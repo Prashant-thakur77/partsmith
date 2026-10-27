@@ -84,3 +84,14 @@ always titled "pipeline check — deterministic mock providers, NOT model perfor
 so IoU ≥ 0.97 at e = 0.1 mm needs L ≳ 13 mm; on an 8 mm spacer it rejects a model that is within 0.2 mm everywhere. The IoU ≥ 0.97
 gate therefore applies only to views whose silhouette short side is ≥ 20 mm. Smaller views are gated on Hausdorff ≤ 0.5 mm and
 mean contour distance ≤ 0.15 mm, both scale-free, plus their part tests. IoU is still reported for every view.
+
+**2026-10-28 — Agentic stages keep the conversation on our side.** `run_agent` drives Responses function tools (Spark 1.3 /
+Wonder) and chat tools (Spark Open, Glimmer) with `store=False`: instructions, tools and reasoning are resent each turn, only the
+last few tool images stay inline, and images in tool outputs travel as `input_image` parts (chat path: a following user message).
+Tools are our own metrology and verifier functions, so the model operates the instrument but code still decides `verified`.
+
+**2026-10-28 — Cited values and generated pixels are gated by code.** A Wonder spec lookup value is accepted only if a web search
+actually ran, the cited URL is one the search returned, the name was requested, and the value converts to mm; it becomes
+`Source.cited` and never overrides a measured value. Muse Image reconstructions get the original pixels pasted back outside the
+broken region (intact area identical by construction) and then pass the metrology gate (markers ≤ 1 px, intact IoU ≥ 0.98)
+before the completion enters the outline as inferred.

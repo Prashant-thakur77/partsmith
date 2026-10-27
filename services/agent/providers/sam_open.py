@@ -60,3 +60,30 @@ def health(route: Route, timeout_s: float = 30.0) -> dict[str, Any]:
     resp.raise_for_status()
     data = resp.json()
     return data if isinstance(data, dict) else {"ok": bool(data)}
+
+
+def segment_video(
+    route: Route, video_mp4: bytes, prompt: str, fps: float, timeout_s: float
+) -> list[tuple[int, float, media.BoolMask, float, str]]:
+    """POST /segment_video {"video_b64", "prompt", "fps"} -> {"width", "height", "frames": [{"frame_idx", "t_s",
+    "masks": [{"object_id", "score", "rle"}]}]}. Returns (frame, t_s, mask, score, object id) rows."""
+    body = {"video_b64": base64.b64encode(video_mp4).decode("ascii"), "prompt": prompt, "fps": fps}
+    with clients.http_client(timeout_s) as http:
+        resp = http.post(f"{_url(route)}/segment_video", json=body, headers=_headers(route))
+    resp.raise_for_status()
+    data = resp.json()
+    out: list[tuple[int, float, media.BoolMask, float, str]] = []
+    for frame in data.get("frames", []):
+        for m in frame.get("masks", []):
+            mask = media.rle_decode(m["rle"])
+            out.append(
+                (
+                    int(frame["frame_idx"]),
+                    float(frame["t_s"]),
+                    mask,
+                    float(m.get("score", 0.0)),
+                    str(m.get("object_id", "1")),
+                )
+            )
+    out.sort(key=lambda r: (r[0], -r[3]))
+    return out

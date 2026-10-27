@@ -44,7 +44,7 @@ def normalize_effort(effort: str | None) -> str | None:
     return e if e in META_EFFORTS else "medium"
 
 
-def _upload(client: Any, data: bytes, mime: str, name: str) -> str:
+def upload(client: Any, data: bytes, mime: str, name: str) -> str:
     uploaded = client.files.create(file=(name, data, mime), purpose="user_data")
     file_id = field(uploaded, "id")
     if not isinstance(file_id, str) or not file_id.startswith("file-"):
@@ -52,10 +52,19 @@ def _upload(client: Any, data: bytes, mime: str, name: str) -> str:
     return file_id
 
 
-def _image_parts(images: list[bytes], file_ids: list[str] | None) -> list[dict[str, Any]]:
-    if file_ids is not None:
-        return [{"type": "input_image", "file_id": fid} for fid in file_ids]
-    return [{"type": "input_image", "image_url": media.data_url(img)} for img in images]
+def _image_parts(
+    images: list[bytes], file_ids: list[str] | None, labels: list[str] | None = None
+) -> list[dict[str, Any]]:
+    """One input_image per image, each preceded by its caption when `labels` are given (judge crops)."""
+    out: list[dict[str, Any]] = []
+    for i, img in enumerate(images):
+        if labels and i < len(labels) and labels[i]:
+            out.append({"type": "input_text", "text": f"Image {i + 1}: {labels[i]}"})
+        if file_ids is not None:
+            out.append({"type": "input_image", "file_id": file_ids[i]})
+        else:
+            out.append({"type": "input_image", "image_url": media.data_url(img)})
+    return out
 
 
 def build_input(req: ModelRequest, file_ids: list[str] | None = None) -> list[dict[str, Any]]:
@@ -69,7 +78,7 @@ def build_input(req: ModelRequest, file_ids: list[str] | None = None) -> list[di
         if role == "user":
             parts: list[dict[str, Any]] = [{"type": "input_text", "text": content}]
             if i == at:
-                parts += _image_parts(req.images, file_ids)
+                parts += _image_parts(req.images, file_ids, req.image_labels)
             items.append({"type": "message", "role": "user", "content": parts})
         else:
             items.append({"type": "message", "role": role, "content": content})
@@ -80,7 +89,7 @@ def _body_size(kwargs: dict[str, Any]) -> int:
     return len(json.dumps(kwargs, default=str).encode())
 
 
-def _usage(response: Any) -> Usage:
+def usage_of(response: Any) -> Usage:
     u = field(response, "usage")
     if u is None:
         return Usage()
@@ -138,7 +147,7 @@ def responses_complete(route: Route, req: ModelRequest, default_effort: str | No
     client = client_for(route, timeout_s)
     kwargs = responses_kwargs(route, req, default_effort)
     if req.images and _body_size(kwargs) > INLINE_BODY_LIMIT:
-        ids = [_upload(client, img, media.sniff_image_mime(img), f"image-{i}") for i, img in enumerate(req.images)]
+        ids = [upload(client, img, media.sniff_image_mime(img), f"image-{i}") for i, img in enumerate(req.images)]
         kwargs["input"] = build_input(req, ids)
     stream = True if req.stream is None else req.stream
     if stream:
@@ -152,7 +161,7 @@ def responses_complete(route: Route, req: ModelRequest, default_effort: str | No
     else:
         response = client.responses.create(**kwargs)
         text = str(field(response, "output_text", "") or "")
-    return LiveText(text=text, usage=_usage(response), model=route.model, tool_calls=_tool_calls(response))
+    return LiveText(text=text, usage=usage_of(response), model=route.model, tool_calls=_tool_calls(response))
 
 
 def sam_request(route: Route, image_url_or_file: dict[str, str], prompt: str) -> dict[str, Any]:
@@ -176,7 +185,7 @@ def sam_segment(route: Route, image: bytes, prompt: str, timeout_s: float) -> li
     width, height = media.image_size(image)
     ref: dict[str, str] = {"image_url": media.data_url(image)}
     if len(image) * 4 // 3 > INLINE_BODY_LIMIT:
-        ref = {"file_id": _upload(client, image, media.sniff_image_mime(image), "segment-image")}
+        ref = {"file_id": upload(client, image, media.sniff_image_mime(image), "segment-image")}
     events = client.responses.create(**sam_request(route, ref, prompt))
     try:
         text, _ = sam_parse.stream_text(events)
@@ -215,21 +224,36 @@ def extract_image(response: Any) -> bytes:
     raise ProviderError("Muse Image returned no image (filtered or failed)", provider="meta")
 
 
-def image_generate(route: Route, prompt: str, references: list[bytes], timeout_s: float) -> tuple[bytes, str]:
+def image_generate(
+    route: Route,
+    prompt: str,
+    references: list[bytes],
+    timeout_s: float,
+    *,
+    store: bool = False,
+    previous_response_id: str | None = None,
+) -> tuple[bytes, str, str]:
+    """Returns (image bytes, mime, response id or "" when not stored).
+
+    With `previous_response_id` the call continues a stored image conversation: send only the change.
+    """
     client = client_for(route, timeout_s)
     refs = [{"image_url": media.data_url(r)} for r in references]
     kwargs = image_request(route, prompt, refs)
     if references and _body_size(kwargs) > INLINE_BODY_LIMIT:
-        refs = [
-            {"file_id": _upload(client, r, media.sniff_image_mime(r), f"ref-{i}")} for i, r in enumerate(references)
-        ]
+        refs = [{"file_id": upload(client, r, media.sniff_image_mime(r), f"ref-{i}")} for i, r in enumerate(references)]
         kwargs = image_request(route, prompt, refs)
-    data = extract_image(client.responses.create(**kwargs))
+    kwargs["store"] = store or previous_response_id is not None
+    if previous_response_id:
+        kwargs["previous_response_id"] = previous_response_id
+    response = client.responses.create(**kwargs)
+    data = extract_image(response)
     try:
         mime = media.sniff_image_mime(data)
     except ValueError:
         mime = "image/webp"
-    return data, mime
+    response_id = str(field(response, "id", "") or "") if kwargs["store"] else ""
+    return data, mime, response_id
 
 
 _LANGS = {"en": "English", "hi": "Hindi", "english": "English", "hindi": "Hindi"}

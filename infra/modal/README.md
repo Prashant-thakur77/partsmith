@@ -6,7 +6,7 @@ stages that use them run as deterministic mocks (shown on `/status` and by `make
 | App | File | Serves | Used by stage | Env var in `.env` |
 |---|---|---|---|---|
 | `partsmith-glimmer` | `glimmer.py` | Muse Glimmer 30B, GGUF Q4_K_M + vision projector, llama.cpp OpenAI-compatible server | `judge`, `capture_triage` (and `understand` with `OPEN_WEIGHTS_ONLY=1`) | `GLIMMER_BASE_URL`, `GLIMMER_API_KEY` |
-| `partsmith-sam3` | `sam3.py` | SAM 3 open weights (`facebook/sam3` image model), `POST /segment`, `GET /health` | `segment` with `OPEN_WEIGHTS_ONLY=1`, or as fallback when `MODEL_API_KEY` is missing | `SAM3_OPEN_URL`, `SAM3_OPEN_API_KEY` |
+| `partsmith-sam3` | `sam3.py` | SAM 3 open weights: `facebook/sam3` image model (`POST /segment`) and the `facebook/sam3.1` multiplex video tracker (`POST /segment_video`), `GET /health` | `segment` / `segment_video` with `OPEN_WEIGHTS_ONLY=1`, or as fallback when `MODEL_API_KEY` is missing | `SAM3_OPEN_URL`, `SAM3_OPEN_API_KEY` |
 
 ## Deploy
 
@@ -22,7 +22,7 @@ modal run infra/modal/glimmer.py               # ephemeral test: /health + one q
 modal deploy infra/modal/glimmer.py            # prints the server URL
 #   → .env: GLIMMER_BASE_URL=<printed URL>   GLIMMER_API_KEY=<same value as the secret>
 
-# SAM 3 open weights (checkpoint is gated: request access to facebook/sam3 on Hugging Face first)
+# SAM 3 open weights (checkpoints are gated: request access to facebook/sam3 and facebook/sam3.1 on Hugging Face first)
 modal secret create huggingface HF_TOKEN=hf_...
 export SAM3_OPEN_API_KEY=$(openssl rand -hex 24)
 modal secret create partsmith-sam3 SAM3_OPEN_API_KEY=$SAM3_OPEN_API_KEY
@@ -42,7 +42,9 @@ to open-weight models (Muse Spark Open builder on Baseten/Fireworks/Together, Gl
   decode speed is bound by memory bandwidth and an L4 has roughly a third of an L40S's, so judge calls take about three
   times longer. `GLIMMER_GPU=L4 modal deploy infra/modal/glimmer.py` trades latency for cost. Context is 131,072
   tokens split across 2 parallel slots (65,536 per request; reasoning tokens count against it).
-- **SAM 3:** an L4 is enough for single images (`SAM3_GPU` to change).
+- **SAM 3:** an L4 is enough for single images (`SAM3_GPU` to change). The video tracker loads on the first
+  `/segment_video` call; FlashAttention-3 kernels are only used on H100, so other GPUs run the default attention.
+  Clips are resampled to 5 fps by PartSmith before upload to keep orbit tracking short.
 - Both apps **scale to zero**: no container, no charge while idle. A cold start loads weights from a Modal Volume
   (`partsmith-glimmer-weights`, `partsmith-hf-cache`); the very first start also downloads them. Requests during a
   Glimmer cold start get HTTP 503 until a replica is ready; PartSmith retries 503 with backoff, and `make smoke` waits

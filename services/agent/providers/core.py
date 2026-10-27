@@ -5,7 +5,7 @@ from __future__ import annotations
 import base64
 import re
 import time
-from collections.abc import Callable
+from collections.abc import Callable, Iterable
 from dataclasses import dataclass, replace
 from typing import Any
 
@@ -35,7 +35,7 @@ REPAIR_PROMPT = (
 
 
 @dataclass
-class _Outcome[T]:
+class Outcome[T]:
     value: T
     usage: Usage
     model: str
@@ -58,8 +58,8 @@ def _mock_label(res: Resolution) -> str:
 
 
 def _run_chain[T](
-    stage: str, res: Resolution, s: Settings, attempt: Callable[[Route], _Outcome[T]]
-) -> tuple[_Outcome[T], Route, int] | None:
+    stage: str, res: Resolution, s: Settings, attempt: Callable[[Route], Outcome[T]]
+) -> tuple[Outcome[T], Route, int] | None:
     """Try each live route in order. Emits one event per route tried. Returns None if every route failed."""
     errors: list[str] = []
     failures: list[ProviderError] = []
@@ -98,6 +98,76 @@ def _run_chain[T](
     raise ProviderError(f"{stage}: every live provider failed: {' | '.join(errors)}", stage=stage)
 
 
+@dataclass
+class Dispatched[T]:
+    value: T
+    mode: Mode
+    provider: str
+    model: str
+    usd: float
+    ms: int
+    note: str = ""
+
+
+def dispatch[T](
+    stage: str,
+    digest: str,
+    *,
+    request: dict[str, Any],
+    mock: Callable[[], T],
+    attempt: Callable[[Route], Outcome[T]],
+    encode: Callable[[T], dict[str, Any]],
+    decode: Callable[[dict[str, Any]], T],
+) -> Dispatched[T]:
+    """Shared mode handling for non-text capabilities: replay (recording or mock on a miss) → mock → live chain.
+
+    `encode`/`decode` turn the value into the JSON stored under `$PARTSMITH_HOME/recordings/<digest>.json`.
+    Emits one `model_call` event for mock/replay and one per live route tried.
+    """
+    s = settings()
+    res = resolve(stage)
+
+    def run_mock(note: str) -> Dispatched[T]:
+        t0 = time.monotonic()
+        value = mock()
+        ms = _ms(t0)
+        model = _mock_label(res)
+        record_call(stage=stage, provider="mock", model=model, mode="mock", usage=Usage(), ms=ms, usd=0.0)
+        return Dispatched(value, "mock", "mock", model, 0.0, ms, note)
+
+    if res.mode == "replay":
+        rec = replay.load(digest)
+        if rec is not None:
+            t0 = time.monotonic()
+            value = decode(rec.get("response", {}))
+            provider, model = str(rec.get("provider", "replay")), str(rec.get("model", ""))
+            usage = Usage.from_dict(rec.get("usage"))
+            record_call(stage=stage, provider=provider, model=model, mode="replay", usage=usage, ms=_ms(t0), usd=0.0)
+            return Dispatched(value, "replay", provider, model, 0.0, _ms(t0), f"replayed recording {digest[:12]}")
+        warn_once(f"replay: no recording for {stage} ({digest[:12]}) → deterministic mock")
+        return run_mock("replay miss → deterministic mock")
+    if res.mode == "mock":
+        return run_mock(res.note)
+    result = _run_chain(stage, res, s, attempt)
+    if result is None:
+        return run_mock("live providers failed → deterministic mock")
+    out, route, ms = result
+    if s.record:
+        replay.save(
+            digest,
+            {
+                "kind": stage, "stage": stage, "provider": route.provider, "model": out.model, "request": request,
+                "response": encode(out.value), "usage": out.usage.to_dict(), "usd": out.usd, "ms": ms,
+            },
+        )  # fmt: skip
+    return Dispatched(out.value, "live", route.provider, out.model, out.usd, ms, res.note)
+
+
+def retry_opts(route: Route) -> dict[str, Any]:
+    """`with_retries` keyword arguments for one live call on `route` (longer for scale-to-zero endpoints)."""
+    return {"provider": route.provider, **_retry_opts(route, settings())}
+
+
 # ---------------------------------------------------------------------------------------------------------------
 # Text / JSON completions
 
@@ -110,7 +180,7 @@ def _parse_validate(text: str, schema: dict[str, Any]) -> tuple[Any, list[str]]:
     return parsed, validate(parsed, schema)
 
 
-def _live_text(route: Route, stage: str, req: ModelRequest, s: Settings) -> _Outcome[tuple[str, Any, list[Any]]]:
+def _live_text(route: Route, stage: str, req: ModelRequest, s: Settings) -> Outcome[tuple[str, Any, list[Any]]]:
     spec = stage_spec(stage)
     timeout = req.timeout_s or s.timeout_s
 
@@ -159,7 +229,7 @@ def _live_text(route: Route, stage: str, req: ModelRequest, s: Settings) -> _Out
                 err.usage = usage
                 raise err
     usd = pricing.token_cost_usd(route.provider, live.model, usage)
-    return _Outcome((text, parsed, live.tool_calls), usage, live.model, usd)
+    return Outcome((text, parsed, live.tool_calls), usage, live.model, usd)
 
 
 def _mock_completion(stage: str, req: ModelRequest, res: Resolution, digest: str, note: str) -> Completion:
@@ -317,14 +387,14 @@ def segment(image_png: bytes, prompt: str) -> list[tuple[BoolMask, float]]:
     if res.mode == "mock":
         return mock()
 
-    def attempt(route: Route) -> _Outcome[list[tuple[BoolMask, float]]]:
+    def attempt(route: Route) -> Outcome[list[tuple[BoolMask, float]]]:
         timeout = s.timeout_s
         if route.protocol == "sam_meta":
             fn: Callable[[], list[tuple[BoolMask, float]]] = lambda: meta.sam_segment(route, image_png, phrase, timeout)  # noqa: E731
         else:
             fn = lambda: sam_open.segment(route, image_png, phrase, timeout)  # noqa: E731
         masks = retry.with_retries(fn, provider=route.provider, **_retry_opts(route, s))
-        return _Outcome(masks, Usage(), route.model, pricing.segment_cost_usd(route.provider))
+        return Outcome(masks, Usage(), route.model, pricing.segment_cost_usd(route.provider))
 
     result = _run_chain("segment", res, s, attempt)
     if result is None:
@@ -351,67 +421,44 @@ def segment(image_png: bytes, prompt: str) -> list[tuple[BoolMask, float]]:
 # Images
 
 
-def generate_image(prompt: str, reference_images: list[bytes] | tuple[bytes, ...] = ()) -> ImageResult:
-    """Muse Image generation/editing with optional reference images. Mock mode returns a labelled placeholder."""
+def generate_image(
+    prompt: str, reference_images: list[bytes] | tuple[bytes, ...] = (), *, editable: bool = False
+) -> ImageResult:
+    """Muse Image generation with optional reference images. Mock mode returns a labelled placeholder.
+
+    `editable=True` stores the response with Meta (store=True) so `edit_image(result.response_id, ...)` can continue
+    it; leave it False for anything private.
+    """
     refs = list(reference_images)
-    s = settings()
-    res = resolve("image")
-    digest = replay.request_hash("image", "image", {"prompt": prompt, "refs": [sha256(r) for r in refs]})
+    digest = replay.request_hash(
+        "image", "image", {"prompt": prompt, "refs": [sha256(r) for r in refs], "editable": editable}
+    )
 
-    def mock(note: str) -> ImageResult:
-        t0 = time.monotonic()
-        data, mime = mocks.mock_image(prompt, refs)
-        ms = _ms(t0)
-        record_call(stage="image", provider="mock", model=_mock_label(res), mode="mock", usage=Usage(), ms=ms, usd=0.0)
-        return ImageResult(data=data, mime=mime, mode="mock", provider="mock", model=_mock_label(res), ms=ms, note=note)
-
-    if res.mode == "replay":
-        rec = replay.load(digest)
-        if rec is not None:
-            resp = rec.get("response", {})
-            provider, model = str(rec.get("provider", "replay")), str(rec.get("model", ""))
-            record_call(stage="image", provider=provider, model=model, mode="replay", usage=Usage(), ms=0, usd=0.0)
-            return ImageResult(
-                data=base64.b64decode(resp["b64"]),
-                mime=str(resp.get("mime", "image/png")),
-                mode="replay",
-                provider=provider,
-                model=model,
-                note=f"replayed recording {digest[:12]}",
-            )
-        warn_once(f"replay: no recording for image ({digest[:12]}) → deterministic mock")
-        return mock("replay miss → deterministic mock")
-    if res.mode == "mock":
-        return mock(res.note)
-
-    def attempt(route: Route) -> _Outcome[tuple[bytes, str]]:
+    def attempt(route: Route) -> Outcome[tuple[bytes, str, str]]:
+        timeout = max(settings().timeout_s, 300.0)
         value = retry.with_retries(
-            lambda: meta.image_generate(route, prompt, refs, max(s.timeout_s, 300.0)),
-            provider=route.provider,
-            **_retry_opts(route, s),
+            lambda: meta.image_generate(route, prompt, refs, timeout, store=editable), **retry_opts(route)
         )
-        return _Outcome(value, Usage(), route.model, pricing.image_cost_usd(route.provider))
+        return Outcome(value, Usage(), route.model, pricing.image_cost_usd(route.provider))
 
-    result = _run_chain("image", res, s, attempt)
-    if result is None:
-        return mock("live providers failed → deterministic mock")
-    out, route, ms = result
-    data, mime = out.value
-    if s.record:
-        replay.save(
-            digest,
-            {
-                "kind": "image",
-                "stage": "image",
-                "provider": route.provider,
-                "model": out.model,
-                "request": {"prompt": prompt, "refs": [sha256(r) for r in refs]},
-                "response": {"b64": base64.b64encode(data).decode("ascii"), "mime": mime},
-                "usd": out.usd,
-                "ms": ms,
-            },
-        )
-    return ImageResult(data=data, mime=mime, mode="live", provider=route.provider, model=out.model, usd=out.usd, ms=ms)
+    def mock() -> tuple[bytes, str, str]:
+        data, mime = mocks.mock_image(prompt, refs)
+        return data, mime, mocks.remember_mock_image(data) if editable else ""
+
+    out = dispatch(
+        "image",
+        digest,
+        request={"prompt": prompt, "refs": [sha256(r) for r in refs], "editable": editable},
+        mock=mock,
+        attempt=attempt,
+        encode=lambda v: {"b64": base64.b64encode(v[0]).decode("ascii"), "mime": v[1], "response_id": v[2]},
+        decode=lambda r: (base64.b64decode(r["b64"]), str(r.get("mime", "image/png")), str(r.get("response_id", ""))),
+    )
+    data, mime, response_id = out.value
+    return ImageResult(
+        data=data, mime=mime, mode=out.mode, provider=out.provider, model=out.model, usd=out.usd, ms=out.ms,
+        note=out.note, response_id=response_id,
+    )  # fmt: skip
 
 
 # ---------------------------------------------------------------------------------------------------------------
@@ -463,13 +510,13 @@ def transcribe(audio: bytes, mime: str, language_hint: str | None = None) -> Tra
     if res.mode == "mock":
         return mock(res.note)
 
-    def attempt(route: Route) -> _Outcome[tuple[str, int | None]]:
+    def attempt(route: Route) -> Outcome[tuple[str, int | None]]:
         value = retry.with_retries(
             lambda: meta.voice_transcribe(route, audio, mime, language_hint, s.timeout_s),
             provider=route.provider,
             **_retry_opts(route, s),
         )
-        return _Outcome(value, Usage(), route.model, pricing.voice_cost_usd(route.provider, value[1]))
+        return Outcome(value, Usage(), route.model, pricing.voice_cost_usd(route.provider, value[1]))
 
     result = _run_chain("transcribe", res, s, attempt)
     if result is None:
@@ -566,3 +613,39 @@ def overall_mode() -> str:
 
 def warnings() -> list[str]:
     return [f"{row['stage']}: {row['note']}" for row in status() if row["note"]]
+
+
+def open_weights_summary(events: Iterable[Any] | None = None) -> dict[str, dict[str, Any]]:
+    """Per stage: which model/provider served it, whether that is open weights, and how often (live + replay calls).
+
+    Built from this process's model calls, or from recorded `model_call` events (e.g. every run.jsonl) when given.
+    Mock calls are counted separately under `modes` and never as evidence.
+    """
+    from .routing import ENDPOINTS
+    from .telemetry import tally, tally_from_events
+
+    rows = tally() if events is None else tally_from_events(events)
+    out: dict[str, dict[str, Any]] = {}
+    for r in rows:
+        st = out.setdefault(
+            r["stage"],
+            {"model": "", "provider": "", "open_weights": False, "calls": 0, "tokens": 0, "modes": {}, "routes": []},
+        )
+        st["modes"][r["mode"]] = st["modes"].get(r["mode"], 0) + r["calls"]
+        if r["mode"] == "mock":
+            continue
+        ep = ENDPOINTS.get(r["provider"])
+        st["routes"].append(
+            {
+                "provider": r["provider"], "model": r["model"], "mode": r["mode"],
+                "open_weights": bool(ep and ep.open_weights), "calls": r["calls"],
+                "tokens": r["tokens_in"] + r["tokens_out"],
+            }
+        )  # fmt: skip
+        st["calls"] += r["calls"]
+        st["tokens"] += r["tokens_in"] + r["tokens_out"]
+    for st in out.values():
+        if st["routes"]:
+            top = max(st["routes"], key=lambda x: x["calls"])
+            st["model"], st["provider"], st["open_weights"] = top["model"], top["provider"], top["open_weights"]
+    return out

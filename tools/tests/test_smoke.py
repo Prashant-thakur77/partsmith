@@ -27,6 +27,7 @@ def zero_keys(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> Any:
         raise AssertionError("smoke test must not build a real client")
 
     clients.set_client_factory(no_network)
+    clients.set_ws_connect(no_network)
     yield
     providers.reset_state()
 
@@ -39,7 +40,7 @@ def test_zero_keys_all_warnings_exit_zero(capsys: pytest.CaptureFixture[str]) ->
     for env in ("MODEL_API_KEY", "BASETEN_API_KEY", "GLIMMER_BASE_URL", "SAM3_OPEN_URL", "FIREWORKS_API_KEY"):
         assert env in out
     assert "Stage routing (overall mode: mock)" in out
-    assert "0 live ✅ · 12 missing ⚠️ (mock) · 0 failed ❌" in out
+    assert "0 live ✅ · 13 missing ⚠️ (mock) · 0 failed ❌" in out
 
 
 class _Err(Exception):

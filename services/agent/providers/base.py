@@ -22,6 +22,7 @@ class ModelRequest:
     messages: list[dict[str, str]]
     images: list[bytes] = field(default_factory=list)
     images_at: int | None = None
+    image_labels: list[str] = field(default_factory=list)  # optional caption per image ("crop around hole_1")
     json_schema: dict[str, Any] | None = None
     schema_name: str = "result"
     strict: bool = True
@@ -112,6 +113,7 @@ class ImageResult:
     usd: float = 0.0
     ms: int = 0
     note: str = ""
+    response_id: str = ""  # set when the call was stored (store=True) so `edit_image` can continue from it
 
 
 @dataclass
@@ -166,6 +168,6 @@ class SchemaValidationError(ProviderError):
         self.errors = errors
 
 
-MockHandler = Callable[[ModelRequest], Any]
-"""Deterministic stand-in for a stage. Text stages return a dict (JSON answer) or str; `transcribe` returns str;
+MockHandler = Callable[..., Any]
+"""Deterministic stand-in for a stage. Agent stages get `(req, history)` and return {"tool", "args"} or {"final"}. Text stages return a dict (JSON answer) or str; `transcribe` returns str;
 `segment` returns `list[(bool mask, score)]`; `image` returns PNG bytes."""

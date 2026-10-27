@@ -55,3 +55,22 @@ def field(obj: Any, name: str, default: Any = None) -> Any:
     if isinstance(obj, dict):
         return obj.get(name, default)
     return getattr(obj, name, default)
+
+
+WsConnect = Callable[..., Any]  # (url, **kwargs) -> sync websocket with send / recv / close
+_ws_connect: WsConnect | None = None
+
+
+def set_ws_connect(connect: WsConnect | None) -> None:
+    """Install a fake WebSocket connector (tests) or restore the real one (None)."""
+    global _ws_connect
+    _ws_connect = connect
+
+
+def ws_connect(url: str, **kwargs: Any) -> Any:
+    if _ws_connect is not None:
+        return _ws_connect(url, **kwargs)
+    from websockets.sync.client import connect
+
+    # Entering the connection's context marks it as managed; the caller closes it with `.close()`.
+    return connect(url, **kwargs).__enter__()

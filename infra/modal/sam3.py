@@ -10,6 +10,9 @@ API (mirrors what `services.agent.providers.segment` returns; client in `service
     POST /segment {"image_b64": str, "prompt": "<one noun phrase>", "threshold": 0.5}
          -> {"width", "height", "model", "ms",
              "masks": [{"score", "box_xyxy": [x1, y1, x2, y2], "rle": {"size": [h, w], "counts": [...]}}]}
+    POST /segment_video {"video_b64": str (MP4), "prompt": "<one noun phrase>", "fps": float}
+         -> {"width", "height", "model": "sam3.1", "ms",
+             "frames": [{"frame_idx", "t_s", "masks": [{"object_id", "score", "rle"}]}]}   (SAM 3.1 multiplex tracker)
     `rle`: uncompressed row-major run lengths starting with a run of False; masks are full-frame (h x w of the input).
     Requests need `Authorization: Bearer $SAM3_OPEN_API_KEY`.
 
@@ -68,7 +71,7 @@ def rle_encode(mask) -> dict:
         modal.Secret.from_name("partsmith-sam3", required_keys=["SAM3_OPEN_API_KEY"]),
     ],
     scaledown_window=10 * MINUTES,  # scale to zero after 10 idle minutes
-    timeout=10 * MINUTES,
+    timeout=20 * MINUTES,  # orbit clips: a few hundred frames through the tracker
     min_containers=0,
 )
 @modal.concurrent(max_inputs=4)
@@ -82,7 +85,57 @@ class Sam3Service:
         self.device = "cuda" if torch.cuda.is_available() else "cpu"
         self.gpu = torch.cuda.get_device_name(0) if self.device == "cuda" else "cpu"
         self.processor = Sam3Processor(build_sam3_image_model(device=self.device), device=self.device)
+        self.video_predictor = None  # SAM 3.1 multiplex tracker, loaded on the first /segment_video call
         cache.commit()  # keep the downloaded checkpoint for the next cold start
+
+    def run_video(self, video_b64: str, prompt: str, fps: float) -> dict:
+        """Track one noun phrase through an MP4 with the SAM 3.1 multiplex video predictor (gated facebook/sam3.1)."""
+        import base64
+        import tempfile
+        import time
+
+        import numpy as np
+        import torch
+
+        t0 = time.perf_counter()
+        if self.video_predictor is None:
+            from sam3.model_builder import build_sam3_predictor
+
+            # FlashAttention-3 kernels need an H100; everything smaller runs the default attention.
+            use_fa3 = "H100" in self.gpu
+            self.video_predictor = build_sam3_predictor(version="sam3.1", use_fa3=use_fa3, max_num_objects=16)
+            cache.commit()
+        predictor = self.video_predictor
+        with tempfile.NamedTemporaryFile(suffix=".mp4") as f:
+            f.write(base64.b64decode(video_b64))
+            f.flush()
+            session = predictor.handle_request({"type": "start_session", "resource_path": f.name})["session_id"]
+            try:
+                with torch.inference_mode():
+                    predictor.handle_request(
+                        {"type": "add_prompt", "session_id": session, "frame_index": 0, "text": prompt}
+                    )
+                    frames, size = [], None
+                    stream = predictor.handle_stream_request({"type": "propagate_in_video", "session_id": session})
+                    for item in stream:
+                        out = item["outputs"]
+                        masks = np.asarray(out["out_binary_masks"]).astype(bool)
+                        if masks.ndim == 4:
+                            masks = masks[:, 0]
+                        if masks.size:
+                            size = masks.shape[-2:]
+                        rows = [
+                            {"object_id": str(int(o)), "score": float(p), "rle": rle_encode(m)}
+                            for o, p, m in zip(out["out_obj_ids"], out["out_probs"], masks, strict=True)
+                        ]
+                        idx = int(item["frame_index"])
+                        frames.append({"frame_idx": idx, "t_s": idx / fps, "masks": rows})
+            finally:
+                predictor.handle_request({"type": "close_session", "session_id": session})
+        frames.sort(key=lambda fr: fr["frame_idx"])
+        height, width = (int(size[0]), int(size[1])) if size is not None else (0, 0)
+        ms = int((time.perf_counter() - t0) * 1000)
+        return {"width": width, "height": height, "model": "sam3.1", "ms": ms, "frames": frames}
 
     def run_segment(self, image_b64: str, prompt: str, threshold: float) -> dict:
         import base64
@@ -104,7 +157,7 @@ class Sam3Service:
         boxes = out["boxes"].detach().cpu().float().numpy().tolist()
         scores = out["scores"].detach().cpu().float().numpy().tolist()
         items = []
-        for m, b, s in zip(masks, boxes, scores):
+        for m, b, s in zip(masks, boxes, scores, strict=True):
             m = m.reshape(m.shape[-2], m.shape[-1])
             if m.shape != (height, width):  # defensive: always answer in input-pixel coordinates
                 m = np.asarray(Image.fromarray(m).resize((width, height), Image.Resampling.NEAREST))
@@ -140,6 +193,23 @@ class Sam3Service:
                 return self.run_segment(body.image_b64, phrase, body.threshold)
             except (ValueError, OSError) as exc:
                 raise HTTPException(status_code=400, detail=f"bad image: {exc}") from exc
+
+        class VideoIn(BaseModel):
+            video_b64: str = Field(max_length=280_000_000)  # ~200 MB of MP4
+            prompt: str = Field(min_length=1, max_length=80)
+            fps: float = Field(5.0, gt=0.0, le=60.0)
+
+        @api.post("/segment_video")
+        def segment_video(body: VideoIn, authorization: str = Header(default="")) -> dict:
+            if authorization != f"Bearer {expected}":
+                raise HTTPException(status_code=401, detail="missing or wrong bearer token")
+            phrase = " ".join(body.prompt.split())
+            if "," in phrase:
+                raise HTTPException(status_code=400, detail="one noun phrase per request (no commas)")
+            try:
+                return self.run_video(body.video_b64, phrase, body.fps)
+            except (ValueError, OSError, RuntimeError) as exc:
+                raise HTTPException(status_code=400, detail=f"bad video: {exc}") from exc
 
         return api
 

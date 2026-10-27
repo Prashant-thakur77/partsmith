@@ -51,6 +51,11 @@ def isolated(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> Iterator[None]:
         raise AssertionError(f"test tried to build a real client for {base_url}")
 
     clients.set_client_factory(no_network)
+
+    def no_ws(url: str, **kw: Any) -> Any:
+        raise AssertionError(f"test tried to open a real WebSocket to {url}")
+
+    clients.set_ws_connect(no_ws)
     yield
     providers.reset_state()
     mocks.clear_mocks()

@@ -86,7 +86,6 @@ def mock_complete(stage: str, req: ModelRequest) -> tuple[str, Any]:
 
 def mock_segment(image: bytes, prompt: str) -> list[tuple[media.BoolMask, float]]:
     """Largest region that differs from the border colour. Score 0.5 marks it as a mock guess."""
-    import cv2
 
     handler = _handlers.get("segment")
     if handler is not None:
@@ -94,14 +93,20 @@ def mock_segment(image: bytes, prompt: str) -> list[tuple[media.BoolMask, float]
             ModelRequest(messages=[{"role": "user", "content": prompt}], images=[image])
         )
         return result
-    rgb = media.decode_image_rgb(image)
-    gray = cv2.cvtColor(rgb, cv2.COLOR_RGB2GRAY).astype(np.int16)
+    return threshold_segment(media.decode_image_rgb(image))
+
+
+def threshold_segment(rgb: Any) -> list[tuple[media.BoolMask, float]]:
+    """Background subtraction on an RGB array: largest region unlike the border colour, holes filled."""
+    import cv2
+
+    gray = cv2.cvtColor(np.ascontiguousarray(rgb, dtype=np.uint8), cv2.COLOR_RGB2GRAY).astype(np.int16)
     border = np.concatenate([gray[0], gray[-1], gray[:, 0], gray[:, -1]])
     background = int(np.median(border))
     diff = np.abs(gray - background).astype(np.uint8)
-    _, fg = cv2.threshold(diff, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
     if int(diff.max()) < 12:
         return []
+    _, fg = cv2.threshold(diff, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
     fg = cv2.morphologyEx(fg, cv2.MORPH_OPEN, np.ones((3, 3), np.uint8))
     n, labels, stats, _ = cv2.connectedComponentsWithStats(fg, connectivity=8)
     if n <= 1:
@@ -112,6 +117,40 @@ def mock_segment(image: bytes, prompt: str) -> list[tuple[media.BoolMask, float]
     contours, _ = cv2.findContours(mask.astype(np.uint8), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_NONE)
     cv2.drawContours(filled, contours, -1, 255, thickness=-1)
     return [(filled > 0, 0.5)]
+
+
+def flood_segment(
+    rgb: Any,
+    points_pos: list[tuple[float, float]],
+    points_neg: list[tuple[float, float]],
+    box: tuple[float, float, float, float] | None,
+    tolerance: int = 14,
+) -> list[tuple[media.BoolMask, float]]:
+    """Point-prompt stand-in: flood fill from each positive point (similar grey levels), minus the regions grown from
+    negative points, clipped to the box. Holes in a part flood to the hole; the part body floods to the body."""
+    import cv2
+
+    gray = cv2.cvtColor(np.ascontiguousarray(rgb, dtype=np.uint8), cv2.COLOR_RGB2GRAY)
+    h, w = gray.shape
+
+    def grow(x: float, y: float) -> media.BoolMask:
+        xi, yi = min(max(round(x), 0), w - 1), min(max(round(y), 0), h - 1)
+        ff = np.zeros((h + 2, w + 2), np.uint8)
+        flags = 8 | cv2.FLOODFILL_MASK_ONLY | cv2.FLOODFILL_FIXED_RANGE | (255 << 8)
+        cv2.floodFill(gray.copy(), ff, (xi, yi), 0, (tolerance,), (tolerance,), flags)
+        return ff[1:-1, 1:-1] > 0
+
+    mask = np.zeros((h, w), dtype=bool)
+    for x, y in points_pos:
+        mask |= grow(x, y)
+    for x, y in points_neg:
+        mask &= ~grow(x, y)
+    if box is not None:
+        x1, y1, x2, y2 = (round(v) for v in box)
+        clip = np.zeros_like(mask)
+        clip[max(0, y1) : max(0, y2) + 1, max(0, x1) : max(0, x2) + 1] = True
+        mask &= clip
+    return [(mask, 0.5)] if mask.any() else []
 
 
 def _font(size: int) -> Any:
@@ -166,3 +205,17 @@ def mock_transcript(audio: bytes, mime: str, language_hint: str | None) -> str:
         )
         return str(handler(req))
     return MOCK_TRANSCRIPT
+
+
+_mock_images: dict[str, bytes] = {}
+
+
+def remember_mock_image(data: bytes) -> str:
+    """Store a mock image so `edit_image` can continue from it (the mock stand-in for a stored response id)."""
+    rid = f"mock-img-{media.sha256(data)[:16]}"
+    _mock_images[rid] = data
+    return rid
+
+
+def recall_mock_image(response_id: str) -> bytes | None:
+    return _mock_images.get(response_id)

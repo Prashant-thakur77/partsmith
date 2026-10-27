@@ -24,6 +24,7 @@ from .media import BoolMask
 
 _RECORD_BOX_RE = re.compile(r"(\d+)<\|box;([^|]*)\|>")
 _BOX_KEYS = ("x1", "y1", "x2", "y2", "w", "h")
+_FRAME_RE = re.compile(r"^<(\d+)f>")
 
 
 def _event_dict(event: Any) -> dict[str, Any]:
@@ -74,21 +75,29 @@ def stream_text(events: Iterable[Any]) -> tuple[str, Any]:
     return text, final
 
 
-def split_confidence(text: str) -> tuple[str, dict[str, float]]:
-    """Strip `;c=<float>` (and any other unknown box keys) from box tokens; return clean text + {object_id: c}."""
-    conf: dict[str, float] = {}
+def split_confidence(text: str) -> tuple[str, dict[tuple[int, str], float]]:
+    """Strip `;c=<float>` (and any other unknown box keys) from box tokens.
 
-    def repl(m: re.Match[str]) -> str:
-        obj, body = m.group(1), m.group(2)
-        params = dict(p.split("=", 1) for p in body.split(";") if "=" in p)
-        if "c" in params:
-            with contextlib.suppress(ValueError):
-                conf[obj] = float(params["c"])
-        if not all(k in params for k in _BOX_KEYS):
-            return m.group(0)
-        return obj + "<|box;" + ";".join(f"{k}={params[k]}" for k in _BOX_KEYS) + "|>"
+    Returns the clean text and {(frame index, object id): confidence}; the frame comes from each line's `<Nf>` header.
+    """
+    conf: dict[tuple[int, str], float] = {}
+    lines = []
+    for line in text.split("\n"):
+        header = _FRAME_RE.match(line)
+        frame = int(header.group(1)) if header else 0
 
-    return _RECORD_BOX_RE.sub(repl, text), conf
+        def repl(m: re.Match[str], frame: int = frame) -> str:
+            obj, body = m.group(1), m.group(2)
+            params = dict(p.split("=", 1) for p in body.split(";") if "=" in p)
+            if "c" in params:
+                with contextlib.suppress(ValueError):
+                    conf[(frame, obj)] = float(params["c"])
+            if not all(k in params for k in _BOX_KEYS):
+                return m.group(0)
+            return obj + "<|box;" + ";".join(f"{k}={params[k]}" for k in _BOX_KEYS) + "|>"
+
+        lines.append(_RECORD_BOX_RE.sub(repl, line))
+    return "\n".join(lines), conf
 
 
 def _paste(raster: np.ndarray[Any, Any], left: int, top: int, right: int, bottom: int, out: BoolMask) -> None:
@@ -141,6 +150,44 @@ def parse_masks(text: str, width: int, height: int) -> list[tuple[BoolMask, floa
         b = rec.bounds
         _paste(raster, math.floor(b.left), math.floor(b.top), math.ceil(b.right), math.ceil(b.bottom), mask)
         if mask.any():
-            out.append((mask, float(conf.get(obj, 1.0))))
+            out.append((mask, float(conf.get((0, obj), 1.0))))
     out.sort(key=lambda t: (-t[1], -int(t[0].sum())))
+    return out
+
+
+def parse_video_masks(text: str, width: int, height: int) -> list[tuple[int, str, BoolMask, float]]:
+    """SAM 3.1 video output → `[(frame index, object id, full-frame mask, score)]` sorted by frame then score.
+
+    Frames may arrive out of order (forward then backward propagation); the latest revision per (frame, object) wins.
+    """
+    from meta_sam_parser import (
+        CompletedOutcome,
+        SegmentationMaskRecord,
+        decode_mask_to_raster,
+        video_segmentation_format,
+    )
+
+    if not text.strip():
+        return []
+    clean, conf = split_confidence(text)
+    parser = video_segmentation_format().create_parser()
+    parser.push(clean)
+    result = parser.finish(CompletedOutcome()).result
+    latest: dict[tuple[int, str], Any] = {}
+    for rec in result.records:
+        if isinstance(rec, SegmentationMaskRecord):
+            frame = rec.frame.frame_index if rec.frame is not None else 0
+            latest[(frame, rec.object_id)] = rec
+    if not latest and any(d.severity == "error" for d in result.diagnostics):
+        raise ProviderError(f"SAM video output could not be parsed: {result.diagnostics[0].message}")
+    out: list[tuple[int, str, BoolMask, float]] = []
+    for (frame, obj), rec in latest.items():
+        flat = np.frombuffer(decode_mask_to_raster(rec.mask), dtype=np.uint8)
+        raster = flat.reshape(rec.mask.height, rec.mask.width).astype(bool)
+        mask = np.zeros((height, width), dtype=bool)
+        b = rec.bounds
+        _paste(raster, math.floor(b.left), math.floor(b.top), math.ceil(b.right), math.ceil(b.bottom), mask)
+        if mask.any():
+            out.append((frame, obj, mask, float(conf.get((frame, obj), 1.0))))
+    out.sort(key=lambda t: (t[0], -t[3]))
     return out

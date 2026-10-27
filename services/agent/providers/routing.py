@@ -4,14 +4,20 @@
 |------------------|------------------|----------------------------------------------------------------------------|------------------------------------|
 | understand       | Understander     | muse-spark-1.3 (Meta API, vision, strict JSON)                              | Glimmer (Modal → Together)         |
 | plan, build, fix | Planner/Builder/Fixer | Muse Spark Open: Baseten → Fireworks → Together → muse-spark-1.3      | Spark Open: Baseten → FW → Together |
+| fix_agent        | Fixer agent (tools) | Muse Spark Open: Baseten → Fireworks → Together → muse-spark-1.3    | Spark Open: Baseten → FW → Together |
+| spec_lookup      | Spec finder      | muse-wonder-1.0 with web_search (citations)                                | none → deterministic mock          |
 | judge            | Judge            | Muse Glimmer 30B: llama.cpp on Modal → Together                            | same                               |
 | capture_triage   | Capture triage   | Muse Glimmer 30B: llama.cpp on Modal → Together                            | same                               |
 | voice_map        | Voice editor     | muse-spark-1.3                                                             | Spark Open                         |
 | variant          | Variant mapper   | muse-spark-1.3                                                             | Spark Open                         |
 | steer_plan       | Factory planner  | muse-wonder-1.0                                                            | Spark Open                         |
 | segment          | Segmenter        | sam-3.1 (Meta API) → SAM 3 open weights on Modal                           | SAM 3 open weights on Modal        |
-| image            | Preview images   | muse-image-1.0                                                             | none → deterministic mock          |
-| transcribe       | Transcriber      | muse-voice-transcribe-1.0                                                  | none → deterministic mock          |
+| segment_points   | Feature cutter   | sam-3.1 point/box prompts                                                  | none → deterministic mock          |
+| segment_video    | Orbit tracker    | sam-3.1 video (Files API) → SAM 3.1 multiplex on Modal                     | SAM 3.1 multiplex on Modal         |
+| image            | Preview images   | muse-image-1.0 (previews, iterative edits, install cards)                  | none → deterministic mock          |
+| reconstruct      | Region completer | muse-image-1.0 (completes the broken region; code keeps the rest)          | none → deterministic mock          |
+| transcribe       | Transcriber      | muse-voice-transcribe-1.0 (file endpoint)                                  | none → deterministic mock          |
+| transcribe_stream| Live voice       | muse-voice-transcribe-1.0 realtime WebSocket (file endpoint fallback)      | none → deterministic mock          |
 
 A stage whose chain has no configured key runs in mock mode (one warning, shown in `status()`).
 """
@@ -24,7 +30,7 @@ from typing import Literal
 from .config import Mode, env, settings, warn_once
 
 Protocol = Literal["responses", "chat", "sam_meta", "sam_open", "image", "voice"]
-Kind = Literal["complete", "segment", "image", "transcribe"]
+Kind = Literal["complete", "agent", "search", "segment", "video", "image", "transcribe"]
 
 
 @dataclass(frozen=True)
@@ -119,14 +125,20 @@ STAGES: dict[str, StageSpec] = {
         StageSpec("plan", "Planner", "complete", (*SPARK_OPEN_CHAIN, SPARK_13), SPARK_OPEN_CHAIN, "medium"),
         StageSpec("build", "Builder", "complete", (*SPARK_OPEN_CHAIN, SPARK_13), SPARK_OPEN_CHAIN, "medium"),
         StageSpec("fix", "Fixer", "complete", (*SPARK_OPEN_CHAIN, SPARK_13), SPARK_OPEN_CHAIN, "medium"),
+        StageSpec("fix_agent", "Fixer agent", "agent", (*SPARK_OPEN_CHAIN, SPARK_13), SPARK_OPEN_CHAIN, "medium"),
+        StageSpec("spec_lookup", "Spec finder", "search", (WONDER,), (), "medium"),
         StageSpec("judge", "Judge", "complete", GLIMMER_CHAIN, GLIMMER_CHAIN, "medium"),
         StageSpec("capture_triage", "Capture triage", "complete", GLIMMER_CHAIN, GLIMMER_CHAIN, "low"),
         StageSpec("voice_map", "Voice editor", "complete", (SPARK_13,), SPARK_OPEN_CHAIN, "low"),
         StageSpec("variant", "Variant mapper", "complete", (SPARK_13,), SPARK_OPEN_CHAIN, "low"),
         StageSpec("steer_plan", "Factory planner", "complete", (WONDER,), SPARK_OPEN_CHAIN, "medium"),
         StageSpec("segment", "Segmenter", "segment", (SAM_31, SAM_3_OPEN), (SAM_3_OPEN,)),
+        StageSpec("segment_points", "Feature cutter", "segment", (SAM_31,), ()),
+        StageSpec("segment_video", "Orbit tracker", "video", (SAM_31, SAM_3_OPEN), (SAM_3_OPEN,)),
         StageSpec("image", "Preview images", "image", (MUSE_IMAGE,), ()),
+        StageSpec("reconstruct", "Region completer", "image", (MUSE_IMAGE,), ()),
         StageSpec("transcribe", "Transcriber", "transcribe", (MUSE_VOICE,), ()),
+        StageSpec("transcribe_stream", "Live voice", "transcribe", (MUSE_VOICE,), ()),
     )
 }
 

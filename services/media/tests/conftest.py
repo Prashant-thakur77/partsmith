@@ -32,6 +32,11 @@ def zero_keys(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> Iterator[None]
     monkeypatch.setattr(retry, "sleep", lambda s: None)
     providers.reset_state()
     mocks.clear_mocks()
+
+    def no_ws(url: str, **kw: object) -> object:
+        raise AssertionError(f"test tried to open a real WebSocket to {url}")
+
+    clients.set_ws_connect(no_ws)
     yield
     providers.reset_state()
     mocks.clear_mocks()

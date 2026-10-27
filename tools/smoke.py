@@ -66,10 +66,30 @@ def _spark_open(route: Route, timeout_s: float) -> str:
 
 
 def _image(route: Route, timeout_s: float) -> str:
-    data, mime = meta.image_generate(
+    data, mime, _ = meta.image_generate(
         route, "a small grey plastic washer on a white table, product photo", [], timeout_s
     )
     return f"{len(data) // 1024} KiB {mime}"
+
+
+def _voice_realtime(route: Route, timeout_s: float) -> str:
+    """WebSocket handshake + 1 s of silence + endStream; no fallback to the file endpoint here."""
+    import json
+
+    from services.agent.providers import clients, realtime
+
+    url = (route.endpoint.base_url() or "").replace("https://", "wss://") + realtime.STREAM_PATH
+    ws = clients.ws_connect(url, max_size=None, open_timeout=15)
+    try:
+        ws.send(json.dumps(realtime.handshake(route.endpoint.key() or "", route.model, [], ["English", "Hindi"])))
+        ack = json.loads(ws.recv(timeout=15))
+        if "sessionId" not in ack:
+            raise RuntimeError(f"handshake rejected: {str(ack)[:100]}")
+        ws.send(b"\0\0" * realtime.SAMPLE_RATE)
+        ws.send(json.dumps({"type": "endStream"}))
+        return f"session {str(ack['sessionId'])[:12]} opened, 1 s streamed"
+    finally:
+        ws.close()
 
 
 def _voice(route: Route, timeout_s: float) -> str:
@@ -135,6 +155,7 @@ def checks(cold_start_s: float = 300.0) -> list[Check]:
         Check("Meta · muse-wonder-1.0", routing.WONDER, _text),
         Check("Meta · muse-image-1.0", routing.MUSE_IMAGE, _image),
         Check("Meta · muse-voice-transcribe-1.0", routing.MUSE_VOICE, _voice),
+        Check("Meta · voice realtime (WebSocket)", routing.MUSE_VOICE, _voice_realtime),
         Check("Meta · sam-3.1", routing.SAM_31, _sam),
         Check("Baseten · models.list", routing.SPARK_OPEN_BASETEN, _baseten_models),
         Check("Baseten · Muse Spark Open", routing.SPARK_OPEN_BASETEN, _spark_open),

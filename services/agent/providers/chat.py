@@ -22,6 +22,10 @@ from .routing import SPARK_OPEN_DEFAULT_ID, Route
 
 SPARK_OPEN_EFFORTS = ("low", "medium", "high", "xhigh")
 GLIMMER_STRENGTHS = ("low", "medium", "high", "xhigh")
+# Judge crops: every image is prompt tokens inside one 65,536-token llama.cpp slot (reasoning shares it). Keep images
+# at or below this side length and roughly a dozen per request.
+GLIMMER_MAX_IMAGE_SIDE = 1024
+GLIMMER_MAX_IMAGES = 12
 _model_cache: dict[tuple[str, str], str] = {}
 
 
@@ -105,7 +109,22 @@ def reset_model_cache() -> None:
     _model_cache.clear()
 
 
-def build_messages(req: ModelRequest) -> list[dict[str, Any]]:
+def image_parts(
+    images: list[bytes], labels: list[str] | None = None, max_side: int | None = None
+) -> list[dict[str, Any]]:
+    """Chat content parts: optional caption + image_url per image, in order. Several images per message are fine on
+    llama.cpp with a vision projector; each costs prompt tokens that grow with resolution, so Glimmer images are
+    downscaled to `GLIMMER_MAX_IMAGE_SIDE` px."""
+    out: list[dict[str, Any]] = []
+    for i, img in enumerate(images):
+        if labels and i < len(labels) and labels[i]:
+            out.append({"type": "text", "text": f"Image {i + 1}: {labels[i]}"})
+        data = media.fit_image(img, max_side) if max_side else img
+        out.append({"type": "image_url", "image_url": {"url": media.data_url(data)}})
+    return out
+
+
+def build_messages(req: ModelRequest, max_side: int | None = None) -> list[dict[str, Any]]:
     at = req.image_message_index()
     out: list[dict[str, Any]] = []
     for i, msg in enumerate(req.messages):
@@ -114,7 +133,7 @@ def build_messages(req: ModelRequest) -> list[dict[str, Any]]:
         content = msg.get("content", "")
         if role == "user" and i == at:
             parts: list[dict[str, Any]] = [{"type": "text", "text": content}]
-            parts += [{"type": "image_url", "image_url": {"url": media.data_url(img)}} for img in req.images]
+            parts += image_parts(req.images, req.image_labels, max_side)
             out.append({"role": "user", "content": parts})
         else:
             out.append({"role": role, "content": content})
@@ -133,7 +152,13 @@ def _nested_tools(tools: list[dict[str, Any]]) -> list[dict[str, Any]]:
 
 
 def chat_kwargs(route: Route, req: ModelRequest, model: str, default_effort: str | None) -> dict[str, Any]:
-    kwargs: dict[str, Any] = {"model": model, "messages": build_messages(req)}
+    max_side = GLIMMER_MAX_IMAGE_SIDE if is_glimmer(route) else None
+    if max_side and len(req.images) > GLIMMER_MAX_IMAGES:
+        raise ProviderError(
+            f"Glimmer requests take at most {GLIMMER_MAX_IMAGES} images (got {len(req.images)}); send fewer crops",
+            provider=route.provider,
+        )
+    kwargs: dict[str, Any] = {"model": model, "messages": build_messages(req, max_side)}
     if req.json_schema is not None:
         kwargs["response_format"] = {
             "type": "json_schema",
@@ -182,7 +207,7 @@ def clean_glimmer_text(text: str) -> str:
     return _SPECIAL_RE.sub("", text).strip()
 
 
-def _collect_stream(chunks: Any) -> tuple[str, Usage, list[dict[str, Any]]]:
+def collect_stream(chunks: Any) -> tuple[str, Usage, list[dict[str, Any]]]:
     parts: list[str] = []
     usage = Usage()
     tools: dict[int, dict[str, Any]] = {}
@@ -216,7 +241,7 @@ def chat_complete(route: Route, req: ModelRequest, default_effort: str | None, t
     if stream:
         chunks = client.chat.completions.create(**kwargs, stream=True, stream_options={"include_usage": True})
         try:
-            text, usage, tool_calls = _collect_stream(chunks)
+            text, usage, tool_calls = collect_stream(chunks)
         finally:
             close = getattr(chunks, "close", None)
             if callable(close):

@@ -62,6 +62,22 @@ def encode_png(rgb: NDArray[Any]) -> bytes:
     return buf.getvalue()
 
 
+def fit_image(data: bytes, max_side: int) -> bytes:
+    """Downscale so the longest side is at most `max_side` (PNG out); returns the input unchanged when it fits."""
+    from PIL import Image
+
+    with Image.open(io.BytesIO(data)) as im:
+        if max(im.size) <= max_side:
+            return data
+        scale = max_side / max(im.size)
+        small = im.convert("RGB").resize(
+            (max(1, round(im.width * scale)), max(1, round(im.height * scale))), Image.Resampling.LANCZOS
+        )
+    buf = io.BytesIO()
+    small.save(buf, format="PNG")
+    return buf.getvalue()
+
+
 def is_wav(data: bytes) -> bool:
     return data[:4] == b"RIFF" and data[8:12] == b"WAVE"
 

@@ -30,6 +30,9 @@ GLIMMER_TOGETHER = TokenPrice(0.35, 1.50, 0.04)
 SELF_HOSTED = TokenPrice(0.0, 0.0, 0.0)
 
 SAM_31_PER_IMAGE_USD = 2.50 / 1000
+SAM_31_PER_VIDEO_FRAME_USD = 0.20 / 1000
+SAM_31_MIN_VIDEO_FRAMES = 50  # billed minimum per video request
+WEB_SEARCH_PER_QUERY_USD = 2.50 / 1000
 MUSE_IMAGE_PER_IMAGE_USD = 0.01
 VOICE_PER_HOUR_USD = 0.18
 
@@ -72,3 +75,13 @@ def voice_cost_usd(provider: str, duration_ms: int | None) -> float:
     if provider != "meta" or not duration_ms:
         return 0.0
     return round(VOICE_PER_HOUR_USD * duration_ms / 3_600_000, 8)
+
+
+def video_cost_usd(provider: str, n_frames: int) -> float:
+    if provider != "meta":
+        return 0.0
+    return round(SAM_31_PER_VIDEO_FRAME_USD * max(SAM_31_MIN_VIDEO_FRAMES, n_frames), 8)
+
+
+def web_search_cost_usd(provider: str, n_queries: int) -> float:
+    return round(WEB_SEARCH_PER_QUERY_USD * n_queries, 8) if provider == "meta" else 0.0
