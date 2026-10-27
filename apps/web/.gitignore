@@ -1,0 +1,5 @@
+.next/
+e2e/screenshots/
+playwright-report/
+test-results/
+next-env.d.ts

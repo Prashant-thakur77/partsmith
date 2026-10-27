@@ -30,3 +30,6 @@ A fresh session should read this file, `docs/ARCHITECTURE.md`, `docs/API.md` and
   → 114 passed (fast + slow). **Phase 2 exit gate:** `uv run python -m services.verifier.selfcheck` → 10/10 templates pass
   (self-consistency Hausdorff ≤ 0.05 mm vs 0.15 mm limit; ±1 mm length perturbation detected with the right sign, never verified).
   Synthetic measurements derived from each template's own silhouette.
+- **Web app** (`apps/web`, Next.js 15 / React 19 / Tailwind 4): `pnpm typecheck`, `pnpm lint` clean; `pnpm build` OK (19 routes);
+  Playwright 92 passed / 24 skipped (functional flows run in desktop-light only) with axe (0 serious/critical) on desktop+mobile ×
+  light+dark. Built against route-mocked fixtures only — real-backend integration is wave 3.

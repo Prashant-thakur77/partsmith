@@ -1,0 +1,264 @@
+{
+ "l-bracket": {
+  "title": "L-bracket",
+  "summary": "Angle bracket: a base leg lying on the mounting face and an upright leg at one end, joined by a rounded inner bend. Screw holes in both legs; edge gussets stiffen the corner.",
+  "tags": [
+   "bracket",
+   "angle",
+   "shelf",
+   "corner",
+   "mounting",
+   "l-bracket"
+  ],
+  "params": [
+   {
+    "name": "length",
+    "default": 40.0,
+    "min": 18.0,
+    "max": 120.0,
+    "step": 0.1,
+    "unit": "mm",
+    "affects_fit": true,
+    "label": "Base leg length",
+    "topology": false
+   },
+   {
+    "name": "width",
+    "default": 20.0,
+    "min": 10.0,
+    "max": 60.0,
+    "step": 0.1,
+    "unit": "mm",
+    "affects_fit": true,
+    "label": "Bracket width",
+    "topology": false
+   },
+   {
+    "name": "height",
+    "default": 30.0,
+    "min": 12.0,
+    "max": 100.0,
+    "step": 0.1,
+    "unit": "mm",
+    "affects_fit": true,
+    "label": "Upright leg height",
+    "topology": false
+   },
+   {
+    "name": "thickness",
+    "default": 3.0,
+    "min": 1.6,
+    "max": 8.0,
+    "step": 0.1,
+    "unit": "mm",
+    "affects_fit": true,
+    "label": "Leg thickness",
+    "topology": false
+   },
+   {
+    "name": "hole_d",
+    "default": 4.5,
+    "min": 2.5,
+    "max": 7.0,
+    "step": 0.05,
+    "unit": "mm",
+    "affects_fit": true,
+    "label": "Screw hole diameter",
+    "topology": false
+   },
+   {
+    "name": "base_holes",
+    "default": 2.0,
+    "min": 1.0,
+    "max": 3.0,
+    "step": 1.0,
+    "unit": "",
+    "affects_fit": false,
+    "label": "Holes in the base leg",
+    "topology": true
+   },
+   {
+    "name": "wall_holes",
+    "default": 2.0,
+    "min": 0.0,
+    "max": 3.0,
+    "step": 1.0,
+    "unit": "",
+    "affects_fit": false,
+    "label": "Holes in the upright leg",
+    "topology": true
+   },
+   {
+    "name": "gusset_count",
+    "default": 2.0,
+    "min": 0.0,
+    "max": 2.0,
+    "step": 1.0,
+    "unit": "",
+    "affects_fit": false,
+    "label": "Edge gussets",
+    "topology": true
+   },
+   {
+    "name": "bend_radius",
+    "default": 2.0,
+    "min": 0.0,
+    "max": 6.0,
+    "step": 0.1,
+    "unit": "mm",
+    "affects_fit": false,
+    "label": "Inner bend radius",
+    "topology": false
+   },
+   {
+    "name": "corner_radius",
+    "default": 2.0,
+    "min": 0.0,
+    "max": 8.0,
+    "step": 0.1,
+    "unit": "mm",
+    "affects_fit": false,
+    "label": "Free corner radius",
+    "topology": false
+   }
+  ],
+  "defaults": {
+   "length": 40.0,
+   "width": 20.0,
+   "height": 30.0,
+   "thickness": 3.0,
+   "hole_d": 4.5,
+   "base_holes": 2.0,
+   "wall_holes": 2.0,
+   "gusset_count": 2.0,
+   "bend_radius": 2.0,
+   "corner_radius": 2.0
+  },
+  "code": "\"\"\"L-bracket (angle bracket) with screw holes in both legs, optional gussets and a rounded inner bend.\"\"\"\n\nimport cadquery as cq\n\nFAMILY = \"bracket\"\nTITLE = \"L-bracket\"\nSUMMARY = (\n    \"Angle bracket: a base leg lying on the mounting face and an upright leg at one end, joined by a rounded \"\n    \"inner bend. Screw holes in both legs; edge gussets stiffen the corner.\"\n)\nTAGS = [\"bracket\", \"angle\", \"shelf\", \"corner\", \"mounting\", \"l-bracket\"]\nMEASURE_MAP = {\n    \"length\": \"length\",\n    \"width\": \"width\",\n    \"thickness\": \"thickness\",\n    \"height\": \"height\",\n    \"hole_1.diameter\": \"hole_d\",\n}\n\nPARAMS = {  # name: (default, min, max, step, unit, affects_fit, label)\n    \"length\": (40.0, 18.0, 120.0, 0.1, \"mm\", True, \"Base leg length\"),\n    \"width\": (20.0, 10.0, 60.0, 0.1, \"mm\", True, \"Bracket width\"),\n    \"height\": (30.0, 12.0, 100.0, 0.1, \"mm\", True, \"Upright leg height\"),\n    \"thickness\": (3.0, 1.6, 8.0, 0.1, \"mm\", True, \"Leg thickness\"),\n    \"hole_d\": (4.5, 2.5, 7.0, 0.05, \"mm\", True, \"Screw hole diameter\"),\n    \"base_holes\": (2, 1, 3, 1, \"\", False, \"Holes in the base leg\"),\n    \"wall_holes\": (2, 0, 3, 1, \"\", False, \"Holes in the upright leg\"),\n    \"gusset_count\": (2, 0, 2, 1, \"\", False, \"Edge gussets\"),\n    \"bend_radius\": (2.0, 0.0, 6.0, 0.1, \"mm\", False, \"Inner bend radius\"),\n    \"corner_radius\": (2.0, 0.0, 8.0, 0.1, \"mm\", False, \"Free corner radius\"),\n}\n\n\ndef spread(a: float, b: float, n: int) -> list[float]:\n    \"\"\"n evenly spaced positions from a to b (one centred position when there is no room).\"\"\"\n    if n <= 0:\n        return []\n    if n == 1 or b <= a:\n        return [(a + b) / 2]\n    return [a + (b - a) * i / (n - 1) for i in range(n)]\n\n\ndef build(p: dict[str, float]) -> cq.Workplane:\n    length, width, height, t = p[\"length\"], p[\"width\"], p[\"height\"], p[\"thickness\"]\n    hole_d = min(p[\"hole_d\"], width - 3.0)\n    x0 = -length / 2  # outer face of the upright leg\n    xi = x0 + t  # inner face of the upright leg\n    rb = min(p[\"bend_radius\"], (length - t) * 0.3, (height - t) * 0.3)\n\n    # L profile in the XZ plane (local x = X, local y = Z), extruded symmetrically along Y.\n    sk = cq.Workplane(\"XZ\").moveTo(x0, 0).lineTo(length / 2, 0).lineTo(length / 2, t)\n    if rb > 0.05:\n        k = 0.29289321881345254  # 1 - cos(45 deg)\n        sk = sk.lineTo(xi + rb, t).threePointArc((xi + rb * k, t + rb * k), (xi, t + rb))\n    else:\n        sk = sk.lineTo(xi, t)\n    part = sk.lineTo(xi, height).lineTo(x0, height).close().extrude(width / 2, both=True)\n\n    rc = min(p[\"corner_radius\"], width / 2 - 0.5, (length - t) / 3, (height - t) / 3)\n    if rc > 0.2:\n        part = part.edges(\"|Z and >X\").fillet(rc).edges(\"|X and >Z\").fillet(rc)\n\n    g = int(p[\"gusset_count\"])\n    if g > 0:\n        gs = min(0.45 * (length - t), 0.45 * (height - t))\n        tri = [(xi - 0.2, t - 0.2), (xi + gs, t - 0.2), (xi - 0.2, t + gs)]\n        ys = [width / 2 - t / 2] if g == 1 else [width / 2 - t / 2, -width / 2 + t / 2]\n        for y in ys:\n            part = part.union(cq.Workplane(\"XZ\", origin=(0, y, 0)).polyline(tri).close().extrude(t / 2, both=True))\n\n    e = max(hole_d, 3.5)\n    xs = spread(xi + rb + e, length / 2 - e, int(p[\"base_holes\"]))\n    if xs:\n        cut = cq.Workplane(\"XY\").workplane(offset=-1).pushPoints([(x, 0) for x in xs]).circle(hole_d / 2)\n        part = part.cut(cut.extrude(t + 2))\n    zs = spread(t + rb + e, height - e, int(p[\"wall_holes\"]))\n    if zs:\n        cut = cq.Workplane(\"YZ\", origin=(x0 - 1, 0, 0)).pushPoints([(0, z) for z in zs]).circle(hole_d / 2)\n        part = part.cut(cut.extrude(t + 2))\n    return part\n\n\nresult = build({k: v[0] for k, v in PARAMS.items()})\n"
+ },
+ "cable-clip": {
+  "title": "Cable clip",
+  "summary": "Base strip with screw holes at the ends and C-shaped snap channels standing on it; each cable presses in through a slightly narrower opening at the top.",
+  "tags": [
+   "cable clip",
+   "cable holder",
+   "wire",
+   "organiser",
+   "desk",
+   "snap-fit"
+  ],
+  "params": [
+   {
+    "name": "length",
+    "default": 40.0,
+    "min": 24.0,
+    "max": 100.0,
+    "step": 0.1,
+    "unit": "mm",
+    "affects_fit": true,
+    "label": "Base length",
+    "topology": false
+   },
+   {
+    "name": "width",
+    "default": 10.0,
+    "min": 6.0,
+    "max": 30.0,
+    "step": 0.1,
+    "unit": "mm",
+    "affects_fit": true,
+    "label": "Clip width",
+    "topology": false
+   },
+   {
+    "name": "base_thickness",
+    "default": 2.0,
+    "min": 1.2,
+    "max": 5.0,
+    "step": 0.1,
+    "unit": "mm",
+    "affects_fit": true,
+    "label": "Base thickness",
+    "topology": false
+   },
+   {
+    "name": "cable_d",
+    "default": 6.0,
+    "min": 2.0,
+    "max": 16.0,
+    "step": 0.05,
+    "unit": "mm",
+    "affects_fit": true,
+    "label": "Cable diameter",
+    "topology": false
+   },
+   {
+    "name": "wall",
+    "default": 1.6,
+    "min": 1.0,
+    "max": 4.0,
+    "step": 0.05,
+    "unit": "mm",
+    "affects_fit": true,
+    "label": "Channel wall",
+    "topology": false
+   },
+   {
+    "name": "opening",
+    "default": 0.75,
+    "min": 0.5,
+    "max": 0.95,
+    "step": 0.01,
+    "unit": "",
+    "affects_fit": true,
+    "label": "Snap opening (fraction of the cable diameter)",
+    "topology": false
+   },
+   {
+    "name": "channel_count",
+    "default": 2.0,
+    "min": 1.0,
+    "max": 5.0,
+    "step": 1.0,
+    "unit": "",
+    "affects_fit": false,
+    "label": "Cable channels",
+    "topology": true
+   },
+   {
+    "name": "hole_d",
+    "default": 3.5,
+    "min": 2.0,
+    "max": 6.0,
+    "step": 0.05,
+    "unit": "mm",
+    "affects_fit": true,
+    "label": "Screw hole diameter",
+    "topology": false
+   },
+   {
+    "name": "hole_count",
+    "default": 2.0,
+    "min": 0.0,
+    "max": 2.0,
+    "step": 1.0,
+    "unit": "",
+    "affects_fit": false,
+    "label": "Screw holes",
+    "topology": true
+   }
+  ],
+  "defaults": {
+   "length": 40.0,
+   "width": 10.0,
+   "base_thickness": 2.0,
+   "cable_d": 6.0,
+   "wall": 1.6,
+   "opening": 0.75,
+   "channel_count": 2.0,
+   "hole_d": 3.5,
+   "hole_count": 2.0
+  },
+  "code": "\"\"\"Screw-on cable clip: a base strip with snap-in C channels for one or more cables.\"\"\"\n\nimport cadquery as cq\n\nFAMILY = \"cable_clip\"\nTITLE = \"Cable clip\"\nSUMMARY = (\n    \"Base strip with screw holes at the ends and C-shaped snap channels standing on it; each cable presses in \"\n    \"through a slightly narrower opening at the top.\"\n)\nTAGS = [\"cable clip\", \"cable holder\", \"wire\", \"organiser\", \"desk\", \"snap-fit\"]\nMEASURE_MAP = {\n    \"length\": \"length\",\n    \"width\": \"width\",\n    \"thickness\": \"base_thickness\",\n    \"hole_1.diameter\": \"hole_d\",\n    \"cable.diameter\": \"cable_d\",\n}\n\nPARAMS = {  # name: (default, min, max, step, unit, affects_fit, label)\n    \"length\": (40.0, 24.0, 100.0, 0.1, \"mm\", True, \"Base length\"),\n    \"width\": (10.0, 6.0, 30.0, 0.1, \"mm\", True, \"Clip width\"),\n    \"base_thickness\": (2.0, 1.2, 5.0, 0.1, \"mm\", True, \"Base thickness\"),\n    \"cable_d\": (6.0, 2.0, 16.0, 0.05, \"mm\", True, \"Cable diameter\"),\n    \"wall\": (1.6, 1.0, 4.0, 0.05, \"mm\", True, \"Channel wall\"),\n    \"opening\": (0.75, 0.5, 0.95, 0.01, \"\", True, \"Snap opening (fraction of the cable diameter)\"),\n    \"channel_count\": (2, 1, 5, 1, \"\", False, \"Cable channels\"),\n    \"hole_d\": (3.5, 2.0, 6.0, 0.05, \"mm\", True, \"Screw hole diameter\"),\n    \"hole_count\": (2, 0, 2, 1, \"\", False, \"Screw holes\"),\n}\n\n\ndef build(p: dict[str, float]) -> cq.Workplane:\n    length, width, t = p[\"length\"], p[\"width\"], p[\"base_thickness\"]\n    wall = p[\"wall\"]\n    holes = int(p[\"hole_count\"])\n    hole_d = min(p[\"hole_d\"], width - 2.4)\n    tab = 2 * hole_d + 2.0 if holes > 0 else 1.0\n    n = int(p[\"channel_count\"])\n    region = length - 2 * tab\n    cable = max(min(p[\"cable_d\"], region / n - 2 * wall - 1.0), 1.0)\n    pitch = cable + 2 * wall + 1.0\n    ri, ro = cable / 2, cable / 2 + wall\n    zc = t + ri - 0.3  # the seat dips into the base, so the ring and the base overlap (no tangent faces)\n\n    base = cq.Workplane(\"XY\").rect(length, width).extrude(t)\n    r = min(1.5, width / 2 - 0.2)\n    base = base.edges(\"|Z\").fillet(r)\n    if holes > 0:\n        xs = [length / 2 - tab / 2, -length / 2 + tab / 2][:holes]\n        base = base.faces(\">Z\").workplane().pushPoints([(x, 0) for x in xs]).hole(hole_d)\n\n    xc = [(i - (n - 1) / 2) * pitch for i in range(n)]\n    rings = (\n        cq.Workplane(\"XZ\").pushPoints([(x, zc) for x in xc]).circle(ro).circle(ri).extrude(width / 2, both=True)\n    )\n    part = base.union(rings)\n    gap = min(p[\"opening\"] * cable, cable - 0.2)\n    slots = cq.Workplane(\"XY\").workplane(offset=zc).pushPoints([(x, 0) for x in xc]).rect(gap, width + 2)\n    return part.cut(slots.extrude(ro + 1))\n\n\nresult = build({k: v[0] for k, v in PARAMS.items()})\n"
+ }
+}

@@ -1,0 +1,308 @@
+"use client";
+
+import { useQuery, keepPreviousData } from "@tanstack/react-query";
+import { Axis3D, Box, Crosshair, Grid3x3, Maximize, Scissors, Spline } from "lucide-react";
+import dynamic from "next/dynamic";
+import * as React from "react";
+import type * as THREE from "three";
+import { fmtNum } from "@/lib/format";
+import { cn } from "@/lib/utils";
+import { Badge } from "../ui/badge";
+import { Skeleton } from "../ui/skeleton";
+import { Slider } from "../ui/slider";
+import { Spinner } from "../ui/spinner";
+import { Toggle } from "../ui/toggle";
+import { Tooltip } from "../ui/tooltip";
+import type { SectionState, ViewerColors } from "./cad-scene";
+import { fetchViewData, type ViewData } from "./view-data";
+
+const CadScene = dynamic(() => import("./cad-scene"), { ssr: false, loading: () => <Skeleton className="absolute inset-0 rounded-none" /> });
+
+function readColors(): ViewerColors {
+  const cs = getComputedStyle(document.documentElement);
+  const v = (n: string, f: string) => cs.getPropertyValue(n).trim() || f;
+  const dark = document.documentElement.dataset.theme === "dark";
+  return {
+    part: v("--viewer-part", "#d9d9d6"),
+    edge: v("--viewer-edge", "#2b2b2b"),
+    cut: dark ? "#f0803c" : "#f26a21",
+    grid: dark ? "#2a2a2a" : "#dcdcdc",
+    gridStrong: dark ? "#3a3a3a" : "#bdbdbd",
+    measure: dark ? "#ff9a52" : "#e2550f",
+  };
+}
+
+function useViewerColors(): ViewerColors | null {
+  const [c, setC] = React.useState<ViewerColors | null>(null);
+  React.useEffect(() => {
+    const update = () => setC(readColors());
+    update();
+    window.addEventListener("partsmith:theme", update);
+    const mo = new MutationObserver(update);
+    mo.observe(document.documentElement, { attributes: true, attributeFilter: ["data-theme"] });
+    return () => {
+      window.removeEventListener("partsmith:theme", update);
+      mo.disconnect();
+    };
+  }, []);
+  return c;
+}
+
+function webglAvailable(): boolean {
+  try {
+    const c = document.createElement("canvas");
+    return !!(c.getContext("webgl2") ?? c.getContext("webgl"));
+  } catch {
+    return false;
+  }
+}
+
+class SceneBoundary extends React.Component<{ children: React.ReactNode; fallback: React.ReactNode }, { failed: boolean }> {
+  override state = { failed: false };
+  static getDerivedStateFromError() {
+    return { failed: true };
+  }
+  override render() {
+    return this.state.failed ? this.props.fallback : this.props.children;
+  }
+}
+
+/**
+ * CAD viewer for the worker's `view.json`. Keeps the previous model on screen while a re-bake loads (no camera jump),
+ * so dragging a knob feels like editing, not reloading.
+ */
+export function CadViewer({
+  viewUrl,
+  className,
+  label = "3D model",
+  busy = false,
+  emptyText = "No model yet.",
+  toolbar = true,
+  overlay,
+}: {
+  viewUrl: string | null | undefined;
+  className?: string;
+  label?: string;
+  busy?: boolean;
+  emptyText?: string;
+  toolbar?: boolean;
+  overlay?: React.ReactNode;
+}) {
+  const q = useQuery<ViewData>({
+    queryKey: ["view", viewUrl],
+    queryFn: ({ signal }) => fetchViewData(viewUrl!, signal),
+    enabled: !!viewUrl,
+    placeholderData: keepPreviousData,
+    staleTime: Infinity,
+    retry: 1,
+  });
+  const colors = useViewerColors();
+  const [gl, setGl] = React.useState<boolean | null>(null);
+  React.useEffect(() => setGl(webglAvailable()), []);
+  const [ortho, setOrtho] = React.useState(true);
+  const [edges, setEdges] = React.useState(true);
+  const [grid, setGrid] = React.useState(true);
+  const [section, setSection] = React.useState<SectionState>({ enabled: false, axis: "z", t: 0.5, flip: false });
+  const [measuring, setMeasuring] = React.useState(false);
+  const [points, setPoints] = React.useState<THREE.Vector3[]>([]);
+  const [fitNonce, setFitNonce] = React.useState(0);
+  const [lost, setLost] = React.useState(false);
+
+  React.useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        setMeasuring(false);
+        setPoints([]);
+      }
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, []);
+
+  const data = q.data;
+  const dims = data ? [0, 1, 2].map((i) => data.max[i]! - data.min[i]!) : null;
+  const pick = React.useCallback((p: THREE.Vector3) => setPoints((prev) => (prev.length >= 2 ? [p] : [...prev, p])), []);
+
+  const fallback = (
+    <div className="absolute inset-0 flex items-center justify-center p-6 text-center text-[13px] text-muted">
+      The 3D view needs WebGL, which this browser has turned off. Downloads still work.
+    </div>
+  );
+
+  return (
+    <div
+      role="group"
+      aria-label={label}
+      className={cn("relative isolate overflow-hidden bg-[var(--viewer-bg)] bg-dots", className)}
+    >
+      {data && colors && gl && !lost ? (
+        <SceneBoundary fallback={fallback}>
+          <div className="absolute inset-0" aria-hidden>
+            <CadScene
+              data={data}
+              ortho={ortho}
+              showEdges={edges}
+              showGrid={grid}
+              section={section}
+              measuring={measuring}
+              points={points}
+              onPick={pick}
+              fitNonce={fitNonce}
+              colors={colors}
+              onContextLost={() => setLost(true)}
+            />
+          </div>
+        </SceneBoundary>
+      ) : gl === false || lost ? (
+        fallback
+      ) : q.isError ? (
+        <div className="absolute inset-0 flex items-center justify-center p-6 text-center text-[13px] text-muted">
+          Could not load the model geometry ({q.error instanceof Error ? q.error.message : "error"}).
+        </div>
+      ) : viewUrl && (q.isPending || !colors) ? (
+        <div className="absolute inset-0 flex flex-col items-center justify-center gap-3">
+          <Box className="size-8 animate-pulse text-subtle" aria-hidden />
+          <span className="text-[12px] text-muted">Loading geometry…</span>
+        </div>
+      ) : (
+        <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 p-6 text-center">
+          <Box className="size-8 text-subtle" aria-hidden />
+          <span className="text-[13px] text-muted">{emptyText}</span>
+        </div>
+      )}
+
+      {overlay}
+
+      {(busy || q.isFetching) && data ? (
+        <div className="absolute top-3 left-1/2 z-10 -translate-x-1/2">
+          <Badge tone="neutral" className="h-6 gap-1.5 bg-surface px-2 shadow-sm">
+            <Spinner className="size-3" label="Rebuilding" /> rebuilding
+          </Badge>
+        </div>
+      ) : null}
+
+      {dims ? (
+        <div className="pointer-events-none absolute right-3 bottom-3 z-10 rounded-md border border-border bg-surface/90 px-2 py-1 font-mono text-[11px] text-muted tnum shadow-sm backdrop-blur">
+          {fmtNum(dims[0]!, 1)} × {fmtNum(dims[1]!, 1)} × {fmtNum(dims[2]!, 1)} mm
+        </div>
+      ) : null}
+
+      {measuring ? (
+        <div className="pointer-events-none absolute bottom-14 left-1/2 z-10 -translate-x-1/2 rounded-md bg-inverse px-2.5 py-1.5 text-[12px] text-inverse-fg shadow-md">
+          {points.length < 2 ? `Click point ${points.length + 1} of 2 on the part · Esc to stop` : "Click again to start a new measurement"}
+        </div>
+      ) : null}
+
+      {toolbar && data ? (
+        <div className="absolute top-3 right-3 z-10 flex flex-col items-end gap-2">
+          <div
+            role="toolbar"
+            aria-label="Viewer tools"
+            className="flex items-center gap-0.5 rounded-lg border border-border bg-surface/95 p-0.5 shadow-sm backdrop-blur"
+          >
+            <Tooltip content="Fit to view">
+              <button
+                type="button"
+                aria-label="Fit to view"
+                onClick={() => setFitNonce((n) => n + 1)}
+                className="inline-flex size-8 items-center justify-center rounded-md text-muted hover:bg-surface-2 hover:text-fg"
+              >
+                <Maximize className="size-4" aria-hidden />
+              </button>
+            </Tooltip>
+            <Tooltip content={ortho ? "Orthographic — switch to perspective" : "Perspective — switch to orthographic"}>
+              <Toggle pressed={ortho} onPressedChange={setOrtho} aria-label="Orthographic camera" className="size-8 px-0">
+                <Axis3D aria-hidden />
+              </Toggle>
+            </Tooltip>
+            <Tooltip content="B-rep edges">
+              <Toggle pressed={edges} onPressedChange={setEdges} aria-label="Show edges" className="size-8 px-0">
+                <Spline aria-hidden />
+              </Toggle>
+            </Tooltip>
+            <Tooltip content="Millimetre grid">
+              <Toggle pressed={grid} onPressedChange={setGrid} aria-label="Show grid" className="size-8 px-0">
+                <Grid3x3 aria-hidden />
+              </Toggle>
+            </Tooltip>
+            <Tooltip content="Section plane">
+              <Toggle
+                pressed={section.enabled}
+                onPressedChange={(v) => setSection((s) => ({ ...s, enabled: v }))}
+                aria-label="Section plane"
+                className="size-8 px-0"
+              >
+                <Scissors aria-hidden />
+              </Toggle>
+            </Tooltip>
+            <Tooltip content="Measure between two points">
+              <Toggle
+                pressed={measuring}
+                onPressedChange={(v) => {
+                  setMeasuring(v);
+                  setPoints([]);
+                }}
+                aria-label="Measure"
+                className="size-8 px-0"
+              >
+                <Crosshair aria-hidden />
+              </Toggle>
+            </Tooltip>
+          </div>
+          {section.enabled ? (
+            <div className="w-56 space-y-2.5 rounded-lg border border-border bg-surface/95 p-3 shadow-sm backdrop-blur">
+              <div className="flex items-center justify-between">
+                <span className="text-[12px] font-medium">Section</span>
+                <div className="inline-flex rounded-md border border-border bg-surface-2 p-0.5" role="radiogroup" aria-label="Section axis">
+                  {(["x", "y", "z"] as const).map((a) => (
+                    <button
+                      key={a}
+                      type="button"
+                      role="radio"
+                      aria-checked={section.axis === a}
+                      onClick={() => setSection((s) => ({ ...s, axis: a }))}
+                      className={cn(
+                        "h-6 w-7 rounded-[4px] font-mono text-[11px] uppercase text-muted",
+                        section.axis === a && "bg-surface text-fg shadow-sm",
+                      )}
+                    >
+                      {a}
+                    </button>
+                  ))}
+                </div>
+              </div>
+              <Slider
+                aria-label="Section position"
+                min={0}
+                max={1}
+                step={0.005}
+                value={[section.t]}
+                onValueChange={(v) => setSection((s) => ({ ...s, t: v[0] ?? s.t }))}
+              />
+              {data ? (
+                <div className="flex items-center justify-between font-mono text-[11px] text-muted tnum">
+                  <span>
+                    {section.axis} ={" "}
+                    {fmtNum(
+                      data.min[{ x: 0, y: 1, z: 2 }[section.axis]]! +
+                        (data.max[{ x: 0, y: 1, z: 2 }[section.axis]]! - data.min[{ x: 0, y: 1, z: 2 }[section.axis]]!) * section.t,
+                      2,
+                    )}{" "}
+                    mm
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => setSection((s) => ({ ...s, flip: !s.flip }))}
+                    className="rounded px-1.5 py-0.5 font-sans text-[11px] text-muted hover:bg-surface-2 hover:text-fg"
+                  >
+                    Flip side
+                  </button>
+                </div>
+              ) : null}
+            </div>
+          ) : null}
+        </div>
+      ) : null}
+    </div>
+  );
+}

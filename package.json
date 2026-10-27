@@ -1,0 +1,11 @@
+{
+  "name": "partsmith",
+  "private": true,
+  "packageManager": "pnpm@12.14.0",
+  "engines": { "node": ">=22" },
+  "scripts": {
+    "dev:web": "pnpm -C apps/web dev",
+    "build:web": "pnpm -C apps/web build",
+    "check:web": "pnpm -C apps/web typecheck && pnpm -C apps/web lint"
+  }
+}
