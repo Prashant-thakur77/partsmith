@@ -6,7 +6,7 @@ Synthetic bench: seed 7, n = 60 template samples + 20 reference-object renders, 
 
 ## Phase 1 exit gate (mean abs error ≤ 0.4 mm, accepted photos)
 
-- synthetic bench: mean 0.697 mm over N = 218 dims → **FAIL**
+- synthetic bench: mean 0.628 mm over N = 216 dims → **FAIL**
 - reference objects (reference_spec (published spec; synthetic render of the nominal model)): mean 0.194 mm over N = 40 dims → **PASS**
 - overall: **FAIL**
 
@@ -14,29 +14,29 @@ Synthetic bench: seed 7, n = 60 template samples + 20 reference-object renders, 
 
 Ground truth: synthetic_exact (template mesh, exact).
 
-Photos: 120 (mat + part detected: 120; capture gate passed: 95/120 = 79 % [0.71, 0.85]).
+Photos: 120 (mat + part detected: 120; capture gate passed: 94/120 = 78 % [0.70, 0.85]).
 
 | dims | N | mean abs [95 % CI] | median | P90 | max | ≤0.3 mm | ≤0.5 mm | bias |
 |---|---:|---|---:|---:|---:|---:|---:|---:|
-| accepted photos | 218 | 0.697 [0.429, 1.084] | 0.155 | 1.338 | 29.707 | 70 % | 79 % | -0.261 |
+| accepted photos | 216 | 0.628 [0.388, 0.966] | 0.153 | 1.190 | 29.707 | 70 % | 80 % | -0.201 |
 | all detected photos | 272 | 1.089 [0.678, 1.578] | 0.171 | 1.436 | 36.308 | 65 % | 75 % | -0.475 |
 
-- pass@0.3 mm (every named dim of an accepted photo within 0.3 mm; a missed dim fails): 39/95 = 41 % [0.32, 0.51]
-- pass@0.5 mm (every named dim of an accepted photo within 0.5 mm; a missed dim fails): 54/95 = 57 % [0.47, 0.66]
+- pass@0.3 mm (every named dim of an accepted photo within 0.3 mm; a missed dim fails): 39/94 = 41 % [0.32, 0.52]
+- pass@0.5 mm (every named dim of an accepted photo within 0.5 mm; a missed dim fails): 54/94 = 57 % [0.47, 0.67]
 
 | by dimension | N | mean abs [95 % CI] | median | P90 | max | ≤0.3 mm | ≤0.5 mm | bias |
 |---|---:|---|---:|---:|---:|---:|---:|---:|
 | hole Ø | 75 | 0.138 [0.115, 0.164] | 0.098 | 0.298 | 0.449 | 91 % | 100 % | -0.069 |
 | side:thickness | 47 | 0.731 [0.477, 1.006] | 0.396 | 2.587 | 3.630 | 43 % | 60 % | -0.704 |
-| top:length | 48 | 1.289 [0.284, 2.775] | 0.133 | 1.377 | 29.707 | 75 % | 77 % | -0.722 |
-| top:width | 48 | 0.947 [0.517, 1.484] | 0.256 | 2.736 | 10.502 | 58 % | 67 % | 0.333 |
+| top:length | 47 | 1.000 [0.218, 2.399] | 0.128 | 1.103 | 29.707 | 77 % | 79 % | -0.421 |
+| top:width | 47 | 0.938 [0.498, 1.531] | 0.254 | 2.779 | 10.502 | 60 % | 68 % | 0.311 |
 
 | by profile | N | mean abs [95 % CI] | median | P90 | max | ≤0.3 mm | ≤0.5 mm | bias |
 |---|---:|---|---:|---:|---:|---:|---:|---:|
 | side: flat | 21 | 0.309 [0.212, 0.410] | 0.242 | 0.647 | 0.853 | 52 % | 76 % | -0.280 |
 | side: tall features | 26 | 1.072 [0.665, 1.535] | 0.586 | 3.062 | 3.630 | 35 % | 46 % | -1.046 |
 | top: flat | 80 | 0.172 [0.140, 0.206] | 0.128 | 0.338 | 0.798 | 82 % | 95 % | -0.137 |
-| top: tall features | 91 | 1.141 [0.539, 2.018] | 0.142 | 2.462 | 29.707 | 73 % | 75 % | -0.142 |
+| top: tall features | 89 | 0.984 [0.436, 1.734] | 0.138 | 1.909 | 29.707 | 74 % | 76 % | 0.006 |
 
 | by preset | N | mean abs [95 % CI] | median | P90 | max | ≤0.3 mm | ≤0.5 mm | bias |
 |---|---:|---|---:|---:|---:|---:|---:|---:|
@@ -47,11 +47,11 @@ Photos: 120 (mat + part detected: 120; capture gate passed: 95/120 = 79 % [0.71,
 | moire | 4 | 0.596 [0.082, 1.353] | 0.276 | 1.375 | 1.771 | 50 % | 75 % | 0.340 |
 | paper | 38 | 0.362 [0.215, 0.564] | 0.180 | 0.453 | 2.749 | 68 % | 89 % | -0.279 |
 | tilt | 32 | 0.526 [0.270, 0.847] | 0.178 | 1.055 | 3.251 | 62 % | 69 % | -0.295 |
-| white-part | 12 | 5.036 [0.716, 10.548] | 0.489 | 14.438 | 29.707 | 50 % | 50 % | -4.294 |
+| white-part | 10 | 4.418 [0.342, 10.357] | 0.265 | 12.422 | 29.707 | 60 % | 60 % | -3.803 |
 
 | by family / object | N | mean abs [95 % CI] | median | P90 | max | ≤0.3 mm | ≤0.5 mm | bias |
 |---|---:|---|---:|---:|---:|---:|---:|---:|
-| bracket | 15 | 2.303 [0.878, 4.353] | 1.372 | 4.759 | 14.875 | 40 % | 47 % | -0.041 |
+| bracket | 13 | 1.408 [0.607, 2.337] | 0.413 | 3.748 | 5.315 | 46 % | 54 % | 0.991 |
 | cable_clip | 21 | 2.164 [0.212, 5.475] | 0.157 | 1.282 | 29.707 | 71 % | 76 % | -1.803 |
 | clip | 16 | 0.610 [0.208, 1.161] | 0.157 | 1.742 | 3.587 | 69 % | 69 % | 0.444 |
 | cover | 18 | 0.937 [0.377, 1.578] | 0.084 | 3.059 | 3.630 | 67 % | 67 % | -0.849 |
@@ -66,7 +66,7 @@ Photos: 120 (mat + part detected: 120; capture gate passed: 95/120 = 79 % [0.71,
 |---|---:|---|---:|---:|---:|---:|---:|---:|
 | paper-a4 | 55 | 1.131 [0.331, 2.466] | 0.263 | 1.200 | 29.707 | 65 % | 80 % | -0.872 |
 | screen-l | 60 | 0.492 [0.264, 0.769] | 0.114 | 1.409 | 4.953 | 75 % | 82 % | 0.086 |
-| screen-m | 103 | 0.585 [0.331, 0.956] | 0.112 | 1.280 | 14.875 | 69 % | 77 % | -0.137 |
+| screen-m | 101 | 0.436 [0.285, 0.619] | 0.100 | 1.021 | 5.315 | 70 % | 78 % | -0.006 |
 
 ## reference_objects_synthetic
 
@@ -139,6 +139,7 @@ Ground truth: ruler (±0.5 mm).
 | synthetic | syn-hook-tilt-s563265 | top | tilt | capture gate failed: The part touches the markers — move it into the middle of the plain area. |  |
 | synthetic | syn-l-bracket-blur-s785210 | top | blur | capture gate failed: The photo is blurry — hold the phone still, tap to focus on the part and retake. |  |
 | synthetic | syn-l-bracket-moire-s114398 | top | moire | capture gate failed: Wavy stripes from the screen are visible — move the phone a little further away or rotate it slightly. |  |
+| synthetic | syn-l-bracket-white-part-s103059 | top | white-part | capture gate failed: The part blends into the background — switch the screen mat to the dark stage (or use a darker surface). | hole_1.diameter, hole_2.diameter, hole_3.diameter |
 | synthetic | syn-spacer-moire-s143272 | top | moire | capture gate failed: Wavy stripes from the screen are visible — move the phone a little further away or rotate it slightly. |  |
 | synthetic | syn-spacer-moire-s601695 | top | moire | capture gate failed: Wavy stripes from the screen are visible — move the phone a little further away or rotate it slightly. |  |
 | synthetic | syn-spacer-white-part-s276343 | top | white-part | capture gate failed: The part blends into the background — switch the screen mat to the dark stage (or use a darker surface). | hole_1.diameter |
@@ -159,7 +160,6 @@ Ground truth: ruler (±0.5 mm).
 | synthetic | syn-spacer-white-part-s276343 | side | white-part | capture gate failed: The part blends into the background — switch the screen mat to the dark stage (or use a darker surface). |  |
 | synthetic | syn-cable-clip-white-part-s236478 | top | white-part | dimension(s) not measured | hole_1.diameter, hole_2.diameter |
 | synthetic | syn-caster-wheel-tilt-s108404 | top | tilt | dimension(s) not measured | hole_1.diameter, hole_2.diameter, hole_3.diameter, hole_5.diameter, hole_6.diameter, hole_7.diameter |
-| synthetic | syn-l-bracket-white-part-s103059 | top | white-part | dimension(s) not measured | hole_1.diameter, hole_2.diameter, hole_3.diameter |
 | synthetic | syn-spacer-white-part-s928626 | top | white-part | dimension(s) not measured | hole_1.diameter |
 
-Runtime: 135.1 s. Regenerate: `uv run python -m eval.measure_only`.
+Runtime: 117.6 s. Regenerate: `uv run python -m eval.measure_only`.

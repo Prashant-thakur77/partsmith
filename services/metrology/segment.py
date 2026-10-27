@@ -54,6 +54,8 @@ class SegResult:
     prompt: str | None = None
     attempts: list[dict[str, Any]] = field(default_factory=list)
     notes: list[str] = field(default_factory=list)
+    largest_fraction: float | None = None  # share of the raw foreground in the kept component (fragmentation)
+    background: Callable[[NDArray[np.float64]], NDArray[np.float64]] | None = None  # stage colour model at image px
 
 
 class Segmenter(Protocol):
@@ -85,6 +87,14 @@ def fill_holes(mask: BoolMask, max_area_px: float | None = None) -> BoolMask:
         if max_area_px is None or area <= max_area_px:
             out[lab == i] = True
     return out
+
+
+def _largest_fraction(mask: BoolMask, px_per_mm2: float, min_mm2: float = 1.0) -> float:
+    """Share of the foreground (pieces ≥ `min_mm2`) that lies in the largest piece; 1.0 = one solid part."""
+    _, _, stats, _ = cv2.connectedComponentsWithStats(mask.astype(np.uint8), connectivity=8)
+    areas = stats[1:, cv2.CC_STAT_AREA].astype(np.float64)
+    areas = areas[areas >= min_mm2 * px_per_mm2]
+    return float(areas.max() / areas.sum()) if len(areas) else 0.0
 
 
 def largest_component(mask: BoolMask) -> BoolMask:
@@ -268,6 +278,46 @@ def _otsu(values: F64, bins: int = 256) -> tuple[float, float]:
     return float(edges[k + 1]), float(sb[k] / var_t) if var_t > 0 else 0.0
 
 
+SHADOW_MIN_RATIO = 0.70  # a cast shadow keeps at least this share of the stage's brightness (lamp + room light)
+SHADOW_CHROMA_TOL = 8.0  # max colour distance (8-bit) from the darkened stage colour
+SHADOW_MAX_GRADIENT = 60.0  # grey levels per mm at 0.25 mm blur: penumbras stay below, part edges far above
+SHADOW_KEEP_FRACTION = 0.5
+# A part whose own colour is within this of the darkened stage colour is treated as shadow-coloured (no suppression).
+PART_SHADOW_CHROMA_TOL = 16.0
+PART_SHADOW_MIN_RATIO = 0.78  # white, off-white and light-grey parts on a white stage
+
+
+def _shadow_cone_distance(
+    roi: NDArray[np.float32], bg: NDArray[np.float32], k_min: float = SHADOW_MIN_RATIO, k_max: float = 1.0
+) -> NDArray[np.float32]:
+    """Distance of each pixel from the 'shadow cone' {k·B : k ∈ [k_min, k_max]} of the local stage colour B."""
+    bb = np.maximum(np.sum(bg * bg, axis=2), 1e-6)
+    k = np.clip(np.sum(roi * bg, axis=2) / bb, k_min, k_max)
+    return np.asarray(np.linalg.norm(roi - k[..., None] * bg, axis=2), dtype=np.float32)
+
+
+def _smooth(roi: NDArray[np.float32], px_per_mm: float) -> NDArray[np.bool_]:
+    """Pixels without sharp structure at ~0.5 mm scale (shadow interiors and penumbras)."""
+    g = cv2.cvtColor(np.clip(roi, 0, 255).astype(np.uint8), cv2.COLOR_BGR2GRAY).astype(np.float32)
+    sig = max(0.5 * px_per_mm / 2.0, 0.8)
+    gb = cv2.GaussianBlur(g, (0, 0), sig)
+    gx = cv2.Sobel(gb, cv2.CV_32F, 1, 0, ksize=3) / 8.0
+    gy = cv2.Sobel(gb, cv2.CV_32F, 0, 1, ksize=3) / 8.0
+    grad_mm = np.hypot(gx, gy) * px_per_mm
+    return np.asarray(grad_mm < SHADOW_MAX_GRADIENT, dtype=bool)
+
+
+def _bg_model(coef: F64, x0: int, y0: int, sx: float, sy: float) -> Callable[[F64], F64]:
+    """The fitted stage colour (BGR) at full-frame image points."""
+
+    def at(pts_px: F64) -> F64:
+        p = np.asarray(pts_px, dtype=np.float64).reshape(-1, 2)
+        A = _poly_design((p[:, 0] - x0 - sx) / sx, (p[:, 1] - y0 - sy) / sy)
+        return np.asarray(A @ coef, dtype=np.float64)
+
+    return at
+
+
 def _poly_design(x: F64, y: F64) -> F64:
     return np.asarray(np.c_[np.ones_like(x), x, y, x * x, y * y, x * y], dtype=np.float64)
 
@@ -287,6 +337,7 @@ class ThresholdSegmenter:
     min_line_mm: float = 1.0
     min_contrast: float = 18.0  # minimum colour distance (8-bit units) for anything to count as part
     source: str = THRESHOLD_SOURCE
+    suppress_shadows: bool = True
 
     def segment(self, img: U8, prompt: str = "plastic part", *, context: SegContext | None = None) -> SegResult:
         if context is None:
@@ -381,10 +432,58 @@ class ThresholdSegmenter:
             upper = thr
         if np.count_nonzero(core) < min_area_px:
             return SegResult(empty, 0.0, self.source, notes=["No part found on the stage."])
+        largest_fraction = _largest_fraction(cand_b, px_mm**2)
+        notes: list[str] = []
+
+        # Cast shadows: the stage colour scaled down (same chroma, darker) and smooth. Remove them unless the part
+        # itself looks like that (a light-grey or white part on a white stage), which the contrast check reports.
+        shadow_zone: BoolMask = np.zeros(core.shape, dtype=bool)
+        cone_d = _shadow_cone_distance(roi, bg)
+        part_like_shadow = False
+        if self.suppress_shadows:
+            er = cv2.erode(core.astype(np.uint8), _disk(3)) > 0
+            core_sel = er if er.any() else core.astype(bool)
+            P = np.median(roi[core_sel], axis=0)[None, None, :].astype(np.float32)
+            Bm = np.median(bg[core_sel], axis=0)[None, None, :].astype(np.float32)
+            cone_part = _shadow_cone_distance(P, Bm, PART_SHADOW_MIN_RATIO, 1.05)
+            part_like_shadow = float(cone_part[0, 0]) < max(PART_SHADOW_CHROMA_TOL, noise)
+            if part_like_shadow:
+                notes.append("the part's colour looks like a shadow on this stage; shadows were not removed")
+        if self.suppress_shadows and not part_like_shadow:
+            # Judge colour on a lightly smoothed image (sensor noise would otherwise blur the shadow/part boundary).
+            roi_s = np.asarray(cv2.GaussianBlur(roi, (0, 0), 1.5), dtype=np.float32)
+            shadow_like = _shadow_cone_distance(roi_s, bg) < max(SHADOW_CHROMA_TOL, noise)
+            shadow_like &= _smooth(roi, px_mm)
+            kept = core & ~shadow_like
+            if self.min_line_mm > 0:
+                kept_u8 = kept.astype(np.uint8)
+                opened = cv2.morphologyEx(kept_u8, cv2.MORPH_OPEN, k)
+                kept = (kept_u8 > 0) & (cv2.dilate(opened, k) > 0)
+            kept = largest_component(kept)
+            removed = int(np.count_nonzero(core)) - int(np.count_nonzero(kept))
+            if np.count_nonzero(kept) >= SHADOW_KEEP_FRACTION * np.count_nonzero(core):
+                if removed > 0.02 * np.count_nonzero(core):
+                    notes.append(f"cast shadow removed ({removed / px_mm**2:.0f} mm²)")
+                    shadow_zone = cv2.dilate((core & ~kept).astype(np.uint8), _disk(5)) > 0
+                core = kept
+            elif removed > 0.02 * np.count_nonzero(core):
+                notes.append("the part's colour looks like a shadow on this stage; shadows were not removed")
+            # Shadow touching the part's edge (whether or not it crossed the threshold): score that edge against
+            # the shadow, not the bare stage.
+            near = cv2.dilate(core.astype(np.uint8), _disk(max(3.0, 1.0 * px_mm))) > 0
+            touching = near & ~core & shadow_like & (dist > max(SHADOW_CHROMA_TOL, 2.0 * noise))
+            if np.count_nonzero(touching) > 0.01 * np.count_nonzero(core):
+                shadow_zone |= cv2.dilate(touching.astype(np.uint8), _disk(5)) > 0
+
         eroded = cv2.erode(core.astype(np.uint8), _disk(3)) > 0
         d_part = float(np.median(dist[eroded])) if eroded.any() else float(np.median(dist[core]))
         d_part = max(d_part, thr * 1.05)
         prob = np.clip(dist / d_part, 0.0, 1.0).astype(np.float32)
+        if shadow_zone.any():
+            # Next to a removed shadow the local background is the shadow, so score by distance to the shadow cone.
+            dc = float(np.median(cone_d[eroded])) if eroded.any() else d_part
+            prob_c = np.clip(cone_d / max(dc, 1e-3), 0.0, 1.0).astype(np.float32)
+            prob = np.where(shadow_zone & ~eroded, prob_c, prob).astype(np.float32)
         prob[~inside] = 0.0
 
         full_mask = empty.copy()
@@ -398,7 +497,12 @@ class ThresholdSegmenter:
             self.source,
             prob=full_prob,
             prompt=prompt,
-            notes=[f"threshold segmentation: background model from the stage border, contrast {d_part:.0f}/255"],
+            notes=[
+                f"threshold segmentation: background model from the stage border, contrast {d_part:.0f}/255",
+                *notes,
+            ],
+            largest_fraction=largest_fraction,
+            background=_bg_model(coef, x0, y0, sx, sy),
         )
 
 

@@ -102,3 +102,21 @@ def test_sigma_model() -> None:
     s = SigmaModel(reproj_mm=0.02, edge_mm=0.05, height_rel=0.01, scale_rel=0.002)
     assert s.length(40) > s.length(10) > 0
     assert s.diameter(5.0, 400) < s.length(5.0)
+
+
+def test_see_through_fit_on_an_exact_lens() -> None:
+    from shapely.geometry import Point
+
+    from services.metrology.features import fit_see_through_hole
+
+    nadir, zc, h = (0.0, 0.0), 300.0, 8.0
+    s = (zc - h) / zc
+    c, r = np.array([120.0, 40.0]), 3.0
+    c2 = np.array(nadir) + (c - np.array(nadir)) / s
+    lens = Point(*c).buffer(r, 256).intersection(Point(*c2).buffer(r / s, 256))
+    q = np.asarray(lens.exterior.coords)[:-1]
+    f = fit_see_through_hole(q, nadir, zc, h)
+    assert f is not None
+    assert (f.cx, f.cy, f.r) == pytest.approx((120.0, 40.0, 3.0), abs=0.01)
+    assert f.shift_mm == pytest.approx(np.linalg.norm(c2 - c), rel=1e-3)
+    assert f.sigma_d > 0  # thickness uncertainty propagates into the diameter

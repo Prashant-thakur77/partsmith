@@ -7,7 +7,7 @@ down, so the part frame flips it). `PartFrame.matrix()` is the 3×3 affine part 
 from __future__ import annotations
 
 import math
-from collections.abc import Callable
+from collections.abc import Callable, Sequence
 from dataclasses import dataclass, field
 
 import cv2
@@ -235,6 +235,101 @@ def symmetry_axis(poly: Polygon) -> tuple[float, float]:
     return (0.0 if deg > 179.995 else deg), best
 
 
+@dataclass(frozen=True)
+class SeeThroughFit:
+    """A vertical through-hole of a part with thickness h, fitted to the region where the mat shows through.
+
+    Seen from a camera, the bottom opening (z = 0) projects onto the mat plane as disc(c, r); the top opening (height h)
+    projects as disc(n + (c − n)/s, r/s), with n the camera nadir and s = (Zc − h)/Zc. Only their intersection — a lens
+    when the camera is off-axis — shows the mat. (c, r) are fitted to that lens's boundary in mat-plane coordinates.
+    """
+
+    cx: float  # hole axis, mat mm
+    cy: float
+    r: float
+    rms: float
+    roundness: float
+    n: int
+    sigma_d: float  # 1σ of the diameter (fit statistics + thickness uncertainty)
+    shift_mm: float  # offset between the two projected openings
+    height_mm: float
+
+
+def _lens_residuals(q: F64, c: F64, r: float, nadir: F64, s: float) -> F64:
+    c2 = nadir + (c - nadir) / s
+    d1 = np.hypot(q[:, 0] - c[0], q[:, 1] - c[1]) - r
+    d2 = np.hypot(q[:, 0] - c2[0], q[:, 1] - c2[1]) - r / s
+    return np.asarray(np.maximum(d1, d2), dtype=np.float64)
+
+
+def _fit_lens(q: F64, nadir: F64, s: float) -> tuple[F64, F64] | None:
+    m = q.mean(axis=0)
+    # lens centroid ≈ midpoint of the two projected centres → back out the axis
+    c0 = nadir + 2 * (m - nadir) / (1 + 1 / s)
+    shift = float(np.linalg.norm((c0 - nadir) * (1 / s - 1)))
+    r0 = float(np.max(np.hypot(q[:, 0] - m[0], q[:, 1] - m[1]))) + shift / 2
+    best = None
+    for rs in (r0, 0.8 * r0, 1.25 * r0):
+
+        def res(v: F64) -> F64:
+            return _lens_residuals(q, v[:2], float(v[2]), nadir, s)
+
+        sol = least_squares(res, np.array([c0[0], c0[1], rs]), method="trf", x_scale=1.0)
+        if best is None or sol.cost < best.cost:
+            best = sol
+    if best is None or not best.success:
+        return None
+    return np.asarray(best.x, dtype=np.float64), np.asarray(best.jac, dtype=np.float64)
+
+
+def fit_see_through_hole(
+    q_ground: F64, nadir: tuple[float, float], camera_height_mm: float, height_mm: float, height_sigma_mm: float = 0.3
+) -> SeeThroughFit | None:
+    """Fit a vertical cylindrical hole to its see-through region's boundary (mat-plane coordinates, mm)."""
+    q = np.asarray(q_ground, dtype=np.float64).reshape(-1, 2)
+    if len(q) < 8 or camera_height_mm <= height_mm:
+        return None
+    n = np.asarray(nadir, dtype=np.float64)
+    s = (camera_height_mm - height_mm) / camera_height_mm
+    out = _fit_lens(q, n, s)
+    if out is None:
+        return None
+    x, J = out
+    c, r = x[:2], float(x[2])
+    if r <= 0:
+        return None
+    res = _lens_residuals(q, c, r, n, s)
+    dof = max(len(q) - 3, 1)
+    s2 = float(res @ res) / dof
+    try:
+        cov = np.linalg.inv(J.T @ J) * s2
+        sig_r = float(math.sqrt(max(cov[2, 2], 0.0)))
+    except np.linalg.LinAlgError:
+        sig_r = float("nan")
+    # Sensitivity to the stated thickness: refit at h ± σ_h.
+    dd = []
+    for dh in (-height_sigma_mm, height_sigma_mm):
+        hh = height_mm + dh
+        if 0 < hh < camera_height_mm:
+            alt = _fit_lens(q, n, (camera_height_mm - hh) / camera_height_mm)
+            if alt is not None:
+                dd.append(abs(2 * float(alt[0][2]) - 2 * r))
+    sig_h = max(dd) if dd else 0.0
+    sig_d = math.hypot(2 * sig_r if math.isfinite(sig_r) else 0.0, sig_h)
+    shift = float(np.linalg.norm((c - n) * (1 / s - 1)))
+    return SeeThroughFit(
+        cx=float(c[0]),
+        cy=float(c[1]),
+        r=r,
+        rms=float(np.sqrt(np.mean(res**2))),
+        roundness=float(res.max() - res.min()),
+        n=len(q),
+        sigma_d=sig_d,
+        shift_mm=shift,
+        height_mm=height_mm,
+    )
+
+
 # ---------------------------------------------------------------- footprint → measurements
 
 
@@ -314,10 +409,12 @@ def build_measurements(
     mask_source: str = "threshold",
     mask_confidence: float | None = None,
     notes: list[str] | None = None,
+    hole_fits: Sequence[SeeThroughFit] = (),
 ) -> tuple[Measurements, FootprintFeatures]:
     """`Measurements` (schema) for a footprint polygon. Every value is `source=measured` with a 1σ estimate.
 
-    `to_px` (mat mm → image px) fills the evidence pixels so the UI can point at what was measured.
+    `to_px` (mat mm → image px) fills the evidence pixels so the UI can point at what was measured. `hole_fits`
+    (see-through cylinder fits, mat frame) replace the plain circle fit for the holes they match.
     """
     ff = analyse_footprint(poly_mat, scale=scale)
     fr = ff.frame
@@ -343,19 +440,35 @@ def build_measurements(
         evidence=ev(np.array([[0.0, -W / 2], [0.0, W / 2]]), "short side of the footprint's minimum-area rectangle"),
     )
     holes: list[Hole] = []
+    fits_part = [(f, fr.to_part(np.array([[f.cx, f.cy]]))[0]) for f in hole_fits]
     for i, (cf, _) in enumerate(ff.holes, start=1):
         d = 2 * cf.r
+        sig = sigma.diameter(d, cf.n)
+        cx, cy = cf.cx, cf.cy
+        roundness = cf.roundness
+        note = f"circle fit, rms {cf.rms:.3f} mm over {cf.n} edge points"
+        match = [(f, c) for f, c in fits_part if math.hypot(c[0] - cf.cx, c[1] - cf.cy) < max(cf.r, 0.5)]
+        if match:
+            f, c = match[0]
+            d = 2 * f.r * scale
+            cx, cy = float(c[0]), float(c[1])
+            roundness = f.roundness
+            sig = math.hypot(f.sigma_d * scale, sigma.diameter(d, f.n))
+            note = (
+                f"see-through fit, h={f.height_mm:.1f} mm: vertical cylinder whose top and bottom openings overlap by "
+                f"{max(0.0, 2 * f.r - f.shift_mm):.2f} mm in the photo; rms {f.rms:.3f} mm over {f.n} edge points"
+            )
         holes.append(
             Hole(
                 id=f"hole_{i}",
-                center_mm=(round(cf.cx, 3), round(cf.cy, 3)),
+                center_mm=(round(cx, 3), round(cy, 3)),
                 diameter=Measured(
                     value=round(d, 3),
                     source=Source.measured,
-                    sigma_mm=round(sigma.diameter(d, cf.n), 3),
-                    evidence=ev(np.array([[cf.cx, cf.cy]]), f"circle fit, rms {cf.rms:.3f} mm over {cf.n} edge points"),
+                    sigma_mm=round(sig, 3),
+                    evidence=ev(np.array([[cx, cy]]), note),
                 ),
-                roundness_mm=round(cf.roundness, 3),
+                roundness_mm=round(roundness, 3),
             )
         )
     slots: list[Slot] = []

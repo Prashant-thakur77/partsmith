@@ -23,7 +23,9 @@ class ViewKind(StrEnum):
 
 
 class CaptureCheck(Strict):
-    name: Literal["markers", "reprojection", "blur", "coverage", "tilt", "exposure", "glare", "moire", "scale"]
+    name: Literal[
+        "markers", "reprojection", "blur", "coverage", "tilt", "exposure", "glare", "moire", "scale", "contrast"
+    ]
     passed: bool
     severity: Literal["ok", "warn", "fail"]
     value: float | None = None

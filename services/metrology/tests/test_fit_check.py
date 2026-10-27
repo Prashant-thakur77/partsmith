@@ -12,6 +12,7 @@ from services.metrology.fit_check import (
     fit_check,
     fit_outline_for,
 )
+from services.metrology.mats import STAGE_COLOURS
 
 MAT = "screen-m"
 OUTLINE_PART = T.rounded_rect_poly(0, 0, 40, 20, 3)
@@ -37,6 +38,11 @@ def test_fit_outline_for_centres_on_stage() -> None:
         fit_outline_for(T.rect_poly(0, 0, 150, 20), [], "screen-s")
 
 
+def _hex_bgr(h: str) -> tuple[int, int, int]:
+    r, g, b = (int(h[i : i + 2], 16) for i in (1, 3, 5))
+    return b, g, r
+
+
 def _photo(grow: float, shift: tuple[float, float] = (0.6, 0.4), light: bool = True) -> tuple[np.ndarray, dict]:  # type: ignore[type-arg]
     fo = fit_outline_for(OUTLINE_PART, HOLES_PART, MAT)
     ring = np.array(fo["outline_mm"])
@@ -56,7 +62,9 @@ def _photo(grow: float, shift: tuple[float, float] = (0.6, 0.4), light: bool = T
         img = T.draw_outline_on_mat(img, c, ring, BGR, 0.4)
         return T.draw_outline_on_mat(img, c, T.circle_poly(hc[0], hc[1], 6.0, 180), BGR, 0.4)
 
-    sc = T.render_scene(MAT, cam.K, cam.R, cam.t, cam.size, part, under=under)
+    # A light part goes on the dark stage (on the white stage the contrast check asks for exactly that).
+    stage = _hex_bgr(STAGE_COLOURS["dark"]) if light else None
+    sc = T.render_scene(MAT, cam.K, cam.R, cam.t, cam.size, part, under=under, stage_bgr=stage)
     return sc.image, fo
 
 

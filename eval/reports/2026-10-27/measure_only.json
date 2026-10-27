@@ -15,35 +15,35 @@
    "n_photos": 120,
    "n_detected": 120,
    "capture_gate_pass": {
-    "k": 95,
+    "k": 94,
     "n": 120,
-    "rate": 0.7916666666666666,
+    "rate": 0.7833333333333333,
     "ci95": [
-     0.7105232156701865,
-     0.8547156039189031
+     0.7014563746709164,
+     0.8476327643584851
     ]
    },
    "accepted": {
-    "n": 218,
-    "mean_mm": 0.6972275229357798,
+    "n": 216,
+    "mean_mm": 0.6284657407407408,
     "mean_ci95_mm": [
-     0.42907194954128447,
-     1.0839011582568803
+     0.3877355324074075,
+     0.9662327777777777
     ],
-    "median_mm": 0.15505000000000002,
-    "p90_mm": 1.3382000000000005,
+    "median_mm": 0.15255000000000002,
+    "p90_mm": 1.19,
     "max_mm": 29.707,
-    "within_0_3": 0.6972477064220184,
+    "within_0_3": 0.7037037037037037,
     "within_0_3_ci95": [
-     0.6332762920831583,
-     0.754387945508745
+     0.639679080985463,
+     0.7606093835837887
     ],
-    "within_0_5": 0.7889908256880734,
+    "within_0_5": 0.7962962962962963,
     "within_0_5_ci95": [
-     0.7300614255493738,
-     0.8379117597596939
+     0.7376287018607025,
+     0.8446090647854817
     ],
-    "signed_mean_mm": -0.2611816513761468
+    "signed_mean_mm": -0.2010861111111111
    },
    "all_detected": {
     "n": 272,
@@ -69,20 +69,20 @@
    },
    "pass_at_0.3": {
     "k": 39,
-    "n": 95,
-    "rate": 0.4105263157894737,
+    "n": 94,
+    "rate": 0.4148936170212766,
     "ci95": [
-     0.31696158583207545,
-     0.5110458090118303
+     0.32055034593510945,
+     0.5159197947102598
     ]
    },
    "pass_at_0.5": {
     "k": 54,
-    "n": 95,
-    "rate": 0.5684210526315789,
+    "n": 94,
+    "rate": 0.574468085106383,
     "ci95": [
-     0.46808208987214145,
-     0.6634416670119307
+     0.4735323762443877,
+     0.6695562506909143
     ]
    },
    "by_dim": {
@@ -131,48 +131,48 @@
      "signed_mean_mm": -0.7035085106382978
     },
     "top:length": {
-     "n": 48,
-     "mean_mm": 1.2886020833333334,
+     "n": 47,
+     "mean_mm": 0.9995297872340424,
      "mean_ci95_mm": [
-      0.2844665625000001,
-      2.7752720312500005
+      0.21754143617021277,
+      2.3986326063829777
      ],
-     "median_mm": 0.133,
-     "p90_mm": 1.3774000000000002,
+     "median_mm": 0.128,
+     "p90_mm": 1.1031999999999993,
      "max_mm": 29.707,
-     "within_0_3": 0.75,
+     "within_0_3": 0.7659574468085106,
      "within_0_3_ci95": [
-      0.6121562719049204,
-      0.8507936632620209
+      0.6277574244984441,
+      0.8639672541377281
      ],
-     "within_0_5": 0.7708333333333334,
+     "within_0_5": 0.7872340425531915,
      "within_0_5_ci95": [
-      0.6346073590999655,
-      0.8669217373308877
+      0.6509597329080159,
+      0.88010292001905
      ],
-     "signed_mean_mm": -0.7221395833333334
+     "signed_mean_mm": -0.4210148936170212
     },
     "top:width": {
-     "n": 48,
-     "mean_mm": 0.9470583333333334,
+     "n": 47,
+     "mean_mm": 0.9380170212765958,
      "mean_ci95_mm": [
-      0.5168915625,
-      1.484364114583333
+      0.497949574468085,
+      1.5310703723404253
      ],
-     "median_mm": 0.2557,
-     "p90_mm": 2.736000000000002,
+     "median_mm": 0.2541,
+     "p90_mm": 2.7789999999999995,
      "max_mm": 10.502,
-     "within_0_3": 0.5833333333333334,
+     "within_0_3": 0.5957446808510638,
      "within_0_3_ci95": [
-      0.4428133228397628,
-      0.7115033222158844
+      0.4534212295011096,
+      0.7235996548079124
      ],
-     "within_0_5": 0.6666666666666666,
+     "within_0_5": 0.6808510638297872,
      "within_0_5_ci95": [
-      0.5254010970594798,
-      0.7832321930518142
+      0.5383265689689715,
+      0.7960462125036255
      ],
-     "signed_mean_mm": 0.3331875
+     "signed_mean_mm": 0.3110851063829788
     }
    },
    "by_preset": {
@@ -331,50 +331,50 @@
      "signed_mean_mm": -0.295171875
     },
     "white-part": {
-     "n": 12,
-     "mean_mm": 5.0356,
+     "n": 10,
+     "mean_mm": 4.41802,
      "mean_ci95_mm": [
-      0.7161458333333334,
-      10.547762916666667
+      0.3421475,
+      10.3567
      ],
-     "median_mm": 0.489,
-     "p90_mm": 14.437700000000001,
+     "median_mm": 0.265,
+     "p90_mm": 12.422499999999994,
      "max_mm": 29.707,
-     "within_0_3": 0.5,
+     "within_0_3": 0.6,
      "within_0_3_ci95": [
-      0.2537815976337061,
-      0.7462184023662939
+      0.31267376973365824,
+      0.8318196702937638
      ],
-     "within_0_5": 0.5,
+     "within_0_5": 0.6,
      "within_0_5_ci95": [
-      0.2537815976337061,
-      0.7462184023662939
+      0.31267376973365824,
+      0.8318196702937638
      ],
-     "signed_mean_mm": -4.294066666666667
+     "signed_mean_mm": -3.8025800000000003
     }
    },
    "by_group": {
     "bracket": {
-     "n": 15,
-     "mean_mm": 2.3029999999999995,
+     "n": 13,
+     "mean_mm": 1.4075384615384614,
      "mean_ci95_mm": [
-      0.8780616666666666,
-      4.35305
+      0.6067615384615386,
+      2.336932692307691
      ],
-     "median_mm": 1.372,
-     "p90_mm": 4.759399999999999,
-     "max_mm": 14.875,
-     "within_0_3": 0.4,
+     "median_mm": 0.413,
+     "p90_mm": 3.7482000000000006,
+     "max_mm": 5.315,
+     "within_0_3": 0.46153846153846156,
      "within_0_3_ci95": [
-      0.1982449614134158,
-      0.6425316987937539
+      0.23206067809538303,
+      0.7085620428549398
      ],
-     "within_0_5": 0.4666666666666667,
+     "within_0_5": 0.5384615384615384,
      "within_0_5_ci95": [
-      0.24809535365737387,
-      0.698830199745016
+      0.29143795714506004,
+      0.7679393219046169
      ],
-     "signed_mean_mm": -0.0414000000000001
+     "signed_mean_mm": 0.9909230769230768
     },
     "cable_clip": {
      "n": 21,
@@ -621,26 +621,26 @@
      "signed_mean_mm": 0.08561499999999998
     },
     "screen-m": {
-     "n": 103,
-     "mean_mm": 0.5849320388349515,
+     "n": 101,
+     "mean_mm": 0.43565346534653465,
      "mean_ci95_mm": [
-      0.33072084951456315,
-      0.955655631067961
+      0.2845366336633663,
+      0.6194609158415839
      ],
-     "median_mm": 0.112,
-     "p90_mm": 1.2795999999999994,
-     "max_mm": 14.875,
-     "within_0_3": 0.6893203883495146,
+     "median_mm": 0.1,
+     "p90_mm": 1.021,
+     "max_mm": 5.315,
+     "within_0_3": 0.7029702970297029,
      "within_0_3_ci95": [
-      0.5945002023335518,
-      0.7705266367837563
+      0.6077495802310494,
+      0.7833170880620782
      ],
-     "within_0_5": 0.7669902912621359,
+     "within_0_5": 0.7821782178217822,
      "within_0_5_ci95": [
-      0.6766575236750112,
-      0.8381239161058078
+      0.6921548637306663,
+      0.8515231873109992
      ],
-     "signed_mean_mm": -0.13715922330097088
+     "signed_mean_mm": -0.006182178217821771
     }
    },
    "by_profile": {
@@ -711,26 +711,26 @@
      "signed_mean_mm": -0.13668
     },
     "top: tall features": {
-     "n": 91,
-     "mean_mm": 1.1413813186813186,
+     "n": 89,
+     "mean_mm": 0.9844797752808989,
      "mean_ci95_mm": [
-      0.5394636813186814,
-      2.018320714285714
+      0.4364029213483146,
+      1.7340886797752806
      ],
-     "median_mm": 0.142,
-     "p90_mm": 2.462,
+     "median_mm": 0.138,
+     "p90_mm": 1.909200000000002,
      "max_mm": 29.707,
-     "within_0_3": 0.7252747252747253,
+     "within_0_3": 0.7415730337078652,
      "within_0_3_ci95": [
-      0.6258521771107707,
-      0.80644821672347
+      0.6419705871628898,
+      0.8211845651386962
      ],
-     "within_0_5": 0.7472527472527473,
+     "within_0_5": 0.7640449438202247,
      "within_0_5_ci95": [
-      0.6492032145567589,
-      0.8252728274564324
+      0.6660637395237937,
+      0.840175612991893
      ],
-     "signed_mean_mm": -0.1421791208791209
+     "signed_mean_mm": 0.006344943820224689
     }
    }
   },
@@ -1404,8 +1404,8 @@
  },
  "gate": {
   "synthetic": {
-   "mean_mm": 0.6972275229357798,
-   "n": 218,
+   "mean_mm": 0.6284657407407408,
+   "n": 216,
    "pass": false
   },
   "reference_objects": {
@@ -1528,6 +1528,18 @@
   },
   {
    "source": "synthetic",
+   "sample_id": "syn-l-bracket-white-part-s103059",
+   "view": "top",
+   "preset": "white-part",
+   "reason": "capture gate failed: The part blends into the background \u2014 switch the screen mat to the dark stage (or use a darker surface).",
+   "missed": [
+    "hole_1.diameter",
+    "hole_2.diameter",
+    "hole_3.diameter"
+   ]
+  },
+  {
+   "source": "synthetic",
    "sample_id": "syn-spacer-moire-s143272",
    "view": "top",
    "preset": "moire",
@@ -1696,18 +1708,6 @@
     "hole_5.diameter",
     "hole_6.diameter",
     "hole_7.diameter"
-   ]
-  },
-  {
-   "source": "synthetic",
-   "sample_id": "syn-l-bracket-white-part-s103059",
-   "view": "top",
-   "preset": "white-part",
-   "reason": "dimension(s) not measured",
-   "missed": [
-    "hole_1.diameter",
-    "hole_2.diameter",
-    "hole_3.diameter"
    ]
   },
   {
@@ -1735,7 +1735,7 @@
    "n_scored": 2,
    "missed": [],
    "extra_holes": 0,
-   "seconds": 6.58,
+   "seconds": 4.39,
    "notes": [
     "camera intrinsics: exif; camera 359 mm above the mat, tilt 7.0\u00b0",
     "threshold segmentation: background model from the stage border, contrast 268/255"
@@ -1754,7 +1754,7 @@
    "n_scored": 2,
    "missed": [],
    "extra_holes": 0,
-   "seconds": 9.1,
+   "seconds": 6.34,
    "notes": [
     "camera intrinsics: exif; camera 333 mm above the mat, tilt 4.6\u00b0",
     "threshold segmentation: background model from the stage border, contrast 262/255"
@@ -1773,7 +1773,7 @@
    "n_scored": 2,
    "missed": [],
    "extra_holes": 0,
-   "seconds": 5.59,
+   "seconds": 3.46,
    "notes": [
     "camera intrinsics: exif; camera 366 mm above the mat, tilt 2.5\u00b0",
     "threshold segmentation: background model from the stage border, contrast 269/255"
@@ -1792,7 +1792,7 @@
    "n_scored": 2,
    "missed": [],
    "extra_holes": 0,
-   "seconds": 5.58,
+   "seconds": 3.43,
    "notes": [
     "camera intrinsics: exif; camera 307 mm above the mat, tilt 3.6\u00b0",
     "threshold segmentation: background model from the stage border, contrast 242/255"
@@ -1811,7 +1811,7 @@
    "n_scored": 2,
    "missed": [],
    "extra_holes": 0,
-   "seconds": 6.7,
+   "seconds": 4.8,
    "notes": [
     "camera intrinsics: exif; camera 289 mm above the mat, tilt 12.6\u00b0",
     "threshold segmentation: background model from the stage border, contrast 258/255"
@@ -1830,7 +1830,7 @@
    "n_scored": 2,
    "missed": [],
    "extra_holes": 0,
-   "seconds": 7.72,
+   "seconds": 4.52,
    "notes": [
     "camera intrinsics: exif; camera 306 mm above the mat, tilt 0.1\u00b0",
     "threshold segmentation: background model from the stage border, contrast 283/255"
@@ -1849,7 +1849,7 @@
    "n_scored": 2,
    "missed": [],
    "extra_holes": 0,
-   "seconds": 9.16,
+   "seconds": 5.6,
    "notes": [
     "camera intrinsics: exif; camera 324 mm above the mat, tilt 6.3\u00b0",
     "threshold segmentation: background model from the stage border, contrast 189/255"
@@ -1868,7 +1868,7 @@
    "n_scored": 2,
    "missed": [],
    "extra_holes": 0,
-   "seconds": 7.35,
+   "seconds": 5.44,
    "notes": [
     "camera intrinsics: exif; camera 269 mm above the mat, tilt 4.3\u00b0",
     "threshold segmentation: background model from the stage border, contrast 264/255"
@@ -1887,7 +1887,7 @@
    "n_scored": 2,
    "missed": [],
    "extra_holes": 0,
-   "seconds": 4.38,
+   "seconds": 3.18,
    "notes": [
     "camera intrinsics: exif; camera 384 mm above the mat, tilt 5.7\u00b0",
     "threshold segmentation: background model from the stage border, contrast 265/255"
@@ -1906,7 +1906,7 @@
    "n_scored": 2,
    "missed": [],
    "extra_holes": 0,
-   "seconds": 5.65,
+   "seconds": 4.15,
    "notes": [
     "camera intrinsics: exif; camera 326 mm above the mat, tilt 15.9\u00b0",
     "threshold segmentation: background model from the stage border, contrast 272/255"
@@ -1925,7 +1925,7 @@
    "n_scored": 2,
    "missed": [],
    "extra_holes": 0,
-   "seconds": 6.33,
+   "seconds": 4.29,
    "notes": [
     "camera intrinsics: exif; camera 275 mm above the mat, tilt 1.7\u00b0",
     "threshold segmentation: background model from the stage border, contrast 197/255"
@@ -1944,7 +1944,7 @@
    "n_scored": 2,
    "missed": [],
    "extra_holes": 0,
-   "seconds": 6.55,
+   "seconds": 4.96,
    "notes": [
     "camera intrinsics: exif; camera 379 mm above the mat, tilt 7.7\u00b0",
     "threshold segmentation: background model from the stage border, contrast 306/255"
@@ -1963,7 +1963,7 @@
    "n_scored": 2,
    "missed": [],
    "extra_holes": 0,
-   "seconds": 3.19,
+   "seconds": 2.65,
    "notes": [
     "camera intrinsics: exif; camera 415 mm above the mat, tilt 0.5\u00b0",
     "threshold segmentation: background model from the stage border, contrast 264/255"
@@ -1982,7 +1982,7 @@
    "n_scored": 2,
    "missed": [],
    "extra_holes": 0,
-   "seconds": 4.08,
+   "seconds": 3.1,
    "notes": [
     "camera intrinsics: exif; camera 325 mm above the mat, tilt 6.6\u00b0",
     "threshold segmentation: background model from the stage border, contrast 269/255"
@@ -2001,7 +2001,7 @@
    "n_scored": 2,
    "missed": [],
    "extra_holes": 0,
-   "seconds": 5.14,
+   "seconds": 4.5,
    "notes": [
     "camera intrinsics: exif; camera 355 mm above the mat, tilt 17.2\u00b0",
     "threshold segmentation: background model from the stage border, contrast 291/255"
@@ -2020,7 +2020,7 @@
    "n_scored": 2,
    "missed": [],
    "extra_holes": 0,
-   "seconds": 5.62,
+   "seconds": 4.11,
    "notes": [
     "camera intrinsics: exif; camera 411 mm above the mat, tilt 5.7\u00b0",
     "threshold segmentation: background model from the stage border, contrast 356/255"
@@ -2039,7 +2039,7 @@
    "n_scored": 2,
    "missed": [],
    "extra_holes": 0,
-   "seconds": 6.97,
+   "seconds": 5.67,
    "notes": [
     "camera intrinsics: exif; camera 281 mm above the mat, tilt 5.1\u00b0",
     "threshold segmentation: background model from the stage border, contrast 339/255"
@@ -2058,7 +2058,7 @@
    "n_scored": 2,
    "missed": [],
    "extra_holes": 0,
-   "seconds": 3.98,
+   "seconds": 2.49,
    "notes": [
     "camera intrinsics: exif; camera 394 mm above the mat, tilt 5.0\u00b0",
     "threshold segmentation: background model from the stage border, contrast 340/255"
@@ -2077,7 +2077,7 @@
    "n_scored": 2,
    "missed": [],
    "extra_holes": 0,
-   "seconds": 3.68,
+   "seconds": 2.95,
    "notes": [
     "camera intrinsics: exif; camera 427 mm above the mat, tilt 0.0\u00b0",
     "threshold segmentation: background model from the stage border, contrast 329/255"
@@ -2096,7 +2096,7 @@
    "n_scored": 2,
    "missed": [],
    "extra_holes": 0,
-   "seconds": 4.34,
+   "seconds": 3.5,
    "notes": [
     "camera intrinsics: exif; camera 332 mm above the mat, tilt 16.3\u00b0",
     "threshold segmentation: background model from the stage border, contrast 302/255"
@@ -2115,7 +2115,7 @@
    "n_scored": 2,
    "missed": [],
    "extra_holes": 0,
-   "seconds": 5.73,
+   "seconds": 4.91,
    "notes": [
     "camera intrinsics: exif; camera 367 mm above the mat, tilt 1.1\u00b0",
     "threshold segmentation: background model from the stage border, contrast 208/255"
@@ -2134,7 +2134,7 @@
    "n_scored": 2,
    "missed": [],
    "extra_holes": 0,
-   "seconds": 4.18,
+   "seconds": 2.78,
    "notes": [
     "camera intrinsics: exif; camera 257 mm above the mat, tilt 5.1\u00b0",
     "threshold segmentation: background model from the stage border, contrast 91/255"
@@ -2153,7 +2153,7 @@
    "n_scored": 2,
    "missed": [],
    "extra_holes": 0,
-   "seconds": 2.93,
+   "seconds": 2.0,
    "notes": [
     "camera intrinsics: exif; camera 346 mm above the mat, tilt 8.1\u00b0",
     "threshold segmentation: background model from the stage border, contrast 133/255"
@@ -2172,7 +2172,7 @@
    "n_scored": 2,
    "missed": [],
    "extra_holes": 0,
-   "seconds": 6.96,
+   "seconds": 5.38,
    "notes": [
     "camera intrinsics: exif; camera 407 mm above the mat, tilt 2.7\u00b0",
     "threshold segmentation: background model from the stage border, contrast 200/255"
@@ -2191,7 +2191,7 @@
    "n_scored": 2,
    "missed": [],
    "extra_holes": 0,
-   "seconds": 6.51,
+   "seconds": 5.6,
    "notes": [
     "camera intrinsics: exif; camera 406 mm above the mat, tilt 5.5\u00b0",
     "threshold segmentation: background model from the stage border, contrast 269/255"
@@ -2210,7 +2210,7 @@
    "n_scored": 2,
    "missed": [],
    "extra_holes": 0,
-   "seconds": 8.29,
+   "seconds": 6.44,
    "notes": [
     "camera intrinsics: exif; camera 374 mm above the mat, tilt 14.6\u00b0",
     "threshold segmentation: background model from the stage border, contrast 272/255"
@@ -2229,7 +2229,7 @@
    "n_scored": 4,
    "missed": [],
    "extra_holes": 0,
-   "seconds": 6.1,
+   "seconds": 4.27,
    "notes": [
     "camera intrinsics: exif; camera 338 mm above the mat, tilt 2.1\u00b0",
     "threshold segmentation: background model from the stage border, contrast 197/255"
@@ -2248,7 +2248,7 @@
    "n_scored": 4,
    "missed": [],
    "extra_holes": 0,
-   "seconds": 6.99,
+   "seconds": 5.02,
    "notes": [
     "camera intrinsics: exif; camera 298 mm above the mat, tilt 3.8\u00b0",
     "threshold segmentation: background model from the stage border, contrast 311/255"
@@ -2267,7 +2267,7 @@
    "n_scored": 4,
    "missed": [],
    "extra_holes": 0,
-   "seconds": 7.03,
+   "seconds": 4.69,
    "notes": [
     "camera intrinsics: exif; camera 351 mm above the mat, tilt 7.5\u00b0",
     "threshold segmentation: background model from the stage border, contrast 342/255"
@@ -2286,7 +2286,7 @@
    "n_scored": 4,
    "missed": [],
    "extra_holes": 0,
-   "seconds": 5.72,
+   "seconds": 4.71,
    "notes": [
     "camera intrinsics: exif; camera 354 mm above the mat, tilt 2.6\u00b0",
     "threshold segmentation: background model from the stage border, contrast 268/255"
@@ -2305,7 +2305,7 @@
    "n_scored": 4,
    "missed": [],
    "extra_holes": 0,
-   "seconds": 3.71,
+   "seconds": 3.42,
    "notes": [
     "camera intrinsics: exif; camera 275 mm above the mat, tilt 7.0\u00b0",
     "threshold segmentation: background model from the stage border, contrast 235/255"
@@ -2327,7 +2327,7 @@
     "hole_2.diameter"
    ],
    "extra_holes": 0,
-   "seconds": 5.01,
+   "seconds": 4.61,
    "notes": [
     "camera intrinsics: exif; camera 352 mm above the mat, tilt 1.3\u00b0",
     "threshold segmentation: background model from the stage border, contrast 148/255"
@@ -2346,7 +2346,7 @@
    "n_scored": 8,
    "missed": [],
    "extra_holes": 0,
-   "seconds": 5.15,
+   "seconds": 3.79,
    "notes": [
     "camera intrinsics: exif; camera 397 mm above the mat, tilt 4.7\u00b0",
     "threshold segmentation: background model from the stage border, contrast 324/255"
@@ -2365,7 +2365,7 @@
    "n_scored": 9,
    "missed": [],
    "extra_holes": 0,
-   "seconds": 4.07,
+   "seconds": 3.05,
    "notes": [
     "camera intrinsics: exif; camera 407 mm above the mat, tilt 0.4\u00b0",
     "threshold segmentation: background model from the stage border, contrast 139/255"
@@ -2384,7 +2384,7 @@
    "n_scored": 8,
    "missed": [],
    "extra_holes": 0,
-   "seconds": 7.58,
+   "seconds": 6.18,
    "notes": [
     "camera intrinsics: exif; camera 346 mm above the mat, tilt 6.5\u00b0",
     "threshold segmentation: background model from the stage border, contrast 172/255"
@@ -2403,7 +2403,7 @@
    "n_scored": 9,
    "missed": [],
    "extra_holes": 0,
-   "seconds": 8.97,
+   "seconds": 6.34,
    "notes": [
     "camera intrinsics: exif; camera 404 mm above the mat, tilt 2.5\u00b0",
     "threshold segmentation: background model from the stage border, contrast 168/255"
@@ -2429,7 +2429,7 @@
     "hole_7.diameter"
    ],
    "extra_holes": 0,
-   "seconds": 5.99,
+   "seconds": 3.94,
    "notes": [
     "camera intrinsics: exif; camera 358 mm above the mat, tilt 15.9\u00b0",
     "threshold segmentation: background model from the stage border, contrast 329/255"
@@ -2448,7 +2448,7 @@
    "n_scored": 8,
    "missed": [],
    "extra_holes": 0,
-   "seconds": 4.33,
+   "seconds": 3.22,
    "notes": [
     "camera intrinsics: exif; camera 376 mm above the mat, tilt 12.5\u00b0",
     "threshold segmentation: background model from the stage border, contrast 293/255"
@@ -2467,7 +2467,7 @@
    "n_scored": 3,
    "missed": [],
    "extra_holes": 0,
-   "seconds": 7.47,
+   "seconds": 6.26,
    "notes": [
     "camera intrinsics: exif; camera 343 mm above the mat, tilt 8.0\u00b0",
     "threshold segmentation: background model from the stage border, contrast 336/255"
@@ -2486,7 +2486,7 @@
    "n_scored": 3,
    "missed": [],
    "extra_holes": 0,
-   "seconds": 5.83,
+   "seconds": 4.44,
    "notes": [
     "camera intrinsics: exif; camera 248 mm above the mat, tilt 1.7\u00b0",
     "threshold segmentation: background model from the stage border, contrast 182/255"
@@ -2505,7 +2505,7 @@
    "n_scored": 3,
    "missed": [],
    "extra_holes": 0,
-   "seconds": 3.75,
+   "seconds": 3.41,
    "notes": [
     "camera intrinsics: exif; camera 418 mm above the mat, tilt 5.7\u00b0",
     "threshold segmentation: background model from the stage border, contrast 300/255"
@@ -2524,7 +2524,7 @@
    "n_scored": 3,
    "missed": [],
    "extra_holes": 0,
-   "seconds": 4.14,
+   "seconds": 3.56,
    "notes": [
     "camera intrinsics: exif; camera 389 mm above the mat, tilt 6.3\u00b0",
     "threshold segmentation: background model from the stage border, contrast 218/255"
@@ -2543,7 +2543,7 @@
    "n_scored": 3,
    "missed": [],
    "extra_holes": 0,
-   "seconds": 5.39,
+   "seconds": 4.14,
    "notes": [
     "camera intrinsics: exif; camera 340 mm above the mat, tilt 7.6\u00b0",
     "threshold segmentation: background model from the stage border, contrast 79/255"
@@ -2564,7 +2564,7 @@
     "hole_1.diameter"
    ],
    "extra_holes": 0,
-   "seconds": 5.74,
+   "seconds": 4.88,
    "notes": [
     "camera intrinsics: exif; camera 316 mm above the mat, tilt 4.4\u00b0",
     "threshold segmentation: background model from the stage border, contrast 36/255"
@@ -2583,7 +2583,7 @@
    "n_scored": 3,
    "missed": [],
    "extra_holes": 0,
-   "seconds": 6.87,
+   "seconds": 5.9,
    "notes": [
     "camera intrinsics: exif; camera 305 mm above the mat, tilt 0.7\u00b0",
     "threshold segmentation: background model from the stage border, contrast 279/255"
@@ -2602,7 +2602,7 @@
    "n_scored": 3,
    "missed": [],
    "extra_holes": 0,
-   "seconds": 3.12,
+   "seconds": 2.36,
    "notes": [
     "camera intrinsics: exif; camera 382 mm above the mat, tilt 5.0\u00b0",
     "threshold segmentation: background model from the stage border, contrast 242/255"
@@ -2621,7 +2621,7 @@
    "n_scored": 3,
    "missed": [],
    "extra_holes": 0,
-   "seconds": 4.42,
+   "seconds": 2.8,
    "notes": [
     "camera intrinsics: exif; camera 365 mm above the mat, tilt 5.9\u00b0",
     "threshold segmentation: background model from the stage border, contrast 150/255"
@@ -2640,7 +2640,7 @@
    "n_scored": 3,
    "missed": [],
    "extra_holes": 0,
-   "seconds": 6.75,
+   "seconds": 5.52,
    "notes": [
     "camera intrinsics: exif; camera 355 mm above the mat, tilt 3.2\u00b0",
     "threshold segmentation: background model from the stage border, contrast 152/255"
@@ -2659,7 +2659,7 @@
    "n_scored": 3,
    "missed": [],
    "extra_holes": 0,
-   "seconds": 5.55,
+   "seconds": 4.69,
    "notes": [
     "camera intrinsics: exif; camera 345 mm above the mat, tilt 15.9\u00b0",
     "threshold segmentation: background model from the stage border, contrast 228/255"
@@ -2678,7 +2678,7 @@
    "n_scored": 3,
    "missed": [],
    "extra_holes": 0,
-   "seconds": 5.57,
+   "seconds": 4.18,
    "notes": [
     "camera intrinsics: exif; camera 280 mm above the mat, tilt 12.8\u00b0",
     "threshold segmentation: background model from the stage border, contrast 271/255"
@@ -2697,7 +2697,7 @@
    "n_scored": 5,
    "missed": [],
    "extra_holes": 0,
-   "seconds": 7.66,
+   "seconds": 6.05,
    "notes": [
     "camera intrinsics: exif; camera 326 mm above the mat, tilt 5.7\u00b0",
     "threshold segmentation: background model from the stage border, contrast 367/255"
@@ -2716,7 +2716,7 @@
    "n_scored": 5,
    "missed": [],
    "extra_holes": 0,
-   "seconds": 4.66,
+   "seconds": 3.98,
    "notes": [
     "camera intrinsics: exif; camera 395 mm above the mat, tilt 6.3\u00b0",
     "threshold segmentation: background model from the stage border, contrast 194/255"
@@ -2735,7 +2735,7 @@
    "n_scored": 4,
    "missed": [],
    "extra_holes": 0,
-   "seconds": 2.86,
+   "seconds": 1.99,
    "notes": [
     "camera intrinsics: exif; camera 380 mm above the mat, tilt 6.6\u00b0",
     "threshold segmentation: background model from the stage border, contrast 256/255"
@@ -2754,7 +2754,7 @@
    "n_scored": 5,
    "missed": [],
    "extra_holes": 0,
-   "seconds": 8.95,
+   "seconds": 6.32,
    "notes": [
     "camera intrinsics: exif; camera 380 mm above the mat, tilt 0.9\u00b0",
     "threshold segmentation: background model from the stage border, contrast 162/255"
@@ -2773,7 +2773,7 @@
    "n_scored": 5,
    "missed": [],
    "extra_holes": 0,
-   "seconds": 4.52,
+   "seconds": 2.79,
    "notes": [
     "camera intrinsics: exif; camera 406 mm above the mat, tilt 2.8\u00b0",
     "threshold segmentation: background model from the stage border, contrast 272/255"
@@ -2795,7 +2795,7 @@
     "hole_2.diameter"
    ],
    "extra_holes": 0,
-   "seconds": 6.08,
+   "seconds": 4.6,
    "notes": [
     "camera intrinsics: exif; camera 362 mm above the mat, tilt 0.6\u00b0",
     "threshold segmentation: background model from the stage border, contrast 119/255"
@@ -2814,7 +2814,7 @@
    "n_scored": 4,
    "missed": [],
    "extra_holes": 0,
-   "seconds": 7.29,
+   "seconds": 4.83,
    "notes": [
     "camera intrinsics: exif; camera 371 mm above the mat, tilt 0.3\u00b0",
     "threshold segmentation: background model from the stage border, contrast 199/255"
@@ -2833,7 +2833,7 @@
    "n_scored": 3,
    "missed": [],
    "extra_holes": 0,
-   "seconds": 9.12,
+   "seconds": 6.61,
    "notes": [
     "camera intrinsics: exif; camera 412 mm above the mat, tilt 7.2\u00b0",
     "threshold segmentation: background model from the stage border, contrast 255/255"
@@ -2852,7 +2852,7 @@
    "n_scored": 4,
    "missed": [],
    "extra_holes": 0,
-   "seconds": 4.85,
+   "seconds": 3.31,
    "notes": [
     "camera intrinsics: exif; camera 259 mm above the mat, tilt 3.6\u00b0",
     "threshold segmentation: background model from the stage border, contrast 118/255"
@@ -2871,7 +2871,7 @@
    "n_scored": 5,
    "missed": [],
    "extra_holes": 0,
-   "seconds": 4.88,
+   "seconds": 3.6,
    "notes": [
     "camera intrinsics: exif; camera 397 mm above the mat, tilt 3.3\u00b0",
     "threshold segmentation: background model from the stage border, contrast 193/255"
@@ -2890,7 +2890,7 @@
    "n_scored": 4,
    "missed": [],
    "extra_holes": 0,
-   "seconds": 6.52,
+   "seconds": 5.05,
    "notes": [
     "camera intrinsics: exif; camera 386 mm above the mat, tilt 17.8\u00b0",
     "threshold segmentation: background model from the stage border, contrast 308/255"
@@ -2909,7 +2909,7 @@
    "n_scored": 3,
    "missed": [],
    "extra_holes": 0,
-   "seconds": 7.88,
+   "seconds": 7.03,
    "notes": [
     "camera intrinsics: exif; camera 389 mm above the mat, tilt 15.4\u00b0",
     "threshold segmentation: background model from the stage border, contrast 210/255"
@@ -2928,7 +2928,7 @@
    "n_scored": 2,
    "missed": [],
    "extra_holes": 0,
-   "seconds": 6.41,
+   "seconds": 6.64,
    "notes": [
     "camera intrinsics: exif; camera 380 mm above the mat, tilt 0.3\u00b0",
     "threshold segmentation: background model from the stage border, contrast 206/255"
@@ -2947,7 +2947,7 @@
    "n_scored": 2,
    "missed": [],
    "extra_holes": 0,
-   "seconds": 6.46,
+   "seconds": 4.55,
    "notes": [
     "camera intrinsics: exif; camera 319 mm above the mat, tilt 6.9\u00b0",
     "threshold segmentation: background model from the stage border, contrast 190/255"
@@ -2966,7 +2966,7 @@
    "n_scored": 2,
    "missed": [],
    "extra_holes": 0,
-   "seconds": 4.54,
+   "seconds": 3.99,
    "notes": [
     "camera intrinsics: exif; camera 372 mm above the mat, tilt 6.7\u00b0",
     "threshold segmentation: background model from the stage border, contrast 188/255"
@@ -2985,7 +2985,7 @@
    "n_scored": 2,
    "missed": [],
    "extra_holes": 0,
-   "seconds": 3.04,
+   "seconds": 4.35,
    "notes": [
     "camera intrinsics: exif; camera 291 mm above the mat, tilt 6.1\u00b0",
     "threshold segmentation: background model from the stage border, contrast 115/255"
@@ -3004,7 +3004,7 @@
    "n_scored": 2,
    "missed": [],
    "extra_holes": 0,
-   "seconds": 7.35,
+   "seconds": 7.85,
    "notes": [
     "camera intrinsics: exif; camera 316 mm above the mat, tilt 0.1\u00b0",
     "threshold segmentation: background model from the stage border, contrast 135/255"
@@ -3023,7 +3023,7 @@
    "n_scored": 2,
    "missed": [],
    "extra_holes": 0,
-   "seconds": 7.9,
+   "seconds": 7.93,
    "notes": [
     "camera intrinsics: exif; camera 411 mm above the mat, tilt 15.0\u00b0",
     "threshold segmentation: background model from the stage border, contrast 279/255"
@@ -3042,7 +3042,7 @@
    "n_scored": 3,
    "missed": [],
    "extra_holes": 0,
-   "seconds": 3.33,
+   "seconds": 3.18,
    "notes": [
     "camera intrinsics: exif; camera 381 mm above the mat, tilt 7.6\u00b0",
     "threshold segmentation: background model from the stage border, contrast 266/255"
@@ -3061,7 +3061,7 @@
    "n_scored": 5,
    "missed": [],
    "extra_holes": 0,
-   "seconds": 7.13,
+   "seconds": 7.59,
    "notes": [
     "camera intrinsics: exif; camera 304 mm above the mat, tilt 7.2\u00b0",
     "threshold segmentation: background model from the stage border, contrast 247/255"
@@ -3080,7 +3080,7 @@
    "n_scored": 3,
    "missed": [],
    "extra_holes": 0,
-   "seconds": 5.83,
+   "seconds": 5.64,
    "notes": [
     "camera intrinsics: exif; camera 318 mm above the mat, tilt 4.0\u00b0",
     "threshold segmentation: background model from the stage border, contrast 240/255"
@@ -3099,7 +3099,7 @@
    "n_scored": 5,
    "missed": [],
    "extra_holes": 0,
-   "seconds": 5.05,
+   "seconds": 4.39,
    "notes": [
     "camera intrinsics: exif; camera 367 mm above the mat, tilt 0.4\u00b0",
     "threshold segmentation: background model from the stage border, contrast 355/255"
@@ -3118,7 +3118,7 @@
    "n_scored": 3,
    "missed": [],
    "extra_holes": 0,
-   "seconds": 4.4,
+   "seconds": 4.98,
    "notes": [
     "camera intrinsics: exif; camera 333 mm above the mat, tilt 0.6\u00b0",
     "threshold segmentation: background model from the stage border, contrast 230/255"
@@ -3131,8 +3131,8 @@
    "preset": "white-part",
    "group": "bracket",
    "detected": true,
-   "accepted": true,
-   "retake_reason": null,
+   "accepted": false,
+   "retake_reason": "The part blends into the background \u2014 switch the screen mat to the dark stage (or use a darker surface).",
    "n_gt_dims": 5,
    "n_scored": 2,
    "missed": [
@@ -3141,7 +3141,7 @@
     "hole_3.diameter"
    ],
    "extra_holes": 0,
-   "seconds": 3.2,
+   "seconds": 3.23,
    "notes": [
     "camera intrinsics: exif; camera 417 mm above the mat, tilt 7.5\u00b0",
     "threshold segmentation: background model from the stage border, contrast 106/255"
@@ -3160,7 +3160,7 @@
    "n_scored": 3,
    "missed": [],
    "extra_holes": 0,
-   "seconds": 5.22,
+   "seconds": 5.12,
    "notes": [
     "camera intrinsics: exif; camera 314 mm above the mat, tilt 0.2\u00b0",
     "threshold segmentation: background model from the stage border, contrast 285/255"
@@ -3179,7 +3179,7 @@
    "n_scored": 3,
    "missed": [],
    "extra_holes": 0,
-   "seconds": 4.07,
+   "seconds": 5.09,
    "notes": [
     "camera intrinsics: exif; camera 278 mm above the mat, tilt 6.2\u00b0",
     "threshold segmentation: background model from the stage border, contrast 296/255"
@@ -3198,7 +3198,7 @@
    "n_scored": 3,
    "missed": [],
    "extra_holes": 0,
-   "seconds": 5.07,
+   "seconds": 5.05,
    "notes": [
     "camera intrinsics: exif; camera 403 mm above the mat, tilt 5.0\u00b0",
     "threshold segmentation: background model from the stage border, contrast 245/255"
@@ -3217,7 +3217,7 @@
    "n_scored": 3,
    "missed": [],
    "extra_holes": 0,
-   "seconds": 3.74,
+   "seconds": 3.9,
    "notes": [
     "camera intrinsics: exif; camera 404 mm above the mat, tilt 2.0\u00b0",
     "threshold segmentation: background model from the stage border, contrast 285/255"
@@ -3238,7 +3238,7 @@
     "hole_1.diameter"
    ],
    "extra_holes": 0,
-   "seconds": 4.21,
+   "seconds": 4.35,
    "notes": [
     "camera intrinsics: exif; camera 361 mm above the mat, tilt 2.3\u00b0",
     "threshold segmentation: background model from the stage border, contrast 70/255"
@@ -3259,7 +3259,7 @@
     "hole_1.diameter"
    ],
    "extra_holes": 0,
-   "seconds": 3.12,
+   "seconds": 3.69,
    "notes": [
     "camera intrinsics: exif; camera 374 mm above the mat, tilt 7.8\u00b0",
     "threshold segmentation: background model from the stage border, contrast 149/255"
@@ -3278,7 +3278,7 @@
    "n_scored": 1,
    "missed": [],
    "extra_holes": 0,
-   "seconds": 5.42,
+   "seconds": 5.85,
    "notes": [
     "camera intrinsics: exif; camera 389 mm above the mat, tilt 1.1\u00b0",
     "threshold segmentation: background model from the stage border, contrast 202/255"
@@ -3297,7 +3297,7 @@
    "n_scored": 1,
    "missed": [],
    "extra_holes": 0,
-   "seconds": 5.16,
+   "seconds": 5.01,
    "notes": [
     "camera intrinsics: exif; camera 374 mm above the mat, tilt 5.0\u00b0",
     "threshold segmentation: background model from the stage border, contrast 266/255"
@@ -3316,7 +3316,7 @@
    "n_scored": 1,
    "missed": [],
    "extra_holes": 0,
-   "seconds": 3.03,
+   "seconds": 3.12,
    "notes": [
     "camera intrinsics: exif; camera 412 mm above the mat, tilt 4.0\u00b0",
     "threshold segmentation: background model from the stage border, contrast 257/255"
@@ -3335,7 +3335,7 @@
    "n_scored": 1,
    "missed": [],
    "extra_holes": 0,
-   "seconds": 4.49,
+   "seconds": 4.9,
    "notes": [
     "camera intrinsics: exif; camera 390 mm above the mat, tilt 1.3\u00b0",
     "threshold segmentation: background model from the stage border, contrast 242/255"
@@ -3354,7 +3354,7 @@
    "n_scored": 1,
    "missed": [],
    "extra_holes": 0,
-   "seconds": 7.44,
+   "seconds": 7.11,
    "notes": [
     "camera intrinsics: exif; camera 390 mm above the mat, tilt 15.0\u00b0",
     "threshold segmentation: background model from the stage border, contrast 278/255"
@@ -3373,7 +3373,7 @@
    "n_scored": 1,
    "missed": [],
    "extra_holes": 0,
-   "seconds": 5.25,
+   "seconds": 5.51,
    "notes": [
     "camera intrinsics: exif; camera 276 mm above the mat, tilt 0.3\u00b0",
     "threshold segmentation: background model from the stage border, contrast 336/255"
@@ -3392,7 +3392,7 @@
    "n_scored": 1,
    "missed": [],
    "extra_holes": 0,
-   "seconds": 5.71,
+   "seconds": 5.79,
    "notes": [
     "camera intrinsics: exif; camera 320 mm above the mat, tilt 7.2\u00b0",
     "threshold segmentation: background model from the stage border, contrast 343/255"
@@ -3411,7 +3411,7 @@
    "n_scored": 1,
    "missed": [],
    "extra_holes": 0,
-   "seconds": 4.98,
+   "seconds": 4.79,
    "notes": [
     "camera intrinsics: exif; camera 354 mm above the mat, tilt 3.8\u00b0",
     "threshold segmentation: background model from the stage border, contrast 302/255"
@@ -3430,7 +3430,7 @@
    "n_scored": 1,
    "missed": [],
    "extra_holes": 0,
-   "seconds": 4.23,
+   "seconds": 4.2,
    "notes": [
     "camera intrinsics: exif; camera 417 mm above the mat, tilt 2.2\u00b0",
     "threshold segmentation: background model from the stage border, contrast 369/255"
@@ -3449,7 +3449,7 @@
    "n_scored": 1,
    "missed": [],
    "extra_holes": 0,
-   "seconds": 6.37,
+   "seconds": 6.13,
    "notes": [
     "camera intrinsics: exif; camera 289 mm above the mat, tilt 12.6\u00b0",
     "threshold segmentation: background model from the stage border, contrast 380/255"
@@ -3468,7 +3468,7 @@
    "n_scored": 1,
    "missed": [],
    "extra_holes": 0,
-   "seconds": 2.6,
+   "seconds": 2.61,
    "notes": [
     "camera intrinsics: exif; camera 406 mm above the mat, tilt 0.9\u00b0",
     "threshold segmentation: background model from the stage border, contrast 268/255"
@@ -3487,7 +3487,7 @@
    "n_scored": 1,
    "missed": [],
    "extra_holes": 0,
-   "seconds": 3.97,
+   "seconds": 3.87,
    "notes": [
     "camera intrinsics: exif; camera 310 mm above the mat, tilt 7.7\u00b0",
     "threshold segmentation: background model from the stage border, contrast 134/255"
@@ -3506,7 +3506,7 @@
    "n_scored": 1,
    "missed": [],
    "extra_holes": 0,
-   "seconds": 2.7,
+   "seconds": 2.79,
    "notes": [
     "camera intrinsics: exif; camera 285 mm above the mat, tilt 7.8\u00b0",
     "threshold segmentation: background model from the stage border, contrast 156/255"
@@ -3525,7 +3525,7 @@
    "n_scored": 1,
    "missed": [],
    "extra_holes": 0,
-   "seconds": 7.62,
+   "seconds": 7.15,
    "notes": [
     "camera intrinsics: exif; camera 382 mm above the mat, tilt 1.2\u00b0",
     "threshold segmentation: background model from the stage border, contrast 297/255"
@@ -3544,7 +3544,7 @@
    "n_scored": 1,
    "missed": [],
    "extra_holes": 0,
-   "seconds": 5.54,
+   "seconds": 5.44,
    "notes": [
     "camera intrinsics: exif; camera 386 mm above the mat, tilt 5.4\u00b0",
     "threshold segmentation: background model from the stage border, contrast 210/255"
@@ -3563,7 +3563,7 @@
    "n_scored": 1,
    "missed": [],
    "extra_holes": 0,
-   "seconds": 4.21,
+   "seconds": 3.77,
    "notes": [
     "camera intrinsics: exif; camera 378 mm above the mat, tilt 12.5\u00b0",
     "threshold segmentation: background model from the stage border, contrast 380/255"
@@ -3582,7 +3582,7 @@
    "n_scored": 1,
    "missed": [],
    "extra_holes": 0,
-   "seconds": 5.73,
+   "seconds": 5.42,
    "notes": [
     "camera intrinsics: exif; camera 348 mm above the mat, tilt 6.3\u00b0",
     "threshold segmentation: background model from the stage border, contrast 221/255"
@@ -3601,7 +3601,7 @@
    "n_scored": 1,
    "missed": [],
    "extra_holes": 0,
-   "seconds": 5.33,
+   "seconds": 5.1,
    "notes": [
     "camera intrinsics: exif; camera 334 mm above the mat, tilt 3.7\u00b0",
     "threshold segmentation: background model from the stage border, contrast 253/255"
@@ -3620,7 +3620,7 @@
    "n_scored": 1,
    "missed": [],
    "extra_holes": 0,
-   "seconds": 5.63,
+   "seconds": 4.1,
    "notes": [
     "camera intrinsics: exif; camera 381 mm above the mat, tilt 5.9\u00b0",
     "threshold segmentation: background model from the stage border, contrast 305/255"
@@ -3639,7 +3639,7 @@
    "n_scored": 1,
    "missed": [],
    "extra_holes": 0,
-   "seconds": 4.18,
+   "seconds": 3.74,
    "notes": [
     "camera intrinsics: exif; camera 413 mm above the mat, tilt 3.8\u00b0",
     "threshold segmentation: background model from the stage border, contrast 301/255"
@@ -3658,7 +3658,7 @@
    "n_scored": 1,
    "missed": [],
    "extra_holes": 0,
-   "seconds": 4.31,
+   "seconds": 3.86,
    "notes": [
     "camera intrinsics: exif; camera 277 mm above the mat, tilt 2.2\u00b0",
     "threshold segmentation: background model from the stage border, contrast 249/255"
@@ -3677,7 +3677,7 @@
    "n_scored": 1,
    "missed": [],
    "extra_holes": 0,
-   "seconds": 5.95,
+   "seconds": 5.67,
    "notes": [
     "camera intrinsics: exif; camera 363 mm above the mat, tilt 0.1\u00b0",
     "threshold segmentation: background model from the stage border, contrast 207/255"
@@ -3696,7 +3696,7 @@
    "n_scored": 1,
    "missed": [],
    "extra_holes": 0,
-   "seconds": 4.14,
+   "seconds": 4.38,
    "notes": [
     "camera intrinsics: exif; camera 288 mm above the mat, tilt 4.5\u00b0",
     "threshold segmentation: background model from the stage border, contrast 332/255"
@@ -3715,7 +3715,7 @@
    "n_scored": 1,
    "missed": [],
    "extra_holes": 0,
-   "seconds": 3.55,
+   "seconds": 3.74,
    "notes": [
     "camera intrinsics: exif; camera 414 mm above the mat, tilt 4.9\u00b0",
     "threshold segmentation: background model from the stage border, contrast 134/255"
@@ -3734,7 +3734,7 @@
    "n_scored": 1,
    "missed": [],
    "extra_holes": 0,
-   "seconds": 4.27,
+   "seconds": 4.48,
    "notes": [
     "camera intrinsics: exif; camera 315 mm above the mat, tilt 6.3\u00b0",
     "threshold segmentation: background model from the stage border, contrast 214/255"
@@ -3753,7 +3753,7 @@
    "n_scored": 1,
    "missed": [],
    "extra_holes": 0,
-   "seconds": 5.58,
+   "seconds": 5.84,
    "notes": [
     "camera intrinsics: exif; camera 350 mm above the mat, tilt 3.9\u00b0",
     "threshold segmentation: background model from the stage border, contrast 227/255"
@@ -3772,7 +3772,7 @@
    "n_scored": 1,
    "missed": [],
    "extra_holes": 0,
-   "seconds": 4.63,
+   "seconds": 4.98,
    "notes": [
     "camera intrinsics: exif; camera 339 mm above the mat, tilt 12.2\u00b0",
     "threshold segmentation: background model from the stage border, contrast 292/255"
@@ -3791,7 +3791,7 @@
    "n_scored": 1,
    "missed": [],
    "extra_holes": 0,
-   "seconds": 4.58,
+   "seconds": 4.66,
    "notes": [
     "camera intrinsics: exif; camera 338 mm above the mat, tilt 13.7\u00b0",
     "threshold segmentation: background model from the stage border, contrast 370/255"
@@ -3810,7 +3810,7 @@
    "n_scored": 1,
    "missed": [],
    "extra_holes": 0,
-   "seconds": 4.59,
+   "seconds": 4.87,
    "notes": [
     "camera intrinsics: exif; camera 378 mm above the mat, tilt 3.4\u00b0",
     "threshold segmentation: background model from the stage border, contrast 207/255"
@@ -3829,7 +3829,7 @@
    "n_scored": 1,
    "missed": [],
    "extra_holes": 0,
-   "seconds": 4.11,
+   "seconds": 4.43,
    "notes": [
     "camera intrinsics: exif; camera 377 mm above the mat, tilt 4.2\u00b0",
     "threshold segmentation: background model from the stage border, contrast 262/255"
@@ -3848,7 +3848,7 @@
    "n_scored": 1,
    "missed": [],
    "extra_holes": 0,
-   "seconds": 4.54,
+   "seconds": 4.8,
    "notes": [
     "camera intrinsics: exif; camera 284 mm above the mat, tilt 1.5\u00b0",
     "threshold segmentation: background model from the stage border, contrast 218/255"
@@ -3886,7 +3886,7 @@
    "n_scored": 1,
    "missed": [],
    "extra_holes": 0,
-   "seconds": 5.54,
+   "seconds": 5.21,
    "notes": [
     "camera intrinsics: exif; camera 386 mm above the mat, tilt 3.5\u00b0",
     "threshold segmentation: background model from the stage border, contrast 271/255"
@@ -3905,7 +3905,7 @@
    "n_scored": 1,
    "missed": [],
    "extra_holes": 0,
-   "seconds": 4.92,
+   "seconds": 4.25,
    "notes": [
     "camera intrinsics: exif; camera 305 mm above the mat, tilt 2.2\u00b0",
     "threshold segmentation: background model from the stage border, contrast 135/255"
@@ -3924,7 +3924,7 @@
    "n_scored": 1,
    "missed": [],
    "extra_holes": 0,
-   "seconds": 5.12,
+   "seconds": 5.08,
    "notes": [
     "camera intrinsics: exif; camera 277 mm above the mat, tilt 1.8\u00b0",
     "threshold segmentation: background model from the stage border, contrast 226/255"
@@ -3943,7 +3943,7 @@
    "n_scored": 1,
    "missed": [],
    "extra_holes": 0,
-   "seconds": 5.77,
+   "seconds": 4.85,
    "notes": [
     "camera intrinsics: exif; camera 366 mm above the mat, tilt 5.2\u00b0",
     "threshold segmentation: background model from the stage border, contrast 268/255"
@@ -3962,7 +3962,7 @@
    "n_scored": 1,
    "missed": [],
    "extra_holes": 0,
-   "seconds": 4.59,
+   "seconds": 3.54,
    "notes": [
     "camera intrinsics: exif; camera 402 mm above the mat, tilt 6.8\u00b0",
     "threshold segmentation: background model from the stage border, contrast 142/255"
@@ -3981,7 +3981,7 @@
    "n_scored": 1,
    "missed": [],
    "extra_holes": 0,
-   "seconds": 5.65,
+   "seconds": 5.8,
    "notes": [
     "camera intrinsics: exif; camera 345 mm above the mat, tilt 3.8\u00b0",
     "threshold segmentation: background model from the stage border, contrast 255/255"
@@ -4000,7 +4000,7 @@
    "n_scored": 1,
    "missed": [],
    "extra_holes": 0,
-   "seconds": 3.12,
+   "seconds": 3.1,
    "notes": [
     "camera intrinsics: exif; camera 346 mm above the mat, tilt 12.0\u00b0",
     "threshold segmentation: background model from the stage border, contrast 358/255"
@@ -4019,7 +4019,7 @@
    "n_scored": 1,
    "missed": [],
    "extra_holes": 0,
-   "seconds": 6.79,
+   "seconds": 5.85,
    "notes": [
     "camera intrinsics: exif; camera 301 mm above the mat, tilt 12.4\u00b0",
     "threshold segmentation: background model from the stage border, contrast 268/255"
@@ -4038,7 +4038,7 @@
    "n_scored": 1,
    "missed": [],
    "extra_holes": 0,
-   "seconds": 6.5,
+   "seconds": 5.6,
    "notes": [
     "camera intrinsics: exif; camera 310 mm above the mat, tilt 5.6\u00b0",
     "threshold segmentation: background model from the stage border, contrast 346/255"
@@ -4057,7 +4057,7 @@
    "n_scored": 1,
    "missed": [],
    "extra_holes": 0,
-   "seconds": 4.91,
+   "seconds": 4.45,
    "notes": [
     "camera intrinsics: exif; camera 340 mm above the mat, tilt 2.3\u00b0",
     "threshold segmentation: background model from the stage border, contrast 272/255"
@@ -4076,7 +4076,7 @@
    "n_scored": 1,
    "missed": [],
    "extra_holes": 0,
-   "seconds": 4.17,
+   "seconds": 3.89,
    "notes": [
     "camera intrinsics: exif; camera 298 mm above the mat, tilt 5.1\u00b0",
     "threshold segmentation: background model from the stage border, contrast 359/255"
@@ -4095,7 +4095,7 @@
    "n_scored": 1,
    "missed": [],
    "extra_holes": 0,
-   "seconds": 6.99,
+   "seconds": 5.9,
    "notes": [
     "camera intrinsics: exif; camera 373 mm above the mat, tilt 1.6\u00b0",
     "threshold segmentation: background model from the stage border, contrast 191/255"
@@ -4114,7 +4114,7 @@
    "n_scored": 1,
    "missed": [],
    "extra_holes": 0,
-   "seconds": 3.42,
+   "seconds": 3.04,
    "notes": [
     "camera intrinsics: exif; camera 418 mm above the mat, tilt 4.5\u00b0",
     "threshold segmentation: background model from the stage border, contrast 225/255"
@@ -4133,7 +4133,7 @@
    "n_scored": 1,
    "missed": [],
    "extra_holes": 0,
-   "seconds": 6.21,
+   "seconds": 5.8,
    "notes": [
     "camera intrinsics: exif; camera 389 mm above the mat, tilt 2.2\u00b0",
     "threshold segmentation: background model from the stage border, contrast 169/255"
@@ -4152,7 +4152,7 @@
    "n_scored": 1,
    "missed": [],
    "extra_holes": 0,
-   "seconds": 4.25,
+   "seconds": 4.17,
    "notes": [
     "camera intrinsics: exif; camera 367 mm above the mat, tilt 7.2\u00b0",
     "threshold segmentation: background model from the stage border, contrast 256/255"
@@ -4171,7 +4171,7 @@
    "n_scored": 1,
    "missed": [],
    "extra_holes": 0,
-   "seconds": 4.39,
+   "seconds": 4.15,
    "notes": [
     "camera intrinsics: exif; camera 372 mm above the mat, tilt 0.0\u00b0",
     "threshold segmentation: background model from the stage border, contrast 323/255"
@@ -4190,7 +4190,7 @@
    "n_scored": 1,
    "missed": [],
    "extra_holes": 0,
-   "seconds": 4.28,
+   "seconds": 3.94,
    "notes": [
     "camera intrinsics: exif; camera 286 mm above the mat, tilt 3.3\u00b0",
     "threshold segmentation: background model from the stage border, contrast 114/255"
@@ -4209,7 +4209,7 @@
    "n_scored": 1,
    "missed": [],
    "extra_holes": 0,
-   "seconds": 6.73,
+   "seconds": 6.01,
    "notes": [
     "camera intrinsics: exif; camera 351 mm above the mat, tilt 4.4\u00b0",
     "threshold segmentation: background model from the stage border, contrast 171/255"
@@ -4228,7 +4228,7 @@
    "n_scored": 1,
    "missed": [],
    "extra_holes": 0,
-   "seconds": 4.69,
+   "seconds": 4.13,
    "notes": [
     "camera intrinsics: exif; camera 423 mm above the mat, tilt 17.3\u00b0",
     "threshold segmentation: background model from the stage border, contrast 218/255"
@@ -4247,7 +4247,7 @@
    "n_scored": 1,
    "missed": [],
    "extra_holes": 0,
-   "seconds": 6.14,
+   "seconds": 5.96,
    "notes": [
     "camera intrinsics: exif; camera 358 mm above the mat, tilt 13.6\u00b0",
     "threshold segmentation: background model from the stage border, contrast 178/255"
@@ -4266,7 +4266,7 @@
    "n_scored": 1,
    "missed": [],
    "extra_holes": 0,
-   "seconds": 4.17,
+   "seconds": 3.43,
    "notes": [
     "camera intrinsics: exif; camera 404 mm above the mat, tilt 7.9\u00b0",
     "threshold segmentation: background model from the stage border, contrast 285/255"
@@ -4285,7 +4285,7 @@
    "n_scored": 1,
    "missed": [],
    "extra_holes": 0,
-   "seconds": 2.21,
+   "seconds": 2.28,
    "notes": [
     "camera intrinsics: exif; camera 413 mm above the mat, tilt 4.9\u00b0",
     "threshold segmentation: background model from the stage border, contrast 295/255"
@@ -4304,7 +4304,7 @@
    "n_scored": 1,
    "missed": [],
    "extra_holes": 0,
-   "seconds": 3.19,
+   "seconds": 2.82,
    "notes": [
     "camera intrinsics: exif; camera 362 mm above the mat, tilt 5.3\u00b0",
     "threshold segmentation: background model from the stage border, contrast 155/255"
@@ -4323,7 +4323,7 @@
    "n_scored": 1,
    "missed": [],
    "extra_holes": 0,
-   "seconds": 4.35,
+   "seconds": 4.04,
    "notes": [
     "camera intrinsics: exif; camera 368 mm above the mat, tilt 6.3\u00b0",
     "threshold segmentation: background model from the stage border, contrast 125/255"
@@ -4342,7 +4342,7 @@
    "n_scored": 1,
    "missed": [],
    "extra_holes": 0,
-   "seconds": 5.4,
+   "seconds": 6.07,
    "notes": [
     "camera intrinsics: exif; camera 385 mm above the mat, tilt 4.5\u00b0",
     "threshold segmentation: background model from the stage border, contrast 228/255"
@@ -4361,7 +4361,7 @@
    "n_scored": 1,
    "missed": [],
    "extra_holes": 0,
-   "seconds": 4.88,
+   "seconds": 5.1,
    "notes": [
     "camera intrinsics: exif; camera 365 mm above the mat, tilt 12.3\u00b0",
     "threshold segmentation: background model from the stage border, contrast 276/255"
@@ -4380,7 +4380,7 @@
    "n_scored": 1,
    "missed": [],
    "extra_holes": 0,
-   "seconds": 5.95,
+   "seconds": 5.17,
    "notes": [
     "camera intrinsics: exif; camera 290 mm above the mat, tilt 3.5\u00b0",
     "threshold segmentation: background model from the stage border, contrast 244/255"
@@ -4399,7 +4399,7 @@
    "n_scored": 1,
    "missed": [],
    "extra_holes": 0,
-   "seconds": 5.22,
+   "seconds": 3.7,
    "notes": [
     "camera intrinsics: exif; camera 367 mm above the mat, tilt 7.6\u00b0",
     "threshold segmentation: background model from the stage border, contrast 317/255"
@@ -4418,7 +4418,7 @@
    "n_scored": 1,
    "missed": [],
    "extra_holes": 0,
-   "seconds": 3.93,
+   "seconds": 4.17,
    "notes": [
     "camera intrinsics: exif; camera 369 mm above the mat, tilt 2.3\u00b0",
     "threshold segmentation: background model from the stage border, contrast 243/255"
@@ -4437,7 +4437,7 @@
    "n_scored": 1,
    "missed": [],
    "extra_holes": 0,
-   "seconds": 3.33,
+   "seconds": 3.51,
    "notes": [
     "camera intrinsics: exif; camera 353 mm above the mat, tilt 1.7\u00b0",
     "threshold segmentation: background model from the stage border, contrast 197/255"
@@ -4456,7 +4456,7 @@
    "n_scored": 1,
    "missed": [],
    "extra_holes": 0,
-   "seconds": 3.05,
+   "seconds": 3.32,
    "notes": [
     "camera intrinsics: exif; camera 383 mm above the mat, tilt 2.3\u00b0",
     "threshold segmentation: background model from the stage border, contrast 205/255"
@@ -4475,7 +4475,7 @@
    "n_scored": 1,
    "missed": [],
    "extra_holes": 0,
-   "seconds": 4.95,
+   "seconds": 5.06,
    "notes": [
     "camera intrinsics: exif; camera 228 mm above the mat, tilt 3.6\u00b0",
     "threshold segmentation: background model from the stage border, contrast 262/255"
@@ -4494,7 +4494,7 @@
    "n_scored": 1,
    "missed": [],
    "extra_holes": 0,
-   "seconds": 5.2,
+   "seconds": 4.3,
    "notes": [
     "camera intrinsics: exif; camera 417 mm above the mat, tilt 5.9\u00b0",
     "threshold segmentation: background model from the stage border, contrast 343/255"
@@ -4513,7 +4513,7 @@
    "n_scored": 1,
    "missed": [],
    "extra_holes": 0,
-   "seconds": 5.34,
+   "seconds": 5.27,
    "notes": [
     "camera intrinsics: exif; camera 325 mm above the mat, tilt 6.3\u00b0",
     "threshold segmentation: background model from the stage border, contrast 229/255"
@@ -4532,7 +4532,7 @@
    "n_scored": 1,
    "missed": [],
    "extra_holes": 0,
-   "seconds": 3.84,
+   "seconds": 3.61,
    "notes": [
     "camera intrinsics: exif; camera 405 mm above the mat, tilt 0.4\u00b0",
     "threshold segmentation: background model from the stage border, contrast 289/255"
@@ -4551,7 +4551,7 @@
    "n_scored": 1,
    "missed": [],
    "extra_holes": 0,
-   "seconds": 3.51,
+   "seconds": 3.38,
    "notes": [
     "camera intrinsics: exif; camera 346 mm above the mat, tilt 3.5\u00b0",
     "threshold segmentation: background model from the stage border, contrast 255/255"
@@ -4570,7 +4570,7 @@
    "n_scored": 1,
    "missed": [],
    "extra_holes": 0,
-   "seconds": 4.87,
+   "seconds": 4.58,
    "notes": [
     "camera intrinsics: exif; camera 339 mm above the mat, tilt 5.1\u00b0",
     "threshold segmentation: background model from the stage border, contrast 56/255"
@@ -4589,7 +4589,7 @@
    "n_scored": 1,
    "missed": [],
    "extra_holes": 0,
-   "seconds": 3.87,
+   "seconds": 3.77,
    "notes": [
     "camera intrinsics: exif; camera 395 mm above the mat, tilt 3.1\u00b0",
     "threshold segmentation: background model from the stage border, contrast 142/255"
@@ -8583,7 +8583,7 @@
    "gt_mm": 33.1,
    "measured_mm": 18.225,
    "error_mm": -14.875,
-   "accepted": true,
+   "accepted": false,
    "preset": "white-part",
    "group": "bracket",
    "mat_id": "screen-m",
@@ -8600,7 +8600,7 @@
    "gt_mm": 15.8,
    "measured_mm": 17.172,
    "error_mm": 1.372,
-   "accepted": true,
+   "accepted": false,
    "preset": "white-part",
    "group": "bracket",
    "mat_id": "screen-m",
@@ -10072,5 +10072,5 @@
    "profile": "flat"
   }
  ],
- "runtime_s": 135.1
+ "runtime_s": 117.6
 }

@@ -7,7 +7,7 @@ tests) and are meant to be re-tuned on real phone photos.
 
 from __future__ import annotations
 
-from typing import Literal
+from typing import Any, Literal, cast
 
 import cv2
 import numpy as np
@@ -44,18 +44,27 @@ MOIRE_FAIL = 5.0
 SCALE_WARN = 0.015
 SCALE_FAIL = 0.03
 PATCH_PX_PER_CELL = 8
+# Contrast: share of the outline whose inside/outside colours differ by less than EDGE_MIN_CONTRAST (8-bit units, the
+# same order as the segmenter's minimum contrast). Also fail when the part's median colour is that close to the stage,
+# when the segmentation fell apart into pieces, or when the mask is implausibly ragged.
+EDGE_MIN_CONTRAST = 20.0
+CONTRAST_WARN_WEAK = 0.08
+CONTRAST_FAIL_WEAK = 0.20
+CONTRAST_MIN_SEPARATION = 20.0
+CONTRAST_MIN_LARGEST_FRACTION = 0.85
+CONTRAST_MIN_SOLIDITY = 0.25
+# A part whose colour is the stage colour slightly darkened (white, off-white, light grey on a white stage) cannot be
+# told from its own shadow or reliably from the stage.
+CONE_CHROMA_TOL = 16.0  # same tolerance the segmenter uses to call a part shadow-coloured
+CONE_MIN_RATIO = 0.70  # wider than the segmenter's 0.78: light-grey parts on a white stage are sent to the dark stage
 
 
 def _check(
     name: str, sev: Severity, reason: str, value: float | None = None, threshold: float | None = None
 ) -> CaptureCheck:
+    v = None if value is None else round(float(value), 4)
     return CaptureCheck(
-        name=name,
-        passed=sev != "fail",
-        severity=sev,
-        value=None if value is None else round(float(value), 4),
-        threshold=threshold,
-        reason=reason,
+        name=cast(Any, name), passed=sev != "fail", severity=sev, value=v, threshold=threshold, reason=reason
     )
 
 
@@ -429,13 +438,126 @@ def check_scale(det: MatDetection | None) -> CaptureCheck:
     return _check("scale", "ok", "Marker sizes match the mat.", dev, SCALE_WARN)
 
 
-_ORDER = ("markers", "reprojection", "scale", "coverage", "glare", "tilt", "blur", "moire", "exposure")
+def edge_contrast(img: U8, det: MatDetection, mask: BoolMask, n_points: int = 360) -> tuple[float, float, float]:
+    """(share of the part's outline with weak contrast, median contrast across the outline, part/stage colour distance).
+
+    Contrast across the outline = colour distance between the mean of 0.4–1.2 mm inside and 0.4–1.2 mm outside the
+    mask edge, along the edge normal. A mask that follows real edges has strong contrast everywhere; one that leaked
+    into or stopped inside a part that blends with the stage has long stretches of weak contrast.
+    """
+    cs, _ = cv2.findContours(mask.astype(np.uint8), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_NONE)
+    if not cs:
+        return 1.0, 0.0, 0.0
+    c = max(cs, key=cv2.contourArea).reshape(-1, 2).astype(np.float64)
+    if len(c) < 20:
+        return 1.0, 0.0, 0.0
+    ys, xs = np.nonzero(mask)
+    ppm = det.px_per_mm_at(tuple(det.to_mm(np.array([[xs.mean(), ys.mean()]]))[0]))
+    idx = np.linspace(0, len(c) - 1, min(n_points, len(c))).astype(int)
+    k = max(2, len(c) // 200)
+    tang = np.roll(c, -k, axis=0) - np.roll(c, k, axis=0)
+    tang = tang[idx] / np.maximum(np.linalg.norm(tang[idx], axis=1, keepdims=True), 1e-9)
+    nrm = np.c_[-tang[:, 1], tang[:, 0]]
+    p = c[idx]
+    # orient normals outwards: the inside sample must land on the mask
+    probe = np.round(p - nrm * 0.8 * ppm).astype(int)
+    h, w = mask.shape
+    probe[:, 0] = np.clip(probe[:, 0], 0, w - 1)
+    probe[:, 1] = np.clip(probe[:, 1], 0, h - 1)
+    flip = ~mask[probe[:, 1], probe[:, 0]]
+    nrm[flip] *= -1
+    offs = np.linspace(0.4, 1.2, 5) * ppm
+    imgf = img.astype(np.float32)
+
+    def sample(sign: float) -> NDArray[np.float32]:
+        pts = p[:, None, :] + sign * offs[None, :, None] * nrm[:, None, :]
+        vals = cv2.remap(
+            imgf,
+            pts[..., 0].astype(np.float32),
+            pts[..., 1].astype(np.float32),
+            cv2.INTER_LINEAR,
+            borderMode=cv2.BORDER_REPLICATE,
+        )
+        return np.asarray(vals.mean(axis=1), dtype=np.float32)
+
+    inside, outside = sample(-1.0), sample(1.0)
+    d = np.linalg.norm(inside - outside, axis=1)
+    core = cv2.erode(mask.astype(np.uint8), np.ones((5, 5), np.uint8)) > 0
+    st = _poly_mask(mask.shape, det.to_px(det.mat.stage.corners()))
+    bg = st & ~(cv2.dilate(mask.astype(np.uint8), np.ones((15, 15), np.uint8)) > 0)
+    sep = 0.0
+    if core.any() and bg.any():
+        sep = float(np.linalg.norm(np.median(imgf[core], axis=0) - np.median(imgf[bg], axis=0)))
+    return float(np.mean(d < EDGE_MIN_CONTRAST)), float(np.median(d)), sep
+
+
+def part_in_shadow_cone(img: U8, det: MatDetection, mask: BoolMask) -> bool:
+    """True when the part's median colour is the stage's colour scaled by 0.70–1.05 (same chroma)."""
+    core = cv2.erode(mask.astype(np.uint8), np.ones((5, 5), np.uint8)) > 0
+    st = _poly_mask(mask.shape, det.to_px(det.mat.stage.corners()))
+    bg = st & ~(cv2.dilate(mask.astype(np.uint8), np.ones((15, 15), np.uint8)) > 0)
+    if not core.any() or not bg.any():
+        return False
+    imgf = img.astype(np.float32)
+    P = np.median(imgf[core], axis=0)
+    B = np.median(imgf[bg], axis=0)
+    k = float(P @ B / max(float(B @ B), 1e-6))
+    chroma = float(np.linalg.norm(P - k * B))
+    return CONE_MIN_RATIO <= k <= 1.05 and chroma < CONE_CHROMA_TOL
+
+
+def check_contrast(
+    img: U8,
+    det: MatDetection | None,
+    mask: BoolMask | None,
+    largest_fraction: float | None = None,
+) -> CaptureCheck:
+    if det is None or mask is None or not mask.any():
+        return _check("contrast", "ok", "Contrast not checked yet (no part mask).")
+    img3 = img if img.ndim == 3 else np.asarray(cv2.cvtColor(img, cv2.COLOR_GRAY2BGR), dtype=np.uint8)
+    weak, med, sep = edge_contrast(img3, det, mask)
+    like_shadow = part_in_shadow_cone(img3, det, mask)
+    st = _poly_mask(mask.shape, det.to_px(det.mat.stage.corners()))
+    stage_lum = float(np.median(_gray(img3)[st & ~mask])) if (st & ~mask).any() else 255.0
+    fix = (
+        "switch the screen mat to the dark stage (or use a darker surface)"
+        if stage_lum >= 128
+        else "switch the screen mat to the light stage (or use a lighter surface)"
+    )
+    reason = f"The part blends into the background — {fix}."
+    frag = largest_fraction is not None and largest_fraction < CONTRAST_MIN_LARGEST_FRACTION
+    hull = cv2.convexHull(np.argwhere(mask)[:, ::-1].astype(np.int32))
+    solidity = float(mask.sum()) / max(float(cv2.contourArea(hull)), 1.0)
+    if (
+        weak > CONTRAST_FAIL_WEAK
+        or sep < CONTRAST_MIN_SEPARATION
+        or frag
+        or solidity < CONTRAST_MIN_SOLIDITY
+        or like_shadow
+    ):
+        return _check("contrast", "fail", reason, weak, CONTRAST_FAIL_WEAK)
+    if weak > CONTRAST_WARN_WEAK:
+        return _check(
+            "contrast", "warn", f"Parts of the outline are faint — {fix} for cleaner edges.", weak, CONTRAST_FAIL_WEAK
+        )
+    return _check(
+        "contrast", "ok", f"The part stands out from the stage (edge contrast {med:.0f}/255).", weak, CONTRAST_FAIL_WEAK
+    )
+
+
+_ORDER = ("markers", "reprojection", "scale", "coverage", "contrast", "glare", "tilt", "blur", "moire", "exposure")
 
 
 def run_gate(
-    img: U8, det: MatDetection | None, mask: BoolMask | None = None, *, pose: PoseEstimate | None = None
+    img: U8,
+    det: MatDetection | None,
+    mask: BoolMask | None = None,
+    *,
+    pose: PoseEstimate | None = None,
+    largest_fraction: float | None = None,
 ) -> CaptureReport:
-    """All capture checks. `mask` (full-frame part mask) enables the coverage and part-exposure checks."""
+    """All capture checks. `mask` (full-frame part mask) enables the coverage, contrast and part-exposure checks;
+    `largest_fraction` (share of the segmenter's foreground in its largest component) feeds the contrast check."""
     if det is not None and pose is None:
         try:
             pose = estimate_pose(det)
@@ -447,6 +569,7 @@ def run_gate(
         check_reprojection(det),
         check_blur(gray, det),
         check_coverage(det, mask),
+        check_contrast(img, det, mask, largest_fraction),
         check_tilt(pose),
         check_exposure(img, det, mask),
         check_glare(img, det, mask),

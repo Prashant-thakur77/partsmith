@@ -266,9 +266,12 @@ def render_mat_view(
     surround_bgr: BGR = (48, 46, 44),
     screen_margin_mm: float = 4.0,
     texture_px_per_mm: float | None = None,
+    stage_bgr: BGR | None = None,
 ) -> U8:
-    """The mat (plus a white margin standing for the rest of the screen / page) seen by `cam`; `surround_bgr` elsewhere."""
-    get_mat(mat_id)  # validates the id early with a helpful error
+    """The mat (plus a white margin standing for the rest of the screen / page) seen by `cam`; `surround_bgr` elsewhere.
+
+    `stage_bgr` fills the plain stage with another colour (e.g. the screen mat's dark stage, `mats.STAGE_COLOURS`)."""
+    mat = get_mat(mat_id)
     w, h = cam.size
     if texture_px_per_mm is None:
         res = cam.K[0, 0] / max(cam.height_mm, 1.0)
@@ -289,8 +292,47 @@ def render_mat_view(
     lum = np.divide(val_f, cov_f, out=np.zeros_like(val_f), where=cov_f > 1e-6)
     wb, bb, sb = (np.array(c, np.float32) for c in (white_bgr, black_bgr, surround_bgr))
     mat_rgb = bb[None, None, :] + (wb - bb)[None, None, :] * lum[..., None]
+    if stage_bgr is not None:
+        st = mat.stage
+        sc = np.zeros(canvas.shape, np.float32)
+        ex = np.asarray([(st.x_mm + m_mm) * ppm, (st.x2_mm + m_mm) * ppm], dtype=np.float64)
+        ey = np.asarray([(st.y_mm + m_mm) * ppm, (st.y2_mm + m_mm) * ppm], dtype=np.float64)
+        ox = _overlap_1d(ex, canvas.shape[1])
+        oy = _overlap_1d(ey, canvas.shape[0])
+        sc[:] = np.outer(oy, ox)
+        sw = cv2.warpPerspective(sc, M, (w * ss, h * ss), flags=cv2.INTER_LINEAR, borderValue=0)
+        sw_f = cv2.resize(sw, (w, h), interpolation=cv2.INTER_AREA)
+        a = np.divide(sw_f, cov_f, out=np.zeros_like(sw_f), where=cov_f > 1e-6)[..., None]
+        mat_rgb = mat_rgb * (1 - a) + np.array(stage_bgr, np.float32)[None, None, :] * a
     out = mat_rgb * cov_f[..., None] + sb[None, None, :] * (1 - cov_f[..., None])
     return np.clip(np.round(out), 0, 255).astype(np.uint8)
+
+
+def _overlap_1d(edges_px: F64, n: int) -> F64:
+    j = np.arange(n, dtype=np.float64)
+    return np.asarray(np.clip(np.minimum(j + 1, edges_px[1]) - np.maximum(j, edges_px[0]), 0.0, 1.0), dtype=np.float64)
+
+
+def cast_shadow(
+    footprint_mm: F64, direction_deg: float, length_mm: float, strength: float, soft_mm: float
+) -> Callable[[U8, Camera], U8]:
+    """An `under=` hook: a soft shadow on the mat plane, the footprint swept `length_mm` along `direction_deg` and
+    darkened by `strength` (same chroma — what a lamp does to paper or a screen)."""
+
+    def draw(img: U8, cam: Camera) -> U8:
+        w, h = cam.size
+        a = math.radians(direction_deg)
+        d = np.array([math.cos(a), math.sin(a)]) * length_mm
+        fp = np.asarray(footprint_mm, dtype=np.float64)
+        groups = [[fp + d * t] for t in np.linspace(0.0, 1.0, 12)]
+        proj = [[cam.project(np.c_[g[0], np.zeros(len(g[0]))])] for g in groups]
+        m = rasterize((h, w), proj).astype(np.float32) / 255.0
+        ppm = cam.K[0, 0] / max(cam.height_mm, 1.0)
+        m = np.asarray(cv2.GaussianBlur(m, (0, 0), max(soft_mm * ppm / 2.0, 0.5)), dtype=np.float32)
+        out = img.astype(np.float32) * (1.0 - strength * m[..., None])
+        return np.clip(np.round(out), 0, 255).astype(np.uint8)
+
+    return draw
 
 
 @dataclass

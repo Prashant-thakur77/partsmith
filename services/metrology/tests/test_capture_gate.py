@@ -31,7 +31,18 @@ def test_good_photo_passes(good: T.Scene) -> None:
     rep, c = _checks(T.add_noise(good.image, 2.0), good.mask)
     assert rep.passed and rep.retake_reason is None
     assert all(x.severity == "ok" for x in rep.checks), [(x.name, x.reason) for x in rep.checks if x.severity != "ok"]
-    assert set(c) == {"markers", "reprojection", "blur", "coverage", "tilt", "exposure", "glare", "moire", "scale"}
+    assert set(c) == {
+        "markers",
+        "reprojection",
+        "blur",
+        "coverage",
+        "contrast",
+        "tilt",
+        "exposure",
+        "glare",
+        "moire",
+        "scale",
+    }
     for x in rep.checks:
         assert x.reason.endswith(".")
 

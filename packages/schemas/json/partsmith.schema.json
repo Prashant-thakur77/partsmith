@@ -573,7 +573,8 @@
             "exposure",
             "glare",
             "moire",
-            "scale"
+            "scale",
+            "contrast"
           ],
           "title": "Name",
           "type": "string"

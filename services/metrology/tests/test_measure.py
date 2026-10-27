@@ -10,7 +10,8 @@ from partsmith_schemas.measurement import Hole, ViewKind
 from shapely.geometry import Polygon
 
 from services.metrology import testing as T
-from services.metrology.mats import get_mat
+from services.metrology.calibrate import detect_mat
+from services.metrology.mats import STAGE_COLOURS, get_mat
 from services.metrology.measure import MeasureOutput, measure_photo
 from services.metrology.segment import ThresholdSegmenter
 
@@ -143,3 +144,187 @@ def test_empty_stage() -> None:
     out = measure_photo(sc.image, "top", segmenter=ThresholdSegmenter())
     assert out.result.measurements is None and out.result.calibration is not None
     assert not out.result.capture.passed
+
+
+def _caster_plate(dx: float, hole_d: float, h: float) -> tuple[T.PrismPart, list[tuple[float, float]]]:
+    cx, cy = _centre("screen-l", dx, 0)
+    hs = [(cx + ox, cy + oy) for ox in (-17, 17) for oy in (-17, 17)] if hole_d >= 4 else [(cx - 15, cy), (cx + 15, cy)]
+    body = T.rounded_rect_poly(cx, cy, 50, 50 if hole_d >= 4 else 24, 5)
+    return T.PrismPart(body, [T.circle_poly(x, y, hole_d) for x, y in hs], thickness_mm=h), hs
+
+
+def test_see_through_holes_of_a_thick_plate() -> None:
+    """10 mm plate, camera tilted 18°: each Ø5 hole shows the mat only through a narrow lens. Fitting the hole as a
+    vertical cylinder (bottom disc ∩ projected top disc) recovers diameter and position."""
+    part, hs = _caster_plate(20, 5.0, 10.0)
+    cam = T.camera_above(_centre("screen-l"), height_mm=330, tilt_deg=18, azimuth_deg=160)
+    sc = T.render_part_scene("screen-l", cam, part)
+    out = measure_photo(sc.image, "top", segmenter=ThresholdSegmenter(), thickness_mm=10.0, K=cam.K)
+    m = out.result.measurements
+    assert m is not None and len(m.holes) == 4
+    for hole in m.holes:
+        c = _hole_mat(out, hole)
+        assert min(np.hypot(c[0] - x, c[1] - y) for x, y in hs) < TOL_MM
+        assert abs(hole.diameter.value - 5.0) < TOL_MM
+        assert hole.diameter.evidence is not None and "see-through fit, h=10.0 mm" in (
+            hole.diameter.evidence.note or ""
+        )
+        assert 0 < hole.diameter.sigma_mm < 0.3
+    # Without the thickness the same photo cannot give the bores: the old behaviour is kept and said so.
+    raw = measure_photo(sc.image, "top", segmenter=ThresholdSegmenter(), thickness_mm=None, K=cam.K)
+    assert raw.result.measurements is not None
+    assert any("through-holes read small" in n for n in raw.result.measurements.notes)
+
+
+def test_hidden_hole_is_noted() -> None:
+    part, hs = _caster_plate(60, 2.5, 10.0)
+    cam = T.camera_above(_centre("screen-l"), height_mm=300, tilt_deg=18, azimuth_deg=0)
+    sc = T.render_part_scene("screen-l", cam, part)
+    out = measure_photo(sc.image, "top", segmenter=ThresholdSegmenter(), thickness_mm=10.0, K=cam.K)
+    m = out.result.measurements
+    assert m is not None and not m.holes
+    hidden = [n for n in m.notes if n.startswith("possible hidden hole")]
+    assert len(hidden) == 2
+    for (x, y), note in zip(sorted(hs), sorted(hidden), strict=True):
+        assert f"({x:.1f}, {y:.1f})" in note or f"({x:.1f}," in note
+
+
+def test_camera_frame_outputs() -> None:
+    part, _ = _plate("screen-m", 6.0)
+    cam = T.camera_above(_centre("screen-m"), height_mm=260, tilt_deg=10, azimuth_deg=30)
+    sc = T.render_part_scene("screen-m", cam, part)
+    out = measure_photo(sc.image, "top", segmenter=ThresholdSegmenter(), thickness_mm=6.0, K=cam.K)
+    assert out.K is not None and out.R is not None and out.t_mm is not None and out.part_to_mat is not None
+    np.testing.assert_allclose(out.R, cam.R, atol=2e-3)
+    np.testing.assert_allclose(out.t_mm, cam.t, atol=1.0)
+    assert out.photo_mask is not None and out.photo_mask.shape == sc.image.shape[:2]
+    assert out.H_top is not None and out.top_px_per_mm is not None
+    # the top face is closer to the camera, so it is imaged larger than the mat plane at the same spot
+    assert out.top_px_per_mm > out.detection.px_per_mm_at(_centre("screen-m", 8, -4))  # type: ignore[union-attr]
+
+
+def _hex_bgr(h: str) -> tuple[int, int, int]:
+    r, g, b = (int(h[i : i + 2], 16) for i in (1, 3, 5))
+    return b, g, r
+
+
+WHITE_PART = {"top_bgr": (212, 214, 214), "side_bgr": (186, 188, 188)}
+
+
+def test_white_part_white_stage_fails_contrast_dark_stage_measures() -> None:
+    body = T.rounded_rect_poly(105, 65, 42, 12, 2, 20)
+    part = T.PrismPart(body, [T.circle_poly(118, 70, 3.5)], thickness_mm=2.0)
+    part.top_bgr, part.side_bgr = WHITE_PART["top_bgr"], WHITE_PART["side_bgr"]
+    cam = T.camera_above((105, 65), height_mm=260, tilt_deg=6, azimuth_deg=30)
+    on_white = T.render_scene("screen-m", cam.K, cam.R, cam.t, cam.size, part)
+    out = measure_photo(T.add_noise(on_white.image, 2.0), "top", segmenter=ThresholdSegmenter(), thickness_mm=2.0)
+    c = next(x for x in out.result.capture.checks if str(x.name) == "contrast")
+    assert c.severity == "fail" and not out.result.capture.passed
+    assert "switch the screen mat to the dark stage" in c.reason
+    dark = _hex_bgr(STAGE_COLOURS["dark"])
+    on_dark = T.render_scene("screen-m", cam.K, cam.R, cam.t, cam.size, part, stage_bgr=dark)
+    out2 = measure_photo(T.add_noise(on_dark.image, 2.0), "top", segmenter=ThresholdSegmenter(), thickness_mm=2.0)
+    m = out2.result.measurements
+    assert out2.result.capture.passed, out2.result.capture.retake_reason
+    assert m is not None and abs(m.length.value - 42) < TOL_MM and abs(m.width.value - 12) < TOL_MM
+    assert len(m.holes) == 1 and abs(m.holes[0].diameter.value - 3.5) < TOL_MM
+
+
+def test_fragmented_mask_fails_contrast() -> None:
+    from services.metrology.capture_gate import check_contrast
+
+    part, _ = _plate("screen-m", 1.0)
+    cam = T.camera_above(_centre("screen-m"), height_mm=260, tilt_deg=6)
+    sc = T.render_part_scene("screen-m", cam, part)
+    det = detect_mat(sc.image)
+    c = check_contrast(sc.image, det, sc.mask, largest_fraction=0.4)
+    assert c.severity == "fail"
+    assert check_contrast(sc.image, det, sc.mask, largest_fraction=1.0).severity == "ok"
+
+
+@pytest.mark.parametrize("colour", [(40, 46, 52), (150, 150, 150)], ids=["dark", "mid-grey"])
+def test_cast_shadow_on_paper_is_not_part(colour: tuple[int, int, int]) -> None:
+    cx, cy = _centre("paper-a4")
+    disc = T.circle_poly(cx, cy, 16.0)
+    part = T.PrismPart(disc, [], thickness_mm=10.0, top_bgr=colour, side_bgr=tuple(int(v * 0.8) for v in colour))  # type: ignore[arg-type]
+    cam = T.camera_above((cx, cy), height_mm=320, tilt_deg=4, azimuth_deg=60)
+    shadow = T.cast_shadow(disc, 130.0, 7.0, 0.25, 2.5)
+    sc = T.render_scene("paper-a4", cam.K, cam.R, cam.t, cam.size, part, under=shadow, white_bgr=(214, 222, 226))
+    img = T.add_noise(sc.image, 2.5)
+    out = measure_photo(img, "top", segmenter=ThresholdSegmenter(), thickness_mm=10.0, K=cam.K)
+    m = out.result.measurements
+    assert m is not None
+    assert abs(m.length.value - 16.0) < TOL_MM and abs(m.width.value - 16.0) < TOL_MM
+    if colour[0] > 100:  # a mid-grey part is darker than the stage like its shadow: without suppression it grows
+        plain = measure_photo(
+            img, "top", segmenter=ThresholdSegmenter(suppress_shadows=False), thickness_mm=10.0, K=cam.K
+        )
+        assert plain.result.measurements is not None
+        assert plain.result.measurements.length.value - 16.0 > 1.0
+
+
+def test_side_view_of_a_thin_tall_card() -> None:
+    """An SD card (32 × 24 × 2.1 mm) standing on its long edge: its top edge shifts by more than its own thickness, so
+    the height-corrected outline keeps only a small share of the photo outline — that is correct, not a failure."""
+    cx, cy = _centre("screen-m", 30, 0)
+    part = T.PrismPart(T.rect_poly(cx, cy, 32.0, 2.1, 5.0), [], thickness_mm=24.0)
+    cam = T.camera_above(_centre("screen-m"), height_mm=330, tilt_deg=14, azimuth_deg=0)
+    sc = T.render_part_scene("screen-m", cam, part)
+    out = measure_photo(
+        sc.image, "side", segmenter=ThresholdSegmenter(), thickness_mm=24.0, K=cam.K, stated_thickness_mm=24.0
+    )
+    m = out.result.measurements
+    assert m is not None and m.thickness is not None
+    assert abs(m.thickness.value - 2.1) < TOL_MM and abs(m.length.value - 32.0) < TOL_MM
+    assert not any("taller than the plate" in n for n in m.notes)
+
+
+def test_side_view_flags_tall_features() -> None:
+    cx, cy = _centre("screen-m")
+    part = T.PrismPart(T.rect_poly(cx, cy, 40, 12, 0), [], thickness_mm=20.0)
+    cam = T.camera_above((cx, cy), height_mm=280, tilt_deg=6, azimuth_deg=90)
+    sc = T.render_part_scene("screen-m", cam, part)
+    out = measure_photo(
+        sc.image, "side", segmenter=ThresholdSegmenter(), thickness_mm=20.0, K=cam.K, stated_thickness_mm=3.0
+    )
+    assert out.result.measurements is not None
+    assert any("taller than the plate" in n for n in out.result.measurements.notes)
+
+
+def _cylinder(cx: float, cy: float, length: float, d: float, ang: float, n: int = 96) -> tuple[np.ndarray, np.ndarray]:
+    """Triangle mesh (mat frame, z into the table) of a cylinder lying on the mat with its axis at `ang` degrees."""
+    r = d / 2
+    a = np.linspace(0, 2 * np.pi, n, endpoint=False)
+    ring = np.c_[np.zeros(n), r * np.cos(a), -(r + r * np.sin(a))]
+    ca, sa = math.cos(math.radians(ang)), math.sin(math.radians(ang))
+    rot = np.array([[ca, -sa, 0], [sa, ca, 0], [0, 0, 1]])
+    ends = [ring + np.array([-length / 2, 0.0, 0.0]), ring + np.array([length / 2, 0.0, 0.0])]
+    verts = np.concatenate(ends) @ rot.T + np.array([cx, cy, 0.0])
+    faces = []
+    for i in range(n):
+        j = (i + 1) % n
+        faces += [[i, j, n + j], [i, n + j, n + i]]
+    c0 = len(verts)
+    verts = np.r_[
+        verts, [[cx - ca * length / 2, cy - sa * length / 2, -r], [cx + ca * length / 2, cy + sa * length / 2, -r]]
+    ]
+    for i in range(n):
+        j = (i + 1) % n
+        faces += [[c0, i, j], [c0 + 1, n + i, n + j]]
+    return verts, np.array(faces)
+
+
+@pytest.mark.parametrize(("length", "d"), [(50.5, 14.5), (16.0, 40.0)], ids=["aa-cell", "wheel-on-tread"])
+def test_round_profile(length: float, d: float) -> None:
+    mesh = _cylinder(120, 70, length, d, 20)
+    cam = T.camera_above((105, 65), height_mm=300, tilt_deg=12, azimuth_deg=30, f_px=2000, size=(2000, 1500))
+    sc = T.render_scene("screen-m", cam.K, cam.R, cam.t, cam.size, mesh)
+    prism = measure_photo(sc.image, "top", segmenter=ThresholdSegmenter(), thickness_mm=d, K=cam.K)
+    rnd = measure_photo(sc.image, "top", segmenter=ThresholdSegmenter(), thickness_mm=d, K=cam.K, profile="round")
+    mp, mr = prism.result.measurements, rnd.result.measurements
+    assert mp is not None and mr is not None
+    big, small = max(length, d), min(length, d)
+    err_r = max(abs(mr.length.value - big), abs(mr.width.value - small))
+    err_p = max(abs(mp.length.value - big), abs(mp.width.value - small))
+    assert err_r < TOL_MM and err_p > 0.3
+    assert any("round profile" in n for n in mr.notes)

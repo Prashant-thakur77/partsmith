@@ -51,3 +51,7 @@ A fresh session should read this file, `docs/ARCHITECTURE.md`, `docs/API.md` and
   PS-noHeightCorr on synthetic (n=6) + reference-object renders (n=4); real_ruler pending. Mock pipeline check only. First pass:
   PS synthetic verified 1/6, median 0.10 mm but mean 3.6 mm (glare/white-part failures); `--check-regression` wired for CI.
 - **Verifier camera-frame comparison** (`3237b2f`): posed 8 mm plate verifies at Hausdorff 0.07 mm; ±1 mm / Ø+0.4 mm still caught.
+- **Metrology round 2:** see-through hole fitting (thick-part holes 0/4 → 4/4 found, Ø error ≈ 0.02–0.03 mm on renders), hidden-hole
+  notes, shadow suppression, dark screen stage + `contrast` gate check, thin side views, round profiles. Synthetic measure-only bench
+  mean 1.503 → 0.628 mm (flat 0.172, tall features 0.984, side thickness 0.731, reference renders 0.194). Phase 1 gate (≤ 0.4 mm)
+  still FAIL on synthetic overall: tall features are a single-photo ambiguity, handled in the full loop by camera-frame verification.

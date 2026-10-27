@@ -49,6 +49,40 @@ homothety s = (Zc − h)/Zc about the camera nadir) and the two footprints are i
 that recovers the true outline on both the near (bottom edge visible) and far (top edge visible) sides, and keeps
 through-holes round. `height_scale(Zc, h)` is reported as `height_correction_scale`.
 
+## Through-holes in thick parts
+
+From above, a through-hole shows the mat only where its bottom opening (z = 0) and its top opening (z = h, shifted by
+parallax) overlap — a lens when the camera is off to one side. With the thickness and pose known, each see-through
+region is fitted as a vertical cylinder (`features.fit_see_through_hole`): the residual of a boundary point is
+max(|q − c| − r, |q − c'| − r/s), c' and r/s being the top opening projected onto the mat plane. σ combines the fit
+statistics with a refit at h ± 0.3 mm; `evidence.note` says "see-through fit, h=… mm". Small see-through regions are
+kept when the expected parallax shift is ≥ 0.1 mm. Bores that hide the mat completely are reported in `notes` as a
+"possible hidden hole" (a compact wall-coloured patch inside the top face), never invented as a hole.
+
+## Stage colour, contrast and shadows
+
+`mats.STAGE_COLOURS = {"light": "#FFFFFF", "dark": "#303030"}`: the screen mat may fill its stage with either (the
+marker ring stays black on white). The threshold segmenter models whatever uniform stage colour it sees. The gate's
+`contrast` check fails with "The part blends into the background — switch the screen mat to the dark stage (or use a
+darker surface)" when the part's colour is the stage colour slightly darkened (white, off-white, light grey on white),
+when the outline has long stretches without contrast, when the segmentation fell apart into pieces, or when the mask is
+implausibly ragged. Cast shadows (same chroma as the stage, 70–100 % of its brightness, no sharp structure) are removed
+unless the part itself has that colour; edges next to a shadow are located against the shadow, not the bare stage.
+
+## Side views, round profiles, tall features
+
+- Side view (part on its side): pass the top view's width as `thickness_mm`. A thin, tall object keeps only a small
+  share of its photo outline after the height correction; that is accepted (guard 5 % for side views, 25 % for top).
+- `profile="round"`: a cylinder lying on its curved side (AA cell, wheel on its tread), `thickness_mm` = diameter.
+  Curved sides come from silhouette rays tangent to the cylinder (mid-height plane, corrected by r(1/cos θ − 1)); the
+  flat ends from the prism outline.
+- `stated_thickness_mm` on a side view adds a note when the part stands clearly taller than the stated plate thickness.
+
+## Camera-frame outputs
+
+`MeasureOutput.K`, `.R`, `.t_mm` (from the pose), `.photo_mask` (full frame), `.part_to_mat`, `.H_top` and
+`.top_px_per_mm` (local image px per mm at the part centre on the plane used for measuring).
+
 ## Fit check
 
 The web page draws the `fit-outline` (mat frame) in `FIT_OUTLINE_RGB` (#E0218A); the threshold segmenter treats that

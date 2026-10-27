@@ -30,6 +30,12 @@ GRID_CELLS = MARKER_BITS + 2
 
 ID1_CARD_MM = (85.60, 53.98)
 
+# Stage fills the screen mat can show (sRGB hex). Light suits dark and coloured parts; dark suits white, grey and beige
+# parts. The marker ring always stays black on white. Dark is a deep grey, not black: a glossy screen showing black
+# mirrors the room and the phone, which a grey's own light partly masks.
+STAGE_COLOURS: dict[str, str] = {"light": "#FFFFFF", "dark": "#303030"}
+DEFAULT_STAGE = "light"
+
 
 @dataclass(frozen=True)
 class Rect:
