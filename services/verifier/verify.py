@@ -14,6 +14,9 @@ measured values, run the part tests, and apply the pass rule:
                AND, on every smaller view, mean contour distance <= 0.15 mm
                AND no blocking judge veto
 
+Functional probes (`functional.py`: which screws pass each hole, declared interface fits, printability) are added
+as P1 tests and summarised in ``VerifyOutput.functional``; they never take part in the pass rule.
+
 IoU depends on scale: for an L x L square with a uniform edge error e, IoU ~ 1 - 4e/L, so a 0.1 mm error already
 costs 3 % IoU at 13 mm and 12 % on a 1.5 mm side profile. Views under 20 mm are therefore gated on the two
 scale-free distances (Hausdorff and mean contour distance) plus their part tests; their IoU is still reported.
@@ -45,11 +48,13 @@ from partsmith_schemas.verification import (
 )
 from scipy.optimize import linear_sum_assignment
 
+from services.geom_worker.bake import part_facts
 from services.geom_worker.sandbox import ExecResult
 from services.verifier import VERIFIER_VERSION
 from services.verifier import metrics as M
 from services.verifier.align import Rigid2D, align
 from services.verifier.camera import CameraCompare, CameraView, compare_camera
+from services.verifier.functional import FunctionalProbe, as_part_tests, run_probes
 from services.verifier.part_tests import (
     CENTER_TOL_MM,
     DEPTH_TOL_MM,
@@ -111,6 +116,8 @@ class VerifyOutput:
     # Values the tests used ("bbox.x", "hole:hole_1.diameter", ...) plus the true CAD dimensions under "cad.*".
     model_values: dict[str, Value] = field(default_factory=dict)
     view_gates: dict[str, list[str]] = field(default_factory=dict)  # view -> gates applied ("hausdorff", "iou")
+    # Functional probes (screws, interfaces, printability): {"passed", "total", "probes": [FunctionalProbe dicts]}.
+    functional: dict[str, Any] = field(default_factory=dict)
 
 
 # ----------------------------------------------------------------------------------------------- helpers
@@ -321,8 +328,18 @@ def verify(
         view_results[view] = vr
         view_metrics.append(vr.metrics)
 
-    residuals, values, hole_reasons = _model_values(exec_result, feats, measurements, partspec, view_results)
+    hole_names: dict[int, str] = {}
+    residuals, values, hole_reasons = _model_values(
+        exec_result, feats, measurements, partspec, view_results, hole_names
+    )
     tests = evaluate_tests(generate_tests(partspec, measurements), values)
+    probes = _functional(exec_result, feats, hole_names)
+    tests += as_part_tests(probes)  # P1: reported, never part of the pass rule
+    functional = {
+        "passed": sum(p.passed for p in probes),
+        "total": len(probes),
+        "probes": [p.to_dict() for p in probes],
+    }
     residuals.sort(key=lambda r: abs(r.delta_mm), reverse=True)
 
     # ---- the pass rule (PLAN §6.5), exactly
@@ -359,7 +376,26 @@ def verify(
         ms=int((time.perf_counter() - t0) * 1000),
         **base,
     )
-    return VerifyOutput(v, overlays, view_results, values, view_gates)
+    return VerifyOutput(v, overlays, view_results, values, view_gates, functional)
+
+
+def _functional(
+    exec_result: ExecResult, feats: SolidFeatures | None, hole_names: Mapping[int, str]
+) -> list[FunctionalProbe]:
+    """Screw, interface and printability probes for the executed model (all informational)."""
+    if feats is None or exec_result.mesh is None or exec_result.solid_info is None:
+        return []
+    holes = [(hole_names.get(j, f"model_hole_{j + 1}"), h) for j, h in enumerate(feats.holes)]
+    facts, over = part_facts(exec_result.solid_info.volume_mm3, exec_result.mesh)
+    key = facts.orientation.split(":")[0]
+    return run_probes(
+        holes,
+        (exec_result.features or {}).get("interfaces") or [],
+        min_wall_mm=feats.min_wall_mm,
+        overhang_mm2=over.get(key),
+        area_mm2=exec_result.solid_info.area_mm2,
+        orientation=facts.orientation.split(": ", 1)[-1],
+    )
 
 
 def _validity(exec_result: ExecResult) -> Validity | None:
@@ -410,6 +446,7 @@ def _model_values(
     measurements: Mapping[str, Measurements],
     partspec: PartSpec | None,
     views: Mapping[str, ViewResult],
+    hole_names: dict[int, str] | None = None,
 ) -> tuple[list[FeatureResidual], dict[str, Value], list[str]]:
     """Model values for the tests, residual rows and notes.
 
@@ -482,6 +519,8 @@ def _model_values(
     cad_match = _match(ec, ed, cad_c, cad_d)
     for i, j in cad_match.items():
         values[f"cad.hole:{exp[i].id}.diameter"] = float(cad_d[j])
+    if hole_names is not None:  # model hole index -> the measured hole's id, for the functional probes
+        hole_names.update({j: exp[i].id for i, j in cad_match.items()})
 
     if top_mm is not None and vr_top is not None and vr_top.camera is not None:
         # Model holes as measured from its render, moved into the photo's part frame through the mat.

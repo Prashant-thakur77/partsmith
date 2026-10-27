@@ -62,7 +62,7 @@ def build(p: dict[str, float]) -> cq.Workplane:
     n = int(p["hole_count"])
     hole_d = min(p["hole_d"], body_w - 6.0)
     csk = min(hole_d * 2.0, body_w - 3.0)
-    e = max(csk, 5.0)
+    e = 7.0  # end hole centre from the leaf end: fixed, so holes stay put when their size changes
     ys = y0 + (body_w - rk) / 2
     xs = [0.0] if n == 1 else [-length / 2 + e + (length - 2 * e) * i / (n - 1) for i in range(n)]
     leaf = leaf.faces(">Z").workplane(centerOption="ProjectedOrigin").pushPoints([(x, ys) for x in xs])
@@ -87,6 +87,29 @@ def build(p: dict[str, float]) -> cq.Workplane:
         part = part.union(knuckle).union(web)
     pin = cq.Workplane("YZ", origin=(-length / 2 - 1, 0, 0)).center(yk, zk).circle(p["pin_d"] / 2)
     return part.cut(pin.extrude(length + 2))
+
+
+def interfaces(p: dict[str, float]) -> list[dict[str, str | float | list[float]]]:
+    """Mating interfaces for the functional probes: the pin hole, probed inside the first knuckle."""
+    length, wl, t = p["length"], p["leaf_width"], p["thickness"]
+    rk = min(p["pin_d"] / 2 + p["knuckle_wall"], (wl - 6.0) / 2)
+    zk = max(rk, t / 2) + 0.2
+    yk = wl / 2 - rk
+    k, phase = int(p["knuckle_count"]), int(p["knuckle_phase"])
+    seg = length / (2 * k - 1 + 2 * phase)
+    half = seg * p["knuckle_fill"] / 2
+    for i in range(k):
+        c = -length / 2 + (2 * i + phase + 0.5) * seg + p["knuckle_offset"]
+        lo, hi = max(c - half, -length / 2), min(c + half, length / 2)
+        if hi - lo >= 1.0:
+            return [
+                {
+                    "id": "pin_hole", "label": "hinge pin hole", "mate_label": "pin",
+                    "at": [(lo + hi) / 2, yk, zk], "axis": [0.0, 1.0, 0.0],
+                    "mates": [1.5, 2.0, 2.5, 3.0, 4.0, 5.0, 6.0],
+                }
+            ]  # fmt: skip
+    return []
 
 
 result = build({k: v[0] for k, v in PARAMS.items()})

@@ -42,12 +42,15 @@ PARAMS = {  # name: (default, min, max, step, unit, affects_fit, label)
 }
 
 
+SCREW_TAB_MM = 9.0  # screw tab length: fixed, so the holes stay put when their size changes
+
+
 def build(p: dict[str, float]) -> cq.Workplane:
     length, width, t = p["length"], p["width"], p["base_thickness"]
     wall = p["wall"]
     holes = int(p["hole_count"])
     hole_d = min(p["hole_d"], width - 2.4)
-    tab = 2 * hole_d + 2.0 if holes > 0 else 1.0
+    tab = SCREW_TAB_MM if holes > 0 else 1.0
     n = int(p["channel_count"])
     region = length - 2 * tab
     gap_c = p["channel_gap"]
@@ -75,6 +78,26 @@ def build(p: dict[str, float]) -> cq.Workplane:
         wedge = [(x, zc), (x + reach * sa / ca, zc + reach), (x - reach * sa / ca, zc + reach)]
         part = part.cut(cq.Workplane("XZ").polyline(wedge).close().extrude(width / 2 + 1, both=True))
     return part
+
+
+def interfaces(p: dict[str, float]) -> list[dict[str, str | float | list[float]]]:
+    """Mating interfaces for the functional probes: the channel bore holds the cable."""
+    length, t = p["length"], p["base_thickness"]
+    wall = p["wall"]
+    holes = int(p["hole_count"])
+    tab = SCREW_TAB_MM if holes > 0 else 1.0
+    n = int(p["channel_count"])
+    gap_c = p["channel_gap"]
+    cable = max(min(p["cable_d"], (length - 2 * tab) / n - 2 * wall - gap_c), 1.0)
+    pitch = cable + 2 * wall + gap_c
+    x0 = -(n - 1) / 2 * pitch
+    return [
+        {
+            "id": "cable_channel", "label": "cable channel", "mate_label": "cable",
+            "at": [x0, 0.0, t + cable / 2 - 0.3], "axis": [1.0, 0.0, 0.0],
+            "mates": [2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 10.0, 12.0, 14.0, 16.0],
+        }
+    ]  # fmt: skip
 
 
 result = build({k: v[0] for k, v in PARAMS.items()})

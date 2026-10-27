@@ -250,3 +250,34 @@ def measure_solid(shape: cq.Shape) -> dict[str, Any]:
         "min_wall_raw_mm": wall_raw,
         "n_faces": len(shape.Faces()),
     }
+
+
+def measure_interfaces(shape: cq.Shape, probes: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    """Measure each declared interface gap on the solid: from the probe point (which must be in air) cast a ray each
+    way along the axis; the gap is the sum of the two distances to the first surface. A ray that hits nothing means the
+    gap is open on that side (None)."""
+    import cadquery as cq
+
+    inter = _intersector(shape)
+    solid = cast(Any, shape)
+    out = []
+    for pr in probes:
+        at = np.asarray(pr["at"], dtype=np.float64)
+        ax = np.asarray(pr["axis"], dtype=np.float64)
+        n = float(np.linalg.norm(ax))
+        gap: float | None = None
+        note = ""
+        if n == 0:
+            note = "zero axis"
+        elif solid.isInside(cq.Vector(*at), 1e-4):
+            note = "probe point is inside the material"
+        else:
+            ax = ax / n
+            fwd = [w for w in _hits(inter, at, ax) if w > 1e-6]
+            back = [w for w in _hits(inter, at, -ax) if w > 1e-6]
+            if fwd and back:
+                gap = float(fwd[0] + back[0])
+            else:
+                note = "open on one side"
+        out.append({**pr, "gap_mm": gap, "note": note})
+    return out

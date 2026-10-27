@@ -167,6 +167,18 @@ def _classify(exc: BaseException) -> str:
 
 def run_user_code(code: str, params: dict[str, Any]) -> tuple[Any, dict[str, Any] | None]:
     """Exec the program with restricted builtins and return ``(build_result, error)``."""
+    out, err, _ = run_user_code_ns(code, params)
+    return out, err
+
+
+def run_user_code_ns(code: str, params: dict[str, Any]) -> tuple[Any, dict[str, Any] | None, dict[str, Any]]:
+    """Like `run_user_code`, also returning the program's namespace (for its optional `interfaces(p)`)."""
+    ns: dict[str, Any] = {"__builtins__": _safe_builtins(), "__name__": "part"}
+    out, err = _exec(code, params, ns)
+    return out, err, ns
+
+
+def _exec(code: str, params: dict[str, Any], ns: dict[str, Any]) -> tuple[Any, dict[str, Any] | None]:
     try:
         tree = ast.parse(code, filename=PROGRAM_FILENAME)
     except SyntaxError as e:
@@ -174,7 +186,6 @@ def run_user_code(code: str, params: dict[str, Any]) -> tuple[Any, dict[str, Any
     has_build = any(isinstance(n, ast.FunctionDef) and n.name == "build" for n in tree.body)
     if has_build:
         tree = _strip_default_build(tree)
-    ns: dict[str, Any] = {"__builtins__": _safe_builtins(), "__name__": "part"}
     try:
         exec(compile(tree, PROGRAM_FILENAME, "exec"), ns)
         out = ns["build"](dict(params)) if has_build else ns.get("result")
@@ -190,6 +201,40 @@ def run_user_code(code: str, params: dict[str, Any]) -> tuple[Any, dict[str, Any
         what = "build() returned None" if has_build else "the program defines neither build() nor result"
         return None, _error("runtime", what, None, code)
     return out, None
+
+
+def _interface_probes(ns: dict[str, Any], params: dict[str, Any], warnings: list[str]) -> list[dict[str, Any]]:
+    """The program's declared mating interfaces, `interfaces(p) -> [{id, label, at, axis, mates}]`, validated to plain
+    numbers. The program only says WHERE to look; the gap itself is measured on the solid by our code."""
+    fn = ns.get("interfaces")
+    if not callable(fn):
+        return []
+    try:
+        raw = fn(dict(params))
+    except Exception as e:
+        warnings.append(f"interfaces() failed: {type(e).__name__}: {e}")
+        return []
+    out: list[dict[str, Any]] = []
+    for item in raw if isinstance(raw, list | tuple) else []:
+        try:
+            at = [float(x) for x in item["at"]]
+            axis = [float(x) for x in item["axis"]]
+            mates = sorted(float(m) for m in item.get("mates", []))[:24]
+            if len(at) != 3 or len(axis) != 3 or not all(math.isfinite(x) for x in at + axis + mates):
+                raise ValueError("at/axis must be 3 finite numbers")
+            out.append(
+                {
+                    "id": str(item["id"])[:40],
+                    "label": str(item.get("label", item["id"]))[:80],
+                    "at": at,
+                    "axis": axis,
+                    "mates": mates,
+                    "mate_label": str(item.get("mate_label", "part"))[:40],
+                }
+            )
+        except (KeyError, TypeError, ValueError) as e:
+            warnings.append(f"interfaces(): ignored a malformed entry ({type(e).__name__}: {e})")
+    return out[:8]
 
 
 def to_shape(obj: Any) -> cq.Shape | None:
@@ -256,7 +301,7 @@ def execute(job: dict[str, Any], workdir: Path) -> dict[str, Any]:
         res["stage_ms"][name] = int((now - t) * 1000)
         t = now
 
-    built, err = run_user_code(code, params)
+    built, err, ns = run_user_code_ns(code, params)
     lap("build")
     if err is not None:
         res["error"] = err
@@ -311,6 +356,13 @@ def execute(job: dict[str, Any], workdir: Path) -> dict[str, Any]:
         except Exception as e:
             res["warnings"].append(f"feature measurement failed: {type(e).__name__}: {e}")
         lap("features")
+        probes = _interface_probes(ns, params, res["warnings"])
+        if probes and isinstance(res.get("features"), dict):
+            try:
+                res["features"]["interfaces"] = solid_features.measure_interfaces(shape, probes)
+            except Exception as e:
+                res["warnings"].append(f"interface measurement failed: {type(e).__name__}: {e}")
+            lap("interfaces")
     res["ok"] = True
     return res
 

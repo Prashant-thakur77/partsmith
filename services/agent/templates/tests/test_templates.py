@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from collections.abc import Iterator
+from collections.abc import Callable, Iterator
 from concurrent.futures import ThreadPoolExecutor
 
 import pytest
@@ -14,7 +14,7 @@ NAMES = {
     "clip", "knob", "l_bracket", "hook", "spacer", "battery_cover", "caster_wheel", "cupboard_latch", "cable_clip",
     "hinge_leaf",
 }  # fmt: skip
-WORKERS = 4
+WORKERS = 2
 
 
 @pytest.fixture(scope="module")
@@ -103,3 +103,25 @@ def test_topology_knobs_change_the_face_count(tpool: WarmPool) -> None:
         if lo.solid_info.n_faces == hi.solid_info.n_faces:
             same.append(f"{label}: {lo.solid_info.n_faces} faces at min and max")
     assert not same, "\n".join(same)
+
+
+def test_declared_interfaces_are_measured_on_the_solid(tpool: WarmPool) -> None:
+    """Interface gaps come from ray casts on the built solid; they must equal the parameter that sizes them."""
+    expected: dict[str, tuple[str, Callable[[dict[str, float]], float]]] = {
+        "clip": ("panel_gap", lambda p: p["arm_height"] - min(max(p["hook_overhang"] * 1.5 + 1.0, 1.5), p["arm_height"] - 1.0)),
+        "cable_clip": ("cable_channel", lambda p: p["cable_d"]),
+        "knob": ("shaft_bore", lambda p: p["bore_d"]),
+        "caster_wheel": ("axle_bore", lambda p: p["bore_d"]),
+        "hinge_leaf": ("pin_hole", lambda p: p["pin_d"]),
+    }  # fmt: skip
+    ts = [get_template(n) for n in expected]
+    results = []
+    for t in ts:
+        r = run_program(t.code, t.defaults, pool=tpool, outputs=(), timeout_s=30)
+        r.cleanup()
+        results.append(r)
+    for t, r in zip(ts, results, strict=True):
+        iid, fn = expected[t.name]
+        itf = {i["id"]: i for i in (r.features or {}).get("interfaces", [])}
+        assert iid in itf, (t.name, r.warnings)
+        assert itf[iid]["gap_mm"] == pytest.approx(fn(t.defaults), abs=0.02), t.name

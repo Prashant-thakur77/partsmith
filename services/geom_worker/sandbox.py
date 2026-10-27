@@ -78,7 +78,7 @@ class ExecError:
         return d
 
     def short(self) -> str:
-        where = f"line {self.line}: " if self.line else ""
+        where = f"line {self.line}: " if self.line and not self.message.startswith(f"line {self.line}:") else ""
         return f"{self.kind} error, {where}{self.message}"
 
 

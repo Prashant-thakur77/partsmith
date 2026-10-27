@@ -59,4 +59,16 @@ def build(p: dict[str, float]) -> cq.Workplane:
     return knob.cut(bore)
 
 
+def interfaces(p: dict[str, float]) -> list[dict[str, str | float | list[float]]]:
+    """Mating interfaces for the functional probes: the bore takes the control shaft (measured across the round)."""
+    depth_b = min(p["bore_depth"], p["height"] - 1.5)
+    return [
+        {
+            "id": "shaft_bore", "label": "shaft bore", "mate_label": "shaft",
+            "at": [0.0, 0.0, depth_b / 2], "axis": [0.0, 1.0, 0.0],
+            "mates": [3.0, 4.0, 5.0, 6.0, 6.35, 8.0, 10.0],
+        }
+    ]  # fmt: skip
+
+
 result = build({k: v[0] for k, v in PARAMS.items()})

@@ -69,4 +69,15 @@ def build(p: dict[str, float]) -> cq.Workplane:
     return wheel.cut(cq.Workplane("XY").workplane(offset=-1).circle(rb).extrude(w + 2))
 
 
+def interfaces(p: dict[str, float]) -> list[dict[str, str | float | list[float]]]:
+    """Mating interfaces for the functional probes: the axle bore."""
+    return [
+        {
+            "id": "axle_bore", "label": "axle bore", "mate_label": "axle",
+            "at": [0.0, 0.0, p["tread_width"] / 2], "axis": [1.0, 0.0, 0.0],
+            "mates": [3.0, 4.0, 5.0, 6.0, 8.0, 10.0, 12.0],
+        }
+    ]  # fmt: skip
+
+
 result = build({k: v[0] for k, v in PARAMS.items()})

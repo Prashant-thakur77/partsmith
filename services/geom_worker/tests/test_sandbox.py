@@ -164,3 +164,27 @@ def test_spawn_mode_fallback(plate_code: str) -> None:
         assert t.error is not None and t.error.kind == "timeout"
     finally:
         p.close()
+
+
+def test_interfaces_are_validated_and_measured(pool: WarmPool) -> None:
+    code = (
+        "import cadquery as cq\n"
+        "def build(p):\n"
+        "    return cq.Workplane('XY').box(20, 20, 10, centered=(True, True, False)).faces('>Z').workplane().hole(5)\n"
+        "def interfaces(p):\n"
+        "    return [\n"
+        "        {'id': 'bore', 'label': 'bore', 'at': [0, 0, 5], 'axis': [1, 0, 0], 'mates': [4, 5, 6]},\n"
+        "        {'id': 'solid', 'label': 'inside', 'at': [8, 8, 5], 'axis': [1, 0, 0], 'mates': [1]},\n"
+        "        {'id': 'bad', 'at': [0, 0], 'axis': [1, 0, 0]},\n"
+        "        'not a dict',\n"
+        "    ]\n"
+        "result = build({})\n"
+    )
+    r = run_program(code, pool=pool, outputs=())
+    r.cleanup()
+    assert r.ok
+    itf = {i["id"]: i for i in (r.features or {})["interfaces"]}
+    assert itf["bore"]["gap_mm"] == pytest.approx(5.0, abs=1e-3)
+    assert itf["solid"]["gap_mm"] is None and "inside the material" in itf["solid"]["note"]
+    assert "bad" not in itf
+    assert sum("malformed" in w for w in r.warnings) == 2

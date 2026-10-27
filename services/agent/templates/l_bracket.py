@@ -70,7 +70,7 @@ def build(p: dict[str, float]) -> cq.Workplane:
         for y in ys:
             part = part.union(cq.Workplane("XZ", origin=(0, y, 0)).polyline(tri).close().extrude(t / 2, both=True))
 
-    e = max(hole_d, 3.5)
+    e = 4.5  # first hole centre from the bend / free end: fixed, so holes stay put when their size changes
     xs = spread(xi + rb + e, length / 2 - e, int(p["base_holes"]), hole_d + 1.5)
     if xs:
         cut = cq.Workplane("XY").workplane(offset=-1).pushPoints([(x, 0) for x in xs]).circle(hole_d / 2)
