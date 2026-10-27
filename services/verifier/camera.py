@@ -36,7 +36,7 @@ from scipy.ndimage import map_coordinates
 from scipy.optimize import minimize
 
 from services.verifier import metrics as M
-from services.verifier.render import VIEW_AXES, BoolMask, FloatArray, Frame, silhouette_camera
+from services.verifier.render import VIEW_AXES, BoolMask, FloatArray, Frame, camera_coverage
 
 CROP_MARGIN_PX = 40
 REFINE_MAXITER = 80
@@ -48,6 +48,8 @@ class CameraView:
 
     - ``K``, ``R``, ``t_mm``: intrinsics and mat -> camera pose (mat frame: x right, y down, z into the table).
     - ``image_mask``: full-frame boolean part mask (the segmentation the metrology used).
+    - ``image_field``: the soft coverage map (0..1, full frame) the metrology traced its sub-pixel contours on. When
+      given, the photo's edge is its 0.5 crossing, exactly the edge that was measured; otherwise the mask's edge.
     - ``part_to_mat``: 3x3 affine part frame -> mat (``Measurements.part_to_mat`` of this view).
     - ``px_per_mm_local``: image pixels per mm around the part (to report distances in mm).
     - ``top_height_mm``: height of the plane the metrology also mapped contours onto (its height correction);
@@ -64,6 +66,7 @@ class CameraView:
     px_per_mm_local: float
     image_size: tuple[int, int] | None = None  # (width, height); default: the mask's shape
     dist: npt.ArrayLike | None = None
+    image_field: npt.ArrayLike | None = None
     top_height_mm: float | None = None
     scale_correction: float = 1.0
     H_ground: npt.ArrayLike | None = None
@@ -224,10 +227,42 @@ def _crop_for(cam: CameraView, P: FloatArray, vertices: FloatArray) -> _Crop:
 def render_in_crop(
     cam: CameraView, P: FloatArray, vertices: FloatArray, faces: Any, crop: _Crop, supersample: int = 4
 ) -> BoolMask:
-    return silhouette_camera(
+    return np.asarray(coverage_in_crop(cam, P, vertices, faces, crop, supersample) >= 0.5)
+
+
+def coverage_in_crop(
+    cam: CameraView, P: FloatArray, vertices: FloatArray, faces: Any, crop: _Crop, supersample: int = 4
+) -> npt.NDArray[np.float32]:
+    """Model silhouette coverage (0..1) in the crop: its 0.5 crossing is the sub-pixel model edge."""
+    return camera_coverage(
         vertices, faces, crop.K(_arr(cam.K)), cam.R, cam.t_mm, crop.h, crop.w,
         placement=P, dist=cam.dist, supersample=supersample, front_only=True,
     )  # fmt: skip
+
+
+def _subpx_contours(field_: npt.ArrayLike) -> list[Any]:
+    """Sub-pixel contours with the metrology's tracer (0.5 crossing; binary masks are de-staircased first)."""
+    from services.metrology.segment import mask_contour_subpx
+
+    f = np.asarray(field_)
+    return list(mask_contour_subpx(f.astype(np.float32) if f.dtype != bool else f, min_area_px=2.0))
+
+
+def _fill_contours(contours: list[Any], h: int, w: int, ss: int = 4) -> BoolMask:
+    """Boolean mask of sub-pixel contours (outer rings filled, hole rings cleared), area-correct to 1/ss px."""
+    canvas = np.zeros((h * ss, w * ss), np.uint8)
+    for want_hole, val in ((False, 255), (True, 0)):
+        rings = [c.points_px for c in contours if c.is_hole == want_hole and len(c.points_px) >= 3]
+        pts = [np.round(((r + 0.5) * ss - 0.5) * 16).astype(np.int32).reshape(-1, 1, 2) for r in rings]
+        if pts:
+            cv2.fillPoly(canvas, pts, val, cv2.LINE_8, 4)
+    small = cv2.resize(canvas, (w, h), interpolation=cv2.INTER_AREA)
+    return np.asarray(small >= 128)
+
+
+def _contour_points_mm(contours: list[Any], frame: Frame) -> FloatArray:
+    pts = [M.resample_closed(frame.to_mm(c.points_px), M.RESAMPLE_MM) for c in contours if len(c.points_px) >= 3]
+    return np.vstack(pts) if pts else np.zeros((0, 2))
 
 
 def _boundary(mask: BoolMask) -> tuple[FloatArray, FloatArray]:
@@ -268,12 +303,12 @@ def metrology_pose(cam: CameraView) -> Any:
 
 
 def measure_mask_like_metrology(
-    mask_full: BoolMask | None,
+    mask_full: npt.ArrayLike | None,
     cam: CameraView,
     view: str,
     *,
     origin: DataOrigin = DataOrigin.synthetic,
-    crop_mask: BoolMask | None = None,
+    crop_mask: npt.ArrayLike | None = None,
     crop_xy: tuple[int, int] = (0, 0),
 ) -> Measurements | None:
     """Measure a camera-frame mask with the metrology's own footprint code, exactly as `measure_photo` does after
@@ -301,7 +336,10 @@ def measure_mask_like_metrology(
     off = np.array(crop_xy if crop_mask is not None else (0, 0), dtype=np.float64)
     contours = [
         replace(c, points_px=c.points_px + off)
-        for c in mask_contour_subpx(np.asarray(mask, dtype=bool), min_area_px=2.0)
+        for c in mask_contour_subpx(
+            np.asarray(mask, dtype=np.float32) if np.asarray(mask).dtype != bool else np.asarray(mask),
+            min_area_px=2.0,
+        )
     ]
     det = _MatView(cam, ground_homography(cam))
     ground = footprint_from_contours(contours, det, det.H) if contours else None
@@ -360,7 +398,12 @@ def compare_camera(
         else cad_to_mat_from_alignment(v, projection, model_to_part, cam.part_to_mat)
     )
     crop = _crop_for(cam, P0, v)
-    photo = np.asarray(cam.image_mask, dtype=bool)[crop.y0 : crop.y0 + crop.h, crop.x0 : crop.x0 + crop.w]
+    window = (slice(crop.y0, crop.y0 + crop.h), slice(crop.x0, crop.x0 + crop.w))
+    # The photo's edge is the sub-pixel boundary the metrology measured (0.5 crossing of its soft coverage map), not
+    # the cleaned binary mask, which carries a pixel or two of blur halo (~0.3 mm at 3-4 px/mm).
+    src = cam.image_field if cam.image_field is not None else cam.image_mask
+    photo_cs = _subpx_contours(np.asarray(src)[window])
+    photo = _fill_contours(photo_cs, crop.h, crop.w) if photo_cs else np.zeros((crop.h, crop.w), dtype=bool)
     notes: list[str] = []
     P = P0
     if refine:
@@ -388,11 +431,13 @@ def compare_camera(
             notes.append(
                 f"{view}: refined in the photo frame by {r.x[0]:+.2f} deg, ({r.x[1]:+.2f}, {r.x[2]:+.2f}) mm on the mat"
             )
-    model = render_in_crop(cam, P, v, faces, crop, supersample=4)
+    cov = coverage_in_crop(cam, P, v, faces, crop, supersample=4)
+    model = np.asarray(cov >= 0.5)
 
     ppm = float(cam.px_per_mm_local)
     frame = Frame(ppm, 0.0, 0.0, crop.w, crop.h)  # a pixel-scale frame: distances in mm, positions in crop pixels
-    d = M.mask_contour_distances(model, photo, frame)
+    # Distances between the two sub-pixel edges (not pixel staircases: one pixel is ~0.3 mm here).
+    d = M.contour_distances_mm(_contour_points_mm(_subpx_contours(cov), frame), _contour_points_mm(photo_cs, frame))
     over, under = M.over_under_mm2(photo, model, frame)
     worst_part: tuple[float, float] | None = None
     if d.worst_point_mm is not None:
@@ -410,7 +455,7 @@ def compare_camera(
     if measure:
         try:
             model_meas = measure_mask_like_metrology(
-                None, cam, view, origin=origin, crop_mask=model, crop_xy=(crop.x0, crop.y0)
+                None, cam, view, origin=origin, crop_mask=cov, crop_xy=(crop.x0, crop.y0)
             )
         except Exception as e:  # metrology code is evolving; the comparison itself does not depend on it
             notes.append(f"{view}: like-for-like measurement of the model failed ({type(e).__name__}: {e})")

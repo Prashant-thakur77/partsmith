@@ -75,6 +75,7 @@ class MeasureOutput:
     px_per_mm: float = RECTIFIED_PX_PER_MM
     origin_mm: tuple[float, float] = (0.0, 0.0)  # mat mm of the rectified grid's top-left corner
     photo_mask: BoolMask | None = None  # full-frame part mask after clean-up
+    photo_field: NDArray[np.float32] | None = None  # soft coverage the sub-pixel contours were traced on
     footprint_mat: Polygon | None = None  # footprint in mat mm (nominal mat scale)
     features: FootprintFeatures | None = None
     detection: MatDetection | None = None
@@ -515,6 +516,7 @@ def measure_photo(
         outer = cv2.dilate(mask.astype(np.uint8), np.ones((9, 9), np.uint8)) > 0
         field_ = np.where(inner, 1.0, np.where(outer, seg.prob, 0.0)).astype(np.float32)
 
+    soft_field = field_.astype(np.float32) if field_.dtype == np.float32 else None
     capture = run_gate(
         img,
         det,
@@ -537,6 +539,7 @@ def measure_photo(
             px_per_mm=px_per_mm,
             origin_mm=rect.origin_mm,
             photo_mask=mask,
+            photo_field=soft_field,
             detection=det,
             pose=pose,
             segmentation=seg,
@@ -657,6 +660,7 @@ def measure_photo(
         px_per_mm=px_per_mm,
         origin_mm=rect.origin_mm,
         photo_mask=mask,
+        photo_field=soft_field,
         footprint_mat=footprint,
         features=ff,
         detection=det,

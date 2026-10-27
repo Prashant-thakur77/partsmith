@@ -10,15 +10,13 @@ measured values, run the part tests, and apply the pass rule:
 
     verified = all P0 tests pass
                AND Hausdorff <= 0.5 mm on every measured view
-               AND IoU >= 0.97 on the top view and on every view whose silhouette is >= 10 mm wide
+               AND, on every view whose silhouette's short side is >= 20 mm, IoU >= 0.97
+               AND, on every smaller view, mean contour distance <= 0.15 mm
                AND no blocking judge veto
 
-IoU depends on scale: on a thin side profile (1.5 mm) a 0.1 mm edge error alone costs ~12 % IoU. Thinner views are
-therefore gated on Hausdorff plus the side-view thickness test (+/-0.3 mm); their IoU is still reported.
-
-``max_error_mm`` is the largest of every view's Hausdorff distance and every |feature residual|.
-``status`` is "verified" when that holds, "failed" when the program did not run or the solid is invalid, and
-"best_effort" otherwise. Model output never reaches this decision except through the geometry it built.
+IoU depends on scale: for an L x L square with a uniform edge error e, IoU ~ 1 - 4e/L, so a 0.1 mm error already
+costs 3 % IoU at 13 mm and 12 % on a 1.5 mm side profile. Views under 20 mm are therefore gated on the two
+scale-free distances (Hausdorff and mean contour distance) plus their part tests; their IoU is still reported.
 """
 
 from __future__ import annotations
@@ -75,7 +73,8 @@ from services.verifier.render import (
 from services.verifier.solid_features import SolidFeatures
 
 DEFAULT_PX_PER_MM = 20.0
-IOU_GATE_MIN_WIDTH_MM = 10.0
+IOU_GATE_MIN_WIDTH_MM = 20.0
+MEAN_GATE_MM = 0.15
 HOLE_MATCH_MAX_MM = 3.0
 COMPARED_VIEWS = ("top", "side")
 
@@ -311,13 +310,14 @@ def verify(
                 vr.photo.mask, vr.model_mask, vr.photo.frame, distances=dist, title=title
             )
         min_w = float(meas.width.value)
-        vr.iou_gated = view == "top" or min_w >= IOU_GATE_MIN_WIDTH_MM
+        vr.iou_gated = min_w >= IOU_GATE_MIN_WIDTH_MM
         if not vr.iou_gated:
             vr.gate_note = (
-                f"thin profile ({min_w:.1f} mm < {IOU_GATE_MIN_WIDTH_MM:g} mm wide), so IoU is reported but not gated; "
-                "gated on Hausdorff and the +/-0.3 mm thickness test"
+                f"small silhouette ({min_w:.1f} mm across, under {IOU_GATE_MIN_WIDTH_MM:g} mm), so IoU is reported but "
+                f"not gated (it shrinks with size for the same edge error); gated on Hausdorff <= {th.hausdorff_mm} mm "
+                f"and mean contour distance <= {MEAN_GATE_MM} mm, plus its part tests"
             )
-        view_gates[view] = ["hausdorff", "iou"] if vr.iou_gated else ["hausdorff", "thickness_test"]
+        view_gates[view] = ["hausdorff", "iou"] if vr.iou_gated else ["hausdorff", "mean"]
         view_results[view] = vr
         view_metrics.append(vr.metrics)
 
@@ -330,7 +330,9 @@ def verify(
     view_fail = [
         vr.metrics
         for vr in view_results.values()
-        if vr.metrics.hausdorff_mm > th.hausdorff_mm or (vr.iou_gated and vr.metrics.iou < th.iou)
+        if vr.metrics.hausdorff_mm > th.hausdorff_mm
+        or (vr.iou_gated and vr.metrics.iou < th.iou)
+        or (not vr.iou_gated and vr.metrics.mean_mm > MEAN_GATE_MM)
     ]
     blocking = [v for v in veto_list if v.severity == "blocking"]
     verified = bool(view_metrics) and not p0_failed and not view_fail and not blocking
@@ -525,14 +527,18 @@ def _reasons(
         out.append("No measured top or side view to compare against, so the part cannot be verified.")
     for vr in views:
         vm = vr.metrics
-        ok = vm.hausdorff_mm <= th.hausdorff_mm and (not vr.iou_gated or vm.iou >= th.iou)
+        ok = vm.hausdorff_mm <= th.hausdorff_mm and (vm.iou >= th.iou if vr.iou_gated else vm.mean_mm <= MEAN_GATE_MM)
         where = (
             f" (worst at x={vm.worst_point_mm[0]:.1f}, y={vm.worst_point_mm[1]:.1f} mm)"
             if vm.worst_point_mm and not ok
             else ""
         )
         frame = "photo frame" if vr.frame == "camera" else "rectified"
-        iou = f"IoU {vm.iou:.3f} (needs >= {th.iou})" if vr.iou_gated else f"IoU {vm.iou:.3f} (not gated)"
+        iou = (
+            f"IoU {vm.iou:.3f} (needs >= {th.iou})"
+            if vr.iou_gated
+            else f"IoU {vm.iou:.3f} (not gated), mean contour distance {vm.mean_mm:.2f} mm (needs <= {MEAN_GATE_MM} mm)"
+        )
         out.append(
             f"{vm.view} view ({frame}): {iou}, Hausdorff {vm.hausdorff_mm:.2f} mm "
             f"(needs <= {th.hausdorff_mm} mm){where}" + ("" if ok else " - fails")

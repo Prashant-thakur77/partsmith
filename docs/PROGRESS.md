@@ -61,3 +61,9 @@ A fresh session should read this file, `docs/ARCHITECTURE.md`, `docs/API.md` and
   one photo (reported as a range in notes, σ widened). Measure-only gate (≤ 0.4 mm): synthetic 0.466 FAIL, reference renders 0.170 PASS.
 - **API fixes from the live web suite** (`a705786`): atomic job writes, 409 codes, bench gallery files, cancel status, SSE headers,
   forwarded-host links, shared Hinglish synonyms.
+- **Verification regression found and fixed:** after camera-frame verification landed, 0/17 demo samples verified. Bisect
+  (exported trees per commit) pinned it to comparing the model with the binary mask's ~0.3 mm blur halo instead of the
+  sub-pixel edge metrology measures. Fix: compare sub-pixel edges of the photo's soft coverage field and the model's area
+  coverage. IoU gate now only for views ≥ 20 mm wide (scale-free mean-distance gate below that; see DECISIONS).
+  Demo samples (mock): 5/17 verified (battery cover 0.23, knob 0.41, L-bracket 0.30, AA cell 0.20, spacer 0.10 mm); remaining
+  failures are mostly side-view shape errors of templates and the hard white/glare cases. `pytest -m "not live"`: 432 passed.

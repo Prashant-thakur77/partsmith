@@ -44,7 +44,8 @@ def iou(a: BoolMask, b: BoolMask) -> float:
     return float(np.count_nonzero(a & b) / union) if union else 0.0
 
 
-def _resample_closed(poly: FloatArray, spacing: float) -> FloatArray:
+def resample_closed(poly: FloatArray, spacing: float) -> FloatArray:
+    """Points along a closed polyline, no two consecutive ones further apart than `spacing`."""
     if len(poly) < 2:
         return poly
     closed = np.vstack([poly, poly[:1]])
@@ -62,7 +63,7 @@ def contour_points_mm(mask: BoolMask, frame: Frame, spacing_mm: float = RESAMPLE
     """All boundary curves of a mask (outer and holes) as mm points, resampled to <= spacing_mm."""
     m = np.ascontiguousarray(np.asarray(mask, dtype=np.uint8))
     contours, _ = cv2.findContours(m, cv2.RETR_LIST, cv2.CHAIN_APPROX_NONE)
-    pts = [_resample_closed(frame.to_mm(c.reshape(-1, 2).astype(np.float64)), spacing_mm) for c in contours if len(c)]
+    pts = [resample_closed(frame.to_mm(c.reshape(-1, 2).astype(np.float64)), spacing_mm) for c in contours if len(c)]
     if not pts:
         return np.zeros((0, 2))
     return np.vstack(pts)

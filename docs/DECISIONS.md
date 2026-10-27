@@ -79,3 +79,8 @@ switches (`single_shot`, `mat_scale`, `numeric_feedback`, `templates`, `judge`, 
 behaviour. Only the scorer reads `gt.yaml`; it re-executes the final `part.py` in the sandbox and measures it the way the ground
 truth was measured. Mean-error CIs use a cluster bootstrap over parts (dimensions of one part are correlated). Mock-mode tables are
 always titled "pipeline check — deterministic mock providers, NOT model performance".
+
+**2026-10-27 — IoU gate only where IoU is meaningful.** For an L × L silhouette with uniform boundary error e, IoU ≈ 1 − 4e/L,
+so IoU ≥ 0.97 at e = 0.1 mm needs L ≳ 13 mm; on an 8 mm spacer it rejects a model that is within 0.2 mm everywhere. The IoU ≥ 0.97
+gate therefore applies only to views whose silhouette short side is ≥ 20 mm. Smaller views are gated on Hausdorff ≤ 0.5 mm and
+mean contour distance ≤ 0.15 mm, both scale-free, plus their part tests. IoU is still reported for every view.

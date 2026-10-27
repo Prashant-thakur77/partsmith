@@ -110,6 +110,15 @@ def _downsample(canvas: npt.NDArray[np.uint8], frame: Frame, ss: int) -> BoolMas
 
 def rasterize_triangles(tris_px: npt.ArrayLike, height: int, width: int, supersample: int = 1) -> BoolMask:
     """Fill triangles given in continuous pixel coordinates (M x 3 x 2). Degenerate (edge-on) triangles are skipped."""
+    cov = rasterize_coverage(tris_px, height, width, supersample)
+    return np.asarray(cov >= 0.5)
+
+
+def rasterize_coverage(
+    tris_px: npt.ArrayLike, height: int, width: int, supersample: int = 4
+) -> npt.NDArray[np.float32]:
+    """Per-pixel area coverage (0..1) of the union of the triangles, from a `supersample` x render. Its 0.5 crossing
+    is a sub-pixel silhouette edge."""
     frame = Frame(1.0, 0.0, 0.0, width, height)
     ss = _supersample(frame, supersample)
     t = np.asarray(tris_px, dtype=np.float64).reshape(-1, 3, 2)
@@ -123,7 +132,10 @@ def rasterize_triangles(tris_px: npt.ArrayLike, height: int, width: int, supersa
     fixed = np.round(t * (1 << _SHIFT)).astype(np.int32)
     for tri in fixed:
         cv2.fillConvexPoly(canvas, tri, 255, cv2.LINE_8, _SHIFT)
-    return _downsample(canvas, Frame(1.0, 0.0, 0.0, width, height), ss)
+    if ss == 1:
+        return (canvas > 0).astype(np.float32)
+    small = cv2.resize(canvas, (width, height), interpolation=cv2.INTER_AREA)
+    return np.asarray(small, dtype=np.float32) / 255.0
 
 
 def silhouette(
@@ -196,7 +208,29 @@ def silhouette_camera(
     supersample: int = 1,
     front_only: bool = False,
 ) -> BoolMask:
-    """Silhouette as the phone camera saw it. Vertices are CAD-frame mm; `placement` (4x4) puts them on the mat;
+    """Boolean silhouette as the phone camera saw it (see `camera_coverage`)."""
+    cov = camera_coverage(
+        vertices, faces, K, R, t, height, width,
+        placement=placement, dist=dist, supersample=supersample, front_only=front_only,
+    )  # fmt: skip
+    return np.asarray(cov >= 0.5)
+
+
+def camera_coverage(
+    vertices: npt.ArrayLike,
+    faces: npt.ArrayLike,
+    K: npt.ArrayLike,
+    R: npt.ArrayLike,
+    t: npt.ArrayLike,
+    height: int,
+    width: int,
+    *,
+    placement: npt.ArrayLike | None = None,
+    dist: npt.ArrayLike | None = None,
+    supersample: int = 4,
+    front_only: bool = False,
+) -> npt.NDArray[np.float32]:
+    """Silhouette coverage (0..1 per pixel) as the phone camera saw it. Vertices are CAD-frame mm; `placement` (4x4) puts them on the mat;
     (K, R, t) is the camera pose from the mat markers (mat frame -> camera). Triangles behind the camera are dropped.
     ``front_only`` also drops back-facing triangles (half the work; needs a closed, outward-wound mesh)."""
     v = np.asarray(vertices, dtype=np.float64)
@@ -222,4 +256,4 @@ def silhouette_camera(
         if placement is not None and np.linalg.det(np.asarray(placement, dtype=np.float64)[:3, :3]) < 0:
             n = -n  # a mirroring placement flips the winding
         front &= np.einsum("ij,ij->i", n, tri.mean(axis=1)) < 0
-    return rasterize_triangles(uv[f[front]], height, width, supersample)
+    return rasterize_coverage(uv[f[front]], height, width, supersample)

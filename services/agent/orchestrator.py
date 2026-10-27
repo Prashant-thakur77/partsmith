@@ -55,7 +55,7 @@ from services.metrology.measure import MeasureOutput, decode_image, measure_phot
 from services.metrology.segment import ProviderSegmenter
 from services.verifier.camera import CameraView
 from services.verifier.render import Frame, rasterize_polygon
-from services.verifier.verify import PhotoMask, VerifyOutput, verify
+from services.verifier.verify import MEAN_GATE_MM, PhotoMask, VerifyOutput, verify
 
 Strategy = Literal["template", "free_code", "human"]
 StageName = Literal[
@@ -237,6 +237,8 @@ class Round:
             excess += max(m.hausdorff_mm - v.thresholds.hausdorff_mm, 0.0) / v.thresholds.hausdorff_mm
             if "iou" in gates.get(m.view, ["iou"]):
                 excess += max(v.thresholds.iou - m.iou, 0.0) / (1.0 - v.thresholds.iou)
+            if "mean" in gates.get(m.view, []):
+                excess += max(m.mean_mm - MEAN_GATE_MM, 0.0) / MEAN_GATE_MM
         return (0 if v.verified else 1, round(excess, 4))
 
     def better_than(self, other: Round | None) -> bool:
@@ -459,6 +461,12 @@ def template_measure_map(code: str, template: Template | None) -> dict[str, str]
     except (SyntaxError, ValueError):
         lit = None
     return {str(k): str(v) for k, v in lit.items()} if isinstance(lit, dict) else {}
+
+
+def photo_field(mo: MeasureOutput) -> np.ndarray[Any, np.dtype[np.float32]] | None:
+    """The soft coverage map the metrology traced its sub-pixel contours on. The verifier compares the model with
+    this edge, not with the binary mask's blur halo."""
+    return mo.photo_field
 
 
 # ------------------------------------------------------------------------------------------------- the run
@@ -768,6 +776,7 @@ class FixRun:
         h, w = mo.photo_mask.shape[:2]
         height, profile = self.heights.get(view, (None, "prism"))
         return CameraView(
+            image_field=photo_field(mo),
             K=mo.K,
             R=mo.R,
             t_mm=mo.t_mm,

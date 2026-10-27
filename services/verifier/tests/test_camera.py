@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from collections.abc import Iterator
+from dataclasses import replace
 
 import cv2
 import numpy as np
@@ -97,12 +98,12 @@ def thin(vpool: WarmPool, plate_code: str) -> Iterator[ExecResult]:
     r.cleanup()
 
 
-def test_thin_side_view_is_gated_on_hausdorff_and_thickness(thin: ExecResult) -> None:
+def test_thin_side_view_is_gated_on_scale_free_distances(thin: ExecResult) -> None:
     out = verify(thin, {"side": _side(40.0, 1.6)}, None)
     v = out.verification
     sv = v.views[0]
-    assert sv.iou < 0.97 and sv.hausdorff_mm < 0.5  # a 0.1 mm error on a 1.5 mm profile
-    assert out.view_gates["side"] == ["hausdorff", "thickness_test"]
+    assert sv.iou < 0.97 and sv.hausdorff_mm < 0.5 and sv.mean_mm <= 0.15  # a 0.1 mm error on a 1.5 mm profile
+    assert out.view_gates["side"] == ["hausdorff", "mean"]
     assert v.verified, v.reasons
     assert any("not gated" in s for s in v.reasons)
     t = next(x for x in v.tests if x.id == "side.thickness")
@@ -113,16 +114,39 @@ def test_thin_side_view_is_gated_on_hausdorff_and_thickness(thin: ExecResult) ->
     assert not next(x for x in bad.tests if x.id == "side.thickness").passed
 
 
-def test_wide_side_view_still_gates_iou(vpool: WarmPool) -> None:
-    code = "import cadquery as cq\nresult = cq.Workplane('XY').box(40, 20, 12, centered=(True, True, False))\n"
+def test_small_top_view_uses_mean_distance(vpool: WarmPool) -> None:
+    """An 8 mm square: a uniform 0.1 mm edge error costs ~5 % IoU but is well inside both distance gates."""
+    code = "import cadquery as cq\nresult = cq.Workplane('XY').box(8, 8, 3, centered=(True, True, False))\n"
     r = run_program(code, pool=vpool, outputs=())
     r.cleanup()
-    out = verify(r, {"side": _side(40.4, 12.28)}, None)
+
+    def top(side: float) -> Measurements:
+        s = side / 2
+        return Measurements(
+            view=ViewKind.top, origin=DataOrigin.synthetic, outline_mm=[(-s, -s), (s, -s), (s, s), (-s, s)],
+            length=Measured(value=side), width=Measured(value=side), area_mm2=side * side,
+        )  # fmt: skip
+
+    out = verify(r, {"top": top(8.2)}, None)
+    vm = out.verification.views[0]
+    assert out.view_gates["top"] == ["hausdorff", "mean"]
+    assert vm.iou < 0.97 and vm.mean_mm <= 0.15
+    assert out.verification.verified, out.verification.reasons
+    far = verify(r, {"top": top(8.5)}, None)
+    assert far.verification.views[0].mean_mm > 0.15 and not far.verification.verified
+
+
+def test_side_view_of_20_mm_and_more_gates_iou(vpool: WarmPool) -> None:
+    code = "import cadquery as cq\nresult = cq.Workplane('XY').box(40, 30, 20, centered=(True, True, False))\n"
+    r = run_program(code, pool=vpool, outputs=())
+    r.cleanup()
+    out = verify(r, {"side": _side(40.8, 20.28)}, None)
     v = out.verification
     assert out.view_gates["side"] == ["hausdorff", "iou"]
-    assert v.views[0].iou < 0.97 and v.views[0].hausdorff_mm < 0.5
+    assert v.views[0].iou < 0.97
     assert next(x for x in v.tests if x.id == "side.thickness").passed
     assert not v.verified
+    assert any("side view" in s and "needs >= 0.97" in s and "fails" in s for s in v.reasons)
 
 
 def test_see_through_bore_of_a_tall_part_is_found(vpool: WarmPool) -> None:
@@ -157,3 +181,17 @@ def test_tall_thin_side_view_keeps_the_height_correction(vpool: WarmPool) -> Non
     st = next(x for x in out.verification.tests if x.id == "side.thickness")
     assert st.passed and st.value == pytest.approx(2.5, abs=0.3), out.verification.reasons
     assert out.views["side"].frame == "camera"
+
+
+def test_photo_edge_is_the_measured_subpixel_edge_not_the_mask_halo(thick: ExecResult) -> None:
+    """A cleaned binary mask carries a pixel or two of blur halo (about 0.3 mm at 4 px/mm). The comparison must use
+    the soft coverage map's 0.5 crossing, the edge the metrology measured."""
+    meas, cam = _posed(thick, 8.0)
+    halo = cv2.dilate(np.asarray(cam.image_mask, np.uint8), np.ones((3, 3), np.uint8), iterations=2) > 0
+    with_field = verify(thick, {"top": meas}, None, camera_views={"top": replace(cam, image_mask=halo)})
+    mask_only = verify(
+        thick, {"top": meas}, None, camera_views={"top": replace(cam, image_mask=halo, image_field=None)}
+    )
+    a, b = with_field.verification.views[0], mask_only.verification.views[0]
+    assert with_field.verification.verified, with_field.verification.reasons
+    assert a.mean_mm < 0.05 and b.mean_mm > a.mean_mm + 0.08

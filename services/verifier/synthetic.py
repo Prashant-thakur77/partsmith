@@ -24,9 +24,9 @@ from services.verifier.camera import (
     CameraView,
     _crop_for,
     cad_to_mat_from_alignment,
+    coverage_in_crop,
     local_px_per_mm,
     measure_mask_like_metrology,
-    render_in_crop,
 )
 from services.verifier.render import Frame, project, silhouette
 from services.verifier.verify import PhotoMask
@@ -126,12 +126,17 @@ def synthetic_camera_view(
     empty = np.zeros((h, w), dtype=bool)
     probe = CameraView(K, R, t_mm, empty, part_to_mat, 1.0, image_size=image_size)
     crop = _crop_for(probe, P, v)
-    mask = empty.copy()
-    mask[crop.y0 : crop.y0 + crop.h, crop.x0 : crop.x0 + crop.w] = render_in_crop(probe, P, v, f, crop)
+    cov = coverage_in_crop(probe, P, v, f, crop)
+    field_ = np.zeros((h, w), dtype=np.float32)
+    field_[crop.y0 : crop.y0 + crop.h, crop.x0 : crop.x0 + crop.w] = cov
+    mask = field_ >= 0.5
     centre = (v @ P[:3, :3].T + P[:3, 3])[:, :2].mean(axis=0)
     ppm = local_px_per_mm(probe, (float(centre[0]), float(centre[1])))
-    cam = replace(probe, image_mask=mask, px_per_mm_local=ppm, top_height_mm=top_height_mm, **(cam_kwargs or {}))
-    meas = measure_mask_like_metrology(mask, cam, view, origin=DataOrigin.synthetic)
+    cam = replace(
+        probe, image_mask=mask, image_field=field_, px_per_mm_local=ppm, top_height_mm=top_height_mm,
+        **(cam_kwargs or {}),
+    )  # fmt: skip
+    meas = measure_mask_like_metrology(field_, cam, view, origin=DataOrigin.synthetic)
     if meas is None:
         raise ValueError("the part is not visible in the synthetic photo")
     meas.mask_source = "synthetic-gt"
