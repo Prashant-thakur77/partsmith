@@ -26,6 +26,7 @@ from pydantic import Field
 from services.api import agentdocs
 from services.geom_worker.bake import BakeError
 from services.geom_worker.program import ProgramError, UnknownParamError
+from services.registry import gate
 from services.registry import parts as P
 from services.registry.store import get_registry
 
@@ -124,7 +125,7 @@ def build_server(*, allow_paths: bool = False, read_only: bool | None = None) ->
         """Search the PartSmith registry. Numbers in the query boost parts with a matching default dimension.
         Example: search_parts(q="caster wheel 50 mm"). Returns {items: [card], total, coverage}. coverage="none"
         means nothing matched: say so and offer report_need instead of substituting an unrelated part."""
-        items, total = get_registry().search(q, family=family, verified=verified, limit=limit)
+        items, total = get_registry().search(q, family=family, verified=verified, limit=limit, role="part")
         coverage = "none" if not items else ("good" if total >= 1 and q else "browse")
         return {"items": [_card(p) for p in items], "total": total, "coverage": coverage}
 
@@ -140,6 +141,7 @@ def build_server(*, allow_paths: bool = False, read_only: bool | None = None) ->
         d["thumbnail_url"] = _abs(d["thumbnail_url"])
         d["thumbnail_2x_url"] = _abs(d["thumbnail_2x_url"])
         d["page"] = _web(f"/parts/{slug}")
+        d["ship"] = gate.decide_part(part).to_dict()
         return d
 
     @server.tool(annotations=READ_ONLY)
@@ -166,11 +168,19 @@ def build_server(*, allow_paths: bool = False, read_only: bool | None = None) ->
         ] = None,
         formats: Annotated[list[str] | None, Field(description="Any of stl, 3mf, step, glb, view, py")] = None,
         inline_stl_path: Annotated[bool, Field(description="Also return the local STL file path (stdio only)")] = False,
+        ack: Annotated[
+            bool, Field(description="Acknowledge a best-effort (unverified) part; tell the user the reason")
+        ] = False,
     ) -> dict[str, Any]:
         """Build the part at these parameters and return download URLs (content-addressed: an identical request is a
-        free cache hit). `clamped` lists values that had to change to stay in range. Example:
-        bake(slug="cable-clip-8", params={"cable_d": 8.0}, formats=["stl", "step"])."""
+        free cache hit). `clamped` lists values that had to change to stay in range. Export gate: verified parts bake
+        directly; best-effort parts need ack=true after you tell the user the returned reason; failed parts are
+        refused. Example: bake(slug="cable-clip-8", params={"cable_d": 8.0}, formats=["stl", "step"])."""
         part = _part(slug)
+        decision = gate.decide_part(part)
+        if not decision.allowed(ack):
+            hint = " Tell the user, then call again with ack=true." if decision.needs_ack else ""
+            raise ToolError(f"Export gate: {decision.reason}{hint}")
         try:
             fmts = P.parse_formats(formats or ["stl", "step", "3mf"])
             out = P.bake_output(part, params or {}, fmts)
@@ -185,7 +195,46 @@ def build_server(*, allow_paths: bool = False, read_only: bool | None = None) ->
         ).model_dump(mode="json")
         if inline_stl_path and allow_paths and "stl" in out.files:
             res["stl_path"] = str(out.files["stl"])
+        res["ship"] = decision.to_dict()
         return res
+
+    @server.tool(annotations=READ_ONLY)
+    def verify(
+        slug: Annotated[str, Field(description="Part slug")],
+        job_id: Annotated[str, Field(description="Fix job whose measured photos to verify against")],
+        params: Annotated[dict[str, float] | None, Field(description="Knob values (others keep defaults)")] = None,
+    ) -> dict[str, Any]:
+        """Run the deterministic verifier for a registry part at `params` against a job's measured photos: per-view
+        IoU and Hausdorff (mm), feature residuals, part tests and `verified` (decided by code, never by a model).
+        Use it to check whether an existing part fits a user's broken one before building a new part."""
+        _part(slug)
+        try:
+            detail = dict(_svc().job_detail(job_id))
+        except KeyError as exc:
+            raise ToolError(f"no job {job_id!r}") from exc
+        meas = detail.get("measurements") or {}
+        if not meas:
+            raise ToolError(f"job {job_id} has no measurements yet; poll get_job until measuring is done")
+        try:
+            v, functional = P.verify_part(slug, params or {}, meas)
+        except UnknownParamError as exc:
+            raise ToolError(str(exc)) from exc
+        out: dict[str, Any] = v.model_dump(mode="json")
+        out["functional"] = functional
+        return out
+
+    @server.tool(annotations=READ_ONLY)
+    def get_lessons(
+        status: Annotated[str | None, Field(description="candidate, promoted or rejected")] = "promoted",
+        family: Annotated[str | None, Field(description="Family scope (global lessons are always included)")] = None,
+    ) -> dict[str, Any]:
+        """Rules learned from earlier builds and fit reports, with evidence links. Only `promoted` lessons were
+        confirmed by a person; treat candidates as unconfirmed hints."""
+        if status not in (None, "candidate", "promoted", "rejected"):
+            raise ToolError("status must be candidate, promoted or rejected")
+        from services.api.round2 import lessons_out
+
+        return {"lessons": lessons_out(family, status)}
 
     @server.tool(annotations=READ_ONLY)
     def find_matching(slug: Annotated[str, Field(description="Part slug")]) -> dict[str, Any]:
@@ -197,7 +246,7 @@ def build_server(*, allow_paths: bool = False, read_only: bool | None = None) ->
     @server.tool(annotations=READ_ONLY)
     def list_families() -> dict[str, Any]:
         """Part families with part and verified counts."""
-        fams = get_registry().families()
+        fams = get_registry().families(include_reference=False)
         return {"families": [dict(f, title=P.FAMILY_TITLES.get(f["family"], f["family"])) for f in fams]}
 
     @server.tool(annotations=READ_ONLY)

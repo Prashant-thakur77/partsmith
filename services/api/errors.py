@@ -12,6 +12,7 @@ from starlette.exceptions import HTTPException as StarletteHTTPException
 
 from services.geom_worker.bake import BakeError
 from services.geom_worker.program import ProgramError, UnknownParamError
+from services.registry.gate import ShipBlocked
 from services.registry.parts import PartNotFound
 
 log = logging.getLogger("partsmith.api")
@@ -74,6 +75,13 @@ def install(app: FastAPI) -> None:
     @app.exception_handler(BakeError)
     async def _bake(_: Request, exc: BakeError) -> JSONResponse:
         return _resp(422, "bake_failed", f"the part program failed to build: {exc}")
+
+    @app.exception_handler(ShipBlocked)
+    async def _ship(_: Request, exc: ShipBlocked) -> JSONResponse:
+        d = exc.decision
+        if d.needs_ack:
+            return _resp(409, "needs_ack", f"{d.reason} Repeat with ack=1 to export it anyway.")
+        return _resp(409, "not_shippable", d.reason)
 
     @app.exception_handler(StarletteHTTPException)
     async def _http(_: Request, exc: StarletteHTTPException) -> JSONResponse:

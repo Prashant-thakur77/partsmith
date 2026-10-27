@@ -64,6 +64,7 @@ class FakeService:
             j.emit(MetricEvent(job=j.id, iter=1, name="hausdorff_mm", value=0.31, threshold=0.5))
             if j.input.intent != "no-outline":
                 j.write_text("part.py", make_part("spacer").code)
+                j.write_json("verification.json", make_part("spacer").verification)
                 j.write_json("outline.json", {"outline_mm": [[0, 0], [10, 0], [10, 5]], "holes": []})
             j.emit(DoneEvent(job=j.id, verified=True, status="verified", summary={"max_error_mm": 0.31}))
 
@@ -569,8 +570,10 @@ def test_families_needs_stats(client: TestClient) -> None:
     assert fams["hook"] == {"family": "hook", "title": "Hooks", "count": 2, "verified": 1}
     assert fams["wheel"]["count"] == 0  # template families are listed with honest zero counts
     n = client.post("/api/v1/needs", json={"query": "dishwasher rack wheel 22 mm"}).json()
-    again = client.post("/api/v1/needs", json={"query": "Dishwasher rack wheel 22 mm"}).json()
-    assert again["id"] == n["id"] and again["votes"] == 2
+    same_client = client.post("/api/v1/needs", json={"query": "Dishwasher rack wheel 22 mm"}).json()
+    assert same_client["id"] == n["id"] and same_client["votes"] == 1 and same_client["counted"] is False
+    other = client.post("/api/v1/needs", json={"query": "dishwasher rack wheel 22 MM"}, headers={"User-Agent": "b"})
+    assert other.json()["votes"] == 2
     assert client.get("/api/v1/needs").json()[0]["votes"] == 2
     s = client.get("/api/v1/stats").json()
     assert s["parts"] == 2 and s["verified"] == 1 and s["synthetic"] == 2 and s["real"] == 0 and s["jobs"] == 0

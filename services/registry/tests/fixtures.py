@@ -9,7 +9,7 @@ from collections.abc import Iterator
 from pathlib import Path
 
 import pytest
-from partsmith_schemas import DataOrigin, PartRecord, Verification
+from partsmith_schemas import DataOrigin, PartRecord, Validity, Verification, ViewMetrics
 from partsmith_schemas.registry import Provenance
 
 from services.agent import jobs, providers
@@ -104,6 +104,20 @@ def make_part(
             status="verified" if verified else "best_effort",
             max_error_mm=max_error_mm,
             origin=origin,
+            views=[
+                ViewMetrics(
+                    view="top",
+                    iou=0.99 if verified else 0.9,
+                    hausdorff_mm=max_error_mm,
+                    hd95_mm=max_error_mm,
+                    mean_mm=max_error_mm / 2,
+                )
+            ],
+            validity=Validity(
+                is_valid=True, single_solid=True, watertight=True, volume_mm3=1000.0, bbox_mm=(10.0, 10.0, 10.0)
+            ),
+            hashes={"code_sha256": code_sha(code), "mesh_sha256": "0" * 64},
+            reasons=[] if verified else ["the top outline differs from the photo by up to 0.8 mm"],
         ),
         provenance=Provenance(origin=origin, created_by="test", forked_from=forked_from, note="TEST DATA"),
         created_at=time.time(),

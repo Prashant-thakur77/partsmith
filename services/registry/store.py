@@ -82,6 +82,35 @@ class ThumbRow(Base):
     created_at: Mapped[float] = mapped_column(Float)
 
 
+class NeedMetaRow(Base):
+    """Extras of a request ("need"): an optional photo and who asked (hashed client fingerprint, never an IP)."""
+
+    __tablename__ = "need_meta"
+    id: Mapped[str] = mapped_column(String(32), primary_key=True)
+    photo_key: Mapped[str | None] = mapped_column(String(80), nullable=True)
+    updated_at: Mapped[float] = mapped_column(Float)
+
+
+class NeedVoteRow(Base):
+    __tablename__ = "need_votes"
+    need_id: Mapped[str] = mapped_column(String(32), primary_key=True)
+    voter: Mapped[str] = mapped_column(String(32), primary_key=True)  # hashed client fingerprint
+    created_at: Mapped[float] = mapped_column(Float)
+
+
+class UsageRow(Base):
+    """API/MCP call counts per day, route and hashed client fingerprint (no raw IPs or user agents)."""
+
+    __tablename__ = "usage"
+    day: Mapped[str] = mapped_column(String(10), primary_key=True)
+    route: Mapped[str] = mapped_column(String(160), primary_key=True)
+    client: Mapped[str] = mapped_column(String(32), primary_key=True)
+    n: Mapped[int] = mapped_column(Integer, default=0)
+
+
+ROLE_REFERENCE_TAG = "role:reference"  # reference objects (ID-1 card, LEGO brick ...): bench-only, hidden from /parts
+
+
 def _url() -> str:
     return os.environ.get("DATABASE_URL") or f"sqlite:///{home() / 'partsmith.db'}"
 
@@ -147,8 +176,10 @@ class Registry:
         sort: str = "relevance",
         cursor: int = 0,
         limit: int = 24,
+        role: str | None = None,
     ) -> tuple[list[PartRecord], int]:
-        """Token search over title/family/tags/summary with numeric boosting ("cooler wheel 32 mm" prefers Ø≈32 parts)."""
+        """Token search over title/family/tags/summary with numeric boosting ("cooler wheel 32 mm" prefers Ø≈32 parts).
+        `role`: None = everything, "part" = functional parts only, "reference" = reference objects only."""
         tokens = [
             t for t in re.findall(r"[a-z]+", q.lower()) if len(t) > 1 and t not in {"mm", "for", "the", "and", "with"}
         ]
@@ -161,6 +192,10 @@ class Registry:
                 stmt = stmt.where(PartRow.verified == verified)
             if origin:
                 stmt = stmt.where(PartRow.origin == origin)
+            if role == "reference":
+                stmt = stmt.where(PartRow.search_text.contains(ROLE_REFERENCE_TAG))
+            elif role == "part":
+                stmt = stmt.where(~PartRow.search_text.contains(ROLE_REFERENCE_TAG))
             if tokens:
                 stmt = stmt.where(or_(*[PartRow.search_text.contains(t) for t in tokens]))
             rows = list(s.scalars(stmt))
@@ -179,13 +214,12 @@ class Registry:
             parts.sort(key=lambda p: _score(p, tokens, numbers), reverse=True)
         return parts[cursor : cursor + limit], len(parts)
 
-    def families(self) -> list[dict[str, Any]]:
+    def families(self, *, include_reference: bool = True) -> list[dict[str, Any]]:
         with self.session() as s:
-            rows = s.execute(
-                select(PartRow.family, func.count(), func.sum(func.cast(PartRow.verified, Integer))).group_by(
-                    PartRow.family
-                )
-            ).all()
+            stmt = select(PartRow.family, func.count(), func.sum(func.cast(PartRow.verified, Integer)))
+            if not include_reference:
+                stmt = stmt.where(~PartRow.search_text.contains(ROLE_REFERENCE_TAG))
+            rows = s.execute(stmt.group_by(PartRow.family)).all()
         return [{"family": f, "count": int(c), "verified": int(v or 0)} for f, c, v in rows]
 
     def stats(self) -> dict[str, Any]:
@@ -194,6 +228,12 @@ class Registry:
             verified = s.scalar(select(func.count()).select_from(PartRow).where(PartRow.verified.is_(True))) or 0
             by_origin = dict(s.execute(select(PartRow.origin, func.count()).group_by(PartRow.origin)).all())
             records = list(s.scalars(select(PartRow.record)))
+            reference = (
+                s.scalar(
+                    select(func.count()).select_from(PartRow).where(PartRow.search_text.contains(ROLE_REFERENCE_TAG))
+                )
+                or 0
+            )
         grams = sum((json.loads(r).get("facts") or {}).get("mass_g_pla", 0.0) for r in records)
         return {
             "parts": int(total),
@@ -202,6 +242,7 @@ class Registry:
             "real": int(by_origin.get("real", 0)),
             "reference_object": int(by_origin.get("reference_object", 0)),
             "grams_pla": round(float(grams), 1),
+            "reference": int(reference),
         }
 
     # ---- thumbnails ------------------------------------------------------------------------------------------------
@@ -242,10 +283,87 @@ class Registry:
                 s.add(row)
             return Need(id=row.id, query=row.query, votes=row.votes, status=row.status, created_at=row.created_at)
 
+    def request_need(self, query: str, voter: str) -> tuple[Need, bool]:
+        """Create a request, or vote for the same request (case-insensitive) once per voter. Returns (need, counted)."""
+        query = query.strip()[:300]
+        with self._lock, self.session() as s:
+            row = s.scalars(select(NeedRow).where(func.lower(NeedRow.query) == query.lower())).first()
+            counted = True
+            if row is None:
+                row = NeedRow(
+                    id="n_" + secrets.token_hex(5), query=query, votes=1, status="open", created_at=time.time()
+                )
+                s.add(row)
+                s.add(NeedVoteRow(need_id=row.id, voter=voter, created_at=time.time()))
+            elif s.get(NeedVoteRow, (row.id, voter)) is None:
+                s.add(NeedVoteRow(need_id=row.id, voter=voter, created_at=time.time()))
+                row.votes += 1
+            else:
+                counted = False
+            return Need(
+                id=row.id, query=row.query, votes=row.votes, status=row.status, created_at=row.created_at
+            ), counted
+
+    def get_need(self, nid: str) -> Need | None:
+        with self.session() as s:
+            r = s.get(NeedRow, nid)
+            return Need(id=r.id, query=r.query, votes=r.votes, status=r.status, created_at=r.created_at) if r else None
+
+    def vote_need(self, nid: str, voter: str) -> tuple[Need, bool]:
+        """One vote per voter (hashed fingerprint). Returns (need, counted). KeyError for unknown ids."""
+        with self._lock, self.session() as s:
+            r = s.get(NeedRow, nid)
+            if r is None:
+                raise KeyError(nid)
+            counted = s.get(NeedVoteRow, (nid, voter)) is None
+            if counted:
+                s.add(NeedVoteRow(need_id=nid, voter=voter, created_at=time.time()))
+                r.votes += 1
+            return Need(id=r.id, query=r.query, votes=r.votes, status=r.status, created_at=r.created_at), counted
+
+    def set_need_status(self, nid: str, status: str) -> Need:
+        with self._lock, self.session() as s:
+            r = s.get(NeedRow, nid)
+            if r is None:
+                raise KeyError(nid)
+            r.status = status
+            return Need(id=r.id, query=r.query, votes=r.votes, status=r.status, created_at=r.created_at)
+
+    def set_need_photo(self, nid: str, photo_key: str) -> None:
+        with self._lock, self.session() as s:
+            s.merge(NeedMetaRow(id=nid, photo_key=photo_key, updated_at=time.time()))
+
+    def need_photos(self) -> dict[str, str]:
+        with self.session() as s:
+            return {r.id: r.photo_key for r in s.scalars(select(NeedMetaRow)) if r.photo_key}
+
     def needs(self, limit: int = 50) -> list[Need]:
         with self.session() as s:
             rows = s.scalars(select(NeedRow).order_by(NeedRow.votes.desc(), NeedRow.created_at.desc()).limit(limit))
             return [Need(id=r.id, query=r.query, votes=r.votes, status=r.status, created_at=r.created_at) for r in rows]
+
+    # ---- usage -------------------------------------------------------------------------------------------------------
+    def add_usage(self, counts: dict[tuple[str, str, str], int]) -> None:
+        """Add (day, route, client) → n counts."""
+        if not counts:
+            return
+        with self._lock, self.session() as s:
+            for (day, route, client), n in counts.items():
+                row = s.get(UsageRow, (day, route, client))
+                if row is None:
+                    s.add(UsageRow(day=day, route=route, client=client, n=n))
+                else:
+                    row.n += n
+
+    def usage(self, since_day: str | None = None) -> list[tuple[str, str, str, int]]:
+        with self.session() as s:
+            stmt = select(UsageRow)
+            if since_day:
+                stmt = stmt.where(UsageRow.day >= since_day)
+            return [(r.day, r.route, r.client, r.n) for r in s.scalars(stmt)]
+
+    def lesson(self, lid: str) -> dict[str, Any] | None:
+        return next((x for x in self.lessons() if x["id"] == lid), None)
 
     # ---- lessons -----------------------------------------------------------------------------------------------------
     def add_lesson(self, scope: str, rule: str, evidence: dict[str, Any]) -> str:

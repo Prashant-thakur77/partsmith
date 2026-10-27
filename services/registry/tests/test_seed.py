@@ -49,6 +49,7 @@ def _fake_service() -> SimpleNamespace:
             {"id": "spacer-easy-01", "title": "Spacer", "family_hint": "spacer"},
             {"id": "spacer-easy-02", "title": "Spacer 2", "family_hint": "spacer"},
             {"id": "bad-glare-01", "title": "Glare", "family_hint": "clip"},
+            {"id": "ref-id1-card", "title": "ID-1 card", "family_hint": None, "kind": "reference_object"},
         ],
         start_demo_job=start_demo_job,
         publish=publish,
@@ -62,21 +63,24 @@ def test_seed_is_idempotent_and_exports_replays(monkeypatch: pytest.MonkeyPatch,
     monkeypatch.setattr(S, "_service", lambda: fake)
     monkeypatch.setattr(S, "SAMPLES_DIR", tmp_path / "no-committed-samples")
     out = S.seed(log=lambda m: None)
-    assert out["seeded"] == ["spacer-easy-01", "spacer-easy-02"]
+    # product names from the part's own knobs, never the sample folder; a reference object is tagged, not listed
+    assert out["seeded"] == ["spacer-8mm", "spacer-8mm-height6mm", "reference-spacer-standoff"]
     assert out["failed"] == ["bad-glare-01: best effort 5.00 mm > 2 mm, not published"]
-    assert get_registry().get_part("bad-glare-01") is None
     reg = get_registry()
-    part = reg.get_part("spacer-easy-01")
-    assert part is not None and part.provenance.origin == DataOrigin.synthetic
-    assert reg.thumbnail("spacer-easy-01") is not None
+    part = reg.get_part("spacer-8mm")
+    assert part is not None and part.title == "Spacer, 8 mm" and part.provenance.origin == DataOrigin.synthetic
+    assert reg.thumbnail("spacer-8mm") is not None
+    assert {p.slug for p in reg.search("", role="part", limit=50)[0]} == {"spacer-8mm", "spacer-8mm-height6mm"}
+    assert [p.slug for p in reg.search("", role="reference")[0]] == ["reference-spacer-standoff"]
+    assert not any(s.startswith(("spacer-easy", "demo-")) for s in reg.slugs())
     index = json.loads((jobs.REPLAYS_DIR / S.INDEX_NAME).read_text())
-    assert set(index) == {"spacer-easy-01", "spacer-easy-02", "bad-glare-01"}  # every finished run is a replay
+    assert set(index) == {"spacer-easy-01", "spacer-easy-02", "bad-glare-01", "ref-id1-card"}  # every run is a replay
     assert all((jobs.REPLAYS_DIR / jid / "run.jsonl").exists() for jid in index.values())
 
     again = S.seed(log=lambda m: None)
-    assert again["seeded"] == [] and again["skipped"] == ["spacer-easy-01", "spacer-easy-02", "bad-glare-01"]
-    assert fake.calls["runs"] == 3  # nothing re-ran
-    assert S.seed(retry=True, max_error_mm=None, log=lambda m: None)["seeded"] == ["bad-glare-01"]
+    assert again["seeded"] == [] and set(again["skipped"]) >= {"spacer-8mm", "spacer-8mm-height6mm"}
+    assert fake.calls["runs"] == 4  # nothing re-ran
+    assert S.seed(retry=True, max_error_mm=None, log=lambda m: None)["seeded"] == ["spacer-8mm-height8mm"]
     assert S.seed(if_empty=True, log=lambda m: None) == {"seeded": [], "skipped": [], "failed": []}
 
 
@@ -105,9 +109,9 @@ def test_seed_runs_the_real_pipeline(monkeypatch: pytest.MonkeyPatch, tmp_path: 
     monkeypatch.setattr(service, "SAMPLES_DIRS", (root,))
     monkeypatch.setattr(S, "SAMPLES_DIR", root)
     out = S.seed(include_real=False, log=lambda m: None)
-    assert out["seeded"] == ["spacer-seed-01"], out
-    part = get_registry().get_part("spacer-seed-01")
-    assert part is not None and part.provenance.origin == DataOrigin.synthetic
-    assert get_registry().thumbnail("spacer-seed-01") is not None
+    assert out["seeded"] == ["spacer-12mm"], out
+    part = get_registry().get_part("spacer-12mm")
+    assert part is not None and part.provenance.origin == DataOrigin.synthetic and part.title == "Spacer, 12 mm"
+    assert get_registry().thumbnail("spacer-12mm") is not None
     again = S.seed(include_real=False, log=lambda m: None)
-    assert again["skipped"] == ["spacer-seed-01"] and again["seeded"] == []
+    assert again["skipped"] == ["spacer-12mm"] and again["seeded"] == []

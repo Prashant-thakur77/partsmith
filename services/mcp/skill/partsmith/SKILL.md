@@ -22,6 +22,8 @@ an origin label (`real` = verified against a photo of a real part, `synthetic` =
 
 ## Rules
 - Never rescale a part to force a fit — change the knob that matters.
+- `bake` refuses best-effort parts until `ack=true`: tell the user the returned reason first, and suggest the fit-test
+  coupon. Use `verify(slug, job_id)` to check an existing part against the user's photos before building a new one.
 - Units are millimetres. Quote numbers exactly as returned; `best_effort` is not `verified`.
 - Say which dimensions were measured, which were stated by the user and which were assumed.
 - `start_fix_job` and `report_need` write; everything else is read-only.

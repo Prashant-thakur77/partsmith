@@ -40,8 +40,8 @@ def base_url() -> str:
 def llms_txt(reg: Registry | None = None, *, base: str | None = None) -> str:
     reg = reg or get_registry()
     stats = reg.stats()
-    fams = sorted(reg.families(), key=lambda f: -f["count"])
-    parts, total = reg.search("", sort="title", limit=60)
+    fams = sorted(reg.families(include_reference=False), key=lambda f: -f["count"])
+    parts, total = reg.search("", sort="title", limit=60, role="part")
     b = (base or base_url()).rstrip("/")
     lines = [
         "# PartSmith",

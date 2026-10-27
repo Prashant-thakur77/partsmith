@@ -71,7 +71,7 @@ def _token(spec: ParamSpec, v: float) -> str:
         return f"{round(v)}{_ABBR.get(word, word[:4])}"
     if spec.name in MAIN_DIMS:
         return f"{_num(v)}mm"
-    return f"{spec.name.split('_')[0][:5]}{_num(v)}{spec.unit}"
+    return f"{spec.name.split('_')[0]}{_num(v)}{spec.unit}"
 
 
 def variant_suffix(new: PartRecord, old: PartRecord) -> str:

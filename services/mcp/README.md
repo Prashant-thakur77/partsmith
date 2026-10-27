@@ -15,10 +15,12 @@ Absolute URLs in tool results use `PARTSMITH_PUBLIC_URL` (default `http://localh
 
 | Tool | Writes? | What it does |
 |---|---|---|
-| `search_parts(q, family?, verified?, limit?)` | no | Search; numbers in `q` prefer parts with a matching dimension. `coverage: "none"` = nothing matched |
-| `get_part(slug)` | no | Knobs (min/max/step/unit/topology), verification, provenance (origin), printing facts, download URLs |
+| `search_parts(q, family?, verified?, limit?)` | no | Search; numbers in `q` prefer parts with a matching dimension. `coverage: "none"` = nothing matched. Bench reference objects are not listed |
+| `get_part(slug)` | no | Knobs (min/max/step/unit/topology), verification, provenance (origin), printing facts, download URLs, `ship` (export-gate decision) |
 | `get_variant(slug, want)` | no | Plain words → clamped params, `applied`, `not_applied`, `confidence`, `bake_url` |
-| `bake(slug, params?, formats?, inline_stl_path?)` | no | STL/3MF/STEP/GLB/view/py URLs (content-addressed cache); `stl_path` over stdio |
+| `bake(slug, params?, formats?, inline_stl_path?, ack?)` | no | STL/3MF/STEP/GLB/view/py URLs (content-addressed cache); `stl_path` over stdio. Export gate: best-effort parts need `ack=true` after you tell the user the reason; failed parts are refused |
+| `verify(slug, job_id, params?)` | no | Runs the deterministic verifier for a registry part against a job's measured photos (IoU, Hausdorff, residuals, tests, `verified`) |
+| `get_lessons(status?, family?)` | no | Rules learned from earlier builds with evidence links (default: promoted, i.e. confirmed by a person) |
 | `find_matching(slug)` | no | Mating parts, shared interface (same screw/pin/bore Ø), same family — each with a `reason` |
 | `list_families()` | no | Families with part and verified counts |
 | `measure_photo(image_base64 \| path, view?, thickness_mm?, mat_id?)` | no | Photo on a PartSmith mat → capture report, calibration, measurements in mm |

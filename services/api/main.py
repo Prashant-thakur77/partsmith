@@ -13,9 +13,7 @@ import asyncio
 import contextlib
 import json
 import logging
-import math
 import os
-import re
 import threading
 import time
 from collections import defaultdict, deque
@@ -23,10 +21,10 @@ from collections.abc import AsyncIterator, Awaitable, Callable, Iterator
 from typing import Annotated, Any, Literal
 from urllib.parse import urlencode
 
-from fastapi import APIRouter, Body, FastAPI, File, Form, Query, Request, UploadFile
+from fastapi import APIRouter, Body, Depends, FastAPI, File, Form, Query, Request, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, JSONResponse, PlainTextResponse, Response, StreamingResponse
-from partsmith_schemas import JobInput, Measurements, Need, PartRecord
+from partsmith_schemas import ArtifactEvent, JobInput, Measurements, MetricEvent, Need, PartRecord
 from partsmith_schemas.partspec import Family
 from partsmith_schemas.registry import BakeResult, VariantResult
 from partsmith_schemas.verification import ParamSpec, Verification
@@ -35,33 +33,39 @@ from starlette.routing import Route
 from starlette.types import Receive, Scope, Send
 
 from services.agent import providers
-from services.api import agentdocs, deps
+from services.api import agentdocs, auth, usage
+from services.api.auth import require_admin
+from services.api.common import (
+    API,
+    EXTENSIONS,
+    IMMUTABLE,
+    _file,
+    _formats,
+    _job,
+    _mat_or_404,
+    _query_params,
+    _resolve_artifact,
+    _service_call,
+    _svc,
+    public_base,
+)
 from services.api.errors import ApiError, install
+from services.api.round2 import apply_preset, embed_router
+from services.api.round2 import router as round2_router
 from services.api.uploads import check_audio, clean_image
 from services.common import blobs
 from services.common.paths import REPO_ROOT
 from services.geom_worker import bake as geom_bake
-from services.geom_worker.program import ProgramError, UnknownParamError
+from services.registry import gate, steer
 from services.registry import parts as P
-from services.registry import steer
 from services.registry.publish import dedupe_published, publish_part
 from services.registry.store import get_registry
 
 VERSION = "0.1.0"
-API = "/api/v1"
+FOLLOW_MAX_S = 1800.0
+FOLLOW_POLL_S = 0.5
 HEARTBEAT_S = float(os.environ.get("PARTSMITH_SSE_HEARTBEAT_S", "15"))
 BENCH_REPORT = REPO_ROOT / "eval" / "reports" / "latest" / "report.json"
-IMMUTABLE = "public, max-age=31536000, immutable"
-MEDIA_TYPES = {
-    "stl": "model/stl",
-    "step": "model/step",
-    "3mf": "model/3mf",
-    "glb": "model/gltf-binary",
-    "view": "application/json",
-    "py": "text/x-python; charset=utf-8",
-}
-EXTENSIONS = {"stl": ".stl", "step": ".step", "3mf": ".3mf", "glb": ".glb", "view": ".view.json", "py": ".py"}
-RESERVED_QUERY = {"format", "formats", "download"}
 
 log = logging.getLogger("partsmith.api")
 
@@ -193,92 +197,20 @@ async def rate_limit(request: Request, call_next: Callable[[Request], Awaitable[
                 status_code=429,
                 headers={"Retry-After": str(retry)},
             )
-    return await call_next(request)
+    response = await call_next(request)
+    path = request.url.path
+    if path.startswith((API, "/mcp", "/embed", "/llms.txt", "/prompt.txt")):
+        route = getattr(request.scope.get("route"), "path", None) or ("/mcp" if path.startswith("/mcp") else path)
+        try:
+            usage.record(
+                str(route), request.client.host if request.client else "", request.headers.get("user-agent", "")
+            )
+        except Exception:  # counting must never break a request
+            log.warning("usage counter failed")
+    return response
 
 
 router = APIRouter(prefix=API)
-
-
-def _svc() -> Any:
-    return deps.service()
-
-
-def _job(job_id: str) -> Any:
-    job = _svc().manager().get(job_id)
-    if job is None:
-        ids = [s.id for s in _svc().manager().list(200, include_replays=True)]
-        import difflib
-
-        raise ApiError(404, "job_not_found", f"no job {job_id!r}", difflib.get_close_matches(job_id, ids, n=3))
-    return job
-
-
-_HINTS = {
-    "no_model_outline": "fit-outline and fit-check need a finished fix job with a model outline "
-    "(Steer lanes and failed runs have none)",
-    "no_program": "the job has no part program yet (it is still running, failed early or was refused)",
-    "no_preview_source": "the preview needs a verified outline and a rectified photo from a fix job",
-}
-
-
-def _service_call(fn: Callable[..., Any], *args: Any, conflict: str, **kw: Any) -> Any:
-    """Call the agent service; its KeyError (missing state) → 409 `conflict`, ValueError → 422. Errors that already
-    map to the envelope (unknown part/param, bad PARAMS) pass through."""
-    try:
-        return fn(*args, **kw)
-    except (P.PartNotFound, UnknownParamError, ProgramError, ApiError):
-        raise
-    except KeyError as exc:
-        msg = str(exc.args[0]) if exc.args else conflict
-        hint = _HINTS.get(conflict)
-        raise ApiError(409, conflict, f"{msg}; {hint}" if hint else msg) from exc
-    except ValueError as exc:
-        raise ApiError(422, "invalid_request", str(exc)) from exc
-
-
-def _float(name: str, raw: str) -> float:
-    try:
-        v = float(raw)
-    except ValueError:
-        raise ApiError(422, "bad_param", f"{name}={raw!r} is not a number") from None
-    if not math.isfinite(v):
-        raise ApiError(422, "bad_param", f"{name} must be finite")
-    return v
-
-
-def _query_params(request: Request) -> dict[str, float]:
-    return {k: _float(k, v) for k, v in request.query_params.multi_items() if k not in RESERVED_QUERY}
-
-
-def _formats(request: Request) -> list[str]:
-    raw = request.query_params.getlist("format") + request.query_params.getlist("formats")
-    try:
-        return P.parse_formats(raw or None)
-    except ValueError as exc:
-        raise ApiError(422, "bad_format", str(exc), list(P.ALL_FORMATS)) from exc
-
-
-def _file(path: Any, fmt: str, filename: str, *, cache: str = IMMUTABLE) -> FileResponse:
-    return FileResponse(
-        path,
-        media_type=MEDIA_TYPES.get(fmt, "application/octet-stream"),
-        filename=filename,
-        headers={"Cache-Control": cache},
-    )
-
-
-def _resolve_artifact(url: str) -> Any:
-    """Local file behind an artifact URL (bake route or blob)."""
-    if url.startswith(f"{API}/bakes/"):
-        key, _, name = url[len(f"{API}/bakes/") :].partition("/")
-        return P.bake_file(key, name)
-    if url.startswith(f"{API}/blobs/"):
-        try:
-            p = blobs.locate(url[len(f"{API}/blobs/") :])
-        except ValueError:
-            return None
-        return p if p.exists() else None
-    return None
 
 
 # ------------------------------------------------------------------------------------------------- system
@@ -363,6 +295,7 @@ def status() -> dict[str, Any]:
     live_open = sorted({r["stage"] for r in rows if r["open_weights"] and r["mode"] == "live"})
     return {
         "mode": providers.overall_mode(),
+        "admin": auth.mode(),
         "providers": rows,
         "warnings": providers.warnings(),
         "jobs": {"total": jobs_total, "verified": jobs_verified},
@@ -389,16 +322,6 @@ def mats() -> list[dict[str, Any]]:
     from services.metrology.mats import all_mats, layout_json
 
     return [layout_json(m.mat_id) for m in all_mats()]
-
-
-def _mat_or_404(mat_id: str) -> None:
-    from services.metrology.mats import all_mats
-
-    ids = [m.mat_id for m in all_mats()]
-    if mat_id not in ids:
-        import difflib
-
-        raise ApiError(404, "mat_not_found", f"no mat {mat_id!r}", difflib.get_close_matches(mat_id, ids, n=3) or ids)
 
 
 @router.get("/mats/{mat_id}", summary="One mat layout", tags=["mats"])
@@ -564,9 +487,12 @@ async def job_events(
     job_id: str,
     request: Request,
     from_seq: Annotated[int, Query(ge=0, description="Resume from this event seq")] = 0,
+    follow: Annotated[bool, Query(description="Keep streaming after `done` (fit-check updates)")] = False,
 ) -> StreamingResponse:
     """One `data: <Event JSON>` per event, `id:` = seq, original `ts` kept (replays pace on ts gaps). A `: keep-alive`
-    comment is sent when nothing happens for a while. `Last-Event-ID` resumes like `from_seq`."""
+    comment is sent when nothing happens for a while. `Last-Event-ID` resumes like `from_seq`. The stream ends after
+    `done`, unless `follow=1`: then it stays open (up to 30 min) and delivers events added later, e.g. a phone's
+    fit check, so a laptop page turns green without reloading."""
     job = await asyncio.to_thread(_job, job_id)
     start = from_seq
     last = request.headers.get("last-event-id")
@@ -576,20 +502,32 @@ async def job_events(
     async def stream() -> AsyncIterator[str]:
         seq = start
         yield "retry: 3000\n\n"
+        quiet_since = time.monotonic()
+        deadline = time.monotonic() + FOLLOW_MAX_S
         while True:
             if await request.is_disconnected():
                 return
-            events = await asyncio.to_thread(job.events_since, seq, HEARTBEAT_S)
+            if follow and job.finished:  # events_since would not wait on a finished job: poll instead
+                events = list(job.events[seq:])
+                if not events:
+                    await asyncio.sleep(FOLLOW_POLL_S)
+            else:
+                events = await asyncio.to_thread(job.events_since, seq, HEARTBEAT_S)
             if events:
+                quiet_since = time.monotonic()
                 for ev in events:
                     yield _sse(ev)
                     seq = ev.seq + 1
-                    if ev.t == "done":
+                    if ev.t == "done" and not follow:
                         return
                 continue
-            if job.finished:
+            if job.finished and not follow:
                 return
-            yield ": keep-alive\n\n"
+            if follow and time.monotonic() > deadline:
+                return
+            if not follow or time.monotonic() - quiet_since >= HEARTBEAT_S:
+                quiet_since = time.monotonic()
+                yield ": keep-alive\n\n"
 
     return StreamingResponse(
         stream(),
@@ -694,7 +632,26 @@ def job_fit_check(
     _mat_or_404(mat_id)
     data, _ = clean_image(photo.file.read(), "photo")
     out = _service_call(_svc().fit_check, job_id, data, mat_id, conflict="no_model_outline")
-    return out.model_dump(mode="json") if hasattr(out, "model_dump") else dict(out)
+    res: dict[str, Any] = out.model_dump(mode="json") if hasattr(out, "model_dump") else dict(out)
+    _emit_fit_check(_job(job_id), res, mat_id)
+    return res
+
+
+def _emit_fit_check(job: Any, res: dict[str, Any], mat_id: str) -> None:
+    """Live update for pages following the job's SSE: metric events (fit_check_passed 1/0, IoU, Hausdorff) and the
+    overlay as a `measure_overlay` artifact labelled "fit check …"."""
+    it = int(job.summary.iterations)
+    passed = bool(res.get("passed"))
+    job.emit(MetricEvent(job=job.id, iter=it, name="fit_check_passed", value=1.0 if passed else 0.0, unit=""))
+    if isinstance(res.get("iou"), (int, float)):
+        job.emit(MetricEvent(job=job.id, iter=it, name="fit_check_iou", value=float(res["iou"]), unit=""))
+    if isinstance(res.get("hausdorff_mm"), (int, float)):
+        job.emit(MetricEvent(job=job.id, iter=it, name="fit_check_hausdorff_mm", value=float(res["hausdorff_mm"])))
+    url = res.get("overlay_url")
+    if isinstance(url, str) and url.startswith(f"{API}/blobs/"):
+        key = url.rsplit("/", 1)[-1]
+        job.emit(ArtifactEvent(job=job.id, kind="measure_overlay", sha=key.split(".")[0], url=url, iter=it,
+                               label=f"fit check on {mat_id}: {'PASS' if passed else 'FAIL'}"))  # fmt: skip
 
 
 @router.get(
@@ -711,9 +668,10 @@ def job_runlog(job_id: str) -> FileResponse:
 
 
 @router.get("/jobs/{job_id}/bake", summary="Re-bake the job's current part program (before publishing)", tags=["jobs"])
-def job_bake(job_id: str, request: Request, download: bool = False) -> Any:
-    """Query: `<param>=<value>` knobs plus `format=` (repeat or comma-separate). Same BakeResult as part bakes."""
-    _job(job_id)
+def job_bake(job_id: str, request: Request, download: bool = False, ack: bool = False) -> Any:
+    """Query: `<param>=<value>` knobs plus `format=` (repeat or comma-separate). Same BakeResult as part bakes.
+    `download=1` goes through the export gate: verified ships, best effort needs `ack=1`, failed is refused."""
+    job = _job(job_id)
     params, fmts = _query_params(request), _formats(request)
     svc = _svc()
     if not hasattr(svc, "bake_job"):
@@ -722,6 +680,8 @@ def job_bake(job_id: str, request: Request, download: bool = False) -> Any:
     data = res.model_dump(mode="json") if hasattr(res, "model_dump") else dict(res)
     if download:
         fmt = fmts[0]
+        if fmt != "view":  # the viewer mesh is a preview, not a printable export
+            gate.require(_job_decision(job), ack)
         path = _resolve_artifact(data["artifacts"].get(fmt, ""))
         if path is None:
             raise ApiError(404, "artifact_not_found", f"no {fmt} file for this bake", sorted(data["artifacts"]))
@@ -731,17 +691,32 @@ def job_bake(job_id: str, request: Request, download: bool = False) -> Any:
 
 class PublishRequest(BaseModel):
     slug: str | None = Field(None, pattern=r"^[a-z0-9][a-z0-9-]{1,79}$", description="Optional slug for the new part")
+    ack: bool = Field(False, description="Acknowledge a best-effort part (required to publish one)")
+
+
+def _job_decision(job: Any) -> gate.ShipDecision:
+    data = job.read_json("verification.json")
+    ver = Verification.model_validate(data) if data else None
+    return gate.decide(verification=ver, job=job)
 
 
 @router.post(
     "/jobs/{job_id}/publish", summary="Publish a finished job to the registry (origin preserved)", tags=["jobs"]
 )
-def job_publish(job_id: str, body: Annotated[PublishRequest | None, Body()] = None) -> dict[str, Any]:
+def job_publish(
+    job_id: str,
+    body: Annotated[PublishRequest | None, Body()] = None,
+    ack: bool = False,
+    _admin: None = Depends(require_admin),
+) -> dict[str, Any]:
+    """Admin. Export gate: verified publishes; best effort needs `ack` (body or `?ack=1`); failed is refused."""
     job = _job(job_id)
     if not job.finished or job.summary.status != "done":
         raise ApiError(
             409, "not_finished", f"job {job_id} is {job.summary.status}; only finished jobs can be published"
         )
+    decision = _job_decision(job)
+    gate.require(decision, ack or bool(body and body.ack))
     slug = body.slug if body else None
     if slug and get_registry().get_part(slug) is not None:
         raise ApiError(409, "slug_taken", f"slug {slug!r} is taken", P.closest_slugs(slug))
@@ -753,6 +728,7 @@ def job_publish(job_id: str, body: Annotated[PublishRequest | None, Body()] = No
         job.save_summary()
     detail = P.part_detail(outcome.part)
     detail["publish"] = outcome.to_dict()
+    detail["ship"] = decision.to_dict()
     return detail
 
 
@@ -818,24 +794,32 @@ def measure(
 class VerifyRequest(BaseModel):
     part: str = Field(description="Registry slug")
     params: dict[str, float] = Field(default_factory=dict)
-    measurements: Measurements | dict[str, Measurements] = Field(description="One view or {view: Measurements}")
+    measurements: Measurements | dict[str, Measurements] | None = Field(
+        None, description="One view or {view: Measurements}"
+    )
+    job_id: str | None = Field(None, description="Use this job's measured photos instead of `measurements`")
 
 
 @router.post("/verify", summary="Stateless: verify a registry part at params against measurements", tags=["measure"])
-def verify_part(body: VerifyRequest) -> Verification:
+def verify_part(body: VerifyRequest) -> dict[str, Any]:
     """Deterministic: runs the part program in the sandbox and applies the pass rule. Code decides `verified`."""
-    from services.geom_worker.sandbox import run_program
-    from services.verifier.verify import verify
-
-    part = P.require_part(body.part)
-    meas = (
-        body.measurements if isinstance(body.measurements, dict) else {body.measurements.view.value: body.measurements}
-    )
-    res = run_program(part.code, body.params, outputs=(), features=True)
-    try:
-        return verify(res, meas, None).verification
-    finally:
-        res.cleanup()
+    P.require_part(body.part)
+    meas: dict[str, Any]
+    if body.job_id:
+        _job(body.job_id)
+        meas = dict(_service_call(_svc().job_detail, body.job_id, conflict="job_not_found").get("measurements") or {})
+        if not meas:
+            raise ApiError(409, "no_measurements", f"job {body.job_id} has no measurements yet")
+    elif body.measurements is None:
+        raise ApiError(422, "validation_error", "send `measurements` or `job_id`")
+    elif isinstance(body.measurements, dict):
+        meas = dict(body.measurements)
+    else:
+        meas = {body.measurements.view.value: body.measurements}
+    verification, functional = P.verify_part(body.part, body.params, meas)
+    out: dict[str, Any] = verification.model_dump(mode="json")
+    out["functional"] = functional
+    return out
 
 
 # ------------------------------------------------------------------------------------------------- registry
@@ -852,11 +836,16 @@ def parts_search(
     sort: SortKey = "relevance",
     cursor: str | None = None,
     limit: Annotated[int, Query(ge=1, le=100)] = 24,
+    role: Annotated[
+        Literal["part", "reference", "all"], Query(description="reference = bench reference objects")
+    ] = "part",
 ) -> dict[str, Any]:
-    """`sort`: relevance (default) | newest | error (smallest max error first) | title. `cursor` is opaque."""
+    """`sort`: relevance (default) | newest | error (smallest max error first) | title. `cursor` is opaque.
+    Reference objects (ID-1 card, LEGO brick …) are bench-only and hidden unless `role=reference` or `role=all`."""
     reg = get_registry()
     start = int(cursor) if cursor and cursor.isdigit() else 0
-    items, total = reg.search(q, family=family, verified=verified, origin=origin, sort=sort, cursor=start, limit=limit)
+    items, total = reg.search(q, family=family, verified=verified, origin=origin, sort=sort, cursor=start, limit=limit,
+                              role=None if role == "all" else role)  # fmt: skip
     thumbs = reg.thumbnails()
     nxt = start + len(items)
     return {
@@ -882,12 +871,14 @@ def part_params(slug: str) -> list[ParamSpec]:
     tags=["registry"],
     responses={200: {"model": BakeResult}},
 )
-def part_bake(slug: str, request: Request, download: bool = False) -> Any:
+def part_bake(slug: str, request: Request, download: bool = False, preset: str | None = None) -> Any:
     """Query: `<param>=<value>` for any knob plus `format=stl|3mf|step|glb|view|py` (repeat or comma-separate;
     default stl,step,view). Out-of-range values are clamped and listed in `clamped`; unknown knobs are a 422 with
-    `closest_matches`. Identical requests are content-addressed cache hits."""
+    `closest_matches`. `preset=` applies a fit preset (GET /parts/{slug}/presets) after the knob values. Identical
+    requests are content-addressed cache hits."""
     part = P.require_part(slug)
     params, fmts = _query_params(request), _formats(request)
+    params, preset_info = apply_preset(part, params, preset)
     out = P.bake_output(part, params, fmts)
     if download:
         fmt = fmts[0]
@@ -897,6 +888,8 @@ def part_bake(slug: str, request: Request, download: bool = False) -> Any:
         return _file(path, fmt, f"{slug}{EXTENSIONS[fmt]}")
     res = out.to_bake_result(slug, lambda fmt, p: P.bake_url(out.cache_key, p.name)).model_dump(mode="json")
     res["facts_notes"] = out.facts_notes
+    if preset_info is not None:
+        res["preset"] = preset_info
     return res
 
 
@@ -966,7 +959,7 @@ def part_feedback(slug: str, body: FeedbackRequest) -> dict[str, Any]:
 def families() -> list[dict[str, Any]]:
     from services.agent.templates import list_templates
 
-    counts = {f["family"]: f for f in get_registry().families()}
+    counts = {f["family"]: f for f in get_registry().families(include_reference=False)}
     names = list(dict.fromkeys([*counts, *(t.family.value for t in list_templates())]))
     return [
         {
@@ -983,14 +976,84 @@ class NeedRequest(BaseModel):
     query: str = Field(min_length=3, max_length=300, examples=["dishwasher rack wheel 22 mm"])
 
 
-@router.post("/needs", summary="Request a part that does not exist yet", tags=["registry"])
-def needs_add(body: NeedRequest) -> Need:
-    return get_registry().add_need(body.query)
+def _need_out(need: Need, photos: dict[str, str] | None = None) -> dict[str, Any]:
+    d: dict[str, Any] = need.model_dump(mode="json")
+    key = (photos if photos is not None else get_registry().need_photos()).get(need.id)
+    d["photo_url"] = blobs.url(key) if key else None
+    return d
 
 
-@router.get("/needs", summary="Most-wanted missing parts", tags=["registry"])
-def needs_list(limit: Annotated[int, Query(ge=1, le=200)] = 50) -> list[Need]:
-    return get_registry().needs(limit)
+def _client(request: Request) -> str:
+    return usage.fingerprint(request.client.host if request.client else "", request.headers.get("user-agent", ""))
+
+
+@router.post(
+    "/needs",
+    summary="Request a part that does not exist yet (JSON, or multipart with an optional photo)",
+    tags=["requests"],
+    openapi_extra={"requestBody": {"content": {
+        "application/json": {"schema": {"type": "object", "properties": {"query": {"type": "string"}}},
+                             "example": {"query": "dishwasher rack wheel 22 mm"}},
+        "multipart/form-data": {"schema": {"type": "object", "properties": {
+            "query": {"type": "string"}, "photo": {"type": "string", "format": "binary"}}}}}}},
+)  # fmt: skip
+async def needs_add(request: Request) -> dict[str, Any]:
+    """A repeat of an existing request adds a vote (once per client). Photos are validated and GPS-stripped."""
+    photo: bytes | None = None
+    if request.headers.get("content-type", "").startswith("multipart/form-data"):
+        form = await request.form()
+        q = form.get("query")
+        up = form.get("photo")
+        if up is not None and not isinstance(up, str):
+            photo = await up.read()
+        query = q if isinstance(q, str) else ""
+    else:
+        try:
+            body = await request.json()
+        except json.JSONDecodeError as exc:
+            raise ApiError(422, "validation_error", 'send JSON {"query": ...} or multipart query + photo') from exc
+        query = str(body.get("query", "")) if isinstance(body, dict) else ""
+    try:
+        query = NeedRequest(query=query.strip()).query
+    except ValueError as exc:
+        raise ApiError(422, "validation_error", "query: 3 to 300 characters") from exc
+    reg = get_registry()
+    need, counted = reg.request_need(query, _client(request))
+    if photo is not None:
+        data, mime = clean_image(photo, "photo")
+        reg.set_need_photo(need.id, blobs.put(data, ".jpg" if mime == "image/jpeg" else ".png"))
+    return {**_need_out(need), "counted": counted}
+
+
+@router.get("/needs", summary="Requested parts, most votes first", tags=["requests"])
+def needs_list(
+    limit: Annotated[int, Query(ge=1, le=200)] = 50,
+    status: Literal["open", "in_progress", "fulfilled"] | None = None,
+) -> list[dict[str, Any]]:
+    reg = get_registry()
+    photos = reg.need_photos()
+    return [_need_out(n, photos) for n in reg.needs(500) if status is None or n.status == status][:limit]
+
+
+@router.post("/needs/{need_id}/vote", summary="Vote for a request (one vote per client)", tags=["requests"])
+def needs_vote(need_id: str, request: Request) -> dict[str, Any]:
+    try:
+        need, counted = get_registry().vote_need(need_id, _client(request))
+    except KeyError as exc:
+        raise ApiError(404, "need_not_found", f"no request {need_id!r}") from exc
+    return {**_need_out(need), "counted": counted}
+
+
+class NeedStatusRequest(BaseModel):
+    status: Literal["open", "in_progress", "fulfilled"]
+
+
+@router.patch("/needs/{need_id}", summary="Set a request's status (admin)", tags=["requests"])
+def needs_status(need_id: str, body: NeedStatusRequest, _admin: None = Depends(require_admin)) -> dict[str, Any]:
+    try:
+        return _need_out(get_registry().set_need_status(need_id, body.status))
+    except KeyError as exc:
+        raise ApiError(404, "need_not_found", f"no request {need_id!r}") from exc
 
 
 @router.get("/stats", summary="Counters computed from the database", tags=["registry"])
@@ -1000,6 +1063,8 @@ def stats() -> dict[str, Any]:
         s["jobs"] = sum(1 for j in _svc().manager().list(100_000) if not j.is_replay)
     except ApiError:
         s["jobs"] = 0
+    s["usage"] = usage.summary()
+    s.update({k: s["usage"][k] for k in ("calls_total", "mcp_calls", "distinct_clients", "last_7d")})
     return s
 
 
@@ -1020,7 +1085,7 @@ class ReviewRequest(BaseModel):
 @router.post(
     "/steer", summary="Start a Steer factory run (Muse Wonder plans, lanes build + self-check)", tags=["steer"]
 )
-def steer_start(body: SteerRequest) -> dict[str, str]:
+def steer_start(body: SteerRequest, _admin: None = Depends(require_admin)) -> dict[str, str]:
     return {"id": steer.start(body.brief, body.count)}
 
 
@@ -1042,7 +1107,7 @@ def steer_get(run_id: str) -> dict[str, Any]:
 @router.post(
     "/steer/{run_id}/review", summary="approve | send_back | reject one queued part; returns the state", tags=["steer"]
 )
-def steer_review(run_id: str, body: ReviewRequest) -> dict[str, Any]:
+def steer_review(run_id: str, body: ReviewRequest, _admin: None = Depends(require_admin)) -> dict[str, Any]:
     state = steer_get(run_id)
     try:
         return steer.review(run_id, body.slug, body.action, body.note)
@@ -1105,6 +1170,22 @@ def _overlay_url(failure: dict[str, Any]) -> str | None:
     return None
 
 
+EVIDENCE_FILES = ("bypass", "program_vs_mesh", "impact", "open_weights")
+
+
+def _bench_evidence() -> dict[str, Any]:
+    """Side reports next to report.json (lying-brain bypass suite, program vs mesh, impact log, open weights): each
+    is the file's JSON, or null when that script has not run yet."""
+    out: dict[str, Any] = {}
+    for name in EVIDENCE_FILES:
+        path = BENCH_REPORT.parent / f"{name}.json"
+        try:
+            out[name] = json.loads(path.read_text()) if path.exists() else None
+        except json.JSONDecodeError:
+            out[name] = None
+    return out
+
+
 @router.get("/bench", summary="Latest PartSmith-Bench report (or a 'pending' payload)", tags=["bench"])
 def bench() -> dict[str, Any]:
     """`failures[].overlay_url` always resolves (a blob or `/bench/files/...`) or is null."""
@@ -1117,6 +1198,7 @@ def bench() -> dict[str, Any]:
         for f in report.get("failures") or []:
             if isinstance(f, dict):
                 f["overlay_url"] = _overlay_url(f)
+        report["evidence"] = _bench_evidence()
         return report
     return {
         "status": "pending",
@@ -1129,6 +1211,7 @@ def bench() -> dict[str, Any]:
         },
         "runs": [],
         "failures": [],
+        "evidence": _bench_evidence(),
     }
 
 
@@ -1143,23 +1226,6 @@ def bench_file(path: str) -> FileResponse:
     if found is None:
         raise ApiError(404, "report_file_not_found", f"no report file {path!r}")
     return FileResponse(found, headers={"Cache-Control": "public, max-age=300"})
-
-
-_HOST_RE = re.compile(r"^[A-Za-z0-9.\-]+(:\d{1,5})?$|^\[[0-9a-fA-F:]+\](:\d{1,5})?$")
-
-
-def public_base(request: Request) -> str:
-    """Absolute base for links: X-Forwarded-Host/-Proto (the web app proxies), else PARTSMITH_PUBLIC_URL, else this
-    request's own origin. Header values are validated so they cannot inject text into the documents."""
-    host = request.headers.get("x-forwarded-host", "").split(",")[0].strip()
-    proto = request.headers.get("x-forwarded-proto", "").split(",")[0].strip().lower()
-    if host and _HOST_RE.match(host):
-        scheme = proto if proto in ("http", "https") else request.url.scheme
-        return f"{scheme}://{host}"
-    env = os.environ.get("PARTSMITH_PUBLIC_URL", "").strip()
-    if env:
-        return env.rstrip("/")
-    return str(request.base_url).rstrip("/")
 
 
 @router.get(
@@ -1184,6 +1250,8 @@ def prompt_txt(request: Request) -> PlainTextResponse:
 
 
 app.include_router(router)
+app.include_router(round2_router)
+app.include_router(embed_router)
 app.add_api_route("/llms.txt", llms_txt, methods=["GET"], include_in_schema=False)
 app.add_api_route("/prompt.txt", prompt_txt, methods=["GET"], include_in_schema=False)
 app.router.routes.append(Route("/mcp", endpoint=mcp_mount, methods=["GET", "POST", "DELETE"]))

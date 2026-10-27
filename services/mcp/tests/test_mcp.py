@@ -40,6 +40,8 @@ def test_tools_have_schemas_descriptions_and_annotations(srv: Any) -> None:
         "start_fix_job",
         "get_job",
         "report_need",
+        "verify",
+        "get_lessons",
     }
     for name, t in tools.items():
         assert t.description and len(t.description) > 40, name
@@ -122,3 +124,35 @@ def test_photo_and_job_tools_use_the_service(monkeypatch: pytest.MonkeyPatch, sr
         asyncio.run(http_only.call_tool("measure_photo", {"path": str(p)}))
     with pytest.raises(ToolError, match="does not decode"):
         asyncio.run(srv.call_tool("measure_photo", {"image_base64": base64.b64encode(b"nope").decode()}))
+
+
+def test_round2_tools_gate_verify_lessons(monkeypatch: pytest.MonkeyPatch, srv: Any) -> None:
+    from services.agent.templates import get_template
+    from services.geom_worker.sandbox import run_program
+    from services.verifier.synthetic import synthetic_top_measurement
+
+    add_part("spacer", "m3-spacer")
+    add_part("hook", "rough-hook", verified=False, max_error_mm=0.8)
+    assert _call(srv, "get_part", {"slug": "rough-hook"})["ship"]["status"] == "best_effort"
+    with pytest.raises(ToolError, match="ack=true"):
+        asyncio.run(srv.call_tool("bake", {"slug": "rough-hook", "formats": ["stl"]}))
+    ok = _call(srv, "bake", {"slug": "rough-hook", "formats": ["stl"], "ack": True})
+    assert ok["ship"]["status"] == "best_effort" and ok["artifacts"]["stl"].startswith("http")
+
+    res = run_program(get_template("spacer").code, {}, outputs=())
+    meas, _ = synthetic_top_measurement(res)
+    res.cleanup()
+    fake = SimpleNamespace(job_detail=lambda j: {"measurements": {"top": meas.model_dump(mode="json")}} if j == "j_1"
+                           else (_ for _ in ()).throw(KeyError(j)))  # fmt: skip
+    monkeypatch.setattr(S, "_svc", lambda: fake)
+    v = _call(srv, "verify", {"slug": "m3-spacer", "job_id": "j_1"})
+    assert v["views"][0]["hausdorff_mm"] < 0.5 and "verified" in v
+    with pytest.raises(ToolError, match="no job"):
+        asyncio.run(srv.call_tool("verify", {"slug": "m3-spacer", "job_id": "j_9"}))
+
+    reg = get_registry()
+    lid = reg.add_lesson("global", "PLA holes print 0.2 mm small", {"job_id": "j_1"})
+    assert _call(srv, "get_lessons", {})["lessons"] == []  # only promoted by default
+    reg.set_lesson_status(lid, "promoted", "test")
+    got = _call(srv, "get_lessons", {})["lessons"]
+    assert got[0]["id"] == lid and got[0]["links"][0]["id"] == "j_1"

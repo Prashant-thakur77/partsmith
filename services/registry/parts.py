@@ -598,7 +598,7 @@ def matching(slug: str, *, limit: int = 12, reg: Registry | None = None) -> list
     reg = reg or get_registry()
     part = require_part(slug, reg)
     mine = interface_dims(part)
-    others, _ = reg.search("", limit=10_000, sort="title")
+    others, _ = reg.search("", limit=10_000, sort="title", role="part")
     out: list[tuple[PartRecord, str]] = []
     seen = {slug}
     for s in part.mating:
@@ -720,6 +720,30 @@ def lineage(part: PartRecord, reg: Registry | None = None) -> list[dict[str, Any
         if c.provenance.forked_from == part.slug and c.slug != part.slug:
             out.append({"slug": c.slug, "version": c.version, "relation": "variant_of", "title": c.title})
     return out
+
+
+def verify_part(slug: str, params: Mapping[str, float], measurements: Mapping[str, Any], *,
+                reg: Registry | None = None) -> tuple[Any, dict[str, Any]]:  # fmt: skip
+    """Run the verifier for a registry part at `params` against measurements ({view: Measurements}). Deterministic:
+    the program runs in the sandbox and the pass rule decides `verified`. Returns (`Verification`, functional probe
+    summary — screws that pass each hole, interface fits, printability; never part of the pass rule)."""
+    from partsmith_schemas import Measurements
+
+    from services.geom_worker.sandbox import run_program
+    from services.verifier.verify import verify
+
+    part = require_part(slug, reg)
+    meas = {
+        str(k): (m if isinstance(m, Measurements) else Measurements.model_validate(m)) for k, m in measurements.items()
+    }
+    if not meas:
+        raise ValueError("no measurements to verify against")
+    res = run_program(part.code, dict(params), outputs=(), features=True)
+    try:
+        out = verify(res, meas, None)
+    finally:
+        res.cleanup()
+    return out.verification, dict(getattr(out, "functional", {}) or {})
 
 
 def part_detail(part: PartRecord, reg: Registry | None = None) -> dict[str, Any]:

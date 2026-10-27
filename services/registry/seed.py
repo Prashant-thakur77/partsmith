@@ -30,6 +30,7 @@ from partsmith_schemas.partspec import Family
 
 from services.agent import jobs
 from services.common.paths import REPO_ROOT, home
+from services.registry import catalog
 from services.registry import parts as P
 from services.registry.publish import dedupe_published, publish_part
 from services.registry.store import Registry, get_registry
@@ -79,8 +80,8 @@ def _read_state() -> dict[str, Any]:
         return {}
 
 
-def _write_state(state: dict[str, Any], sid: str, job_id: str, reason: str) -> None:
-    state[sid] = {"job_id": job_id, "reason": reason}
+def _write_state(state: dict[str, Any], sid: str, job_id: str, reason: str, slug: str | None = None) -> None:
+    state[sid] = {"job_id": job_id, "reason": reason, "slug": slug}
     _state_path().write_text(json.dumps(state, indent=1))
 
 
@@ -133,27 +134,34 @@ def seed(
     svc = _service()
     committed = {d.name for d in SAMPLES_DIR.iterdir()} if SAMPLES_DIR.exists() else set()
     samples: list[dict[str, Any]] = [
-        dict(s, kind="synthetic") for s in svc.list_demo_samples() if not committed or s["id"] in committed
+        dict(s, source="synthetic") for s in svc.list_demo_samples() if not committed or s["id"] in committed
     ]  # only the committed demo set (data/synthetic/bench is for the benchmark, not the registry)
     if include_real:
-        samples += [dict(s, kind="real") for s in _real_samples()]
+        samples += [dict(s, source="real", kind=s["meta"].get("kind", "template")) for s in _real_samples()]
     if only:
         samples = [s for s in samples if s["id"] in only]
     index = _read_index()
     state = _read_state()
+    for old, new in catalog.cleanup(reg).items():  # older seeds used sample-folder slugs (demo-…)
+        log(f"renamed {old} → {new}")
+        for s in samples:
+            if slug_for(str(s["id"])) == old and s["id"] not in state:
+                _write_state(state, str(s["id"]), "", "published (renamed)", new)
     for s in samples:
         sid, slug = str(s["id"]), slug_for(str(s["id"]))
-        existing = reg.get_part(slug)
+        reference = s.get("kind") == "reference_object"
+        prior = state.get(sid) or {}
+        existing = reg.get_part(prior.get("slug") or slug)
         if existing is not None:
-            result["skipped"].append(slug)
+            result["skipped"].append(existing.slug)
             P.after_publish(existing, reg=reg)  # cheap when the thumbnail is current
             continue
         if sid in state and not retry:  # ran before and was not published: do not spend the run again
             result["skipped"].append(slug)
             continue
-        log(f"seeding {sid} ({s['kind']}) …")
+        log(f"seeding {sid} ({s['source']}{', reference object' if reference else ''}) …")
         try:
-            job = svc.start_demo_job(sid, sync=True) if s["kind"] == "synthetic" else _run_real(svc, s)
+            job = svc.start_demo_job(sid, sync=True) if s["source"] == "synthetic" else _run_real(svc, s)
         except Exception as exc:  # one broken sample must not stop the seed
             result["failed"].append(f"{sid}: {type(exc).__name__}: {exc}")
             continue
@@ -176,11 +184,11 @@ def seed(
             result["failed"].append(f"{sid}: publish failed: {type(exc).__name__}: {exc}")
             continue
         outcome = dedupe_published(part.slug, reg=reg) if reg.get_part(part.slug) else publish_part(part, reg=reg)
-        result["seeded"].append(outcome.part.slug)
-        if outcome.part.slug != slug:  # folded into an identical existing part: remember, so it is not re-run
-            _write_state(state, sid, job.id, f"published as {outcome.part.slug} ({outcome.action})")
+        final = catalog.rename(outcome.part, reference=reference, reg=reg)  # product title + slug, reference role
+        result["seeded"].append(final.slug)
+        _write_state(state, sid, job.id, f"published ({outcome.action})", final.slug)
         log(
-            f"  → {part.slug}: {part.status}"
+            f"  → {final.slug}: {part.status}"
             + (
                 f", max error {part.verification.max_error_mm:.3f} mm"
                 if part.verification and part.verification.max_error_mm is not None
