@@ -18,6 +18,7 @@ class Source(StrEnum):
     measured = "measured"
     user_stated = "user_stated"
     inferred = "inferred"
+    cited = "cited"  # found by a model with web search; carries a citation; never overrides a measured value
 
 
 class DataOrigin(StrEnum):
@@ -38,10 +39,17 @@ class GroundTruthSource(StrEnum):
     caliper = "caliper"
 
 
+class Citation(Strict):
+    url: str
+    title: str = ""
+    quote: str = ""
+
+
 class Evidence(Strict):
     view: str | None = None
     pixels: list[list[float]] | None = None
     note: str | None = None
+    citation: Citation | None = None
 
 
 class Measured(Strict):

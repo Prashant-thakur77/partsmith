@@ -20,6 +20,7 @@ class ViewKind(StrEnum):
     side = "side"
     mating = "mating"
     fit_check = "fit_check"
+    orbit = "orbit"  # frames of a short video walking around the part
 
 
 class CaptureCheck(Strict):

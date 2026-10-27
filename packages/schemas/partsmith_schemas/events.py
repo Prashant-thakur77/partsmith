@@ -67,6 +67,12 @@ class ArtifactEvent(_Ev):
         "repair_card",
         "coupon",
         "partspec",
+        "video",
+        "feature_mask",
+        "reconstruction",
+        "install_card",
+        "zip",
+        "share_card",
     ]
     sha: str
     url: str
@@ -118,6 +124,40 @@ class IterationEvent(_Ev):
     total_tests: int = 0
 
 
+class ThoughtEvent(_Ev):
+    """A model's reasoning summary (never raw chain of thought), shown in the trace."""
+
+    t: Literal["thought"] = "thought"
+    stage: str
+    model: str = ""
+    text: str
+    iter: int | None = None
+
+
+class ToolCallEvent(_Ev):
+    """One tool call made by an agentic model stage; the result summary is what code returned."""
+
+    t: Literal["tool_call"] = "tool_call"
+    stage: str
+    name: str
+    args: dict[str, Any] = Field(default_factory=dict)
+    result: str = ""
+    ok: bool = True
+    ms: int = 0
+    iter: int | None = None
+
+
+class FocusEvent(_Ev):
+    """The agent points the viewer at a feature or location (part frame, mm)."""
+
+    t: Literal["focus"] = "focus"
+    feature: str = ""
+    view: str = "top"
+    at_mm: tuple[float, float, float] | None = None
+    label: str = ""
+    iter: int | None = None
+
+
 class LogEvent(_Ev):
     t: Literal["log"] = "log"
     level: Literal["info", "warn", "error"] = "info"
@@ -140,6 +180,9 @@ Event = Annotated[
     | ModelCallEvent
     | IterationEvent
     | LogEvent
+    | ThoughtEvent
+    | ToolCallEvent
+    | FocusEvent
     | DoneEvent,
     Field(discriminator="t"),
 ]

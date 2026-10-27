@@ -17,7 +17,7 @@ export interface ArtifactEvent {
   ts?: number;
   ctx?: string;
   t?: "artifact";
-  kind: "photo" | "rectified" | "mask_overlay" | "measure_overlay" | "render_overlay" | "residual_heatmap" | "stl" | "step" | "threemf" | "code" | "view" | "verification" | "template_pdf" | "preview" | "repair_card" | "coupon" | "partspec";
+  kind: "photo" | "rectified" | "mask_overlay" | "measure_overlay" | "render_overlay" | "residual_heatmap" | "stl" | "step" | "threemf" | "code" | "view" | "verification" | "template_pdf" | "preview" | "repair_card" | "coupon" | "partspec" | "video" | "feature_mask" | "reconstruction" | "install_card" | "zip" | "share_card";
   sha: string;
   url: string;
   iter?: number | null;
@@ -104,6 +104,12 @@ export interface CaptureReport {
   retake_reason?: string | null;
 }
 
+export interface Citation {
+  url: string;
+  title?: string;
+  quote?: string;
+}
+
 export interface DShaftBore {
   kind?: "d_shaft_bore";
   id: string;
@@ -124,12 +130,13 @@ export interface DoneEvent {
   summary?: Record<string, unknown>;
 }
 
-export type Event = StageEvent | MetricEvent | ArtifactEvent | QuestionEvent | AnswerEvent | ModelCallEvent | IterationEvent | LogEvent | DoneEvent;
+export type Event = StageEvent | MetricEvent | ArtifactEvent | QuestionEvent | AnswerEvent | ModelCallEvent | IterationEvent | LogEvent | ThoughtEvent | ToolCallEvent | FocusEvent | DoneEvent;
 
 export interface Evidence {
   view?: string | null;
   pixels?: Array<Array<number>> | null;
   note?: string | null;
+  citation?: Citation | null;
 }
 
 export type Family = "clip" | "knob" | "bracket" | "hook" | "spacer" | "cover" | "wheel" | "latch" | "gear" | "cable_clip" | "hinge" | "custom";
@@ -164,6 +171,19 @@ export interface FitCheckResult {
   reasons?: Array<string>;
   overlay_url?: string;
   capture: CaptureReport;
+}
+
+export interface FocusEvent {
+  job: string;
+  seq?: number;
+  ts?: number;
+  ctx?: string;
+  t?: "focus";
+  feature?: string;
+  view?: string;
+  at_mm?: [number, number, number] | null;
+  label?: string;
+  iter?: number | null;
 }
 
 export interface Hole {
@@ -442,7 +462,7 @@ export interface SnapHook {
   note?: string | null;
 }
 
-export type Source = "measured" | "user_stated" | "inferred";
+export type Source = "measured" | "user_stated" | "inferred" | "cited";
 
 export interface StageEvent {
   job: string;
@@ -457,6 +477,18 @@ export interface StageEvent {
   iter?: number | null;
 }
 
+export interface ThoughtEvent {
+  job: string;
+  seq?: number;
+  ts?: number;
+  ctx?: string;
+  t?: "thought";
+  stage: string;
+  model?: string;
+  text: string;
+  iter?: number | null;
+}
+
 export interface Thresholds {
   hausdorff_mm?: number;
   iou?: number;
@@ -468,6 +500,21 @@ export interface ThroughHole {
   center_mm: [number, number];
   diameter: Measured;
   countersink?: boolean;
+}
+
+export interface ToolCallEvent {
+  job: string;
+  seq?: number;
+  ts?: number;
+  ctx?: string;
+  t?: "tool_call";
+  stage: string;
+  name: string;
+  args?: Record<string, unknown>;
+  result?: string;
+  ok?: boolean;
+  ms?: number;
+  iter?: number | null;
 }
 
 export interface Unknown {
@@ -513,7 +560,7 @@ export interface Verification {
   ms?: number;
 }
 
-export type ViewKind = "top" | "side" | "mating" | "fit_check";
+export type ViewKind = "top" | "side" | "mating" | "fit_check" | "orbit";
 
 export interface ViewMetrics {
   view: string;

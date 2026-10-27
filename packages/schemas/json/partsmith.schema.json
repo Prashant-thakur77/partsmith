@@ -108,7 +108,13 @@
             "preview",
             "repair_card",
             "coupon",
-            "partspec"
+            "partspec",
+            "video",
+            "feature_mask",
+            "reconstruction",
+            "install_card",
+            "zip",
+            "share_card"
           ],
           "title": "Kind",
           "type": "string"
@@ -664,6 +670,30 @@
       "title": "CaptureReport",
       "type": "object"
     },
+    "Citation": {
+      "additionalProperties": false,
+      "properties": {
+        "url": {
+          "title": "Url",
+          "type": "string"
+        },
+        "title": {
+          "default": "",
+          "title": "Title",
+          "type": "string"
+        },
+        "quote": {
+          "default": "",
+          "title": "Quote",
+          "type": "string"
+        }
+      },
+      "required": [
+        "url"
+      ],
+      "title": "Citation",
+      "type": "object"
+    },
     "DShaftBore": {
       "additionalProperties": false,
       "properties": {
@@ -766,12 +796,15 @@
           "answer": "#/$defs/AnswerEvent",
           "artifact": "#/$defs/ArtifactEvent",
           "done": "#/$defs/DoneEvent",
+          "focus": "#/$defs/FocusEvent",
           "iteration": "#/$defs/IterationEvent",
           "log": "#/$defs/LogEvent",
           "metric": "#/$defs/MetricEvent",
           "model_call": "#/$defs/ModelCallEvent",
           "question": "#/$defs/QuestionEvent",
-          "stage": "#/$defs/StageEvent"
+          "stage": "#/$defs/StageEvent",
+          "thought": "#/$defs/ThoughtEvent",
+          "tool_call": "#/$defs/ToolCallEvent"
         },
         "propertyName": "t"
       },
@@ -799,6 +832,15 @@
         },
         {
           "$ref": "#/$defs/LogEvent"
+        },
+        {
+          "$ref": "#/$defs/ThoughtEvent"
+        },
+        {
+          "$ref": "#/$defs/ToolCallEvent"
+        },
+        {
+          "$ref": "#/$defs/FocusEvent"
         },
         {
           "$ref": "#/$defs/DoneEvent"
@@ -849,6 +891,17 @@
           ],
           "default": null,
           "title": "Note"
+        },
+        "citation": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Citation"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
         }
       },
       "title": "Evidence",
@@ -1018,6 +1071,94 @@
         "capture"
       ],
       "title": "FitCheckResult",
+      "type": "object"
+    },
+    "FocusEvent": {
+      "additionalProperties": false,
+      "description": "The agent points the viewer at a feature or location (part frame, mm).",
+      "properties": {
+        "job": {
+          "title": "Job",
+          "type": "string"
+        },
+        "seq": {
+          "default": 0,
+          "title": "Seq",
+          "type": "integer"
+        },
+        "ts": {
+          "default": 0.0,
+          "title": "Ts",
+          "type": "number"
+        },
+        "ctx": {
+          "default": "",
+          "title": "Ctx",
+          "type": "string"
+        },
+        "t": {
+          "const": "focus",
+          "default": "focus",
+          "title": "T",
+          "type": "string"
+        },
+        "feature": {
+          "default": "",
+          "title": "Feature",
+          "type": "string"
+        },
+        "view": {
+          "default": "top",
+          "title": "View",
+          "type": "string"
+        },
+        "at_mm": {
+          "anyOf": [
+            {
+              "maxItems": 3,
+              "minItems": 3,
+              "prefixItems": [
+                {
+                  "type": "number"
+                },
+                {
+                  "type": "number"
+                },
+                {
+                  "type": "number"
+                }
+              ],
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "At Mm"
+        },
+        "label": {
+          "default": "",
+          "title": "Label",
+          "type": "string"
+        },
+        "iter": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Iter"
+        }
+      },
+      "required": [
+        "job"
+      ],
+      "title": "FocusEvent",
       "type": "object"
     },
     "Hole": {
@@ -2731,7 +2872,8 @@
       "enum": [
         "measured",
         "user_stated",
-        "inferred"
+        "inferred",
+        "cited"
       ],
       "title": "Source",
       "type": "string"
@@ -2830,6 +2972,69 @@
       "title": "StageEvent",
       "type": "object"
     },
+    "ThoughtEvent": {
+      "additionalProperties": false,
+      "description": "A model's reasoning summary (never raw chain of thought), shown in the trace.",
+      "properties": {
+        "job": {
+          "title": "Job",
+          "type": "string"
+        },
+        "seq": {
+          "default": 0,
+          "title": "Seq",
+          "type": "integer"
+        },
+        "ts": {
+          "default": 0.0,
+          "title": "Ts",
+          "type": "number"
+        },
+        "ctx": {
+          "default": "",
+          "title": "Ctx",
+          "type": "string"
+        },
+        "t": {
+          "const": "thought",
+          "default": "thought",
+          "title": "T",
+          "type": "string"
+        },
+        "stage": {
+          "title": "Stage",
+          "type": "string"
+        },
+        "model": {
+          "default": "",
+          "title": "Model",
+          "type": "string"
+        },
+        "text": {
+          "title": "Text",
+          "type": "string"
+        },
+        "iter": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Iter"
+        }
+      },
+      "required": [
+        "job",
+        "stage",
+        "text"
+      ],
+      "title": "ThoughtEvent",
+      "type": "object"
+    },
     "Thresholds": {
       "additionalProperties": false,
       "properties": {
@@ -2889,6 +3094,84 @@
         "diameter"
       ],
       "title": "ThroughHole",
+      "type": "object"
+    },
+    "ToolCallEvent": {
+      "additionalProperties": false,
+      "description": "One tool call made by an agentic model stage; the result summary is what code returned.",
+      "properties": {
+        "job": {
+          "title": "Job",
+          "type": "string"
+        },
+        "seq": {
+          "default": 0,
+          "title": "Seq",
+          "type": "integer"
+        },
+        "ts": {
+          "default": 0.0,
+          "title": "Ts",
+          "type": "number"
+        },
+        "ctx": {
+          "default": "",
+          "title": "Ctx",
+          "type": "string"
+        },
+        "t": {
+          "const": "tool_call",
+          "default": "tool_call",
+          "title": "T",
+          "type": "string"
+        },
+        "stage": {
+          "title": "Stage",
+          "type": "string"
+        },
+        "name": {
+          "title": "Name",
+          "type": "string"
+        },
+        "args": {
+          "additionalProperties": true,
+          "title": "Args",
+          "type": "object"
+        },
+        "result": {
+          "default": "",
+          "title": "Result",
+          "type": "string"
+        },
+        "ok": {
+          "default": true,
+          "title": "Ok",
+          "type": "boolean"
+        },
+        "ms": {
+          "default": 0,
+          "title": "Ms",
+          "type": "integer"
+        },
+        "iter": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Iter"
+        }
+      },
+      "required": [
+        "job",
+        "stage",
+        "name"
+      ],
+      "title": "ToolCallEvent",
       "type": "object"
     },
     "Unknown": {
@@ -3177,7 +3460,8 @@
         "top",
         "side",
         "mating",
-        "fit_check"
+        "fit_check",
+        "orbit"
       ],
       "title": "ViewKind",
       "type": "string"
