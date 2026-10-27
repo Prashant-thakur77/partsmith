@@ -211,6 +211,9 @@ def extract_code(text: str) -> str:
     return code.strip() + "\n"
 
 
+FLEXIBLE = "flexible or elastomer part"
+ORGANIC = "organic or free-form object"
+
 # Refused part classes (PLAN §13). The understand model classifies too; this list is the code-side backstop.
 REFUSED_PATTERNS: dict[str, tuple[str, ...]] = {
     "firearm or weapon component": (
@@ -277,6 +280,35 @@ REFUSED_PATTERNS: dict[str, tuple[str, ...]] = {
         r"railing",
         r"\bhoist\b",
     ),
+    FLEXIBLE: (
+        r"\brubber\b",
+        r"\bsilicone\b",
+        r"\bgaskets?\b",
+        r"\bo-?rings?\b",
+        r"\b(?:rubber|silicone|door|oil|shaft|lip|fridge|refrigerator) seals?\b",
+        r"elastomer",
+        r"\bsqueegee\b",
+        r"\bbellows\b",
+    ),
+    ORGANIC: (
+        r"figurine",
+        r"\bstatue",
+        r"sculpture",
+        r"\bclay\b",
+        r"\bdoll\b",
+        r"action figure",
+        r"toy figure",
+        r"\bfigure of\b",
+    ),
+}
+
+# Plain reasons per class (the safety classes share one).
+REFUSAL_REASONS: dict[str, str] = {
+    FLEXIBLE: "This looks like a soft, flexible part (rubber, silicone, a gasket or seal). A rigid FDM print would not seal "
+    "or flex like the original, and PartSmith only verifies rigid shapes — please buy the right gasket or seal, or print it "
+    "yourself in TPU at your own risk.",
+    ORGANIC: "This is a free-form object (a figurine, statue or sculpture), not a functional part with dimensions to "
+    "measure. PartSmith rebuilds parametric replacement parts; it does not copy free-form shapes.",
 }
 
 
@@ -293,6 +325,8 @@ def refused_class(*texts: str) -> str | None:
 
 
 def refusal_message(cls: str) -> str:
+    if cls in REFUSAL_REASONS:
+        return REFUSAL_REASONS[cls]
     return (
         f"PartSmith does not make replacement parts in this class ({cls}). A printed copy could fail without warning "
         "where people's safety depends on it — please use an original part from the manufacturer."

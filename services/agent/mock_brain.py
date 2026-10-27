@@ -209,6 +209,20 @@ def template_misfit(t: Template, top: Mapping[str, Any], thickness_mm: float | N
     return None
 
 
+THIN_RING_RATIO = 0.75  # bore / outer diameter at or above this: a thin ring (gasket, O-ring, washer)
+
+
+def _thin_ring(top: Mapping[str, Any]) -> tuple[float, float] | None:
+    """(outer Ø, wall) when the top view is a round outline around one central bore with a thin wall."""
+    cues = shape_cues(top)
+    holes = list(top.get("holes") or [])
+    if not cues["round"] or len(holes) != 1 or not cues["central_hole"]:
+        return None
+    od = (float(top["length"]["value"]) + float(top["width"]["value"])) / 2
+    d = float(holes[0]["diameter"]["value"])
+    return (od, (od - d) / 2) if od > 0 and d / od >= THIN_RING_RATIO else None
+
+
 def _measured(value: float, sigma: float = 0.0, note: str | None = None, source: str = "measured") -> dict[str, Any]:
     d: dict[str, Any] = {"value": round(float(value), 4), "source": source, "sigma_mm": round(float(sigma), 4)}
     if note:
@@ -322,6 +336,18 @@ def understand(req: ModelRequest) -> dict[str, Any]:
         spec["family"] = "custom"
         spec["title"] = f"Custom part (not a {t.title.lower()}: {misfit})"
         return spec
+    ring = _thin_ring(top)
+    if ring is not None:  # a thin annulus could be a gasket or O-ring: rigid prints do not seal, so ask
+        unknowns.append(
+            {
+                "id": "material.flexible",
+                "question": f"This looks like a thin ring (Ø{ring[0]:.1f} mm, wall {ring[1]:.1f} mm). Is it soft or "
+                "flexible — rubber, silicone, a gasket or a seal?",
+                "expects": "choice",
+                "choices": ["no", "yes"],
+                "default": "no",
+            }
+        )
     sym = cues.get("symmetry")
     damage = re.search(
         r"\b(missing|cracked|chipped|snapped off|broken off|broke off|piece|corner|tip)\b", intent.lower()

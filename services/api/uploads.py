@@ -8,6 +8,8 @@ because intrinsics may be estimated from them. PNG and WebP are re-saved as PNG 
 from __future__ import annotations
 
 import io
+import json
+from typing import Any
 
 from PIL import Image
 
@@ -143,3 +145,55 @@ def check_audio(data: bytes, mime: str | None, field: str = "audio") -> str:
     if m not in AUDIO_TYPES:
         raise ApiError(415, "unsupported_media_type", f"{field}: {m} is not an accepted audio type")
     return m
+
+
+MAX_VIDEO_BYTES = 60 * 1024 * 1024
+MAX_POINTS = 32
+POINT_KINDS = ("hole", "slot", "tab", "broken_edge")
+
+
+def check_video(data: bytes, field: str = "orbit") -> str:
+    """A short walk-around clip: MP4/MOV (ISO-BMFF `ftyp`) or WebM, ≤ 60 MB. Returns the MIME type."""
+    if not data:
+        raise ApiError(422, "empty_upload", f"{field}: the file is empty")
+    if len(data) > MAX_VIDEO_BYTES:
+        raise ApiError(413, "too_large", f"{field}: {len(data) / 1e6:.1f} MB > {MAX_VIDEO_BYTES / 1e6:.0f} MB limit")
+    if data[4:8] == b"ftyp":
+        return "video/quicktime" if data[8:10] == b"qt" else "video/mp4"
+    if data[:4] == b"\x1aE\xdf\xa3":
+        return "video/webm"
+    raise ApiError(415, "unsupported_media_type", f"{field}: use an MP4, MOV or WebM clip")
+
+
+def parse_points(raw: str | None) -> dict[str, list[dict[str, Any]]] | None:
+    """User taps on features: JSON {"top": [{"x": px, "y": px, "kind"?: hole|slot|tab|broken_edge, "id"?: str}]}
+    in top-photo pixels. Returns None when absent; malformed input is a 422 with the reason."""
+    if raw is None or not raw.strip():
+        return None
+    try:
+        data = json.loads(raw)
+    except ValueError as exc:
+        raise ApiError(422, "invalid_points", f"points: not JSON ({exc})") from exc
+    if not isinstance(data, dict) or set(data) - {"top"}:
+        raise ApiError(422, "invalid_points", 'points: expected {"top": [{"x", "y", "kind"?, "id"?}]}')
+    pts = data.get("top") or []
+    if not isinstance(pts, list) or len(pts) > MAX_POINTS:
+        raise ApiError(422, "invalid_points", f"points.top: a list of at most {MAX_POINTS} points")
+    out: list[dict[str, Any]] = []
+    for i, p in enumerate(pts):
+        if not isinstance(p, dict):
+            raise ApiError(422, "invalid_points", f"points.top[{i}]: expected an object")
+        try:
+            x, y = float(p["x"]), float(p["y"])
+        except (KeyError, TypeError, ValueError) as exc:
+            raise ApiError(422, "invalid_points", f"points.top[{i}]: x and y (photo pixels) are required") from exc
+        if not (0 <= x < 20000 and 0 <= y < 20000):
+            raise ApiError(422, "invalid_points", f"points.top[{i}]: pixel coordinates out of range")
+        kind = str(p.get("kind", "hole"))
+        if kind not in POINT_KINDS:
+            raise ApiError(422, "invalid_points", f"points.top[{i}]: kind must be one of {', '.join(POINT_KINDS)}")
+        item: dict[str, Any] = {"x": x, "y": y, "kind": kind}
+        if p.get("id"):
+            item["id"] = str(p["id"])[:40]
+        out.append(item)
+    return {"top": out} if out else None

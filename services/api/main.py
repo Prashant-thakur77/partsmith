@@ -52,7 +52,7 @@ from services.api.common import (
 from services.api.errors import ApiError, install
 from services.api.round2 import apply_preset, embed_router
 from services.api.round2 import router as round2_router
-from services.api.uploads import check_audio, clean_image
+from services.api.uploads import check_audio, check_video, clean_image, parse_points
 from services.common import blobs
 from services.common.paths import REPO_ROOT
 from services.geom_worker import bake as geom_bake
@@ -408,12 +408,24 @@ def jobs_fix(
     thickness_mm: Annotated[float | None, Form(gt=0, lt=500)] = None,
     family_hint: Annotated[Family | None, Form()] = None,
     screen_px_per_mm: Annotated[float | None, Form(gt=0, lt=100)] = None,
+    orbit: Annotated[
+        UploadFile | None, File(description="Optional 5–10 s walk-around clip (MP4/MOV/WebM, ≤ 60 MB)")
+    ] = None,
+    points: Annotated[
+        str | None,
+        Form(description='Feature taps in top-photo pixels: {"top": [{"x", "y", "kind"?, "id"?}]}', max_length=8000),
+    ] = None,
 ) -> dict[str, Any]:
     """Photos are validated (decode, size, type) and GPS metadata is removed before anything is stored."""
     photos: dict[str, bytes] = {}
     for view, up in (("top", top), ("side", side), ("mating", mating)):
         if up is not None:
             photos[view], _ = clean_image(up.file.read(), view)
+    if orbit is not None:
+        clip = orbit.file.read()
+        check_video(clip, "orbit")
+        photos["orbit"] = clip
+    taps = parse_points(points)
     job_input = JobInput(
         intent=intent,
         mat_kind=mat_kind,
@@ -421,7 +433,8 @@ def jobs_fix(
         family_hint=family_hint,
         screen_px_per_mm=screen_px_per_mm,
     )
-    job = _service_call(_svc().start_fix_job, photos, job_input, conflict="invalid_request")
+    extra = {"points": taps} if taps else {}
+    job = _service_call(_svc().start_fix_job, photos, job_input, conflict="invalid_request", **extra)
     return dict(job.summary.model_dump(mode="json"))
 
 

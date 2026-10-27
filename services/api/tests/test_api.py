@@ -49,6 +49,7 @@ class FakeService:
         self.mgr = jobs.JobManager(max_workers=4)
         self.photos: dict[str, dict[str, bytes]] = {}
         self.inputs: dict[str, JobInput] = {}
+        self.points: dict[str, Any] = {}
 
     def manager(self) -> jobs.JobManager:
         return self.mgr
@@ -70,9 +71,12 @@ class FakeService:
 
         return run
 
-    def start_fix_job(self, photos: dict[str, bytes], job_input: JobInput, *, sync: bool = False) -> jobs.Job:
+    def start_fix_job(
+        self, photos: dict[str, bytes], job_input: JobInput, *, sync: bool = False, points: Any = None
+    ) -> jobs.Job:
         job = self.mgr.create("fix", job_input, title="test fix")
         self.photos[job.id] = photos
+        self.points[job.id] = points
         self.inputs[job.id] = job_input
         self.mgr.start(job, self._runner(ask=job_input.intent == "ask"))
         return job
@@ -357,6 +361,30 @@ def test_fix_upload_strips_gps_and_validates(client: TestClient, fake: FakeServi
         "unsupported_media_type",
     )
     _err(client.post("/api/v1/jobs/fix", data={"intent": "x"}), 422, "validation_error")
+
+
+def test_fix_upload_accepts_orbit_clip_and_feature_points(client: TestClient, fake: FakeService) -> None:
+    clip = b"\x00\x00\x00\x18ftypmp42" + b"\x00" * 256
+    taps = '{"top": [{"x": 812.5, "y": 640, "kind": "hole", "id": "hole_a"}, {"x": 900, "y": 700}]}'
+    r = client.post(
+        "/api/v1/jobs/fix",
+        files={"top": ("top.jpg", _jpeg(), "image/jpeg"), "orbit": ("orbit.mp4", clip, "video/mp4")},
+        data={"points": taps},
+    )
+    assert r.status_code == 200, r.text
+    jid = r.json()["id"]
+    assert fake.photos[jid]["orbit"] == clip
+    assert fake.points[jid] == {"top": [{"x": 812.5, "y": 640.0, "kind": "hole", "id": "hole_a"},
+                                        {"x": 900.0, "y": 700.0, "kind": "hole"}]}  # fmt: skip
+    r = client.post("/api/v1/jobs/fix", files={"top": ("top.jpg", _jpeg(), "image/jpeg")})
+    assert r.status_code == 200 and fake.points[r.json()["id"]] is None
+    top = {"top": ("top.jpg", _jpeg(), "image/jpeg")}
+    _err(client.post("/api/v1/jobs/fix", files=top, data={"points": "not json"}), 422, "invalid_points")
+    _err(client.post("/api/v1/jobs/fix", files=top, data={"points": '{"top": [{"x": 1}]}'}), 422, "invalid_points")
+    _err(client.post("/api/v1/jobs/fix", files=top, data={"points": '{"top": [{"x": 1, "y": 2, "kind": "gear"}]}'}),
+         422, "invalid_points")  # fmt: skip
+    bad = {**top, "orbit": ("o.avi", b"RIFF0000AVI LIST", "video/avi")}
+    _err(client.post("/api/v1/jobs/fix", files=bad), 415, "unsupported_media_type")
 
 
 def test_demo_list_detail_runlog(client: TestClient, fake: FakeService) -> None:

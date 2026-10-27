@@ -79,7 +79,7 @@ Screen calibration (ID-1 card 85.60 × 53.98 mm) happens in the browser and is s
 ## Jobs
 | Method | Path | Body / Returns |
 |---|---|---|
-| POST | `/jobs/fix` | multipart: `top` (file, required), `side`, `mating` (files, optional), `intent`, `mat_kind` (`screen`\|`paper`), `thickness_mm`, `family_hint`, `screen_px_per_mm` → `JobSummary` |
+| POST | `/jobs/fix` | multipart: `top` (file, required), `side`, `mating` (files, optional), `orbit` (optional 5–10 s walk-around clip, MP4/MOV/WebM ≤ 60 MB), `intent`, `mat_kind` (`screen`\|`paper`), `thickness_mm`, `family_hint`, `screen_px_per_mm`, `points` (optional JSON, see below) → `JobSummary` |
 | GET | `/jobs/demo/samples` | `[{"id": str, "title": str, "family_hint": str\|null, "kind": "template"\|"reference_object"}]` — bundled **synthetic** samples |
 | POST | `/jobs/demo` | `{"sample": str}` → `JobSummary` — runs a bundled **synthetic** sample (labelled synthetic everywhere); unknown ids → `404 sample_not_found` + closest |
 | GET | `/jobs?limit=&include_replays=&kind=` | `[JobSummary]` (newest first) |
@@ -96,6 +96,10 @@ Screen calibration (ID-1 card 85.60 × 53.98 mm) happens in the browser and is s
 | GET | `/jobs/{id}/run.jsonl` | the raw run log (`application/x-ndjson`) |
 | POST | `/transcribe` | multipart `audio`, `language_hint?` → `{"text": str, "mode": "live"\|"mock"\|"replay", "language": str\|null, "model": str, "note": str}` (fix intent and spoken answers; mock transcripts say so in `note`) |
 | GET | `/replays` | `[{"id": str, "title": str, "origin": DataOrigin, "provider_mode": str, "verified": bool, "max_error_mm": float\|null, "iterations": int}]` |
+
+`points` = feature taps in top-photo pixels, `{"top": [{"x": float, "y": float, "kind": "hole"|"slot"|"tab"|"broken_edge", "id"?: str}]}`
+(`kind` defaults to `hole`, at most 32 points). Each tap becomes a point prompt for the segmenter and the feature is measured by
+code; a tap never sets a dimension. Malformed input → `422 invalid_points`; a clip that is not MP4/MOV/WebM → `415`.
 
 ## Measure / verify (stateless)
 | Method | Path | Body / Returns |

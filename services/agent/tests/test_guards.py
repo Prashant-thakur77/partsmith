@@ -101,3 +101,14 @@ def test_rescale_backed_by_each_measured_residual_is_allowed():
     assert len(g.applied) == 2
     g = guards.guard_edits(edits, SPECS, VALUES, outline_params=["length", "width"], residual_deltas={"length": -1.0})
     assert not g.applied
+
+
+def test_flexible_and_organic_objects_are_refused_with_plain_reasons():
+    assert guards.refused_class("Replace this soft silicone rubber gasket ring.") == guards.FLEXIBLE
+    assert guards.refused_class("the O-ring of my pressure cooker lid") == guards.FLEXIBLE
+    assert guards.refused_class("Make a copy of this little clay figurine.") == guards.ORGANIC
+    assert "TPU" in guards.refusal_message(guards.FLEXIBLE)
+    assert "free-form" in guards.refusal_message(guards.ORGANIC)
+    # rigid parts that merely mention nearby things are not refused
+    for ok in ("battery cover of my kid's toy car", "the knob is sealed"):
+        assert guards.refused_class(ok) is None, ok

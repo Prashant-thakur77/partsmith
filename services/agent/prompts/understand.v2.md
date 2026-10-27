@@ -18,8 +18,10 @@ Rules:
 - Units are millimetres. The part frame: origin at the centre of the outline, long side +X, Y up, Z up out of the mat.
 - Choose `family` from the enum; set `template_hint` to the closest template name from: {templates}.
 - If the object is not a rigid part suitable for FDM printing, or belongs to a refused class (weapons or firearm parts, medical
-  devices, child-safety or vehicle-safety parts, anything load-bearing for people), set `family: "custom"` and `refusal` to one
-  sentence explaining why.
+  devices, child-safety or vehicle-safety parts, anything load-bearing for people), or is soft/flexible (rubber, silicone,
+  a gasket, seal or O-ring: a rigid print would not seal or flex), or is an organic free-form object (a figurine, statue,
+  sculpture or clay model: nothing functional to measure), set `family: "custom"` and `refusal` to one plain sentence
+  explaining why. A rigid part that merely touches a seal (a cover, a clip) is not refused.
 Output must match the PartSpec JSON schema exactly. No prose outside the JSON.
 
 # user

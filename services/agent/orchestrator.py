@@ -1167,6 +1167,9 @@ class FixRun:
                 got.append(f"{u.id} = {value}")
             self.save_spec()
             st.label = "Answers: " + (", ".join(got) if got else "none")
+            if str(self.answers.get("material.flexible", "")).strip().lower() in ("yes", "y", "haan", "ha"):
+                st.label = "Refused: the user says the part is soft or flexible"
+                raise _Finish("refused", {"reason": guards.refusal_message(guards.FLEXIBLE)})
 
     def apply_answer(self, qid: str, value: str | float) -> None:
         assert self.spec is not None

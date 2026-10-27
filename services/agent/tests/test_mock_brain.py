@@ -167,3 +167,15 @@ def test_hole_row_moves_with_the_template_hole_knobs():
     by_name = {p.name: p for p in t.params}
     edits = mock_brain._hole_row_edits(holes, regions, by_name, t.defaults, set())
     assert {e["param"]: e["to"] for e in edits} == {"hole_shift": -4.0, "hole_y": 3.0}
+
+
+def test_thin_ring_makes_the_mock_ask_whether_it_is_flexible():
+    ring = _top(34.0, 34.0, [((0.0, 0.0), 28.0)], area=3.1416 / 4 * (34.0**2 - 28.0**2))
+    spec = mock_brain.understand(ModelRequest(messages=[], mock_context={"measurements": {"top": ring}, "intent": ""}))
+    q = [u for u in spec["unknowns"] if u["id"] == "material.flexible"]
+    assert q and q[0]["default"] == "no" and q[0]["choices"] == ["no", "yes"]
+    spacer = _top(20.0, 20.0, [((0.0, 0.0), 8.4)], area=3.1416 / 4 * (400 - 8.4**2))
+    spec = mock_brain.understand(
+        ModelRequest(messages=[], mock_context={"measurements": {"top": spacer}, "intent": ""})
+    )
+    assert not [u for u in spec["unknowns"] if u["id"] == "material.flexible"]
