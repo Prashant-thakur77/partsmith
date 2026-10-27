@@ -9,6 +9,14 @@ SUMMARY = (
     "Gusset ribs behind the hook arm stiffen it."
 )
 TAGS = ["clip", "snap-fit", "panel", "shelf", "retainer", "screw-on"]
+# Where each knob moves the outline (normalised model frame; see services/agent/templates/__init__.py).
+REGIONS = {
+    "hook_overhang": [("xz", 0.2, 0.85, 0.55, 1.0, 1)],
+    "arm_height": [("xz", 0.4, 1.0, 0.75, 1.0, 1), ("yz", -1.0, 1.0, 0.75, 1.0, 1)],
+    "arm_thickness": [("xz", 0.45, 0.95, 0.1, 1.0, 1), ("xy", 0.5, 1.0, -1.0, 1.0, 1)],
+    "rib_count": [("xz", 0.8, 1.0, 0.1, 0.7, 0)],
+    "corner_radius": [("xy", -1.0, -0.8, -1.0, -0.6, -1), ("xy", -1.0, -0.8, 0.6, 1.0, -1)],
+}
 MEASURE_MAP = {
     "length": "length",
     "width": "width",

@@ -9,7 +9,7 @@ without executing them; they only ever run inside the geometry sandbox.
 from __future__ import annotations
 
 import difflib
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from functools import cache
 from pathlib import Path
 
@@ -33,6 +33,10 @@ class Template:
     params: tuple[ParamSpec, ...]
     measure_map: dict[str, str]
     code_sha: str
+    # Optional REGIONS: knob -> boxes in the model's normalised frame where that knob moves the outline, as
+    # (plane, a0, a1, b0, b1, effect): plane "xy" (top) / "xz" / "yz" (side); x, y in [-1, 1] of the bounding box
+    # half-sizes, z in [0, 1] of the height; effect +1 = raising the knob adds material there, -1 removes, 0 unknown.
+    regions: dict[str, tuple[tuple[str, float, float, float, float, int], ...]] = field(default_factory=dict)
 
     @property
     def defaults(self) -> dict[str, float]:
@@ -60,6 +64,14 @@ def _load(path: Path) -> Template:
     bad = [v for v in meta["MEASURE_MAP"].values() if v not in names]
     if bad:
         raise ValueError(f"template {path.name}: MEASURE_MAP points at unknown params {bad}")
+    regions_lit = module_literals(code, ("REGIONS",)).get("REGIONS") or {}
+    bad_r = [k for k in regions_lit if k not in names]
+    if bad_r:
+        raise ValueError(f"template {path.name}: REGIONS names unknown params {bad_r}")
+    regions = {
+        str(k): tuple((str(b[0]), float(b[1]), float(b[2]), float(b[3]), float(b[4]), int(b[5])) for b in v)
+        for k, v in regions_lit.items()
+    }
     return Template(
         name=path.stem,
         family=Family(meta["FAMILY"]),
@@ -70,6 +82,7 @@ def _load(path: Path) -> Template:
         params=params,
         measure_map={str(k): str(v) for k, v in meta["MEASURE_MAP"].items()},
         code_sha=code_sha(code),
+        regions=regions,
     )
 
 
@@ -77,6 +90,17 @@ def _load(path: Path) -> Template:
 def _all() -> dict[str, Template]:
     files = sorted(p for p in TEMPLATE_DIR.glob("*.py") if p.stem != "__init__")
     return {p.stem: _load(p) for p in files}
+
+
+def knobs_at(template: Template, plane: str, a: float, b: float, margin: float = 0.05) -> list[str]:
+    """Knobs whose REGIONS box on `plane` contains the normalised point (a, b)."""
+    out = []
+    for name, boxes in template.regions.items():
+        for pl, a0, a1, b0, b1, _ in boxes:
+            if pl == plane and a0 - margin <= a <= a1 + margin and b0 - margin <= b <= b1 + margin:
+                out.append(name)
+                break
+    return out
 
 
 def list_templates() -> list[Template]:
@@ -99,4 +123,4 @@ def for_family(family: Family | str) -> list[Template]:
     return [t for t in _all().values() if t.family == fam]
 
 
-__all__ = ["TEMPLATE_DIR", "Template", "for_family", "get_template", "list_templates"]
+__all__ = ["TEMPLATE_DIR", "Template", "for_family", "get_template", "knobs_at", "list_templates"]

@@ -11,6 +11,14 @@ SUMMARY = (
     "through a slightly narrower opening at the top."
 )
 TAGS = ["cable clip", "cable holder", "wire", "organiser", "desk", "snap-fit"]
+# Where each knob moves the outline (normalised model frame; see services/agent/templates/__init__.py).
+REGIONS = {
+    "channel_count": [("xz", -0.8, 0.8, 0.3, 1.0, 0)],
+    "channel_gap": [("xz", -0.8, 0.8, 0.3, 1.0, 0)],
+    "cable_d": [("xz", -0.8, 0.8, 0.3, 1.0, 1)],
+    "wall": [("xz", -0.8, 0.8, 0.3, 1.0, 1)],
+    "opening": [("xz", -0.8, 0.8, 0.7, 1.0, -1)],
+}
 MEASURE_MAP = {
     "length": "length",
     "width": "width",
@@ -28,6 +36,7 @@ PARAMS = {  # name: (default, min, max, step, unit, affects_fit, label)
     "wall": (1.6, 1.0, 4.0, 0.05, "mm", True, "Channel wall"),
     "opening": (0.75, 0.5, 0.95, 0.01, "", True, "Snap opening (fraction of the cable diameter)"),
     "channel_count": (2, 1, 5, 1, "", False, "Cable channels"),
+    "channel_gap": (1.0, 0.6, 15.0, 0.1, "mm", False, "Gap between neighbouring channels"),
     "hole_d": (3.5, 2.0, 6.0, 0.05, "mm", True, "Screw hole diameter"),
     "hole_count": (2, 0, 2, 1, "", False, "Screw holes"),
 }
@@ -41,8 +50,9 @@ def build(p: dict[str, float]) -> cq.Workplane:
     tab = 2 * hole_d + 2.0 if holes > 0 else 1.0
     n = int(p["channel_count"])
     region = length - 2 * tab
-    cable = max(min(p["cable_d"], region / n - 2 * wall - 1.0), 1.0)
-    pitch = cable + 2 * wall + 1.0
+    gap_c = p["channel_gap"]
+    cable = max(min(p["cable_d"], region / n - 2 * wall - gap_c), 1.0)
+    pitch = cable + 2 * wall + gap_c
     ri, ro = cable / 2, cable / 2 + wall
     zc = t + ri - 0.3  # the seat dips into the base, so the ring and the base overlap (no tangent faces)
 

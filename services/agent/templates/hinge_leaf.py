@@ -9,6 +9,14 @@ SUMMARY = (
     "one long edge, leaving gaps for the matching leaf's knuckles."
 )
 TAGS = ["hinge", "hinge leaf", "cabinet", "box", "door", "knuckle"]
+# Where each knob moves the outline (normalised model frame; see services/agent/templates/__init__.py).
+REGIONS = {
+    "knuckle_phase": [("xy", -1.0, 1.0, 0.45, 1.0, 0), ("xz", -1.0, 1.0, 0.35, 1.0, 0)],
+    "knuckle_count": [("xy", -1.0, 1.0, 0.45, 1.0, 0), ("xz", -1.0, 1.0, 0.35, 1.0, 0)],
+    "knuckle_gap": [("xy", -1.0, 1.0, 0.5, 1.0, -1), ("xz", -1.0, 1.0, 0.4, 1.0, -1)],
+    "knuckle_wall": [("xy", -1.0, 1.0, 0.7, 1.0, 1), ("yz", 0.4, 1.0, 0.0, 1.0, 1), ("xz", -1.0, 1.0, 0.7, 1.0, 1)],
+    "corner_radius": [("xy", -1.0, -0.75, -1.0, -0.6, -1), ("xy", 0.75, 1.0, -1.0, -0.6, -1)],
+}
 MEASURE_MAP = {
     "length": "length",
     "width": "leaf_width",
@@ -26,6 +34,7 @@ PARAMS = {  # name: (default, min, max, step, unit, affects_fit, label)
     "knuckle_wall": (1.5, 1.0, 3.0, 0.05, "mm", True, "Knuckle wall"),
     "knuckle_count": (3, 1, 5, 1, "", True, "Knuckles on this leaf"),
     "knuckle_gap": (0.3, 0.1, 1.0, 0.05, "mm", True, "Gap to the other leaf's knuckles"),
+    "knuckle_phase": (0, 0, 1, 1, "", True, "Knuckles at the ends (0) or set in from the ends (1, the mating leaf)"),
     "hole_d": (3.5, 2.0, 6.0, 0.05, "mm", True, "Screw hole diameter"),
     "hole_count": (3, 1, 4, 1, "", False, "Screw holes"),
     "corner_radius": (3.0, 0.0, 8.0, 0.1, "mm", False, "Free corner radius"),
@@ -56,12 +65,15 @@ def build(p: dict[str, float]) -> cq.Workplane:
     leaf = leaf.cskHole(hole_d, csk, 90)
 
     k = int(p["knuckle_count"])
-    seg = length / (2 * k - 1)
+    phase = int(p["knuckle_phase"])  # 1: the mating leaf, whose knuckles sit between the other leaf's
+    seg = length / (2 * k - 1 + 2 * phase)
     gap = min(p["knuckle_gap"], seg * 0.3)
     part = leaf
     for i in range(k):
-        x_a = -length / 2 + 2 * i * seg + (gap / 2 if i > 0 else 0.0)
-        x_b = -length / 2 + (2 * i + 1) * seg - (gap / 2 if i < k - 1 else 0.0)
+        j = 2 * i + phase  # segment index of this knuckle
+        first, last = j == 0, j == 2 * k - 2 + 2 * phase
+        x_a = -length / 2 + j * seg + (0.0 if first else gap / 2)
+        x_b = -length / 2 + (j + 1) * seg - (0.0 if last else gap / 2)
         knuckle = cq.Workplane("YZ", origin=(x_a, 0, 0)).center(yk, zk).circle(rk).extrude(x_b - x_a)
         web = cq.Workplane("XY").box(x_b - x_a, 0.7 * rk, zk, centered=False).translate((x_a, yk - 0.7 * rk, 0))
         part = part.union(knuckle).union(web)

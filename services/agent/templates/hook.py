@@ -9,6 +9,18 @@ SUMMARY = (
     "and runs back up parallel to the wall, ending in a rounded tip."
 )
 TAGS = ["hook", "coat hook", "towel", "wall", "hanger", "screw-on"]
+# Where each knob moves the outline (normalised model frame; see services/agent/templates/__init__.py).
+REGIONS = {
+    "tip_length": [("holes", -1.0, 1.0, -1.0, 1.0, 0), ("xz", -0.6, 1.0, 0.0, 1.0, 1)],
+    "bend_radius": [("holes", -1.0, 1.0, -1.0, 1.0, 0), ("xz", -1.0, 1.0, 0.0, 1.0, 1)],
+    "arm_thickness": [("xz", -1.0, -0.6, 0.0, 1.0, 1)],
+    "corner_radius": [
+        ("xy", -1.0, -0.8, -1.0, -0.6, -1),
+        ("xy", 0.8, 1.0, 0.6, 1.0, -1),
+        ("xy", -1.0, -0.8, 0.6, 1.0, -1),
+        ("xy", 0.8, 1.0, -1.0, -0.6, -1),
+    ],
+}
 MEASURE_MAP = {
     "length": "length",
     "width": "width",

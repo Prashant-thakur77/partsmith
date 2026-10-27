@@ -9,6 +9,18 @@ SUMMARY = (
     "is relieved underneath so it reaches over the door; finger ridges on top."
 )
 TAGS = ["latch", "turn button", "cupboard", "cabinet", "catch", "door"]
+# Where each knob moves the outline (normalised model frame; see services/agent/templates/__init__.py).
+REGIONS = {
+    "step_depth": [("xz", 0.2, 1.0, 0.0, 0.6, -1), ("yz", -1.0, 1.0, 0.0, 0.6, -1)],
+    "catch_length": [("xz", -0.2, 1.0, 0.0, 0.6, -1)],
+    "grip_count": [("xz", 0.2, 1.0, 0.75, 1.0, 0)],
+    "edge_fillet": [
+        ("xz", -1.0, -0.85, 0.6, 1.0, -1),
+        ("xz", 0.85, 1.0, 0.6, 1.0, -1),
+        ("yz", -1.0, 1.0, 0.7, 1.0, -1),
+    ],
+    "pivot_offset": [("holes", -1.0, 1.0, -1.0, 1.0, 0)],
+}
 MEASURE_MAP = {"length": "length", "width": "width", "thickness": "thickness", "hole_1.diameter": "pivot_d"}
 
 PARAMS = {  # name: (default, min, max, step, unit, affects_fit, label)

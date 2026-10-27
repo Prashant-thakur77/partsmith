@@ -45,7 +45,7 @@ from pydantic import ValidationError
 from services.agent import guards, lessons, mock_brain, prompt_loader, providers
 from services.agent.jobs import Job, JobCancelled, QuestionTimeout, Runner, context_hash
 from services.agent.providers import Completion, ModelRequest, ProviderError
-from services.agent.templates import Template, get_template, list_templates
+from services.agent.templates import Template, get_template, knobs_at, list_templates
 from services.common import blobs
 from services.geom_worker.program import ProgramError, clamp, code_sha, module_literals, parse_params, set_defaults
 from services.geom_worker.sandbox import ExecResult, check_code, run_program
@@ -69,7 +69,8 @@ ROUND_FAMILIES = ("wheel", "knob", "spacer")
 HIDDEN_HOLE_RE = re.compile(r"possible hidden hole near mat \(([-\d.]+), ([-\d.]+)\) mm, about Ø([\d.]+) mm")
 NOTE_KEYS = ("hidden hole", "taller than", "clearly above the stated", "not a round vertical hole")
 BUILD_RETRIES = 2  # inner retries when the program does not compile / run
-NO_IMPROVE_SWITCH = 2  # rounds without improvement before switching strategy
+NO_IMPROVE_SWITCH = 3  # rounds without real progress before switching strategy
+PROGRESS_EPS = 0.1  # rank units: a round must cut the pass-rule violation by this much to count as progress
 IMPROVE_EPS_MM = 0.005
 IMPROVE_EPS = 0.01  # rank units (multiples of a tolerance)
 MISSING_TEST_PENALTY = 3.0  # a P0 test the model cannot even be measured for (e.g. a missing hole)
@@ -451,6 +452,26 @@ def scale_measurements(m: Measurements, f: float) -> Measurements:
         d.thickness = sc(m.thickness)
     d.notes = [*m.notes, f"ABLATION: sizes guessed without the mat scale (×{f:.3f})"]
     return d
+
+
+def local_kind(photo: np.ndarray[Any, Any], model: np.ndarray[Any, Any], frame: Frame, at_mm: Any) -> str:
+    """'extra' when the model has material the photo lacks around `at_mm` (part frame), 'missing' for the opposite."""
+    c = frame.to_px(np.asarray(at_mm, dtype=np.float64))
+    r = max(2, round(1.5 * frame.px_per_mm))
+    x0, y0 = round(c[0]) - r, round(c[1]) - r
+    h, w = photo.shape[:2]
+    xs, ys = slice(max(x0, 0), min(x0 + 2 * r + 1, w)), slice(max(y0, 0), min(y0 + 2 * r + 1, h))
+    p, m = photo[ys, xs].astype(bool), model[ys, xs].astype(bool)
+    extra, missing = int(np.count_nonzero(m & ~p)), int(np.count_nonzero(p & ~m))
+    return "extra" if extra > missing else "missing" if missing > extra else "unclear"
+
+
+def format_spots(spots: list[dict[str, Any]]) -> str:
+    return "".join(
+        f"; worst {s['view']} residual {s['hausdorff_mm']:.2f} mm at model {s['plane']} ({s['at_mm'][0]:.1f}, "
+        f"{s['at_mm'][1]:.1f}) mm — the model has {s['kind']} material there"
+        for s in spots
+    )
 
 
 def template_measure_map(code: str, template: Template | None) -> dict[str, str]:
@@ -1373,12 +1394,51 @@ class FixRun:
         ppm = vr.photo.frame.px_per_mm
         return count_openings(vr.photo.mask, ppm), count_openings(vr.model_mask, ppm)
 
+    def worst_spots(self, rnd: Round) -> list[dict[str, Any]]:
+        """Where each failing view is worst, in the MODEL's own frame (so a template can say which knob shapes that
+        region), plus whether the model has extra or missing material there."""
+        out: list[dict[str, Any]] = []
+        if rnd.out is None or rnd.exec_result is None or rnd.exec_result.solid_info is None:
+            return out
+        th = rnd.verification.thresholds if rnd.verification else None
+        b = rnd.exec_result.solid_info.bbox_mm
+        lo, hi = np.array(b[:3]), np.array(b[3:])
+        centre, half = (lo + hi) / 2, np.maximum((hi - lo) / 2, 1e-6)
+        for view, vr in rnd.out.views.items():
+            m = vr.metrics
+            if m.worst_point_mm is None or vr.matrix is None:
+                continue
+            if th is not None and m.hausdorff_mm <= th.hausdorff_mm:
+                continue
+            q = np.linalg.inv(np.asarray(vr.matrix, dtype=np.float64)) @ np.array([*m.worst_point_mm, 1.0])
+            axes = {"top": "xy", "side_xz": "xz", "side_yz": "yz"}.get(vr.projection, "xy")
+            idx = ["xyz".index(a) for a in axes]
+            norm = []
+            for k, val in zip(idx, q[:2], strict=True):
+                norm.append(
+                    float((val - lo[k]) / max(hi[k] - lo[k], 1e-6)) if k == 2 else float((val - centre[k]) / half[k])
+                )
+            out.append(
+                {
+                    "view": view,
+                    "plane": axes,
+                    "at_mm": [round(float(q[0]), 2), round(float(q[1]), 2)],
+                    "norm": [round(norm[0], 3), round(norm[1], 3)],
+                    "hausdorff_mm": round(m.hausdorff_mm, 3),
+                    "kind": local_kind(vr.photo.mask, vr.model_mask, vr.photo.frame, m.worst_point_mm),
+                }
+            )
+        return sorted(out, key=lambda w: -float(w["hausdorff_mm"]))
+
     def propose_fix(self, rnd: Round) -> dict[str, Any] | None:
         assert self.spec is not None and rnd.verification is not None
         v = rnd.verification
         specs = parse_params(rnd.code)
         measure_map = template_measure_map(rnd.code, self.template if rnd.strategy == "template" else None)
         photo_n, model_n = self.openings(rnd)
+        spots = self.worst_spots(rnd)
+        tpl = self.template if rnd.strategy == "template" else None
+        regions = dict(tpl.regions) if tpl is not None else {}
         hist = self.history[-2:]
         p = prompt_loader.load("fix")
         limits = ", ".join(f"{s.name} ±{guards.max_delta(s, rnd.values.get(s.name, s.default)):g}" for s in specs)
@@ -1406,7 +1466,7 @@ class FixRun:
             limits=limits,
             param_names=", ".join(s.name for s in specs),
             residuals=format_residuals(v) if numeric else VISUAL_ONLY_NOTE,
-            views=format_views(v) if numeric else VISUAL_ONLY_NOTE,
+            views=(format_views(v) + format_spots(spots)) if numeric else VISUAL_ONLY_NOTE,
             values=json.dumps(rnd.values),
             history=hist_text,
         )
@@ -1431,6 +1491,8 @@ class FixRun:
                 "history": [dict(h) for h in self.history] if numeric else [],
                 "measured_holes": photo_n,
                 "model_holes": model_n,
+                "worst": spots,
+                "regions": {k: [list(b) for b in v] for k, v in regions.items()},
                 "vetoes": [x.model_dump(mode="json") for x in self.vetoes],
             },
         )
@@ -1516,7 +1578,7 @@ class FixRun:
                 "residuals_after": residual_keys(rnd.verification),
             }
         )
-        return improved
+        return rnd.rank[0] < base.rank[0] or rnd.rank[1] < base.rank[1] - PROGRESS_EPS
 
     def fix_loop(self) -> None:
         no_improve = 0
@@ -1529,17 +1591,37 @@ class FixRun:
             self.check_alive()
             improved = self.fix_round()
             no_improve = 0 if improved else no_improve + 1
-            if no_improve >= NO_IMPROVE_SWITCH and not self.best.verified and self.iteration < limit:
+            if no_improve >= self.switch_after() and not self.best.verified and self.iteration < limit:
                 no_improve = 0
                 if not self.switch_strategy():
                     break
 
+    def switch_after(self) -> int:
+        """Rounds without progress before leaving the template: one more when the template still has knobs for the
+        region where the model is worst."""
+        b = self.best
+        if b is None or self.template is None or b.strategy != "template":
+            return NO_IMPROVE_SWITCH - 1
+        spots = self.worst_spots(b)
+        has_knob = any(knobs_at(self.template, s["plane"], *s["norm"]) for s in spots)
+        return NO_IMPROVE_SWITCH if has_knob else NO_IMPROVE_SWITCH - 1
+
+    def side_taller_than_plate(self) -> bool:
+        side = self.measurements.get("side")
+        return side is not None and any("clearly above the stated" in n for n in side.notes)
+
     def switch_strategy(self) -> bool:
         """template → free code → ask the human. Returns False when the loop should stop."""
         cur = self.strategy
+        if cur == "template" and self.side_taller_than_plate():
+            self.log(
+                "no switch to free code: the side photo shows features above the plate, which an extruded outline "
+                "cannot express; the template keeps probing"
+            )
+            return True
         if cur == "template":
             self.switches.append("template → free_code")
-            self.log("two rounds without improvement: switching from the template to free code")
+            self.log("three rounds without progress: switching from the template to free code")
             self.build_round("free_code", iter_label="strategy switch: free code from the measured outline")
             return True
         if cur == "free_code":

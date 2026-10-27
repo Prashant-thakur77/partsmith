@@ -112,3 +112,35 @@ def test_variant_mock_uses_phrase_mapper():
     )
     out = mock_brain.variant(req)
     assert out["edits"] and out["edits"][0]["param"] == "hole_d"
+
+
+def test_region_hints_pick_the_knob_that_shapes_the_worst_spot():
+    t = get_template("hinge_leaf")
+    regions = {k: [list(b) for b in v] for k, v in t.regions.items()}
+    worst = [{"view": "top", "plane": "xy", "norm": [0.1, 0.9], "hausdorff_mm": 3.0, "kind": "extra"}]
+    hints = mock_brain.region_hints(worst, regions, {p.name for p in t.params if p.topology})
+    names = [h["param"] for h in hints]
+    assert names[:2] == ["knuckle_phase", "knuckle_count"]  # pattern knobs before size knobs
+    assert "corner_radius" not in names
+    gap = next(h for h in hints if h["param"] == "knuckle_gap")
+    assert gap["sign"] == 1  # extra material where a larger gap removes material -> raise the gap
+    assert mock_brain.region_hints([{**worst[0], "norm": [0.0, -0.2]}], regions) == []
+
+
+def test_bosses_read_from_a_side_silhouette_with_a_regular_bump_row():
+    import numpy as np
+    from shapely.geometry import Polygon, box
+    from shapely.ops import unary_union
+
+    body = box(-16, -5.5, 16, 4.1)  # 9.6 mm plate, side frame centred on the min-area rectangle
+    studs = [box(x - 2.4, 4.0, x + 2.4, 5.8) for x in (-12, -4, 4, 12)]
+    outline = np.asarray(unary_union([body, *studs]).exterior.coords)[:-1]
+    side = {"outline_mm": outline.tolist()}
+    top = _top(32.0, 16.0)
+    b = mock_brain.side_bosses(side, 9.6, top)
+    assert len(b["centres"]) == 8 and b["pitch"] == pytest.approx(8.0, abs=0.2)
+    assert b["diameter"] == pytest.approx(4.8, abs=0.3) and b["height"] == pytest.approx(1.7, abs=0.2)
+    assert {round(y) for _, y in b["centres"]} == {-4, 4}  # two rows across the 16 mm width
+    one_bump = unary_union([body, box(10, 4.0, 15, 9.0)])
+    assert mock_brain.side_bosses({"outline_mm": np.asarray(one_bump.exterior.coords)[:-1].tolist()}, 9.6, top) == {}
+    assert Polygon(outline).is_valid

@@ -11,6 +11,22 @@ SUMMARY = (
     "spokes between the hub and the rim."
 )
 TAGS = ["wheel", "caster", "castor", "trolley", "furniture", "roller"]
+# Where each knob moves the outline (normalised model frame; see services/agent/templates/__init__.py).
+REGIONS = {
+    "edge_fillet": [
+        ("xz", 0.75, 1.0, 0.0, 0.3, -1),
+        ("xz", -1.0, -0.75, 0.0, 0.3, -1),
+        ("xz", 0.75, 1.0, 0.7, 1.0, -1),
+        ("xz", -1.0, -0.75, 0.7, 1.0, -1),
+        ("yz", 0.75, 1.0, 0.0, 0.3, -1),
+        ("yz", -1.0, -0.75, 0.0, 0.3, -1),
+        ("yz", 0.75, 1.0, 0.7, 1.0, -1),
+        ("yz", -1.0, -0.75, 0.7, 1.0, -1),
+    ],
+    "rim_thickness": [("xy", -0.85, 0.85, -0.85, 0.85, 1)],
+    "hub_d": [("xy", -0.6, 0.6, -0.6, 0.6, 1)],
+    "spoke_count": [("xy", -0.85, 0.85, -0.85, 0.85, 0)],
+}
 MEASURE_MAP = {
     "length": "diameter",
     "width": "diameter",
