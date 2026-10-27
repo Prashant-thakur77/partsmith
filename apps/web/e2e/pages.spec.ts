@@ -9,7 +9,7 @@ const PAGES: PageCase[] = [
   { name: "calibrate", path: "/calibrate", ready: async (p) => { await expect(p.getByRole("slider", { name: "Card width on screen" })).toBeVisible(); } },
   { name: "mat", path: "/mat", full: false, ready: async (p) => { await expect(p.getByRole("img", { name: /1:1 scale/ })).toBeVisible(); } },
   { name: "jobs", path: "/jobs", ready: async (p) => { await expect(p.getByText("L-bracket (synthetic sample)").first()).toBeVisible(); } },
-  { name: "jobs-demo", path: "/jobs/demo", ready: async (p) => { await expect(p.getByRole("button", { name: /Run the/ })).toBeVisible(); } },
+  { name: "jobs-demo", path: "/jobs/demo", ready: async (p) => { await expect(p.getByRole("button", { name: "Run this sample" })).toBeVisible(); } },
   { name: "workspace", path: "/jobs/job_demo_1", ready: async (p) => { await expect(p.getByRole("status", { name: /Verified/ })).toBeVisible(); await expect(p.locator("canvas").first()).toBeVisible(); } },
   { name: "workspace-paused", path: "/jobs/job_paused", ready: async (p) => { await expect(p.getByText("How deep is the D-shaft hole?")).toBeVisible(); } },
   { name: "fit", path: "/jobs/job_demo_1/fit", full: false, ready: async (p) => { await expect(p.getByText("Lay the part exactly on the pink outline")).toBeVisible(); } },
@@ -33,11 +33,13 @@ for (const c of PAGES) {
     expect(res?.status(), "HTTP status").toBeLessThan(c.name === "not-found" ? 500 : 400);
     await c.ready(page);
     await page.waitForLoadState("networkidle");
-    const overflow = await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth);
+    // Compare with the configured viewport: on mobile emulation a too-wide element silently widens innerWidth.
+    const vw = page.viewportSize()!.width;
+    const overflow = await page.evaluate((w) => document.documentElement.scrollWidth - w, vw);
     expect(overflow, "no horizontal page scroll").toBeLessThanOrEqual(0);
     await shot(page, info, c.name, c.full !== false);
     await expectAccessible(page);
-    const errs = realErrors(errors).filter((e) => !(c.opts?.offline && /502|Failed to load resource/.test(e)) && !(c.name === "not-found" && /404/.test(e)) && !(c.name === "bench-pending" && /404/.test(e)));
+    const errs = realErrors(errors).filter((e) => !(c.opts?.offline && /502|Failed to load resource/.test(e)) && !(c.name === "not-found" && /404/.test(e)) );
     expect(errs, errs.join("\n")).toEqual([]);
   });
 }

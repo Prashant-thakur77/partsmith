@@ -39,22 +39,17 @@ export function gtLabel(gt: string | undefined, fallback = "not stated"): string
 
 export type BenchKey = (typeof BENCH_TABLES)[number]["key"];
 
-const HEADLINE_KEYS = ["headline", "median_abs_err_mm", "median_error_mm", "mae_mm", "median_mm", "verified_rate", "pass_rate"];
-
-export function benchHeadline(t: BenchTable): { value: string; n: number | undefined; gt: string } | null {
-  const rec = t as Record<string, unknown>;
-  const gt = gtLabel(typeof t.ground_truth === "string" ? t.ground_truth : undefined, "");
-  const n = typeof t.n === "number" ? t.n : Array.isArray(t.rows) ? t.rows.length : undefined;
-  for (const k of HEADLINE_KEYS) {
-    const v = rec[k];
-    if (typeof v === "string" && v) return { value: v, n, gt };
-    if (typeof v === "number") {
-      const isRate = k.includes("rate");
-      return { value: isRate ? `${(v * 100).toFixed(1)} %` : `${v.toFixed(2)} mm`, n, gt };
-    }
+/** The table's headline number exactly as eval wrote it, or null while the table is pending. */
+export function benchHeadline(t: BenchTable): { value: string; n: number; gt: string } | null {
+  if (t.status === "pending") return null;
+  const gt = gtLabel(t.ground_truth, "");
+  for (const [k, v] of Object.entries(t.headline)) {
+    if (typeof v !== "number") continue;
+    const rate = /rate|share|frac/.test(k);
+    const label = k.replace(/_mm$/, "").replace(/_/g, " ");
+    return { value: rate ? `${(v * 100).toFixed(1)} %` : `${v.toFixed(2)} mm`, n: t.n, gt: `${label} · ${gt}` };
   }
-  if (n !== undefined) return { value: `${n} cases`, n, gt };
-  return null;
+  return t.n ? { value: `${t.n} cases`, n: t.n, gt } : null;
 }
 
 export function cellText(v: unknown): string {

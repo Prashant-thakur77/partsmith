@@ -17,6 +17,7 @@ import { toast } from "@/components/ui/toast";
 import { api, artifactUrl } from "@/lib/api";
 import type { FitCheckResult, FitOutline } from "@/lib/api-types";
 import type { ScreenCalibration } from "@/lib/calibration";
+import type { StageTone } from "@/lib/stage";
 import { fmtNum } from "@/lib/format";
 import { useOrigin } from "@/lib/use-origin";
 import { cn } from "@/lib/utils";
@@ -26,6 +27,14 @@ const OUTLINE = "#E0218A";
 
 function OutlineSvg({ o }: { o: FitOutline }) {
   const pts = o.outline_mm.map(([x, y]) => `${x},${y}`).join(" ");
+  const xs = o.outline_mm.map((p) => p[0]);
+  const ys = o.outline_mm.map((p) => p[1]);
+  const maxX = Math.max(...xs);
+  const minY = Math.min(...ys);
+  const size = Math.max(maxX - Math.min(...xs), Math.max(...ys) - minY);
+  // Small parts: labels go in a legend beside the outline so they never sit on top of the part.
+  const legend = size < 30;
+  const font = legend ? 2.4 : Math.min(3, Math.max(2, size * 0.05));
   return (
     <g>
       <polygon points={pts} fill="none" stroke={OUTLINE} strokeWidth={0.35} strokeLinejoin="round" />
@@ -45,21 +54,21 @@ function OutlineSvg({ o }: { o: FitOutline }) {
         return (
           <g key={i} stroke={OUTLINE} strokeWidth={0.18}>
             <line x1={x1} y1={y1} x2={x2} y2={y2} />
-            <text
-              x={mx}
-              y={my - 1}
-              fill={OUTLINE}
-              stroke="none"
-              fontSize={2.6}
-              fontFamily="var(--font-geist-mono), monospace"
-              textAnchor="middle"
-              transform={`rotate(${a} ${mx} ${my})`}
-            >
-              {d.label} {fmtNum(d.value_mm)} mm
-            </text>
+            {!legend ? (
+              <text x={mx} y={my - font * 0.5} fill={OUTLINE} stroke="none" fontSize={font} fontFamily="var(--font-geist-mono), monospace" textAnchor="middle" transform={`rotate(${a} ${mx} ${my})`}>
+                {d.label}
+              </text>
+            ) : null}
           </g>
         );
       })}
+      {legend
+        ? o.dims.map((d, i) => (
+            <text key={i} x={maxX + 6} y={minY + font + i * font * 1.5} fill={OUTLINE} fontSize={font} fontFamily="var(--font-geist-mono), monospace">
+              {d.label}
+            </text>
+          ))
+        : null}
     </g>
   );
 }
@@ -110,7 +119,7 @@ function useFitUpload(id: string, matId: string | null) {
   return useMutation({ mutationFn: (file: File) => api.fitCheck(id, file, matId!) });
 }
 
-function FitStage({ id, cal }: { id: string; cal: ScreenCalibration }) {
+function FitStage({ id, cal, stage }: { id: string; cal: ScreenCalibration; stage: StageTone }) {
   const origin = useOrigin();
   const { choice, isPending } = useMatChoice(cal.px_per_mm, null);
   const matId = choice?.layout.mat_id ?? null;
@@ -125,7 +134,7 @@ function FitStage({ id, cal }: { id: string; cal: ScreenCalibration }) {
   return (
     <>
       <div className="flex flex-col items-center gap-2">
-        <ScreenMat layout={choice.layout} pxPerMm={cal.px_per_mm} rotated={choice.rotated} title="Screen mat with the model's outline at 1:1">
+        <ScreenMat layout={choice.layout} pxPerMm={cal.px_per_mm} rotated={choice.rotated} stage={stage} title="Screen mat with the model's outline at 1:1">
           {outline.data ? <OutlineSvg o={outline.data} /> : null}
         </ScreenMat>
         <p className="text-[11px] text-white/45">
@@ -227,7 +236,7 @@ export function FitClient({ id }: { id: string }) {
   if (phone && mat) return <PhoneUpload id={id} matId={mat} />;
   return (
     <StageShell exitHref={`/jobs/${encodeURIComponent(id)}`} title="Screen fit check" calibrateNext={`/jobs/${encodeURIComponent(id)}/fit`} tips={false}>
-      {(cal) => <FitStage id={id} cal={cal} />}
+      {(cal, stage) => <FitStage id={id} cal={cal} stage={stage} />}
     </StageShell>
   );
 }

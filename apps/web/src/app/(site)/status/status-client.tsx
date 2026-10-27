@@ -9,7 +9,7 @@ import { ModeBadge } from "@/components/ui/provenance";
 import { Skeleton } from "@/components/ui/skeleton";
 import { api } from "@/lib/api";
 import type { ProviderStatus } from "@/lib/api-types";
-import { fmtInt, fmtUsd, titleCase } from "@/lib/format";
+import { fmtInt, fmtMs, fmtUsd, titleCase } from "@/lib/format";
 import { cn } from "@/lib/utils";
 
 function ProviderCard({ p }: { p: ProviderStatus }) {
@@ -78,7 +78,7 @@ export function StatusClient() {
         {q.isError ? (
           <ErrorState error={q.error} what="provider status" onRetry={() => void q.refetch()} />
         ) : !s ? (
-          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
             {Array.from({ length: 6 }, (_, i) => (
               <Skeleton key={i} className="h-44" />
             ))}
@@ -95,7 +95,7 @@ export function StatusClient() {
               </div>
             ) : null}
             <Section title="Providers by stage">
-              <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
                 {s.providers.map((p) => (
                   <ProviderCard key={`${p.stage}-${p.role}`} p={p} />
                 ))}
@@ -116,6 +116,66 @@ export function StatusClient() {
                   </div>
                 ))}
               </dl>
+            </Section>
+            {s.open_weights ? (
+              <Section title="Open weights" description="Which stages actually ran live on open-weights models on this server.">
+                <div className="flex flex-wrap items-center gap-2 text-[13px]">
+                  <Badge tone={s.open_weights.open_weights_only ? "ok" : "neutral"}>
+                    {s.open_weights.open_weights_only ? "open-weights-only mode" : "mixed providers"}
+                  </Badge>
+                  <span className="text-muted">
+                    <span className="font-mono text-fg tnum">{fmtInt(s.open_weights.calls_on_open_weights)}</span> calls on open weights
+                  </span>
+                  <span className="text-muted">
+                    · live stages:{" "}
+                    {s.open_weights.stages_live_on_open_weights.length ? (
+                      <span className="font-mono text-fg">{s.open_weights.stages_live_on_open_weights.join(", ")}</span>
+                    ) : (
+                      "none yet"
+                    )}
+                  </span>
+                </div>
+              </Section>
+            ) : null}
+            <Section title="Model calls" description="Every model_call event from every non-replay job, grouped by stage and model.">
+              {s.model_calls.length ? (
+                <div tabIndex={0} role="region" aria-label="Model calls" className="scrollbar-thin overflow-x-auto rounded-lg border border-border bg-surface">
+                  <table className="w-full min-w-[720px] text-[12.5px]">
+                    <thead className="bg-surface-2 text-left text-[11px] text-subtle">
+                      <tr>
+                        {["Stage", "Model", "Mode", "Calls", "Failed", "Tokens in / out", "Mean latency", "Cost"].map((h, i) => (
+                          <th key={h} scope="col" className={cn("px-3 py-2 font-medium whitespace-nowrap", i >= 3 && "text-right")}>
+                            {h}
+                          </th>
+                        ))}
+                      </tr>
+                    </thead>
+                    <tbody className="font-mono tnum">
+                      {s.model_calls.map((m) => (
+                        <tr key={`${m.stage}-${m.provider}-${m.model}`} className="border-t border-border">
+                          <th scope="row" className="px-3 py-2 text-left font-sans font-normal whitespace-nowrap">{titleCase(m.stage)}</th>
+                          <td className="px-3 py-2">
+                            {m.model}
+                            {m.open_weights ? <Badge tone="accent" className="ml-1.5 font-sans">open</Badge> : null}
+                          </td>
+                          <td className="px-3 py-2">
+                            <ModeBadge mode={m.mode} />
+                          </td>
+                          <td className="px-3 py-2 text-right">{fmtInt(m.calls)}</td>
+                          <td className={cn("px-3 py-2 text-right", m.failed > 0 && "text-bad")}>{fmtInt(m.failed)}</td>
+                          <td className="px-3 py-2 text-right">
+                            {fmtInt(m.tokens_in)} / {fmtInt(m.tokens_out)}
+                          </td>
+                          <td className="px-3 py-2 text-right">{fmtMs(m.ms_mean)}</td>
+                          <td className="px-3 py-2 text-right">{fmtUsd(m.usd)}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              ) : (
+                <p className="text-[13px] text-muted">No model calls recorded yet.</p>
+              )}
             </Section>
           </>
         )}

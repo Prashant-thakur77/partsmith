@@ -57,6 +57,31 @@ export const StatusSchema = z.object({
   warnings: z.array(z.string()).default([]),
   jobs: z.object({ total: z.number().int(), verified: z.number().int() }),
   cost: z.object({ usd_total: num, usd_per_job_mean: num.nullable(), n_jobs: z.number().int() }),
+  model_calls: z
+    .array(
+      z.object({
+        stage: z.string(),
+        provider: z.string(),
+        model: z.string(),
+        mode: z.string(),
+        calls: z.number().int(),
+        failed: z.number().int().default(0),
+        tokens_in: z.number().int().default(0),
+        tokens_out: z.number().int().default(0),
+        usd: num.default(0),
+        ms_mean: num.nullish(),
+        open_weights: z.boolean().default(false),
+      }),
+    )
+    .default([]),
+  open_weights: z
+    .object({
+      open_weights_only: z.boolean(),
+      stages_live_on_open_weights: z.array(z.string()).default([]),
+      calls_on_open_weights: z.number().int().default(0),
+      last_live_call_ts: z.record(z.string(), num).default({}),
+    })
+    .nullish(),
 });
 export type Status = z.output<typeof StatusSchema>;
 
@@ -85,7 +110,7 @@ export type MatLayout = z.output<typeof MatLayoutSchema>;
 
 // ── capture / measurement ─────────────────────────────────────────────────────
 export const CaptureCheckSchema = z.object({
-  name: z.enum(["markers", "reprojection", "blur", "coverage", "tilt", "exposure", "glare", "moire", "scale"]),
+  name: z.enum(["markers", "reprojection", "blur", "coverage", "tilt", "exposure", "glare", "moire", "scale", "contrast"]),
   passed: z.boolean(),
   severity: z.enum(["ok", "warn", "fail"]),
   value: num.nullish(),
@@ -133,7 +158,7 @@ export const MeasurementsSchema = z.object({
   symmetry_score: num.nullish(),
   height_correction_scale: num.default(1),
   part_to_mat: z.array(z.array(num)).default([]),
-  mask_source: z.enum(["sam-3.1", "sam3-open", "mock-threshold", "synthetic-gt"]).default("mock-threshold"),
+  mask_source: z.enum(["sam-3.1", "sam3-open", "threshold", "mock-threshold", "synthetic-gt"]).default("threshold"),
   mask_confidence: num.nullish(),
   notes: z.array(z.string()).default([]),
 });
@@ -440,6 +465,7 @@ export const BakeResultSchema = z.object({
   facts: PartFactsSchema.nullish(),
   cache_hit: z.boolean(),
   ms: num,
+  facts_notes: z.record(z.string(), z.string()).default({}),
 });
 export type BakeResult = z.output<typeof BakeResultSchema>;
 
@@ -500,6 +526,12 @@ export const PartCardSchema = z.object({
   thumbnail_url: z.string().nullish(),
   params_count: z.number().int().default(0),
   topology_knobs: z.array(z.string()).default([]),
+  verified: z.boolean().optional(),
+  thumbnail_2x_url: z.string().nullish(),
+  summary: z.string().nullish(),
+  bbox_mm: z.tuple([num, num, num]).nullish(),
+  /** /matching only: why this part matches. */
+  reason: z.string().nullish(),
 });
 export type PartCard = z.output<typeof PartCardSchema>;
 
@@ -522,12 +554,13 @@ export const ProvenanceSchema = z.object({
 });
 export type Provenance = z.output<typeof ProvenanceSchema>;
 
-export const LineageEntrySchema = z.looseObject({
-  slug: z.string().optional(),
-  version: z.number().optional(),
-  note: z.string().optional(),
-  created_at: num.optional(),
+export const LineageEntrySchema = z.object({
+  slug: z.string(),
+  version: z.number().int(),
+  relation: z.enum(["forked_from", "variant_of"]),
+  title: z.string().default(""),
 });
+export type LineageEntry = z.output<typeof LineageEntrySchema>;
 
 export const PartRecordSchema = z.object({
   id: z.string(),
@@ -550,6 +583,12 @@ export const PartRecordSchema = z.object({
   mating: z.array(z.string()).default([]),
   artifacts: z.record(z.string(), z.string()).default({}),
   lineage: z.array(LineageEntrySchema).default([]),
+  thumbnail_url: z.string().nullish(),
+  thumbnail_2x_url: z.string().nullish(),
+  facts_notes: z.record(z.string(), z.string()).default({}),
+  fit_reports: z.array(z.record(z.string(), z.unknown())).default([]),
+  origin: DataOriginSchema.optional(),
+  verified: z.boolean().optional(),
 });
 export type PartRecord = z.output<typeof PartRecordSchema>;
 
@@ -559,6 +598,7 @@ export const VariantResultSchema = z.object({
   not_applied: z.array(z.string()),
   confidence: num,
   mode: ProviderModeSchema,
+  bake_url: z.string().nullish(),
 });
 export type VariantResult = z.output<typeof VariantResultSchema>;
 
@@ -579,6 +619,7 @@ export const StatsSchema = z.object({
   verified: z.number().int(),
   synthetic: z.number().int(),
   real: z.number().int(),
+  reference_object: z.number().int().default(0),
   jobs: z.number().int(),
   grams_pla: num,
 });
@@ -587,53 +628,123 @@ export type Stats = z.output<typeof StatsSchema>;
 // ── steer ─────────────────────────────────────────────────────────────────────
 export const SteerLaneSchema = z.object({
   slug: z.string(),
-  status: z.string(),
+  status: z.enum(["queued", "running", "done", "failed"]),
   job_id: z.string().nullish(),
   verified: z.boolean().default(false),
   max_error_mm: num.nullish(),
+  error: z.string().nullish(),
 });
 export type SteerLane = z.output<typeof SteerLaneSchema>;
 
-export const SteerQueueItemSchema = z.looseObject({
+export const SteerQueueItemSchema = z.object({
   slug: z.string(),
-  title: z.string().optional(),
-  verified: z.boolean().optional(),
-  max_error_mm: num.nullish(),
-  status: z.string().optional(),
-  judge: z.string().nullish(),
+  title: z.string(),
+  family: z.string(),
+  status: z.enum(["building", "pending_review", "published", "sent_back", "rejected", "failed"]),
   job_id: z.string().nullish(),
+  verified: z.boolean().default(false),
+  max_error_mm: num.nullish(),
+  params: z.record(z.string(), num).default({}),
+  note: z.string().nullish(),
 });
 export type SteerQueueItem = z.output<typeof SteerQueueItemSchema>;
 
-export const SteerRunSchema = z.object({
+export const SteerStateSchema = z.object({
   id: z.string(),
   brief: z.string(),
+  count: z.number().int(),
+  status: z.enum(["planning", "building", "reviewing", "done", "failed"]),
+  created_at: num,
+  updated_at: num,
+  family_title: z.string().default(""),
+  planner: z.object({ provider: z.string(), model: z.string(), mode: z.string() }).nullish(),
+  plan_job_id: z.string().nullish(),
+  plan_notes: z.array(z.string()).default([]),
+  label: z.string().default(""),
   plan: z.array(
-    z.object({ slug: z.string(), title: z.string(), family: z.string(), params: z.record(z.string(), z.unknown()).default({}) }),
+    z.object({
+      slug: z.string(),
+      title: z.string(),
+      family: z.string(),
+      template: z.string().nullish(),
+      params: z.record(z.string(), num).default({}),
+      why: z.string().nullish(),
+    }),
   ),
   lanes: z.array(SteerLaneSchema),
   queue: z.array(SteerQueueItemSchema).default([]),
+  history: z
+    .array(
+      z.object({
+        slug: z.string(),
+        action: z.string(),
+        note: z.string().nullish(),
+        ts: num,
+        applied: z.array(z.string()).nullish(),
+        not_applied: z.array(z.string()).nullish(),
+      }),
+    )
+    .default([]),
 });
-export type SteerRun = z.output<typeof SteerRunSchema>;
+export type SteerState = z.output<typeof SteerStateSchema>;
+
+export const SteerSummarySchema = z.object({
+  id: z.string(),
+  brief: z.string(),
+  count: z.number().int(),
+  status: z.string(),
+  created_at: num,
+  family_title: z.string().default(""),
+  pending: z.number().int().default(0),
+  published: z.number().int().default(0),
+});
+export type SteerSummary = z.output<typeof SteerSummarySchema>;
 
 // ── bench ─────────────────────────────────────────────────────────────────────
-/** Bench tables are produced by `eval/`; their row shape evolves, so rows stay loosely typed and are rendered generically. */
-export const BenchTableSchema = z.looseObject({
+/** Tables are produced by `eval/`; row cells are rendered generically, exactly as written. */
+export const BenchTableSchema = z.object({
+  n: z.number().int().default(0),
+  ground_truth: GroundTruthSourceSchema,
+  ci: z.unknown().optional(),
+  columns: z.array(z.string()).default([]),
+  rows: z.array(z.record(z.string(), z.unknown())).default([]),
+  headline: z.record(z.string(), z.unknown()).default({}),
+  status: z.enum(["ok", "pending"]).default("ok"),
+  note: z.string().default(""),
   title: z.string().optional(),
-  n: z.number().optional(),
-  ground_truth: z.string().optional(),
-  ci: z.string().optional(),
-  columns: z.array(z.string()).optional(),
-  rows: z.array(z.record(z.string(), z.unknown())).optional(),
-  note: z.string().optional(),
 });
 export type BenchTable = z.output<typeof BenchTableSchema>;
 
 export const BenchReportSchema = z.object({
+  status: z.enum(["ok", "pending"]),
   generated_at: z.union([z.string(), num]).nullish(),
   git_sha: z.string().nullish(),
-  tables: z.record(z.string(), BenchTableSchema.nullable()).default({}),
+  /** Provider mode the runs used and the report's honesty label, e.g. "pipeline check — mock providers". */
+  mode: z.string().nullish(),
+  label: z.string().nullish(),
+  notes: z.array(z.string()).default([]),
+  tables: z.record(z.string(), BenchTableSchema),
   runs: z.unknown().optional(),
-  failures: z.array(z.record(z.string(), z.unknown())).default([]),
+  failures: z.array(z.object({ title: z.string(), reason: z.string(), overlay_url: z.string().nullish() }).loose()).default([]),
 });
 export type BenchReport = z.output<typeof BenchReportSchema>;
+
+// ── misc ──────────────────────────────────────────────────────────────────────
+export const DemoSampleSchema = z.object({
+  id: z.string(),
+  title: z.string(),
+  family_hint: z.string().nullish(),
+  kind: z.enum(["template", "reference_object"]),
+});
+export type DemoSample = z.output<typeof DemoSampleSchema>;
+
+export const TranscribeResultSchema = z.object({
+  text: z.string(),
+  mode: ProviderModeSchema,
+  language: z.string().nullish(),
+  model: z.string(),
+  note: z.string().default(""),
+});
+export type TranscribeResult = z.output<typeof TranscribeResultSchema>;
+
+export const FeedbackResultSchema = z.object({ id: z.string(), slug: z.string(), result: z.string(), kind: z.string() });

@@ -26,7 +26,11 @@ import {
   ReplaySchema,
   StatsSchema,
   StatusSchema,
-  SteerRunSchema,
+  SteerStateSchema,
+  SteerSummarySchema,
+  DemoSampleSchema,
+  TranscribeResultSchema,
+  FeedbackResultSchema,
   VariantResultSchema,
   VerificationSchema,
   type Measurements,
@@ -146,6 +150,7 @@ export type FixJobInput = {
   side?: File | null;
   mating?: File | null;
   intent?: string;
+  matKind: "screen" | "paper";
   /** Only to force a mat; the server identifies the mat from the marker ids it sees. */
   matId?: string | null;
   thicknessMm?: number | null;
@@ -154,6 +159,12 @@ export type FixJobInput = {
 };
 
 export type BakeFormat = "stl" | "3mf" | "step" | "glb" | "view" | "py";
+
+function audioName(b: Blob): string {
+  const t = b.type;
+  const ext = t.includes("ogg") ? "ogg" : t.includes("mp4") || t.includes("m4a") ? "m4a" : t.includes("mpeg") ? "mp3" : t.includes("wav") ? "wav" : "webm";
+  return `audio.${ext}`;
+}
 
 export const api = {
   // system
@@ -172,14 +183,17 @@ export const api = {
     if (input.side) fd.set("side", input.side);
     if (input.mating) fd.set("mating", input.mating);
     if (input.intent) fd.set("intent", input.intent);
+    fd.set("mat_kind", input.matKind);
     if (input.matId) fd.set("mat_id", input.matId);
     if (input.thicknessMm != null) fd.set("thickness_mm", String(input.thicknessMm));
     if (input.familyHint) fd.set("family_hint", input.familyHint);
     if (input.screenPxPerMm != null) fd.set("screen_px_per_mm", String(input.screenPxPerMm));
     return request(JobSummarySchema, "/jobs/fix", { method: "POST", body: fd });
   },
+  demoSamples: () => request(DemoSampleSchema.array(), "/jobs/demo/samples"),
   createDemoJob: (sample: string) => request(JobSummarySchema, "/jobs/demo", json({ sample })),
-  jobs: (limit = 20) => request(JobSummarySchema.array(), "/jobs", { query: { limit } }),
+  jobs: (limit = 20, includeReplays = false) =>
+    request(JobSummarySchema.array(), "/jobs", { query: { limit, include_replays: includeReplays ? "true" : undefined } }),
   job: (id: string) => request(JobDetailSchema, `/jobs/${encodeURIComponent(id)}`),
   jobEventsUrl: (id: string, fromSeq?: number) => apiUrl(`/jobs/${encodeURIComponent(id)}/events`, { from_seq: fromSeq }),
   answer: (id: string, body: { id: string; value: string | number; via: "text" | "voice" }) =>
@@ -187,7 +201,7 @@ export const api = {
   editText: (id: string, text: string) => request(EditResultSchema, `/jobs/${encodeURIComponent(id)}/edit`, json({ text })),
   editAudio: (id: string, audio: Blob) => {
     const fd = new FormData();
-    fd.set("audio", audio, "edit.webm");
+    fd.set("audio", audio, audioName(audio));
     return request(EditResultSchema, `/jobs/${encodeURIComponent(id)}/edit`, { method: "POST", body: fd });
   },
   preview: (id: string) => request(PreviewResultSchema, `/jobs/${encodeURIComponent(id)}/preview`, { method: "POST" }),
@@ -199,15 +213,29 @@ export const api = {
     fd.set("mat_id", matId);
     return request(FitCheckResultSchema, `/jobs/${encodeURIComponent(id)}/fit-check`, { method: "POST", body: fd });
   },
+  jobBake: (id: string, params: ParamQuery, format: BakeFormat = "view", signal?: AbortSignal) =>
+    request(BakeResultSchema, `/jobs/${encodeURIComponent(id)}/bake`, { query: { ...params, format }, signal }),
+  jobBakeDownloadUrl: (id: string, params: ParamQuery, format: BakeFormat) =>
+    apiUrl(`/jobs/${encodeURIComponent(id)}/bake`, { ...params, format, download: 1 }),
+  publish: (id: string, slug?: string) =>
+    request(PartRecordSchema, `/jobs/${encodeURIComponent(id)}/publish`, json(slug ? { slug } : {})),
+  cancel: (id: string) => request(JobSummarySchema, `/jobs/${encodeURIComponent(id)}/cancel`, { method: "POST" }),
+  transcribe: (audio: Blob, languageHint?: string) => {
+    const fd = new FormData();
+    fd.set("audio", audio, audioName(audio));
+    if (languageHint) fd.set("language_hint", languageHint);
+    return request(TranscribeResultSchema, "/transcribe", { method: "POST", body: fd });
+  },
   runLogUrl: (id: string) => apiUrl(`/jobs/${encodeURIComponent(id)}/run.jsonl`),
   replays: () => request(ReplaySchema.array(), "/replays"),
 
   // stateless measure / verify
-  measure: (photo: File, view: string, opts: { matId?: string | null; thicknessMm?: number } = {}) => {
-    const { matId, thicknessMm } = opts;
+  measure: (photo: File, view: "top" | "side", opts: { matKind?: "screen" | "paper"; matId?: string | null; thicknessMm?: number } = {}) => {
+    const { matId, thicknessMm, matKind } = opts;
     const fd = new FormData();
     fd.set("photo", photo);
     fd.set("view", view);
+    if (matKind) fd.set("mat_kind", matKind);
     if (matId) fd.set("mat_id", matId);
     if (thicknessMm != null) fd.set("thickness_mm", String(thicknessMm));
     return request(MeasureResultSchema, "/measure", { method: "POST", body: fd });
@@ -236,6 +264,9 @@ export const api = {
   variant: (slug: string, want: string) =>
     request(VariantResultSchema, `/parts/${encodeURIComponent(slug)}/variant`, { query: { want } }),
   matching: (slug: string) => request(PartCardSchema.array(), `/parts/${encodeURIComponent(slug)}/matching`),
+  thumbnailUrl: (slug: string, scale: 1 | 2 = 1) => apiUrl(`/parts/${encodeURIComponent(slug)}/thumbnail.png`, { scale }),
+  feedback: (slug: string, body: { result: "fits" | "tight" | "loose" | "pass" | "fail"; kind: "print" | "screen_fit"; note: string }) =>
+    request(FeedbackResultSchema, `/parts/${encodeURIComponent(slug)}/feedback`, json(body)),
   templatePdfUrl: (slug: string, params: ParamQuery) => apiUrl(`/parts/${encodeURIComponent(slug)}/template.pdf`, params),
   families: () => request(FamilySchema.array(), "/families"),
   createNeed: (query: string) => request(NeedSchema, "/needs", json({ query })),
@@ -243,11 +274,11 @@ export const api = {
   stats: () => request(StatsSchema, "/stats"),
 
   // steer
-  steer: (brief: string, count: number) =>
-    request(SteerRunSchema.pick({ id: true }), "/steer", json({ brief, count })),
-  steerRun: (id: string) => request(SteerRunSchema, `/steer/${encodeURIComponent(id)}`),
+  steer: (brief: string, count: number) => request(SteerStateSchema.pick({ id: true }), "/steer", json({ brief, count })),
+  steerRuns: (limit = 10) => request(SteerSummarySchema.array(), "/steer", { query: { limit } }),
+  steerRun: (id: string) => request(SteerStateSchema, `/steer/${encodeURIComponent(id)}`),
   steerReview: (id: string, body: { slug: string; action: "approve" | "send_back" | "reject"; note: string }) =>
-    request(SteerRunSchema.partial(), `/steer/${encodeURIComponent(id)}/review`, json(body)),
+    request(SteerStateSchema, `/steer/${encodeURIComponent(id)}/review`, json(body)),
 
   // bench
   bench: () => request(BenchReportSchema, "/bench"),

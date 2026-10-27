@@ -6,7 +6,17 @@ const nextConfig: NextConfig = {
   reactStrictMode: true,
   poweredByHeader: false,
   async rewrites() {
-    return [{ source: "/api/v1/:path*", destination: `${apiUrl}/api/v1/:path*` }];
+    // `fallback` runs after app routes (incl. dynamic ones), so src/app/api/v1/jobs/[id]/events can stream SSE unbuffered.
+    return {
+      beforeFiles: [],
+      afterFiles: [],
+      fallback: [
+        { source: "/api/v1/:path*", destination: `${apiUrl}/api/v1/:path*` },
+        // MCP (streamable HTTP) is mounted on the API app; expose it on the web origin too.
+        { source: "/mcp", destination: `${apiUrl}/mcp` },
+        { source: "/mcp/:path*", destination: `${apiUrl}/mcp/:path*` },
+      ],
+    };
   },
   async headers() {
     return [

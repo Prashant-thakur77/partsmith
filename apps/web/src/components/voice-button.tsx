@@ -1,9 +1,15 @@
 "use client";
 
+import { useMutation } from "@tanstack/react-query";
 import { Mic, Square } from "lucide-react";
 import * as React from "react";
+import { api } from "@/lib/api";
+import type { TranscribeResult } from "@/lib/api-types";
 import { cn } from "@/lib/utils";
 import { Button } from "./ui/button";
+import { ErrorState } from "./ui/error-state";
+import { ModeBadge } from "./ui/provenance";
+import { Spinner } from "./ui/spinner";
 
 /** Records audio with MediaRecorder and hands the Blob to `onAudio` (the server transcribes it). */
 export function VoiceRecordButton({
@@ -20,7 +26,9 @@ export function VoiceRecordButton({
   const [rec, setRec] = React.useState<MediaRecorder | null>(null);
   const [secs, setSecs] = React.useState(0);
   const [err, setErr] = React.useState<string | null>(null);
-  const supported = typeof window !== "undefined" && "MediaRecorder" in window && !!navigator.mediaDevices?.getUserMedia;
+  // Decided after mount so server and client render the same markup.
+  const [supported, setSupported] = React.useState(false);
+  React.useEffect(() => setSupported("MediaRecorder" in window && !!navigator.mediaDevices?.getUserMedia), []);
 
   React.useEffect(() => {
     if (!rec) return;
@@ -70,52 +78,40 @@ export function VoiceRecordButton({
   );
 }
 
-type SpeechRec = {
-  lang: string;
-  interimResults: boolean;
-  start: () => void;
-  stop: () => void;
-  onresult: ((e: { results: ArrayLike<ArrayLike<{ transcript: string }>> }) => void) | null;
-  onend: (() => void) | null;
-  onerror: (() => void) | null;
-};
-
-/** Browser dictation (Web Speech API) for short text fields. Hidden where the browser lacks it. */
-export function DictateButton({ onText, lang = "en-IN", className }: { onText: (t: string) => void; lang?: string; className?: string }) {
-  const [on, setOn] = React.useState(false);
-  const ref = React.useRef<SpeechRec | null>(null);
-  const [supported, setSupported] = React.useState(false);
-  React.useEffect(() => {
-    const w = window as unknown as { SpeechRecognition?: new () => SpeechRec; webkitSpeechRecognition?: new () => SpeechRec };
-    setSupported(!!(w.SpeechRecognition ?? w.webkitSpeechRecognition));
-  }, []);
-  if (!supported) return null;
-  const toggle = () => {
-    if (on) {
-      ref.current?.stop();
-      return;
-    }
-    const w = window as unknown as { SpeechRecognition?: new () => SpeechRec; webkitSpeechRecognition?: new () => SpeechRec };
-    const Ctor = (w.SpeechRecognition ?? w.webkitSpeechRecognition)!;
-    const r = new Ctor();
-    r.lang = lang;
-    r.interimResults = false;
-    r.onresult = (e) => {
-      const t = Array.from(e.results)
-        .map((res) => res[0]?.transcript ?? "")
-        .join(" ");
-      if (t.trim()) onText(t.trim());
-    };
-    r.onend = () => setOn(false);
-    r.onerror = () => setOn(false);
-    ref.current = r;
-    r.start();
-    setOn(true);
-  };
+/**
+ * Record speech and transcribe it on the server (`POST /transcribe`, Muse Voice Transcribe or a labelled mock).
+ * Hands the text back; shows the mode and any note (mock transcripts say so).
+ */
+export function TranscribeButton({
+  onText,
+  languageHint,
+  label = "Speak",
+  className,
+  disabled,
+}: {
+  onText: (text: string, result: TranscribeResult) => void;
+  languageHint?: string;
+  label?: string;
+  className?: string;
+  disabled?: boolean;
+}) {
+  const t = useMutation({ mutationFn: (audio: Blob) => api.transcribe(audio, languageHint), onSuccess: (r) => r.text.trim() && onText(r.text.trim(), r) });
   return (
-    <Button variant={on ? "danger" : "outline"} size="sm" onClick={toggle} aria-pressed={on} className={className}>
-      {on ? <Square aria-hidden /> : <Mic aria-hidden />}
-      {on ? "Listening… tap to stop" : "Dictate"}
-    </Button>
+    <div className={cn("flex flex-col items-end gap-1", className)}>
+      <div className="flex items-center gap-2">
+        {t.isPending ? (
+          <span className="inline-flex items-center gap-1.5 text-[12px] text-muted" role="status">
+            <Spinner className="size-3.5" label="Transcribing" /> transcribing…
+          </span>
+        ) : t.data ? (
+          <span className="inline-flex items-center gap-1.5 text-[11px] text-subtle">
+            <ModeBadge mode={t.data.mode} hideLive />
+            {t.data.note ? <span className="max-w-56 truncate" title={t.data.note}>{t.data.note}</span> : null}
+          </span>
+        ) : null}
+        <VoiceRecordButton onAudio={(a) => t.mutate(a)} label={label} disabled={disabled || t.isPending} />
+      </div>
+      {t.isError ? <ErrorState error={t.error} compact what="the transcription" className="py-2" /> : null}
+    </div>
   );
 }

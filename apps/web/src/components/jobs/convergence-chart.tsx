@@ -24,7 +24,7 @@ export function ConvergenceChart({ data, threshold, height = 150 }: { data: Poin
     <figure className="m-0">
       <div style={{ height }} aria-hidden>
         <ResponsiveContainer width="100%" height="100%">
-          <LineChart accessibilityLayer={false} data={pts} margin={{ top: 8, right: 12, bottom: 0, left: -8 }}>
+          <LineChart accessibilityLayer={false} data={pts} margin={{ top: 8, right: 12, bottom: 0, left: 0 }}>
             <CartesianGrid stroke="var(--border)" strokeDasharray="0" vertical={false} />
             <XAxis
               dataKey="iter"
@@ -41,7 +41,7 @@ export function ConvergenceChart({ data, threshold, height = 150 }: { data: Poin
               tick={{ fontSize: 11, fill: "var(--fg-subtle)", fontFamily: "var(--font-mono)" }}
               tickLine={false}
               axisLine={false}
-              width={40}
+              width={44}
               tickFormatter={(v: number) => fmtNum(v, step < 0.5 ? 2 : 1)}
             />
             {threshold != null ? (

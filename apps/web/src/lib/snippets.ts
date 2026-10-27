@@ -80,7 +80,11 @@ export function mcpConfigs(origin: string): { id: string; label: string; path: s
       id: "stdio",
       label: "Local (stdio)",
       path: "any MCP client",
-      code: JSON.stringify({ mcpServers: { partsmith: { command: "uv", args: ["run", "python", "-m", "services.mcp", "--stdio"] } } }, null, 2),
+      code: JSON.stringify(
+        { mcpServers: { partsmith: { command: "uv", args: ["run", "python", "-m", "services.mcp", "--stdio"], cwd: "/path/to/partsmith" } } },
+        null,
+        2,
+      ),
     },
   ];
 }

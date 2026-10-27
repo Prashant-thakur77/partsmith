@@ -38,6 +38,7 @@ export type StreamState = "connecting" | "live" | "reconnecting" | "closed" | "e
 export function useJobEvents(jobId: string | null, initial: JobEvent[] = []) {
   const [state, dispatch] = useReducer(reducer, { events: [], seen: new Set<number>() });
   const [stream, setStream] = useState<StreamState>("connecting");
+  const [contractErrors, setContractErrors] = useState<string[]>([]);
   const lastSeq = useRef(-1);
   const initialRef = useRef(initial);
 
@@ -73,7 +74,15 @@ export function useJobEvents(jobId: string | null, initial: JobEvent[] = []) {
           return;
         }
         const parsed = EventSchema.safeParse(raw);
-        if (!parsed.success) return;
+        if (!parsed.success) {
+          // Never swallow a contract mismatch: surface it in the workspace and the console.
+          const issue = parsed.error.issues.slice(0, 2).map((i) => `${i.path.join(".")}: ${i.message}`).join("; ");
+          const t = typeof raw === "object" && raw && "t" in raw ? String((raw as { t: unknown }).t) : "?";
+          const msg = `event ${t}: ${issue}`;
+          console.error(`[partsmith] SSE ${msg}`);
+          setContractErrors((cur) => (cur.length > 20 ? cur : [...cur, msg]));
+          return;
+        }
         const ev = parsed.data;
         lastSeq.current = Math.max(lastSeq.current, ev.seq);
         dispatch({ type: "add", events: [ev] });
@@ -103,7 +112,7 @@ export function useJobEvents(jobId: string | null, initial: JobEvent[] = []) {
     };
   }, [jobId]);
 
-  return { events: state.events, stream };
+  return { events: state.events, stream, contractErrors };
 }
 
 export type StageState = { stage: StageName; status: StageEvent["status"] | "pending"; label: string; ms: number | null; iter: number | null };

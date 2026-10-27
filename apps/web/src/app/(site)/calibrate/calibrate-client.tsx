@@ -74,7 +74,7 @@ export function CalibrateClient() {
 
   return (
     <Container className="py-8 sm:py-10">
-      <div className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_320px]">
+      <div className="grid grid-cols-1 gap-8 lg:grid-cols-[minmax(0,1fr)_320px]">
         <div className="min-w-0 space-y-5">
           <div className="space-y-2">
             <div className="text-[12px] font-medium uppercase tracking-[0.08em] text-accent-text">One-time setup · this screen</div>

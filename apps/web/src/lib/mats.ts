@@ -1,12 +1,14 @@
 /** Screen-mat helpers: load layouts (API first, static copy in /public/mats as fallback) and pick the largest that fits. */
-import { api } from "./api";
+import { api, isOffline } from "./api";
 import { MatLayoutSchema, type MatLayout } from "./api-types";
 
 export async function loadScreenMats(): Promise<{ mats: MatLayout[]; source: "api" | "static" }> {
   try {
     const mats = await api.mats();
     return { mats: mats.filter((m) => m.kind === "screen"), source: "api" };
-  } catch {
+  } catch (err) {
+    // Only an unreachable API falls back to the static copies; contract errors must surface.
+    if (!isOffline(err)) throw err;
     // index.json (written by `tools/mat/make_mat.py --web`): [{mat_id, kind, url, ...}]
     const index = await fetch("/mats/index.json").then((r) => (r.ok ? (r.json() as Promise<{ mat_id: string; kind: string; url?: string }[]>) : []));
     const mats: MatLayout[] = [];

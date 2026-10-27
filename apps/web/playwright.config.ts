@@ -16,17 +16,29 @@ export default defineConfig({
     launchOptions: { args: ["--use-angle=swiftshader", "--enable-unsafe-swiftshader", "--ignore-gpu-blocklist"] },
   },
   projects: [
-    { name: "desktop-light", use: { ...devices["Desktop Chrome"], viewport: { width: 1440, height: 900 }, colorScheme: "light" } },
-    { name: "desktop-dark", use: { ...devices["Desktop Chrome"], viewport: { width: 1440, height: 900 }, colorScheme: "dark" } },
-    { name: "mobile-light", use: { ...devices["Desktop Chrome"], viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true, deviceScaleFactor: 2, colorScheme: "light" } },
-    { name: "mobile-dark", use: { ...devices["Desktop Chrome"], viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true, deviceScaleFactor: 2, colorScheme: "dark" } },
+    ...(process.env.PW_LIVE
+      ? [
+          {
+            name: "live",
+            testMatch: /live\/.*\.live\.spec\.ts/,
+            use: { ...devices["Desktop Chrome"], viewport: { width: 1440, height: 900 }, baseURL: process.env.LIVE_WEB_URL ?? "http://localhost:3000" },
+            timeout: 240_000,
+          },
+        ]
+      : []),
+    { name: "desktop-light", testIgnore: /live\//, use: { ...devices["Desktop Chrome"], viewport: { width: 1440, height: 900 }, colorScheme: "light" } },
+    { name: "desktop-dark", testIgnore: /live\//, use: { ...devices["Desktop Chrome"], viewport: { width: 1440, height: 900 }, colorScheme: "dark" } },
+    { name: "mobile-light", testIgnore: /live\//, use: { ...devices["Desktop Chrome"], viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true, deviceScaleFactor: 2, colorScheme: "light" } },
+    { name: "mobile-dark", testIgnore: /live\//, use: { ...devices["Desktop Chrome"], viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true, deviceScaleFactor: 2, colorScheme: "dark" } },
   ],
-  webServer: {
+  webServer: process.env.PW_LIVE
+    ? undefined
+    : {
     // API_URL points at a closed port so server-side fetches fail fast; the browser's /api/v1 calls are route-mocked.
     command: `pnpm exec next start --port ${PORT}`,
     url: `http://localhost:${PORT}`,
     reuseExistingServer: !process.env.CI,
     timeout: 120_000,
-    env: { API_URL: "http://127.0.0.1:9" },
-  },
+        env: { API_URL: "http://127.0.0.1:9" },
+      },
 });

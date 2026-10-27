@@ -9,6 +9,8 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import * as React from "react";
 import { calibrationDrift, useCalibration, useDisplayKey, type ScreenCalibration } from "@/lib/calibration";
+import { STAGE_COLOURS, setStageTone, useStageTone, type StageTone } from "@/lib/stage";
+import { cn } from "@/lib/utils";
 import { Button } from "../ui/button";
 import { Spinner } from "../ui/spinner";
 
@@ -69,7 +71,7 @@ export function StageShell({
 }: {
   exitHref: string;
   title: string;
-  children: (cal: ScreenCalibration) => React.ReactNode;
+  children: (cal: ScreenCalibration, stage: StageTone) => React.ReactNode;
   toolbar?: React.ReactNode;
   tips?: boolean;
   calibrateNext: string;
@@ -80,6 +82,12 @@ export function StageShell({
   const drift = ready && calibration ? calibrationDrift(calibration) : null;
   const ok = ready && calibration && !drift;
   const idle = useIdle();
+  const stage = useStageTone();
+  // `?stage=dark|light` (e.g. from the capture gate's "open mat with dark stage" link) sets and remembers the stage.
+  React.useEffect(() => {
+    const p = new URLSearchParams(window.location.search).get("stage");
+    if (p === "dark" || p === "light") setStageTone(p);
+  }, []);
   const [showTips, setShowTips] = React.useState(false);
   useWakeLock(!!ok);
 
@@ -129,7 +137,7 @@ export function StageShell({
   return (
     <div className="relative flex min-h-dvh items-center justify-center overflow-hidden bg-[#141414] text-white" data-idle={idle || undefined} style={{ cursor: idle ? "none" : undefined }}>
       <h1 className="sr-only">{title}</h1>
-      {children(calibration)}
+      {children(calibration, stage)}
       <div
         className="pointer-events-none absolute inset-x-0 top-0 z-20 flex items-start justify-between gap-2 p-3 transition-opacity duration-300"
         style={{ opacity: idle ? 0 : 1 }}
@@ -141,7 +149,29 @@ export function StageShell({
             </Link>
           </Button>
         </div>
-        <div className="pointer-events-auto flex items-center gap-1.5">
+        <div className="pointer-events-auto flex flex-wrap items-center justify-end gap-1.5">
+          <div className="flex items-center gap-2 rounded-md bg-black/60 py-1 pr-1 pl-2.5">
+            <span className="hidden text-[12px] text-white/70 md:inline">Use Dark for white or light-grey parts.</span>
+            <span className="text-[12px] font-medium text-white/90">Stage</span>
+            <div role="radiogroup" aria-label="Stage colour" className="inline-flex rounded-[5px] bg-white/10 p-0.5">
+              {(["light", "dark"] as const).map((t) => (
+                <button
+                  key={t}
+                  type="button"
+                  role="radio"
+                  aria-checked={stage === t}
+                  onClick={() => setStageTone(t)}
+                  className={cn(
+                    "inline-flex h-6 items-center gap-1.5 rounded-[4px] px-2 text-[12px] font-medium text-white/75 capitalize hover:text-white",
+                    stage === t && "bg-white text-black hover:text-black",
+                  )}
+                >
+                  <span aria-hidden className="size-2.5 rounded-full border border-black/30" style={{ background: STAGE_COLOURS[t] }} />
+                  {t}
+                </button>
+              ))}
+            </div>
+          </div>
           {toolbar}
           {tips ? (
             <Button size="sm" variant="ghost" className="bg-black/60 text-white hover:bg-black/80 hover:text-white" onClick={() => setShowTips((v) => !v)} aria-pressed={showTips}>
@@ -164,7 +194,7 @@ export function StageShell({
             <ul className="space-y-1.5">
               <li>Lay the screen flat (laptop opened 180° or a tablet) and set brightness to about 70 %.</li>
               <li>Kill glare: no lamp or window reflected in the screen. Move the light, not the part.</li>
-              <li>Put the part in the plain white middle; keep the black squares visible around it.</li>
+              <li>Put the part in the plain middle; keep the black squares visible around it. Use the Dark stage for white or light-grey parts.</li>
               <li>Photograph straight down from 20–35 cm with your phone. Night-shift / blue-light filters are fine.</li>
             </ul>
             <button type="button" aria-label="Hide tips" onClick={() => setShowTips(false)} className="rounded p-1 text-white/70 hover:bg-white/10 hover:text-white">

@@ -9,7 +9,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "../ui/tabs";
 export function AgentsStrip() {
   const origin = useOrigin();
   return (
-    <div className="grid gap-6 rounded-xl border border-border bg-surface p-5 sm:p-6 lg:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)]">
+    <div className="grid grid-cols-1 gap-6 rounded-xl border border-border bg-surface p-5 sm:p-6 lg:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)]">
       <div className="space-y-4">
         <div className="inline-flex size-9 items-center justify-center rounded-lg border border-border bg-surface-2">
           <Bot className="size-4" aria-hidden />

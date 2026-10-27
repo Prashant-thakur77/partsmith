@@ -73,7 +73,7 @@ function ReplayPlayer({ id }: { id: string }) {
           )}
         </div>
       </div>
-      <div className="grid gap-0 md:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
+      <div className="grid grid-cols-1 gap-0 md:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
         <div className="space-y-4 border-b border-border p-4 md:border-r md:border-b-0">
           <div aria-live="polite" className="min-h-10">
             <Eyebrow>Now</Eyebrow>
@@ -169,7 +169,7 @@ export function JudgesClient() {
         }
       />
       <Container className="space-y-14 py-10">
-        <ol className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+        <ol className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
           {steps.map((s) => (
             <li key={s.n}>
               <Link href={s.href} className="group flex h-full flex-col gap-2 rounded-lg border border-border bg-surface p-4 hover:border-border-strong">

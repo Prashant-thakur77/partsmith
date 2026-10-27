@@ -20,7 +20,7 @@ export function AgentsClient() {
         description="Search verified parts, turn plain words into knob values, and bake STL or STEP — over REST or MCP. Browsing needs no key."
       />
       <Container className="space-y-16 py-10">
-        <div className="grid gap-3 md:grid-cols-3">
+        <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
           {[
             { href: "/llms.txt", title: "llms.txt", body: "Reference for language models: endpoints, tools, families." },
             { href: "/prompt.txt", title: "prompt.txt", body: "Working instructions to paste into an agent's system prompt." },
@@ -50,7 +50,7 @@ export function AgentsClient() {
               </TabsContent>
             ))}
           </Tabs>
-          <ul className="grid gap-2 sm:grid-cols-2">
+          <ul className="grid grid-cols-1 gap-2 sm:grid-cols-2">
             {MCP_TOOLS.map((t) => (
               <li key={t.name} className="flex items-start gap-3 rounded-md border border-border bg-surface px-3 py-2.5">
                 <code className="shrink-0 font-mono text-[12.5px] text-fg">{t.name}</code>

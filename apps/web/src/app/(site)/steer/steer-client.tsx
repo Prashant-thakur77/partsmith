@@ -12,29 +12,40 @@ import { EmptyState } from "@/components/ui/empty-state";
 import { ErrorState } from "@/components/ui/error-state";
 import { Input, Label, Textarea } from "@/components/ui/input";
 import { Kbd } from "@/components/ui/kbd";
+import { ModeBadge } from "@/components/ui/provenance";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Spinner } from "@/components/ui/spinner";
 import { toast } from "@/components/ui/toast";
 import { api } from "@/lib/api";
 import type { SteerLane, SteerQueueItem } from "@/lib/api-types";
-import { fmtNum, titleCase } from "@/lib/format";
+import { fmtNum, timeAgo, titleCase } from "@/lib/format";
 import { cn } from "@/lib/utils";
 
 function laneTone(l: SteerLane): "ok" | "warn" | "bad" | "accent" | "neutral" {
-  if (l.verified) return "ok";
-  if (/fail|reject/.test(l.status)) return "bad";
-  if (/best|send/.test(l.status)) return "warn";
-  if (/run|build|verify|queued/.test(l.status)) return "accent";
+  if (l.status === "failed") return "bad";
+  if (l.status === "running") return "accent";
+  if (l.status === "done") return l.verified ? "ok" : "warn";
   return "neutral";
 }
 
-function ApprovalQueue({ runId, queue }: { runId: string; queue: SteerQueueItem[] }) {
+const QUEUE_TONE: Record<SteerQueueItem["status"], "ok" | "warn" | "bad" | "accent" | "neutral" | "info"> = {
+  building: "accent",
+  pending_review: "info",
+  published: "ok",
+  sent_back: "warn",
+  rejected: "neutral",
+  failed: "bad",
+};
+
+function ApprovalQueue({ runId, items }: { runId: string; items: SteerQueueItem[] }) {
   const qc = useQueryClient();
+  const queue = items.filter((q) => q.status === "pending_review");
   const [sel, setSel] = React.useState(0);
   const [note, setNote] = React.useState("");
   const review = useMutation({
     mutationFn: (v: { slug: string; action: "approve" | "send_back" | "reject" }) => api.steerReview(runId, { ...v, note }),
-    onSuccess: (_d, v) => {
+    onSuccess: (state, v) => {
+      qc.setQueryData(["steer", runId], state);
       toast(v.action === "approve" ? "Approved" : v.action === "reject" ? "Rejected" : "Sent back", { description: v.slug, tone: v.action === "approve" ? "ok" : "info" });
       setNote("");
       void qc.invalidateQueries({ queryKey: ["steer", runId] });
@@ -59,9 +70,14 @@ function ApprovalQueue({ runId, queue }: { runId: string; queue: SteerQueueItem[
     return () => window.removeEventListener("keydown", onKey);
   }, [queue.length, cur, review]);
 
-  if (!queue.length) return <EmptyState compact icon={Check} title="Nothing waiting for review" />;
+  if (!queue.length)
+    return (
+      <EmptyState compact icon={Check} title="Nothing waiting for review">
+        {items.length ? "Every built part has been reviewed." : "Parts appear here as their lanes finish building."}
+      </EmptyState>
+    );
   return (
-    <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_320px]">
+    <div className="grid grid-cols-1 gap-4 lg:grid-cols-[minmax(0,1fr)_320px]">
       <ul className="divide-y divide-border overflow-hidden rounded-lg border border-border bg-surface" role="listbox" aria-label="Approval queue" aria-activedescendant={cur ? `q-${cur.slug}` : undefined}>
         {queue.map((q, i) => (
           <li
@@ -77,7 +93,9 @@ function ApprovalQueue({ runId, queue }: { runId: string; queue: SteerQueueItem[
               <div className="truncate text-[14px] font-medium">{q.title ?? q.slug}</div>
               <div className="truncate font-mono text-[12px] text-subtle">{q.slug}</div>
             </div>
-            {q.judge ? <span className="hidden max-w-[40%] truncate text-[12px] text-muted md:block">judge: {q.judge}</span> : null}
+            <span className="hidden max-w-[40%] truncate font-mono text-[12px] text-muted md:block">
+              {Object.entries(q.params).slice(0, 3).map(([k, v]) => `${k}=${fmtNum(v, 1)}`).join(" ")}
+            </span>
             <Badge tone={q.verified ? "ok" : "warn"} className="font-mono tnum">
               {q.verified ? "verified" : "not verified"}
               {q.max_error_mm != null ? ` · ${fmtNum(q.max_error_mm)} mm` : ""}
@@ -129,10 +147,12 @@ export function SteerClient() {
     queryKey: ["steer", runId],
     queryFn: () => api.steerRun(runId!),
     enabled: !!runId,
-    refetchInterval: (q) => (q.state.data?.lanes.every((l) => /verified|fail|reject|best|done|approved/.test(l.status)) ? false : 2500),
+    refetchInterval: (q) => (q.state.data && ["done", "failed"].includes(q.state.data.status) ? false : 2500),
   });
   const r = run.data;
-  const done = r ? r.lanes.filter((l) => l.verified).length : 0;
+  const runs = useQuery({ queryKey: ["steer-runs"], queryFn: () => api.steerRuns(10), enabled: !runId });
+  const built = r ? r.lanes.filter((l) => l.status === "done").length : 0;
+  const verified = r ? r.lanes.filter((l) => l.verified).length : 0;
 
   return (
     <>
@@ -154,7 +174,7 @@ export function SteerClient() {
           <div className="flex flex-wrap items-end justify-between gap-3">
             <div className="flex items-center gap-2">
               <Label htmlFor="count">Parts</Label>
-              <Input id="count" type="number" min={1} max={30} value={count} onChange={(e) => setCount(Math.max(1, Math.min(30, Number(e.target.value) || 1)))} className="w-20 font-mono tnum" />
+              <Input id="count" type="number" min={1} max={24} value={count} onChange={(e) => setCount(Math.max(1, Math.min(24, Number(e.target.value) || 1)))} className="w-20 font-mono tnum" />
             </div>
             <Button type="submit" variant="primary" disabled={!brief.trim() || start.isPending}>
               {start.isPending ? <Spinner className="text-accent-fg" label="Planning" /> : <Send aria-hidden />} Plan and build
@@ -164,33 +184,98 @@ export function SteerClient() {
         </form>
 
         {!runId ? (
-          <EmptyState icon={Factory} title="No run selected">
-            Start a run above. Each part goes through the same verifier as a photo fix; nothing is published without approval.
-          </EmptyState>
+          runs.data?.length ? (
+            <Section title="Recent runs">
+              <ul className="divide-y divide-border overflow-hidden rounded-lg border border-border bg-surface">
+                {runs.data.map((x) => (
+                  <li key={x.id}>
+                    <Link href={`${pathname}?id=${encodeURIComponent(x.id)}`} className="flex flex-wrap items-center gap-x-3 gap-y-1 px-4 py-3 hover:bg-surface-2">
+                      <div className="min-w-0 basis-full sm:basis-0 sm:flex-1">
+                        <div className="truncate text-[14px] font-medium">{x.brief}</div>
+                        <div className="text-[12px] text-subtle">
+                          {x.family_title ? `${x.family_title} · ` : ""}
+                          {timeAgo(x.created_at)}
+                        </div>
+                      </div>
+                      <span className="font-mono text-[12px] text-muted tnum">
+                        {x.published}/{x.count} published · {x.pending} pending
+                      </span>
+                      <Badge tone="neutral">{x.status}</Badge>
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            </Section>
+          ) : (
+            <EmptyState icon={Factory} title="No runs yet">
+              Start a run above. Each part goes through the same verifier as a photo fix; nothing is published without approval.
+            </EmptyState>
+          )
         ) : run.isError ? (
           <ErrorState error={run.error} what="this run" onRetry={() => void run.refetch()} />
         ) : !r ? (
           <Skeleton className="h-64" />
         ) : (
           <>
-            <div className="flex flex-wrap items-baseline justify-between gap-2">
-              <div>
-                <div className="text-[12px] text-muted">Run <span className="font-mono">{r.id}</span></div>
-                <div className="text-[18px] font-semibold">{r.brief}</div>
+            <div className="flex flex-col gap-3 rounded-xl border border-border bg-surface p-5 md:flex-row md:items-end md:justify-between">
+              <div className="min-w-0 space-y-1.5">
+                <div className="flex flex-wrap items-center gap-1.5 text-[12px] text-muted">
+                  <span className="font-mono">{r.id}</span>
+                  <Badge tone={r.status === "failed" ? "bad" : r.status === "done" ? "ok" : "accent"}>{r.status}</Badge>
+                  {r.planner ? (
+                    <Badge tone="neutral" className="font-mono">
+                      planner {r.planner.model}
+                    </Badge>
+                  ) : null}
+                  {r.planner ? <ModeBadge mode={r.planner.mode} hideLive /> : null}
+                  {r.label ? <Badge tone="mock">{r.label}</Badge> : null}
+                </div>
+                <h2 className="text-[20px] leading-tight font-semibold tracking-tight">{r.family_title || r.brief}</h2>
+                {r.family_title ? <p className="text-[13px] text-muted">“{r.brief}”</p> : null}
               </div>
-              <div className="font-mono text-[14px] tnum">
-                {done}/{r.plan.length || r.lanes.length} verified
-              </div>
+              <dl className="flex shrink-0 gap-6 font-mono tnum">
+                <div>
+                  <dt className="font-sans text-[11px] text-subtle">built</dt>
+                  <dd className="text-[18px]">
+                    {built}/{r.lanes.length}
+                  </dd>
+                </div>
+                <div>
+                  <dt className="font-sans text-[11px] text-subtle">self-check passed</dt>
+                  <dd className="text-[18px]">
+                    {verified}/{r.lanes.length}
+                  </dd>
+                </div>
+                <div>
+                  <dt className="font-sans text-[11px] text-subtle">published</dt>
+                  <dd className="text-[18px]">{r.queue.filter((q) => q.status === "published").length}</dd>
+                </div>
+              </dl>
             </div>
+            <p className="-mt-6 text-[12px] leading-5 text-subtle">
+              Lanes verify each part against its own rendered silhouette — a synthetic self-check, not a photo measurement.
+            </p>
+            {r.plan_notes.length ? (
+              <ul className="list-disc space-y-1 pl-5 text-[13px] text-muted">
+                {r.plan_notes.map((n) => (
+                  <li key={n}>{n}</li>
+                ))}
+              </ul>
+            ) : null}
             <Section title="Plan">
-              <ul className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
+              <ul className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-3">
                 {r.plan.map((p) => (
-                  <li key={p.slug} className="space-y-1 rounded-md border border-border bg-surface p-3">
-                    <div className="text-[13px] font-medium">{p.title}</div>
-                    <div className="flex items-center gap-1.5 text-[12px] text-muted">
+                  <li key={p.slug} className="space-y-1.5 rounded-lg border border-border bg-surface p-3.5">
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="text-[13.5px] font-medium">{p.title}</div>
                       <Badge tone="neutral">{titleCase(p.family)}</Badge>
-                      <span className="truncate font-mono">{Object.entries(p.params).slice(0, 3).map(([k, v]) => `${k}=${String(v)}`).join(" ")}</span>
                     </div>
+                    {p.why ? <p className="text-[12px] leading-5 text-muted">{p.why}</p> : null}
+                    <p className="font-mono text-[11px] leading-4 break-words text-subtle">
+                      {Object.entries(p.params)
+                        .map(([k, v]) => `${k}=${fmtNum(v, Number.isInteger(v) ? 0 : 2)}`)
+                        .join("  ")}
+                    </p>
                   </li>
                 ))}
               </ul>
@@ -198,10 +283,14 @@ export function SteerClient() {
             <Section title="Build lanes">
               <ul className="divide-y divide-border overflow-hidden rounded-lg border border-border bg-surface">
                 {r.lanes.map((l) => (
-                  <li key={l.slug} className="flex items-center gap-3 px-4 py-2.5 text-[13px]">
+                  <li key={l.slug} className="flex flex-wrap items-center gap-x-3 gap-y-1 px-4 py-2.5 text-[13px]">
                     <span className="min-w-0 flex-1 truncate font-mono">{l.slug}</span>
+                    {l.error ? <span className="w-full truncate text-[12px] text-bad sm:order-none sm:w-auto">{l.error}</span> : null}
                     {l.max_error_mm != null ? <span className="font-mono text-[12px] text-muted tnum">{fmtNum(l.max_error_mm)} mm</span> : null}
-                    <Badge tone={laneTone(l)}>{l.status.replace(/_/g, " ")}</Badge>
+                    <Badge tone={laneTone(l)}>
+                      {l.status === "running" ? <Spinner className="size-3 text-current" label="Building" /> : null}
+                      {l.status === "done" ? (l.verified ? "self-check passed" : "best effort") : l.status}
+                    </Badge>
                     {l.job_id ? (
                       <Link href={`/jobs/${encodeURIComponent(l.job_id)}`} className="text-[12px] text-accent-text hover:underline">
                         trace
@@ -211,9 +300,38 @@ export function SteerClient() {
                 ))}
               </ul>
             </Section>
-            <Section title="Approval queue" description="Keyboard first: a / s / r on the selected item.">
-              <ApprovalQueue runId={r.id} queue={r.queue} />
+            <Section title="Approval queue" description="Keyboard first: a approve · s send back with your note · r reject.">
+              <ApprovalQueue runId={r.id} items={r.queue} />
+              {r.queue.some((q) => q.status !== "pending_review") ? (
+                <ul className="flex flex-wrap gap-1.5">
+                  {r.queue
+                    .filter((q) => q.status !== "pending_review")
+                    .map((q) => (
+                      <li key={q.slug}>
+                        <Badge tone={QUEUE_TONE[q.status]}>
+                          {q.title} · {q.status.replace("_", " ")}
+                        </Badge>
+                      </li>
+                    ))}
+                </ul>
+              ) : null}
             </Section>
+            {r.history.length ? (
+              <Section title="Review history">
+                <ol className="space-y-1.5 text-[13px]">
+                  {[...r.history].reverse().map((h, i) => (
+                    <li key={i} className="flex flex-wrap items-baseline gap-x-2">
+                      <span className="font-mono text-[12px] text-subtle">{timeAgo(h.ts)}</span>
+                      <span className="font-medium">{h.action.replace("_", " ")}</span>
+                      <span className="font-mono text-[12px]">{h.slug}</span>
+                      {h.note ? <span className="text-muted">“{h.note}”</span> : null}
+                      {h.applied?.length ? <span className="text-ok">applied: {h.applied.join(", ")}</span> : null}
+                      {h.not_applied?.length ? <span className="text-warn">not applied: {h.not_applied.join(", ")}</span> : null}
+                    </li>
+                  ))}
+                </ol>
+              </Section>
+            ) : null}
           </>
         )}
       </Container>

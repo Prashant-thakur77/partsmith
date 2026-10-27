@@ -25,6 +25,7 @@ export function PhotoSlot({
   required,
   value,
   onChange,
+  matKind,
   gate = true,
   onGate,
   compact = false,
@@ -33,6 +34,7 @@ export function PhotoSlot({
   title: string;
   hint: string;
   required?: boolean;
+  matKind?: "screen" | "paper";
   value: SlotValue;
   onChange: (v: SlotValue) => void;
   gate?: boolean;
@@ -44,7 +46,7 @@ export function PhotoSlot({
   const [busy, setBusy] = React.useState(false);
   const [drag, setDrag] = React.useState(false);
   const measure = useMutation({
-    mutationFn: (file: File) => api.measure(file, view),
+    mutationFn: (file: File) => api.measure(file, view === "mating" ? "top" : view, { matKind }),
     onSuccess: (r) => onGate?.(r.capture.passed),
     onError: () => onGate?.(null),
   });
@@ -118,7 +120,7 @@ export function PhotoSlot({
           {compact ? null : <p className="hidden text-[11px] text-subtle sm:block">or drop an image here</p>}
         </div>
       ) : (
-        <div className="grid gap-4 p-3 sm:grid-cols-[160px_minmax(0,1fr)]">
+        <div className="grid grid-cols-1 gap-4 p-3 sm:grid-cols-[160px_minmax(0,1fr)]">
           <div className="relative aspect-[4/3] overflow-hidden rounded-md border border-border bg-surface-2">
             {/* eslint-disable-next-line @next/next/no-img-element -- local object URL preview */}
             <img src={value.info.url} alt={`${title} preview`} className="absolute inset-0 size-full object-cover" />

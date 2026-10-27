@@ -7,8 +7,9 @@ import { useMatChoice } from "@/components/mat/use-mat-layout";
 import { Spinner } from "@/components/ui/spinner";
 import { fmtNum } from "@/lib/format";
 import type { ScreenCalibration } from "@/lib/calibration";
+import type { StageTone } from "@/lib/stage";
 
-function MatStage({ cal, preferred }: { cal: ScreenCalibration; preferred: string | null }) {
+function MatStage({ cal, preferred, stage }: { cal: ScreenCalibration; preferred: string | null; stage: StageTone }) {
   const { choice, mats, isPending, source } = useMatChoice(cal.px_per_mm, preferred);
   if (isPending) return <Spinner className="text-white/60" label="Loading mat" />;
   if (!choice) {
@@ -28,10 +29,10 @@ function MatStage({ cal, preferred }: { cal: ScreenCalibration; preferred: strin
   }
   return (
     <div className="flex flex-col items-center gap-2">
-      <ScreenMat layout={choice.layout} pxPerMm={cal.px_per_mm} rotated={choice.rotated} />
+      <ScreenMat layout={choice.layout} pxPerMm={cal.px_per_mm} rotated={choice.rotated} stage={stage} />
       <p className="max-w-[90vw] text-center text-[11px] text-white/45">
         {choice.layout.title} · {fmtNum(choice.layout.width_mm, 0)} × {fmtNum(choice.layout.height_mm, 0)} mm · {fmtNum(cal.px_per_mm, 3)} px/mm
-        {source === "static" ? " · offline copy" : ""} · Tips (top right) for glare and lighting
+        {source === "static" ? " · offline copy" : ""} · {stage} stage · Use Dark for white or light-grey parts
       </p>
     </div>
   );
@@ -41,7 +42,7 @@ export function MatClient() {
   const preferred = useSearchParams().get("mat");
   return (
     <StageShell exitHref="/fix" title="Screen mat" calibrateNext="/mat">
-      {(cal) => <MatStage cal={cal} preferred={preferred} />}
+      {(cal, stage) => <MatStage cal={cal} preferred={preferred} stage={stage} />}
     </StageShell>
   );
 }

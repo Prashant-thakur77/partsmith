@@ -1,7 +1,7 @@
 "use client";
 
 import { useMutation, useQuery } from "@tanstack/react-query";
-import { ArrowRight, Box, ChevronRight, Download, FileCode2, FileJson, FileText, GitFork, Layers, Link2, Wand2 } from "lucide-react";
+import { ArrowRight, Info, Box, ChevronRight, Download, FileCode2, FileJson, FileText, GitFork, Layers, Link2, Wand2 } from "lucide-react";
 import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import * as React from "react";
@@ -23,6 +23,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Spinner } from "@/components/ui/spinner";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "@/components/ui/toast";
+import { Tooltip } from "@/components/ui/tooltip";
 import { VerifiedBadge } from "@/components/ui/verified-badge";
 import { CadViewer } from "@/components/viewer/cad-viewer";
 import { api, artifactUrl } from "@/lib/api";
@@ -44,8 +45,23 @@ function useInitialParams(): Record<string, number> {
   }, [sp]);
 }
 
-function FactsList({ facts }: { facts: PartFacts }) {
+function NoteLabel({ label, note }: { label: string; note?: string }) {
+  if (!note) return <>{label}</>;
+  return (
+    <span className="inline-flex items-center gap-1">
+      {label}
+      <Tooltip content={note}>
+        <span tabIndex={0} role="img" aria-label={`How ${label.toLowerCase()} is computed`} className="inline-flex cursor-help text-subtle hover:text-fg">
+          <Info className="size-3.5" aria-hidden />
+        </span>
+      </Tooltip>
+    </span>
+  );
+}
+
+function FactsList({ facts, notes }: { facts: PartFacts; notes: Record<string, string> }) {
   const [x, y, z] = facts.bbox_mm;
+  const gdp = facts.mass_g_pla < 10 ? 2 : 1;
   return (
     <dl>
       <Fact label="Bounding box">
@@ -53,24 +69,56 @@ function FactsList({ facts }: { facts: PartFacts }) {
           {fmtNum(x, 1)} × {fmtNum(y, 1)} × {fmtNum(z, 1)} <span className="text-muted">mm</span>
         </span>
       </Fact>
-      <Fact label="Volume">
+      <Fact label={<NoteLabel label="Volume" note={notes.volume_mm3 ?? notes.volume} />}>
         <span className="font-mono tnum">
           {fmtNum(facts.volume_mm3, 0)} <span className="text-muted">mm³</span>
         </span>
       </Fact>
-      <Fact label="Mass (PLA / PETG)">
+      <Fact label={<NoteLabel label="Mass (PLA / PETG)" note={notes.mass} />}>
         <span className="font-mono tnum">
-          {fmtNum(facts.mass_g_pla, 1)} / {fmtNum(facts.mass_g_petg, 1)} <span className="text-muted">g</span>
+          {fmtNum(facts.mass_g_pla, gdp)} / {fmtNum(facts.mass_g_petg, gdp)} <span className="text-muted">g</span>
         </span>
       </Fact>
-      <Fact label="Print time (estimate)">
+      <Fact label={<NoteLabel label="Print time (estimate)" note={notes.print_minutes_est} />}>
         <span className="font-mono tnum">
-          {Math.round(facts.print_minutes_est)} <span className="text-muted">min</span>
+          {facts.print_minutes_est < 10 ? fmtNum(facts.print_minutes_est, 1) : Math.round(facts.print_minutes_est)} <span className="text-muted">min</span>
         </span>
       </Fact>
-      <Fact label="Supports">{facts.supports_needed ? "needed" : "not needed"}</Fact>
-      <Fact label="Orientation">{facts.orientation}</Fact>
+      <Fact label={<NoteLabel label="Supports" note={notes.supports_needed} />}>{facts.supports_needed ? "needed" : "not needed"}</Fact>
+      <Fact label={<NoteLabel label="Orientation" note={notes.orientation} />}>
+        <span className="block max-w-[14rem] text-right">{facts.orientation}</span>
+      </Fact>
     </dl>
+  );
+}
+
+const FIT_CHOICES = [
+  { v: "fits", label: "It fits" },
+  { v: "tight", label: "Too tight" },
+  { v: "loose", label: "Too loose" },
+] as const;
+
+/** "Did it fit?" — recorded as lessons evidence for this part. */
+function FitFeedback({ slug, reports }: { slug: string; reports: number }) {
+  const fb = useMutation({
+    mutationFn: (result: (typeof FIT_CHOICES)[number]["v"]) => api.feedback(slug, { result, kind: "print", note: "" }),
+    onSuccess: () => toast("Thanks — recorded", { description: "Fit reports feed the lessons the builder learns from.", tone: "ok" }),
+  });
+  return (
+    <div className="space-y-2">
+      <div className="flex items-baseline justify-between gap-2">
+        <span className="text-[13px] font-medium text-fg">Printed it? Did it fit?</span>
+        {reports ? <span className="text-[12px] text-subtle">{reports} report{reports === 1 ? "" : "s"}</span> : null}
+      </div>
+      <div className="grid grid-cols-3 gap-1.5">
+      {FIT_CHOICES.map((c) => (
+        <Button key={c.v} size="sm" className="px-2" variant={fb.variables === c.v && fb.isSuccess ? "solid" : "outline"} disabled={fb.isPending || fb.isSuccess} onClick={() => fb.mutate(c.v)}>
+          {c.label}
+        </Button>
+      ))}
+      </div>
+      {fb.isError ? <ErrorState error={fb.error} compact what="your report" /> : null}
+    </div>
   );
 }
 
@@ -206,7 +254,7 @@ export function PartClient({ slug }: { slug: string }) {
     return (
       <Container className="space-y-6 py-8">
         <Skeleton className="h-8 w-72" />
-        <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_340px]">
+        <div className="grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,1fr)_340px]">
           <Skeleton className="h-[480px]" />
           <Skeleton className="h-[480px]" />
         </div>
@@ -272,7 +320,7 @@ export function PartClient({ slug }: { slug: string }) {
       </div>
 
       <Container className="space-y-14 py-8">
-        <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_340px]">
+        <div className="grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,1fr)_340px]">
           <div className="overflow-hidden rounded-xl border border-border bg-surface lg:sticky lg:top-20 lg:self-start">
             <CadViewer viewUrl={live.viewUrl} busy={live.bake.pending && live.changed} className="h-[380px] sm:h-[520px] lg:h-[min(620px,calc(100dvh-120px))]" label={`3D model of ${part.title}`} />
           </div>
@@ -300,14 +348,14 @@ export function PartClient({ slug }: { slug: string }) {
           </div>
         </div>
 
-        <div className="grid gap-6 lg:grid-cols-3">
+        <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
           <VerificationCard part={part} />
           <Card>
             <CardHeader className="flex-row items-center justify-between">
               <CardTitle>Real-world facts</CardTitle>
               {live.changed && live.bake.data?.facts ? <Badge tone="accent">this variant</Badge> : null}
             </CardHeader>
-            <CardContent>{facts ? <FactsList facts={facts} /> : <p className="text-[13px] text-muted">Facts appear after the first bake.</p>}</CardContent>
+            <CardContent>{facts ? <FactsList facts={facts} notes={{ ...part.facts_notes, ...(live.bake.data?.facts_notes ?? {}) }} /> : <p className="text-[13px] text-muted">Facts appear after the first bake.</p>}</CardContent>
           </Card>
           <Card>
             <CardHeader>
@@ -346,6 +394,9 @@ export function PartClient({ slug }: { slug: string }) {
                 <Download className="size-3.5 text-subtle" aria-hidden />
               </a>
               <p className="pt-1 text-[11px] text-subtle">Downloads use the knob values above.</p>
+              <div className="border-t border-border pt-3">
+                <FitFeedback slug={slug} reports={part.fit_reports.length} />
+              </div>
             </CardContent>
           </Card>
         </div>
@@ -373,7 +424,7 @@ export function PartClient({ slug }: { slug: string }) {
           </Tabs>
         </Section>
 
-        <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
+        <div className="grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
           <Section title="Provenance">
             <Card>
               <CardContent className="pt-4">
@@ -408,7 +459,7 @@ export function PartClient({ slug }: { slug: string }) {
           <Section title="Lineage">
             {part.lineage.length || part.provenance.forked_from ? (
               <ol className="space-y-2">
-                {part.provenance.forked_from ? (
+                {part.provenance.forked_from && !part.lineage.some((l) => l.relation === "forked_from") ? (
                   <li className="flex items-center gap-2 text-[13px]">
                     <GitFork className="size-4 text-muted" aria-hidden /> Forked from{" "}
                     <Link href={`/parts/${encodeURIComponent(part.provenance.forked_from)}`} className="font-mono text-accent-text hover:underline">
@@ -416,16 +467,14 @@ export function PartClient({ slug }: { slug: string }) {
                     </Link>
                   </li>
                 ) : null}
-                {part.lineage.map((l, i) => (
-                  <li key={i} className="flex items-center gap-2 rounded-md border border-border bg-surface px-3 py-2 text-[13px]">
-                    <span className="font-mono text-[12px] text-subtle">{l.version != null ? `v${l.version}` : "·"}</span>
-                    {l.slug ? (
-                      <Link href={`/parts/${encodeURIComponent(l.slug)}`} className="font-mono text-accent-text hover:underline">
-                        {l.slug}
-                      </Link>
-                    ) : null}
-                    <span className="truncate text-muted">{l.note}</span>
-                    {l.created_at ? <span className="ml-auto shrink-0 text-[12px] text-subtle">{fmtDate(l.created_at)}</span> : null}
+                {part.lineage.map((l) => (
+                  <li key={`${l.relation}-${l.slug}`} className="flex items-center gap-3 rounded-md border border-border bg-surface px-3 py-2 text-[13px]">
+                    <GitFork className="size-4 shrink-0 text-muted" aria-hidden />
+                    <span className="shrink-0 text-muted">{l.relation === "forked_from" ? "Forked from" : "Variant"}</span>
+                    <Link href={`/parts/${encodeURIComponent(l.slug)}`} className="min-w-0 truncate font-medium text-accent-text hover:underline">
+                      {l.title || l.slug}
+                    </Link>
+                    <span className="ml-auto shrink-0 font-mono text-[12px] text-subtle">v{l.version}</span>
                   </li>
                 ))}
               </ol>

@@ -7,13 +7,21 @@ import { cn } from "@/lib/utils";
 import { OriginBadge } from "../ui/provenance";
 import { PartStatusBadge } from "./part-status";
 
-export function PartThumb({ url, title, className }: { url?: string | null; title: string; className?: string }) {
+export function PartThumb({ url, url2x, title, className }: { url?: string | null; url2x?: string | null; title: string; className?: string }) {
   const src = artifactUrl(url);
+  const src2 = artifactUrl(url2x);
   return (
     <div className={cn("relative aspect-[4/3] overflow-hidden bg-[var(--viewer-bg)] bg-dots", className)}>
       {src ? (
         // eslint-disable-next-line @next/next/no-img-element -- thumbnails are API artifacts of unknown size
-        <img src={src} alt={`Render of ${title}`} loading="lazy" className="absolute inset-0 size-full object-contain p-4" />
+        <img
+          src={src}
+          srcSet={src2 ? `${src} 1x, ${src2} 2x` : undefined}
+          alt={`Render of ${title}`}
+          loading="lazy"
+          decoding="async"
+          className="absolute inset-0 size-full object-contain p-3"
+        />
       ) : (
         <div className="absolute inset-0 flex items-center justify-center">
           <svg viewBox="0 0 80 60" className="h-1/2 text-border-strong" aria-hidden>
@@ -35,11 +43,13 @@ export function PartCard({ part, className }: { part: PartCardT; className?: str
         className,
       )}
     >
-      <PartThumb url={part.thumbnail_url} title={part.title} className="border-b border-border" />
+      <PartThumb url={part.thumbnail_url} url2x={part.thumbnail_2x_url} title={part.title} className="border-b border-border" />
       <div className="flex flex-1 flex-col gap-2.5 p-3.5">
         <div className="flex items-start justify-between gap-2">
           <div className="min-w-0">
-            <h3 className="truncate text-[14px] font-medium text-fg group-hover:text-accent-text">{part.title}</h3>
+            <h3 className="line-clamp-2 text-[14px] leading-5 font-medium text-fg group-hover:text-accent-text" title={part.title}>
+              {part.title}
+            </h3>
             <p className="truncate text-[12px] text-muted">{titleCase(part.family)}</p>
           </div>
         </div>
@@ -47,6 +57,7 @@ export function PartCard({ part, className }: { part: PartCardT; className?: str
           <PartStatusBadge status={part.status} maxErrorMm={part.max_error_mm} />
           <OriginBadge origin={part.origin} hideReal />
         </div>
+        {part.reason ? <p className="line-clamp-2 text-[12px] leading-4 text-muted">{part.reason}</p> : null}
         <div className="mt-auto flex items-center gap-3 pt-1 text-[12px] text-subtle">
           <span className="inline-flex items-center gap-1">
             <SlidersHorizontal className="size-3.5" aria-hidden />

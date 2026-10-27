@@ -5,7 +5,7 @@ import { HelpCircle, Send } from "lucide-react";
 import * as React from "react";
 import { api } from "@/lib/api";
 import type { QuestionEvent } from "@/lib/api-types";
-import { DictateButton } from "../voice-button";
+import { TranscribeButton } from "../voice-button";
 import { Button } from "../ui/button";
 import { ErrorState } from "../ui/error-state";
 import { Input } from "../ui/input";
@@ -71,7 +71,8 @@ export function QuestionPanel({ jobId, question }: { jobId: string; question: Qu
             />
             {num ? <span className="pointer-events-none absolute top-1/2 right-3 -translate-y-1/2 font-mono text-[12px] text-subtle">mm</span> : null}
           </div>
-          <DictateButton
+          <TranscribeButton
+            label="Say it"
             onText={(t) => {
               const m = t.match(/-?\d+(?:[.,]\d+)?/);
               setValue(num && m ? m[0].replace(",", ".") : t);

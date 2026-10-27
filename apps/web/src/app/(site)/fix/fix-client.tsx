@@ -7,7 +7,7 @@ import { useRouter } from "next/navigation";
 import * as React from "react";
 import { PhotoSlot, type SlotValue } from "@/components/fix/photo-slot";
 import { Container } from "@/components/layout/page";
-import { DictateButton } from "@/components/voice-button";
+import { TranscribeButton } from "@/components/voice-button";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { ErrorState } from "@/components/ui/error-state";
@@ -74,6 +74,7 @@ export function FixClient() {
         side: side?.file,
         mating: mating?.file,
         intent: intent.trim(),
+        matKind: mat,
         thicknessMm: thickness.trim() ? Number(thickness) : null,
         familyHint: family || null,
         screenPxPerMm: mat === "screen" ? (calibration?.px_per_mm ?? null) : null,
@@ -102,10 +103,10 @@ export function FixClient() {
         </Button>
       </div>
 
-      <div className="grid gap-10 lg:grid-cols-[minmax(0,1fr)_300px]">
+      <div className="grid grid-cols-1 gap-10 lg:grid-cols-[minmax(0,1fr)_300px]">
         <div className="space-y-12">
           <Step n={1} title="Choose your mat" done={mat === "paper" || calibrated}>
-            <div role="radiogroup" aria-label="Mat type" className="grid gap-3 sm:grid-cols-2">
+            <div role="radiogroup" aria-label="Mat type" className="grid grid-cols-1 gap-3 sm:grid-cols-2">
               {(
                 [
                   { v: "screen", icon: Monitor, title: "Screen mat", badge: "recommended", body: "Your laptop or tablet screen, drawn at 1:1 after a one-time card calibration." },
@@ -176,7 +177,11 @@ export function FixClient() {
               </div>
             )}
             <p className="text-[12.5px] leading-5 text-subtle">
-              Tip: open the mat on the laptop, then open this page on your phone to take the photos.
+              Tip: open the mat on the laptop, then open this page on your phone to take the photos. White or light-grey part?{" "}
+              <Link href="/mat?stage=dark" target="_blank" className="text-accent-text underline underline-offset-2">
+                Open the mat with the dark stage
+              </Link>
+              .
             </p>
           </Step>
 
@@ -184,6 +189,7 @@ export function FixClient() {
             <div className="space-y-3">
               <PhotoSlot
                 view="top"
+                matKind={mat}
                 title="Top view"
                 hint="Straight down from 20–35 cm, part in the plain middle, black squares visible around it."
                 required
@@ -193,6 +199,7 @@ export function FixClient() {
               />
               <PhotoSlot
                 view="side"
+                matKind={mat}
                 title="Side view"
                 hint="Lay the part on its side on the mat and shoot straight down — this gives the thickness."
                 value={side}
@@ -215,7 +222,7 @@ export function FixClient() {
             <div className="space-y-2">
               <div className="flex items-end justify-between gap-2">
                 <Label htmlFor="intent">What broke, and what should change?</Label>
-                <DictateButton onText={(t) => setIntent((cur) => (cur ? `${cur} ${t}` : t))} />
+                <TranscribeButton label="Say it" onText={(t) => setIntent((cur) => (cur ? `${cur} ${t}` : t))} />
               </div>
               <Textarea
                 id="intent"
@@ -237,7 +244,7 @@ export function FixClient() {
                 ))}
               </div>
             </div>
-            <div className="grid gap-4 sm:grid-cols-2">
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
               <div className="space-y-1.5">
                 <Label htmlFor="thickness">Thickness, if you know it</Label>
                 <div className="relative">

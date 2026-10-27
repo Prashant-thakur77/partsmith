@@ -18,6 +18,12 @@ pnpm -C apps/web mats        # regenerate public/mats/*.json from the metrology 
 - E2E fixtures live in `e2e/fixtures/` (route-mocked in tests only). `e2e/fixtures/generate.py` rebuilds their geometry and images
   from the real family templates: `uv run python apps/web/e2e/fixtures/generate.py` from the repo root.
 - Screenshots land in `e2e/screenshots/<project>/` (gitignored).
+- Live suite (opt-in, not in CI): with the API on :8000 (seeded registry) and the web app on :3000,
+  `pnpm -C apps/web e2e:live` checks every read endpoint against the Zod contract, runs demo → workspace → verdict →
+  knob re-bake → export, a photo fix with answered questions, edit, preview and fit outline, a steer approval, and takes
+  real-data screenshots into `e2e/screenshots/live-*`.
+- SSE: `src/app/api/v1/jobs/[id]/events/route.ts` streams job events unbuffered; everything else under `/api/v1` and
+  `/mcp` is a fallback rewrite to `API_URL`.
 
 Env: `API_URL` (server-side proxy target), `NEXT_PUBLIC_SITE_URL` (absolute URLs in llms.txt/OG), `NEXT_PUBLIC_MCP_URL`
 (MCP endpoint shown in agent docs; defaults to `<origin>/mcp`), `NEXT_PUBLIC_REPO_URL` (source link on /judges).

@@ -125,7 +125,7 @@ export function Knob({
             <Minus className="size-3.5" aria-hidden />
           </button>
           <div className="flex flex-1 gap-1" aria-hidden>
-            {Array.from({ length: Math.min(24, Math.round((spec.max - spec.min) / spec.step) + 1) }, (_, i) => spec.min + i * spec.step).map((n) => (
+            {Array.from({ length: Math.min(24, Math.round((spec.max - Math.max(spec.min, spec.step)) / spec.step) + 1) }, (_, i) => Math.max(spec.min, spec.step) + i * spec.step).map((n) => (
               <span key={n} className={cn("h-2 flex-1 rounded-[2px]", n <= value ? "bg-accent" : "bg-surface-3")} />
             ))}
           </div>

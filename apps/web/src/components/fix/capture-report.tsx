@@ -1,4 +1,5 @@
-import { AlertTriangle, CheckCircle2, XCircle } from "lucide-react";
+import { AlertTriangle, CheckCircle2, Contrast, ExternalLink, XCircle } from "lucide-react";
+import Link from "next/link";
 import type { CaptureReport } from "@/lib/api-types";
 import { cn } from "@/lib/utils";
 
@@ -14,12 +15,37 @@ const NAMES: Record<string, string> = {
   glare: "Glare",
   moire: "Screen moiré",
   scale: "Scale",
+  contrast: "Contrast",
 };
 
 /** The server capture gate's verdict, check by check, with its plain-words reasons. */
 export function CaptureReportView({ report, className }: { report: CaptureReport; className?: string }) {
+  const contrast = report.checks.find((c) => c.name === "contrast" && c.severity !== "ok");
+  // The server's reason says which stage to switch to; offer it as one click.
+  const tone = contrast && /light stage/i.test(contrast.reason) && !/dark stage/i.test(contrast.reason) ? "light" : "dark";
   return (
     <div className={cn("space-y-2", className)}>
+      {contrast ? (
+        <div
+          role="alert"
+          className={cn(
+            "flex flex-col gap-2.5 rounded-lg border p-3 sm:flex-row sm:items-center sm:justify-between",
+            contrast.severity === "fail" ? "border-bad-border bg-bad-soft" : "border-warn-border bg-warn-soft",
+          )}
+        >
+          <div className="flex items-start gap-2">
+            <Contrast className={cn("mt-0.5 size-4 shrink-0", contrast.severity === "fail" ? "text-bad" : "text-warn")} aria-hidden />
+            <p className="text-[13px] leading-5 font-medium text-fg">{contrast.reason}</p>
+          </div>
+          <Link
+            href={`/mat?stage=${tone}`}
+            target="_blank"
+            className="inline-flex h-8 shrink-0 items-center gap-1.5 self-start rounded-md bg-inverse px-3 text-[12.5px] font-medium text-inverse-fg hover:opacity-90 sm:self-auto"
+          >
+            Open mat with {tone} stage <ExternalLink className="size-3.5" aria-hidden />
+          </Link>
+        </div>
+      ) : null}
       <div
         className={cn(
           "flex items-start gap-2 rounded-md border px-3 py-2 text-[13px]",
@@ -33,7 +59,7 @@ export function CaptureReportView({ report, className }: { report: CaptureReport
           {report.retake_reason ? <span className="text-muted"> — {report.retake_reason}</span> : null}
         </span>
       </div>
-      <ul className="grid gap-1 sm:grid-cols-2">
+      <ul className="grid grid-cols-1 gap-1 sm:grid-cols-2">
         {report.checks.map((c) => {
           const Icon = ICON[c.severity];
           return (

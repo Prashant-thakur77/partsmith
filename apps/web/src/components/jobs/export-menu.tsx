@@ -19,6 +19,7 @@ const ITEMS = [
   { kind: "code", label: "part.py", sub: "parametric CadQuery", icon: FileCode2, file: "part.py" },
   { kind: "template_pdf", label: "1:1 paper template", sub: "PDF, print at 100 %", icon: FileText, file: "template.pdf" },
   { kind: "repair_card", label: "Repair card", sub: "printable summary", icon: Wrench, file: "repair-card.pdf" },
+  { kind: "coupon", label: "Fit-test coupon", sub: "small test print for the fit", icon: Box, file: "coupon.stl" },
   { kind: "verification", label: "verification.json", sub: "the verifier's record", icon: FileText, file: "verification.json" },
 ] as const;
 
@@ -80,7 +81,7 @@ export function PreviewDialog({ jobId, photoUrl, disabled }: { jobId: string; ph
       </DialogTrigger>
       <DialogContent className="max-w-3xl">
         <DialogTitle>See the fix</DialogTitle>
-        <DialogDescription>A generated image of the new part in your original photo. It is an illustration, not a measurement.</DialogDescription>
+        <DialogDescription>The new part shown in your original photo — an illustration only, never a measurement.</DialogDescription>
         {preview.isPending ? (
           <div className="flex aspect-[4/3] items-center justify-center rounded-lg border border-border bg-surface-2">
             <Spinner label="Generating preview" />
@@ -89,7 +90,7 @@ export function PreviewDialog({ jobId, photoUrl, disabled }: { jobId: string; ph
           <ErrorState error={preview.error} compact what="the preview" onRetry={() => preview.mutate()} />
         ) : preview.data ? (
           <div className="space-y-2">
-            <div className="grid gap-2 sm:grid-cols-2">
+            <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
               {photoUrl ? (
                 <figure className="space-y-1">
                   {/* eslint-disable-next-line @next/next/no-img-element -- API artifact */}
@@ -100,7 +101,7 @@ export function PreviewDialog({ jobId, photoUrl, disabled }: { jobId: string; ph
               <figure className="space-y-1">
                 <div className="relative">
                   {/* eslint-disable-next-line @next/next/no-img-element -- API artifact */}
-                  <img src={artifactUrl(preview.data.url)} alt="AI-generated preview of the repaired part" className="aspect-[4/3] w-full rounded-md border border-border object-cover" />
+                  <img src={artifactUrl(preview.data.url)} alt={`${preview.data.label || "Preview"} of the repaired part`} className="aspect-[4/3] w-full rounded-md border border-border object-cover" />
                   <div className="absolute top-2 left-2 flex gap-1">
                     <Badge tone="inverse">
                       <ImageIcon aria-hidden /> {preview.data.label || "AI preview"}
@@ -108,7 +109,7 @@ export function PreviewDialog({ jobId, photoUrl, disabled }: { jobId: string; ph
                     <ModeBadge mode={preview.data.mode} hideLive />
                   </div>
                 </div>
-                <figcaption className="text-[12px] text-muted">{preview.data.label || "AI preview"} — generated, not measured</figcaption>
+                <figcaption className="text-[12px] text-muted">{preview.data.label || "AI preview"} · illustration, not a measurement</figcaption>
               </figure>
             </div>
           </div>

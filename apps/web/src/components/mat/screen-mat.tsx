@@ -7,6 +7,7 @@
  */
 import * as React from "react";
 import type { MatLayout } from "@/lib/api-types";
+import { STAGE_COLOURS, type StageTone } from "@/lib/stage";
 
 function markerPath(m: MatLayout["markers"][number]): string {
   const n = m.bits.length;
@@ -31,6 +32,7 @@ export function ScreenMat({
   children,
   className,
   title,
+  stage = "light",
 }: {
   layout: MatLayout;
   pxPerMm: number;
@@ -38,6 +40,8 @@ export function ScreenMat({
   children?: React.ReactNode;
   className?: string;
   title?: string;
+  /** Stage rectangle fill; the marker ring and its quiet zone stay white. */
+  stage?: StageTone;
 }) {
   const path = React.useMemo(() => layout.markers.map(markerPath).join(""), [layout]);
   const w = layout.width_mm * pxPerMm;
@@ -54,6 +58,9 @@ export function ScreenMat({
       style={{ width: w, height: h }}
     >
       <rect x={0} y={0} width={layout.width_mm} height={layout.height_mm} fill="#ffffff" />
+      {stage !== "light" ? (
+        <rect x={layout.stage.x_mm} y={layout.stage.y_mm} width={layout.stage.w_mm} height={layout.stage.h_mm} fill={STAGE_COLOURS[stage]} />
+      ) : null}
       <path d={path} fill="#000000" />
       <g shapeRendering="geometricPrecision">{children}</g>
     </svg>

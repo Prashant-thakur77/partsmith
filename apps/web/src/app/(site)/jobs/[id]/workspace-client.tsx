@@ -1,7 +1,7 @@
 "use client";
 
-import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { AlertTriangle, Ban, ExternalLink, FileJson, ScanLine } from "lucide-react";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { AlertTriangle, Ban, Boxes, CircleStop, ExternalLink, FileJson, ScanLine, Upload } from "lucide-react";
 import Link from "next/link";
 import * as React from "react";
 import { CodeDiff } from "@/components/jobs/code-diff";
@@ -9,7 +9,7 @@ import { ConvergenceChart } from "@/components/jobs/convergence-chart";
 import { EditPanel } from "@/components/jobs/edit-panel";
 import { ExportMenu, PreviewDialog } from "@/components/jobs/export-menu";
 import { JobStatusBadge } from "@/components/jobs/job-badges";
-import { PhotoPanel } from "@/components/jobs/photo-panel";
+import { PhotoPanel, imagesByView } from "@/components/jobs/photo-panel";
 import { QuestionPanel } from "@/components/jobs/question-panel";
 import { ResidualTable } from "@/components/jobs/residual-table";
 import { IterationList, TraceTimeline } from "@/components/jobs/trace-timeline";
@@ -22,14 +22,16 @@ import { ErrorState } from "@/components/ui/error-state";
 import { Mm } from "@/components/ui/mm";
 import { ModeBadge, OriginBadge } from "@/components/ui/provenance";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Spinner } from "@/components/ui/spinner";
 import { StatusDot } from "@/components/ui/status-dot";
+import { toast } from "@/components/ui/toast";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { VerifiedBadge } from "@/components/ui/verified-badge";
 import { CadViewer } from "@/components/viewer/cad-viewer";
 import { api, artifactUrl } from "@/lib/api";
-import type { BakeResult, JobDetail, JobEvent, Measurements } from "@/lib/api-types";
+import type { ArtifactEvent, BakeResult, JobDetail, JobEvent, Measurements } from "@/lib/api-types";
 import { fmtNum, fmtUsd, paramLabel } from "@/lib/format";
-import { useBake, useCountTo } from "@/lib/hooks";
+import { useBake, useCountTo, useJobBake } from "@/lib/hooks";
 import { STAGE_LABELS, summarizeEvents, useJobEvents, type EventSummary, type StreamState } from "@/lib/job-events";
 import { cn } from "@/lib/utils";
 
@@ -112,10 +114,49 @@ function Row({ label, children }: { label: string; children: React.ReactNode }) 
   );
 }
 
+function JobActions({ id, summary }: { id: string; summary: JobDetail["summary"] }) {
+  const qc = useQueryClient();
+  const publish = useMutation({
+    mutationFn: () => api.publish(id),
+    onSuccess: (part) => {
+      toast("Published to the registry", { description: part.title, tone: "ok" });
+      void qc.invalidateQueries({ queryKey: ["job", id] });
+    },
+    onError: (e) => toast("Could not publish", { description: e instanceof Error ? e.message : String(e), tone: "bad" }),
+  });
+  const cancel = useMutation({
+    mutationFn: () => api.cancel(id),
+    onSuccess: () => void qc.invalidateQueries({ queryKey: ["job", id] }),
+    onError: (e) => toast("Could not cancel", { description: e instanceof Error ? e.message : String(e), tone: "bad" }),
+  });
+  if (summary.is_replay) return null;
+  if (summary.part_slug)
+    return (
+      <Button asChild variant="outline" size="sm">
+        <Link href={`/parts/${encodeURIComponent(summary.part_slug)}`}>
+          <Boxes aria-hidden /> Registry page
+        </Link>
+      </Button>
+    );
+  if (summary.status === "done")
+    return (
+      <Button variant="primary" size="sm" onClick={() => publish.mutate()} disabled={publish.isPending}>
+        {publish.isPending ? <Spinner className="text-accent-fg" label="Publishing" /> : <Upload aria-hidden />} Publish
+      </Button>
+    );
+  if (["queued", "running", "waiting_for_answer"].includes(summary.status))
+    return (
+      <Button variant="ghost" size="sm" onClick={() => cancel.mutate()} disabled={cancel.isPending}>
+        <CircleStop aria-hidden /> Cancel
+      </Button>
+    );
+  return null;
+}
+
 export function WorkspaceClient({ id }: { id: string }) {
   const qc = useQueryClient();
   const detail = useQuery({ queryKey: ["job", id], queryFn: () => api.job(id) });
-  const { events: streamed, stream } = useJobEvents(id);
+  const { events: streamed, stream, contractErrors } = useJobEvents(id);
   const events = React.useMemo(() => mergeEvents(detail.data?.events ?? [], streamed), [detail.data?.events, streamed]);
   const s = React.useMemo(() => summarizeEvents(events), [events]);
   const d: JobDetail | undefined = detail.data;
@@ -135,8 +176,15 @@ export function WorkspaceClient({ id }: { id: string }) {
 
   const slug = d?.summary.part_slug ?? null;
   const changed = !!d && !!values && Object.entries(values).some(([k, v]) => d.values[k] !== v);
-  const knobBake = useBake(slug, changed ? values : null);
+  // Published parts re-bake through the registry; unpublished jobs re-bake their own program.
+  const partBake = useBake(slug, changed && slug ? values : null);
+  const jobBake = useJobBake(id, changed && !slug ? values : null);
+  const knobBake = slug ? partBake : jobBake;
 
+  const views = React.useMemo(
+    () => imagesByView(events.filter((e): e is ArtifactEvent => e.t === "artifact"), d?.artifacts ?? {}),
+    [events, d?.artifacts],
+  );
   const artifacts = React.useMemo(() => {
     const out: Record<string, string> = { ...(d?.artifacts ?? {}) };
     for (const [k, a] of Object.entries(s.artifacts)) out[k] = a.url;
@@ -167,7 +215,7 @@ export function WorkspaceClient({ id }: { id: string }) {
     return (
       <div className="space-y-4 px-4 py-6 sm:px-6">
         <Skeleton className="h-10 w-80" />
-        <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_minmax(0,1.3fr)_380px]">
+        <div className="grid grid-cols-1 gap-4 xl:grid-cols-[minmax(0,1fr)_minmax(0,1.3fr)_380px]">
           <Skeleton className="h-[420px]" />
           <Skeleton className="h-[420px]" />
           <Skeleton className="h-[420px]" />
@@ -193,7 +241,7 @@ export function WorkspaceClient({ id }: { id: string }) {
         <div className="flex flex-col gap-3 px-4 py-4 sm:px-6 lg:flex-row lg:items-center lg:justify-between">
           <div className="min-w-0 space-y-1.5">
             <div className="flex flex-wrap items-center gap-2">
-              <h1 className="truncate text-[20px] font-semibold tracking-tight">{sum.title || d.partspec?.title || "Fix job"}</h1>
+              <h1 className="line-clamp-2 text-[18px] leading-tight font-semibold tracking-tight sm:text-[20px]">{sum.title || d.partspec?.title || "Fix job"}</h1>
               {sum.status !== "done" ? <JobStatusBadge job={sum} /> : null}
               {replay ? <OriginBadge origin="replay" /> : null}
               <OriginBadge origin={sum.origin} hideReal />
@@ -220,9 +268,23 @@ export function WorkspaceClient({ id }: { id: string }) {
               </Link>
             </Button>
             <ExportMenu artifacts={artifacts} />
+            <JobActions id={id} summary={sum} />
           </div>
         </div>
       </div>
+
+      {contractErrors.length ? (
+        <div className="px-4 pt-4 sm:px-6">
+          <div role="alert" className="rounded-lg border border-bad-border bg-bad-soft px-4 py-3 text-[13px]">
+            <div className="font-medium text-fg">Some live events did not match the API contract and were not shown</div>
+            <ul className="mt-1 list-disc pl-5 font-mono text-[12px] text-muted">
+              {contractErrors.slice(0, 5).map((e) => (
+                <li key={e}>{e}</li>
+              ))}
+            </ul>
+          </div>
+        </div>
+      ) : null}
 
       {s.question && !done ? (
         <div className="px-4 pt-4 sm:px-6">
@@ -257,7 +319,7 @@ export function WorkspaceClient({ id }: { id: string }) {
         </div>
       ) : null}
 
-      <div className="grid gap-4 px-4 pt-4 sm:px-6 xl:grid-cols-[minmax(0,1fr)_minmax(0,1.3fr)_380px]">
+      <div className="grid grid-cols-1 gap-4 px-4 pt-4 sm:px-6 xl:grid-cols-[minmax(0,1fr)_minmax(0,1.3fr)_380px]">
         {/* centre: viewer (first on small screens) */}
         <div className="overflow-hidden rounded-lg border border-border bg-surface xl:order-2">
           <CadViewer
@@ -272,7 +334,7 @@ export function WorkspaceClient({ id }: { id: string }) {
         {/* left: photo + measurements */}
         <div className="flex flex-col gap-4 xl:order-1">
           <div className="overflow-hidden rounded-lg border border-border bg-surface">
-            <PhotoPanel artifacts={artifacts} className="h-[360px] sm:h-[420px] xl:h-[520px]" />
+            <PhotoPanel views={views} className="h-[360px] sm:h-[420px] xl:h-[520px]" />
           </div>
         </div>
 
@@ -380,7 +442,7 @@ export function WorkspaceClient({ id }: { id: string }) {
         </aside>
 
         {/* bottom: knobs + edits */}
-        <div className="grid gap-4 xl:order-4 xl:col-span-2 lg:grid-cols-[minmax(0,3fr)_minmax(0,2fr)]">
+        <div className="grid min-w-0 grid-cols-1 gap-4 xl:order-4 xl:col-span-2 lg:grid-cols-[minmax(0,3fr)_minmax(0,2fr)]">
           <div className="rounded-lg border border-border bg-surface p-4">
             {d.params.length ? (
               <>
@@ -392,12 +454,12 @@ export function WorkspaceClient({ id }: { id: string }) {
                   pending={changed && knobBake.pending}
                   error={knobBake.error}
                   title="Knobs"
-                  disabled={!slug}
                   columns={2}
                 />
-                {!slug ? (
-                  <p className="mt-3 text-[12px] text-subtle">Live re-bake unlocks when the job is packaged; use a voice or text edit meanwhile.</p>
-                ) : null}
+                <p className="mt-3 text-[12px] text-subtle">
+                  {slug ? "Re-bakes the published registry part." : "Re-bakes this job's program; publish to put it in the registry."} Knob changes are not
+                  re-verified against the photo.
+                </p>
               </>
             ) : (
               <div className="space-y-1">

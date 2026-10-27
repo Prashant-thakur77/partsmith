@@ -95,3 +95,20 @@ test("theme toggle switches to dark without reload", async ({ page }) => {
   await page.reload();
   await expect(page.locator("html")).toHaveAttribute("data-theme", "dark");
 });
+
+test("contrast failure offers the dark stage in one click, and the mat draws it", async ({ page }) => {
+  await setup(page, { contrastFail: true });
+  await page.goto("/fix");
+  await page.getByLabel("Upload Top view photo").setInputFiles(join(__dirname, "fixtures/generated/photo.png"));
+  const link = page.getByRole("link", { name: "Open mat with dark stage" });
+  await expect(link).toBeVisible();
+  await expect(link).toHaveAttribute("href", "/mat?stage=dark");
+  await page.goto("/mat?stage=dark");
+  await expect(page.getByRole("radio", { name: /dark/i })).toHaveAttribute("aria-checked", "true");
+  await expect(page.locator('svg rect[fill="#303030"]')).toHaveCount(1);
+  // persisted per device
+  await page.goto("/mat");
+  await expect(page.locator('svg rect[fill="#303030"]')).toHaveCount(1);
+  await page.getByRole("radio", { name: /light/i }).click();
+  await expect(page.locator('svg rect[fill="#303030"]')).toHaveCount(0);
+});
