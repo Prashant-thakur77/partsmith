@@ -11,7 +11,7 @@ import { ErrorState } from "@/components/ui/error-state";
 import { ModeBadge, OriginBadge } from "@/components/ui/provenance";
 import { Skeleton } from "@/components/ui/skeleton";
 import { api } from "@/lib/api";
-import { fmtUsd, timeAgo } from "@/lib/format";
+import { fmtUsd, timeAgo, splitTitle } from "@/lib/format";
 
 export function JobsClient() {
   const q = useQuery({ queryKey: ["jobs"], queryFn: () => api.jobs(50), refetchInterval: 10_000 });
@@ -58,7 +58,7 @@ export function JobsClient() {
               <li key={j.id}>
                 <Link href={`/jobs/${encodeURIComponent(j.id)}`} className="group flex items-center gap-4 px-4 py-3 hover:bg-surface-2">
                   <div className="min-w-0 flex-1 space-y-1">
-                    <div className="truncate text-[14px] font-medium">{j.title || j.id}</div>
+                    <div className="truncate text-[14px] font-medium">{splitTitle(j.title || j.id).title}</div>
                     <div className="flex flex-wrap items-center gap-1.5 text-[12px] text-subtle">
                       <span className="font-mono">{j.id}</span>
                       <span aria-hidden>·</span>

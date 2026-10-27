@@ -3,7 +3,7 @@
  * Every response is validated with Zod; failures surface as `ApiError` (HTTP error body) or `ApiOfflineError`
  * (backend unreachable). The browser calls the same-origin `/api/v1` path, which next.config.ts rewrites to the API.
  */
-import type { z } from "zod";
+import { z } from "zod";
 import {
   ApiErrorBodySchema,
   BakeResultSchema,
@@ -14,6 +14,7 @@ import {
   FitOutlineSchema,
   HealthSchema,
   JobDetailSchema,
+  JobStatusSchema,
   JobSummarySchema,
   MatLayoutSchema,
   MeasureResultSchema,
@@ -100,7 +101,9 @@ async function request<S extends z.ZodType>(
   const url = apiUrl(path, query);
   let res: Response;
   try {
-    res = await fetch(url, { ...rest, headers: { Accept: "application/json", ...(rest.headers ?? {}) } });
+    // Server-side calls (SSR prefetch) must never hang a page render.
+    const signal = rest.signal ?? (typeof window === "undefined" ? AbortSignal.timeout(3000) : undefined);
+    res = await fetch(url, { ...rest, signal, headers: { Accept: "application/json", ...(rest.headers ?? {}) } });
   } catch (err) {
     if (err instanceof DOMException && err.name === "AbortError") throw err;
     throw new ApiOfflineError(err);
@@ -219,7 +222,11 @@ export const api = {
     apiUrl(`/jobs/${encodeURIComponent(id)}/bake`, { ...params, format, download: 1 }),
   publish: (id: string, slug?: string) =>
     request(PartRecordSchema, `/jobs/${encodeURIComponent(id)}/publish`, json(slug ? { slug } : {})),
-  cancel: (id: string) => request(JobSummarySchema, `/jobs/${encodeURIComponent(id)}/cancel`, { method: "POST" }),
+  /** `status` is "cancelling" when the job had not stopped within the server's wait (it stops at its next check). */
+  cancel: (id: string) =>
+    request(JobSummarySchema.extend({ status: z.union([JobStatusSchema, z.literal("cancelling")]) }), `/jobs/${encodeURIComponent(id)}/cancel`, {
+      method: "POST",
+    }),
   transcribe: (audio: Blob, languageHint?: string) => {
     const fd = new FormData();
     fd.set("audio", audio, audioName(audio));

@@ -7,10 +7,10 @@ export async function GET(req: Request): Promise<Response> {
   const origin = process.env.NEXT_PUBLIC_SITE_URL ?? new URL(req.url).origin;
   const base = (process.env.API_URL ?? "http://localhost:8000").replace(/\/$/, "");
   try {
-    const res = await fetch(`${base}/api/v1/llms.txt`, { cache: "no-store", signal: AbortSignal.timeout(3000), headers: { "X-Forwarded-Host": new URL(origin).host } });
+    const res = await fetch(`${base}/api/v1/llms.txt`, { cache: "no-store", signal: AbortSignal.timeout(3000), headers: { "X-Forwarded-Host": new URL(origin).host, "X-Forwarded-Proto": new URL(origin).protocol.replace(":", "") } });
     if (res.ok) {
-      // The API writes its own host into links; the web origin proxies the same paths, so point readers there.
-      const text = (await res.text()).split(base).join(origin);
+      // The API builds absolute links from X-Forwarded-Host/-Proto, so they point at this web origin.
+      const text = await res.text();
       return new Response(text, { headers: { "Content-Type": "text/plain; charset=utf-8", "X-PartSmith-Source": "api" } });
     }
   } catch {

@@ -1,6 +1,7 @@
 "use client";
 
 import { useQuery } from "@tanstack/react-query";
+import * as React from "react";
 import { AlertTriangle, Check, KeyRound, Lock, MapPin, Unlock, X } from "lucide-react";
 import { Container, PageHeader, Section } from "@/components/layout/page";
 import { Badge } from "@/components/ui/badge";
@@ -54,6 +55,25 @@ function ProviderCard({ p }: { p: ProviderStatus }) {
   );
 }
 
+function Warnings({ items }: { items: string[] }) {
+  const [all, setAll] = React.useState(false);
+  const shown = all ? items : items.slice(0, 3);
+  return (
+    <div role="note" aria-label="Provider warnings" className="space-y-1.5 rounded-lg border border-warn-border bg-warn-soft p-4">
+      {shown.map((w) => (
+        <p key={w} className="flex items-start gap-2 text-[13px]">
+          <AlertTriangle className="mt-0.5 size-4 shrink-0 text-warn" aria-hidden /> {w}
+        </p>
+      ))}
+      {items.length > 3 ? (
+        <button type="button" onClick={() => setAll((v) => !v)} aria-expanded={all} className="pl-6 text-[12.5px] font-medium text-fg underline underline-offset-2">
+          {all ? "Show fewer" : `Show all ${items.length} warnings`}
+        </button>
+      ) : null}
+    </div>
+  );
+}
+
 export function StatusClient() {
   const q = useQuery({ queryKey: ["status"], queryFn: api.status, refetchInterval: 15_000 });
   const h = useQuery({ queryKey: ["health"], queryFn: api.health, retry: false });
@@ -85,15 +105,7 @@ export function StatusClient() {
           </div>
         ) : (
           <>
-            {s.warnings.length ? (
-              <div role="alert" className="space-y-1.5 rounded-lg border border-warn-border bg-warn-soft p-4">
-                {s.warnings.map((w) => (
-                  <p key={w} className="flex items-start gap-2 text-[13px]">
-                    <AlertTriangle className="mt-0.5 size-4 shrink-0 text-warn" aria-hidden /> {w}
-                  </p>
-                ))}
-              </div>
-            ) : null}
+            {s.warnings.length ? <Warnings items={s.warnings} /> : null}
             <Section title="Providers by stage">
               <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
                 {s.providers.map((p) => (

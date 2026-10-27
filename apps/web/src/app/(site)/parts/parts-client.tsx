@@ -156,6 +156,7 @@ export function PartsClient() {
           </EmptyState>
         ) : (
           <>
+            <h2 className="sr-only">Results</h2>
             <div className="grid grid-cols-2 gap-3 sm:gap-4 md:grid-cols-3 lg:grid-cols-4">
               {items.map((p) => (
                 <PartCard key={p.slug} part={p} />

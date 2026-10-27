@@ -13,6 +13,7 @@ import { STAGE_COLOURS, setStageTone, useStageTone, type StageTone } from "@/lib
 import { cn } from "@/lib/utils";
 import { Button } from "../ui/button";
 import { Spinner } from "../ui/spinner";
+import { radioGroupKeys } from "@/lib/a11y";
 
 export function useWakeLock(active: boolean) {
   React.useEffect(() => {
@@ -153,7 +154,7 @@ export function StageShell({
           <div className="flex items-center gap-2 rounded-md bg-black/60 py-1 pr-1 pl-2.5">
             <span className="hidden text-[12px] text-white/70 md:inline">Use Dark for white or light-grey parts.</span>
             <span className="text-[12px] font-medium text-white/90">Stage</span>
-            <div role="radiogroup" aria-label="Stage colour" className="inline-flex rounded-[5px] bg-white/10 p-0.5">
+            <div role="radiogroup" onKeyDown={radioGroupKeys} aria-label="Stage colour" className="inline-flex rounded-[5px] bg-white/10 p-0.5">
               {(["light", "dark"] as const).map((t) => (
                 <button
                   key={t}

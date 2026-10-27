@@ -42,7 +42,7 @@ export function Knob({
   return (
     <div className={cn("group/knob space-y-2", disabled && "opacity-60")}>
       <div className="flex items-center justify-between gap-2">
-        <div className="flex min-w-0 items-center gap-1.5">
+        <div className="flex min-w-0 flex-wrap items-center gap-x-1.5 gap-y-1">
           <label htmlFor={id} className="truncate text-[13px] font-medium text-fg" title={spec.name}>
             {label}
           </label>

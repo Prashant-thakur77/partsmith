@@ -71,3 +71,26 @@ export function titleCase(s: string): string {
 export function paramLabel(name: string, label?: string): string {
   return label && label.trim() ? label : titleCase(name.replace(/_mm$|_deg$/, ""));
 }
+
+const ORIGIN_WORDS = /^(synthetic|synthetic sample|replay|real|real photo)$/i;
+const PRESET_WORDS = /^(clean|tilt|glare|blur|paper|low-light|moire|white-part|dark-stage)$/i;
+
+/**
+ * Split a server title like "Spacer / standoff (synthetic, clean) (synthetic sample)" into the name and its capture
+ * preset ("clean"). Only trailing groups made of origin/preset words are removed; origin is shown by badges instead.
+ */
+export function splitTitle(raw: string): { title: string; presets: string[] } {
+  let t = raw.trim();
+  const presets: string[] = [];
+  for (;;) {
+    const m = /\s*\(([^()]*)\)\s*$/.exec(t);
+    if (!m) break;
+    const words = m[1]!.split(",").map((w) => w.trim()).filter(Boolean);
+    // A group is metadata when it names the origin ("synthetic, white-on-light") or only known presets.
+    const meta = words.some((w) => ORIGIN_WORDS.test(w)) || (words.length > 0 && words.every((w) => PRESET_WORDS.test(w)));
+    if (!words.length || !meta) break;
+    for (const w of words) if (!ORIGIN_WORDS.test(w) && !presets.includes(w.toLowerCase())) presets.unshift(w.toLowerCase());
+    t = t.slice(0, m.index).trim();
+  }
+  return { title: t || raw, presets };
+}

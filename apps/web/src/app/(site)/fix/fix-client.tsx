@@ -18,6 +18,7 @@ import { calibrationDrift, useCalibration } from "@/lib/calibration";
 import { FAMILIES } from "@/lib/families";
 import { fmtNum, titleCase } from "@/lib/format";
 import { cn } from "@/lib/utils";
+import { radioGroupKeys } from "@/lib/a11y";
 
 const EXAMPLES = [
   "The hook snapped off here — make it 1 mm thicker.",
@@ -106,7 +107,7 @@ export function FixClient() {
       <div className="grid grid-cols-1 gap-10 lg:grid-cols-[minmax(0,1fr)_300px]">
         <div className="space-y-12">
           <Step n={1} title="Choose your mat" done={mat === "paper" || calibrated}>
-            <div role="radiogroup" aria-label="Mat type" className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+            <div role="radiogroup" onKeyDown={radioGroupKeys} aria-label="Mat type" className="grid grid-cols-1 gap-3 sm:grid-cols-2">
               {(
                 [
                   { v: "screen", icon: Monitor, title: "Screen mat", badge: "recommended", body: "Your laptop or tablet screen, drawn at 1:1 after a one-time card calibration." },

@@ -5,6 +5,8 @@ const apiUrl = (process.env.API_URL ?? "http://localhost:8000").replace(/\/$/, "
 const nextConfig: NextConfig = {
   reactStrictMode: true,
   poweredByHeader: false,
+  // Put generated <meta> (titles, descriptions) in <head> for every client, not only known bots.
+  htmlLimitedBots: /.*/,
   async rewrites() {
     // `fallback` runs after app routes (incl. dynamic ones), so src/app/api/v1/jobs/[id]/events can stream SSE unbuffered.
     return {

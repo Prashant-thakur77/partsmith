@@ -322,7 +322,7 @@ export function PartClient({ slug }: { slug: string }) {
       <Container className="space-y-14 py-8">
         <div className="grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,1fr)_340px]">
           <div className="overflow-hidden rounded-xl border border-border bg-surface lg:sticky lg:top-20 lg:self-start">
-            <CadViewer viewUrl={live.viewUrl} busy={live.bake.pending && live.changed} className="h-[380px] sm:h-[520px] lg:h-[min(620px,calc(100dvh-120px))]" label={`3D model of ${part.title}`} />
+            <CadViewer viewUrl={live.viewUrl} poster={artifactUrl(part.thumbnail_url)} poster2x={artifactUrl(part.thumbnail_2x_url)} busy={live.bake.pending && live.changed} className="h-[380px] sm:h-[520px] lg:h-[min(620px,calc(100dvh-120px))]" label={`3D model of ${part.title}`} />
           </div>
           <div className="space-y-5">
             <Card>

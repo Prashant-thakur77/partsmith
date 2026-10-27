@@ -86,6 +86,7 @@ export function PhotoSlot({
         type="file"
         accept="image/jpeg,image/png,image/heic,image/heif,image/webp"
         className="sr-only"
+        tabIndex={-1}
         aria-label={`Upload ${title} photo`}
         onChange={(e) => void accept(e.target.files?.[0])}
       />
@@ -110,10 +111,10 @@ export function PhotoSlot({
           {busy ? <Spinner /> : compact ? null : <ImagePlus className="size-6 text-subtle" aria-hidden />}
           <p className={cn("text-[12.5px] leading-5 text-muted", compact ? "max-w-md" : "max-w-xs")}>{hint}</p>
           <div className="flex flex-wrap justify-center gap-2">
-            <Button size="sm" variant="solid" onClick={() => camRef.current?.click()} className="sm:hidden">
+            <Button size="sm" variant="solid" onClick={() => camRef.current?.click()} className="sm:hidden" aria-label={`Take photo: ${title.toLowerCase()}`}>
               <Camera aria-hidden /> Take photo
             </Button>
-            <Button size="sm" variant="outline" onClick={() => fileRef.current?.click()}>
+            <Button size="sm" variant="outline" onClick={() => fileRef.current?.click()} aria-label={`Choose file: ${title.toLowerCase()}`}>
               <ImagePlus aria-hidden /> Choose file
             </Button>
           </div>

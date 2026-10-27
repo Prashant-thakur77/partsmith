@@ -17,9 +17,10 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Slider } from "@/components/ui/slider";
 import { VerifiedBadge } from "@/components/ui/verified-badge";
 import { api } from "@/lib/api";
-import { fmtNum } from "@/lib/format";
+import { fmtNum, splitTitle } from "@/lib/format";
 import { STAGE_LABELS, summarizeEvents } from "@/lib/job-events";
 import { cn } from "@/lib/utils";
+import { radioGroupKeys } from "@/lib/a11y";
 
 const REPO_URL = process.env.NEXT_PUBLIC_REPO_URL ?? "";
 
@@ -62,7 +63,7 @@ function ReplayPlayer({ id }: { id: string }) {
         <Badge tone="mock" upper>
           <History aria-hidden /> replay
         </Badge>
-        <span className="truncate text-[14px] font-medium">{job.data.summary.title || id}</span>
+        <span className="truncate text-[14px] font-medium">{splitTitle(job.data.summary.title || id).title}</span>
         <OriginBadge origin={job.data.summary.origin} hideReal />
         <ModeBadge mode={job.data.summary.provider_mode} />
         <div className="ml-auto">
@@ -87,7 +88,7 @@ function ReplayPlayer({ id }: { id: string }) {
           </div>
           <div>
             <div className="mb-1.5 flex items-center justify-between">
-              <Eyebrow>Max error per iteration</Eyebrow>
+              <Eyebrow>Silhouette error per iteration</Eyebrow>
               {last != null ? <span className="font-mono text-[13px] tnum">{fmtNum(last)} mm</span> : null}
             </div>
             <ConvergenceChart data={s.convergence} threshold={threshold} height={170} />
@@ -117,7 +118,7 @@ function ReplayPlayer({ id }: { id: string }) {
         <span className="font-mono text-[12px] text-muted tnum">
           {idx}/{events.length} events
         </span>
-        <div className="inline-flex rounded-md border border-border bg-surface-2 p-0.5" role="radiogroup" aria-label="Speed">
+        <div className="inline-flex rounded-md border border-border bg-surface-2 p-0.5" role="radiogroup" onKeyDown={radioGroupKeys} aria-label="Speed">
           {[1, 2, 4].map((x) => (
             <button
               key={x}
@@ -196,7 +197,7 @@ export function JudgesClient() {
           ) : (
             <div className="space-y-3">
               {replays.data.length > 1 ? (
-                <div className="flex flex-wrap gap-1.5" role="radiogroup" aria-label="Stored runs">
+                <div className="flex flex-wrap gap-1.5" role="radiogroup" onKeyDown={radioGroupKeys} aria-label="Stored runs">
                   {replays.data.map((r) => (
                     <button
                       key={r.id}
@@ -209,7 +210,7 @@ export function JudgesClient() {
                         active === r.id ? "border-fg bg-fg text-bg" : "border-border bg-surface text-muted hover:text-fg",
                       )}
                     >
-                      {r.title}
+                      {splitTitle(r.title).title}
                     </button>
                   ))}
                 </div>

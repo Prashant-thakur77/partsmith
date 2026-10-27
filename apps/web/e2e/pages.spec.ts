@@ -1,21 +1,27 @@
 import { expect, test } from "@playwright/test";
 import { expectAccessible, realErrors, setup, shot } from "./helpers";
 
+/** Desktop loads the 3D view on its own; phones show the poster and load 3D on tap. */
+async function show3d(p: import("@playwright/test").Page) {
+  if ((p.viewportSize()?.width ?? 1440) < 768) await p.getByRole("button", { name: "View in 3D" }).first().click();
+  await expect(p.locator("canvas").first()).toBeVisible();
+}
+
 type PageCase = { name: string; path: string; ready: (p: import("@playwright/test").Page) => Promise<void>; full?: boolean; opts?: Parameters<typeof setup>[1] };
 
 const PAGES: PageCase[] = [
-  { name: "home", path: "/", ready: async (p) => { await expect(p.getByRole("heading", { level: 1 })).toBeVisible(); await expect(p.getByText("verified parts").first()).toBeVisible(); await expect(p.locator("canvas").first()).toBeVisible(); } },
+  { name: "home", path: "/", ready: async (p) => { await expect(p.getByRole("heading", { level: 1 })).toBeVisible(); await expect(p.getByText("verified parts").first()).toBeVisible(); await show3d(p); } },
   { name: "fix", path: "/fix", ready: async (p) => { await expect(p.getByRole("heading", { name: "From photo to verified part" })).toBeVisible(); } },
   { name: "calibrate", path: "/calibrate", ready: async (p) => { await expect(p.getByRole("slider", { name: "Card width on screen" })).toBeVisible(); } },
   { name: "mat", path: "/mat", full: false, ready: async (p) => { await expect(p.getByRole("img", { name: /1:1 scale/ })).toBeVisible(); } },
-  { name: "jobs", path: "/jobs", ready: async (p) => { await expect(p.getByText("L-bracket (synthetic sample)").first()).toBeVisible(); } },
+  { name: "jobs", path: "/jobs", ready: async (p) => { await expect(p.getByText("L-bracket", { exact: true }).first()).toBeVisible(); } },
   { name: "jobs-demo", path: "/jobs/demo", ready: async (p) => { await expect(p.getByRole("button", { name: "Run this sample" })).toBeVisible(); } },
-  { name: "workspace", path: "/jobs/job_demo_1", ready: async (p) => { await expect(p.getByRole("status", { name: /Verified/ })).toBeVisible(); await expect(p.locator("canvas").first()).toBeVisible(); } },
+  { name: "workspace", path: "/jobs/job_demo_1", ready: async (p) => { await expect(p.getByRole("status", { name: /Verified/ })).toBeVisible(); await show3d(p); } },
   { name: "workspace-paused", path: "/jobs/job_paused", ready: async (p) => { await expect(p.getByText("How deep is the D-shaft hole?")).toBeVisible(); } },
   { name: "fit", path: "/jobs/job_demo_1/fit", full: false, ready: async (p) => { await expect(p.getByText("Lay the part exactly on the pink outline")).toBeVisible(); } },
   { name: "parts", path: "/parts", ready: async (p) => { await expect(p.getByRole("link", { name: /L-bracket/ }).first()).toBeVisible(); } },
-  { name: "part", path: "/parts/l-bracket", ready: async (p) => { await expect(p.getByRole("heading", { name: "L-bracket", level: 1 })).toBeVisible(); await expect(p.locator("canvas").first()).toBeVisible(); } },
-  { name: "steer", path: "/steer?id=steer_1", ready: async (p) => { await expect(p.getByRole("listbox", { name: "Approval queue" })).toBeVisible(); } },
+  { name: "part", path: "/parts/l-bracket", ready: async (p) => { await expect(p.getByRole("heading", { name: "L-bracket", level: 1 })).toBeVisible(); await show3d(p); } },
+  { name: "steer", path: "/steer?id=steer_1", ready: async (p) => { await expect(p.getByRole("listbox", { name: /Approval queue/ })).toBeVisible(); } },
   { name: "bench", path: "/bench", ready: async (p) => { await expect(p.getByText("N = 40")).toBeVisible(); } },
   { name: "status", path: "/status", ready: async (p) => { await expect(p.getByText("Providers by stage")).toBeVisible(); } },
   { name: "agents", path: "/agents", ready: async (p) => { await expect(p.getByRole("heading", { name: "Connect over MCP" })).toBeVisible(); } },

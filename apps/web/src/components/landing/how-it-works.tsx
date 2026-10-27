@@ -74,7 +74,7 @@ const STEPS = [
 
 export function HowItWorks({ className }: { className?: string }) {
   return (
-    <ol className={cn("grid gap-4 md:grid-cols-3", className)}>
+    <ol className={cn("grid grid-cols-1 gap-4 md:grid-cols-3", className)}>
       {STEPS.map(({ n, title, body, art: Art }) => (
         <li key={n} className="flex flex-col overflow-hidden rounded-xl border border-border bg-surface">
           <div className="aspect-[5/3] border-b border-border bg-surface-2 bg-dots p-3">

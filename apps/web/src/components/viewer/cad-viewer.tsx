@@ -1,13 +1,15 @@
 "use client";
 
 import { useQuery, keepPreviousData } from "@tanstack/react-query";
-import { Axis3D, Box, Crosshair, Grid3x3, Maximize, Scissors, Spline } from "lucide-react";
+import { Axis3D, Box, Crosshair, Grid3x3, Maximize, Rotate3D, Scissors, Spline } from "lucide-react";
 import dynamic from "next/dynamic";
 import * as React from "react";
 import type * as THREE from "three";
 import { fmtNum } from "@/lib/format";
 import { cn } from "@/lib/utils";
+import { useMediaQuery } from "@/lib/hooks";
 import { Badge } from "../ui/badge";
+import { Button } from "../ui/button";
 import { Skeleton } from "../ui/skeleton";
 import { Slider } from "../ui/slider";
 import { Spinner } from "../ui/spinner";
@@ -15,6 +17,7 @@ import { Toggle } from "../ui/toggle";
 import { Tooltip } from "../ui/tooltip";
 import type { SectionState, ViewerColors } from "./cad-scene";
 import { fetchViewData, type ViewData } from "./view-data";
+import { radioGroupKeys } from "@/lib/a11y";
 
 const CadScene = dynamic(() => import("./cad-scene"), { ssr: false, loading: () => <Skeleton className="absolute inset-0 rounded-none" /> });
 
@@ -79,6 +82,8 @@ export function CadViewer({
   emptyText = "No model yet.",
   toolbar = true,
   overlay,
+  poster,
+  poster2x,
 }: {
   viewUrl: string | null | undefined;
   className?: string;
@@ -87,11 +92,49 @@ export function CadViewer({
   emptyText?: string;
   toolbar?: boolean;
   overlay?: React.ReactNode;
+  /** Image shown until the 3D scene is ready (e.g. the part's thumbnail); three.js loads when visible and idle. */
+  poster?: string | null;
+  /** 2× poster (used on large screens; phones get the 1× file). */
+  poster2x?: string | null;
 }) {
+  const boxRef = React.useRef<HTMLDivElement>(null);
+  const [armed, setArmed] = React.useState(false);
+  // Phones: 3D loads on tap (saves data/battery, and a full-width canvas would otherwise trap page scrolling).
+  const small = useMediaQuery("(max-width: 767px)");
+  React.useEffect(() => {
+    if (armed || small) return;
+    const el = boxRef.current;
+    if (!el) return;
+    let idle: number | undefined;
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    const arm = () => {
+      const w = window as Window & { requestIdleCallback?: (cb: () => void, o?: { timeout: number }) => number };
+      if (w.requestIdleCallback) idle = w.requestIdleCallback(() => setArmed(true), { timeout: 2500 });
+      else timer = setTimeout(() => setArmed(true), 600);
+    };
+    const io = new IntersectionObserver((entries) => {
+      if (entries.some((e) => e.isIntersecting)) {
+        io.disconnect();
+        arm();
+      }
+    });
+    io.observe(el);
+    const now = () => setArmed(true);
+    el.addEventListener("pointerdown", now, { once: true });
+    el.addEventListener("focusin", now, { once: true });
+    return () => {
+      io.disconnect();
+      el.removeEventListener("pointerdown", now);
+      el.removeEventListener("focusin", now);
+      const w = window as Window & { cancelIdleCallback?: (id: number) => void };
+      if (idle !== undefined) w.cancelIdleCallback?.(idle);
+      if (timer) clearTimeout(timer);
+    };
+  }, [armed, small]);
   const q = useQuery<ViewData>({
     queryKey: ["view", viewUrl],
     queryFn: ({ signal }) => fetchViewData(viewUrl!, signal),
-    enabled: !!viewUrl,
+    enabled: !!viewUrl && armed,
     placeholderData: keepPreviousData,
     staleTime: Infinity,
     retry: 1,
@@ -131,6 +174,7 @@ export function CadViewer({
 
   return (
     <div
+      ref={boxRef}
       role="group"
       aria-label={label}
       className={cn("relative isolate overflow-hidden bg-[var(--viewer-bg)] bg-dots", className)}
@@ -159,7 +203,27 @@ export function CadViewer({
         <div className="absolute inset-0 flex items-center justify-center p-6 text-center text-[13px] text-muted">
           Could not load the model geometry ({q.error instanceof Error ? q.error.message : "error"}).
         </div>
-      ) : viewUrl && (q.isPending || !colors) ? (
+      ) : viewUrl && !armed && small ? (
+        <>
+          {poster ? (
+            // eslint-disable-next-line @next/next/no-img-element -- API thumbnail used as the LCP poster
+            <img src={poster} srcSet={poster2x ? `${poster} 640w, ${poster2x} 1280w` : undefined} sizes="(max-width: 767px) 340px, 720px" alt="" aria-hidden className="absolute inset-0 size-full object-contain p-6" fetchPriority="high" decoding="async" />
+          ) : null}
+          <div className="absolute inset-0 flex items-center justify-center">
+            <Button variant="outline" size="sm" className="bg-surface/95 shadow-md" onClick={() => setArmed(true)}>
+              <Rotate3D aria-hidden /> View in 3D
+            </Button>
+          </div>
+        </>
+      ) : viewUrl && poster && (!armed || q.isPending || !colors) ? (
+        <>
+          {/* eslint-disable-next-line @next/next/no-img-element -- API thumbnail used as the LCP poster */}
+          <img src={poster} srcSet={poster2x ? `${poster} 640w, ${poster2x} 1280w` : undefined} sizes="(max-width: 767px) 340px, 720px" alt="" aria-hidden className="absolute inset-0 size-full object-contain p-6" fetchPriority="high" decoding="async" />
+          <span className="absolute bottom-3 left-3 rounded-md border border-border bg-surface/90 px-2 py-1 text-[11px] text-muted shadow-sm">
+            Loading 3D…
+          </span>
+        </>
+      ) : viewUrl && (!armed || q.isPending || !colors) ? (
         <div className="absolute inset-0 flex flex-col items-center justify-center gap-3">
           <Box className="size-8 animate-pulse text-subtle" aria-hidden />
           <span className="text-[12px] text-muted">Loading geometry…</span>
@@ -253,7 +317,7 @@ export function CadViewer({
             <div className="w-56 space-y-2.5 rounded-lg border border-border bg-surface/95 p-3 shadow-sm backdrop-blur">
               <div className="flex items-center justify-between">
                 <span className="text-[12px] font-medium">Section</span>
-                <div className="inline-flex rounded-md border border-border bg-surface-2 p-0.5" role="radiogroup" aria-label="Section axis">
+                <div className="inline-flex rounded-md border border-border bg-surface-2 p-0.5" role="radiogroup" onKeyDown={radioGroupKeys} aria-label="Section axis">
                   {(["x", "y", "z"] as const).map((a) => (
                     <button
                       key={a}

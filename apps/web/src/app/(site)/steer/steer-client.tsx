@@ -78,7 +78,7 @@ function ApprovalQueue({ runId, items }: { runId: string; items: SteerQueueItem[
     );
   return (
     <div className="grid grid-cols-1 gap-4 lg:grid-cols-[minmax(0,1fr)_320px]">
-      <ul className="divide-y divide-border overflow-hidden rounded-lg border border-border bg-surface" role="listbox" aria-label="Approval queue" aria-activedescendant={cur ? `q-${cur.slug}` : undefined}>
+      <ul className="divide-y divide-border overflow-hidden rounded-lg border border-border bg-surface" role="listbox" tabIndex={0} aria-label="Approval queue (j/k to move, a approve, s send back, r reject)" aria-activedescendant={cur ? `q-${cur.slug}` : undefined}>
         {queue.map((q, i) => (
           <li
             key={q.slug}

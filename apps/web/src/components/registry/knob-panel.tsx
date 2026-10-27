@@ -70,7 +70,7 @@ export function KnobPanel({
       {params.length === 0 ? (
         <p className="text-[13px] text-muted">This program has no knobs.</p>
       ) : (
-        <div className={cn("grid", dense ? "gap-4" : "gap-5", columns === 2 && "gap-x-8 md:grid-cols-2")}>
+        <div className={cn("grid grid-cols-1", dense ? "gap-4" : "gap-5", columns === 2 && "gap-x-8 md:grid-cols-2")}>
           {ordered.map((p) => (
             <Knob
               key={p.name}

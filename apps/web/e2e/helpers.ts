@@ -32,8 +32,10 @@ export async function shot(page: Page, info: TestInfo, name: string, fullPage = 
 }
 
 export async function expectAccessible(page: Page) {
-  const res = await new AxeBuilder({ page }).withTags(["wcag2a", "wcag2aa", "wcag21a", "wcag21aa", "wcag22aa"]).analyze();
-  const bad = res.violations.filter((v) => v.impact === "serious" || v.impact === "critical");
+  const res = await new AxeBuilder({ page }).withTags(["wcag2a", "wcag2aa", "wcag21a", "wcag21aa", "wcag22aa", "best-practice"]).analyze();
+  // Serious/critical fail everywhere; heading order and landmark structure are enforced too (screen-reader navigation).
+  const STRUCTURE = new Set(["heading-order", "landmark-one-main", "landmark-unique", "region", "page-has-heading-one", "landmark-no-duplicate-banner", "landmark-no-duplicate-contentinfo"]);
+  const bad = res.violations.filter((v) => v.impact === "serious" || v.impact === "critical" || STRUCTURE.has(v.id));
   const summary = bad.map((v) => `${v.impact} ${v.id}: ${v.help}\n  ${v.nodes.slice(0, 3).map((n) => n.target.join(" ")).join("\n  ")}`).join("\n");
   expect(bad, summary).toEqual([]);
 }

@@ -90,6 +90,7 @@ test("registry search filters and offers a need when nothing matches", async ({ 
 test("theme toggle switches to dark without reload", async ({ page }) => {
   await setup(page);
   await page.goto("/");
+  await expect(page.getByRole("link", { name: /API online/ })).toBeVisible(); // hydrated
   await page.getByRole("radio", { name: "Dark theme" }).click();
   await expect(page.locator("html")).toHaveAttribute("data-theme", "dark");
   await page.reload();

@@ -30,7 +30,7 @@ import { VerifiedBadge } from "@/components/ui/verified-badge";
 import { CadViewer } from "@/components/viewer/cad-viewer";
 import { api, artifactUrl } from "@/lib/api";
 import type { ArtifactEvent, BakeResult, JobDetail, JobEvent, Measurements } from "@/lib/api-types";
-import { fmtNum, fmtUsd, paramLabel } from "@/lib/format";
+import { fmtNum, fmtUsd, paramLabel, splitTitle } from "@/lib/format";
 import { useBake, useCountTo, useJobBake } from "@/lib/hooks";
 import { STAGE_LABELS, summarizeEvents, useJobEvents, type EventSummary, type StreamState } from "@/lib/job-events";
 import { cn } from "@/lib/utils";
@@ -126,7 +126,12 @@ function JobActions({ id, summary }: { id: string; summary: JobDetail["summary"]
   });
   const cancel = useMutation({
     mutationFn: () => api.cancel(id),
-    onSuccess: () => void qc.invalidateQueries({ queryKey: ["job", id] }),
+    onSuccess: (r) => {
+      toast(r.status === "cancelling" ? "Stopping the job…" : "Job cancelled", {
+        description: r.status === "cancelling" ? "It stops at its next check." : undefined,
+      });
+      void qc.invalidateQueries({ queryKey: ["job", id] });
+    },
     onError: (e) => toast("Could not cancel", { description: e instanceof Error ? e.message : String(e), tone: "bad" }),
   });
   if (summary.is_replay) return null;
@@ -229,6 +234,7 @@ export function WorkspaceClient({ id }: { id: string }) {
   const measurements = d.measurements.top ?? Object.values(d.measurements)[0];
   const doneStatus = s.done?.status ?? (sum.status === "done" ? (sum.verified ? "verified" : "best_effort") : sum.status === "failed" ? "failed" : null);
   const usd = s.usd || sum.cost_usd;
+  const heading = splitTitle(sum.title || d.partspec?.title || "Fix job");
 
   return (
     <div className="pb-10">
@@ -241,7 +247,12 @@ export function WorkspaceClient({ id }: { id: string }) {
         <div className="flex flex-col gap-3 px-4 py-4 sm:px-6 lg:flex-row lg:items-center lg:justify-between">
           <div className="min-w-0 space-y-1.5">
             <div className="flex flex-wrap items-center gap-2">
-              <h1 className="line-clamp-2 text-[18px] leading-tight font-semibold tracking-tight sm:text-[20px]">{sum.title || d.partspec?.title || "Fix job"}</h1>
+              <h1 className="line-clamp-2 text-[18px] leading-tight font-semibold tracking-tight sm:text-[20px]">{heading.title}</h1>
+              {heading.presets.map((p) => (
+                <Badge key={p} tone="outline">
+                  {p}
+                </Badge>
+              ))}
               {sum.status !== "done" ? <JobStatusBadge job={sum} /> : null}
               {replay ? <OriginBadge origin="replay" /> : null}
               <OriginBadge origin={sum.origin} hideReal />
@@ -250,9 +261,9 @@ export function WorkspaceClient({ id }: { id: string }) {
             <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-[12px] text-subtle">
               <span className="font-mono">{sum.id}</span>
               <span className="font-mono tnum">{s.modelCalls.length} model calls · {fmtUsd(usd)}</span>
-              {lastIterErr != null ? (
+              {lastIterErr != null && !verification ? (
                 <span className="font-mono tnum">
-                  max error <span className="text-fg">{fmtNum(counting ?? lastIterErr)} mm</span>
+                  silhouette error <span className="text-fg">{fmtNum(counting ?? lastIterErr)} mm</span>
                   {threshold != null ? <> / limit {fmtNum(threshold)} mm</> : null}
                 </span>
               ) : null}
@@ -342,7 +353,7 @@ export function WorkspaceClient({ id }: { id: string }) {
         <aside className="flex min-w-0 flex-col gap-4 xl:order-3 xl:row-span-2">
           <div className="rounded-lg border border-border bg-surface p-4">
             <div className="mb-2 flex items-center justify-between">
-              <Eyebrow>Max error per iteration</Eyebrow>
+              <Eyebrow>Silhouette error per iteration</Eyebrow>
               {lastIterErr != null ? <Mm value={counting ?? lastIterErr} size="sm" /> : null}
             </div>
             <ConvergenceChart data={s.convergence} threshold={threshold} />

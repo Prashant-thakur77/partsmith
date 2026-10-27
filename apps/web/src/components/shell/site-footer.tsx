@@ -54,7 +54,7 @@ export function SiteFooter() {
                       {l.label}
                     </a>
                   ) : (
-                    <Link href={l.href} className="text-[13px] text-muted hover:text-fg">
+                    <Link href={l.href} prefetch={false} className="text-[13px] text-muted hover:text-fg">
                       {l.label}
                     </Link>
                   )}

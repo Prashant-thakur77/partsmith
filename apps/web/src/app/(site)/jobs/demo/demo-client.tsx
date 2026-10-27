@@ -15,8 +15,9 @@ import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Spinner } from "@/components/ui/spinner";
 import { api } from "@/lib/api";
-import { fmtNum, titleCase } from "@/lib/format";
+import { fmtNum, titleCase, splitTitle } from "@/lib/format";
 import { cn } from "@/lib/utils";
+import { radioGroupKeys } from "@/lib/a11y";
 
 export function DemoClient() {
   const router = useRouter();
@@ -56,7 +57,7 @@ export function DemoClient() {
           ) : samples.isError ? (
             <ErrorState error={samples.error} compact what="the samples" onRetry={() => void samples.refetch()} />
           ) : (
-            <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-3" role="radiogroup" aria-label="Sample">
+            <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-3" role="radiogroup" onKeyDown={radioGroupKeys} aria-label="Sample">
               {shown.map((x) => (
                 <button
                   key={x.id}
@@ -69,9 +70,14 @@ export function DemoClient() {
                     sample === x.id ? "border-fg shadow-[0_0_0_1px_var(--fg)]" : "border-border",
                   )}
                 >
-                  <span className="text-[13.5px] leading-5 font-medium text-fg">{x.title}</span>
+                  <span className="text-[13.5px] leading-5 font-medium text-fg">{splitTitle(x.title).title}</span>
                   <span className="flex flex-wrap gap-1">
                     {x.kind === "reference_object" ? <Badge tone="info">reference object</Badge> : null}
+                    {splitTitle(x.title).presets.map((p) => (
+                      <Badge key={p} tone="outline">
+                        {p}
+                      </Badge>
+                    ))}
                     {x.family_hint && x.family_hint !== "reference" ? <Badge tone="neutral">{titleCase(x.family_hint)}</Badge> : null}
                     <span className="font-mono text-[11px] text-subtle">{x.id}</span>
                   </span>
@@ -97,7 +103,7 @@ export function DemoClient() {
             <Badge tone="mock">
               <FlaskConical aria-hidden /> synthetic input
             </Badge>
-            {sampleTitle ? <span className="text-[13px] text-muted">{sampleTitle}</span> : null}
+            {sampleTitle ? <span className="text-[13px] text-muted">{splitTitle(sampleTitle).title}</span> : null}
           </div>
           {run.isError ? <ErrorState error={run.error} compact what="the sample job" /> : null}
         </Section>
@@ -124,7 +130,7 @@ export function DemoClient() {
                     className="group flex items-center justify-between gap-4 rounded-lg border border-border bg-surface p-4 hover:border-border-strong"
                   >
                     <div className="min-w-0 space-y-2">
-                      <div className="truncate text-[14px] font-medium">{r.title}</div>
+                      <div className="truncate text-[14px] font-medium">{splitTitle(r.title).title}</div>
                       <div className="flex flex-wrap gap-1.5">
                         <OriginBadge origin={r.origin} />
                         <ModeBadge mode={r.provider_mode} />
