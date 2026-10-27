@@ -75,10 +75,21 @@ def _view(hd: float, iou: float = 0.99, over: float = 0.0, under: float = 0.0) -
 def test_fix_moves_mapped_knob_against_residual_damped():
     t = get_template("battery_cover")
     vals = {**t.defaults, "width": 32.0}
-    res = [{"feature_id": "outline", "quantity": "width", "measured_mm": 32.4, "model_mm": 32.0, "delta_mm": -0.4,
-            "tol_mm": 0.3, "passed": False}]
+    res = [
+        {
+            "feature_id": "outline",
+            "quantity": "width",
+            "measured_mm": 32.4,
+            "model_mm": 32.0,
+            "delta_mm": -0.4,
+            "tol_mm": 0.3,
+            "passed": False,
+        }
+    ]
     out = mock_brain.fix(_fix_ctx(res, [_view(0.6)], vals))
-    assert out["edits"] == [{"param": "width", "from": 32.0, "to": pytest.approx(32.36), "reason": "residual -0.40 mm"}]
+    assert out["edits"] == [
+        {"param": "width", "from": 32.0, "to": pytest.approx(32.36), "reason": "residual -0.40 mm (damped)"}
+    ]
 
 
 def test_fix_probes_an_unmapped_knob_then_reverses():
@@ -95,7 +106,9 @@ def test_fix_probes_an_unmapped_knob_then_reverses():
 
 def test_variant_mock_uses_phrase_mapper():
     params = [ParamSpec(name="hole_d", default=4.0, min=2.0, max=8.0, step=0.05, label="Screw hole")]
-    req = ModelRequest(messages=[], mock_context={"want": "hole thoda bada", "params": [p.model_dump() for p in params],
-                                                  "values": {"hole_d": 4.0}})
+    req = ModelRequest(
+        messages=[],
+        mock_context={"want": "hole thoda bada", "params": [p.model_dump() for p in params], "values": {"hole_d": 4.0}},
+    )
     out = mock_brain.variant(req)
     assert out["edits"] and out["edits"][0]["param"] == "hole_d"

@@ -16,6 +16,7 @@ MEASURE_MAP = {
     "width": "diameter",
     "thickness": "tread_width",
     "hole_1.diameter": "bore_d",
+    "side.thickness": "tread_width",  # short side of the side photo's silhouette
 }
 
 PARAMS = {  # name: (default, min, max, step, unit, affects_fit, label)

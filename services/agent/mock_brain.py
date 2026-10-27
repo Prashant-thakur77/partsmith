@@ -28,7 +28,7 @@ from typing import Any
 from partsmith_schemas.verification import ParamSpec
 
 from services.agent import providers
-from services.agent.guards import max_delta
+from services.agent.guards import max_delta, residual_param
 from services.agent.providers import ModelRequest
 from services.agent.templates import Template, get_template, list_templates
 from services.geom_worker.program import clamp, set_defaults
@@ -68,6 +68,27 @@ def _top(ctx: Mapping[str, Any]) -> dict[str, Any] | None:
     return dict(top) if isinstance(top, Mapping) else None
 
 
+def count_lobes(outline: Sequence[Sequence[float]], min_depth_mm: float = 0.2) -> int:
+    """Radial notches (grip flutes) around a round outline (part frame, centred): local minima of the radius."""
+    import numpy as np
+
+    P = np.asarray(outline, dtype=np.float64).reshape(-1, 2)
+    if len(P) < 12:
+        return 0
+    th = np.arctan2(P[:, 1], P[:, 0])
+    r = np.hypot(P[:, 0], P[:, 1])
+    order = np.argsort(th)
+    grid = np.linspace(-np.pi, np.pi, 720, endpoint=False)
+    rr = np.interp(grid, th[order], r[order], period=2 * np.pi)
+    k = 6
+    n = 0
+    for i in range(len(rr)):
+        win = rr[np.arange(i - k, i + k + 1) % len(rr)]
+        if rr[i] <= win.min() + 1e-9 and win.max() - rr[i] >= min_depth_mm and rr[i] < rr[(i - 1) % len(rr)]:
+            n += 1
+    return n
+
+
 def shape_cues(top: Mapping[str, Any]) -> dict[str, Any]:
     """What a model would notice in the top photo: size, roundness, holes and where they are."""
     L = float(top["length"]["value"])
@@ -87,6 +108,7 @@ def shape_cues(top: Mapping[str, Any]) -> dict[str, Any]:
         "central_hole": bool(central),
         "n_slots": len(top.get("slots") or []),
         "symmetry": top.get("symmetry_score"),
+        "lobes": count_lobes(top.get("outline_mm") or []),
     }
 
 
@@ -121,6 +143,27 @@ def choose_template(intent: str, family_hint: str | None, cues: Mapping[str, Any
     if cues["aspect"] > 2.2:
         return "hinge_leaf", "long plate with a row of screw holes"
     return "hook", "plate with two screw holes"
+
+
+def template_misfit(t: Template, top: Mapping[str, Any], thickness_mm: float | None) -> str | None:
+    """Why the measured size cannot be this template (a mapped size far outside its PARAMS range), else None."""
+    mm = t.measure_map
+    L, W = float(top["length"]["value"]), float(top["width"]["value"])
+    checks: list[tuple[str, float, str]] = []
+    if mm.get("length") and mm.get("length") == mm.get("width"):
+        checks.append((mm["length"], (L + W) / 2, "diameter"))
+    else:
+        if mm.get("length"):
+            checks.append((mm["length"], L, "length"))
+        if mm.get("width"):
+            checks.append((mm["width"], W, "width"))
+    if thickness_mm and mm.get("thickness"):
+        checks.append((mm["thickness"], thickness_mm, "thickness"))
+    for name, value, what in checks:
+        p = t.param(name)
+        if not 0.9 * p.min <= value <= 1.1 * p.max:
+            return f"its {what} ({value:.2f} mm) is outside the {t.name} template's {p.min:g}–{p.max:g} mm range"
+    return None
 
 
 def _measured(value: float, sigma: float = 0.0, note: str | None = None, source: str = "measured") -> dict[str, Any]:
@@ -185,7 +228,18 @@ def understand(req: ModelRequest) -> dict[str, Any]:
                 "angle_deg": float(s.get("angle_deg", 0.0)),
             }
         )
-    if "bore.diameter" in t.measure_map:
+    misfit = template_misfit(t, top, float(thickness["value"]) if thickness["source"] != "inferred" else None)
+    if "height" in t.measure_map and side is None and not misfit:
+        hp = t.param(t.measure_map["height"])
+        unknowns.append(
+            {
+                "id": "height",
+                "question": "How tall is the tallest part (above the mat), in millimetres?",
+                "expects": "number_mm",
+                "default": hp.default,
+            }
+        )
+    if "bore.diameter" in t.measure_map and not misfit:
         bp = t.param(t.measure_map["bore.diameter"])
         flat = t.measure_map.get("bore.flat_depth")
         fd = t.param(flat).default if flat else 0.0
@@ -219,8 +273,12 @@ def understand(req: ModelRequest) -> dict[str, Any]:
         "features": features,
         "unknowns": unknowns,
         "intent": intent,
-        "template_hint": t.name,
+        "template_hint": None if misfit else t.name,
     }
+    if misfit:
+        spec["family"] = "custom"
+        spec["title"] = f"Custom part (not a {t.title.lower()}: {misfit})"
+        return spec
     sym = cues.get("symmetry")
     if isinstance(sym, (int, float)) and sym < 0.9 and "broken" in intent.lower():
         spec["broken_region"] = {
@@ -241,6 +299,8 @@ def plan(req: ModelRequest) -> dict[str, Any]:
     hint = spec.get("template_hint")
     if ctx.get("strategy_hint") == "free_code":
         return {"strategy": "free_code", "template": None, "why": f"template did not converge ({MOCK_TAG})"}
+    if not hint and spec.get("family") == "custom":
+        return {"strategy": "free_code", "template": None, "why": f"no template fits the measured size ({MOCK_TAG})"}
     if hint:
         return {
             "strategy": "template",
@@ -264,7 +324,11 @@ def _representative_hole(holes: Sequence[Mapping[str, Any]], all_same: bool) -> 
 
 
 def template_values(
-    t: Template, spec: Mapping[str, Any], top: Mapping[str, Any] | None, answers: Mapping[str, Any]
+    t: Template,
+    spec: Mapping[str, Any],
+    top: Mapping[str, Any] | None,
+    answers: Mapping[str, Any],
+    side: Mapping[str, Any] | None = None,
 ) -> dict[str, float]:
     """PARAMS for the first build: measured quantities via MEASURE_MAP (rounded to nominal sizes), counts of the
     measured holes, user answers; everything else stays at the template default."""
@@ -286,6 +350,15 @@ def template_values(
             vals[mm["hole_1.diameter"]] = _round(d, DIAMETER_ROUND_MM)
         for k in count_knobs:
             vals[k.name] = float(len(holes))
+        cues = shape_cues(top)
+        lobes = int(cues["lobes"])
+        if cues["round"] and lobes >= 3:  # count the grip flutes seen around the rim
+            for p in t.params:
+                if p.topology and any(w in p.label.lower() for w in ("flute", "notch", "lobe")):
+                    vals[p.name] = float(lobes)
+    side_h = ((side or {}).get("thickness") or {}).get("value")
+    if mm.get("height") and side_h:  # the side photo shows the part's full height
+        vals[mm["height"]] = _round(float(side_h), LENGTH_ROUND_MM)
     th = spec.get("thickness") or {}
     if mm.get("thickness") and th.get("value"):
         vals[mm["thickness"]] = _round(float(th["value"]), THICKNESS_ROUND_MM)
@@ -331,7 +404,7 @@ def outline_program(spec: Mapping[str, Any], top: Mapping[str, Any] | None) -> s
         + "}",
         "",
         "PARAMS = {  # name: (default, min, max, step, unit, affects_fit, label)",
-        f'    "thickness": ({th:.2f}, 0.8, 40.0, 0.05, "mm", True, "Plate thickness"),',
+        f'    "thickness": ({th:.2f}, {min(0.8, round(th * 0.5, 2)):.2f}, 40.0, 0.01, "mm", True, "Plate thickness"),',
         '    "outline_offset": (0.0, -1.0, 1.0, 0.02, "mm", True, "Outline offset (+ grows the outline)"),',
     ]
     for i, h in enumerate(holes):
@@ -380,7 +453,9 @@ def build(req: ModelRequest) -> str:
     if ctx.get("strategy") == "free_code" or not ctx.get("template"):
         return "```python\n" + outline_program(spec, top) + "```"
     t = get_template(str(ctx["template"]))
-    vals = template_values(t, spec, top, ctx.get("answers") or {})
+    meas = ctx.get("measurements") or {}
+    side = meas.get("side") if isinstance(meas.get("side"), Mapping) else None
+    vals = template_values(t, spec, top, ctx.get("answers") or {}, side)
     code = set_defaults(t.code, vals)
     header = f"# part.py — generated by PartSmith from the {t.name} template (deterministic mock builder).\n"
     return "```python\n" + header + code + "```"
@@ -389,23 +464,8 @@ def build(req: ModelRequest) -> str:
 # ------------------------------------------------------------------------------------------------- fix
 
 
-def _param_for(key_exact: str, key_generic: str | None, measure_map: Mapping[str, str]) -> str | None:
-    if key_exact in measure_map:
-        return measure_map[key_exact]
-    if key_generic and key_generic in measure_map:
-        return measure_map[key_generic]
-    return None
-
-
 def _residual_param(r: Mapping[str, Any], measure_map: Mapping[str, str]) -> str | None:
-    fid, qty = str(r["feature_id"]), str(r["quantity"])
-    if fid == "outline" and qty in ("length", "width"):
-        return measure_map.get(qty)
-    if fid == "plate" and qty == "thickness":
-        return measure_map.get("thickness")
-    if qty == "diameter":
-        return _param_for(f"{fid}.diameter", "hole_1.diameter", measure_map)
-    return None
+    return residual_param(str(r["feature_id"]), str(r["quantity"]), measure_map)
 
 
 def _inner_feature(p: ParamSpec) -> bool:
@@ -436,6 +496,7 @@ def _explore(
     history: Sequence[Mapping[str, Any]],
     views: Sequence[Mapping[str, Any]],
     center_miss_mm: float = 0.0,
+    centre_residuals: Mapping[str, float] | None = None,
 ) -> tuple[list[dict[str, Any]], str]:
     """One knob at a time: try a step, keep going while the Hausdorff distance drops, else try the other way, then
     move on. The orchestrator always continues from the best round, so a step that made things worse is undone."""
@@ -455,13 +516,39 @@ def _explore(
         hd_b, hd_a = last.get("hd_before"), last.get("hd_after")
         improved = hd_b is not None and hd_a is not None and hd_a < hd_b - HD_IMPROVED_MM
         tag = str(probe["reason"]).split(":")[0]
+        cres = dict(centre_residuals or {})
+        if improved and cres and _positional(p):
+            slope = _measured_slope(p.name, list(cres), history, signed=True)
+            if slope is not None:
+                d = sum(cres.values()) / len(cres)
+                why = f"the hole centre moves {slope:+.2f} mm per mm of {p.name}; {d:+.2f} mm left"
+                return [
+                    {"param": p.name, "to": to - d / slope, "reason": f"probe=: {why}"}
+                ], f"place the hole with {p.name}"
         if improved:
             why = f"the last change of {p.name} lowered the Hausdorff distance {hd_b:.2f} → {hd_a:.2f} mm"
             return [{"param": p.name, "to": to + step, "reason": f"probe>: {why}"}], f"continue moving {p.name}"
         if tag == "probe+":
             why = f"{p.name} {step:+.2f} did not help; try the other direction"
             return [{"param": p.name, "to": frm - step, "reason": f"probe-: {why}"}], f"reverse {p.name}"
+        if tag in ("probe>", "probe="):
+            why = f"{p.name} {step:+.2f} overshot; try half of that step"
+            return [{"param": p.name, "to": frm + step / 2, "reason": f"probe~: {why}"}], f"halve the step on {p.name}"
     done = set(probed)
+    cres_now = dict(centre_residuals or {})
+    if center_miss_mm > 0 and cres_now:  # a position knob already tried: its measured response places the hole
+        for p in specs:
+            if not _positional(p) or p.name not in by_name:
+                continue
+            slope = _measured_slope(p.name, list(cres_now), history, signed=True)
+            if slope is None:
+                continue
+            cur = float(values.get(p.name, p.default))
+            d = sum(cres_now.values()) / len(cres_now)
+            why = f"the hole centre moves {slope:+.2f} mm per mm of {p.name}; {d:+.2f} mm left"
+            return [
+                {"param": p.name, "to": cur - d / slope, "reason": f"probe=: {why}"}
+            ], f"place the hole with {p.name}"
     under = sum(float(v.get("under_area_mm2", 0.0)) for v in views)
     over = sum(float(v.get("over_area_mm2", 0.0)) for v in views)
     cands = _probe_candidates(specs, measure_map)
@@ -500,6 +587,41 @@ def _failed_before(history: Sequence[Mapping[str, Any]]) -> set[tuple[str, float
     return out
 
 
+def _hole_centres(residuals: Sequence[Mapping[str, Any]]) -> dict[str, tuple[float, float]]:
+    """Measured hole centres (part frame) from the centre residual rows."""
+    xs: dict[str, float] = {}
+    ys: dict[str, float] = {}
+    for r in residuals:
+        if r["quantity"] == "center_x":
+            xs[str(r["feature_id"])] = float(r["measured_mm"])
+        elif r["quantity"] == "center_y":
+            ys[str(r["feature_id"])] = float(r["measured_mm"])
+    return {h: (xs[h], ys.get(h, 0.0)) for h in xs}
+
+
+def _positional(p: ParamSpec) -> bool:
+    return any(w in p.name for w in ("offset", "pitch", "spacing", "position"))
+
+
+def _measured_slope(
+    param: str, keys: Sequence[str], history: Sequence[Mapping[str, Any]], *, signed: bool = False
+) -> float | None:
+    """d(residual)/d(param) from the latest round that changed only this knob's value among its edits."""
+    for h in reversed(history):
+        for e in h.get("edits", []):
+            if e.get("param") != param:
+                continue
+            dx = float(e["to"]) - float(e["from"])
+            before, after = h.get("residuals_before") or {}, h.get("residuals_after") or {}
+            ds = [float(after[k]) - float(before[k]) for k in keys if k in before and k in after]
+            if abs(dx) < 1e-6 or not ds:
+                return None
+            slope = (sum(ds) / len(ds)) / dx
+            ok = 0.15 <= (abs(slope) if signed else slope) <= 5.0
+            return slope if ok else None
+    return None
+
+
 def fix(req: ModelRequest) -> dict[str, Any]:
     ctx = req.mock_context
     specs = [ParamSpec.model_validate(p) for p in ctx.get("params", [])]
@@ -513,26 +635,44 @@ def fix(req: ModelRequest) -> dict[str, Any]:
     views_fail = any(float(v["hausdorff_mm"]) > 0.5 or float(v["iou"]) < 0.97 for v in views)
     failed = _failed_before(history)
 
-    # 1. residuals that a mapped knob controls: move it against the residual (damped)
-    wanted: dict[str, list[float]] = {}
-    notes: list[str] = []
+    # 1. residuals that a mapped knob controls: move it against the residual. Every residual the knob controls is
+    #    averaged (a stated and a measured thickness can disagree a little); after one try the measured response
+    #    (secant) sets the step, because a knob does not always move the measured size 1:1 (parallax, fillets).
+    centres = _hole_centres(residuals)
+    # a hole in the wrong place explains a large Hausdorff distance better than sub-tolerance size residuals do
+    hole_misplaced = any(
+        str(r["quantity"]).startswith("center") and abs(float(r["delta_mm"])) > float(r["tol_mm"]) for r in residuals
+    )
+    has_count = any(p.topology and "hole" in p.name for p in specs)
+    controlled: dict[str, list[tuple[str, float]]] = {}
+    failing: set[str] = set()
     for r in residuals:
         d, tol = float(r["delta_mm"]), float(r["tol_mm"])
-        if abs(d) <= (tol if not views_fail else 0.5 * tol):
-            continue
         name = _residual_param(r, measure_map)
         if name is None or name not in by_name:
             continue
-        wanted.setdefault(name, []).append(d)
-        notes.append(f"{r['feature_id']} {r['quantity']} {d:+.2f} mm → {name}")
+        fid = str(r["feature_id"])
+        generic = fid in centres and f"{fid}.diameter" not in measure_map and not has_count and len(centres) > 1
+        if generic and fid != min(centres, key=lambda h: math.hypot(*centres[h])):
+            continue  # the generic hole knob sizes the central hole only
+        key = f"{fid}.{r['quantity']}"
+        controlled.setdefault(name, []).append((key, d))
+        if abs(d) > (tol if not views_fail or hole_misplaced else 0.5 * tol):
+            failing.add(name)
     edits: list[dict[str, Any]] = []
-    for name, deltas in wanted.items():
-        mean = sum(deltas) / len(deltas)
+    notes: list[str] = []
+    for name in sorted(failing, key=lambda n: -max(abs(d) for _, d in controlled[n])):
+        pairs = controlled[name]
+        mean = sum(d for _, d in pairs) / len(pairs)
         cur = values.get(name, by_name[name].default)
-        to = round(cur - DAMPING * mean, 4)
-        if (name, round(to, 2)) in failed:
+        slope = _measured_slope(name, [k for k, _ in pairs], history)
+        step = -mean / slope if slope is not None else -DAMPING * mean
+        to = round(cur + step, 4)
+        if any(p == name and abs(t - to) < 0.06 for p, t in failed):
             continue  # tried that already and it did not help
-        edits.append({"param": name, "from": cur, "to": to, "reason": f"residual {mean:+.2f} mm"})
+        how = f"measured response {slope:.2f} mm/mm" if slope is not None else "damped"
+        edits.append({"param": name, "from": cur, "to": to, "reason": f"residual {mean:+.2f} mm ({how})"})
+        notes.append(f"{', '.join(k for k, _ in pairs)} {mean:+.2f} mm → {name}")
     if edits:
         return {
             "analysis": "Largest residuals first: " + "; ".join(notes) + f". ({MOCK_TAG})",
@@ -549,7 +689,7 @@ def fix(req: ModelRequest) -> dict[str, Any]:
         k = knobs[0]
         cur = values.get(k.name, k.default)
         to = cur + (1 if missing else -1)
-        if k.min <= to <= k.max and (k.name, round(to, 2)) not in failed:
+        if k.min <= to <= k.max and not any(p == k.name and abs(t - to) < 0.06 for p, t in failed):
             why = (
                 f"{missing} measured hole(s) have no match in the model"
                 if missing
@@ -568,7 +708,12 @@ def fix(req: ModelRequest) -> dict[str, Any]:
             for r in residuals
             if str(r["quantity"]).startswith("center") and abs(float(r["delta_mm"])) > float(r["tol_mm"])
         ]
-        probe_edits, why = _explore(specs, values, measure_map, history, views, max(centers, default=0.0))
+        cres = {
+            f"{r['feature_id']}.{r['quantity']}": float(r["delta_mm"])
+            for r in residuals
+            if str(r["quantity"]).startswith("center") and abs(float(r["delta_mm"])) > 0.5 * float(r["tol_mm"])
+        }
+        probe_edits, why = _explore(specs, values, measure_map, history, views, max(centers, default=0.0), cres)
         for e in probe_edits:
             e["from"] = values.get(str(e["param"]), by_name[str(e["param"])].default)
         if probe_edits:

@@ -15,6 +15,7 @@ MEASURE_MAP = {
     "thickness": "thickness",
     "hole_1.diameter": "hole_d",
     "pin.diameter": "pin_d",
+    "side.thickness": "pin_d",  # short side of the side photo's silhouette
 }
 
 PARAMS = {  # name: (default, min, max, step, unit, affects_fit, label)

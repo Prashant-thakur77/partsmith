@@ -14,6 +14,7 @@ MEASURE_MAP = {
     "width": "width",
     "thickness": "plate_thickness",
     "hole_1.diameter": "hole_d",
+    "side.thickness": "reach",  # short side of the side photo's silhouette
 }
 
 PARAMS = {  # name: (default, min, max, step, unit, affects_fit, label)

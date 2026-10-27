@@ -22,8 +22,12 @@ def test_reply_for_a_stale_state_is_discarded(tmp_path):
     assert calls and calls[0].ctx == "ctx-before" and calls[0].mode == "mock"
     # a current reply is kept
     mock_brain.install(replace=True)
-    out = run.call("plan", providers.ModelRequest(messages=[], json_schema=orchestrator.PLAN_SCHEMA,
-                                                  mock_context={"partspec": {"template_hint": "spacer"}}))
+    out = run.call(
+        "plan",
+        providers.ModelRequest(
+            messages=[], json_schema=orchestrator.PLAN_SCHEMA, mock_context={"partspec": {"template_hint": "spacer"}}
+        ),
+    )
     assert out is not None and out.json["template"] == "spacer"
     m.shutdown()
 

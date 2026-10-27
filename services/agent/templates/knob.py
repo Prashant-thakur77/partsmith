@@ -17,6 +17,7 @@ MEASURE_MAP = {
     "thickness": "height",
     "bore.diameter": "bore_d",
     "bore.flat_depth": "flat_depth",
+    "side.thickness": "height",  # short side of the side photo's silhouette
 }
 
 PARAMS = {  # name: (default, min, max, step, unit, affects_fit, label)

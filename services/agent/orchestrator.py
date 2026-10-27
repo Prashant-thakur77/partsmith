@@ -14,6 +14,7 @@ from __future__ import annotations
 import difflib
 import json
 import math
+import re
 import time
 from collections.abc import Callable, Iterator, Mapping
 from contextlib import contextmanager
@@ -52,6 +53,7 @@ from services.metrology.calibrate import MatNotFoundError, detect_mat, estimate_
 from services.metrology.capture_gate import run_gate
 from services.metrology.measure import MeasureOutput, decode_image, measure_photo
 from services.metrology.segment import ProviderSegmenter
+from services.verifier.camera import CameraView
 from services.verifier.render import Frame, rasterize_polygon
 from services.verifier.verify import PhotoMask, VerifyOutput, verify
 
@@ -61,9 +63,16 @@ StageName = Literal[
 ]
 
 DEFAULT_MAX_ITERS = 6
+# Part-mask checks that make the measurement itself unreliable: the job stops with the retake reason.
+FATAL_PART_CHECKS = ("contrast", "coverage", "markers", "scale", "reprojection")
+ROUND_FAMILIES = ("wheel", "knob", "spacer")
+HIDDEN_HOLE_RE = re.compile(r"possible hidden hole near mat \(([-\d.]+), ([-\d.]+)\) mm, about Ø([\d.]+) mm")
+NOTE_KEYS = ("hidden hole", "taller than", "clearly above the stated", "not a round vertical hole")
 BUILD_RETRIES = 2  # inner retries when the program does not compile / run
 NO_IMPROVE_SWITCH = 2  # rounds without improvement before switching strategy
 IMPROVE_EPS_MM = 0.005
+IMPROVE_EPS = 0.01  # rank units (multiples of a tolerance)
+MISSING_TEST_PENALTY = 3.0  # a P0 test the model cannot even be measured for (e.g. a missing hole)
 MASK_PX_PER_MM = 20.0
 MODEL_IMAGE_MAX_PX = 1600
 MIN_OPENING_MM2 = 2.0
@@ -209,21 +218,34 @@ class Round:
         return float(v.max_error_mm)
 
     @property
-    def rank(self) -> tuple[int, int, float]:
-        """Ordering for "better": verified first, then fewer failing P0 tests, then the smaller max error."""
+    def rank(self) -> tuple[int, float]:
+        """Ordering for "better": verified first, then the total violation of the pass rule — how far each failing P0
+        test and each view metric is beyond its tolerance, in units of that tolerance."""
         v = self.verification
         if v is None or v.status == "failed" or v.max_error_mm is None:
-            return (2, 1 << 30, math.inf)
-        fails = sum(1 for t in v.tests if t.priority == "P0" and not t.passed)
-        return (0 if v.verified else 1, fails, float(v.max_error_mm))
+            return (2, math.inf)
+        excess = 0.0
+        for t in v.tests:
+            if t.priority != "P0" or t.passed:
+                continue
+            if t.value is None or t.expected is None or not t.tol:
+                excess += MISSING_TEST_PENALTY
+            else:
+                excess += min(max(abs(t.value - t.expected) - t.tol, 0.0) / t.tol, 10.0)
+        gates = self.out.view_gates if self.out is not None else {}
+        for m in v.views:
+            excess += max(m.hausdorff_mm - v.thresholds.hausdorff_mm, 0.0) / v.thresholds.hausdorff_mm
+            if "iou" in gates.get(m.view, ["iou"]):
+                excess += max(v.thresholds.iou - m.iou, 0.0) / (1.0 - v.thresholds.iou)
+        return (0 if v.verified else 1, round(excess, 4))
 
     def better_than(self, other: Round | None) -> bool:
         if other is None:
             return True
         a, b = self.rank, other.rank
-        if a[:2] != b[:2]:
-            return a[:2] < b[:2]
-        return a[2] < b[2] - IMPROVE_EPS_MM
+        if a[0] != b[0]:
+            return a[0] < b[0]
+        return a[1] < b[1] - IMPROVE_EPS
 
     @property
     def worst_hd(self) -> float | None:
@@ -359,6 +381,11 @@ def residual_table(v: Verification) -> list[dict[str, Any]]:
     return [r.model_dump(mode="json") for r in sorted(v.residuals, key=lambda r: abs(r.delta_mm), reverse=True)]
 
 
+def residual_keys(v: Verification | None) -> dict[str, float]:
+    """{"feature.quantity": model − measured} for the history the fixer sees."""
+    return {f"{r.feature_id}.{r.quantity}": round(r.delta_mm, 4) for r in v.residuals} if v else {}
+
+
 def format_residuals(v: Verification, limit: int = 12) -> str:
     rows = sorted(v.residuals, key=lambda r: abs(r.delta_mm), reverse=True)[:limit]
     out = [
@@ -461,6 +488,10 @@ class FixRun:
         self.vetoes: list[JudgeVeto] = []
         self.best: Round | None = None
         self.current: Round | None = None
+        self.heights: dict[str, tuple[float | None, str]] = {}  # view -> (height passed to the metrology, profile)
+        self.pending_heights: dict[str, tuple[float | None, str]] = {}
+        self.noted: set[tuple[str, str]] = set()
+        self.hidden_holes: dict[str, tuple[float, float]] = {}  # question id -> part-frame centre
 
     # ---- events ------------------------------------------------------------------------------------------------------
     def stage_event(self, stage: StageName, status: str, label: str, ms: int | None = None) -> None:
@@ -668,18 +699,103 @@ class FixRun:
         hint = self.job.input.family_hint
         return ProviderSegmenter(providers.segment, family_word=hint.value.replace("_", " ") if hint else None)
 
-    def measure_view(self, view: str, thickness_mm: float | None) -> MeasureOutput:
+    def measure_view(
+        self,
+        view: str,
+        thickness_mm: float | None,
+        *,
+        profile: Literal["prism", "round"] = "prism",
+        stated_thickness_mm: float | None = None,
+    ) -> MeasureOutput:
         if not self.opts.height_correction:
             thickness_mm = None  # ablation: footprints stay on the mat plane
         with providers.job_context(self.job.id, self.job.emit, ctx=self.job.ctx):
-            return measure_photo(
+            mo = measure_photo(
                 self.photos[view],
                 view,
                 segmenter=self.segmenter(),
                 thickness_mm=thickness_mm,
                 origin=self.job.input.origin,
                 mat_id=self.opts.mat_id,
+                profile=profile,
+                stated_thickness_mm=stated_thickness_mm,
             )
+        self.pending_heights[view] = (thickness_mm, profile)
+        return mo
+
+    def measure_side(self, profile: Literal["prism", "round"]) -> bool:
+        """Measure the side photo (part on its side): its top face stands at the top view's width."""
+        top = self.measurements["top"]
+        ms = self.measure_view(
+            "side", top.width.value, profile=profile, stated_thickness_mm=self.job.input.thickness_mm
+        )
+        self.store_view("side", ms)
+        m = ms.result.measurements
+        if m is None or m.thickness is None:
+            self.log("side photo could not be measured; continuing with the top view", "warn")
+            return False
+        self.accept_view("side", ms, m)
+        return True
+
+    def round_part(self) -> bool:
+        """A solid of revolution (wheel, knob, spacer): on its side it lies on its curved surface."""
+        fam = (
+            self.spec.family.value
+            if self.spec
+            else (self.job.input.family_hint.value if self.job.input.family_hint else None)
+        )
+        if fam in ROUND_FAMILIES:
+            return True
+        cues = mock_brain.shape_cues(self.measurements["top"].model_dump(mode="json"))
+        return bool(cues["round"])
+
+    def camera_view(self, view: str) -> CameraView | None:
+        """The photo's own camera for the verifier's camera-frame comparison (None without a solved pose)."""
+        mo = self.mo.get(view)
+        if mo is None or mo.pose is None or mo.photo_mask is None or mo.detection is None or mo.part_to_mat is None:
+            return None
+        if mo.K is None or mo.R is None or mo.t_mm is None:
+            return None
+        det = mo.detection
+        ppm = mo.top_px_per_mm
+        if ppm is None and mo.footprint_mat is not None:
+            c = mo.footprint_mat.centroid
+            ppm = det.px_per_mm_at((c.x, c.y))
+        if ppm is None:
+            return None
+        h, w = mo.photo_mask.shape[:2]
+        height, profile = self.heights.get(view, (None, "prism"))
+        if profile == "round":
+            return None  # the camera-frame comparison re-measures prisms only; a round profile stays rectified
+        return CameraView(
+            K=mo.K,
+            R=mo.R,
+            t_mm=mo.t_mm,
+            image_mask=mo.photo_mask,
+            part_to_mat=mo.part_to_mat,
+            px_per_mm_local=float(ppm),
+            image_size=(w, h),
+            dist=det.dist,
+            top_height_mm=height,
+            scale_correction=1.0,
+            H_ground=det.H,
+        )
+
+    def camera_views(self) -> dict[str, CameraView]:
+        out: dict[str, CameraView] = {}
+        for view in self.measurements:
+            cv = self.camera_view(view)
+            if cv is not None:
+                out[view] = cv
+        return out
+
+    def surface_notes(self) -> None:
+        """Metrology notes that change what the model can know: shown in the trace once."""
+        for view, m in self.measurements.items():
+            for n in m.notes:
+                if any(k in n for k in NOTE_KEYS) and (view, n) not in self.noted:
+                    self.noted.add((view, n))
+                    self.log(f"{view} photo: {n}", "warn")
 
     def store_view(self, view: str, mo: MeasureOutput) -> None:
         self.artifact("measure_overlay", mo.overlay_png, ".png", f"{view}: measured outline and features")
@@ -696,21 +812,27 @@ class FixRun:
             mo = self.measure_view("top", self.job.input.thickness_mm)
             self.store_view("top", mo)
             m = mo.result.measurements
-            if m is None:
+            cap = mo.result.capture
+            fatal = [c for c in cap.checks if c.severity == "fail" and c.name in FATAL_PART_CHECKS]
+            if m is None or fatal:
                 st.status = "fail"
-                reason = mo.result.capture.retake_reason or "No part found on the mat's stage."
+                reason = (fatal[0].reason if fatal else None) or cap.retake_reason or "No part found on the stage."
                 st.label = f"Retake: {reason}"
-                raise _Finish("failed", {"retake_reason": reason, "capture": mo.result.capture.model_dump(mode="json")})
+                raise _Finish("failed", {"retake_reason": reason, "capture": cap.model_dump(mode="json")})
+            for c in cap.checks:
+                if c.severity == "fail":
+                    self.log(
+                        f"photo check {c.name}: {c.reason} (measuring anyway; the verifier compares the result)", "warn"
+                    )
             self.accept_view("top", mo, m)
             labels = [f"top {m.length.value:.2f} × {m.width.value:.2f} mm, {len(m.holes)} hole(s)"]
             if "side" in self.photos:
-                ms = self.measure_view("side", m.width.value)
-                self.store_view("side", ms)
-                if ms.result.measurements is not None and ms.result.measurements.thickness is not None:
-                    self.accept_view("side", ms, ms.result.measurements)
-                    labels.append(f"side: thickness {ms.result.measurements.thickness.value:.2f} mm")
-                else:
-                    self.log("side photo could not be measured; continuing with the top view", "warn")
+                profile: Literal["prism", "round"] = "round" if self.round_part() else "prism"
+                if self.measure_side(profile):
+                    sm = self.measurements["side"]
+                    assert sm.thickness is not None
+                    labels.append(f"side ({profile}): height {sm.thickness.value:.2f} mm")
+            self.surface_notes()
             cal = mo.result.calibration
             if cal is not None:
                 self.calibration = {"mat_id": cal.mat_id, "H": cal.homography}
@@ -721,6 +843,7 @@ class FixRun:
     def accept_view(self, view: str, mo: MeasureOutput, m: Measurements) -> None:
         self.mo[view] = mo
         self.measurements[view] = m
+        self.heights[view] = self.pending_heights.get(view, (None, "prism"))
         pm = photo_mask_for(mo, m)
         if pm is not None:
             self.masks[view] = pm
@@ -807,14 +930,46 @@ class FixRun:
             cls = guards.refused_class(self.job.input.intent, spec.title, spec.intent)
             reason = spec.refusal or (guards.refusal_message(cls) if cls else None)
             self.spec = spec
-            self.save_spec()
             if reason:
+                self.save_spec()
                 st.label = f"Refused: {reason}"
                 raise _Finish("refused", {"reason": reason})
+            self.note_unknowns(spec)
+            side_h = self.heights.get("side")
+            if side_h is not None and side_h[1] != "round" and self.round_part() and self.measure_side("round"):
+                self.save_measurements()
+                self.log("side photo re-measured as a round profile (the part lies on its curved side)")
+            self.save_spec()
             st.label = (
                 f"{spec.family.value}: {len(spec.features)} feature(s), thickness {spec.thickness.value:.2f} mm "
                 f"({spec.thickness.source.value}), {len(spec.unknowns)} question(s)"
             )
+
+    def note_unknowns(self, spec: PartSpec) -> None:
+        """Questions from metrology notes: a bore the camera could not see through may still be a hole."""
+        top = self.measurements["top"]
+        if not top.part_to_mat:
+            return
+        Mi = np.linalg.inv(np.asarray(top.part_to_mat, dtype=np.float64))
+        k = 0
+        for n in top.notes:
+            m = HIDDEN_HOLE_RE.search(n)
+            if m is None:
+                continue
+            k += 1
+            x, y, d = (float(g) for g in m.groups())
+            px, py = (Mi @ np.array([x, y, 1.0]))[:2]
+            uid = f"hidden_hole_{k}.diameter"
+            self.hidden_holes[uid] = (round(float(px), 3), round(float(py), 3))
+            if not any(u.id == uid for u in spec.unknowns):
+                spec.unknowns.append(
+                    Unknown(
+                        id=uid,
+                        question=f"The photo may hide a through-hole about Ø{d:.1f} mm at ({px:.1f}, {py:.1f}) mm from "
+                        "the part's centre. If there is a hole there, what is its diameter in mm? (0 = no hole)",
+                        default=0.0,
+                    )
+                )
 
     def enforce_measured(self, spec: PartSpec, top: Measurements) -> PartSpec:
         """Code decides: measured values replace whatever the model wrote; unmeasured 'measured' claims are downgraded."""
@@ -962,6 +1117,13 @@ class FixRun:
                     self.accept_view("top", mo, mo.result.measurements)
                     self.save_measurements()
                     self.enforce_measured(self.spec, mo.result.measurements)
+            return
+        if qid in self.hidden_holes:
+            if num > 0:
+                cx, cy = self.hidden_holes[qid]
+                hid = qid.split(".")[0]
+                d = Measured(value=num, source=Source.user_stated, sigma_mm=0.2)
+                self.spec.features.append(ThroughHole(id=hid, center_mm=(cx, cy), diameter=d))
             return
         fid, _, attr = qid.partition(".")
         for f in self.spec.features:
@@ -1125,7 +1287,7 @@ class FixRun:
                 )
         out: VerifyOutput | None = None
         with self.stage("verify", "Comparing the model with the photo") as st:
-            out = verify(res, self.measurements, self.spec, photo_masks=self.masks)
+            out = verify(res, self.measurements, self.spec, photo_masks=self.masks, camera_views=self.camera_views())
             v = out.verification
             st.label = (
                 f"{'Verified' if v.verified else v.status.replace('_', ' ')}: "
@@ -1282,7 +1444,18 @@ class FixRun:
             specs = parse_params(base.code)
             mmap = template_measure_map(base.code, self.template if base.strategy == "template" else None)
             outline_params = [p for k, p in mmap.items() if k in guards.OUTLINE_KEYS]
-            g = guards.guard_edits(proposal.get("edits") or [], specs, base.values, outline_params=outline_params)
+            backing: dict[str, list[float]] = {}
+            for r in base.verification.residuals if base.verification else []:
+                rp = guards.residual_param(r.feature_id, r.quantity, mmap)
+                if rp is not None:
+                    backing.setdefault(rp, []).append(r.delta_mm)
+            g = guards.guard_edits(
+                proposal.get("edits") or [],
+                specs,
+                base.values,
+                outline_params=outline_params,
+                residual_deltas={k: sum(v) / len(v) for k, v in backing.items()},
+            )
             for r in g.rejected:
                 self.log(f"guard: {r}", "warn")
             new_code, new_values = base.code, g.values(base.values)
@@ -1329,6 +1502,8 @@ class FixRun:
                 "max_error_before": _r(before),
                 "max_error_after": _r(rnd.score),
                 "improved": improved,
+                "residuals_before": residual_keys(base.verification),
+                "residuals_after": residual_keys(rnd.verification),
             }
         )
         return improved
@@ -1446,9 +1621,16 @@ class FixRun:
             return None
         v = b.out.verification
         if self.vetoes and b.exec_result is not None:
-            out = verify(b.exec_result, self.measurements, self.spec, photo_masks=self.masks, vetoes=self.vetoes)
+            out = verify(
+                b.exec_result,
+                self.measurements,
+                self.spec,
+                photo_masks=self.masks,
+                vetoes=self.vetoes,
+                camera_views=self.camera_views(),
+            )
             v = out.verification
-            b.out = VerifyOutput(v, b.out.overlays, b.out.views, b.out.model_values)
+            b.out = out
         self.job.write_json("verification.json", v)
         self.job.write_text("part.py", set_defaults(b.code, b.values))
         self.job.write_json("values.json", b.values)

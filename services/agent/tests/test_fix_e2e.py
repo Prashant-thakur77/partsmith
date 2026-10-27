@@ -5,6 +5,7 @@ Ground truth (the params used to render) is only used here, by the test, to chec
 
 from __future__ import annotations
 
+import dataclasses
 import threading
 import time
 from pathlib import Path
@@ -20,6 +21,7 @@ from services.agent.templates import get_template
 from services.agent.tests import synth_samples as S
 from services.metrology import testing as T
 from services.metrology.fit_check import FIT_OUTLINE_RGB
+from services.metrology.mats import STAGE_COLOURS
 
 pytestmark = pytest.mark.slow
 
@@ -69,7 +71,7 @@ def test_fix_job_reaches_verified_and_replays(jobs: dict[str, Any], sid: str) ->
     values = job.read_json("values.json")
     t = get_template(spec.template)
     lp = t.measure_map["length"]
-    assert values[lp] == pytest.approx(spec.params[lp], abs=0.3)
+    assert values[lp] == pytest.approx(spec.params[lp], abs=0.5)  # verified = within the 0.5 mm pass bound
     detail = service.detail_of(job)
     assert detail["verification"]["verified"] is True
     assert {"stl", "step", "threemf", "view", "code", "template_pdf", "repair_card"} <= set(detail["artifacts"])
@@ -131,6 +133,23 @@ def test_question_pauses_and_resumes(sample_root: Path) -> None:
     assert any(e.t == "answer" and e.value == 12.0 for e in job.events)
 
 
+def test_white_part_on_the_light_stage_ends_with_a_retake_message(tmp_path: Path) -> None:
+    spec = dataclasses.replace(SAMPLES["cover-01"], id="white-cover", part_bgr=(236, 238, 240))
+    S.write_sample(spec, tmp_path)
+    job = _run(tmp_path, "white-cover")
+    done = job.events[-1]
+    assert done.t == "done" and done.status == "failed" and not done.verified
+    assert "dark stage" in done.summary["retake_reason"]
+    assert any(
+        e.t == "stage" and e.stage == "measure" and e.status == "fail" and "Retake" in e.label for e in job.events
+    )
+    # the same part on the dark stage measures fine
+    dark = dataclasses.replace(spec, id="white-cover-dark", stage_bgr=S.hex_bgr(STAGE_COLOURS["dark"]))
+    S.write_sample(dark, tmp_path)
+    job2 = _run(tmp_path, "white-cover-dark")
+    assert job2.events[-1].status != "failed" or "retake_reason" not in job2.events[-1].summary
+
+
 def test_refused_class_ends_refused(sample_root: Path) -> None:
     job = _run(sample_root, "latch-01", intent="make me a trigger for a pistol")
     done = job.events[-1]
@@ -179,7 +198,11 @@ def test_fit_check_passes_on_the_part_lying_on_its_outline(jobs: dict[str, Any])
         return img
 
     cam = T.camera_above((105, 65), height_mm=300, tilt_deg=5, azimuth_deg=40)
-    sc = T.render_scene(mat, cam.K, cam.R, cam.t, cam.size, (V, res.mesh.faces), part_bgr=(200, 200, 205), under=under)
+    # a light part goes on the dark stage, as the capture gate's contrast check asks
+    dark = S.hex_bgr(STAGE_COLOURS["dark"])
+    sc = T.render_scene(
+        mat, cam.K, cam.R, cam.t, cam.size, (V, res.mesh.faces), part_bgr=(200, 200, 205), under=under, stage_bgr=dark
+    )
     out = service.fit_check(job.id, T.encode_png(sc.image), mat)
     assert out["passed"], out["reasons"]
     assert out["overlay_url"].startswith("/api/v1/blobs/") and out["iou"] > 0.95

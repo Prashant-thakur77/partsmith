@@ -17,6 +17,7 @@ MEASURE_MAP = {
     "thickness": "base_thickness",
     "hole_1.diameter": "hole_d",
     "cable.diameter": "cable_d",
+    "side.thickness": "cable_d",  # short side of the side photo's silhouette
 }
 
 PARAMS = {  # name: (default, min, max, step, unit, affects_fit, label)

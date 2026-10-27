@@ -9,7 +9,13 @@ SUMMARY = (
     "Gusset ribs behind the hook arm stiffen it."
 )
 TAGS = ["clip", "snap-fit", "panel", "shelf", "retainer", "screw-on"]
-MEASURE_MAP = {"length": "length", "width": "width", "thickness": "thickness", "hole_1.diameter": "hole_d"}
+MEASURE_MAP = {
+    "length": "length",
+    "width": "width",
+    "thickness": "thickness",
+    "hole_1.diameter": "hole_d",
+    "side.thickness": "arm_height",  # overall height seen in the side photo
+}
 
 PARAMS = {  # name: (default, min, max, step, unit, affects_fit, label)
     "length": (36.0, 22.0, 80.0, 0.1, "mm", True, "Plate length"),

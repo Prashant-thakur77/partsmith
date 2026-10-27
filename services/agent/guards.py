@@ -26,6 +26,7 @@ MAX_ABS_DELTA_MM = 2.0
 MIN_DELTA_MM = 0.5
 MAX_DELTA_DEG = 10.0
 MAX_TOPOLOGY_STEP = 1
+MAX_BACKED_DELTA_MM = 10.0  # an edit backed by its own measured residual may move by up to that residual
 RESCALE_MIN_PARAMS = 2
 RESCALE_REL_TOL = 0.01  # factors within 1 % of each other count as "the same scale"
 RESCALE_MIN_CHANGE = 0.01  # ... and they must actually change the size by more than 1 %
@@ -85,8 +86,14 @@ def snap(value: float, spec: ParamSpec) -> float:
     return float(round(v, decimals))
 
 
-def is_rescale(edits: Sequence[Mapping[str, Any]], current: Mapping[str, float], outline_params: Iterable[str]) -> bool:
-    """True when the edits scale every outline-size parameter by (nearly) the same factor."""
+def is_rescale(
+    edits: Sequence[Mapping[str, Any]],
+    current: Mapping[str, float],
+    outline_params: Iterable[str],
+    residual_deltas: Mapping[str, float] | None = None,
+) -> bool:
+    """True when the edits scale every outline-size parameter by (nearly) the same factor without each change being
+    backed by that parameter's own measured residual (`residual_deltas`: param -> model − measured, mm)."""
     names = [p for p in dict.fromkeys(outline_params) if p in current]
     if len(names) < RESCALE_MIN_PARAMS:
         return False
@@ -103,7 +110,16 @@ def is_rescale(edits: Sequence[Mapping[str, Any]], current: Mapping[str, float],
         return False
     mean = sum(factors) / len(factors)
     same = max(factors) - min(factors) <= RESCALE_REL_TOL * mean
-    return same and abs(mean - 1.0) > RESCALE_MIN_CHANGE
+    if not (same and abs(mean - 1.0) > RESCALE_MIN_CHANGE):
+        return False
+    deltas = residual_deltas or {}
+
+    def backed(n: str) -> bool:
+        d = deltas.get(n)
+        move = targets[n] - current[n]
+        return d is not None and move * d < 0 and abs(move) <= abs(d) * 1.1 + 0.05
+
+    return not all(backed(n) for n in names)
 
 
 def guard_edits(
@@ -113,11 +129,12 @@ def guard_edits(
     *,
     outline_params: Iterable[str] = (),
     cap_deltas: bool = True,
+    residual_deltas: Mapping[str, float] | None = None,
 ) -> GuardResult:
     """Apply the guards to raw `{"param", "to", "reason"}` proposals. `current` holds the values in force now."""
     by_name = {s.name: s for s in specs}
     res = GuardResult()
-    if is_rescale(edits, current, outline_params):
+    if is_rescale(edits, current, outline_params, residual_deltas):
         res.rejected.append(
             "refused: the edits scale the whole outline by one factor — never rescale to force a fit; change the "
             "parameter that is actually wrong"
@@ -147,6 +164,9 @@ def guard_edits(
         notes: list[str] = []
         if cap_deltas:
             lim = max_delta(spec, cur)
+            d = (residual_deltas or {}).get(name)
+            if d is not None and (target - cur) * d < 0 and not spec.topology:
+                lim = max(lim, min(2 * abs(d), MAX_BACKED_DELTA_MM))
             if abs(target - cur) > lim + 1e-9:
                 target = cur + math.copysign(lim, target - cur)
                 notes.append(f"capped to a {lim:g}{' ' + spec.unit if spec.unit else ''} change this round")
@@ -164,6 +184,19 @@ def guard_edits(
             GuardedEdit(name, cur, value, reason, proposed, limited=bool(notes) or not math.isclose(value, proposed))
         )
     return res
+
+
+def residual_param(feature_id: str, quantity: str, measure_map: Mapping[str, str]) -> str | None:
+    """The PARAMS knob a template says controls a measured quantity (MEASURE_MAP), or None."""
+    if feature_id == "outline" and quantity in ("length", "width"):
+        return measure_map.get(quantity)
+    if feature_id == "plate" and quantity == "thickness":
+        return measure_map.get("thickness")
+    if feature_id == "side" and quantity == "thickness":
+        return measure_map.get("side.thickness") or measure_map.get("height")
+    if quantity == "diameter":
+        return measure_map.get(f"{feature_id}.diameter") or measure_map.get("hole_1.diameter")
+    return None
 
 
 _FENCE = re.compile(r"```(?:python|py)?[ \t]*\n(.*?)```", re.S)

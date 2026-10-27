@@ -54,8 +54,12 @@ def test_whole_outline_rescale_is_refused():
     g = guards.guard_edits(edits, SPECS, VALUES, outline_params=["length", "width"])
     assert not g.applied and "never rescale" in g.rejected[0]
     # changing one outline knob (or both by different factors) is fine
-    g = guards.guard_edits([{"param": "length", "to": 41.0}, {"param": "width", "to": 20.2}], SPECS, VALUES,
-                           outline_params=["length", "width"])
+    g = guards.guard_edits(
+        [{"param": "length", "to": 41.0}, {"param": "width", "to": 20.2}],
+        SPECS,
+        VALUES,
+        outline_params=["length", "width"],
+    )
     assert len(g.applied) == 2
 
 
@@ -75,9 +79,25 @@ def test_extract_code_and_refusals():
 def test_lesson_candidates_only_from_measured_changes():
     its = [{"iter": 2, "edits": [{"param": "corner_radius", "from": 3.0, "to": 4.2}]}]
     c = lessons.extract_candidates(
-        job_id="j", family="cover", template="battery_cover", first_values={"corner_radius": 3.0, "length": 56.0},
-        final_values={"corner_radius": 4.2, "length": 56.0}, iterations=its, verified=True, strategy_switches=[],
-        max_error_mm=0.3, origin="synthetic",
+        job_id="j",
+        family="cover",
+        template="battery_cover",
+        first_values={"corner_radius": 3.0, "length": 56.0},
+        final_values={"corner_radius": 4.2, "length": 56.0},
+        iterations=its,
+        verified=True,
+        strategy_switches=[],
+        max_error_mm=0.3,
+        origin="synthetic",
     )
     assert len(c) == 1 and c[0].scope == "cover" and "corner_radius" in c[0].rule
     assert c[0].evidence["origin"] == "synthetic"
+
+
+def test_rescale_backed_by_each_measured_residual_is_allowed():
+    edits = [{"param": "length", "to": 41.0}, {"param": "width", "to": 20.5}]
+    deltas = {"length": -1.0, "width": -0.5}  # model smaller than measured on both, by exactly these amounts
+    g = guards.guard_edits(edits, SPECS, VALUES, outline_params=["length", "width"], residual_deltas=deltas)
+    assert len(g.applied) == 2
+    g = guards.guard_edits(edits, SPECS, VALUES, outline_params=["length", "width"], residual_deltas={"length": -1.0})
+    assert not g.applied

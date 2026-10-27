@@ -31,6 +31,8 @@ class SampleSpec:
     intent: str = ""
     mat_id: str = MAT
     pose: tuple[float, float, float] = (3.0, -2.0, 20.0)  # dx, dy from the stage centre (mm), rotation (deg)
+    part_bgr: tuple[int, int, int] = (60, 70, 85)
+    stage_bgr: tuple[int, int, int] | None = None  # None = the light stage
     camera: dict[str, float] = field(default_factory=lambda: {"height_mm": 420.0, "tilt_deg": 4.0, "azimuth_deg": 30.0})
 
 
@@ -51,7 +53,16 @@ def render_top(spec: SampleSpec, params: dict[str, float] | None = None) -> byte
     V = place(res.mesh.vertices, cx + spec.pose[0], cy + spec.pose[1], spec.pose[2])
     c = spec.camera
     cam = T.camera_above((cx, cy), height_mm=c["height_mm"], tilt_deg=c["tilt_deg"], azimuth_deg=c["azimuth_deg"])
-    sc = T.render_scene(spec.mat_id, cam.K, cam.R, cam.t, cam.size, (V, res.mesh.faces), part_bgr=(60, 70, 85))
+    sc = T.render_scene(
+        spec.mat_id,
+        cam.K,
+        cam.R,
+        cam.t,
+        cam.size,
+        (V, res.mesh.faces),
+        part_bgr=spec.part_bgr,
+        stage_bgr=spec.stage_bgr,
+    )
     res.cleanup()
     return T.encode_png(sc.image)
 
@@ -78,6 +89,11 @@ def write_sample(spec: SampleSpec, root: Path) -> Path:
     gt += [f"  {k}: {v}" for k, v in spec.params.items()]
     (d / "gt.yaml").write_text("\n".join(gt) + "\n")
     return d
+
+
+def hex_bgr(h: str) -> tuple[int, int, int]:
+    r, g, b = (int(h[i : i + 2], 16) for i in (1, 3, 5))
+    return b, g, r
 
 
 SAMPLES = [
