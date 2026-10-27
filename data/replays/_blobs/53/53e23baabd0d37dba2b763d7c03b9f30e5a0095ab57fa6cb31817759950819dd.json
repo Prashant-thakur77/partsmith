@@ -1,0 +1,245 @@
+{
+  "family": "hook",
+  "units": "mm",
+  "title": "Wall hook (family hint 'hook')",
+  "base_profile": {
+    "kind": "polyline",
+    "points_mm": [
+      [
+        -25.265,
+        -4.606
+      ],
+      [
+        -24.494,
+        -5.827
+      ],
+      [
+        -22.468,
+        -6.942
+      ],
+      [
+        -20.02,
+        -6.911
+      ],
+      [
+        -18.783,
+        -7.197
+      ],
+      [
+        -13.102,
+        -6.913
+      ],
+      [
+        -10.013,
+        -7.153
+      ],
+      [
+        -3.292,
+        -7.104
+      ],
+      [
+        -2.94,
+        -7.352
+      ],
+      [
+        -2.755,
+        -12.232
+      ],
+      [
+        -2.421,
+        -12.69
+      ],
+      [
+        -1.204,
+        -13.164
+      ],
+      [
+        1.047,
+        -13.356
+      ],
+      [
+        9.668,
+        -13.264
+      ],
+      [
+        14.05,
+        -13.732
+      ],
+      [
+        15.974,
+        -13.467
+      ],
+      [
+        17.411,
+        -13.653
+      ],
+      [
+        22.909,
+        -12.348
+      ],
+      [
+        24.851,
+        -11.021
+      ],
+      [
+        25.689,
+        -9.559
+      ],
+      [
+        25.481,
+        -7.987
+      ],
+      [
+        25.656,
+        -3.764
+      ],
+      [
+        25.414,
+        0.817
+      ],
+      [
+        25.586,
+        2.316
+      ],
+      [
+        24.663,
+        6.281
+      ],
+      [
+        24.724,
+        8.398
+      ],
+      [
+        24.273,
+        11.532
+      ],
+      [
+        23.485,
+        12.699
+      ],
+      [
+        22.719,
+        13.191
+      ],
+      [
+        20.711,
+        13.711
+      ],
+      [
+        -19.582,
+        13.662
+      ],
+      [
+        -23.268,
+        13.299
+      ],
+      [
+        -24.506,
+        12.514
+      ],
+      [
+        -25.255,
+        11.394
+      ],
+      [
+        -25.481,
+        9.842
+      ],
+      [
+        -25.437,
+        1.611
+      ],
+      [
+        -25.691,
+        -1.326
+      ]
+    ],
+    "source": "measured",
+    "sigma_mm": 0.156
+  },
+  "thickness": {
+    "value": 4.5,
+    "source": "user_stated",
+    "sigma_mm": 0.3,
+    "evidence": null
+  },
+  "features": [
+    {
+      "kind": "through_hole",
+      "id": "hole_1",
+      "center_mm": [
+        -9.75,
+        3.463
+      ],
+      "diameter": {
+        "value": 3.52,
+        "source": "measured",
+        "sigma_mm": 0.071,
+        "evidence": {
+          "view": "top",
+          "pixels": [
+            [
+              946.37,
+              575.72
+            ]
+          ],
+          "note": "see-through fit, h=4.5 mm: vertical cylinder whose top and bottom openings overlap by 2.37 mm in the photo; rms 0.096 mm over 128 edge points"
+        }
+      },
+      "countersink": false
+    },
+    {
+      "kind": "slot",
+      "id": "slot_1",
+      "center_mm": [
+        -20.126,
+        3.509
+      ],
+      "length": {
+        "value": 3.795,
+        "source": "measured",
+        "sigma_mm": 0.149,
+        "evidence": {
+          "view": "top",
+          "pixels": [
+            [
+              981.85,
+              555.2
+            ]
+          ],
+          "note": "obround fit: end-arc centres + 2r"
+        }
+      },
+      "width": {
+        "value": 2.64,
+        "source": "measured",
+        "sigma_mm": 0.067,
+        "evidence": {
+          "view": "top",
+          "pixels": [
+            [
+              981.85,
+              555.2
+            ]
+          ],
+          "note": "obround fit: mean end-arc diameter"
+        }
+      },
+      "angle_deg": 78.58
+    }
+  ],
+  "broken_region": {
+    "polygon_mm": [],
+    "strategy": "template",
+    "note": "outline symmetry 0.88: the template restores the missing side (deterministic mock)"
+  },
+  "fit": {
+    "clearance_mm": 0.2,
+    "material": "PLA",
+    "printer": "FDM_0_4"
+  },
+  "unknowns": [],
+  "intent": "Make a replacement for this broken wall hook.",
+  "refusal": null,
+  "template_hint": "hook"
+}

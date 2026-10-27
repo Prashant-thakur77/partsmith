@@ -7,19 +7,19 @@
  "preset": "clean",
  "mode": "mock",
  "gt_source": "reference_spec",
- "status": "verified",
- "verified": true,
- "iterations": 4,
- "iterations_to_converge": 4,
+ "status": "best_effort",
+ "verified": false,
+ "iterations": 6,
+ "iterations_to_converge": null,
  "strategy": "free_code",
- "template": "battery_cover",
- "verifier_max_error_mm": 0.15000000000000213,
+ "template": null,
+ "verifier_max_error_mm": 0.7789999999999999,
  "retake_reason": null,
  "usd": 0.0,
  "tokens_in": 0,
  "tokens_out": 0,
- "model_calls": 9,
- "model_ms": 112,
+ "model_calls": 11,
+ "model_ms": 144,
  "provider_modes": [
   "mock"
  ],
@@ -46,43 +46,55 @@
  "convergence": [
   {
    "iter": 1,
-   "hausdorff_mm": 2.5,
-   "iou": 0.9180147950521464,
-   "max_error_mm": 11.5
+   "hausdorff_mm": 1.322735243011975,
+   "iou": 0.9162228824485678,
+   "max_error_mm": 2.3830000000000027
   },
   {
    "iter": 2,
-   "hausdorff_mm": 2.5,
-   "iou": 0.9180147950521464,
-   "max_error_mm": 11.5
+   "hausdorff_mm": 1.1530133108808216,
+   "iou": 0.9489084997677659,
+   "max_error_mm": 1.9299999999999997
   },
   {
    "iter": 3,
-   "hausdorff_mm": 2.5,
-   "iou": 0.9180147950521464,
-   "max_error_mm": 11.5
+   "hausdorff_mm": 0.896519723308629,
+   "iou": 0.9632828087311277,
+   "max_error_mm": 1.4549999999999983
   },
   {
    "iter": 4,
-   "hausdorff_mm": 0.15000000000000213,
-   "iou": 0.9978556695639099,
-   "max_error_mm": 0.15000000000000213
+   "hausdorff_mm": 0.908632997788021,
+   "iou": 0.9457420266329997,
+   "max_error_mm": 0.908632997788021
+  },
+  {
+   "iter": 5,
+   "hausdorff_mm": 0.9923424309973552,
+   "iou": 0.9248894542370828,
+   "max_error_mm": 0.9923424309973552
+  },
+  {
+   "iter": 6,
+   "hausdorff_mm": 0.5760281618074029,
+   "iou": 0.9354381093235942,
+   "max_error_mm": 0.7789999999999999
   }
  ],
- "wall_s": 6.42,
+ "wall_s": 9.13,
  "dims": [
   {
    "name": "length",
    "gt_mm": 50.5,
-   "model_mm": 52.1227,
-   "error_mm": 1.6227,
+   "model_mm": 50.5456,
+   "error_mm": 0.0456,
    "within_spec": false
   },
   {
    "name": "width",
    "gt_mm": 14.5,
-   "model_mm": 14.873,
-   "error_mm": 0.373,
+   "model_mm": 13.4809,
+   "error_mm": -1.0191,
    "within_spec": false
   }
  ],
@@ -92,5 +104,5 @@
  "pass_0_5": false,
  "valid": true,
  "valid_reason": "",
- "failure": "worst length +1.62 mm"
+ "failure": "worst width -1.02 mm"
 }

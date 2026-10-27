@@ -217,7 +217,7 @@ def collect_tasks(
         ruler = [p.parent for p in parts if (yaml.safe_load(p.read_text()) or {}).get("gt_source") == "ruler"]
         ruler = [p for p in ruler if (p / "top.jpg").exists()]
         if not ruler:
-            notes.append("real_ruler: pending — no real parts with ruler ground truth yet (data/real/<part>/gt.yaml)")
+            notes.append("real_ruler: no real parts with ruler ground truth yet (data/real/<part>/gt.yaml)")
         plan += [("real_ruler", p.name, str(p), "real", "real", None) for p in ruler]
     for cfg in configs:
         for suite, sid, sdir, kind, preset, photo in plan:
@@ -575,6 +575,7 @@ def _ci(c: Sequence[float], nd: int = 3) -> str:
 
 
 def config_row(cfg: str, runs: Sequence[Mapping[str, Any]], seed: int = 0) -> dict[str, Any]:
+    runs = sorted(runs, key=lambda r: (str(r.get("suite")), str(r.get("sample_id"))))  # order-free bootstrap CIs
     errs = [float(d["error_mm"]) for r in runs for d in r.get("dims") or []]
     st = error_stats(errs, seed=seed)
     # dims of one part are correlated: the CI resamples whole runs, not single dimensions
@@ -655,7 +656,7 @@ def build_tables(scores: Sequence[Mapping[str, Any]], mode: str, notes: Sequence
                 "median_abs_err_mm": None,
                 "status": "pending",
                 "mode": mode,
-                "note": "; ".join(suite_notes) or f"pending: {PENDING_NOTE[suite]}{extra}",
+                "note": "; ".join(suite_notes) or f"{PENDING_NOTE[suite]}{extra}",
             }
             continue
         cfgs = [c for c in CONFIGS if any(r["config"] == c for r in held)]
@@ -807,6 +808,9 @@ def write_charts(scores: Sequence[Mapping[str, Any]], mode: str, out_dir: Path) 
 
 
 def latest_measure_only() -> dict[str, Any] | None:
+    """Aggregates of the newest measure_only report (no per-photo rows), plus its printed `summary` lines."""
+    from .measure_only import summary_lines
+
     reps = sorted(REPORTS_DIR.glob("*/measure_only.json"))
     if not reps:
         return None
@@ -814,6 +818,7 @@ def latest_measure_only() -> dict[str, Any] | None:
     return {
         "date": r.get("date"),
         "file": str(reps[-1].relative_to(REPO)),
+        "summary": "\n".join(summary_lines(r)),
         "gate": r.get("gate"),
         "synthetic_manifest": r.get("synthetic_manifest"),
         "sections": r.get("sections"),

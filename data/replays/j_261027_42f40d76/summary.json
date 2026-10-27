@@ -1,0 +1,16 @@
+{
+  "id": "j_261027_42f40d76",
+  "kind": "fix",
+  "status": "done",
+  "created_at": 1793109507.4443526,
+  "updated_at": 1793109523.538275,
+  "title": "Cupboard turn-button latch (synthetic, clean) (synthetic sample)",
+  "origin": "synthetic",
+  "provider_mode": "mock",
+  "verified": false,
+  "max_error_mm": 0.6203010676663432,
+  "iterations": 6,
+  "cost_usd": 0.0,
+  "part_slug": "demo-cupboard-latch",
+  "is_replay": false
+}

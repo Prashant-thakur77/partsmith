@@ -1,0 +1,16 @@
+{
+  "kind": "fix",
+  "intent": "Make a replacement for this broken snap retaining clip.",
+  "photo_shas": {
+    "top": "460fdc3751d396b95258782b754fcbd99c91e0d1b480bf18d33d3fdd96f20cc4.jpg",
+    "side": "d25658dfe656e6cc180a03d3d642c9498c0d6b367a0c54a88e2f30734d48b664.jpg"
+  },
+  "mat_kind": "screen",
+  "screen_px_per_mm": null,
+  "thickness_mm": 3.0,
+  "family_hint": "clip",
+  "origin": "synthetic",
+  "max_iters": 6,
+  "budget_usd": 0.5,
+  "provider_mode": null
+}

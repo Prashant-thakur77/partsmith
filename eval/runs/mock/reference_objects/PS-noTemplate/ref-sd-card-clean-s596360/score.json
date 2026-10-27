@@ -7,19 +7,19 @@
  "preset": "clean",
  "mode": "mock",
  "gt_source": "reference_spec",
- "status": "verified",
- "verified": true,
- "iterations": 1,
- "iterations_to_converge": 1,
+ "status": "best_effort",
+ "verified": false,
+ "iterations": 4,
+ "iterations_to_converge": 2,
  "strategy": "free_code",
  "template": null,
- "verifier_max_error_mm": 0.14999999999999858,
+ "verifier_max_error_mm": 0.3715101679854011,
  "retake_reason": null,
  "usd": 0.0,
  "tokens_in": 0,
  "tokens_out": 0,
- "model_calls": 7,
- "model_ms": 288,
+ "model_calls": 10,
+ "model_ms": 249,
  "provider_modes": [
   "mock"
  ],
@@ -33,6 +33,9 @@
   "build": [
    "mock:meta-models/muse-spark-open"
   ],
+  "fix": [
+   "mock:meta-models/muse-spark-open"
+  ],
   "judge": [
    "mock:muse-glimmer"
   ]
@@ -40,26 +43,44 @@
  "convergence": [
   {
    "iter": 1,
-   "hausdorff_mm": 0.14999999999999858,
-   "iou": 0.94582274957375,
-   "max_error_mm": 0.14999999999999858
+   "hausdorff_mm": 0.7348366639341085,
+   "iou": 0.9359868691013541,
+   "max_error_mm": 0.7348366639341085
+  },
+  {
+   "iter": 2,
+   "hausdorff_mm": 0.3715101679854011,
+   "iou": 0.9522149302707137,
+   "max_error_mm": 0.3715101679854011
+  },
+  {
+   "iter": 3,
+   "hausdorff_mm": 0.8145514933737733,
+   "iou": 0.951937984496124,
+   "max_error_mm": 0.8145514933737733
+  },
+  {
+   "iter": 4,
+   "hausdorff_mm": 0.5620547372745257,
+   "iou": 0.9465294592413237,
+   "max_error_mm": 0.5640000000000001
   }
  ],
- "wall_s": 14.89,
+ "wall_s": 15.29,
  "dims": [
   {
    "name": "length",
    "gt_mm": 32.0,
-   "model_mm": 31.9707,
-   "error_mm": -0.0293,
-   "within_spec": true
+   "model_mm": 32.368,
+   "error_mm": 0.368,
+   "within_spec": false
   },
   {
    "name": "width",
    "gt_mm": 24.0,
-   "model_mm": 23.9104,
-   "error_mm": -0.0896,
-   "within_spec": true
+   "model_mm": 24.3251,
+   "error_mm": 0.3251,
+   "within_spec": false
   },
   {
    "name": "thickness",
@@ -71,7 +92,7 @@
  ],
  "missed": [],
  "extra_holes": 0,
- "pass_0_3": true,
+ "pass_0_3": false,
  "pass_0_5": true,
  "valid": true,
  "valid_reason": ""

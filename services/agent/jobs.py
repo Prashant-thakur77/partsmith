@@ -318,13 +318,48 @@ def load_job(run_dir: Path, *, is_replay: bool = False) -> Job:
     return Job(summary, job_input, run_dir, events=events)
 
 
+# Large lossless images are re-encoded for committed replays (the judge path only displays them).
+REPLAY_JPEG_KINDS = {"rectified", "measure_overlay", "mask_overlay", "residual_heatmap", "render_overlay"}
+REPLAY_MAX_SIDE_PX = 1600
+REPLAY_JPEG_QUALITY = 85
+
+
+def _replay_image(key: str) -> str:
+    """Re-encode a PNG artifact as a smaller JPEG blob for replays; returns the new key (or the old one if unchanged)."""
+    import cv2
+    import numpy as np
+
+    if not key.endswith(".png"):
+        return key
+    img = cv2.imdecode(np.frombuffer(blobs.get(key), np.uint8), cv2.IMREAD_UNCHANGED)
+    if img is None:
+        return key
+    if img.ndim == 3 and img.shape[2] == 4:  # flatten transparency onto white
+        alpha = img[:, :, 3:4].astype(np.float32) / 255.0
+        img = (img[:, :, :3].astype(np.float32) * alpha + 255.0 * (1.0 - alpha)).astype(np.uint8)
+    h, w = img.shape[:2]
+    scale = min(1.0, REPLAY_MAX_SIDE_PX / max(h, w))
+    if scale < 1.0:
+        img = cv2.resize(img, (round(w * scale), round(h * scale)), interpolation=cv2.INTER_AREA)
+    ok, buf = cv2.imencode(".jpg", img, [cv2.IMWRITE_JPEG_QUALITY, REPLAY_JPEG_QUALITY])
+    return blobs.put(buf.tobytes(), ".jpg") if ok else key
+
+
 def export_replay(job: Job, replay_id: str | None = None) -> Path:
-    """Copy a finished run (events + side files + referenced blobs stay in the blob store) into data/replays/."""
+    """Copy a finished run into data/replays/ with every referenced blob, so the judge path works on a fresh clone.
+    Display-only images are re-encoded as JPEG; the replay's own run.jsonl points at the re-encoded copies."""
     dest = REPLAYS_DIR / (replay_id or job.id)
     if dest.exists():
         shutil.rmtree(dest)
     shutil.copytree(job.dir, dest)
+    lines: list[str] = []
     for ev in job.events:
         if ev.t == "artifact":
+            if ev.kind in REPLAY_JPEG_KINDS:
+                new_key = _replay_image(ev.sha)
+                if new_key != ev.sha:
+                    ev = ev.model_copy(update={"sha": new_key, "url": blobs.url(new_key)})
             blobs.copy_to_replays(ev.sha)
+        lines.append(ev.model_dump_json(exclude_none=True))
+    (dest / "run.jsonl").write_text("\n".join(lines) + "\n", encoding="utf-8")
     return dest

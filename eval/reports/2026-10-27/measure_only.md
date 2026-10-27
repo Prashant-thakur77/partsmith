@@ -168,4 +168,4 @@ Ground truth: ruler (±0.5 mm).
 | synthetic | syn-caster-wheel-tilt-s108404 | top | tilt | dimension(s) not measured | hole_1.diameter, hole_2.diameter, hole_3.diameter, hole_5.diameter, hole_6.diameter, hole_7.diameter |
 | synthetic | syn-hinge-leaf-white-part-s529109 | top | white-part | dimension(s) not measured | hole_1.diameter, hole_2.diameter |
 
-Runtime: 262.9 s. Regenerate: `uv run python -m eval.measure_only`.
+Runtime: 139.5 s. Regenerate: `uv run python -m eval.measure_only`.

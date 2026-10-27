@@ -7,19 +7,19 @@
  "preset": "clean",
  "mode": "mock",
  "gt_source": "reference_spec",
- "status": "failed",
+ "status": "best_effort",
  "verified": false,
- "iterations": 1,
- "iterations_to_converge": null,
+ "iterations": 3,
+ "iterations_to_converge": 1,
  "strategy": "free_code",
  "template": null,
- "verifier_max_error_mm": null,
+ "verifier_max_error_mm": 0.1459195799970205,
  "retake_reason": null,
  "usd": 0.0,
  "tokens_in": 0,
  "tokens_out": 0,
- "model_calls": 6,
- "model_ms": 180,
+ "model_calls": 7,
+ "model_ms": 149,
  "provider_modes": [
   "mock"
  ],
@@ -32,20 +32,62 @@
   ],
   "build": [
    "mock:meta-models/muse-spark-open"
+  ],
+  "fix": [
+   "mock:meta-models/muse-spark-open"
+  ],
+  "judge": [
+   "mock:muse-glimmer"
   ]
  },
- "convergence": [],
- "wall_s": 6.63,
- "valid": false,
- "valid_reason": "no part program",
- "dims": [],
- "pass_0_3": false,
- "pass_0_5": false,
- "missed": [
-  "length",
-  "width",
-  "thickness"
+ "convergence": [
+  {
+   "iter": 1,
+   "hausdorff_mm": 0.1459195799970205,
+   "iou": 0.9988699948951524,
+   "max_error_mm": 0.1459195799970205
+  },
+  {
+   "iter": 2,
+   "hausdorff_mm": 0.1459195799970205,
+   "iou": 0.9988699948951524,
+   "max_error_mm": 0.1459195799970205
+  },
+  {
+   "iter": 3,
+   "hausdorff_mm": 0.1459195799970205,
+   "iou": 0.9988699948951524,
+   "max_error_mm": 0.1459195799970205
+  }
  ],
+ "wall_s": 7.96,
+ "dims": [
+  {
+   "name": "length",
+   "gt_mm": 85.6,
+   "model_mm": 85.7413,
+   "error_mm": 0.1413,
+   "within_spec": false
+  },
+  {
+   "name": "width",
+   "gt_mm": 53.98,
+   "model_mm": 54.1109,
+   "error_mm": 0.1309,
+   "within_spec": false
+  },
+  {
+   "name": "thickness",
+   "gt_mm": 0.76,
+   "model_mm": 0.76,
+   "error_mm": 0.0,
+   "within_spec": true
+  }
+ ],
+ "missed": [],
  "extra_holes": 0,
- "failure": "no valid final model (no part program)"
+ "pass_0_3": true,
+ "pass_0_5": true,
+ "valid": true,
+ "valid_reason": ""
 }

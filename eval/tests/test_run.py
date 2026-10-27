@@ -157,6 +157,8 @@ def test_markdown_and_report_shape(tmp_path: Path) -> None:
     assert set(rep["tables"]) == set(R.SUITES) and rep["runs"]["synthetic"]["PS"][0]["sample_id"] == "a"
     md = R.to_markdown(rep)
     assert "NOT MODEL PERFORMANCE" in md and "**pending**" in md
+    mo = R.latest_measure_only()
+    assert mo is None or ("EXIT GATE" in mo["summary"] and "sections" in mo)  # tools/readme.py reads `summary`
     for c in rep["charts"]:
         ET.fromstring((tmp_path / c).read_text())
 

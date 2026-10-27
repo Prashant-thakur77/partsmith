@@ -13,13 +13,13 @@
  "iterations_to_converge": null,
  "strategy": "template",
  "template": "clip",
- "verifier_max_error_mm": 0.6010407640085683,
+ "verifier_max_error_mm": 1.0430426999373552,
  "retake_reason": null,
  "usd": 0.0,
  "tokens_in": 0,
  "tokens_out": 0,
  "model_calls": 9,
- "model_ms": 441,
+ "model_ms": 408,
  "provider_modes": [
   "mock"
  ],
@@ -40,12 +40,12 @@
  "convergence": [
   {
    "iter": 1,
-   "hausdorff_mm": 0.6010407640085683,
-   "iou": 0.9567712567062266,
-   "max_error_mm": 0.6010407640085683
+   "hausdorff_mm": 1.0430426999373552,
+   "iou": 0.8387281581208823,
+   "max_error_mm": 1.0430426999373552
   }
  ],
- "wall_s": 14.76,
+ "wall_s": 13.47,
  "dims": [
   {
    "name": "length",
@@ -68,8 +68,8 @@
   {
    "name": "hole_1.diameter",
    "gt_mm": 3.35,
-   "model_mm": 3.0,
-   "error_mm": -0.35
+   "model_mm": 3.5,
+   "error_mm": 0.15
   }
  ],
  "missed": [],

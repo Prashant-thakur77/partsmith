@@ -13,13 +13,13 @@
  "iterations_to_converge": null,
  "strategy": "free_code",
  "template": null,
- "verifier_max_error_mm": 26.126,
+ "verifier_max_error_mm": 26.059,
  "retake_reason": null,
  "usd": 0.0,
  "tokens_in": 0,
  "tokens_out": 0,
  "model_calls": 11,
- "model_ms": 382,
+ "model_ms": 454,
  "provider_modes": [
   "mock"
  ],
@@ -43,36 +43,36 @@
  "convergence": [
   {
    "iter": 1,
-   "hausdorff_mm": 24.42795529715903,
-   "iou": 0.2931119407779674,
-   "max_error_mm": 26.126
+   "hausdorff_mm": 23.12285453596827,
+   "iou": 0.27859225493819556,
+   "max_error_mm": 26.059
   },
   {
    "iter": 2,
-   "hausdorff_mm": 25.799999999999997,
-   "iou": 0.49929031193266216,
-   "max_error_mm": 26.12600047683716
+   "hausdorff_mm": 11.919657200189514,
+   "iou": 0.18994829457199397,
+   "max_error_mm": 16.078000000000003
   },
   {
    "iter": 3,
-   "hausdorff_mm": 25.799999999999997,
-   "iou": 0.5032856976492704,
-   "max_error_mm": 26.12600047683716
+   "hausdorff_mm": 11.919657200189514,
+   "iou": 0.18994829457199397,
+   "max_error_mm": 16.078000000000003
   }
  ],
- "wall_s": 12.63,
+ "wall_s": 16.17,
  "dims": [
   {
    "name": "length",
    "gt_mm": 51.8,
-   "model_mm": 53.1419,
-   "error_mm": 1.3419
+   "model_mm": 53.1368,
+   "error_mm": 1.3368
   },
   {
    "name": "width",
    "gt_mm": 27.3,
-   "model_mm": 27.415,
-   "error_mm": 0.115
+   "model_mm": 27.4069,
+   "error_mm": 0.1069
   },
   {
    "name": "thickness",
@@ -83,8 +83,8 @@
   {
    "name": "hole_1.diameter",
    "gt_mm": 5.1,
-   "model_mm": 5.22,
-   "error_mm": 0.12
+   "model_mm": 5.23,
+   "error_mm": 0.13
   },
   {
    "name": "hole_2.diameter",

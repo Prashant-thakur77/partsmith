@@ -2,15 +2,16 @@
 import cadquery as cq
 
 FAMILY = 'hook'
-OUTLINE = [(24.967, -11.339), (25.277, -10.062), (25.299, -3.84), (26.557, -2.048), (26.57, 7.764), (26.436, 8.213), (25.332, 8.902), (25.2, 10.687), (24.755, 11.85), (23.94, 12.804), (23.053, 13.368), (21.774, 13.668), (-22.61, 13.699), (-23.905, 13.509), (-24.839, 13.061), (-26.173, 11.536), (-26.572, 9.787), (-26.571, -9.997), (-26.101, -11.749), (-25.511, -12.549), (-24.406, -13.339), (-22.465, -13.716), (21.606, -13.702), (22.545, -13.555), (23.617, -13.048)]
-HOLES = [(-19.927, -0.186), (-6.720, -0.187)]
+OUTLINE = [(24.989, -11.355), (25.305, -10.035), (25.282, -3.839), (26.539, -2.086), (26.572, 7.718), (26.402, 8.2), (25.328, 8.927), (25.226, 10.633), (24.795, 11.8), (23.95, 12.795), (23.103, 13.351), (21.828, 13.661), (-22.639, 13.696), (-23.891, 13.508), (-24.842, 13.052), (-26.155, 11.567), (-26.564, 9.822), (-26.572, -9.958), (-26.091, -11.757), (-25.498, -12.549), (-24.358, -13.359), (-22.491, -13.711), (21.583, -13.693), (22.596, -13.546), (23.675, -13.031)]
+HOLES = [(-19.914, -0.188), (-6.708, -0.190)]
 SLOTS = []
-MEASURE_MAP = {'thickness': 'thickness', 'hole_1.diameter': 'hole_1_d', 'hole_2.diameter': 'hole_2_d'}
+BOSSES = []
+MEASURE_MAP = {'thickness': 'thickness', 'side.thickness': 'thickness', 'hole_1.diameter': 'hole_1_d', 'hole_2.diameter': 'hole_2_d'}
 
 PARAMS = {  # name: (default, min, max, step, unit, affects_fit, label)
-    "thickness": (3.0, 0.8, 40.0, 0.05, "mm", True, "Plate thickness"),
+    "thickness": (3.0, 0.80, 40.0, 0.01, "mm", True, "Plate thickness"),
     "outline_offset": (0.0, -1.0, 1.0, 0.02, "mm", True, "Outline offset (+ grows the outline)"),
-    "hole_1_d": (5.22, 2.22, 8.22, 0.05, "mm", True, "hole_1 diameter"),
+    "hole_1_d": (5.23, 2.23, 8.23, 0.05, "mm", True, "hole_1 diameter"),
     "hole_2_d": (5.23, 2.23, 8.23, 0.05, "mm", True, "hole_2 diameter"),
 }
 
@@ -29,6 +30,9 @@ def build(p):
         sl, sw = p["slot_" + str(i + 1) + "_l"], p["slot_" + str(i + 1) + "_w"]
         cutter = cq.Workplane("XY").workplane(offset=-1).center(s[0], s[1]).slot2D(sl, sw, s[2]).extrude(t + 2)
         body = body.cut(cutter)
+    if BOSSES:
+        studs = cq.Workplane("XY").workplane(offset=t - 0.2).pushPoints(BOSSES).circle(p["boss_d"] / 2)
+        body = body.union(studs.extrude(p["boss_h"] + 0.2))
     return body
 
 

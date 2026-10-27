@@ -9,17 +9,17 @@
  "gt_source": "reference_spec",
  "status": "best_effort",
  "verified": false,
- "iterations": 6,
+ "iterations": 3,
  "iterations_to_converge": null,
  "strategy": "free_code",
- "template": "battery_cover",
- "verifier_max_error_mm": 3.76,
+ "template": null,
+ "verifier_max_error_mm": 5.664,
  "retake_reason": null,
  "usd": 0.0,
  "tokens_in": 0,
  "tokens_out": 0,
- "model_calls": 13,
- "model_ms": 318,
+ "model_calls": 10,
+ "model_ms": 254,
  "provider_modes": [
   "mock"
  ],
@@ -46,62 +46,44 @@
  "convergence": [
   {
    "iter": 1,
-   "hausdorff_mm": 12.020815280171309,
-   "iou": 0.21619373873784678,
-   "max_error_mm": 12.26
+   "hausdorff_mm": 1.7836559625541843,
+   "iou": 0.8968167447945056,
+   "max_error_mm": 5.664
   },
   {
    "iter": 2,
-   "hausdorff_mm": 11.998541578041891,
-   "iou": 0.21689472850409916,
-   "max_error_mm": 12.26
+   "hausdorff_mm": 3.06541566358317,
+   "iou": 0.7947081136090295,
+   "max_error_mm": 3.110999999999997
   },
   {
    "iter": 3,
-   "hausdorff_mm": 11.998541578041891,
-   "iou": 0.21689472850409916,
-   "max_error_mm": 12.26
-  },
-  {
-   "iter": 4,
-   "hausdorff_mm": 11.998541578041891,
-   "iou": 0.21689472850409916,
-   "max_error_mm": 12.26
-  },
-  {
-   "iter": 5,
-   "hausdorff_mm": 3.0,
-   "iou": 0.6491784461475284,
-   "max_error_mm": 5.66
-  },
-  {
-   "iter": 6,
-   "hausdorff_mm": 2.9706901555025897,
-   "iou": 0.7752719042936418,
-   "max_error_mm": 3.76
+   "hausdorff_mm": 3.318768150248732,
+   "iou": 0.7807882893121789,
+   "max_error_mm": 3.318768150248732
   }
  ],
- "wall_s": 12.22,
+ "wall_s": 12.5,
  "dims": [
   {
    "name": "length",
    "gt_mm": 31.8,
-   "model_mm": 34.1226,
-   "error_mm": 2.3226,
+   "model_mm": 34.1294,
+   "error_mm": 2.3294,
    "within_spec": false
   },
   {
    "name": "width",
    "gt_mm": 15.8,
-   "model_mm": 16.5413,
-   "error_mm": 0.7413,
+   "model_mm": 16.5469,
+   "error_mm": 0.7469,
    "within_spec": false
   },
   {
    "name": "thickness",
    "gt_mm": 11.3,
-   "model_mm": 11.5,
-   "error_mm": 0.2,
+   "model_mm": 9.6,
+   "error_mm": -1.7,
    "within_spec": false
   }
  ],
@@ -111,5 +93,5 @@
  "pass_0_5": false,
  "valid": true,
  "valid_reason": "",
- "failure": "worst length +2.32 mm"
+ "failure": "worst length +2.33 mm"
 }

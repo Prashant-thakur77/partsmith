@@ -13,13 +13,13 @@
  "iterations_to_converge": null,
  "strategy": "free_code",
  "template": null,
- "verifier_max_error_mm": 0.6800735254367773,
+ "verifier_max_error_mm": 3.450788774533327,
  "retake_reason": null,
  "usd": 0.0,
  "tokens_in": 0,
  "tokens_out": 0,
  "model_calls": 11,
- "model_ms": 498,
+ "model_ms": 473,
  "provider_modes": [
   "mock"
  ],
@@ -43,36 +43,36 @@
  "convergence": [
   {
    "iter": 1,
-   "hausdorff_mm": 0.6800735254367773,
-   "iou": 0.9081877136376705,
-   "max_error_mm": 0.6800735254367773
+   "hausdorff_mm": 3.450788774533327,
+   "iou": 0.8157755426151403,
+   "max_error_mm": 3.450788774533327
   },
   {
    "iter": 2,
-   "hausdorff_mm": 0.6103277807866859,
-   "iou": 0.9152045842320445,
-   "max_error_mm": 0.6103277807866859
+   "hausdorff_mm": 3.4181036627662844,
+   "iou": 0.8106120304701865,
+   "max_error_mm": 3.4181036627662844
   },
   {
    "iter": 3,
-   "hausdorff_mm": 0.8500000000000014,
-   "iou": 0.9195283141117014,
-   "max_error_mm": 0.856139007568359
+   "hausdorff_mm": 3.456868766005329,
+   "iou": 0.8179398456215066,
+   "max_error_mm": 3.456868766005329
   }
  ],
- "wall_s": 14.92,
+ "wall_s": 15.8,
  "dims": [
   {
    "name": "length",
    "gt_mm": 52.1,
-   "model_mm": 52.1044,
-   "error_mm": 0.0044
+   "model_mm": 52.1204,
+   "error_mm": 0.0204
   },
   {
    "name": "width",
    "gt_mm": 37.3,
-   "model_mm": 37.31,
-   "error_mm": 0.01
+   "model_mm": 37.3197,
+   "error_mm": 0.0197
   },
   {
    "name": "thickness",

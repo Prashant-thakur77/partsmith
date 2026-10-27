@@ -1,0 +1,118 @@
+{
+  "family": "spacer",
+  "units": "mm",
+  "title": "Spacer / standoff (family hint 'spacer')",
+  "base_profile": {
+    "kind": "polyline",
+    "points_mm": [
+      [
+        3.3,
+        -2.309
+      ],
+      [
+        3.882,
+        -0.932
+      ],
+      [
+        3.859,
+        0.935
+      ],
+      [
+        3.293,
+        2.236
+      ],
+      [
+        2.146,
+        3.33
+      ],
+      [
+        0.681,
+        3.93
+      ],
+      [
+        -0.755,
+        3.932
+      ],
+      [
+        -2.251,
+        3.372
+      ],
+      [
+        -3.358,
+        2.225
+      ],
+      [
+        -3.962,
+        0.612
+      ],
+      [
+        -3.908,
+        -0.84
+      ],
+      [
+        -3.174,
+        -2.424
+      ],
+      [
+        -2.078,
+        -3.396
+      ],
+      [
+        -0.628,
+        -3.954
+      ],
+      [
+        0.658,
+        -3.95
+      ],
+      [
+        2.232,
+        -3.34
+      ]
+    ],
+    "source": "measured",
+    "sigma_mm": 0.057
+  },
+  "thickness": {
+    "value": 8.5,
+    "source": "user_stated",
+    "sigma_mm": 0.3,
+    "evidence": null
+  },
+  "features": [
+    {
+      "kind": "through_hole",
+      "id": "hole_1",
+      "center_mm": [
+        -0.025,
+        -0.013
+      ],
+      "diameter": {
+        "value": 3.949,
+        "source": "measured",
+        "sigma_mm": 0.04,
+        "evidence": {
+          "view": "top",
+          "pixels": [
+            [
+              912.97,
+              713.92
+            ]
+          ],
+          "note": "see-through fit, h=8.5 mm: vertical cylinder whose top and bottom openings overlap by 2.53 mm in the photo; rms 0.023 mm over 188 edge points"
+        }
+      },
+      "countersink": false
+    }
+  ],
+  "broken_region": null,
+  "fit": {
+    "clearance_mm": 0.2,
+    "material": "PLA",
+    "printer": "FDM_0_4"
+  },
+  "unknowns": [],
+  "intent": "Make a replacement for this broken spacer / standoff.",
+  "refusal": null,
+  "template_hint": "spacer"
+}

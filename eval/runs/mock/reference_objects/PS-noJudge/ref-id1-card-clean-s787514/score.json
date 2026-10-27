@@ -9,17 +9,17 @@
  "gt_source": "reference_spec",
  "status": "best_effort",
  "verified": false,
- "iterations": 6,
- "iterations_to_converge": null,
- "strategy": "template",
- "template": "battery_cover",
- "verifier_max_error_mm": 2.8000000000000114,
+ "iterations": 3,
+ "iterations_to_converge": 1,
+ "strategy": "free_code",
+ "template": null,
+ "verifier_max_error_mm": 0.1459195799970205,
  "retake_reason": null,
  "usd": 0.0,
  "tokens_in": 0,
  "tokens_out": 0,
- "model_calls": 12,
- "model_ms": 183,
+ "model_calls": 7,
+ "model_ms": 123,
  "provider_modes": [
   "mock"
  ],
@@ -43,64 +43,51 @@
  "convergence": [
   {
    "iter": 1,
-   "hausdorff_mm": 2.8000000000000114,
-   "iou": 0.9730716203703205,
-   "max_error_mm": 2.8000000000000114
+   "hausdorff_mm": 0.1459195799970205,
+   "iou": 0.9988699948951524,
+   "max_error_mm": 0.1459195799970205
   },
   {
    "iter": 2,
-   "hausdorff_mm": 3.0,
-   "iou": 0.9717824150094019,
-   "max_error_mm": 3.0
+   "hausdorff_mm": 0.1459195799970205,
+   "iou": 0.9988699948951524,
+   "max_error_mm": 0.1459195799970205
   },
   {
    "iter": 3,
-   "hausdorff_mm": 3.0,
-   "iou": 0.9717824150094019,
-   "max_error_mm": 3.0
-  },
-  {
-   "iter": 5,
-   "hausdorff_mm": 3.0,
-   "iou": 0.9717824150094019,
-   "max_error_mm": 3.0
-  },
-  {
-   "iter": 6,
-   "hausdorff_mm": 3.0,
-   "iou": 0.9717824150094019,
-   "max_error_mm": 3.0
+   "hausdorff_mm": 0.1459195799970205,
+   "iou": 0.9988699948951524,
+   "max_error_mm": 0.1459195799970205
   }
  ],
- "wall_s": 15.91,
+ "wall_s": 7.36,
  "dims": [
   {
    "name": "length",
    "gt_mm": 85.6,
-   "model_mm": 86.0,
-   "error_mm": 0.4,
+   "model_mm": 85.7413,
+   "error_mm": 0.1413,
    "within_spec": false
   },
   {
    "name": "width",
    "gt_mm": 53.98,
-   "model_mm": 54.0,
-   "error_mm": 0.02,
-   "within_spec": true
+   "model_mm": 54.1109,
+   "error_mm": 0.1309,
+   "within_spec": false
   },
   {
    "name": "thickness",
    "gt_mm": 0.76,
-   "model_mm": 4.5,
-   "error_mm": 3.74,
-   "within_spec": false
+   "model_mm": 0.76,
+   "error_mm": 0.0,
+   "within_spec": true
   }
  ],
  "missed": [],
  "extra_holes": 0,
- "pass_0_3": false,
- "pass_0_5": false,
+ "pass_0_3": true,
+ "pass_0_5": true,
  "valid": true,
- "valid_reason": "",
- "failure": "worst thickness +3.74 mm"
+ "valid_reason": ""
 }

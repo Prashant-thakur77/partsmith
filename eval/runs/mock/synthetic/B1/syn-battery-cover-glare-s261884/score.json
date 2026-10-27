@@ -7,19 +7,19 @@
  "preset": "glare",
  "mode": "mock",
  "gt_source": "synthetic_exact",
- "status": "best_effort",
- "verified": false,
+ "status": "verified",
+ "verified": true,
  "iterations": 1,
- "iterations_to_converge": null,
+ "iterations_to_converge": 1,
  "strategy": "template",
  "template": "battery_cover",
- "verifier_max_error_mm": 3.4799990463256836,
+ "verifier_max_error_mm": 0.39644988593735064,
  "retake_reason": null,
  "usd": 0.0,
  "tokens_in": 0,
  "tokens_out": 0,
  "model_calls": 9,
- "model_ms": 478,
+ "model_ms": 425,
  "provider_modes": [
   "mock"
  ],
@@ -40,12 +40,12 @@
  "convergence": [
   {
    "iter": 1,
-   "hausdorff_mm": 3.444198019858904,
-   "iou": 0.8483018416646735,
-   "max_error_mm": 3.4799990463256836
+   "hausdorff_mm": 0.39644988593735064,
+   "iou": 0.8978723404255319,
+   "max_error_mm": 0.39644988593735064
   }
  ],
- "wall_s": 13.16,
+ "wall_s": 11.9,
  "dims": [
   {
    "name": "length",

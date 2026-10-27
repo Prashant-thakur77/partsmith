@@ -13,13 +13,13 @@
  "iterations_to_converge": null,
  "strategy": "free_code",
  "template": "hinge_leaf",
- "verifier_max_error_mm": 19.783452681470948,
+ "verifier_max_error_mm": 8.40272500603259,
  "retake_reason": null,
  "usd": 0.0,
  "tokens_in": 0,
  "tokens_out": 0,
  "model_calls": 14,
- "model_ms": 752,
+ "model_ms": 385,
  "provider_modes": [
   "mock"
  ],
@@ -43,54 +43,54 @@
  "convergence": [
   {
    "iter": 1,
-   "hausdorff_mm": 17.950000000000003,
-   "iou": 0.09794816506362641,
-   "max_error_mm": 17.950000000000003
+   "hausdorff_mm": 8.547495044176564,
+   "iou": 0.6722187082718392,
+   "max_error_mm": 8.547495044176564
   },
   {
    "iter": 2,
-   "hausdorff_mm": 17.950000000000003,
-   "iou": 0.09794816506362641,
-   "max_error_mm": 17.950000000000003
+   "hausdorff_mm": 9.471649029727462,
+   "iou": 0.9130352226336277,
+   "max_error_mm": 9.471649029727462
   },
   {
    "iter": 3,
-   "hausdorff_mm": 17.950000000000003,
-   "iou": 0.09794816506362641,
-   "max_error_mm": 17.950000000000003
+   "hausdorff_mm": 9.517878222606953,
+   "iou": 0.9150208887200911,
+   "max_error_mm": 9.517878222606953
   },
   {
    "iter": 4,
-   "hausdorff_mm": 19.783452681470948,
-   "iou": 0.14023176736833726,
-   "max_error_mm": 19.783452681470948
+   "hausdorff_mm": 9.471649029727462,
+   "iou": 0.9130352226336277,
+   "max_error_mm": 9.471649029727462
   },
   {
    "iter": 5,
-   "hausdorff_mm": 19.434055160979657,
-   "iou": 0.14369701165601698,
-   "max_error_mm": 19.434055160979657
+   "hausdorff_mm": 9.471649029727462,
+   "iou": 0.9130352226336277,
+   "max_error_mm": 9.471649029727462
   },
   {
    "iter": 6,
-   "hausdorff_mm": 19.284320055423265,
-   "iou": 0.1451720511573734,
-   "max_error_mm": 19.284320055423265
+   "hausdorff_mm": 8.40272500603259,
+   "iou": 0.861537073786758,
+   "max_error_mm": 8.40272500603259
   }
  ],
- "wall_s": 29.54,
+ "wall_s": 21.26,
  "dims": [
   {
    "name": "length",
    "gt_mm": 55.7,
-   "model_mm": 19.3619,
-   "error_mm": -36.3381
+   "model_mm": 56.0717,
+   "error_mm": 0.3717
   },
   {
    "name": "width",
    "gt_mm": 22.399326,
-   "model_mm": 2.179,
-   "error_mm": -20.2203
+   "model_mm": 22.3144,
+   "error_mm": -0.0849
   },
   {
    "name": "thickness",
@@ -108,5 +108,5 @@
  "pass_0_5": false,
  "valid": true,
  "valid_reason": "",
- "failure": "worst length -36.34 mm; missing hole_1.diameter, hole_2.diameter"
+ "failure": "worst thickness -2.70 mm; missing hole_1.diameter, hole_2.diameter"
 }

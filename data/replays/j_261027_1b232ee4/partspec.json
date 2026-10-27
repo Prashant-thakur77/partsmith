@@ -1,0 +1,138 @@
+{
+  "family": "bracket",
+  "units": "mm",
+  "title": "L-bracket (family hint 'bracket')",
+  "base_profile": {
+    "kind": "polyline",
+    "points_mm": [
+      [
+        23.093,
+        15.12
+      ],
+      [
+        20.438,
+        15.132
+      ],
+      [
+        20.198,
+        11.936
+      ],
+      [
+        19.952,
+        11.625
+      ],
+      [
+        7.007,
+        8.815
+      ],
+      [
+        -21.438,
+        8.783
+      ],
+      [
+        -22.263,
+        8.488
+      ],
+      [
+        -22.885,
+        7.846
+      ],
+      [
+        -23.156,
+        6.888
+      ],
+      [
+        -23.17,
+        -12.733
+      ],
+      [
+        -22.873,
+        -14.306
+      ],
+      [
+        -22.282,
+        -14.91
+      ],
+      [
+        -21.187,
+        -15.252
+      ],
+      [
+        22.43,
+        -15.195
+      ],
+      [
+        23.156,
+        -10.808
+      ]
+    ],
+    "source": "measured",
+    "sigma_mm": 0.094
+  },
+  "thickness": {
+    "value": 2.5,
+    "source": "user_stated",
+    "sigma_mm": 0.3,
+    "evidence": null
+  },
+  "features": [
+    {
+      "kind": "through_hole",
+      "id": "hole_1",
+      "center_mm": [
+        -19.499,
+        -3.231
+      ],
+      "diameter": {
+        "value": 3.589,
+        "source": "measured",
+        "sigma_mm": 0.047,
+        "evidence": {
+          "view": "top",
+          "pixels": [
+            [
+              904.86,
+              706.44
+            ]
+          ],
+          "note": "see-through fit, h=2.5 mm: vertical cylinder whose top and bottom openings overlap by 3.07 mm in the photo; rms 0.009 mm over 183 edge points"
+        }
+      },
+      "countersink": false
+    },
+    {
+      "kind": "through_hole",
+      "id": "hole_2",
+      "center_mm": [
+        14.495,
+        -3.237
+      ],
+      "diameter": {
+        "value": 3.591,
+        "source": "measured",
+        "sigma_mm": 0.04,
+        "evidence": {
+          "view": "top",
+          "pixels": [
+            [
+              1060.34,
+              643.68
+            ]
+          ],
+          "note": "see-through fit, h=2.5 mm: vertical cylinder whose top and bottom openings overlap by 3.17 mm in the photo; rms 0.008 mm over 187 edge points"
+        }
+      },
+      "countersink": false
+    }
+  ],
+  "broken_region": null,
+  "fit": {
+    "clearance_mm": 0.2,
+    "material": "PLA",
+    "printer": "FDM_0_4"
+  },
+  "unknowns": [],
+  "intent": "Make a replacement for this broken l-bracket.",
+  "refusal": null,
+  "template_hint": "l_bracket"
+}

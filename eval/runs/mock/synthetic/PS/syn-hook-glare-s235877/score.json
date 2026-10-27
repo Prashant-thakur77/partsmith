@@ -13,13 +13,13 @@
  "iterations_to_converge": null,
  "strategy": "template",
  "template": "hook",
- "verifier_max_error_mm": 3.8029593739612837,
+ "verifier_max_error_mm": 1.960032911966016,
  "retake_reason": null,
  "usd": 0.0,
  "tokens_in": 0,
  "tokens_out": 0,
  "model_calls": 15,
- "model_ms": 681,
+ "model_ms": 380,
  "provider_modes": [
   "mock"
  ],
@@ -46,72 +46,72 @@
  "convergence": [
   {
    "iter": 1,
-   "hausdorff_mm": 5.247856705360769,
-   "iou": 0.5468905094412154,
-   "max_error_mm": 5.247856705360769
+   "hausdorff_mm": 4.947610352772983,
+   "iou": 0.7382545022758757,
+   "max_error_mm": 4.947610352772983
   },
   {
    "iter": 2,
-   "hausdorff_mm": 3.955060050113022,
-   "iou": 0.4437548986976175,
-   "max_error_mm": 3.955060050113022
+   "hausdorff_mm": 2.475198435947938,
+   "iou": 0.8601706048238776,
+   "max_error_mm": 3.0219999999999985
   },
   {
    "iter": 3,
-   "hausdorff_mm": 3.8616706229299274,
-   "iou": 0.45145752194148214,
-   "max_error_mm": 3.8616706229299274
+   "hausdorff_mm": 2.4294576291424126,
+   "iou": 0.9212745589643069,
+   "max_error_mm": 2.4294576291424126
   },
   {
    "iter": 4,
-   "hausdorff_mm": 3.8029593739612837,
-   "iou": 0.5852691657860644,
-   "max_error_mm": 3.8029593739612837
+   "hausdorff_mm": 1.960032911966016,
+   "iou": 0.9275202354672554,
+   "max_error_mm": 1.960032911966016
   },
   {
    "iter": 5,
-   "hausdorff_mm": 3.8029593739612837,
-   "iou": 0.6041742573295441,
-   "max_error_mm": 3.8029593739612837
+   "hausdorff_mm": 2.089478072484283,
+   "iou": 0.8749255091667543,
+   "max_error_mm": 2.629000000000005
   },
   {
    "iter": 6,
-   "hausdorff_mm": 3.8029593739612837,
-   "iou": 0.5852691657860644,
-   "max_error_mm": 3.8029593739612837
+   "hausdorff_mm": 2.137101728267382,
+   "iou": 0.8912623744997543,
+   "max_error_mm": 2.7550000000000026
   }
  ],
- "wall_s": 32.51,
+ "wall_s": 21.15,
  "dims": [
   {
    "name": "length",
    "gt_mm": 51.8,
-   "model_mm": 53.2,
-   "error_mm": 1.4
+   "model_mm": 50.1,
+   "error_mm": -1.7
   },
   {
    "name": "width",
    "gt_mm": 27.3,
-   "model_mm": 27.4,
-   "error_mm": 0.1
+   "model_mm": 25.9,
+   "error_mm": -1.4
   },
   {
    "name": "thickness",
    "gt_mm": 29.55,
-   "model_mm": 32.5,
-   "error_mm": 2.95
+   "model_mm": 29.6,
+   "error_mm": 0.05
   },
   {
    "name": "hole_1.diameter",
    "gt_mm": 5.1,
-   "model_mm": 5.2,
-   "error_mm": 0.1
+   "model_mm": 4.75,
+   "error_mm": -0.35
   },
   {
    "name": "hole_2.diameter",
    "gt_mm": 5.1,
-   "model_mm": 5.2,
-   "error_mm": 0.1
+   "model_mm": 4.75,
+   "error_mm": -0.35
   }
  ],
  "missed": [],
@@ -121,5 +121,5 @@
  "valid": true,
  "valid_reason": "",
  "overlay": "overlay.png",
- "failure": "worst thickness +2.95 mm"
+ "failure": "worst length -1.70 mm"
 }

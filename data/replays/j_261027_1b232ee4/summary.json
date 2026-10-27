@@ -1,0 +1,16 @@
+{
+  "id": "j_261027_1b232ee4",
+  "kind": "fix",
+  "status": "done",
+  "created_at": 1793109590.236363,
+  "updated_at": 1793109603.5751114,
+  "title": "L-bracket (synthetic, clean) (synthetic sample)",
+  "origin": "synthetic",
+  "provider_mode": "mock",
+  "verified": true,
+  "max_error_mm": 0.3041679361578238,
+  "iterations": 5,
+  "cost_usd": 0.0,
+  "part_slug": "demo-l-bracket",
+  "is_replay": false
+}

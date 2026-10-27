@@ -7,19 +7,19 @@
  "preset": "clean",
  "mode": "mock",
  "gt_source": "reference_spec",
- "status": "verified",
- "verified": true,
- "iterations": 4,
- "iterations_to_converge": 4,
+ "status": "best_effort",
+ "verified": false,
+ "iterations": 6,
+ "iterations_to_converge": null,
  "strategy": "free_code",
  "template": "battery_cover",
- "verifier_max_error_mm": 0.14999999999999858,
+ "verifier_max_error_mm": 0.7348366639341085,
  "retake_reason": null,
  "usd": 0.0,
  "tokens_in": 0,
  "tokens_out": 0,
- "model_calls": 11,
- "model_ms": 539,
+ "model_calls": 13,
+ "model_ms": 255,
  "provider_modes": [
   "mock"
  ],
@@ -46,43 +46,55 @@
  "convergence": [
   {
    "iter": 1,
-   "hausdorff_mm": 3.25,
-   "iou": 0.8132732329529108,
-   "max_error_mm": 3.262
+   "hausdorff_mm": 3.2800677466986143,
+   "iou": 0.7936946902654868,
+   "max_error_mm": 3.2800677466986143
   },
   {
    "iter": 2,
-   "hausdorff_mm": 3.25,
-   "iou": 0.8132732329529108,
-   "max_error_mm": 3.262
+   "hausdorff_mm": 3.2800677466986143,
+   "iou": 0.7936946902654868,
+   "max_error_mm": 3.2800677466986143
   },
   {
    "iter": 3,
-   "hausdorff_mm": 3.25,
-   "iou": 0.8132732329529108,
-   "max_error_mm": 3.262
+   "hausdorff_mm": 3.2800677466986143,
+   "iou": 0.7936946902654868,
+   "max_error_mm": 3.2800677466986143
   },
   {
    "iter": 4,
-   "hausdorff_mm": 0.14999999999999858,
-   "iou": 0.94582274957375,
-   "max_error_mm": 0.14999999999999858
+   "hausdorff_mm": 0.7348366639341085,
+   "iou": 0.9359868691013541,
+   "max_error_mm": 0.7348366639341085
+  },
+  {
+   "iter": 5,
+   "hausdorff_mm": 0.7348366639341085,
+   "iou": 0.9359868691013541,
+   "max_error_mm": 0.7348366639341085
+  },
+  {
+   "iter": 6,
+   "hausdorff_mm": 0.7348366639341085,
+   "iou": 0.9359868691013541,
+   "max_error_mm": 0.7348366639341085
   }
  ],
- "wall_s": 20.88,
+ "wall_s": 13.56,
  "dims": [
   {
    "name": "length",
    "gt_mm": 32.0,
-   "model_mm": 31.9707,
-   "error_mm": -0.0293,
+   "model_mm": 31.9673,
+   "error_mm": -0.0327,
    "within_spec": true
   },
   {
    "name": "width",
    "gt_mm": 24.0,
-   "model_mm": 23.9104,
-   "error_mm": -0.0896,
+   "model_mm": 23.9249,
+   "error_mm": -0.0751,
    "within_spec": true
   },
   {

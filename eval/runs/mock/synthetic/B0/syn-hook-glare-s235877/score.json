@@ -13,13 +13,13 @@
  "iterations_to_converge": null,
  "strategy": "template",
  "template": "hook",
- "verifier_max_error_mm": 8.168999999999997,
+ "verifier_max_error_mm": 6.780999999999999,
  "retake_reason": null,
  "usd": 0.0,
  "tokens_in": 0,
  "tokens_out": 0,
  "model_calls": 9,
- "model_ms": 343,
+ "model_ms": 376,
  "provider_modes": [
   "mock"
  ],
@@ -40,12 +40,12 @@
  "convergence": [
   {
    "iter": 1,
-   "hausdorff_mm": 4.802082881417189,
-   "iou": 0.43167286159926926,
-   "max_error_mm": 8.168999999999997
+   "hausdorff_mm": 6.3345576651002276,
+   "iou": 0.6990564733531486,
+   "max_error_mm": 6.780999999999999
   }
  ],
- "wall_s": 10.42,
+ "wall_s": 12.26,
  "dims": [
   {
    "name": "length",

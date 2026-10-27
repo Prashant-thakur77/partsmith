@@ -9,17 +9,17 @@
  "gt_source": "synthetic_exact",
  "status": "best_effort",
  "verified": false,
- "iterations": 6,
+ "iterations": 7,
  "iterations_to_converge": null,
  "strategy": "free_code",
  "template": "hinge_leaf",
- "verifier_max_error_mm": 19.783452681470948,
+ "verifier_max_error_mm": 8.382120177710643,
  "retake_reason": null,
  "usd": 0.0,
  "tokens_in": 0,
  "tokens_out": 0,
- "model_calls": 15,
- "model_ms": 545,
+ "model_calls": 17,
+ "model_ms": 368,
  "provider_modes": [
   "mock"
  ],
@@ -46,60 +46,66 @@
  "convergence": [
   {
    "iter": 1,
-   "hausdorff_mm": 17.950000000000003,
-   "iou": 0.09794816506362641,
-   "max_error_mm": 17.950000000000003
+   "hausdorff_mm": 8.547495044176564,
+   "iou": 0.6722187082718392,
+   "max_error_mm": 8.547495044176564
   },
   {
    "iter": 2,
-   "hausdorff_mm": 17.950000000000003,
-   "iou": 0.09794816506362641,
-   "max_error_mm": 17.950000000000003
+   "hausdorff_mm": 9.471649029727462,
+   "iou": 0.9130352226336277,
+   "max_error_mm": 9.471649029727462
   },
   {
    "iter": 3,
-   "hausdorff_mm": 17.950000000000003,
-   "iou": 0.09794816506362641,
-   "max_error_mm": 17.950000000000003
+   "hausdorff_mm": 9.517878222606953,
+   "iou": 0.9150208887200911,
+   "max_error_mm": 9.517878222606953
   },
   {
    "iter": 4,
-   "hausdorff_mm": 19.783452681470948,
-   "iou": 0.14023176736833726,
-   "max_error_mm": 19.783452681470948
+   "hausdorff_mm": 9.471649029727462,
+   "iou": 0.9130352226336277,
+   "max_error_mm": 9.471649029727462
   },
   {
    "iter": 5,
-   "hausdorff_mm": 19.434055160979657,
-   "iou": 0.14369701165601698,
-   "max_error_mm": 19.434055160979657
+   "hausdorff_mm": 9.471649029727462,
+   "iou": 0.9130352226336277,
+   "max_error_mm": 9.471649029727462
   },
   {
    "iter": 6,
-   "hausdorff_mm": 19.284320055423265,
-   "iou": 0.1451720511573734,
-   "max_error_mm": 19.284320055423265
+   "hausdorff_mm": 8.40272500603259,
+   "iou": 0.861537073786758,
+   "max_error_mm": 8.40272500603259
+  },
+  {
+   "iter": 7,
+   "hausdorff_mm": 8.382120177710643,
+   "iou": 0.9052011029761339,
+   "max_error_mm": 8.382120177710643
   }
  ],
- "wall_s": 30.33,
+ "wall_s": 23.56,
  "dims": [
   {
    "name": "length",
    "gt_mm": 55.7,
-   "model_mm": 19.3619,
-   "error_mm": -36.3381
+   "model_mm": 56.0717,
+   "error_mm": 0.3717
   },
   {
    "name": "width",
    "gt_mm": 22.399326,
-   "model_mm": 2.179,
-   "error_mm": -20.2203
+   "model_mm": 22.3144,
+   "error_mm": -0.0849
   },
   {
    "name": "thickness",
    "gt_mm": 5.199985,
-   "model_mm": 2.5,
-   "error_mm": -2.7
+   "model_mm": 2.19,
+   "error_mm": -3.01
   }
  ],
  "missed": [
@@ -112,5 +118,5 @@
  "valid": true,
  "valid_reason": "",
  "overlay": "overlay.png",
- "failure": "worst length -36.34 mm; missing hole_1.diameter, hole_2.diameter"
+ "failure": "worst thickness -3.01 mm; missing hole_1.diameter, hole_2.diameter"
 }

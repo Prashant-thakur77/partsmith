@@ -10,13 +10,27 @@ SUMMARY = (
     "Gusset ribs behind the hook arm stiffen it."
 )
 TAGS = ["clip", "snap-fit", "panel", "shelf", "retainer", "screw-on"]
-MEASURE_MAP = {"length": "length", "width": "width", "thickness": "thickness", "hole_1.diameter": "hole_d"}
+# Where each knob moves the outline (normalised model frame; see services/agent/templates/__init__.py).
+REGIONS = {
+    "hook_overhang": [("xz", 0.2, 0.85, 0.55, 1.0, 1)],
+    "arm_height": [("xz", 0.4, 1.0, 0.75, 1.0, 1), ("yz", -1.0, 1.0, 0.75, 1.0, 1)],
+    "arm_thickness": [("xz", 0.45, 0.95, 0.1, 1.0, 1), ("xy", 0.5, 1.0, -1.0, 1.0, 1)],
+    "rib_count": [("xz", 0.8, 1.0, 0.1, 0.7, 0)],
+    "corner_radius": [("xy", -1.0, -0.8, -1.0, -0.6, -1), ("xy", -1.0, -0.8, 0.6, 1.0, -1)],
+}
+MEASURE_MAP = {
+    "length": "length",
+    "width": "width",
+    "thickness": "thickness",
+    "hole_1.diameter": "hole_d",
+    "side.thickness": "arm_height",  # overall height seen in the side photo
+}
 
 PARAMS = {  # name: (default, min, max, step, unit, affects_fit, label)
-    "length": (38.0, 22.0, 80.0, 0.1, "mm", True, "Plate length"),
+    "length": (37.0, 22.0, 80.0, 0.1, "mm", True, "Plate length"),
     "width": (14.0, 10.0, 40.0, 0.1, "mm", True, "Plate width"),
     "thickness": (3.0, 1.5, 6.0, 0.1, "mm", True, "Plate thickness"),
-    "hole_d": (4.2, 2.5, 6.0, 0.05, "mm", True, "Screw hole diameter"),
+    "hole_d": (3.0, 2.5, 6.0, 0.05, "mm", True, "Screw hole diameter"),
     "arm_height": (8.0, 4.0, 20.0, 0.1, "mm", True, "Hook arm height above the plate"),
     "arm_thickness": (2.0, 1.2, 4.0, 0.1, "mm", True, "Hook arm thickness"),
     "hook_overhang": (1.2, 0.6, 3.0, 0.1, "mm", True, "Snap hook overhang"),

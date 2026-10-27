@@ -13,13 +13,13 @@
  "iterations_to_converge": null,
  "strategy": "template",
  "template": "battery_cover",
- "verifier_max_error_mm": 8.143,
+ "verifier_max_error_mm": 8.100000000000001,
  "retake_reason": null,
  "usd": 0.0,
  "tokens_in": 0,
  "tokens_out": 0,
  "model_calls": 9,
- "model_ms": 391,
+ "model_ms": 404,
  "provider_modes": [
   "mock"
  ],
@@ -40,12 +40,12 @@
  "convergence": [
   {
    "iter": 1,
-   "hausdorff_mm": 6.003540621999654,
-   "iou": 0.7235756160271382,
-   "max_error_mm": 8.143
+   "hausdorff_mm": 6.4391424675367555,
+   "iou": 0.6597595292913788,
+   "max_error_mm": 8.100000000000001
   }
  ],
- "wall_s": 11.14,
+ "wall_s": 12.03,
  "dims": [
   {
    "name": "length",

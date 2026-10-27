@@ -13,13 +13,13 @@
  "iterations_to_converge": null,
  "strategy": "template",
  "template": "hinge_leaf",
- "verifier_max_error_mm": 17.849999999999994,
+ "verifier_max_error_mm": 7.558,
  "retake_reason": null,
  "usd": 0.0,
  "tokens_in": 0,
  "tokens_out": 0,
  "model_calls": 9,
- "model_ms": 347,
+ "model_ms": 372,
  "provider_modes": [
   "mock"
  ],
@@ -40,24 +40,24 @@
  "convergence": [
   {
    "iter": 1,
-   "hausdorff_mm": 17.849999999999994,
-   "iou": 0.09706975244752872,
-   "max_error_mm": 17.849999999999994
+   "hausdorff_mm": 6.906587467074087,
+   "iou": 0.5859839085645537,
+   "max_error_mm": 7.558
   }
  ],
- "wall_s": 13.83,
+ "wall_s": 15.51,
  "dims": [
   {
    "name": "length",
    "gt_mm": 55.7,
-   "model_mm": 24.0,
-   "error_mm": -31.7
+   "model_mm": 48.0,
+   "error_mm": -7.7
   },
   {
    "name": "width",
    "gt_mm": 22.399326,
-   "model_mm": 13.9993,
-   "error_mm": -8.4
+   "model_mm": 18.9993,
+   "error_mm": -3.4
   },
   {
    "name": "thickness",
@@ -80,5 +80,5 @@
  "pass_0_5": false,
  "valid": true,
  "valid_reason": "",
- "failure": "worst length -31.70 mm; missing hole_2.diameter"
+ "failure": "worst length -7.70 mm; missing hole_2.diameter"
 }

@@ -2,13 +2,14 @@
 import cadquery as cq
 
 FAMILY = 'spacer'
-OUTLINE = [(5.128, 0.036), (4.694, 2.133), (3.623, 3.627), (1.751, 4.81), (-0.184, 5.108), (-1.985, 4.711), (-3.65, 3.579), (-4.767, 1.862), (-5.128, -0.031), (-4.731, -1.998), (-3.612, -3.692), (-1.966, -4.749), (0.052, -5.108), (2.049, -4.668), (3.683, -3.522), (4.755, -1.878)]
+OUTLINE = [(5.114, -0.403), (4.922, 1.524), (4.049, 3.161), (2.463, 4.5), (0.408, 5.1), (-1.602, 4.857), (-3.282, 3.925), (-4.558, 2.327), (-5.112, 0.429), (-4.908, -1.512), (-3.756, -3.53), (-2.35, -4.584), (-0.557, -5.097), (1.405, -4.905), (3.294, -3.905), (4.544, -2.324)]
 HOLES = [(-0.010, 0.006)]
 SLOTS = []
-MEASURE_MAP = {'thickness': 'thickness', 'hole_1.diameter': 'hole_1_d'}
+BOSSES = []
+MEASURE_MAP = {'thickness': 'thickness', 'side.thickness': 'thickness', 'hole_1.diameter': 'hole_1_d'}
 
 PARAMS = {  # name: (default, min, max, step, unit, affects_fit, label)
-    "thickness": (9.0, 0.8, 40.0, 0.05, "mm", True, "Plate thickness"),
+    "thickness": (9.0, 0.80, 40.0, 0.01, "mm", True, "Plate thickness"),
     "outline_offset": (0.0, -1.0, 1.0, 0.02, "mm", True, "Outline offset (+ grows the outline)"),
     "hole_1_d": (4.21, 1.21, 7.21, 0.05, "mm", True, "hole_1 diameter"),
 }
@@ -28,6 +29,9 @@ def build(p):
         sl, sw = p["slot_" + str(i + 1) + "_l"], p["slot_" + str(i + 1) + "_w"]
         cutter = cq.Workplane("XY").workplane(offset=-1).center(s[0], s[1]).slot2D(sl, sw, s[2]).extrude(t + 2)
         body = body.cut(cutter)
+    if BOSSES:
+        studs = cq.Workplane("XY").workplane(offset=t - 0.2).pushPoints(BOSSES).circle(p["boss_d"] / 2)
+        body = body.union(studs.extrude(p["boss_h"] + 0.2))
     return body
 
 

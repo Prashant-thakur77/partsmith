@@ -1,0 +1,444 @@
+{
+  "top": {
+    "view": "top",
+    "origin": "synthetic",
+    "outline_mm": [
+      [
+        17.139,
+        -4.544
+      ],
+      [
+        17.202,
+        4.499
+      ],
+      [
+        16.661,
+        5.517
+      ],
+      [
+        16.057,
+        5.857
+      ],
+      [
+        -15.53,
+        5.952
+      ],
+      [
+        -16.606,
+        5.572
+      ],
+      [
+        -17.1,
+        4.902
+      ],
+      [
+        -17.236,
+        -3.94
+      ],
+      [
+        -16.892,
+        -5.07
+      ],
+      [
+        -16.065,
+        -5.635
+      ],
+      [
+        -9.229,
+        -5.722
+      ],
+      [
+        -7.933,
+        -5.968
+      ],
+      [
+        -5.876,
+        -5.747
+      ],
+      [
+        -4.396,
+        -5.973
+      ],
+      [
+        -0.225,
+        -5.758
+      ],
+      [
+        2.016,
+        -5.96
+      ],
+      [
+        3.005,
+        -5.744
+      ],
+      [
+        7.011,
+        -5.974
+      ],
+      [
+        8.552,
+        -5.73
+      ],
+      [
+        15.122,
+        -5.713
+      ],
+      [
+        16.447,
+        -5.451
+      ]
+    ],
+    "holes": [
+      {
+        "id": "hole_1",
+        "center_mm": [
+          -12.961,
+          0.09
+        ],
+        "diameter": {
+          "value": 2.856,
+          "source": "measured",
+          "sigma_mm": 0.043,
+          "evidence": {
+            "view": "top",
+            "pixels": [
+              [
+                832.2,
+                940.05
+              ]
+            ],
+            "note": "see-through fit, h=2.5 mm: vertical cylinder whose top and bottom openings overlap by 2.46 mm in the photo; rms 0.030 mm over 123 edge points"
+          }
+        },
+        "roundness_mm": 0.108
+      },
+      {
+        "id": "hole_2",
+        "center_mm": [
+          12.933,
+          0.101
+        ],
+        "diameter": {
+          "value": 2.85,
+          "source": "measured",
+          "sigma_mm": 0.035,
+          "evidence": {
+            "view": "top",
+            "pixels": [
+              [
+                924.04,
+                994.77
+              ]
+            ],
+            "note": "see-through fit, h=2.5 mm: vertical cylinder whose top and bottom openings overlap by 2.58 mm in the photo; rms 0.034 mm over 129 edge points"
+          }
+        },
+        "roundness_mm": 0.149
+      }
+    ],
+    "slots": [],
+    "length": {
+      "value": 34.522,
+      "source": "measured",
+      "sigma_mm": 0.112,
+      "evidence": {
+        "view": "top",
+        "pixels": [
+          [
+            816.89,
+            931.36
+          ],
+          [
+            939.3,
+            1004.38
+          ]
+        ],
+        "note": "long side of the footprint's minimum-area rectangle"
+      }
+    },
+    "width": {
+      "value": 11.964,
+      "source": "measured",
+      "sigma_mm": 0.109,
+      "evidence": {
+        "view": "top",
+        "pixels": [
+          [
+            865.13,
+            989.38
+          ],
+          [
+            890.42,
+            946.06
+          ]
+        ],
+        "note": "short side of the footprint's minimum-area rectangle"
+      }
+    },
+    "thickness": {
+      "value": 2.5,
+      "source": "user_stated",
+      "sigma_mm": 0.3,
+      "evidence": null
+    },
+    "area_mm2": 389.79,
+    "symmetry_axis_deg": 90.06,
+    "symmetry_score": 0.9953,
+    "height_correction_scale": 0.992917,
+    "part_to_mat": [
+      [
+        0.9523051898677505,
+        -0.3051472191433959,
+        102.4388198852539
+      ],
+      [
+        -0.3051472191433959,
+        -0.9523051898677505,
+        182.5143280029297
+      ],
+      [
+        0.0,
+        0.0,
+        1.0
+      ]
+    ],
+    "mask_source": "threshold",
+    "mask_confidence": 0.9574,
+    "notes": [
+      "camera intrinsics: exif; camera 353 mm above the mat, tilt 7.4\u00b0",
+      "sam-3.1 found no part with score \u2265 0.4; deterministic fallback used.",
+      "threshold segmentation: background model from the stage border, contrast 191/255",
+      "mask grown from the brightest faces to 463 mm\u00b2 (shaded walls)",
+      "height-corrected for a 2.50 mm top face: outline mapped onto the mat plane and the top-face plane (scale 0.9929 about the camera nadir) and intersected; through-holes fitted as vertical cylinders to the region where the mat shows through"
+    ]
+  },
+  "side": {
+    "view": "side",
+    "origin": "synthetic",
+    "outline_mm": [
+      [
+        16.896,
+        0.122
+      ],
+      [
+        16.43,
+        0.289
+      ],
+      [
+        8.516,
+        0.336
+      ],
+      [
+        8.045,
+        1.654
+      ],
+      [
+        7.505,
+        2.315
+      ],
+      [
+        6.857,
+        1.883
+      ],
+      [
+        6.331,
+        2.283
+      ],
+      [
+        5.714,
+        2.225
+      ],
+      [
+        4.916,
+        1.737
+      ],
+      [
+        4.213,
+        2.261
+      ],
+      [
+        3.583,
+        2.338
+      ],
+      [
+        2.14,
+        2.015
+      ],
+      [
+        1.605,
+        2.211
+      ],
+      [
+        1.011,
+        1.712
+      ],
+      [
+        0.388,
+        2.261
+      ],
+      [
+        -0.729,
+        1.572
+      ],
+      [
+        -1.675,
+        2.273
+      ],
+      [
+        -2.045,
+        2.036
+      ],
+      [
+        -2.363,
+        2.308
+      ],
+      [
+        -3.009,
+        2.248
+      ],
+      [
+        -3.68,
+        1.885
+      ],
+      [
+        -4.192,
+        2.244
+      ],
+      [
+        -4.939,
+        1.664
+      ],
+      [
+        -5.602,
+        2.171
+      ],
+      [
+        -6.527,
+        1.524
+      ],
+      [
+        -7.521,
+        2.292
+      ],
+      [
+        -8.47,
+        0.441
+      ],
+      [
+        -16.776,
+        0.292
+      ],
+      [
+        -16.974,
+        -0.049
+      ],
+      [
+        -16.979,
+        -1.813
+      ],
+      [
+        -16.589,
+        -2.235
+      ],
+      [
+        16.64,
+        -2.215
+      ],
+      [
+        16.969,
+        -1.924
+      ]
+    ],
+    "holes": [],
+    "slots": [],
+    "length": {
+      "value": 33.983,
+      "source": "measured",
+      "sigma_mm": 0.113,
+      "evidence": {
+        "view": "side",
+        "pixels": [
+          [
+            1069.55,
+            748.55
+          ],
+          [
+            1158.52,
+            635.21
+          ]
+        ],
+        "note": "long side of the footprint's minimum-area rectangle"
+      }
+    },
+    "width": {
+      "value": 4.676,
+      "source": "measured",
+      "sigma_mm": 0.109,
+      "evidence": {
+        "view": "side",
+        "pixels": [
+          [
+            1122.07,
+            697.83
+          ],
+          [
+            1106.3,
+            685.55
+          ]
+        ],
+        "note": "short side of the footprint's minimum-area rectangle"
+      }
+    },
+    "thickness": {
+      "value": 4.676,
+      "source": "measured",
+      "sigma_mm": 0.109,
+      "evidence": {
+        "view": "side",
+        "pixels": [
+          [
+            1122.07,
+            697.83
+          ],
+          [
+            1106.3,
+            685.55
+          ]
+        ],
+        "note": "short side of the footprint's minimum-area rectangle"
+      }
+    },
+    "area_mm2": 116.3,
+    "symmetry_axis_deg": 89.97,
+    "symmetry_score": 0.9695,
+    "height_correction_scale": 0.965599,
+    "part_to_mat": [
+      [
+        0.5562011037944913,
+        0.8310477315640719,
+        98.00921630859375
+      ],
+      [
+        0.8310477315640719,
+        -0.5562011037944913,
+        149.15101623535156
+      ],
+      [
+        0.0,
+        0.0,
+        1.0
+      ]
+    ],
+    "mask_source": "threshold",
+    "mask_confidence": 0.862,
+    "notes": [
+      "camera intrinsics: exif; camera 348 mm above the mat, tilt 4.6\u00b0",
+      "sam-3.1 found no part with score \u2265 0.4; deterministic fallback used.",
+      "threshold segmentation: background model from the stage border, contrast 210/255",
+      "mask grown from the brightest faces to 162 mm\u00b2 (shaded walls)",
+      "height-corrected for a 11.96 mm top face: outline mapped onto the mat plane and the top-face plane (scale 0.9656 about the camera nadir) and intersected; through-holes fitted as vertical cylinders to the region where the mat shows through",
+      "side view: thickness = short side of the profile",
+      "side view: the part stands 4.7 mm tall, clearly above the stated 2.5 mm thickness \u2014 it has features taller than the plate (top-view outline measured at the stated thickness)"
+    ]
+  }
+}

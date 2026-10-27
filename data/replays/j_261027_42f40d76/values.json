@@ -1,0 +1,11 @@
+{
+  "length": 55.3,
+  "width": 16.0,
+  "thickness": 7.5,
+  "pivot_d": 3.6,
+  "pivot_offset": 8.0,
+  "step_depth": 2.5,
+  "catch_length": 15.3,
+  "grip_count": 2.0,
+  "edge_fillet": 0.8
+}

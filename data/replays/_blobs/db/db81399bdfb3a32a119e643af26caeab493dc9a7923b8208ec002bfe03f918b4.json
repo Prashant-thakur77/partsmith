@@ -1,0 +1,203 @@
+{
+  "verified": true,
+  "status": "verified",
+  "reasons": [
+    "side: refined in the photo frame by +0.04 deg, (-0.19, -0.06) mm on the mat",
+    "top: refined in the photo frame by -0.06 deg, (-0.01, -0.01) mm on the mat",
+    "Verified: all 9 P0 tests pass and every measured view is within tolerance.",
+    "side view (photo frame): IoU 0.991 (not gated), mean contour distance 0.04 mm (needs <= 0.15 mm), Hausdorff 0.22 mm (needs <= 0.5 mm)",
+    "side view: small silhouette (11.0 mm across, under 20 mm), so IoU is reported but not gated (it shrinks with size for the same edge error); gated on Hausdorff <= 0.5 mm and mean contour distance <= 0.15 mm, plus its part tests.",
+    "top view (photo frame): IoU 0.993 (not gated), mean contour distance 0.04 mm (needs <= 0.15 mm), Hausdorff 0.18 mm (needs <= 0.5 mm)",
+    "top view: small silhouette (16.0 mm across, under 20 mm), so IoU is reported but not gated (it shrinks with size for the same edge error); gated on Hausdorff <= 0.5 mm and mean contour distance <= 0.15 mm, plus its part tests.",
+    "top view: length, width and holes compared like for like (model rendered with the photo's camera and measured with the same metrology code)."
+  ],
+  "thresholds": {
+    "hausdorff_mm": 0.5,
+    "iou": 0.97
+  },
+  "views": [
+    {
+      "view": "side",
+      "iou": 0.9906937394247038,
+      "hausdorff_mm": 0.21681500331722478,
+      "hd95_mm": 0.11329569895819248,
+      "mean_mm": 0.04228680194399426,
+      "worst_point_mm": [
+        7.030833169376052,
+        7.845994881254107
+      ],
+      "over_area_mm2": 0.9185684233914664,
+      "under_area_mm2": 3.2149894818701323
+    },
+    {
+      "view": "top",
+      "iou": 0.9933488526770868,
+      "hausdorff_mm": 0.1770422254563125,
+      "hd95_mm": 0.07199631191544403,
+      "mean_mm": 0.03771584593396149,
+      "worst_point_mm": [
+        15.693867012633959,
+        8.49822755042274
+      ],
+      "over_area_mm2": 0.18205039643973606,
+      "under_area_mm2": 3.4589575323549853
+    }
+  ],
+  "residuals": [
+    {
+      "feature_id": "side",
+      "quantity": "thickness",
+      "measured_mm": 11.049,
+      "model_mm": 11.0,
+      "delta_mm": -0.04899999999999949,
+      "tol_mm": 0.3,
+      "passed": true
+    },
+    {
+      "feature_id": "outline",
+      "quantity": "width",
+      "measured_mm": 16.025,
+      "model_mm": 16.005,
+      "delta_mm": -0.019999999999999574,
+      "tol_mm": 0.3,
+      "passed": true
+    },
+    {
+      "feature_id": "outline",
+      "quantity": "length",
+      "measured_mm": 32.039,
+      "model_mm": 32.031,
+      "delta_mm": -0.008000000000002672,
+      "tol_mm": 0.3,
+      "passed": true
+    },
+    {
+      "feature_id": "plate",
+      "quantity": "thickness",
+      "measured_mm": 9.6,
+      "model_mm": 9.6,
+      "delta_mm": 0.0,
+      "tol_mm": 0.3,
+      "passed": true
+    }
+  ],
+  "tests": [
+    {
+      "id": "bbox.x",
+      "description": "length (long side of the footprint) == 32.04 +/- 0.3 mm",
+      "value": 32.031,
+      "expected": 32.039,
+      "tol": 0.3,
+      "passed": true,
+      "priority": "P0"
+    },
+    {
+      "id": "bbox.y",
+      "description": "width (short side of the footprint) == 16.02 +/- 0.3 mm",
+      "value": 16.005,
+      "expected": 16.025,
+      "tol": 0.3,
+      "passed": true,
+      "priority": "P0"
+    },
+    {
+      "id": "side.thickness",
+      "description": "side-view thickness (short side of the side silhouette) == 11.05 +/- 0.3 mm",
+      "value": 11.0,
+      "expected": 11.049,
+      "tol": 0.3,
+      "passed": true,
+      "priority": "P0"
+    },
+    {
+      "id": "thickness",
+      "description": "plate thickness == 9.60 +/- 0.3 mm",
+      "value": 9.6,
+      "expected": 9.6,
+      "tol": 0.3,
+      "passed": true,
+      "priority": "P0"
+    },
+    {
+      "id": "valid",
+      "description": "the solid passes the OCCT validity check",
+      "value": 1.0,
+      "expected": null,
+      "tol": null,
+      "passed": true,
+      "priority": "P0"
+    },
+    {
+      "id": "single_solid",
+      "description": "exactly one solid body",
+      "value": 1.0,
+      "expected": null,
+      "tol": null,
+      "passed": true,
+      "priority": "P0"
+    },
+    {
+      "id": "watertight",
+      "description": "the mesh is watertight (printable)",
+      "value": 1.0,
+      "expected": null,
+      "tol": null,
+      "passed": true,
+      "priority": "P0"
+    },
+    {
+      "id": "volume",
+      "description": "volume > 0",
+      "value": 5097.00727091152,
+      "expected": 0.0,
+      "tol": 0.0,
+      "passed": true,
+      "priority": "P0"
+    },
+    {
+      "id": "min_wall",
+      "description": "thinnest wall >= 0.8 mm (FDM)",
+      "value": 4.828748219792181,
+      "expected": 0.8,
+      "tol": 0.0,
+      "passed": true,
+      "priority": "P0"
+    }
+  ],
+  "validity": {
+    "is_valid": true,
+    "single_solid": true,
+    "watertight": true,
+    "volume_mm3": 5097.00727091152,
+    "bbox_mm": [
+      31.938000000000002,
+      15.961,
+      11.3
+    ],
+    "min_wall_mm": 4.828748219792181,
+    "issues": []
+  },
+  "vetoes": [],
+  "max_error_mm": 0.21681500331722478,
+  "origin": "synthetic",
+  "versions": {
+    "verifier": "0.1.0",
+    "opencv": "5.0.0",
+    "numpy": "2.5.4",
+    "scipy": "1.18.1",
+    "trimesh": "5.2.0",
+    "python": "3.12.13",
+    "cadquery": "2.8.0",
+    "ocp": "7.9.3.1"
+  },
+  "hashes": {
+    "code_sha256": "2d5ff0f703d1070bcecb77930b7088512a30e5d7296ff7978fba954af80cb79b",
+    "params_sha256": "465394c3c556c093c3e84a0536294ef1b27e38584e1b729b05f03acd7d4f816c",
+    "measurements_sha256": "d38afbc16c0888912036fd2611cd786e367e5367b6a4a8b5b83c1af83c2d2a34",
+    "partspec_sha256": "237b945ac73eab96692a543f57d0bc1ab2daa19b75aae56c70e4b4943f5d4557",
+    "mesh_sha256": "3646a891768c7dbe27883e623c295f67f374be964640db628d0505af55801cbe",
+    "overlay:residual_side.png": "4bade0c2a115aa0e240ae958aeaeff61b052461350d0953a14b64ec1acea43cc",
+    "overlay:residual_top.png": "865c6ac73f4929eaca0348b7b27f2388a3c05d70a082bd51cd6b4125a9f13b13"
+  },
+  "ms": 871
+}

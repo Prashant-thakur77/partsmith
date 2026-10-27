@@ -2,13 +2,14 @@
 import cadquery as cq
 
 FAMILY = 'cover'
-OUTLINE = [(-15.954, 11.996), (-16.005, -7.89), (-12.089, -11.919), (15.961, -11.888), (15.898, 11.958)]
+OUTLINE = [(-15.954, 11.998), (-16.006, -7.89), (-12.079, -11.932), (15.956, -11.909), (15.918, 11.956)]
 HOLES = []
 SLOTS = []
-MEASURE_MAP = {'thickness': 'thickness'}
+BOSSES = []
+MEASURE_MAP = {'thickness': 'thickness', 'side.thickness': 'thickness'}
 
 PARAMS = {  # name: (default, min, max, step, unit, affects_fit, label)
-    "thickness": (2.1, 0.8, 40.0, 0.05, "mm", True, "Plate thickness"),
+    "thickness": (2.1, 0.80, 40.0, 0.01, "mm", True, "Plate thickness"),
     "outline_offset": (0.0, -1.0, 1.0, 0.02, "mm", True, "Outline offset (+ grows the outline)"),
 }
 
@@ -27,6 +28,9 @@ def build(p):
         sl, sw = p["slot_" + str(i + 1) + "_l"], p["slot_" + str(i + 1) + "_w"]
         cutter = cq.Workplane("XY").workplane(offset=-1).center(s[0], s[1]).slot2D(sl, sw, s[2]).extrude(t + 2)
         body = body.cut(cutter)
+    if BOSSES:
+        studs = cq.Workplane("XY").workplane(offset=t - 0.2).pushPoints(BOSSES).circle(p["boss_d"] / 2)
+        body = body.union(studs.extrude(p["boss_h"] + 0.2))
     return body
 
 

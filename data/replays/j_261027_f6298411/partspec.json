@@ -1,0 +1,122 @@
+{
+  "family": "clip",
+  "units": "mm",
+  "title": "Snap retaining clip (family hint 'clip')",
+  "base_profile": {
+    "kind": "polyline",
+    "points_mm": [
+      [
+        -21.72,
+        -8.0
+      ],
+      [
+        -20.969,
+        -8.715
+      ],
+      [
+        -20.305,
+        -8.995
+      ],
+      [
+        21.731,
+        -8.916
+      ],
+      [
+        21.864,
+        6.755
+      ],
+      [
+        21.409,
+        7.009
+      ],
+      [
+        18.577,
+        7.007
+      ],
+      [
+        18.342,
+        8.87
+      ],
+      [
+        17.377,
+        9.049
+      ],
+      [
+        15.593,
+        8.941
+      ],
+      [
+        14.445,
+        8.426
+      ],
+      [
+        14.204,
+        7.22
+      ],
+      [
+        13.963,
+        7.025
+      ],
+      [
+        -20.498,
+        6.965
+      ],
+      [
+        -21.338,
+        6.504
+      ],
+      [
+        -21.866,
+        5.44
+      ],
+      [
+        -21.922,
+        -7.134
+      ]
+    ],
+    "source": "measured",
+    "sigma_mm": 0.1
+  },
+  "thickness": {
+    "value": 3.0,
+    "source": "user_stated",
+    "sigma_mm": 0.3,
+    "evidence": null
+  },
+  "features": [
+    {
+      "kind": "through_hole",
+      "id": "hole_1",
+      "center_mm": [
+        -17.415,
+        -1.007
+      ],
+      "diameter": {
+        "value": 3.55,
+        "source": "measured",
+        "sigma_mm": 0.061,
+        "evidence": {
+          "view": "top",
+          "pixels": [
+            [
+              959.16,
+              616.58
+            ]
+          ],
+          "note": "see-through fit, h=3.0 mm: vertical cylinder whose top and bottom openings overlap by 2.76 mm in the photo; rms 0.019 mm over 133 edge points"
+        }
+      },
+      "countersink": false
+    }
+  ],
+  "broken_region": null,
+  "fit": {
+    "clearance_mm": 0.2,
+    "material": "PLA",
+    "printer": "FDM_0_4"
+  },
+  "unknowns": [],
+  "intent": "Make a replacement for this broken snap retaining clip.",
+  "refusal": null,
+  "template_hint": "clip"
+}

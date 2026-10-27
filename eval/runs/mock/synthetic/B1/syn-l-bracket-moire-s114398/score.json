@@ -23,7 +23,7 @@
  "provider_modes": [],
  "providers": {},
  "convergence": [],
- "wall_s": 0.77,
+ "wall_s": 0.65,
  "valid": false,
  "valid_reason": "no part program",
  "dims": [],

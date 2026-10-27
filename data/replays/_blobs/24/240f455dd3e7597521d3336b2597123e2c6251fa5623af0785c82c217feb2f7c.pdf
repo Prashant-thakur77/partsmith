@@ -1,0 +1,166 @@
+%PDF-1.4
+%“Œ‹ž ReportLab Generated PDF document (opensource)
+1 0 obj
+<<
+/F1 2 0 R /F2 3 0 R
+>>
+endobj
+2 0 obj
+<<
+/BaseFont /Helvetica /Encoding /WinAnsiEncoding /Name /F1 /Subtype /Type1 /Type /Font
+>>
+endobj
+3 0 obj
+<<
+/BaseFont /Helvetica-Bold /Encoding /WinAnsiEncoding /Name /F2 /Subtype /Type1 /Type /Font
+>>
+endobj
+4 0 obj
+<<
+/Contents 8 0 R /MediaBox [ 0 0 419.5276 595.2756 ] /Parent 7 0 R /Resources <<
+/Font 1 0 R /ProcSet [ /PDF /Text /ImageB /ImageC /ImageI ]
+>> /Rotate 0 /Trans <<
+
+>> 
+  /Type /Page
+>>
+endobj
+5 0 obj
+<<
+/PageMode /UseNone /Pages 7 0 R /Type /Catalog
+>>
+endobj
+6 0 obj
+<<
+/Author (anonymous) /CreationDate (D:20000101000000+00'00') /Creator (anonymous) /Keywords () /ModDate (D:20000101000000+00'00') /Producer (ReportLab PDF Library - \(opensource\)) 
+  /Subject (unspecified) /Title (Repair card - Caster wheel \(family hint 'wheel'\)) /Trapped /False
+>>
+endobj
+7 0 obj
+<<
+/Count 1 /Kids [ 4 0 R ] /Type /Pages
+>>
+endobj
+8 0 obj
+<<
+/Length 3638
+>>
+stream
+1 0 0 1 0 0 cm  BT /F1 12 Tf 14.4 TL ET
+.705882 .078431 .078431 rg
+n 0 575.4331 419.5276 19.84252 re f*
+1 1 1 rg
+BT /F2 8 Tf 9.6 TL ET
+BT 1 0 0 1 34.01575 581.1024 Tm (SYNTHETIC \267 MOCK MODELS \227 not a real-world measurement) Tj T* ET
+BT /F1 8 Tf 9.6 TL ET
+.501961 .501961 .501961 rg
+BT 1 0 0 1 34.01575 544.252 Tm (PartSmith repair card) Tj T* ET
+BT /F2 16 Tf 19.2 TL ET
+0 0 0 rg
+BT 1 0 0 1 34.01575 532.652 Tm (Caster wheel \(family hint 'wheel'\)) Tj T* ET
+BT /F1 9 Tf 10.8 TL ET
+0 0 0 rg
+BT 1 0 0 1 34.01575 509.452 Tm (Family: wheel) Tj T* ET
+.705882 .32549 .035294 rg
+n
+38.26772 482.2287 m
+143.1496 482.2287 l
+145.5001 482.2287 147.4016 484.1302 147.4016 486.4807 c
+147.4016 497.8193 l
+147.4016 500.1698 145.5001 502.0713 143.1496 502.0713 c
+38.26772 502.0713 l
+35.91723 502.0713 34.01575 500.1698 34.01575 497.8193 c
+34.01575 486.4807 l
+34.01575 484.1302 35.91723 482.2287 38.26772 482.2287 c
+h
+f*
+1 1 1 rg
+BT /F2 9 Tf 10.8 TL ET
+BT 1 0 0 1 39.68504 487.898 Tm (BEST EFFORT) Tj T* ET
+BT /F1 8 Tf 9.6 TL ET
+0 0 0 rg
+BT 1 0 0 1 34.01575 465.2209 Tm (Max error: 0.92 mm  \(pass: <= 0.5 mm, IoU >= 0.97\)) Tj T* ET
+BT /F1 8 Tf 9.6 TL ET
+0 0 0 rg
+BT 1 0 0 1 34.01575 453.6209 Tm (side: IoU 0.976, Hausdorff 0.92 mm, mean 0.17 mm) Tj T* ET
+BT /F1 8 Tf 9.6 TL ET
+0 0 0 rg
+BT 1 0 0 1 34.01575 442.0209 Tm (top: IoU 0.993, Hausdorff 0.22 mm, mean 0.05 mm) Tj T* ET
+BT /F1 8 Tf 9.6 TL ET
+0 0 0 rg
+BT 1 0 0 1 34.01575 430.4209 Tm (Part tests: 21/21 passed) Tj T* ET
+BT /F1 8 Tf 9.6 TL ET
+0 0 0 rg
+BT 1 0 0 1 34.01575 418.8209 Tm (- side: refined in the photo frame by +0.25 deg, \(-0.00, +0.08\) mm on the mat) Tj T* ET
+BT /F1 8 Tf 9.6 TL ET
+0 0 0 rg
+BT 1 0 0 1 34.01575 407.2209 Tm (- top: refined in the photo frame by -0.16 deg, \(-0.01, +0.03\) mm on the mat) Tj T* ET
+BT /F1 8 Tf 9.6 TL ET
+0 0 0 rg
+BT 1 0 0 1 34.01575 395.6209 Tm (- side view \(photo frame\): IoU 0.976 \(not gated\), mean contour distance 0.17 mm \(needs <= 0.15 mm\), Hausdorff 0.92 mm \(needs <= 0.5 mm\) \(worst at x=34.0, y=-6.8 mm\) - fails) Tj T* ET
+BT /F2 10 Tf 12 TL ET
+0 0 0 rg
+BT 1 0 0 1 34.01575 378.3516 Tm (Key dimensions) Tj T* ET
+BT /F1 8.5 Tf 10.2 TL ET
+0 0 0 rg
+BT 1 0 0 1 34.01575 363.8516 Tm (Length: 61.73 mm \261 0.10   [measured]) Tj T* ET
+BT /F1 8.5 Tf 10.2 TL ET
+0 0 0 rg
+BT 1 0 0 1 34.01575 351.5266 Tm (Width: 61.69 mm \261 0.10   [measured]) Tj T* ET
+BT /F1 8.5 Tf 10.2 TL ET
+0 0 0 rg
+BT 1 0 0 1 34.01575 339.2016 Tm (Thickness: 15.00 mm \261 0.30   [user stated]) Tj T* ET
+BT /F1 8.5 Tf 10.2 TL ET
+0 0 0 rg
+BT 1 0 0 1 34.01575 326.8766 Tm (hole_1 \330: 12.71 mm \261 0.06   [measured]) Tj T* ET
+BT /F1 8.5 Tf 10.2 TL ET
+0 0 0 rg
+BT 1 0 0 1 34.01575 314.5516 Tm (hole_2 \330: 12.71 mm \261 0.06   [measured]) Tj T* ET
+BT /F1 8.5 Tf 10.2 TL ET
+0 0 0 rg
+BT 1 0 0 1 34.01575 302.2266 Tm (hole_3 \330: 12.70 mm \261 0.05   [measured]) Tj T* ET
+BT /F1 8.5 Tf 10.2 TL ET
+0 0 0 rg
+BT 1 0 0 1 34.01575 289.9016 Tm (hole_4 \330: 7.18 mm \261 0.06   [measured]) Tj T* ET
+BT /F2 10 Tf 12 TL ET
+0 0 0 rg
+BT 1 0 0 1 34.01575 271.9073 Tm (Print settings \(suggested\)) Tj T* ET
+BT /F1 8.5 Tf 10.2 TL ET
+0 0 0 rg
+BT 1 0 0 1 34.01575 257.4073 Tm (PLA, 0.4 mm nozzle, 0.2 mm layers) Tj T* ET
+BT /F1 8.5 Tf 10.2 TL ET
+0 0 0 rg
+BT 1 0 0 1 34.01575 245.0823 Tm (4 walls, 40% infill, supports: no) Tj T* ET
+BT /F1 8.5 Tf 10.2 TL ET
+0 0 0 rg
+BT 1 0 0 1 34.01575 232.7573 Tm (Orientation: -Z: mounting face \(Z=0\) on the bed, as modelled) Tj T* ET
+BT /F1 7 Tf 8.4 TL ET
+.501961 .501961 .501961 rg
+BT 1 0 0 1 34.01575 17.00787 Tm (All lengths in millimetres. Verified status is decided by PartSmith's deterministic verifier.  Job j_261027_06f86614) Tj T* ET
+ 
+endstream
+endobj
+xref
+0 9
+0000000000 65535 f 
+0000000061 00000 n 
+0000000102 00000 n 
+0000000209 00000 n 
+0000000321 00000 n 
+0000000524 00000 n 
+0000000592 00000 n 
+0000000895 00000 n 
+0000000954 00000 n 
+trailer
+<<
+/ID 
+[<673f09768c36c5df08d8cedbeb0cc452><673f09768c36c5df08d8cedbeb0cc452>]
+% ReportLab generated PDF document -- digest (opensource)
+
+/Info 6 0 R
+/Root 5 0 R
+/Size 9
+>>
+startxref
+4643
+%%EOF

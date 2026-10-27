@@ -11,15 +11,15 @@
  "verified": false,
  "iterations": 1,
  "iterations_to_converge": null,
- "strategy": "template",
- "template": "battery_cover",
- "verifier_max_error_mm": 9.789000000000001,
+ "strategy": "free_code",
+ "template": null,
+ "verifier_max_error_mm": 10.197000000000003,
  "retake_reason": null,
  "usd": 0.0,
  "tokens_in": 0,
  "tokens_out": 0,
  "model_calls": 5,
- "model_ms": 122,
+ "model_ms": 138,
  "provider_modes": [
   "mock"
  ],
@@ -40,33 +40,33 @@
  "convergence": [
   {
    "iter": 1,
-   "hausdorff_mm": 8.454880247525686,
-   "iou": 0.7634986329166907,
-   "max_error_mm": 9.789000000000001
+   "hausdorff_mm": 9.254267403968662,
+   "iou": 0.7742917639824857,
+   "max_error_mm": 10.197000000000003
   }
  ],
- "wall_s": 6.34,
+ "wall_s": 7.4,
  "dims": [
   {
    "name": "length",
    "gt_mm": 85.6,
-   "model_mm": 76.0,
-   "error_mm": -9.6,
+   "model_mm": 75.5419,
+   "error_mm": -10.0581,
    "within_spec": false
   },
   {
    "name": "width",
    "gt_mm": 53.98,
-   "model_mm": 48.0,
-   "error_mm": -5.98,
+   "model_mm": 47.6749,
+   "error_mm": -6.3051,
    "within_spec": false
   },
   {
    "name": "thickness",
    "gt_mm": 0.76,
-   "model_mm": 4.5,
-   "error_mm": 3.74,
-   "within_spec": false
+   "model_mm": 0.76,
+   "error_mm": 0.0,
+   "within_spec": true
   }
  ],
  "missed": [],
@@ -75,5 +75,5 @@
  "pass_0_5": false,
  "valid": true,
  "valid_reason": "",
- "failure": "worst length -9.60 mm"
+ "failure": "worst length -10.06 mm"
 }
