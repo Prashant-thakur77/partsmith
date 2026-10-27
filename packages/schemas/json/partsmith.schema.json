@@ -580,7 +580,8 @@
             "glare",
             "moire",
             "scale",
-            "contrast"
+            "contrast",
+            "single_part"
           ],
           "title": "Name",
           "type": "string"

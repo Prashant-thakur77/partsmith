@@ -7,6 +7,7 @@ tests) and are meant to be re-tuned on real phone photos.
 
 from __future__ import annotations
 
+from collections.abc import Sequence
 from typing import Any, Literal, cast
 
 import cv2
@@ -58,6 +59,9 @@ CONTRAST_MIN_LARGEST_FRACTION = 0.85
 CONTRAST_MIN_SOLIDITY = 0.25
 # A part whose colour is the stage colour slightly darkened (white, off-white, light grey on a white stage) cannot be
 # told from its own shadow or reliably from the stage.
+# A second object counts when it is at least this big (mm²) and this share of the largest one.
+SINGLE_PART_MIN_MM2 = 20.0
+SINGLE_PART_REL = 0.05
 CONE_CHROMA_TOL = 16.0  # same tolerance the segmenter uses to call a part shadow-coloured
 CONE_MIN_RATIO = 0.50  # the segmenter's SHADOW_MIN_RATIO: such parts cannot be told from their own shadow
 
@@ -553,7 +557,36 @@ def check_contrast(
     )
 
 
-_ORDER = ("markers", "reprojection", "scale", "coverage", "contrast", "glare", "tilt", "blur", "moire", "exposure")
+def check_single_part(components_mm2: Sequence[float] | None) -> CaptureCheck:
+    """Fail when the stage holds two or more substantial, separate objects. Holes, slots and thin features of one part
+    never make separate pieces (the segmenter counts pieces before removing thin features, sized after)."""
+    if not components_mm2:
+        return _check("single_part", "ok", "One object checked (no separate pieces to compare).")
+    big = [a for a in components_mm2 if a >= max(SINGLE_PART_MIN_MM2, SINGLE_PART_REL * components_mm2[0])]
+    if len(big) >= 2:
+        return _check(
+            "single_part",
+            "fail",
+            "Two separate objects are on the mat — photograph one part at a time.",
+            len(big),
+            1,
+        )
+    return _check("single_part", "ok", "One part on the stage.", len(big), 1)
+
+
+_ORDER = (
+    "markers",
+    "reprojection",
+    "scale",
+    "single_part",
+    "coverage",
+    "contrast",
+    "glare",
+    "tilt",
+    "blur",
+    "moire",
+    "exposure",
+)
 
 
 def run_gate(
@@ -563,6 +596,7 @@ def run_gate(
     *,
     pose: PoseEstimate | None = None,
     largest_fraction: float | None = None,
+    components_mm2: Sequence[float] | None = None,
 ) -> CaptureReport:
     """All capture checks. `mask` (full-frame part mask) enables the coverage, contrast and part-exposure checks;
     `largest_fraction` (share of the segmenter's foreground in its largest component) feeds the contrast check."""
@@ -584,5 +618,9 @@ def run_gate(
         check_moire(img, det, mask),
         check_scale(det),
     ]
+    # Separate pieces only mean separate objects when the part stands out cleanly: with low contrast or glare the
+    # pieces are fragments of one part or glare blobs, and those checks already ask for a retake.
+    unreliable = any(c.name in ("contrast", "glare") and c.severity == "fail" for c in checks)
+    checks.insert(5, check_single_part(None if unreliable else components_mm2))
     fails = sorted((c for c in checks if c.severity == "fail"), key=lambda c: _ORDER.index(c.name))
     return CaptureReport(passed=not fails, checks=checks, retake_reason=fails[0].reason if fails else None)

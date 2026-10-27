@@ -37,6 +37,7 @@ def test_good_photo_passes(good: T.Scene) -> None:
         "blur",
         "coverage",
         "contrast",
+        "single_part",
         "tilt",
         "exposure",
         "glare",
@@ -128,3 +129,33 @@ def test_saturated_colour_is_not_clipping(bgr: tuple[int, int, int]) -> None:
     sc = T.render_part_scene(MAT, cam, part)
     _, c = _checks(T.add_noise(sc.image, 2.0), sc.mask)
     assert c["exposure"].severity == "ok", c["exposure"].reason
+
+
+def test_single_part() -> None:
+    from services.metrology.measure import measure_photo
+    from services.metrology.segment import ThresholdSegmenter
+
+    cam = T.camera_above(CENTRE, height_mm=260, tilt_deg=6, azimuth_deg=20)
+    two = [T.PrismPart(T.rect_poly(85, 65, 30, 15), [], 3.0), T.PrismPart(T.circle_poly(130, 70, 9.0), [], 3.0)]
+    out = measure_photo(
+        T.render_scene(MAT, cam.K, cam.R, cam.t, cam.size, two).image,
+        "top",
+        segmenter=ThresholdSegmenter(),
+        thickness_mm=3.0,
+        K=cam.K,
+    )
+    c = next(x for x in out.result.capture.checks if str(x.name) == "single_part")
+    assert c.severity == "fail" and c.reason == "Two separate objects are on the mat — photograph one part at a time."
+    # One part with holes, a slot and an arm joined by a 0.8 mm neck: one object.
+    plate = T.PrismPart(T.rect_poly(100, 65, 40, 20), [T.circle_poly(90, 65, 5.0), T.slot_poly(108, 65, 10, 3)], 3.0)
+    neck = T.PrismPart(T.rect_poly(122.4, 65, 5.0, 0.8), [], 3.0)
+    arm = T.PrismPart(T.rect_poly(130, 65, 10, 8), [], 3.0)
+    out1 = measure_photo(
+        T.render_scene(MAT, cam.K, cam.R, cam.t, cam.size, [plate, neck, arm]).image,
+        "top",
+        segmenter=ThresholdSegmenter(),
+        thickness_mm=3.0,
+        K=cam.K,
+    )
+    c1 = next(x for x in out1.result.capture.checks if str(x.name) == "single_part")
+    assert c1.severity == "ok", c1.reason

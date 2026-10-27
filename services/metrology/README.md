@@ -12,7 +12,7 @@ photo ─▶ detect_mat (ArUco ring → mat id, sub-pixel corners, RANSAC homogr
       ─▶ refine_mask + mask_contour_subpx (sub-pixel outer/hole contours)
       ─▶ footprint in mat mm (mat plane ∩ top-face plane when the thickness is known)
       ─▶ features (part frame, outline, holes, slots, symmetry, σ per value) ─▶ MeasureResult + overlay PNG
-run_gate checks the photo (markers, reprojection, blur, coverage, tilt, exposure, glare, moiré, scale) with one
+run_gate checks the photo (markers, reprojection, blur, coverage, contrast, single part, tilt, exposure, glare, moiré, scale) with one
 actionable sentence per check.
 ```
 
@@ -102,13 +102,18 @@ the local inside level, not of the part's median contrast.
   strictly lower; unmatched point holes are added. `region_grow_points()` is the deterministic (mock) point segmenter.
 - `orbit.measure_orbit(video | frames, segment_video_call, *, fps, K, ...)`: per-frame mat + pose (frames with < 4
   markers or > 1.5 px residual are dropped and counted), masks from the video call or the threshold segmenter, best frame
-  per 15° azimuth bin (6–24 views). Footprint = intersection of the ground silhouettes (bottom slice of the visual hull);
-  height = hull height sampled on the outline, where it is tight (`max_height`, measured, "orbit, N frames");
-  `hull_upper_bound_mm` and `height_map` cover the inside, where silhouettes only bound it. `OrbitFrame.camera_view_kwargs`
+  per 15° azimuth bin (6–24 views). Footprint = intersection of the ground silhouettes (bottom slice of the visual hull).
+  Height = the lowest heights that still block every silhouette-edge ray (each ray walked back until it enters the
+  hull of the other views; two views must agree per cell): a lower bound that is tight at real top edges, on the
+  outline or inside it (`max_height`, measured, "orbit, N frames"). `height_map` / `hull_upper_bound_mm` give the hull
+  (upper bound), `height_map_lower` the lower bound. Pixels the threshold fallback could not see (off the stage) are
+  unknown, not background. A note says when the views cover too little of the circle. `OrbitFrame.camera_view_kwargs`
   gives the verifier's `CameraView` fields.
 - `recon_gate.gate_reconstruction(original_rectified, reconstructed, keep_mask, mat)`: markers must re-detect within 1 px,
-  the intact part must keep IoU ≥ 0.98 and colour Δ ≤ 12; the completion (new material attached to the part) comes back
-  as a mask, outline in mat mm and an area labelled `inferred`.
+  the intact part must keep IoU ≥ 0.98 and colour Δ ≤ 12, nothing else around the part may change, and the completion
+  itself must be plausible: joined to the part along ≥ 1 mm, the part's colour and texture, solid (not scattered cells),
+  free of marker-like squares, bounded in size (by `expected_mm` when given), continuing the outline within 40° at the
+  joins. It comes back as a mask, outline in mat mm and an area labelled `inferred`.
 
 ## Fit check
 

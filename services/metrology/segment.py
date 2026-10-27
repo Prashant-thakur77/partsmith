@@ -55,6 +55,7 @@ class SegResult:
     attempts: list[dict[str, Any]] = field(default_factory=list)
     notes: list[str] = field(default_factory=list)
     largest_fraction: float | None = None  # share of the raw foreground in the kept component (fragmentation)
+    components_mm2: list[float] = field(default_factory=list)  # separate foreground pieces ≥ 1 mm², largest first
     background: Callable[[NDArray[np.float64]], NDArray[np.float64]] | None = None  # stage colour model at image px
 
 
@@ -87,6 +88,13 @@ def fill_holes(mask: BoolMask, max_area_px: float | None = None) -> BoolMask:
         if max_area_px is None or area <= max_area_px:
             out[lab == i] = True
     return out
+
+
+def components_mm2(mask: BoolMask, px_per_mm2: float, min_mm2: float = 1.0) -> list[float]:
+    """Areas (mm², largest first) of the separate pieces of a foreground mask."""
+    _, _, stats, _ = cv2.connectedComponentsWithStats(np.asarray(mask, np.uint8), connectivity=8)
+    a = sorted((float(x) / px_per_mm2 for x in stats[1:, cv2.CC_STAT_AREA]), reverse=True)
+    return [round(x, 2) for x in a if x >= min_mm2]
 
 
 def _largest_fraction(mask: BoolMask, px_per_mm2: float, min_mm2: float = 1.0) -> float:
@@ -147,6 +155,36 @@ class Contour:
     area_px: float
 
 
+REMAP_MAX_ROWS = 32000  # cv2.remap maps must stay under SHRT_MAX rows/cols
+
+
+def sample_bilinear(
+    field: NDArray[np.float32], xs: NDArray[np.float64], ys: NDArray[np.float64], border: str = "constant"
+) -> NDArray[np.float32]:
+    """Bilinear samples of a single-channel float image at arbitrary points (any count, any array shape).
+
+    `cv2.remap` limits its map to SHRT_MAX rows, so points are laid out in blocks of at most 1024 columns and
+    `REMAP_MAX_ROWS` rows. Outside the image: 0 (`border="constant"`) or the nearest edge value ("replicate")."""
+    shape = np.shape(xs)
+    x = np.asarray(xs, dtype=np.float32).ravel()
+    y = np.asarray(ys, dtype=np.float32).ravel()
+    n = len(x)
+    out = np.empty(n, np.float32)
+    mode = cv2.BORDER_REPLICATE if border == "replicate" else cv2.BORDER_CONSTANT
+    cols = 1024
+    block = cols * REMAP_MAX_ROWS
+    for s0 in range(0, n, block):
+        xb, yb = x[s0 : s0 + block], y[s0 : s0 + block]
+        m = len(xb)
+        rows = -(-m // cols)
+        pad = rows * cols - m
+        mx = np.pad(xb, (0, pad), constant_values=-1e6).reshape(rows, cols)
+        my = np.pad(yb, (0, pad), constant_values=-1e6).reshape(rows, cols)
+        v = cv2.remap(np.asarray(field, np.float32), mx, my, cv2.INTER_LINEAR, borderMode=mode, borderValue=0.0)
+        out[s0 : s0 + m] = np.asarray(v, np.float32).ravel()[:m]
+    return out.reshape(shape)
+
+
 def _refine_along_normals(field_up: F32, pts: F64, reach: float = 2.5, step: float = 0.25) -> F64:
     """Move contour points (upsampled grid) to the nearest 0.5 crossing of `field_up` along the local normal."""
     n = len(pts)
@@ -159,16 +197,7 @@ def _refine_along_normals(field_up: F32, pts: F64, reach: float = 2.5, step: flo
     nrm = np.c_[-tang[:, 1], tang[:, 0]]
     offs = np.arange(-reach, reach + 1e-9, step)
     samp = pts[:, None, :] + offs[None, :, None] * nrm[:, None, :]
-    vals = (
-        cv2.remap(
-            field_up,
-            samp[..., 0].astype(np.float32),
-            samp[..., 1].astype(np.float32),
-            cv2.INTER_LINEAR,
-            borderMode=cv2.BORDER_REPLICATE,
-        ).astype(np.float64)
-        - 0.5
-    )
+    vals = sample_bilinear(field_up, samp[..., 0], samp[..., 1], border="replicate").astype(np.float64) - 0.5
     sign_change = vals[:, :-1] * vals[:, 1:] <= 0
     mid = (offs[:-1] + offs[1:]) / 2
     score = np.where(sign_change, np.abs(mid)[None, :], np.inf)
@@ -489,6 +518,16 @@ class ThresholdSegmenter:
             if grown.sum() > 1.02 * core.sum():
                 notes.append(f"mask grown from the brightest faces to {grown.sum() / px_mm**2:.0f} mm² (shaded walls)")
             core = grown
+        # Separate objects: pieces of everything that differs from the stage (a thin neck or a dim wall still joins
+        # one part), each sized by its area after thin-line removal (a drawn line on its own is not an object).
+        low = (((dist > floor) & inside & ~shadow_like) | (cand > 0)).astype(np.uint8)
+        thick = low.copy()
+        if self.min_line_mm > 0:
+            op = cv2.morphologyEx(low, cv2.MORPH_OPEN, k)
+            thick = ((low > 0) & (cv2.dilate(op, k) > 0)).astype(np.uint8)
+        _, lab_p = cv2.connectedComponents(low, connectivity=8)
+        counts = np.bincount(lab_p[thick > 0].ravel(), minlength=int(lab_p.max()) + 1)[1:]
+        pieces = [round(float(c) / px_mm**2, 2) for c in sorted(counts, reverse=True) if c / px_mm**2 >= 1.0]
         part_like_shadow = False
         if self.suppress_shadows:
             er = cv2.erode(core.astype(np.uint8), _disk(3)) > 0
@@ -557,6 +596,7 @@ class ThresholdSegmenter:
                 *notes,
             ],
             largest_fraction=largest_fraction,
+            components_mm2=pieces,
             background=_bg_model(coef, x0, y0, sx, sy),
         )
 
@@ -646,6 +686,7 @@ class ProviderSegmenter:
                 ladder.append(p)
         attempts: list[dict[str, Any]] = []
         best: tuple[BoolMask, float, str] | None = None
+        best_good: list[tuple[BoolMask, float]] = []
         for p in ladder:
             try:
                 cands = self._run(img, p)
@@ -658,6 +699,8 @@ class ProviderSegmenter:
                 if self._plausible(m, context)
             ]
             top = max(good, key=lambda c: c[1]) if good else None
+            if top is not None and (best is None or top[1] > best[1]):
+                best_good = good
             attempts.append(
                 {"prompt": p, "n_masks": len(cands), "best_score": None if top is None else round(top[1], 4)}
             )
@@ -680,13 +723,19 @@ class ProviderSegmenter:
             return res
         mask, score, used = best
         notes: list[str] = []
+        pieces: list[float] = []
+        if context is not None:
+            st = context.det.mat.stage
+            ppm2 = context.det.px_per_mm_at((st.x_mm + st.w_mm / 2, st.y_mm + st.h_mm / 2)) ** 2
+            # every confident, separate instance the segmenter returned (two parts → two masks), and the pieces of each
+            pieces = sorted((a for m, _ in best_good for a in components_mm2(m, ppm2)), reverse=True)
         if self.crop_refine:
             refined = self._crop_refine(img, mask, used)
             if refined is not None:
                 mask, crop_score = refined
                 score = max(score, crop_score)
                 notes.append("mask re-segmented on a full-resolution crop")
-        return SegResult(mask, score, self.source, prompt=used, attempts=attempts, notes=notes)
+        return SegResult(mask, score, self.source, prompt=used, attempts=attempts, notes=notes, components_mm2=pieces)
 
     def _crop_refine(self, img: U8, mask: BoolMask, prompt: str) -> tuple[BoolMask, float] | None:
         bb = _bbox(mask)

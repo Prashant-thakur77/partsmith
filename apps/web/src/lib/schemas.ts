@@ -90,7 +90,7 @@ export interface CameraPose {
 }
 
 export interface CaptureCheck {
-  name: "markers" | "reprojection" | "blur" | "coverage" | "tilt" | "exposure" | "glare" | "moire" | "scale" | "contrast";
+  name: "markers" | "reprojection" | "blur" | "coverage" | "tilt" | "exposure" | "glare" | "moire" | "scale" | "contrast" | "single_part";
   passed: boolean;
   severity: "ok" | "warn" | "fail";
   value?: number | null;

@@ -90,3 +90,37 @@ def test_orbit_rejects_bad_frames_and_reports_coverage() -> None:
     out = measure_orbit(frames, None, fps=5)
     assert out.rejected.get("no mat") == 1 and out.n_usable == 4
     assert out.azimuth_bins == 4 and any("walk further around" in n for n in out.notes)
+
+
+def test_orbit_finds_an_interior_arm() -> None:
+    """A 2.4 mm arm standing 10 mm tall inside a 44 × 16 mm, 3 mm plate (a clip): no outline point reaches the arm, and
+    the hull alone reads the roof over the plate (far too high). The silhouette edges that only the arm can block give
+    its height."""
+    cx, cy = C
+    part = [
+        T.PrismPart(T.rounded_rect_poly(cx, cy, 44, 16, 2), [], 3.0),
+        T.PrismPart(T.rect_poly(cx + 5, cy, 2.4, 10), [], 10.0),
+    ]
+    frames = []
+    for az in np.arange(0, 360, 30):
+        cam = T.camera_above(C, height_mm=320, tilt_deg=30, azimuth_deg=float(az), f_px=1000, size=(1000, 750))
+        frames.append(T.render_scene("screen-l", cam.K, cam.R, cam.t, cam.size, part).image)
+    out = measure_orbit(frames, None, fps=5)
+    assert out.max_height is not None and out.hull_upper_bound_mm is not None
+    err = abs(out.max_height.value - 10.0)
+    assert err < max(1.0, 3 * out.max_height.sigma_mm)
+    assert out.hull_upper_bound_mm > 14.0  # the hull alone would have been badly wrong
+    assert out.height_map_lower is not None and out.azimuth_coverage_deg >= 300
+
+
+def test_sample_bilinear_handles_any_point_count() -> None:
+    from services.metrology.segment import sample_bilinear
+
+    field = np.zeros((1500, 2000), np.float32)
+    field[500:1000, 500:1500] = 1.0
+    xs = np.random.default_rng(0).uniform(0, 2000, 100_000)
+    ys = np.random.default_rng(1).uniform(0, 1500, 100_000)
+    v = sample_bilinear(field, xs, ys)
+    inside = (xs > 501) & (xs < 1498) & (ys > 501) & (ys < 998)
+    assert v.shape == xs.shape and np.all(v[inside] == 1.0)
+    assert sample_bilinear(field, np.array([[-5.0]]), np.array([[3.0]])).shape == (1, 1)

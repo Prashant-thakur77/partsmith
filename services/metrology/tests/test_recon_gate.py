@@ -59,3 +59,52 @@ def test_resized_and_misshaped_outputs() -> None:
     assert g.marker_shift_px is not None  # resized back before comparing
     square = cv2.resize(DONE.image, (w, w))
     assert not gate_reconstruction(ORIG, square, KEEP, MAT).ok
+
+
+def _px(pt_mm: tuple[float, float]) -> tuple[int, int]:
+    p = ORIG.mm_to_px(np.array([pt_mm]))[0]
+    return round(p[0]), round(p[1])
+
+
+def test_junk_patch_with_marker_fragment_is_rejected() -> None:
+    """What a mock image model produced: a whitish patch over the break carrying a fragment of a marker."""
+    for offset in (0, 8):  # the dark cells touching the part, or floating in the patch
+        junk = ORIG.image.copy()
+        x0, y0 = _px((117, 62))
+        x1, y1 = _px((128, 74))
+        junk[y0:y1, x0:x1] = (226, 226, 226)
+        cell = 9  # ≈ 1.5 mm cells at 6 px/mm, black-and-white like a marker
+        for i in range(4):
+            for j in range(4):
+                if (i + j) % 2 == 0:
+                    ys, xs = y0 + offset + i * cell, x0 + offset + j * cell
+                    junk[ys : ys + cell, xs : xs + cell] = 25
+        g = gate_reconstruction(ORIG, junk, KEEP, MAT)
+        assert not g.ok, g.reason
+        assert any(w in g.reason for w in ("marker", "colour", "ragged", "changed outside", "no part material"))
+
+
+def test_wrong_colour_and_oversized_completions_are_rejected() -> None:
+    red = DONE.image.copy()
+    new = (cv2.cvtColor(DONE.image, cv2.COLOR_BGR2GRAY) < 150) & ~KEEP
+    red[new] = (40, 40, 200)
+    g = gate_reconstruction(ORIG, red, KEEP, MAT)
+    assert not g.ok and "colour does not match" in g.reason
+    expected = [tuple(p) for p in NOTCH.tolist()]
+    big = DONE.image.copy()
+    blob = np.zeros(KEEP.shape, np.uint8)
+    cv2.circle(blob, _px((128, 70)), int(14 * 6.0), 1, -1)
+    big[(blob > 0) & ~KEEP] = DONE.image[KEEP][0]
+    g2 = gate_reconstruction(ORIG, big, KEEP, MAT, expected_mm=expected)
+    assert not g2.ok and ("larger than the broken region" in g2.reason or "outside the broken region" in g2.reason)
+    ok = gate_reconstruction(ORIG, DONE.image, KEEP, MAT, expected_mm=expected)
+    assert ok.ok, ok.reason
+
+
+def test_spike_that_does_not_continue_the_outline_is_rejected() -> None:
+    spike = ORIG.image.copy()
+    colour = ORIG.image[KEEP][len(ORIG.image[KEEP]) // 2]
+    a, b = _px((105, 65)), _px((105, 95))  # a thin bar sticking straight out of the part's side
+    cv2.line(spike, a, b, tuple(int(c) for c in colour), thickness=18)
+    g = gate_reconstruction(ORIG, spike, KEEP, MAT)
+    assert not g.ok and "does not continue the part" in g.reason

@@ -524,6 +524,7 @@ def measure_photo(
         mask if mask.any() else np.zeros_like(mask),
         pose=pose,
         largest_fraction=seg.largest_fraction,
+        components_mm2=seg.components_mm2,
     )
     rect = rectify(img, det.H, px_per_mm, st, K=det.K, dist=det.dist)
     calib = calibration_from(det, pose, px_per_mm, scale_correction)

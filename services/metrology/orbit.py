@@ -24,6 +24,7 @@ from typing import Any, Protocol
 
 import cv2
 import numpy as np
+import shapely
 from numpy.typing import NDArray
 from partsmith_schemas.common import Evidence, Measured, Source
 from shapely.geometry import Polygon
@@ -38,7 +39,7 @@ from .calibrate import (
     estimate_pose,
 )
 from .features import largest_polygon, min_area_rect, part_frame_from
-from .segment import SegContext, Segmenter, ThresholdSegmenter, mask_contour_subpx, refine_mask
+from .segment import SegContext, Segmenter, ThresholdSegmenter, mask_contour_subpx, refine_mask, sample_bilinear
 
 F64 = NDArray[np.float64]
 F32 = NDArray[np.float32]
@@ -54,6 +55,9 @@ GRID_MM = 0.5
 Z_MAX_MM = 80.0
 RIM_INSET_MM = 0.05  # sample the outline this far inside (the hull rises by inset / tan(tilt) inwards)
 RIM_STEP_MM = 0.25
+EXPLAIN_TOL_MM = 0.15  # slack between a ray's height and the hull when explaining a silhouette pixel
+MAX_AZIMUTH_GAP_DEG = 120.0
+MIN_RAYS_PER_CELL = 3  # one stray silhouette ray does not set a height
 EDGE_SIGMA_PX = 0.3  # 1σ of a silhouette edge in a frame (sub-pixel contour on a clean mask)
 
 
@@ -89,6 +93,8 @@ class OrbitFrame:
     mask_source: str
     mask_score: float
     top_height_mm: float | None = None
+    field_is_soft: bool = False  # True: anti-aliased coverage from the photo; False: a blurred binary mask
+    seen: BoolMask | None = None  # where the segmenter could decide at all (the stage for the threshold fallback)
 
     def camera_view_kwargs(self, part_to_mat: F64) -> dict[str, Any]:
         return {
@@ -113,13 +119,15 @@ class OrbitOutput:
     n_usable: int
     rejected: dict[str, int]
     azimuth_bins: int
+    azimuth_coverage_deg: float = 0.0
     mat_id: str | None = None
     footprint_mat: Polygon | None = None
     length: Measured | None = None
     width: Measured | None = None
     max_height: Measured | None = None
     hull_upper_bound_mm: float | None = None
-    height_map: F32 | None = None  # (ny, nx) hull height per grid cell, NaN outside the footprint
+    height_map: F32 | None = None  # (ny, nx) hull height per grid cell (upper bound), NaN outside the footprint
+    height_map_lower: F32 | None = None  # (ny, nx) lowest heights the silhouette edges require (lower bound)
     grid_origin_mm: tuple[float, float] = (0.0, 0.0)  # mat mm of cell (0, 0)'s centre
     grid_step_mm: float = GRID_MM
     part_to_mat: F64 | None = None
@@ -286,6 +294,7 @@ def measure_orbit(
         assert c.pose is not None
         h_img, w_img = c.img.shape[:2]
         prob: F32 | None = None
+        seen_m: BoolMask | None = None
         if c.idx in vmasks:
             m, score = vmasks[c.idx]
             if m.shape != (h_img, w_img):
@@ -294,6 +303,17 @@ def measure_orbit(
         else:
             r = seg.segment(c.img, prompt, context=SegContext(c.det))
             m, score, prob, source = r.mask, r.score, r.prob, r.source
+            # The threshold segmenter only looks at the stage: a tall part seen obliquely can reach past it, and
+            # those pixels are unknown, not background.
+            stage_m = np.zeros((h_img, w_img), np.uint8)
+            cv2.fillPoly(
+                stage_m,
+                [np.round(c.det.to_px(c.det.mat.stage.inset(0.5).corners()) * 16).astype(np.int32)],
+                1,
+                cv2.LINE_8,
+                shift=4,
+            )
+            seen_m = stage_m > 0
         if not m.any():
             reject("no part mask")
             continue
@@ -314,6 +334,8 @@ def measure_orbit(
                 dist=c.pose.dist,
                 image_mask=m,
                 image_field=_field_of(m, prob),
+                field_is_soft=prob is not None,
+                seen=seen_m,
                 image_size=(w_img, h_img),
                 px_per_mm_local=ppm,
                 H_ground=c.det.H,
@@ -343,6 +365,14 @@ def measure_orbit(
         kept = [kept[i] for i in sorted(set(sel.tolist()))]
     out.frames = kept
     out.azimuth_bins = len(kept)
+    az_r = np.sort(np.radians(np.array([fr.azimuth_deg for fr in kept], dtype=np.float64)))
+    gap = math.degrees(float(np.max(np.diff(np.r_[az_r, az_r[0] + 2 * math.pi])))) if len(az_r) > 1 else 360.0
+    out.azimuth_coverage_deg = round(360.0 - gap, 1)
+    if gap > MAX_AZIMUTH_GAP_DEG:
+        notes.append(
+            f"the views cover {360 - gap:.0f}° around the part: on the unseen side the footprint can read too large "
+            "(the height is still bound by the silhouettes that were seen)"
+        )
     if len(kept) < min_views:
         notes.append(f"only {len(kept)} directions around the part (need {min_views}): walk further around it")
     _carve(out, kept, grid_mm, z_max_mm)
@@ -364,16 +394,22 @@ def _inside_all(views: Sequence[OrbitFrame], X: F64) -> NDArray[np.bool_]:
             uv = np.asarray(
                 cv2.projectPoints(X[idx].reshape(-1, 1, 3), rv, v.t_mm, v.K, v.dist)[0].reshape(-1, 2), dtype=np.float64
             )
-        val = cv2.remap(
-            v.image_field,
-            uv[:, 0:1].astype(np.float32),
-            uv[:, 1:2].astype(np.float32),
-            cv2.INTER_LINEAR,
-            borderMode=cv2.BORDER_CONSTANT,
-            borderValue=0.0,
-        ).ravel()
-        ok[idx] = val >= 0.5
+        val = sample_bilinear(v.image_field, uv[:, 0], uv[:, 1])
+        inside = val >= 0.5
+        if v.seen is not None:
+            inside |= ~_lookup(v.seen, uv)  # no vote where the segmenter could not see
+        ok[idx] = inside
     return ok
+
+
+def _lookup(mask: BoolMask, uv: F64) -> NDArray[np.bool_]:
+    h, w = mask.shape
+    x = np.round(uv[:, 0]).astype(np.int64)
+    y = np.round(uv[:, 1]).astype(np.int64)
+    ok = (x >= 0) & (x < w) & (y >= 0) & (y < h)
+    out = np.zeros(len(uv), dtype=bool)
+    out[ok] = mask[y[ok], x[ok]]
+    return out
 
 
 def _hull_heights(
@@ -398,11 +434,141 @@ def _hull_heights(
     return np.where(capped, z_max_mm, lo), capped
 
 
+# Cast explaining rays this far inside each silhouette edge (see `_min_explaining_heights`): a ray exactly on the edge
+# grazes the top edge and, with any edge error outwards, misses the part entirely. Binary masks (a segmenter's raster)
+# are only pixel-true, so their rays go further in.
+RAY_INSET_PX = 0.75
+RAY_INSET_BINARY_PX = 1.5
+
+
+def _inset(pts: F64, field: F32, d_px: float) -> F64:
+    """Move closed-contour points `d_px` towards the inside of `field` (≥ 0.5)."""
+    p = np.asarray(pts, dtype=np.float64)
+    if len(p) < 5:
+        return p
+    tang = np.roll(p, -2, axis=0) - np.roll(p, 2, axis=0)
+    tang /= np.maximum(np.linalg.norm(tang, axis=1, keepdims=True), 1e-9)
+    nrm = np.c_[-tang[:, 1], tang[:, 0]]
+    a = p + nrm * 1.5
+    b = p - nrm * 1.5
+    fa = sample_bilinear(field, a[:, 0], a[:, 1])
+    fb = sample_bilinear(field, b[:, 0], b[:, 1])
+    sign = np.where(fa >= fb, 1.0, -1.0)
+    return np.asarray(p + nrm * (sign * d_px)[:, None], dtype=np.float64)
+
+
+def _min_explaining_heights(
+    views: Sequence[OrbitFrame],
+    hull: F32,
+    origin: tuple[float, float],
+    grid_mm: float,
+    footprint: Polygon,
+    stride: int = 1,
+    step_mm: float = 0.25,
+) -> tuple[F32, NDArray[np.int64]]:
+    """The lowest heights that still explain every silhouette edge.
+
+    Each view's silhouette edge (sub-pixel) defines rays that the part must block. Walking back along such a ray from
+    where it would meet the mat, the first point that lies inside the visual hull (inside every view's silhouette) is
+    the lowest point that can block it: the part stands at least that tall there. This is a lower bound for the height
+    (the hull is the upper bound); for parts made of vertical-walled steps the two meet at the real top edges, and a
+    tall feature anywhere — on the outline or inside it — leaves rays only it can explain. The first inside point is
+    found on a `step_mm` walk and refined by bisection. Per grid cell and view the 90th percentile of its rays is
+    taken; a cell's height is the second-highest view value (two views must agree).
+    Returns (heights on the hull grid, number of views per cell)."""
+    ny, nx = hull.shape
+    fp = np.isfinite(hull)
+    hmax = float(np.nanmax(hull)) if fp.any() else 0.0
+    org = np.asarray(origin)
+    cells: list[NDArray[np.int64]] = []
+    zs: list[F64] = []
+    vids: list[NDArray[np.int64]] = []
+    for vi, v in enumerate(views):
+        # The ray lies on this view's own silhouette edge (field exactly 0.5): test only the other views.
+        others = [w for wi, w in enumerate(views) if wi != vi]
+        inset_px = RAY_INSET_PX if v.field_is_soft else RAY_INSET_BINARY_PX
+        edge = [_inset(c.points_px[::stride], v.image_field, inset_px) for c in mask_contour_subpx(v.image_field)]
+        if not edge:
+            continue
+        e_px = np.concatenate(edge)
+        if v.seen is not None:  # an edge where the segmenter's view ends is not the part's edge
+            seen_in = cv2.erode(v.seen.astype(np.uint8), np.ones((7, 7), np.uint8)) > 0
+            e_px = e_px[_lookup(seen_in, e_px)]
+            if len(e_px) == 0:
+                continue
+        g = apply_h(v.H_ground, e_px)
+        g = g[~shapely.contains_xy(footprint, g[:, 0], g[:, 1])]
+        if len(g) == 0:
+            continue
+        # The inset (to make grazing rays reliably hit the part) lowers the ray by ≈ inset × height-per-px;
+        # remember that much to add back.
+        inset_mm = inset_px / max(v.px_per_mm_local, 1e-6)
+        C = -v.R.T @ v.t_mm
+        zc = float(-C[2])
+        back = C[:2][None, :] - g  # towards the camera's ground track
+        dist = np.linalg.norm(back, axis=1)
+        u = back / np.maximum(dist[:, None], 1e-9)
+        slope = zc / np.maximum(dist, 1e-9)  # ray height gained per mm walked back
+        t_max = np.minimum(dist, (hmax + 0.5) / slope)
+        n_t = int(np.ceil(float(t_max.max()) / step_mm)) + 1
+        ts = np.arange(n_t, dtype=np.float64) * step_mm
+        first_t = np.full(len(g), np.nan)
+        for t0 in range(n_t):  # walk outwards-in; stop testing a ray once it is explained
+            todo = np.flatnonzero(np.isnan(first_t) & (ts[t0] <= t_max))
+            if len(todo) == 0:
+                break
+            P = g[todo] + ts[t0] * u[todo]
+            inp = shapely.contains_xy(footprint, P[:, 0], P[:, 1])
+            if not inp.any():
+                continue
+            k = todo[inp]
+            X = np.c_[P[inp], -ts[t0] * slope[k]]
+            hit = _inside_all(others, X)
+            first_t[k[hit]] = ts[t0]
+        r = np.flatnonzero(np.isfinite(first_t))
+        if len(r) == 0:
+            continue
+        lo = np.maximum(first_t[r] - step_mm, 0.0)
+        hi = first_t[r]
+        for _ in range(5):  # bisection between the last miss and the first hit
+            mid = (lo + hi) / 2
+            P = g[r] + mid[:, None] * u[r]
+            X = np.c_[P, -mid * slope[r]]
+            ok = shapely.contains_xy(footprint, P[:, 0], P[:, 1]) & _inside_all(others, X)
+            hi = np.where(ok, mid, hi)
+            lo = np.where(ok, lo, mid)
+        P = g[r] + hi[:, None] * u[r]
+        ci = np.floor((P - org) / grid_mm + 0.5).astype(np.int64)
+        okc = (ci[:, 0] >= 0) & (ci[:, 0] < nx) & (ci[:, 1] >= 0) & (ci[:, 1] < ny)
+        cells.append(ci[okc, 1] * nx + ci[okc, 0])
+        vids.append(np.full(int(okc.sum()), vi, dtype=np.int64))
+        zs.append(((hi + inset_mm) * slope[r])[okc])
+    need = np.zeros(ny * nx, np.float32)
+    support = np.zeros(ny * nx, np.int64)  # number of views (≥ MIN_RAYS_PER_CELL rays each) behind the height
+    if cells:
+        cid, zz, vv = np.concatenate(cells), np.concatenate(zs), np.concatenate(vids)
+        order = np.lexsort((zz, vv, cid))
+        cid, zz, vv = cid[order], zz[order], vv[order]
+        key = cid * (len(views) + 1) + vv
+        starts = np.flatnonzero(np.r_[True, key[1:] != key[:-1]])
+        ends = np.r_[starts[1:], len(key)]
+        per: dict[int, list[float]] = {}
+        for a, b in zip(starts, ends, strict=True):
+            if b - a >= MIN_RAYS_PER_CELL:  # per view: the 90th percentile of its rays through this cell
+                per.setdefault(int(cid[a]), []).append(float(zz[a + int(0.9 * (b - a - 1))]))
+        for c, vals in per.items():
+            # Two views must agree: a height one view alone asks for (a stray mask edge) is not used.
+            if len(vals) >= 2:
+                need[c] = sorted(vals)[-2]
+            support[c] = len(vals)
+    return np.where(fp, need.reshape(ny, nx), np.nan).astype(np.float32), support.reshape(ny, nx)
+
+
 def _carve(out: OrbitOutput, views: Sequence[OrbitFrame], grid_mm: float, z_max_mm: float) -> None:
     # Bounding box: intersection of the ground silhouettes (the hull's bottom can only be smaller).
     polys = []
     for v in views:
-        cs = [c for c in mask_contour_subpx(v.image_mask) if not c.is_hole]
+        cs = [c for c in mask_contour_subpx(v.image_field) if not c.is_hole]  # the same edge the carving samples
         if not cs:
             continue
         ring = max(cs, key=lambda c: c.area_px).points_px
@@ -457,26 +623,42 @@ def _carve(out: OrbitOutput, views: Sequence[OrbitFrame], grid_mm: float, z_max_
             value=round(W, 3), source=Source.measured, sigma_mm=round(math.sqrt(2) * sig_xy, 3), evidence=ev
         )
         out.part_to_mat = part_frame_from(fp).matrix()
-    # Height read ON the outline, where the hull is tight: just inside it the bound already rises by d / tan(tilt).
+    # Height. The hull is an upper bound and overestimates wherever a top face is never a silhouette edge (the "roof"
+    # over a plate between the outline and a tall arm). The silhouettes' edges also give a lower bound: the lowest
+    # heights that still block every silhouette edge ray (`_min_explaining_heights`). For vertical-walled parts that
+    # bound is tight at every real top edge, on the outline or inside it, so the maximum height is read from it.
     if fp is None:
         return
-    ring = fp.buffer(-RIM_INSET_MM).exterior if fp.buffer(-RIM_INSET_MM).geom_type == "Polygon" else fp.exterior
-    n_s = max(16, int(ring.length / RIM_STEP_MM))
-    pts = np.array([ring.interpolate(t).coords[0] for t in np.linspace(0, ring.length, n_s, endpoint=False)])
-    rim_h, rim_cap = _hull_heights(views, pts, np.ones(len(pts), dtype=bool), z_max_mm)
-    rim_h = rim_h[~rim_cap]
-    if len(rim_h) == 0:
-        return
-    # Corners are bounded by fewer views and read high; the 90th percentile of the outline is the tallest edge.
-    hmax = float(np.percentile(rim_h, 90))
-    spread = float(np.percentile(rim_h, 95) - np.percentile(rim_h, 80))
+    need, support = _min_explaining_heights(views, height, (float(x0), float(y0)), grid_mm, fp)
+    out.height_map_lower = need
     tan_t = max(math.tan(math.radians(tilt)), 0.05)
-    sig_h = math.hypot(EDGE_SIGMA_PX / ppm / tan_t, RIM_INSET_MM / tan_t, spread / 2)
+    inset_px = float(np.median([RAY_INSET_PX if v.field_is_soft else RAY_INSET_BINARY_PX for v in views]))
+    base_sig = math.hypot(EDGE_SIGMA_PX / ppm / tan_t, 0.5 * inset_px / ppm / tan_t, grid_mm / 4 / tan_t)
+    good = np.isfinite(need) & (support >= 2) & (need > 0)
+    if good.any():
+        hg = need[good]
+        hmax = float(hg.max())
+        top = hg[hg >= hmax - 1.0]
+        sig_h = math.hypot(base_sig, float(np.std(top)) if len(top) > 1 else base_sig)
+        n_cells = int(good.sum())
+        how = f"tallest point that the silhouette edges of ≥ 2 views require ({n_cells} cells)"
+    else:
+        ring = fp.buffer(-RIM_INSET_MM).exterior if fp.buffer(-RIM_INSET_MM).geom_type == "Polygon" else fp.exterior
+        n_s = max(16, int(ring.length / RIM_STEP_MM))
+        rim_pts = np.array([ring.interpolate(t).coords[0] for t in np.linspace(0, ring.length, n_s, endpoint=False)])
+        rim_h, rim_cap = _hull_heights(views, rim_pts, np.ones(len(rim_pts), dtype=bool), z_max_mm)
+        rim_ok = rim_h[~rim_cap]
+        if len(rim_ok) == 0:
+            return
+        hmax = float(np.percentile(rim_ok, 90))
+        sig_h = math.hypot(base_sig, float(np.percentile(rim_ok, 95) - np.percentile(rim_ok, 80)) / 2)
+        how = "visual hull along the outline (no silhouette edge needs a height: low confidence)"
+        out.notes.append("no silhouette edge stands out against the mat: the height comes from the outline only")
     out.max_height = Measured(
         value=round(hmax, 3),
         source=Source.measured,
         sigma_mm=round(sig_h, 3),
-        evidence=Evidence(view="orbit", note=f"orbit, {n} frames: visual hull along the outline"),
+        evidence=Evidence(view="orbit", note=f"orbit, {n} frames: {how}"),
     )
     upper = float(np.nanmax(height))
     out.hull_upper_bound_mm = round(upper, 3)
@@ -484,6 +666,6 @@ def _carve(out: OrbitOutput, views: Sequence[OrbitFrame], grid_mm: float, z_max_
         out.notes.append("the hull reaches the carving ceiling inside the outline: views from higher up would bound it")
     elif upper > hmax + max(1.0, 3 * sig_h):
         out.notes.append(
-            f"inside the outline the views only bound the height at {upper:.1f} mm (a top face is never a silhouette "
-            "edge); taller interior features would need a side photo"
+            f"the silhouettes require {hmax:.1f} mm and allow up to {upper:.1f} mm inside the outline (a top face is "
+            "never a silhouette edge): a feature hidden inside every silhouette would need a side photo"
         )
