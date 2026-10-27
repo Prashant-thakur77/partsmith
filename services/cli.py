@@ -219,7 +219,7 @@ def fix(
     ji = JobInput(
         intent=intent if intent is not None else str(meta.get("intent", "")),
         thickness_mm=thickness if thickness is not None else meta.get("user_thickness_mm"),
-        family_hint=Family(hint) if hint in Family.__members__ else None,
+        family_hint=Family(str(hint)) if hint in Family.__members__ else None,
         origin=origin,
         max_iters=max_iters,
         mat_kind="paper" if str(mat_id or "").startswith("paper") else "screen",

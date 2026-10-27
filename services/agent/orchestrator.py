@@ -987,18 +987,18 @@ class FixRun:
         spec.features = kept
         by_id = {f.id: f for f in spec.features}
         for h in top.holes:
-            f = by_id.get(h.id)
-            if isinstance(f, ThroughHole):
-                if abs(f.diameter.value - h.diameter.value) > 1e-6 or tuple(f.center_mm) != tuple(h.center_mm):
+            hf = by_id.get(h.id)
+            if isinstance(hf, ThroughHole):
+                if abs(hf.diameter.value - h.diameter.value) > 1e-6 or tuple(hf.center_mm) != tuple(h.center_mm):
                     changed.append(h.id)
-                f.diameter, f.center_mm = h.diameter, h.center_mm
+                hf.diameter, hf.center_mm = h.diameter, h.center_mm
             else:
                 spec.features.append(ThroughHole(id=h.id, center_mm=h.center_mm, diameter=h.diameter))
                 changed.append(f"{h.id} added")
         for s in top.slots:
-            f = by_id.get(s.id)
-            if isinstance(f, SlotFeature):
-                f.center_mm, f.length, f.width, f.angle_deg = s.center_mm, s.length, s.width, s.angle_deg
+            sf = by_id.get(s.id)
+            if isinstance(sf, SlotFeature):
+                sf.center_mm, sf.length, sf.width, sf.angle_deg = s.center_mm, s.length, s.width, s.angle_deg
             else:
                 spec.features.append(
                     SlotFeature(id=s.id, center_mm=s.center_mm, length=s.length, width=s.width, angle_deg=s.angle_deg)
@@ -1456,8 +1456,8 @@ class FixRun:
                 outline_params=outline_params,
                 residual_deltas={k: sum(v) / len(v) for k, v in backing.items()},
             )
-            for r in g.rejected:
-                self.log(f"guard: {r}", "warn")
+            for rejected in g.rejected:
+                self.log(f"guard: {rejected}", "warn")
             new_code, new_values = base.code, g.values(base.values)
             if patch and not g.applied:
                 err = self.program_error(str(patch))

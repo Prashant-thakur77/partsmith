@@ -33,6 +33,9 @@ STAGE_EDGE_MARGIN_MM = 1.0
 MIN_PART_AREA_MM2 = 10.0
 TILT_WARN_DEG = 15.0
 TILT_FAIL_DEG = 25.0
+CLIP_HIGH = 250  # every channel at or above: blown out (JPEG keeps clipped highlights a few levels under 255)
+CLIP_LOW = 5
+CLIP_FLAT_STD = 2.0  # grey-level std in a 5×5 window: clipped areas carry no texture
 CLIP_WARN = 0.02
 CLIP_FAIL = 0.05
 GLARE_MARKER_DARK_FRACTION = 0.15  # share of a marker's black cells that are blown out
@@ -251,9 +254,14 @@ def check_tilt(pose: PoseEstimate | None) -> CaptureCheck:
 def check_exposure(img: U8, det: MatDetection | None, mask: BoolMask | None) -> CaptureCheck:
     img3 = img if img.ndim == 3 else cv2.cvtColor(img, cv2.COLOR_GRAY2BGR)
     if mask is not None and mask.any():
+        # Clipping = all channels at the rail with no texture left. One channel at 255 is just a saturated colour
+        # (an orange or red part): its edges and shape are intact.
+        g = _gray(np.asarray(img3, dtype=np.uint8)).astype(np.float32)
+        mu = cv2.blur(g, (5, 5))
+        flat = np.sqrt(np.maximum(cv2.blur(g * g, (5, 5)) - mu * mu, 0.0)) < CLIP_FLAT_STD
         px = img3[mask]
-        hi = np.any(px >= 253, axis=1)
-        lo = np.all(px <= 2, axis=1)
+        hi = np.all(px >= CLIP_HIGH, axis=1) & flat[mask]
+        lo = np.all(px <= CLIP_LOW, axis=1) & flat[mask]
         f = float(np.mean(hi | lo))
         if f > CLIP_FAIL:
             what = "bright" if hi.mean() >= lo.mean() else "dark"

@@ -44,6 +44,7 @@ from services.geom_worker import bake as geom_bake
 from services.geom_worker.program import ProgramError, UnknownParamError
 from services.registry import parts as P
 from services.registry import steer
+from services.registry.publish import dedupe_published, publish_part
 from services.registry.store import get_registry
 
 VERSION = "0.1.0"
@@ -745,8 +746,14 @@ def job_publish(job_id: str, body: Annotated[PublishRequest | None, Body()] = No
     if slug and get_registry().get_part(slug) is not None:
         raise ApiError(409, "slug_taken", f"slug {slug!r} is taken", P.closest_slugs(slug))
     part = _service_call(_svc().publish, job_id, slug=slug, conflict="no_program")
-    P.after_publish(part)
-    return P.part_detail(part)
+    # an identical part (same program + params) already published is reused instead of a second card
+    outcome = dedupe_published(part.slug) if get_registry().get_part(part.slug) else publish_part(part)
+    if outcome.part.slug != part.slug:
+        job.summary.part_slug = outcome.part.slug
+        job.save_summary()
+    detail = P.part_detail(outcome.part)
+    detail["publish"] = outcome.to_dict()
+    return detail
 
 
 CANCEL_WAIT_S = 3.0

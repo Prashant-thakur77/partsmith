@@ -39,7 +39,7 @@ def _fake_service() -> SimpleNamespace:
         return mgr.run_sync(job, runner)
 
     def publish(job_id: str, *, slug: str | None = None) -> Any:
-        part = make_part("spacer", slug)
+        part = make_part("spacer", slug, params={"height": 5.0 + len(get_registry().slugs())})  # distinct parts
         part.provenance.job_id = job_id
         get_registry().upsert_part(part)
         return part

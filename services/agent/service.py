@@ -191,7 +191,7 @@ def sample_job_input(meta: dict[str, Any]) -> JobInput:
         kind="fix",
         intent=str(meta.get("intent") or ""),
         thickness_mm=meta.get("user_thickness_mm"),
-        family_hint=Family(hint) if hint in Family.__members__ else None,
+        family_hint=Family(str(hint)) if hint in Family.__members__ else None,
         origin=DataOrigin.synthetic,
         mat_kind="paper" if mat_id.startswith("paper") else "screen",
     )
@@ -567,11 +567,15 @@ def publish(job_id: str, *, slug: str | None = None) -> PartRecord:
         facts=facts,
         created_at=time.time(),
     )
-    reg.upsert_part(rec)
-    job.summary.part_slug = slug
+    from services.registry.publish import publish_part
+
+    outcome = publish_part(rec, reg=reg, render=True)
+    part = outcome.part
+    job.summary.part_slug = part.slug
     job.save_summary()
-    job.emit(LogEvent(job=job.id, msg=f"published to the registry as {slug} ({status})"))
-    return rec
+    note = f" ({outcome.action}" + (f", same part as {outcome.duplicate_of}" if outcome.duplicate_of else "") + ")"
+    job.emit(LogEvent(job=job.id, msg=f"published to the registry as {part.slug} ({status}){note}"))
+    return part
 
 
 def replays() -> list[dict[str, Any]]:

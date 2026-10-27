@@ -77,7 +77,7 @@ Screen calibration (ID-1 card 85.60 × 53.98 mm) happens in the browser and is s
 | GET | `/jobs/{id}/fit-outline?mat_id=` | `409 no_model_outline` when the job has no model outline (Steer lanes, failed runs); otherwise `{"mat_id": str, "outline_mm": [[x,y]], "holes": [{"center_mm":[x,y],"diameter_mm":float}], "dims": [{"label": str, "from_mm":[x,y], "to_mm":[x,y], "value_mm": float}], "placement": {"cx_mm","cy_mm","theta_deg"}}` in the **mat frame** (`mat_id` default `screen-m`) |
 | POST | `/jobs/{id}/fit-check` | multipart `photo`, `mat_id` → `FitCheckResult = {"passed": bool, "iou": float, "hausdorff_mm": float, "mean_mm": float, "reasons": [str], "overlay_url": str, "capture": CaptureReport}` |
 | GET | `/jobs/{id}/bake?<param>=<value>&format=…[&download=1]` | re-bake the job's current part program before it is published → `BakeResult` (same shape as part bakes; `&download=1` returns the first format's file) |
-| POST | `/jobs/{id}/publish` | `{"slug"?: str}` → part detail (as `GET /parts/{slug}`); the job must be `done`; origin is preserved; thumbnails are rendered here |
+| POST | `/jobs/{id}/publish` | `{"slug"?: str}` → part detail (as `GET /parts/{slug}`) + `"publish": {"slug","action": "created"\|"updated"\|"unchanged"\|"renamed","requested_slug","duplicate_of","version"}`; the job must be `done`; origin is preserved; thumbnails are rendered here. Publishing dedupes (see Registry) |
 | POST | `/jobs/{id}/cancel` | → `JobSummary` after the cancel took effect (`status: "cancelled"`); if the job has not stopped within 3 s the response says `status: "cancelling"` (it stops at its next check). Finished jobs are returned unchanged |
 | GET | `/jobs/{id}/run.jsonl` | the raw run log (`application/x-ndjson`) |
 | POST | `/transcribe` | multipart `audio`, `language_hint?` → `{"text": str, "mode": "live"\|"mock"\|"replay", "language": str\|null, "model": str, "note": str}` (fix intent and spoken answers; mock transcripts say so in `note`) |
@@ -110,6 +110,12 @@ Screen calibration (ID-1 card 85.60 × 53.98 mm) happens in the browser and is s
 
 Part detail = `PartRecord` + `{"artifacts": {"stl","step","3mf","glb","view","py": url}, "lineage": [Lineage], "thumbnail_url", "thumbnail_2x_url", "facts_notes": {fact: how it is computed}, "fit_reports": [...], "origin": DataOrigin, "verified": bool}`.
 Artifact URLs are stable (`/parts/{slug}/bake?format=<fmt>&download=1`, default params, cached after the first bake).
+**Publishing dedupes** (`services/registry/publish.py::publish_part`, used by Steer approvals, job publishes and the
+seed): a part's identity is its program with PARAMS defaults normalised + its clamped values. An identical part returns
+the existing record (`unchanged`), or updates it with `version + 1` when its verification/facts/title changed
+(`updated`). A different part whose slug is taken gets a suffix from the knobs that differ, e.g.
+`cable-clip-50mm-3ch` (`renamed`), and `forked_from` = the taken slug when it is the same program.
+
 `Lineage = {"slug": str, "version": int, "relation": "forked_from"|"variant_of", "title": str}` — `forked_from`: this part
 was forked from `slug`; `variant_of`: `slug` is a variant forked from this part.
 
@@ -134,7 +140,7 @@ SteerState = {"id", "brief", "count", "status": "planning"|"building"|"reviewing
   "plan": [{"slug","title","family","template","params","why"}],
   "lanes": [{"slug","status": "queued"|"running"|"done"|"failed","job_id","verified","max_error_mm","error"?}],
   "queue": [{"slug","title","family","status": "building"|"pending_review"|"published"|"sent_back"|"rejected"|"failed",
-             "job_id","verified","max_error_mm","params","note"}],
+             "job_id","verified","max_error_mm","params","note","published_slug"?,"publish_action"?}],
   "history": [{"slug","action","note","ts","applied"?,"not_applied"?}]}
 ```
 Plans are checked by code (real templates only, params clamped, unique slugs). Each lane is a `kind="steer"` job that

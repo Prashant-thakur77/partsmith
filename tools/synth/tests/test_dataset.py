@@ -80,8 +80,8 @@ def test_reference_object_sample(tmp_path: Path) -> None:
     assert set(s.photos) == {"top"}  # a battery lying down has no separate side view
     gt = load_gt(folder)
     assert gt.raw["spec"]["loose"] is True and gt.kind == "reference_object"
-    assert gt.dim("length", "top").value_mm == pytest.approx(50.5, abs=0.01)  # type: ignore[union-attr]
-    assert gt.dim("width", "top").value_mm == pytest.approx(14.5, abs=0.01)  # type: ignore[union-attr]
+    assert gt.dim("length", "top").value_mm == pytest.approx(50.5, abs=0.01)
+    assert gt.dim("width", "top").value_mm == pytest.approx(14.5, abs=0.01)
 
 
 def test_dataset_specs_cover_templates_and_presets() -> None:
@@ -148,8 +148,8 @@ def test_render_then_measure_is_close_to_exact_gt(
     m = out.result.measurements
     assert out.result.capture.passed, out.result.capture.retake_reason
     assert m is not None
-    assert m.length.value == pytest.approx(gt.dim("length").value_mm, abs=0.3)  # type: ignore[union-attr]
-    assert m.width.value == pytest.approx(gt.dim("width").value_mm, abs=0.3)  # type: ignore[union-attr]
+    assert m.length.value == pytest.approx(gt.dim("length").value_mm, abs=0.3)
+    assert m.width.value == pytest.approx(gt.dim("width").value_mm, abs=0.3)
     from eval.measure_only import score_measurements
 
     gts = [{"name": d.name, "value_mm": d.value_mm, "center_mat_mm": d.center_mat_mm} for d in gt.dims_for("top")]

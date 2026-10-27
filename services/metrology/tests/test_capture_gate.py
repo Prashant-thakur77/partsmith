@@ -117,3 +117,14 @@ def test_no_mat() -> None:
     names = {c.name: c.severity for c in rep.checks}
     assert names["markers"] == "fail" and names["tilt"] == "fail"
     assert rep.retake_reason and "markers" in rep.retake_reason
+
+
+@pytest.mark.parametrize(
+    "bgr", [(0, 128, 255), (30, 30, 255), (255, 90, 20)], ids=["saturated-orange", "saturated-red", "saturated-blue"]
+)
+def test_saturated_colour_is_not_clipping(bgr: tuple[int, int, int]) -> None:
+    part = T.PrismPart(PART.outline_mm, [], 3.0, top_bgr=bgr, side_bgr=tuple(int(v * 0.8) for v in bgr))  # type: ignore[arg-type]
+    cam = T.camera_above(CENTRE, height_mm=260, tilt_deg=8, azimuth_deg=30)
+    sc = T.render_part_scene(MAT, cam, part)
+    _, c = _checks(T.add_noise(sc.image, 2.0), sc.mask)
+    assert c["exposure"].severity == "ok", c["exposure"].reason

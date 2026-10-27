@@ -13,7 +13,7 @@ from partsmith_schemas.events import ModelCallEvent
 from .base import Usage
 from .config import Mode, log
 
-EmitFn = Callable[[ModelCallEvent], None]
+EmitFn = Callable[[ModelCallEvent], object]
 
 
 @dataclass

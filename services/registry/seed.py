@@ -31,6 +31,7 @@ from partsmith_schemas.partspec import Family
 from services.agent import jobs
 from services.common.paths import REPO_ROOT, home
 from services.registry import parts as P
+from services.registry.publish import dedupe_published, publish_part
 from services.registry.store import Registry, get_registry
 
 REAL_DIR = REPO_ROOT / "data" / "real"
@@ -103,7 +104,7 @@ def _run_real(svc: ModuleType, sample: dict[str, Any]) -> Any:
         intent=str(meta.get("intent", "")),
         mat_kind=meta.get("mat_kind", "screen"),
         thickness_mm=meta.get("user_thickness_mm"),
-        family_hint=Family(hint) if hint in Family.__members__ else None,
+        family_hint=Family(str(hint)) if hint in Family.__members__ else None,
         origin=DataOrigin.real,
     )
     return svc.start_fix_job(photos, job_input, sync=True)
@@ -174,8 +175,10 @@ def seed(
         except Exception as exc:
             result["failed"].append(f"{sid}: publish failed: {type(exc).__name__}: {exc}")
             continue
-        P.after_publish(part, reg=reg)
-        result["seeded"].append(part.slug)
+        outcome = dedupe_published(part.slug, reg=reg) if reg.get_part(part.slug) else publish_part(part, reg=reg)
+        result["seeded"].append(outcome.part.slug)
+        if outcome.part.slug != slug:  # folded into an identical existing part: remember, so it is not re-run
+            _write_state(state, sid, job.id, f"published as {outcome.part.slug} ({outcome.action})")
         log(
             f"  → {part.slug}: {part.status}"
             + (

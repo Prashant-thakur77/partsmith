@@ -813,3 +813,16 @@ def test_agent_docs_use_forwarded_host(client: TestClient, monkeypatch: pytest.M
     assert "evil" not in bad and "http://testserver/api/v1" in bad
     monkeypatch.setenv("PARTSMITH_PUBLIC_URL", "https://partsmith.dev/")
     assert "https://partsmith.dev/api/v1/parts/m3-spacer" in client.get("/llms.txt").text
+
+
+def test_job_publish_dedupes_identical_parts(client: TestClient, fake: FakeService) -> None:
+    ids = [client.post("/api/v1/jobs/demo", json={"sample": "spacer-easy-01"}).json()["id"] for _ in range(2)]
+    for jid in ids:
+        _wait_done(fake, jid)
+    a = client.post(f"/api/v1/jobs/{ids[0]}/publish", json={"slug": "spacer-a"}).json()
+    b = client.post(f"/api/v1/jobs/{ids[1]}/publish", json={"slug": "spacer-b"}).json()
+    assert a["publish"]["action"] == "created"
+    assert b["slug"] == "spacer-a" and b["publish"]["duplicate_of"] == "spacer-a"
+    assert get_registry().slugs() == ["spacer-a"]
+    job = fake.mgr.get(ids[1])
+    assert job is not None and job.summary.part_slug == "spacer-a"

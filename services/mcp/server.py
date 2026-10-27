@@ -261,7 +261,7 @@ def build_server(*, allow_paths: bool = False, read_only: bool | None = None) ->
         side = _bytes(side_path, side_base64, "side", allow_paths)
         if side is not None:
             photos["side"] = _clean(side, "side")
-        fam = Family(family_hint) if family_hint in Family.__members__ else None
+        fam = Family(str(family_hint)) if family_hint in Family.__members__ else None
         job = _svc().start_fix_job(photos, JobInput(intent=intent[:500], thickness_mm=thickness_mm, family_hint=fam))
         return {
             "job": job.summary.model_dump(mode="json"),

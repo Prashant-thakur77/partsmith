@@ -27,22 +27,60 @@ class Use:
 
 
 USES: tuple[Use, ...] = (
-    Use("SAM 3.1", "Meta Model API", "Text-prompted masks of the part — the pixels the verifier measures in mm",
-        (("services/agent/providers/routing.py", r"SAM_31 = Route"), ("services/metrology/segment.py", r"class ProviderSegmenter"))),
-    Use("Muse Spark 1.3", "Meta Model API", "Understand stage: names features, family, broken region, unknowns (strict PartSpec JSON)",
-        (("services/agent/orchestrator.py", r'self\.call\("understand"'),)),
-    Use("Muse Spark Open", "open weights (Baseten / Fireworks / Together)", "Planner, CadQuery builder and fixer in the verify loop",
-        (("services/agent/orchestrator.py", r'self\.call\("build"'), ("services/agent/orchestrator.py", r'self\.call\("fix"'))),
-    Use("Muse Glimmer 30B", "open weights (llama.cpp on a Modal GPU)", "Independent veto-only judge and capture triage",
-        (("services/agent/orchestrator.py", r'schema_name="judge"'), ("infra/modal/glimmer.py", r"^app = "))),
-    Use("Muse Voice Transcribe", "Meta Model API", "Hindi/English voice edits and spoken answers",
-        (("services/media/voice.py", r"providers\.transcribe\("),)),
-    Use("Muse Image", "Meta Model API", '"See the fix" in-place preview (labelled AI preview)',
-        (("services/media/preview.py", r"providers\.generate_image\("),)),
-    Use("Muse Wonder", "Meta Model API", "Steer factory planner: plans a family of parts for the registry",
-        (("services/registry/steer.py", r'providers\.complete\("steer_plan"'),)),
-    Use("SAM 3 (open weights)", "open weights (Modal GPU)", "All-open-weights segmentation path and bench",
-        (("infra/modal/sam3.py", r"^app = "),)),
+    Use(
+        "SAM 3.1",
+        "Meta Model API",
+        "Text-prompted masks of the part — the pixels the verifier measures in mm",
+        (
+            ("services/agent/providers/routing.py", r"SAM_31 = Route"),
+            ("services/metrology/segment.py", r"class ProviderSegmenter"),
+        ),
+    ),
+    Use(
+        "Muse Spark 1.3",
+        "Meta Model API",
+        "Understand stage: names features, family, broken region, unknowns (strict PartSpec JSON)",
+        (("services/agent/orchestrator.py", r'self\.call\("understand"'),),
+    ),
+    Use(
+        "Muse Spark Open",
+        "open weights (Baseten / Fireworks / Together)",
+        "Planner, CadQuery builder and fixer in the verify loop",
+        (
+            ("services/agent/orchestrator.py", r'self\.call\("build"'),
+            ("services/agent/orchestrator.py", r'self\.call\("fix"'),
+        ),
+    ),
+    Use(
+        "Muse Glimmer 30B",
+        "open weights (llama.cpp on a Modal GPU)",
+        "Independent veto-only judge and capture triage",
+        (("services/agent/orchestrator.py", r'schema_name="judge"'), ("infra/modal/glimmer.py", r"^app = ")),
+    ),
+    Use(
+        "Muse Voice Transcribe",
+        "Meta Model API",
+        "Hindi/English voice edits and spoken answers",
+        (("services/media/voice.py", r"providers\.transcribe\("),),
+    ),
+    Use(
+        "Muse Image",
+        "Meta Model API",
+        '"See the fix" in-place preview (labelled AI preview)',
+        (("services/media/preview.py", r"providers\.generate_image\("),),
+    ),
+    Use(
+        "Muse Wonder",
+        "Meta Model API",
+        "Steer factory planner: plans a family of parts for the registry",
+        (("services/registry/steer.py", r'providers\.complete\("steer_plan"'),),
+    ),
+    Use(
+        "SAM 3 (open weights)",
+        "open weights (Modal GPU)",
+        "All-open-weights segmentation path and bench",
+        (("infra/modal/sam3.py", r"^app = "),),
+    ),
 )
 
 
@@ -74,15 +112,29 @@ def bench_tables() -> str:
     if not REPORT.exists():
         return "_Bench pending: run `make bench`._"
     rep = json.loads(REPORT.read_text())
-    out = [f"Generated {rep.get('generated_at', '?')} at commit `{rep.get('git_sha', '?')}` · mode **{rep.get('mode', '?')}**."]
+    out = [
+        f"Generated {rep.get('generated_at', '?')} at commit `{rep.get('git_sha', '?')}` · mode **{rep.get('mode', '?')}**."
+    ]
     if rep.get("mode") == "mock":
         out.append(
             "\n> **These rows come from deterministic mock providers (no API keys yet).** They check that the pipeline, verifier "
             "and scorer work end to end; they do **not** measure any model. Live numbers replace them after `make live`."
         )
-    names = {"synthetic": "Synthetic bench (exact ground truth)", "reference_objects": "Reference objects (vs published specs)",
-             "real_ruler": "Real broken parts (vs school ruler, ±0.5 mm)"}
-    cols = ["config", "n", "median_abs_err_mm", "mean_abs_err_mm", "mean_ci95", "pass@0.5", "verified_rate", "median_iters"]
+    names = {
+        "synthetic": "Synthetic bench (exact ground truth)",
+        "reference_objects": "Reference objects (vs published specs)",
+        "real_ruler": "Real broken parts (vs school ruler, ±0.5 mm)",
+    }
+    cols = [
+        "config",
+        "n",
+        "median_abs_err_mm",
+        "mean_abs_err_mm",
+        "mean_ci95",
+        "pass@0.5",
+        "verified_rate",
+        "median_iters",
+    ]
     for key, title in names.items():
         t = rep.get("tables", {}).get(key)
         out.append(f"\n**{title}**")

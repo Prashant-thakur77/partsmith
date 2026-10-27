@@ -47,6 +47,7 @@ from services.common.paths import sub
 from services.geom_worker import bake as geom_bake
 from services.geom_worker.program import clamp, closest_names, code_sha, parse_params, set_defaults
 from services.registry import parts as P
+from services.registry.publish import publish_part
 from services.registry.store import Registry, get_registry
 
 MAX_COUNT = 24
@@ -213,7 +214,7 @@ def check_plan(
     reg = reg or get_registry()
     names = [t.name for t in list_templates()]
     notes: list[str] = []
-    taken = set(reg.slugs())
+    taken: set[str] = set()  # unique within the plan; registry collisions are resolved at publish time
     parts: list[dict[str, Any]] = []
     for item in list(raw.get("parts") or [])[:count]:
         tname = str(item.get("template", ""))
@@ -708,15 +709,14 @@ def review(run_id: str, slug: str, action: str, note: str = "", *, reg: Registry
         part = _lane_part(run, slug)
         if part is None:
             raise ValueError(f"{slug} has no built part to publish")
-        if reg.get_part(slug) is not None:
-            raise ValueError(f"slug {slug!r} is already taken in the registry")
-        reg.upsert_part(part)
-        P.after_publish(part, reg=reg)
+        outcome = publish_part(part, reg=reg)  # dedupes: an identical part is reused, a taken slug gets a suffix
+        entry["publish"] = outcome.to_dict()
 
         def approve(r: dict[str, Any]) -> None:
             for x in r["queue"]:
                 if x["slug"] == slug:
-                    x.update(status="published", note=note)
+                    x.update(status="published", note=note, published_slug=outcome.part.slug,
+                             publish_action=outcome.action)  # fmt: skip
             r["history"].append(entry)
             if all(x["status"] in ("published", "rejected", "failed") for x in r["queue"]):
                 r["status"] = "done"

@@ -113,7 +113,7 @@ def test_height_correction_on_a_thick_part(known_K: bool) -> None:
     assert err_r > 0.5 and err_r > 4 * err_c
     assert len(mc.holes) == 1 and abs(mc.holes[0].diameter.value - 6.0) < TOL_MM
     assert np.linalg.norm(_hole_mat(corr, mc.holes[0]) - hole_c) < TOL_MM
-    assert mc.height_correction_scale == pytest.approx((corr.pose.camera_height_mm - 8) / corr.pose.camera_height_mm)  # type: ignore[union-attr]
+    assert mc.height_correction_scale == pytest.approx((corr.pose.camera_height_mm - 8) / corr.pose.camera_height_mm)
     assert mr.height_correction_scale == 1.0 and any("thickness unknown" in n for n in mr.notes)
 
 
@@ -200,7 +200,7 @@ def test_camera_frame_outputs() -> None:
     assert out.photo_mask is not None and out.photo_mask.shape == sc.image.shape[:2]
     assert out.H_top is not None and out.top_px_per_mm is not None
     # the top face is closer to the camera, so it is imaged larger than the mat plane at the same spot
-    assert out.top_px_per_mm > out.detection.px_per_mm_at(_centre("screen-m", 8, -4))  # type: ignore[union-attr]
+    assert out.top_px_per_mm > out.detection.px_per_mm_at(_centre("screen-m", 8, -4))
 
 
 def _hex_bgr(h: str) -> tuple[int, int, int]:

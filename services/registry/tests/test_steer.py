@@ -42,15 +42,17 @@ def test_check_plan_guards_model_output() -> None:
                 "params": {"hole_d": 99, "lenght": 50},
                 "why": "",
             },
+            {"slug": "kit-clip", "title": "Clip 2", "template": "clip", "params": {}, "why": ""},
             {"slug": "Bad Slug!", "title": "Hook", "template": "hooks", "params": {}, "why": ""},
             {"slug": "x", "title": "?", "template": "zeppelin", "params": {}, "why": ""},
         ],
     }
     title, parts, notes = steer.check_plan(raw, 5)
     assert title == "Kit"
-    assert [p["slug"] for p in parts] == ["kit-clip-2", "bad-slug"]  # unique, clean slugs
+    # unique within the plan, clean; registry collisions are resolved when a part is published
+    assert [p["slug"] for p in parts] == ["kit-clip", "kit-clip-2", "bad-slug"]
     assert parts[0]["params"]["hole_d"] == 6.0 and parts[0]["params"]["length"] == 50.0
-    assert parts[1]["template"] == "hook"
+    assert parts[2]["template"] == "hook"
     assert any("zeppelin" in n for n in notes) and any("clamped" in n for n in notes)
 
 

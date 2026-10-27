@@ -78,3 +78,4 @@ plugins = ["pydantic.mypy"]
 module = ["*.tests.*", "tests.*"]
 disallow_untyped_defs = false
 disallow_incomplete_defs = false
+disable_error_code = ["union-attr"]
