@@ -1,0 +1,80 @@
+[project]
+name = "partsmith"
+version = "0.1.0"
+description = "Phone photos of a broken part on a calibration mat -> measured, verified, parametric CadQuery replacement."
+readme = "README.md"
+license = "MIT"
+requires-python = ">=3.12,<3.13"
+dependencies = [
+  "cadquery==2.8.0",
+  "trimesh==5.2.0",
+  "opencv-contrib-python-headless==5.0.0.93",
+  "numpy>=2",
+  "scipy>=1.14",
+  "shapely>=2.0",
+  "rtree>=1.3",
+  "pydantic>=2.9",
+  "pyyaml>=6",
+  "pillow>=11",
+  "reportlab>=4.2",
+  "fastapi>=0.115",
+  "uvicorn[standard]>=0.32",
+  "python-multipart>=0.0.12",
+  "sqlalchemy>=2.0",
+  "httpx>=0.27",
+  "openai>=1.60",
+  "websockets>=13",
+  "mcp>=1.2",
+  "typer>=0.12",
+]
+
+[project.optional-dependencies]
+sam = ["meta-sam-parser==0.0.5"]
+storage = ["psycopg[binary]>=3.2", "boto3>=1.35", "redis>=5"]
+
+[project.scripts]
+partsmith = "services.cli:app"
+
+[dependency-groups]
+dev = [
+  "pytest>=8.3",
+  "pytest-timeout>=2.3",
+  "hypothesis>=6.112",
+  "ruff>=0.8",
+  "mypy>=1.13",
+  "types-PyYAML",
+  "pre-commit>=4",
+]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["services", "packages/schemas/partsmith_schemas", "eval", "tools"]
+
+[tool.ruff]
+line-length = 120
+target-version = "py312"
+extend-exclude = ["spikes", "apps", "data", "infra/modal"]
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "B", "UP", "SIM", "RUF"]
+ignore = ["E501", "RUF001", "RUF002", "RUF003", "B008"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests", "services", "eval", "tools", "packages/schemas"]
+addopts = "-q --timeout=300"
+markers = ["slow: long-running geometry tests", "live: needs real API keys (skipped by default)"]
+
+[tool.mypy]
+python_version = "3.12"
+strict = true
+ignore_missing_imports = true
+exclude = ["spikes/", "apps/", "infra/modal/", "data/"]
+plugins = ["pydantic.mypy"]
+
+[[tool.mypy.overrides]]
+module = ["*.tests.*", "tests.*"]
+disallow_untyped_defs = false
+disallow_incomplete_defs = false

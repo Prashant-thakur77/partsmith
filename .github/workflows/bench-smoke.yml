@@ -1,0 +1,20 @@
+name: bench-smoke
+on:
+  push:
+    branches: [main]
+
+jobs:
+  synthetic-bench:
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    env:
+      PROVIDER_MODE: mock
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6
+        with:
+          python-version: "3.12"
+          enable-cache: true
+      - run: uv sync --all-extras
+      # 10-part synthetic mini bench with deterministic mock providers; fails if metrics regress past the stored baseline.
+      - run: uv run python -m eval.run --suite synthetic --limit 10 --check-regression

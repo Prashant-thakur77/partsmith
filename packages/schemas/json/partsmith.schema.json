@@ -1,0 +1,3186 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$defs": {
+    "AnswerEvent": {
+      "additionalProperties": false,
+      "properties": {
+        "job": {
+          "title": "Job",
+          "type": "string"
+        },
+        "seq": {
+          "default": 0,
+          "title": "Seq",
+          "type": "integer"
+        },
+        "ts": {
+          "default": 0.0,
+          "title": "Ts",
+          "type": "number"
+        },
+        "ctx": {
+          "default": "",
+          "title": "Ctx",
+          "type": "string"
+        },
+        "t": {
+          "const": "answer",
+          "default": "answer",
+          "title": "T",
+          "type": "string"
+        },
+        "id": {
+          "title": "Id",
+          "type": "string"
+        },
+        "value": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "number"
+            }
+          ],
+          "title": "Value"
+        },
+        "via": {
+          "default": "text",
+          "enum": [
+            "text",
+            "voice"
+          ],
+          "title": "Via",
+          "type": "string"
+        }
+      },
+      "required": [
+        "job",
+        "id",
+        "value"
+      ],
+      "title": "AnswerEvent",
+      "type": "object"
+    },
+    "ArtifactEvent": {
+      "additionalProperties": false,
+      "properties": {
+        "job": {
+          "title": "Job",
+          "type": "string"
+        },
+        "seq": {
+          "default": 0,
+          "title": "Seq",
+          "type": "integer"
+        },
+        "ts": {
+          "default": 0.0,
+          "title": "Ts",
+          "type": "number"
+        },
+        "ctx": {
+          "default": "",
+          "title": "Ctx",
+          "type": "string"
+        },
+        "t": {
+          "const": "artifact",
+          "default": "artifact",
+          "title": "T",
+          "type": "string"
+        },
+        "kind": {
+          "enum": [
+            "photo",
+            "rectified",
+            "mask_overlay",
+            "measure_overlay",
+            "render_overlay",
+            "residual_heatmap",
+            "stl",
+            "step",
+            "threemf",
+            "code",
+            "view",
+            "verification",
+            "template_pdf",
+            "preview",
+            "repair_card",
+            "coupon",
+            "partspec"
+          ],
+          "title": "Kind",
+          "type": "string"
+        },
+        "sha": {
+          "title": "Sha",
+          "type": "string"
+        },
+        "url": {
+          "title": "Url",
+          "type": "string"
+        },
+        "iter": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Iter"
+        },
+        "label": {
+          "default": "",
+          "title": "Label",
+          "type": "string"
+        }
+      },
+      "required": [
+        "job",
+        "kind",
+        "sha",
+        "url"
+      ],
+      "title": "ArtifactEvent",
+      "type": "object"
+    },
+    "BakeResult": {
+      "additionalProperties": false,
+      "properties": {
+        "cache_key": {
+          "title": "Cache Key",
+          "type": "string"
+        },
+        "part_slug": {
+          "title": "Part Slug",
+          "type": "string"
+        },
+        "version": {
+          "title": "Version",
+          "type": "integer"
+        },
+        "params": {
+          "additionalProperties": {
+            "type": "number"
+          },
+          "title": "Params",
+          "type": "object"
+        },
+        "clamped": {
+          "additionalProperties": {
+            "type": "number"
+          },
+          "title": "Clamped",
+          "type": "object"
+        },
+        "artifacts": {
+          "additionalProperties": {
+            "type": "string"
+          },
+          "title": "Artifacts",
+          "type": "object"
+        },
+        "facts": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/PartFacts"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "cache_hit": {
+          "title": "Cache Hit",
+          "type": "boolean"
+        },
+        "ms": {
+          "title": "Ms",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "cache_key",
+        "part_slug",
+        "version",
+        "params",
+        "artifacts",
+        "cache_hit",
+        "ms"
+      ],
+      "title": "BakeResult",
+      "type": "object"
+    },
+    "BaseProfile": {
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "enum": [
+            "polyline",
+            "spline",
+            "circle",
+            "rect"
+          ],
+          "title": "Kind",
+          "type": "string"
+        },
+        "points_mm": {
+          "items": {
+            "maxItems": 2,
+            "minItems": 2,
+            "prefixItems": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "number"
+              }
+            ],
+            "type": "array"
+          },
+          "title": "Points Mm",
+          "type": "array"
+        },
+        "source": {
+          "$ref": "#/$defs/Source",
+          "default": "measured"
+        },
+        "sigma_mm": {
+          "default": 0.0,
+          "title": "Sigma Mm",
+          "type": "number"
+        }
+      },
+      "required": [
+        "kind",
+        "points_mm"
+      ],
+      "title": "BaseProfile",
+      "type": "object"
+    },
+    "BlindHole": {
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "const": "blind_hole",
+          "default": "blind_hole",
+          "title": "Kind",
+          "type": "string"
+        },
+        "id": {
+          "title": "Id",
+          "type": "string"
+        },
+        "center_mm": {
+          "maxItems": 2,
+          "minItems": 2,
+          "prefixItems": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "number"
+            }
+          ],
+          "title": "Center Mm",
+          "type": "array"
+        },
+        "diameter": {
+          "$ref": "#/$defs/Measured"
+        },
+        "depth": {
+          "$ref": "#/$defs/Measured"
+        }
+      },
+      "required": [
+        "id",
+        "center_mm",
+        "diameter",
+        "depth"
+      ],
+      "title": "BlindHole",
+      "type": "object"
+    },
+    "Boss": {
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "const": "boss",
+          "default": "boss",
+          "title": "Kind",
+          "type": "string"
+        },
+        "id": {
+          "title": "Id",
+          "type": "string"
+        },
+        "center_mm": {
+          "maxItems": 2,
+          "minItems": 2,
+          "prefixItems": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "number"
+            }
+          ],
+          "title": "Center Mm",
+          "type": "array"
+        },
+        "outer_d": {
+          "$ref": "#/$defs/Measured"
+        },
+        "inner_d": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Measured"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "height": {
+          "$ref": "#/$defs/Measured"
+        }
+      },
+      "required": [
+        "id",
+        "center_mm",
+        "outer_d",
+        "height"
+      ],
+      "title": "Boss",
+      "type": "object"
+    },
+    "BrokenRegion": {
+      "additionalProperties": false,
+      "properties": {
+        "polygon_mm": {
+          "items": {
+            "maxItems": 2,
+            "minItems": 2,
+            "prefixItems": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "number"
+              }
+            ],
+            "type": "array"
+          },
+          "title": "Polygon Mm",
+          "type": "array"
+        },
+        "strategy": {
+          "enum": [
+            "mirror",
+            "mating_part",
+            "template",
+            "user"
+          ],
+          "title": "Strategy",
+          "type": "string"
+        },
+        "note": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Note"
+        }
+      },
+      "required": [
+        "polygon_mm",
+        "strategy"
+      ],
+      "title": "BrokenRegion",
+      "type": "object"
+    },
+    "Calibration": {
+      "additionalProperties": false,
+      "properties": {
+        "mat_id": {
+          "title": "Mat Id",
+          "type": "string"
+        },
+        "mat_kind": {
+          "$ref": "#/$defs/MatKind"
+        },
+        "markers_found": {
+          "title": "Markers Found",
+          "type": "integer"
+        },
+        "homography": {
+          "items": {
+            "items": {
+              "type": "number"
+            },
+            "type": "array"
+          },
+          "title": "Homography",
+          "type": "array"
+        },
+        "reproj_error_px": {
+          "title": "Reproj Error Px",
+          "type": "number"
+        },
+        "reproj_error_mm": {
+          "title": "Reproj Error Mm",
+          "type": "number"
+        },
+        "rectified_px_per_mm": {
+          "title": "Rectified Px Per Mm",
+          "type": "number"
+        },
+        "scale_correction": {
+          "default": 1.0,
+          "title": "Scale Correction",
+          "type": "number"
+        },
+        "pose": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/CameraPose"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        }
+      },
+      "required": [
+        "mat_id",
+        "mat_kind",
+        "markers_found",
+        "homography",
+        "reproj_error_px",
+        "reproj_error_mm",
+        "rectified_px_per_mm"
+      ],
+      "title": "Calibration",
+      "type": "object"
+    },
+    "CameraPose": {
+      "additionalProperties": false,
+      "properties": {
+        "K": {
+          "items": {
+            "items": {
+              "type": "number"
+            },
+            "type": "array"
+          },
+          "title": "K",
+          "type": "array"
+        },
+        "dist": {
+          "items": {
+            "type": "number"
+          },
+          "title": "Dist",
+          "type": "array"
+        },
+        "R": {
+          "items": {
+            "items": {
+              "type": "number"
+            },
+            "type": "array"
+          },
+          "title": "R",
+          "type": "array"
+        },
+        "t_mm": {
+          "items": {
+            "type": "number"
+          },
+          "title": "T Mm",
+          "type": "array"
+        },
+        "camera_height_mm": {
+          "title": "Camera Height Mm",
+          "type": "number"
+        },
+        "tilt_deg": {
+          "title": "Tilt Deg",
+          "type": "number"
+        },
+        "intrinsics_source": {
+          "enum": [
+            "calibrated",
+            "exif",
+            "estimated",
+            "synthetic"
+          ],
+          "title": "Intrinsics Source",
+          "type": "string"
+        }
+      },
+      "required": [
+        "K",
+        "R",
+        "t_mm",
+        "camera_height_mm",
+        "tilt_deg",
+        "intrinsics_source"
+      ],
+      "title": "CameraPose",
+      "type": "object"
+    },
+    "CaptureCheck": {
+      "additionalProperties": false,
+      "properties": {
+        "name": {
+          "enum": [
+            "markers",
+            "reprojection",
+            "blur",
+            "coverage",
+            "tilt",
+            "exposure",
+            "glare",
+            "moire",
+            "scale"
+          ],
+          "title": "Name",
+          "type": "string"
+        },
+        "passed": {
+          "title": "Passed",
+          "type": "boolean"
+        },
+        "severity": {
+          "enum": [
+            "ok",
+            "warn",
+            "fail"
+          ],
+          "title": "Severity",
+          "type": "string"
+        },
+        "value": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Value"
+        },
+        "threshold": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Threshold"
+        },
+        "reason": {
+          "title": "Reason",
+          "type": "string"
+        }
+      },
+      "required": [
+        "name",
+        "passed",
+        "severity",
+        "reason"
+      ],
+      "title": "CaptureCheck",
+      "type": "object"
+    },
+    "CaptureReport": {
+      "additionalProperties": false,
+      "properties": {
+        "passed": {
+          "title": "Passed",
+          "type": "boolean"
+        },
+        "checks": {
+          "items": {
+            "$ref": "#/$defs/CaptureCheck"
+          },
+          "title": "Checks",
+          "type": "array"
+        },
+        "retake_reason": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Retake Reason"
+        }
+      },
+      "required": [
+        "passed",
+        "checks"
+      ],
+      "title": "CaptureReport",
+      "type": "object"
+    },
+    "DShaftBore": {
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "const": "d_shaft_bore",
+          "default": "d_shaft_bore",
+          "title": "Kind",
+          "type": "string"
+        },
+        "id": {
+          "title": "Id",
+          "type": "string"
+        },
+        "diameter": {
+          "$ref": "#/$defs/Measured"
+        },
+        "flat_depth": {
+          "$ref": "#/$defs/Measured"
+        }
+      },
+      "required": [
+        "id",
+        "diameter",
+        "flat_depth"
+      ],
+      "title": "DShaftBore",
+      "type": "object"
+    },
+    "DataOrigin": {
+      "description": "Provenance of an input or run. Synthetic and mock data are always labelled as such.",
+      "enum": [
+        "real",
+        "synthetic",
+        "reference_object",
+        "replay"
+      ],
+      "title": "DataOrigin",
+      "type": "string"
+    },
+    "DoneEvent": {
+      "additionalProperties": false,
+      "properties": {
+        "job": {
+          "title": "Job",
+          "type": "string"
+        },
+        "seq": {
+          "default": 0,
+          "title": "Seq",
+          "type": "integer"
+        },
+        "ts": {
+          "default": 0.0,
+          "title": "Ts",
+          "type": "number"
+        },
+        "ctx": {
+          "default": "",
+          "title": "Ctx",
+          "type": "string"
+        },
+        "t": {
+          "const": "done",
+          "default": "done",
+          "title": "T",
+          "type": "string"
+        },
+        "verified": {
+          "title": "Verified",
+          "type": "boolean"
+        },
+        "status": {
+          "enum": [
+            "verified",
+            "best_effort",
+            "failed",
+            "refused",
+            "cancelled"
+          ],
+          "title": "Status",
+          "type": "string"
+        },
+        "summary": {
+          "additionalProperties": true,
+          "title": "Summary",
+          "type": "object"
+        }
+      },
+      "required": [
+        "job",
+        "verified",
+        "status"
+      ],
+      "title": "DoneEvent",
+      "type": "object"
+    },
+    "Event": {
+      "discriminator": {
+        "mapping": {
+          "answer": "#/$defs/AnswerEvent",
+          "artifact": "#/$defs/ArtifactEvent",
+          "done": "#/$defs/DoneEvent",
+          "iteration": "#/$defs/IterationEvent",
+          "log": "#/$defs/LogEvent",
+          "metric": "#/$defs/MetricEvent",
+          "model_call": "#/$defs/ModelCallEvent",
+          "question": "#/$defs/QuestionEvent",
+          "stage": "#/$defs/StageEvent"
+        },
+        "propertyName": "t"
+      },
+      "oneOf": [
+        {
+          "$ref": "#/$defs/StageEvent"
+        },
+        {
+          "$ref": "#/$defs/MetricEvent"
+        },
+        {
+          "$ref": "#/$defs/ArtifactEvent"
+        },
+        {
+          "$ref": "#/$defs/QuestionEvent"
+        },
+        {
+          "$ref": "#/$defs/AnswerEvent"
+        },
+        {
+          "$ref": "#/$defs/ModelCallEvent"
+        },
+        {
+          "$ref": "#/$defs/IterationEvent"
+        },
+        {
+          "$ref": "#/$defs/LogEvent"
+        },
+        {
+          "$ref": "#/$defs/DoneEvent"
+        }
+      ]
+    },
+    "Evidence": {
+      "additionalProperties": false,
+      "properties": {
+        "view": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "View"
+        },
+        "pixels": {
+          "anyOf": [
+            {
+              "items": {
+                "items": {
+                  "type": "number"
+                },
+                "type": "array"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Pixels"
+        },
+        "note": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Note"
+        }
+      },
+      "title": "Evidence",
+      "type": "object"
+    },
+    "Family": {
+      "enum": [
+        "clip",
+        "knob",
+        "bracket",
+        "hook",
+        "spacer",
+        "cover",
+        "wheel",
+        "latch",
+        "gear",
+        "cable_clip",
+        "hinge",
+        "custom"
+      ],
+      "title": "Family",
+      "type": "string"
+    },
+    "FeatureResidual": {
+      "additionalProperties": false,
+      "properties": {
+        "feature_id": {
+          "title": "Feature Id",
+          "type": "string"
+        },
+        "quantity": {
+          "title": "Quantity",
+          "type": "string"
+        },
+        "measured_mm": {
+          "title": "Measured Mm",
+          "type": "number"
+        },
+        "model_mm": {
+          "title": "Model Mm",
+          "type": "number"
+        },
+        "delta_mm": {
+          "title": "Delta Mm",
+          "type": "number"
+        },
+        "tol_mm": {
+          "title": "Tol Mm",
+          "type": "number"
+        },
+        "passed": {
+          "title": "Passed",
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "feature_id",
+        "quantity",
+        "measured_mm",
+        "model_mm",
+        "delta_mm",
+        "tol_mm",
+        "passed"
+      ],
+      "title": "FeatureResidual",
+      "type": "object"
+    },
+    "FilletAll": {
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "const": "fillet_all",
+          "default": "fillet_all",
+          "title": "Kind",
+          "type": "string"
+        },
+        "id": {
+          "title": "Id",
+          "type": "string"
+        },
+        "radius": {
+          "$ref": "#/$defs/Measured"
+        }
+      },
+      "required": [
+        "id",
+        "radius"
+      ],
+      "title": "FilletAll",
+      "type": "object"
+    },
+    "Fit": {
+      "additionalProperties": false,
+      "properties": {
+        "clearance_mm": {
+          "default": 0.2,
+          "title": "Clearance Mm",
+          "type": "number"
+        },
+        "material": {
+          "default": "PLA",
+          "enum": [
+            "PLA",
+            "PETG",
+            "ABS",
+            "ASA",
+            "TPU"
+          ],
+          "title": "Material",
+          "type": "string"
+        },
+        "printer": {
+          "default": "FDM_0_4",
+          "enum": [
+            "FDM_0_4",
+            "FDM_0_6",
+            "SLA"
+          ],
+          "title": "Printer",
+          "type": "string"
+        }
+      },
+      "title": "Fit",
+      "type": "object"
+    },
+    "Hole": {
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "title": "Id",
+          "type": "string"
+        },
+        "center_mm": {
+          "maxItems": 2,
+          "minItems": 2,
+          "prefixItems": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "number"
+            }
+          ],
+          "title": "Center Mm",
+          "type": "array"
+        },
+        "diameter": {
+          "$ref": "#/$defs/Measured"
+        },
+        "roundness_mm": {
+          "default": 0.0,
+          "title": "Roundness Mm",
+          "type": "number"
+        }
+      },
+      "required": [
+        "id",
+        "center_mm",
+        "diameter"
+      ],
+      "title": "Hole",
+      "type": "object"
+    },
+    "IterationEvent": {
+      "additionalProperties": false,
+      "properties": {
+        "job": {
+          "title": "Job",
+          "type": "string"
+        },
+        "seq": {
+          "default": 0,
+          "title": "Seq",
+          "type": "integer"
+        },
+        "ts": {
+          "default": 0.0,
+          "title": "Ts",
+          "type": "number"
+        },
+        "ctx": {
+          "default": "",
+          "title": "Ctx",
+          "type": "string"
+        },
+        "t": {
+          "const": "iteration",
+          "default": "iteration",
+          "title": "T",
+          "type": "string"
+        },
+        "iter": {
+          "title": "Iter",
+          "type": "integer"
+        },
+        "strategy": {
+          "enum": [
+            "template",
+            "free_code",
+            "human"
+          ],
+          "title": "Strategy",
+          "type": "string"
+        },
+        "edits": {
+          "items": {
+            "additionalProperties": true,
+            "type": "object"
+          },
+          "title": "Edits",
+          "type": "array"
+        },
+        "analysis": {
+          "default": "",
+          "title": "Analysis",
+          "type": "string"
+        },
+        "code_sha": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Code Sha"
+        },
+        "diff": {
+          "default": "",
+          "title": "Diff",
+          "type": "string"
+        },
+        "hausdorff_mm": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Hausdorff Mm"
+        },
+        "iou": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Iou"
+        },
+        "passed_tests": {
+          "default": 0,
+          "title": "Passed Tests",
+          "type": "integer"
+        },
+        "total_tests": {
+          "default": 0,
+          "title": "Total Tests",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "job",
+        "iter",
+        "strategy"
+      ],
+      "title": "IterationEvent",
+      "type": "object"
+    },
+    "JobInput": {
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "default": "fix",
+          "enum": [
+            "fix",
+            "steer",
+            "bake",
+            "variant",
+            "fit_check"
+          ],
+          "title": "Kind",
+          "type": "string"
+        },
+        "intent": {
+          "default": "",
+          "title": "Intent",
+          "type": "string"
+        },
+        "photo_shas": {
+          "additionalProperties": {
+            "type": "string"
+          },
+          "title": "Photo Shas",
+          "type": "object"
+        },
+        "mat_kind": {
+          "default": "screen",
+          "enum": [
+            "screen",
+            "paper"
+          ],
+          "title": "Mat Kind",
+          "type": "string"
+        },
+        "screen_px_per_mm": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Screen Px Per Mm"
+        },
+        "thickness_mm": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Thickness Mm"
+        },
+        "family_hint": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Family"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "origin": {
+          "$ref": "#/$defs/DataOrigin",
+          "default": "real"
+        },
+        "max_iters": {
+          "default": 6,
+          "title": "Max Iters",
+          "type": "integer"
+        },
+        "budget_usd": {
+          "default": 0.5,
+          "title": "Budget Usd",
+          "type": "number"
+        },
+        "provider_mode": {
+          "anyOf": [
+            {
+              "enum": [
+                "live",
+                "mock",
+                "replay"
+              ],
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Provider Mode"
+        }
+      },
+      "title": "JobInput",
+      "type": "object"
+    },
+    "JobSummary": {
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "title": "Id",
+          "type": "string"
+        },
+        "kind": {
+          "enum": [
+            "fix",
+            "steer",
+            "bake",
+            "variant",
+            "fit_check"
+          ],
+          "title": "Kind",
+          "type": "string"
+        },
+        "status": {
+          "enum": [
+            "queued",
+            "running",
+            "waiting_for_answer",
+            "done",
+            "failed",
+            "cancelled"
+          ],
+          "title": "Status",
+          "type": "string"
+        },
+        "created_at": {
+          "title": "Created At",
+          "type": "number"
+        },
+        "updated_at": {
+          "title": "Updated At",
+          "type": "number"
+        },
+        "title": {
+          "default": "",
+          "title": "Title",
+          "type": "string"
+        },
+        "origin": {
+          "$ref": "#/$defs/DataOrigin",
+          "default": "real"
+        },
+        "provider_mode": {
+          "default": "mock",
+          "enum": [
+            "live",
+            "mock",
+            "replay"
+          ],
+          "title": "Provider Mode",
+          "type": "string"
+        },
+        "verified": {
+          "default": false,
+          "title": "Verified",
+          "type": "boolean"
+        },
+        "max_error_mm": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Max Error Mm"
+        },
+        "iterations": {
+          "default": 0,
+          "title": "Iterations",
+          "type": "integer"
+        },
+        "cost_usd": {
+          "default": 0.0,
+          "title": "Cost Usd",
+          "type": "number"
+        },
+        "part_slug": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Part Slug"
+        },
+        "is_replay": {
+          "default": false,
+          "title": "Is Replay",
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "id",
+        "kind",
+        "status",
+        "created_at",
+        "updated_at"
+      ],
+      "title": "JobSummary",
+      "type": "object"
+    },
+    "JudgeVeto": {
+      "additionalProperties": false,
+      "properties": {
+        "feature": {
+          "title": "Feature",
+          "type": "string"
+        },
+        "issue": {
+          "title": "Issue",
+          "type": "string"
+        },
+        "severity": {
+          "enum": [
+            "blocking",
+            "minor"
+          ],
+          "title": "Severity",
+          "type": "string"
+        }
+      },
+      "required": [
+        "feature",
+        "issue",
+        "severity"
+      ],
+      "title": "JudgeVeto",
+      "type": "object"
+    },
+    "LogEvent": {
+      "additionalProperties": false,
+      "properties": {
+        "job": {
+          "title": "Job",
+          "type": "string"
+        },
+        "seq": {
+          "default": 0,
+          "title": "Seq",
+          "type": "integer"
+        },
+        "ts": {
+          "default": 0.0,
+          "title": "Ts",
+          "type": "number"
+        },
+        "ctx": {
+          "default": "",
+          "title": "Ctx",
+          "type": "string"
+        },
+        "t": {
+          "const": "log",
+          "default": "log",
+          "title": "T",
+          "type": "string"
+        },
+        "level": {
+          "default": "info",
+          "enum": [
+            "info",
+            "warn",
+            "error"
+          ],
+          "title": "Level",
+          "type": "string"
+        },
+        "msg": {
+          "title": "Msg",
+          "type": "string"
+        }
+      },
+      "required": [
+        "job",
+        "msg"
+      ],
+      "title": "LogEvent",
+      "type": "object"
+    },
+    "MatKind": {
+      "enum": [
+        "screen",
+        "paper"
+      ],
+      "title": "MatKind",
+      "type": "string"
+    },
+    "MeasureResult": {
+      "additionalProperties": false,
+      "properties": {
+        "capture": {
+          "$ref": "#/$defs/CaptureReport"
+        },
+        "calibration": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Calibration"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "measurements": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Measurements"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "overlay_sha": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Overlay Sha"
+        },
+        "rectified_sha": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Rectified Sha"
+        },
+        "mask_sha": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Mask Sha"
+        }
+      },
+      "required": [
+        "capture"
+      ],
+      "title": "MeasureResult",
+      "type": "object"
+    },
+    "Measured": {
+      "additionalProperties": false,
+      "properties": {
+        "value": {
+          "title": "Value",
+          "type": "number"
+        },
+        "source": {
+          "$ref": "#/$defs/Source",
+          "default": "measured"
+        },
+        "sigma_mm": {
+          "default": 0.0,
+          "minimum": 0,
+          "title": "Sigma Mm",
+          "type": "number"
+        },
+        "evidence": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Evidence"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        }
+      },
+      "required": [
+        "value"
+      ],
+      "title": "Measured",
+      "type": "object"
+    },
+    "Measurements": {
+      "additionalProperties": false,
+      "description": "Everything the metrology stage measured from one view, in the PART frame\n(centre of min-area rect, long side +X, Y up), millimetres.",
+      "properties": {
+        "view": {
+          "$ref": "#/$defs/ViewKind"
+        },
+        "origin": {
+          "$ref": "#/$defs/DataOrigin"
+        },
+        "outline_mm": {
+          "items": {
+            "maxItems": 2,
+            "minItems": 2,
+            "prefixItems": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "number"
+              }
+            ],
+            "type": "array"
+          },
+          "title": "Outline Mm",
+          "type": "array"
+        },
+        "holes": {
+          "items": {
+            "$ref": "#/$defs/Hole"
+          },
+          "title": "Holes",
+          "type": "array"
+        },
+        "slots": {
+          "items": {
+            "$ref": "#/$defs/Slot"
+          },
+          "title": "Slots",
+          "type": "array"
+        },
+        "length": {
+          "$ref": "#/$defs/Measured"
+        },
+        "width": {
+          "$ref": "#/$defs/Measured"
+        },
+        "thickness": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Measured"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "area_mm2": {
+          "title": "Area Mm2",
+          "type": "number"
+        },
+        "symmetry_axis_deg": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Symmetry Axis Deg"
+        },
+        "symmetry_score": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Symmetry Score"
+        },
+        "height_correction_scale": {
+          "default": 1.0,
+          "title": "Height Correction Scale",
+          "type": "number"
+        },
+        "part_to_mat": {
+          "items": {
+            "items": {
+              "type": "number"
+            },
+            "type": "array"
+          },
+          "title": "Part To Mat",
+          "type": "array"
+        },
+        "mask_source": {
+          "default": "mock-threshold",
+          "enum": [
+            "sam-3.1",
+            "sam3-open",
+            "mock-threshold",
+            "synthetic-gt"
+          ],
+          "title": "Mask Source",
+          "type": "string"
+        },
+        "mask_confidence": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Mask Confidence"
+        },
+        "notes": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Notes",
+          "type": "array"
+        }
+      },
+      "required": [
+        "view",
+        "origin",
+        "outline_mm",
+        "length",
+        "width",
+        "area_mm2"
+      ],
+      "title": "Measurements",
+      "type": "object"
+    },
+    "MetricEvent": {
+      "additionalProperties": false,
+      "properties": {
+        "job": {
+          "title": "Job",
+          "type": "string"
+        },
+        "seq": {
+          "default": 0,
+          "title": "Seq",
+          "type": "integer"
+        },
+        "ts": {
+          "default": 0.0,
+          "title": "Ts",
+          "type": "number"
+        },
+        "ctx": {
+          "default": "",
+          "title": "Ctx",
+          "type": "string"
+        },
+        "t": {
+          "const": "metric",
+          "default": "metric",
+          "title": "T",
+          "type": "string"
+        },
+        "iter": {
+          "title": "Iter",
+          "type": "integer"
+        },
+        "name": {
+          "title": "Name",
+          "type": "string"
+        },
+        "value": {
+          "title": "Value",
+          "type": "number"
+        },
+        "threshold": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Threshold"
+        },
+        "unit": {
+          "default": "mm",
+          "title": "Unit",
+          "type": "string"
+        }
+      },
+      "required": [
+        "job",
+        "iter",
+        "name",
+        "value"
+      ],
+      "title": "MetricEvent",
+      "type": "object"
+    },
+    "ModelCallEvent": {
+      "additionalProperties": false,
+      "properties": {
+        "job": {
+          "title": "Job",
+          "type": "string"
+        },
+        "seq": {
+          "default": 0,
+          "title": "Seq",
+          "type": "integer"
+        },
+        "ts": {
+          "default": 0.0,
+          "title": "Ts",
+          "type": "number"
+        },
+        "ctx": {
+          "default": "",
+          "title": "Ctx",
+          "type": "string"
+        },
+        "t": {
+          "const": "model_call",
+          "default": "model_call",
+          "title": "T",
+          "type": "string"
+        },
+        "provider": {
+          "title": "Provider",
+          "type": "string"
+        },
+        "model": {
+          "title": "Model",
+          "type": "string"
+        },
+        "stage": {
+          "title": "Stage",
+          "type": "string"
+        },
+        "mode": {
+          "enum": [
+            "live",
+            "mock",
+            "replay"
+          ],
+          "title": "Mode",
+          "type": "string"
+        },
+        "tokens_in": {
+          "default": 0,
+          "title": "Tokens In",
+          "type": "integer"
+        },
+        "tokens_out": {
+          "default": 0,
+          "title": "Tokens Out",
+          "type": "integer"
+        },
+        "ms": {
+          "default": 0,
+          "title": "Ms",
+          "type": "integer"
+        },
+        "usd": {
+          "default": 0.0,
+          "title": "Usd",
+          "type": "number"
+        },
+        "ok": {
+          "default": true,
+          "title": "Ok",
+          "type": "boolean"
+        },
+        "error": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Error"
+        }
+      },
+      "required": [
+        "job",
+        "provider",
+        "model",
+        "stage",
+        "mode"
+      ],
+      "title": "ModelCallEvent",
+      "type": "object"
+    },
+    "Need": {
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "title": "Id",
+          "type": "string"
+        },
+        "query": {
+          "title": "Query",
+          "type": "string"
+        },
+        "votes": {
+          "default": 1,
+          "title": "Votes",
+          "type": "integer"
+        },
+        "status": {
+          "default": "open",
+          "enum": [
+            "open",
+            "in_progress",
+            "fulfilled"
+          ],
+          "title": "Status",
+          "type": "string"
+        },
+        "created_at": {
+          "default": 0.0,
+          "title": "Created At",
+          "type": "number"
+        }
+      },
+      "required": [
+        "id",
+        "query"
+      ],
+      "title": "Need",
+      "type": "object"
+    },
+    "ParamSpec": {
+      "additionalProperties": false,
+      "description": "One knob in a part program's PARAMS block: name: (default, min, max, step, unit, affects_fit, label).",
+      "properties": {
+        "name": {
+          "title": "Name",
+          "type": "string"
+        },
+        "default": {
+          "type": "number",
+          "title": "Default"
+        },
+        "min": {
+          "title": "Min",
+          "type": "number"
+        },
+        "max": {
+          "title": "Max",
+          "type": "number"
+        },
+        "step": {
+          "title": "Step",
+          "type": "number"
+        },
+        "unit": {
+          "default": "mm",
+          "enum": [
+            "mm",
+            "deg",
+            ""
+          ],
+          "title": "Unit",
+          "type": "string"
+        },
+        "affects_fit": {
+          "default": true,
+          "title": "Affects Fit",
+          "type": "boolean"
+        },
+        "label": {
+          "default": "",
+          "title": "Label",
+          "type": "string"
+        },
+        "topology": {
+          "default": false,
+          "title": "Topology",
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "name",
+        "default",
+        "min",
+        "max",
+        "step"
+      ],
+      "title": "ParamSpec",
+      "type": "object"
+    },
+    "PartFacts": {
+      "additionalProperties": false,
+      "properties": {
+        "bbox_mm": {
+          "maxItems": 3,
+          "minItems": 3,
+          "prefixItems": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "number"
+            },
+            {
+              "type": "number"
+            }
+          ],
+          "title": "Bbox Mm",
+          "type": "array"
+        },
+        "volume_mm3": {
+          "title": "Volume Mm3",
+          "type": "number"
+        },
+        "mass_g_pla": {
+          "title": "Mass G Pla",
+          "type": "number"
+        },
+        "mass_g_petg": {
+          "title": "Mass G Petg",
+          "type": "number"
+        },
+        "print_minutes_est": {
+          "title": "Print Minutes Est",
+          "type": "number"
+        },
+        "supports_needed": {
+          "title": "Supports Needed",
+          "type": "boolean"
+        },
+        "orientation": {
+          "title": "Orientation",
+          "type": "string"
+        }
+      },
+      "required": [
+        "bbox_mm",
+        "volume_mm3",
+        "mass_g_pla",
+        "mass_g_petg",
+        "print_minutes_est",
+        "supports_needed",
+        "orientation"
+      ],
+      "title": "PartFacts",
+      "type": "object"
+    },
+    "PartRecord": {
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "title": "Id",
+          "type": "string"
+        },
+        "slug": {
+          "title": "Slug",
+          "type": "string"
+        },
+        "title": {
+          "title": "Title",
+          "type": "string"
+        },
+        "family": {
+          "$ref": "#/$defs/Family"
+        },
+        "summary": {
+          "default": "",
+          "title": "Summary",
+          "type": "string"
+        },
+        "tags": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Tags",
+          "type": "array"
+        },
+        "version": {
+          "default": 1,
+          "title": "Version",
+          "type": "integer"
+        },
+        "status": {
+          "enum": [
+            "draft",
+            "verified",
+            "best_effort",
+            "published"
+          ],
+          "title": "Status",
+          "type": "string"
+        },
+        "params": {
+          "items": {
+            "$ref": "#/$defs/ParamSpec"
+          },
+          "title": "Params",
+          "type": "array"
+        },
+        "defaults": {
+          "additionalProperties": {
+            "type": "number"
+          },
+          "title": "Defaults",
+          "type": "object"
+        },
+        "code": {
+          "title": "Code",
+          "type": "string"
+        },
+        "code_sha": {
+          "title": "Code Sha",
+          "type": "string"
+        },
+        "verification": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Verification"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "provenance": {
+          "$ref": "#/$defs/Provenance"
+        },
+        "facts": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/PartFacts"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "licence": {
+          "default": "CC-BY-4.0",
+          "title": "Licence",
+          "type": "string"
+        },
+        "created_at": {
+          "default": 0.0,
+          "title": "Created At",
+          "type": "number"
+        },
+        "mating": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Mating",
+          "type": "array"
+        }
+      },
+      "required": [
+        "id",
+        "slug",
+        "title",
+        "family",
+        "status",
+        "params",
+        "defaults",
+        "code",
+        "code_sha",
+        "provenance"
+      ],
+      "title": "PartRecord",
+      "type": "object"
+    },
+    "PartSpec": {
+      "additionalProperties": false,
+      "properties": {
+        "family": {
+          "$ref": "#/$defs/Family"
+        },
+        "units": {
+          "const": "mm",
+          "default": "mm",
+          "title": "Units",
+          "type": "string"
+        },
+        "title": {
+          "default": "",
+          "title": "Title",
+          "type": "string"
+        },
+        "base_profile": {
+          "$ref": "#/$defs/BaseProfile"
+        },
+        "thickness": {
+          "$ref": "#/$defs/Measured"
+        },
+        "features": {
+          "items": {
+            "discriminator": {
+              "mapping": {
+                "blind_hole": "#/$defs/BlindHole",
+                "boss": "#/$defs/Boss",
+                "d_shaft_bore": "#/$defs/DShaftBore",
+                "fillet_all": "#/$defs/FilletAll",
+                "rib": "#/$defs/Rib",
+                "slot": "#/$defs/SlotFeature",
+                "snap_hook": "#/$defs/SnapHook",
+                "through_hole": "#/$defs/ThroughHole"
+              },
+              "propertyName": "kind"
+            },
+            "oneOf": [
+              {
+                "$ref": "#/$defs/ThroughHole"
+              },
+              {
+                "$ref": "#/$defs/BlindHole"
+              },
+              {
+                "$ref": "#/$defs/SlotFeature"
+              },
+              {
+                "$ref": "#/$defs/Boss"
+              },
+              {
+                "$ref": "#/$defs/Rib"
+              },
+              {
+                "$ref": "#/$defs/SnapHook"
+              },
+              {
+                "$ref": "#/$defs/DShaftBore"
+              },
+              {
+                "$ref": "#/$defs/FilletAll"
+              }
+            ]
+          },
+          "title": "Features",
+          "type": "array"
+        },
+        "broken_region": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/BrokenRegion"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "fit": {
+          "$ref": "#/$defs/Fit"
+        },
+        "unknowns": {
+          "items": {
+            "$ref": "#/$defs/Unknown"
+          },
+          "title": "Unknowns",
+          "type": "array"
+        },
+        "intent": {
+          "default": "",
+          "title": "Intent",
+          "type": "string"
+        },
+        "refusal": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Refusal"
+        },
+        "template_hint": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Template Hint"
+        }
+      },
+      "required": [
+        "family",
+        "base_profile",
+        "thickness"
+      ],
+      "title": "PartSpec",
+      "type": "object"
+    },
+    "PartTest": {
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "title": "Id",
+          "type": "string"
+        },
+        "description": {
+          "title": "Description",
+          "type": "string"
+        },
+        "value": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Value"
+        },
+        "expected": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Expected"
+        },
+        "tol": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Tol"
+        },
+        "passed": {
+          "title": "Passed",
+          "type": "boolean"
+        },
+        "priority": {
+          "default": "P0",
+          "enum": [
+            "P0",
+            "P1"
+          ],
+          "title": "Priority",
+          "type": "string"
+        }
+      },
+      "required": [
+        "id",
+        "description",
+        "value",
+        "expected",
+        "tol",
+        "passed"
+      ],
+      "title": "PartTest",
+      "type": "object"
+    },
+    "Provenance": {
+      "additionalProperties": false,
+      "properties": {
+        "origin": {
+          "$ref": "#/$defs/DataOrigin"
+        },
+        "job_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Job Id"
+        },
+        "photo_shas": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Photo Shas",
+          "type": "array"
+        },
+        "builder_model": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Builder Model"
+        },
+        "provider_mode": {
+          "default": "mock",
+          "enum": [
+            "live",
+            "mock",
+            "replay"
+          ],
+          "title": "Provider Mode",
+          "type": "string"
+        },
+        "created_by": {
+          "default": "partsmith",
+          "title": "Created By",
+          "type": "string"
+        },
+        "forked_from": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Forked From"
+        },
+        "note": {
+          "default": "",
+          "title": "Note",
+          "type": "string"
+        }
+      },
+      "required": [
+        "origin"
+      ],
+      "title": "Provenance",
+      "type": "object"
+    },
+    "QuestionEvent": {
+      "additionalProperties": false,
+      "properties": {
+        "job": {
+          "title": "Job",
+          "type": "string"
+        },
+        "seq": {
+          "default": 0,
+          "title": "Seq",
+          "type": "integer"
+        },
+        "ts": {
+          "default": 0.0,
+          "title": "Ts",
+          "type": "number"
+        },
+        "ctx": {
+          "default": "",
+          "title": "Ctx",
+          "type": "string"
+        },
+        "t": {
+          "const": "question",
+          "default": "question",
+          "title": "T",
+          "type": "string"
+        },
+        "id": {
+          "title": "Id",
+          "type": "string"
+        },
+        "text": {
+          "title": "Text",
+          "type": "string"
+        },
+        "expects": {
+          "default": "number_mm",
+          "enum": [
+            "number_mm",
+            "choice",
+            "text"
+          ],
+          "title": "Expects",
+          "type": "string"
+        },
+        "default": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Default"
+        },
+        "choices": {
+          "anyOf": [
+            {
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Choices"
+        }
+      },
+      "required": [
+        "job",
+        "id",
+        "text"
+      ],
+      "title": "QuestionEvent",
+      "type": "object"
+    },
+    "Rib": {
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "const": "rib",
+          "default": "rib",
+          "title": "Kind",
+          "type": "string"
+        },
+        "id": {
+          "title": "Id",
+          "type": "string"
+        },
+        "from_mm": {
+          "maxItems": 2,
+          "minItems": 2,
+          "prefixItems": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "number"
+            }
+          ],
+          "title": "From Mm",
+          "type": "array"
+        },
+        "to_mm": {
+          "maxItems": 2,
+          "minItems": 2,
+          "prefixItems": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "number"
+            }
+          ],
+          "title": "To Mm",
+          "type": "array"
+        },
+        "width": {
+          "$ref": "#/$defs/Measured"
+        },
+        "height": {
+          "$ref": "#/$defs/Measured"
+        }
+      },
+      "required": [
+        "id",
+        "from_mm",
+        "to_mm",
+        "width",
+        "height"
+      ],
+      "title": "Rib",
+      "type": "object"
+    },
+    "Slot": {
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "title": "Id",
+          "type": "string"
+        },
+        "center_mm": {
+          "maxItems": 2,
+          "minItems": 2,
+          "prefixItems": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "number"
+            }
+          ],
+          "title": "Center Mm",
+          "type": "array"
+        },
+        "length": {
+          "$ref": "#/$defs/Measured"
+        },
+        "width": {
+          "$ref": "#/$defs/Measured"
+        },
+        "angle_deg": {
+          "title": "Angle Deg",
+          "type": "number"
+        }
+      },
+      "required": [
+        "id",
+        "center_mm",
+        "length",
+        "width",
+        "angle_deg"
+      ],
+      "title": "Slot",
+      "type": "object"
+    },
+    "SlotFeature": {
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "const": "slot",
+          "default": "slot",
+          "title": "Kind",
+          "type": "string"
+        },
+        "id": {
+          "title": "Id",
+          "type": "string"
+        },
+        "center_mm": {
+          "maxItems": 2,
+          "minItems": 2,
+          "prefixItems": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "number"
+            }
+          ],
+          "title": "Center Mm",
+          "type": "array"
+        },
+        "length": {
+          "$ref": "#/$defs/Measured"
+        },
+        "width": {
+          "$ref": "#/$defs/Measured"
+        },
+        "angle_deg": {
+          "default": 0.0,
+          "title": "Angle Deg",
+          "type": "number"
+        }
+      },
+      "required": [
+        "id",
+        "center_mm",
+        "length",
+        "width"
+      ],
+      "title": "SlotFeature",
+      "type": "object"
+    },
+    "SnapHook": {
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "const": "snap_hook",
+          "default": "snap_hook",
+          "title": "Kind",
+          "type": "string"
+        },
+        "id": {
+          "title": "Id",
+          "type": "string"
+        },
+        "anchor": {
+          "title": "Anchor",
+          "type": "string"
+        },
+        "overhang": {
+          "$ref": "#/$defs/Measured"
+        },
+        "angle_deg": {
+          "title": "Angle Deg",
+          "type": "number"
+        },
+        "thickness": {
+          "$ref": "#/$defs/Measured"
+        },
+        "note": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Note"
+        }
+      },
+      "required": [
+        "id",
+        "anchor",
+        "overhang",
+        "angle_deg",
+        "thickness"
+      ],
+      "title": "SnapHook",
+      "type": "object"
+    },
+    "Source": {
+      "description": "Where a value came from. Shown on every number in the UI and exports.",
+      "enum": [
+        "measured",
+        "user_stated",
+        "inferred"
+      ],
+      "title": "Source",
+      "type": "string"
+    },
+    "StageEvent": {
+      "additionalProperties": false,
+      "properties": {
+        "job": {
+          "title": "Job",
+          "type": "string"
+        },
+        "seq": {
+          "default": 0,
+          "title": "Seq",
+          "type": "integer"
+        },
+        "ts": {
+          "default": 0.0,
+          "title": "Ts",
+          "type": "number"
+        },
+        "ctx": {
+          "default": "",
+          "title": "Ctx",
+          "type": "string"
+        },
+        "t": {
+          "const": "stage",
+          "default": "stage",
+          "title": "T",
+          "type": "string"
+        },
+        "stage": {
+          "enum": [
+            "capture",
+            "measure",
+            "understand",
+            "ask",
+            "plan",
+            "build",
+            "execute",
+            "verify",
+            "fix",
+            "judge",
+            "package",
+            "learn"
+          ],
+          "title": "Stage",
+          "type": "string"
+        },
+        "status": {
+          "enum": [
+            "start",
+            "ok",
+            "fail",
+            "skip"
+          ],
+          "title": "Status",
+          "type": "string"
+        },
+        "ms": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Ms"
+        },
+        "label": {
+          "default": "",
+          "title": "Label",
+          "type": "string"
+        },
+        "iter": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Iter"
+        }
+      },
+      "required": [
+        "job",
+        "stage",
+        "status"
+      ],
+      "title": "StageEvent",
+      "type": "object"
+    },
+    "Thresholds": {
+      "additionalProperties": false,
+      "properties": {
+        "hausdorff_mm": {
+          "default": 0.5,
+          "title": "Hausdorff Mm",
+          "type": "number"
+        },
+        "iou": {
+          "default": 0.97,
+          "title": "Iou",
+          "type": "number"
+        }
+      },
+      "title": "Thresholds",
+      "type": "object"
+    },
+    "ThroughHole": {
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "const": "through_hole",
+          "default": "through_hole",
+          "title": "Kind",
+          "type": "string"
+        },
+        "id": {
+          "title": "Id",
+          "type": "string"
+        },
+        "center_mm": {
+          "maxItems": 2,
+          "minItems": 2,
+          "prefixItems": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "number"
+            }
+          ],
+          "title": "Center Mm",
+          "type": "array"
+        },
+        "diameter": {
+          "$ref": "#/$defs/Measured"
+        },
+        "countersink": {
+          "default": false,
+          "title": "Countersink",
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "id",
+        "center_mm",
+        "diameter"
+      ],
+      "title": "ThroughHole",
+      "type": "object"
+    },
+    "Unknown": {
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "title": "Id",
+          "type": "string"
+        },
+        "question": {
+          "title": "Question",
+          "type": "string"
+        },
+        "expects": {
+          "default": "number_mm",
+          "enum": [
+            "number_mm",
+            "choice",
+            "text"
+          ],
+          "title": "Expects",
+          "type": "string"
+        },
+        "default": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Default"
+        },
+        "choices": {
+          "anyOf": [
+            {
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Choices"
+        }
+      },
+      "required": [
+        "id",
+        "question"
+      ],
+      "title": "Unknown",
+      "type": "object"
+    },
+    "Validity": {
+      "additionalProperties": false,
+      "properties": {
+        "is_valid": {
+          "title": "Is Valid",
+          "type": "boolean"
+        },
+        "single_solid": {
+          "title": "Single Solid",
+          "type": "boolean"
+        },
+        "watertight": {
+          "title": "Watertight",
+          "type": "boolean"
+        },
+        "volume_mm3": {
+          "title": "Volume Mm3",
+          "type": "number"
+        },
+        "bbox_mm": {
+          "maxItems": 3,
+          "minItems": 3,
+          "prefixItems": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "number"
+            },
+            {
+              "type": "number"
+            }
+          ],
+          "title": "Bbox Mm",
+          "type": "array"
+        },
+        "min_wall_mm": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Min Wall Mm"
+        },
+        "issues": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Issues",
+          "type": "array"
+        }
+      },
+      "required": [
+        "is_valid",
+        "single_solid",
+        "watertight",
+        "volume_mm3",
+        "bbox_mm"
+      ],
+      "title": "Validity",
+      "type": "object"
+    },
+    "VariantResult": {
+      "additionalProperties": false,
+      "properties": {
+        "params": {
+          "additionalProperties": {
+            "type": "number"
+          },
+          "title": "Params",
+          "type": "object"
+        },
+        "applied": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Applied",
+          "type": "array"
+        },
+        "not_applied": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Not Applied",
+          "type": "array"
+        },
+        "confidence": {
+          "title": "Confidence",
+          "type": "number"
+        },
+        "mode": {
+          "enum": [
+            "live",
+            "mock",
+            "replay"
+          ],
+          "title": "Mode",
+          "type": "string"
+        }
+      },
+      "required": [
+        "params",
+        "applied",
+        "not_applied",
+        "confidence",
+        "mode"
+      ],
+      "title": "VariantResult",
+      "type": "object"
+    },
+    "Verification": {
+      "additionalProperties": false,
+      "properties": {
+        "verified": {
+          "title": "Verified",
+          "type": "boolean"
+        },
+        "status": {
+          "enum": [
+            "verified",
+            "best_effort",
+            "failed"
+          ],
+          "title": "Status",
+          "type": "string"
+        },
+        "reasons": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Reasons",
+          "type": "array"
+        },
+        "thresholds": {
+          "$ref": "#/$defs/Thresholds"
+        },
+        "views": {
+          "items": {
+            "$ref": "#/$defs/ViewMetrics"
+          },
+          "title": "Views",
+          "type": "array"
+        },
+        "residuals": {
+          "items": {
+            "$ref": "#/$defs/FeatureResidual"
+          },
+          "title": "Residuals",
+          "type": "array"
+        },
+        "tests": {
+          "items": {
+            "$ref": "#/$defs/PartTest"
+          },
+          "title": "Tests",
+          "type": "array"
+        },
+        "validity": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Validity"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "vetoes": {
+          "items": {
+            "$ref": "#/$defs/JudgeVeto"
+          },
+          "title": "Vetoes",
+          "type": "array"
+        },
+        "max_error_mm": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Max Error Mm"
+        },
+        "origin": {
+          "$ref": "#/$defs/DataOrigin",
+          "default": "real"
+        },
+        "versions": {
+          "additionalProperties": {
+            "type": "string"
+          },
+          "title": "Versions",
+          "type": "object"
+        },
+        "hashes": {
+          "additionalProperties": {
+            "type": "string"
+          },
+          "title": "Hashes",
+          "type": "object"
+        },
+        "ms": {
+          "default": 0,
+          "title": "Ms",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "verified",
+        "status"
+      ],
+      "title": "Verification",
+      "type": "object"
+    },
+    "ViewKind": {
+      "enum": [
+        "top",
+        "side",
+        "mating",
+        "fit_check"
+      ],
+      "title": "ViewKind",
+      "type": "string"
+    },
+    "ViewMetrics": {
+      "additionalProperties": false,
+      "properties": {
+        "view": {
+          "title": "View",
+          "type": "string"
+        },
+        "iou": {
+          "title": "Iou",
+          "type": "number"
+        },
+        "hausdorff_mm": {
+          "title": "Hausdorff Mm",
+          "type": "number"
+        },
+        "hd95_mm": {
+          "title": "Hd95 Mm",
+          "type": "number"
+        },
+        "mean_mm": {
+          "title": "Mean Mm",
+          "type": "number"
+        },
+        "worst_point_mm": {
+          "anyOf": [
+            {
+              "maxItems": 2,
+              "minItems": 2,
+              "prefixItems": [
+                {
+                  "type": "number"
+                },
+                {
+                  "type": "number"
+                }
+              ],
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Worst Point Mm"
+        },
+        "over_area_mm2": {
+          "default": 0.0,
+          "title": "Over Area Mm2",
+          "type": "number"
+        },
+        "under_area_mm2": {
+          "default": 0.0,
+          "title": "Under Area Mm2",
+          "type": "number"
+        }
+      },
+      "required": [
+        "view",
+        "iou",
+        "hausdorff_mm",
+        "hd95_mm",
+        "mean_mm"
+      ],
+      "title": "ViewMetrics",
+      "type": "object"
+    }
+  }
+}
