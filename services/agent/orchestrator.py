@@ -16,7 +16,7 @@ import json
 import math
 import re
 import time
-from collections.abc import Callable, Iterator, Mapping
+from collections.abc import Callable, Iterator, Mapping, Sequence
 from contextlib import contextmanager
 from dataclasses import dataclass, field
 from typing import Any, Literal
@@ -174,6 +174,8 @@ class RunOptions:
     templates: bool = True  # PS-noTemplate: False = free code only
     judge: bool = True  # PS-noJudge: False = no judge stage
     height_correction: bool = True  # PS-noHeightCorr: False = measure on the mat plane, no parallax correction
+    fix_mode: Literal["agent", "pipeline"] = "agent"  # agent = the model operates the tools; pipeline = fixed loop
+    points: dict[str, list[dict[str, Any]]] | None = None  # user taps: {"top": [{"x", "y", "kind"?, "id"?}]} (photo px)
 
 
 class _Finish(Exception):
@@ -523,6 +525,9 @@ class FixRun:
         self.pending_heights: dict[str, tuple[float | None, Literal["prism", "round"]]] = {}
         self.noted: set[tuple[str, str]] = set()
         self.hidden_holes: dict[str, tuple[float, float]] = {}  # question id -> part-frame centre
+        self.orbit_views: list[Any] = []  # calibrated orbit frames (CameraView) for the verifier
+        self.orbit_height: Measured | None = None  # visual-hull height from the orbit clip (measured)
+        self.completion_accepted = False
 
     # ---- events ------------------------------------------------------------------------------------------------------
     def stage_event(self, stage: StageName, status: str, label: str, ms: int | None = None) -> None:
@@ -607,7 +612,10 @@ class FixRun:
             self.switch_strategy()
         self.first_values = dict(first.values)
         if not self.opts.single_shot:
-            self.fix_loop()
+            if self.opts.fix_mode == "agent":
+                self.agent_fix()
+            else:
+                self.fix_loop()
             if self.opts.judge:
                 self.judge()
         final = self.final_verification()
@@ -635,6 +643,10 @@ class FixRun:
             "title": self.spec.title if self.spec else "",
             "family": self.spec.family.value if self.spec else None,
         }
+        ship = self.job.read_json("ship.json")
+        if ship:
+            out["can_ship"] = bool(ship.get("ok"))
+        out["fix_mode"] = self.opts.fix_mode
         if v is not None and v.views:
             out["hausdorff_mm"] = max(m.hausdorff_mm for m in v.views)
             out["iou"] = min(m.iou for m in v.views)
@@ -657,9 +669,8 @@ class FixRun:
         with self.stage("capture", "Checking the photos (markers, blur, tilt, light)") as st:
             for view, key in self.photo_shas.items():
                 self.photos[view] = blobs.get(key)
-                self.job.emit(
-                    ArtifactEvent(job=self.job.id, kind="photo", sha=key, url=blobs.url(key), label=f"{view} photo")
-                )
+                kind, what = ("video", "orbit clip") if view == "orbit" else ("photo", f"{view} photo")
+                self.job.emit(ArtifactEvent(job=self.job.id, kind=kind, sha=key, url=blobs.url(key), label=what))
             if "top" not in self.photos:
                 st.status = "fail"
                 st.label = "No top photo"
@@ -818,7 +829,14 @@ class FixRun:
             cv = self.camera_view(view)
             if cv is not None:
                 out[view] = cv
+        for i, frame in enumerate(self.orbit_views):  # every usable orbit frame is one more calibrated view
+            out[f"orbit_{i}"] = frame
         return out
+
+    def measure_points(self, view: str, points_px: Sequence[Sequence[float]]) -> list[dict[str, Any]]:
+        from services.agent import evidence
+
+        return evidence.measure_points(self, view, points_px)
 
     def surface_notes(self) -> None:
         """Metrology notes that change what the model can know: shown in the trace once."""
@@ -864,6 +882,12 @@ class FixRun:
                     assert sm.thickness is not None
                     labels.append(f"side ({profile}): height {sm.thickness.value:.2f} mm")
             self.surface_notes()
+            if "orbit" in self.photos:
+                from services.agent import evidence
+
+                evidence.apply_orbit(self)
+                if self.orbit_height is not None:
+                    labels.append(f"orbit: height {self.orbit_height.value:.2f} mm")
             cal = mo.result.calibration
             if cal is not None:
                 self.calibration = {"mat_id": cal.mat_id, "H": cal.homography}
@@ -966,6 +990,11 @@ class FixRun:
                 st.label = f"Refused: {reason}"
                 raise _Finish("refused", {"reason": reason})
             self.note_unknowns(spec)
+            from services.agent import evidence
+
+            evidence.apply_points(self)
+            self.enforce_measured(spec, self.measurements["top"])
+            evidence.propose_completion(self)
             side_h = self.heights.get("side")
             if side_h is not None and side_h[1] != "round" and self.round_part() and self.measure_side("round"):
                 self.save_measurements()
@@ -1088,6 +1117,8 @@ class FixRun:
         side = self.measurements.get("side")
         if side is not None and side.thickness is not None:
             return side.thickness
+        if self.orbit_height is not None:
+            return self.orbit_height
         top = self.measurements["top"]
         if top.thickness is not None and top.thickness.source != Source.inferred:
             return top.thickness
@@ -1118,6 +1149,9 @@ class FixRun:
 
     def ask(self) -> None:
         assert self.spec is not None
+        from services.agent import evidence
+
+        evidence.lookup_specs(self)
         if not self.spec.unknowns:
             with self.stage("ask", "No questions needed") as st:
                 st.status = "skip"
@@ -1239,6 +1273,7 @@ class FixRun:
                     "partspec": self.spec.model_dump(mode="json"),
                     "measurements": {v: m.model_dump(mode="json") for v, m in self.model_measurements().items()},
                     "answers": dict(self.answers),
+                    "orbit_height_mm": self.orbit_height.value if self.orbit_height else None,
                     "previous_error": error,
                     "attempt": attempt,
                 },
@@ -1450,15 +1485,40 @@ class FixRun:
             )
         return sorted(out, key=lambda w: -float(w["hausdorff_mm"]))
 
+    def fix_context(self, rnd: Round, *, numeric: bool = True) -> dict[str, Any]:
+        """Everything a fixer may know about a round: residual table, views, tests, worst spots in the model frame,
+        hole layout, template regions, edit history. Never ground truth."""
+        assert rnd.verification is not None
+        v = rnd.verification
+        specs = parse_params(rnd.code)
+        tpl = self.template if rnd.strategy == "template" else None
+        photo_n, model_n = self.openings(rnd)
+        return {
+            "strategy": rnd.strategy,
+            "measure_map": template_measure_map(rnd.code, tpl),
+            "params": [s.model_dump(mode="json") for s in specs],
+            "values": dict(rnd.values),
+            "verification": {
+                "residuals": residual_table(v),
+                "views": [m.model_dump(mode="json") for m in v.views],
+                "tests": [t.model_dump(mode="json") for t in v.tests],
+            }
+            if numeric
+            else {},
+            "history": [dict(h) for h in self.history] if numeric else [],
+            "measured_holes": photo_n,
+            "model_holes": model_n,
+            "worst": self.worst_spots(rnd),
+            "holes": self.hole_layout(rnd),
+            "regions": {k: [list(b) for b in bx] for k, bx in (dict(tpl.regions) if tpl else {}).items()},
+            "vetoes": [x.model_dump(mode="json") for x in self.vetoes],
+        }
+
     def propose_fix(self, rnd: Round) -> dict[str, Any] | None:
         assert self.spec is not None and rnd.verification is not None
         v = rnd.verification
         specs = parse_params(rnd.code)
-        measure_map = template_measure_map(rnd.code, self.template if rnd.strategy == "template" else None)
-        photo_n, model_n = self.openings(rnd)
         spots = self.worst_spots(rnd)
-        tpl = self.template if rnd.strategy == "template" else None
-        regions = dict(tpl.regions) if tpl is not None else {}
         hist = self.history[-2:]
         p = prompt_loader.load("fix")
         limits = ", ".join(f"{s.name} ±{guards.max_delta(s, rnd.values.get(s.name, s.default)):g}" for s in specs)
@@ -1496,26 +1556,7 @@ class FixRun:
             images=images,
             json_schema=FIX_SCHEMA,
             schema_name="fix",
-            mock_context={
-                "strategy": rnd.strategy,
-                "measure_map": measure_map,
-                "params": [s.model_dump(mode="json") for s in specs],
-                "values": dict(rnd.values),
-                "verification": {
-                    "residuals": residual_table(v),
-                    "views": [m.model_dump(mode="json") for m in v.views],
-                    "tests": [t.model_dump(mode="json") for t in v.tests],
-                }
-                if numeric
-                else {},
-                "history": [dict(h) for h in self.history] if numeric else [],
-                "measured_holes": photo_n,
-                "model_holes": model_n,
-                "worst": spots,
-                "holes": self.hole_layout(rnd),
-                "regions": {k: [list(b) for b in v] for k, v in regions.items()},
-                "vetoes": [x.model_dump(mode="json") for x in self.vetoes],
-            },
+            mock_context=self.fix_context(rnd, numeric=numeric),
         )
         try:
             out = self.call("fix", req)
@@ -1523,6 +1564,24 @@ class FixRun:
             self.log(f"fixer unavailable ({exc})", "warn")
             return None
         return dict(out.json) if out is not None and isinstance(out.json, dict) else None
+
+    def guard(self, base: Round, edits: Sequence[Mapping[str, Any]]) -> guards.GuardResult:
+        """The guards for edits proposed against `base` (unknown names, ranges, step caps, no whole-outline rescale)."""
+        specs = parse_params(base.code)
+        mmap = template_measure_map(base.code, self.template if base.strategy == "template" else None)
+        outline_params = [p for k, p in mmap.items() if k in guards.OUTLINE_KEYS]
+        backing: dict[str, list[float]] = {}
+        for r in base.verification.residuals if base.verification else []:
+            rp = guards.residual_param(r.feature_id, r.quantity, mmap)
+            if rp is not None:
+                backing.setdefault(rp, []).append(r.delta_mm)
+        return guards.guard_edits(
+            edits,
+            specs,
+            base.values,
+            outline_params=outline_params,
+            residual_deltas={k: sum(v) / len(v) for k, v in backing.items()},
+        )
 
     def fix_round(self) -> bool:
         """One fix iteration from the best round so far. Returns True when it improved on the best."""
@@ -1534,21 +1593,7 @@ class FixRun:
             proposal = self.propose_fix(base) or {"analysis": "no proposal", "edits": [], "code_patch": None}
             analysis = str(proposal.get("analysis", ""))
             patch = proposal.get("code_patch")
-            specs = parse_params(base.code)
-            mmap = template_measure_map(base.code, self.template if base.strategy == "template" else None)
-            outline_params = [p for k, p in mmap.items() if k in guards.OUTLINE_KEYS]
-            backing: dict[str, list[float]] = {}
-            for r in base.verification.residuals if base.verification else []:
-                rp = guards.residual_param(r.feature_id, r.quantity, mmap)
-                if rp is not None:
-                    backing.setdefault(rp, []).append(r.delta_mm)
-            g = guards.guard_edits(
-                proposal.get("edits") or [],
-                specs,
-                base.values,
-                outline_params=outline_params,
-                residual_deltas={k: sum(v) / len(v) for k, v in backing.items()},
-            )
+            g = self.guard(base, proposal.get("edits") or [])
             for rejected in g.rejected:
                 self.log(f"guard: {rejected}", "warn")
             new_code, new_values = base.code, g.values(base.values)
@@ -1600,6 +1645,33 @@ class FixRun:
             }
         )
         return rnd.rank[0] < base.rank[0] or rnd.rank[1] < base.rank[1] - PROGRESS_EPS
+
+    def agent_fix(self) -> None:
+        """Agentic fixer sessions on the best round. A session that commits nothing better hands over to the next
+        strategy (template -> free code), like the pipeline does; the round cap is the same."""
+        from services.agent import agent_loop
+
+        agent_loop.install_mock(replace=False)
+        sessions = 0
+        while self.best is not None and not self.best.verified and self.iteration < self.max_iters and sessions < 4:
+            stop = self.over_budget()
+            if stop:
+                self.log(f"stopping the agent: {stop}", "warn")
+                break
+            self.check_alive()
+            sessions += 1
+            # A template session leaves one round for the free-code alternative (code's fallback), unless the side
+            # photo shows features an extruded outline cannot express.
+            reserve = 1 if self.strategy == "template" and not self.side_taller_than_plate() else 0
+            before = self.best
+            agent_loop.AgentSession(self, self.max_iters - reserve).drive()
+            if self.best.verified or self.iteration >= self.max_iters:
+                break
+            if self.best is not before and self.best.better_than(before) and self.iteration < self.max_iters - reserve:
+                continue  # the session made progress and stopped early: a fresh session looks again
+            strategy = self.strategy
+            if not self.switch_strategy() or self.strategy == strategy:
+                break
 
     def fix_loop(self) -> None:
         no_improve = 0
@@ -1676,7 +1748,10 @@ class FixRun:
             intent=self.job.input.intent or "replacement part",
             side_note=", photo (side)" if "side" in self.mo else "",
         )
+        from services.agent import evidence
+
         images = [fit_png(self.mo["top"].rectified_png or self.photos["top"])[0], mask_png(vr.model_mask)]
+        images += evidence.hotspot_crops(rnd)  # photo | model, zoomed on the verifier's worst spots
         req = ModelRequest(
             messages=[{"role": "developer", "content": dev}, {"role": "user", "content": user}],
             images=images,
@@ -1755,6 +1830,7 @@ class FixRun:
 
     # ---- 10. package ----------------------------------------------------------------------------------------------------------
     def package(self, v: Verification | None) -> None:
+        from services.agent import evidence
         from services.geom_worker.bake import BakeError, bake
 
         b = self.best
@@ -1789,6 +1865,7 @@ class FixRun:
                 ("template_pdf", lambda: self.template_pdf(outline, v)),
                 ("repair_card", lambda: self.repair_card(v)),
                 ("coupon", self.coupon),
+                ("install_card", lambda: evidence.install_card(self)),
             ]
             for name, fn in extras:
                 try:
@@ -1796,7 +1873,14 @@ class FixRun:
                         made.append(name)
                 except Exception as exc:  # optional extras never fail the job
                     self.log(f"{name} skipped: {type(exc).__name__}: {exc}", "warn")
-            st.label = "Exported: " + ", ".join(made)
+            try:
+                self.artifact("zip", evidence.zip_bundle(self), ".zip", "everything in one zip (model, part.py, cards)")
+                made.append("zip")
+            except Exception as exc:
+                self.log(f"zip skipped: {type(exc).__name__}: {exc}", "warn")
+            ship = evidence.ship_decision(self, v)
+            self.job.write_json("ship.json", ship)
+            st.label = "Exported: " + ", ".join(made) + f" · ship gate: {'open' if ship['ok'] else 'closed'}"
 
     def template_pdf(self, outline: dict[str, Any] | None, v: Verification) -> bool:
         from tools.mat.template_pdf import template_pdf

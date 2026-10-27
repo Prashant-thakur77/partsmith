@@ -10,7 +10,7 @@ import json
 import mimetypes
 import threading
 import time
-from collections.abc import Callable
+from collections.abc import Callable, Mapping, Sequence
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
@@ -91,6 +91,10 @@ def _ext_for(data: bytes) -> str:
         return ".jpg"
     if data[:4] == b"RIFF" and data[8:12] == b"WEBP":
         return ".webp"
+    if data[4:8] == b"ftyp":
+        return ".mov" if data[8:10] == b"qt" else ".mp4"
+    if data[:4] == b"\x1aE\xdf\xa3":
+        return ".webm"
     return ".img"
 
 
@@ -102,14 +106,15 @@ def start_fix_job(
     options: RunOptions | None = None,
     title: str = "",
     on_created: Callable[[Job], None] | None = None,
+    points: Mapping[str, Sequence[Mapping[str, Any]]] | None = None,
 ) -> Job:
     """Store the photos (views: top required, side, mating) and run a fix job. `sync` runs it in this thread and never
     waits for answers (question defaults are used unless `options.answers` has them)."""
     if "top" not in photos:
         raise ValueError("a top-view photo is required")
-    bad = [v for v in photos if v not in ("top", "side", "mating")]
+    bad = [v for v in photos if v not in ("top", "side", "mating", "orbit")]
     if bad:
-        raise ValueError(f"unknown photo view(s) {bad}; use top, side, mating")
+        raise ValueError(f"unknown photo view(s) {bad}; use top, side, mating, orbit (a short video)")
     shas = {view: blobs.put(data, _ext_for(data)) for view, data in photos.items()}
     ji = job_input.model_copy(update={"kind": "fix", "photo_shas": shas})
     opts = options or RunOptions()
@@ -123,6 +128,8 @@ def start_fix_job(
     if ji.origin == DataOrigin.synthetic and "synthetic" not in label.lower():
         label += " (synthetic)"
     job = manager().create("fix", ji, title=label, provider_mode=provider_mode())
+    if points:  # user taps on features (photo pixels), read by the orchestrator's points pass
+        job.write_json("points.json", {v: [dict(p) for p in pts] for v, pts in points.items()})
     runner = make_runner(opts)
     if on_created is not None:
         on_created(job)

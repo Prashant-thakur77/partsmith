@@ -30,6 +30,7 @@ replay_app = typer.Typer(no_args_is_help=True, help="Replays (labelled recorded 
 app.add_typer(replay_app, name="replay")
 
 PHOTO_EXTS = (".jpg", ".jpeg", ".png", ".webp")
+VIDEO_EXTS = (".mp4", ".mov", ".webm")
 
 
 # ------------------------------------------------------------------------------------------------- trace printing
@@ -63,6 +64,14 @@ def format_event(e: Event) -> str | None:
         return f"    · model {e.stage}: {e.provider}/{e.model} [{e.mode}] {e.ms} ms ${e.usd:.4f}{tag}"
     if e.t == "log":
         return f"    {'!' if e.level != 'info' else '·'} {e.msg}"
+    if e.t == "thought":
+        return f"    ~ {e.text}"
+    if e.t == "tool_call":
+        first = e.result.splitlines()[0] if e.result else ""
+        return f"    ⚙ {e.name}({', '.join(f'{k}=' for k in e.args)}) → {first[:140]}"
+    if e.t == "focus":
+        at = ", ".join(f"{v:.1f}" for v in e.at_mm) if e.at_mm else "—"
+        return f"    ⌖ focus {e.view} ({at}) mm: {e.label}"
     if e.t == "done":
         s = e.summary
         return (
@@ -196,6 +205,7 @@ def fix(
     thickness: Annotated[float | None, typer.Option(help="part thickness in mm, if known")] = None,
     family: Annotated[str | None, typer.Option(help="family hint (knob, latch, wheel, ...)")] = None,
     mat: Annotated[str | None, typer.Option(help="mat id (auto-detected when omitted)")] = None,
+    fix_mode: Annotated[str, typer.Option("--fix-mode", help="agent (model drives the tools) or pipeline")] = "agent",
 ) -> None:
     """Photos of a part on the mat → measured, verified part program. Prints the loop live."""
     from services.agent import service
@@ -204,8 +214,8 @@ def fix(
     if not folder.is_dir():
         raise typer.Exit(_fail(f"{folder} is not a folder"))
     photos: dict[str, bytes] = {}
-    for view in ("top", "side", "mating"):
-        for ext in PHOTO_EXTS:
+    for view in ("top", "side", "mating", "orbit"):
+        for ext in PHOTO_EXTS + VIDEO_EXTS:
             p = folder / f"{view}{ext}"
             if p.exists():
                 photos[view] = p.read_bytes()
@@ -230,6 +240,8 @@ def fix(
         question_timeout_s=600.0 if interactive else 0.0,
         max_iters=max_iters,
         mat_id=mat_id,
+        fix_mode="pipeline" if fix_mode == "pipeline" else "agent",
+        points=json.loads((folder / "points.json").read_text()) if (folder / "points.json").exists() else None,
     )
     title = str(meta.get("title") or folder.name)
     _run_and_print(
