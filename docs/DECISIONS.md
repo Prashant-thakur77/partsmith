@@ -29,3 +29,14 @@ code paths (schemas, guards, verifier) so the pipeline is testable end to end; e
 **2026-10-27 — Own viewer format instead of the tessellation package.** The web viewer reads `view.json` (triangles plus
 B-rep edge polylines that we discretise from OCCT edges in the worker). This keeps CAD-grade edges without adding a second
 tessellation stack to the worker image.
+
+**2026-10-27 — Stage routing and fallback chains.** One table (`services/agent/providers/routing.py`) maps each stage to an
+ordered provider chain; the first provider with a key wins. understand → Muse Spark 1.3; plan/build/fix → Muse Spark Open
+(Baseten → Fireworks → Together → Spark 1.3); judge + capture triage → Muse Glimmer 30B on Modal (→ Together); voice/variant →
+Spark 1.3; steer plan → Muse Wonder; segment → SAM 3.1 API (→ SAM 3 open on Modal); image → Muse Image; transcribe → Muse Voice
+Transcribe. `OPEN_WEIGHTS_ONLY=1` restricts every chain to open-weight models. The Baseten model id comes from `models.list()`.
+
+**2026-10-27 — Replays are keyed by a request hash without volatile fields.** `PROVIDER_RECORD=1` stores each live
+request/response under `$PARTSMITH_HOME/recordings/<hash>.json`; the hash excludes the provider, timestamps and mock-only
+context, so a recorded run replays even if a fallback provider answered. Missing recordings fall back to mock with a warning.
+Masks travel between the Modal SAM 3 app and the API in one run-length wire format (`providers/media.py`).

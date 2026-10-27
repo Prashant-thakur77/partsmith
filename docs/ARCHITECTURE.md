@@ -77,7 +77,8 @@ Runtime data lives in `$PARTSMITH_HOME` (default `./var`, gitignored): `blobs/` 
 - `verify.py` — `verify(exec_result, measurements, partspec, vetoes=[]) -> (Verification, overlays)`. Sole authority for `verified`.
 
 ### `services/agent`
-- `providers/` — every model call: `get_provider(stage)`, `PROVIDER_MODE=live|mock|replay`, auto-mock on a missing key (logged
+- `providers/` — every model call: `complete(stage, req)`, `segment`, `generate_image`, `transcribe`, `status()`,
+  `job_context(job_id, emit)`, `register_mock(stage, handler)`; `PROVIDER_MODE=live|mock|replay`, auto-mock on a missing key (logged
   and shown on `/status`), `model_call` events with tokens, ms and $.
 - `templates/` — 10 family templates (`PARAMS` + `build(p)`), each with a topology knob.
 - `prompts/` — versioned prompt files.
