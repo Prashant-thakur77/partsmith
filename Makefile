@@ -48,8 +48,8 @@ smoke: ## One call per provider: ✅ live ok · ⚠️ key missing (mock) · ❌
 seed: ## Build demo parts + synthetic sample runs into the registry ($$PARTSMITH_HOME)
 	$(UV) run partsmith seed
 
-synth: ## Regenerate the synthetic dataset (exact ground truth)
-	$(UV) run partsmith synth --out data/synthetic
+synth: ## Regenerate the synthetic bench (exact ground truth, deterministic from the seed)
+	$(UV) run python -m tools.synth --out data/synthetic/bench --n 200 --seed 7 --n-reference 20 --jobs 6
 
 bench: ## Regenerate eval reports from stored runs (no keys needed)
 	$(UV) run python -m eval.run --from-runs

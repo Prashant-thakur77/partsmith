@@ -1,0 +1,92 @@
+gt_source: synthetic_exact
+origin: synthetic
+sample_id: demo-cupboard-latch
+kind: template
+name: cupboard_latch
+template: cupboard_latch
+reference_object: null
+params: {catch_length: 15.7, edge_fillet: 0.9, grip_count: 1.0, length: 55.3, pivot_d: 3.7, pivot_offset: 7.5, step_depth: 2.2,
+  thickness: 7.3, width: 15.9}
+code_sha: 16c8eaf891f7ae799038cddaafafcbf17dc92b4de9b8142e7a6f3da0d72cb165
+mat_id: screen-m
+units: mm
+dims:
+- {name: length, view: top, value_mm: 55.295058}
+- {name: width, view: top, value_mm: 15.9}
+- name: hole_1.diameter
+  view: top
+  value_mm: 3.7
+  center_mat_mm: [139.956238, 59.282252]
+  center_cad_mm: [-7.5, 0.0]
+- {name: thickness, view: side, value_mm: 8.140285}
+info: {height_mm: 8.3, side_length_mm: 55.421222, user_thickness_mm: 7.5, dim_definitions: 'length/width: min-area rectangle
+    of the orthographic top footprint; hole_k.diameter: see-through openings from above; thickness: short side of the side-view
+    footprint'}
+views:
+  top:
+    image: top.jpg
+    placement:
+      center_mm: [132.4565, 59.3449]
+      yaw_deg: 180.4786
+    cad_to_mat:
+    - [-0.999965, 0.008353, 0.0, 132.4565]
+    - [0.008353, 0.999965, 0.0, 59.3449]
+    - [0.0, 0.0, -1.0, 0.0]
+    - [0.0, 0.0, 0.0, 1.0]
+    part_height_mm: 8.3
+    camera:
+      K:
+      - [1599.880765, 0.0, 999.5]
+      - [0.0, 1599.880765, 749.5]
+      - [0.0, 0.0, 1.0]
+      R:
+      - [-0.977078, -0.210177, 0.033819]
+      - [0.206309, -0.974058, -0.092989]
+      - [0.052486, -0.08388, 0.995093]
+      t_mm: [111.266368, 44.293274, 355.623779]
+      size: [2000, 1500]
+      height_mm: 353.523
+      tilt_deg: 5.679
+      focal35_mm: 27.6886
+      exif_focal35_mm: 28
+    look:
+      surface: screen
+      part_bgr: [40, 188, 222]
+      blur_px: 0.552
+      glare: false
+      moire_amp: 0.0
+      exposure: 1.0
+  side:
+    image: side.jpg
+    placement:
+      center_mm: [100.9246, 75.4877]
+      yaw_deg: 312.1014
+    cad_to_mat:
+    - [0.670445, 0.741959, 0.0, 100.9246]
+    - [0.741959, -0.670445, 0.0, 75.4877]
+    - [0.0, 0.0, -1.0, 0.0]
+    - [0.0, 0.0, 0.0, 1.0]
+    part_height_mm: 15.9
+    camera:
+      K:
+      - [1599.724477, 0.0, 999.5]
+      - [0.0, 1599.724477, 749.5]
+      - [0.0, 0.0, 1.0]
+      R:
+      - [-0.99417, 0.016579, -0.10654]
+      - [-0.013873, -0.999563, -0.026091]
+      - [-0.106926, -0.024461, 0.993966]
+      t_mm: [112.312853, 57.360481, 349.530902]
+      size: [2000, 1500]
+      height_mm: 333.959
+      tilt_deg: 6.297
+      focal35_mm: 27.6859
+      exif_focal35_mm: 28
+    look:
+      surface: screen
+      part_bgr: [40, 42, 185]
+      blur_px: 0.54
+      glare: false
+      moire_amp: 0.0
+      exposure: 1.0
+generator: {version: synth-1, seed: 105, preset: clean}

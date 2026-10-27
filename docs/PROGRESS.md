@@ -37,3 +37,9 @@ A fresh session should read this file, `docs/ARCHITECTURE.md`, `docs/API.md` and
   Mock mode, rendered top-only samples (latch, spacer, cover) verify in 2–3 rounds and replay to identical detail. On the synthetic
   top+side JPEG samples most runs ended best-effort: side-view IoU gate unreachable for thin profiles and see-through holes lost in
   thick parts → camera-frame verification + see-through hole fitting assigned (in progress).
+- **Synthetic data + measure-only bench** (`tools/synth`, `eval/{metrics,stats,measure_only}.py`): 35 tests pass. 16 committed demo
+  samples (all templates + 4 reference objects, screen + paper mats, 11 MB). **Phase 1 gate (first honest run): FAIL** —
+  `uv run python -m eval.measure_only --n 60 --n-reference 20 --seed 7`: synthetic mean abs error 1.503 mm (N=201; flat parts 0.267 mm,
+  tall features 1.741 mm; white-part preset 7.45 mm), synthetic reference-object renders 0.346 mm (N=40, PASS). Real reference
+  objects and real ruler parts: pending (no photos). Fixes in progress: see-through holes, shadows, dark screen stage for white parts,
+  side views of thin parts, round profiles; camera-frame verification for tall features.

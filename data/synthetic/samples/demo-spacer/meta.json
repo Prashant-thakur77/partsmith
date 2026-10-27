@@ -1,0 +1,16 @@
+{
+  "id": "demo-spacer",
+  "title": "Spacer / standoff (synthetic, clean)",
+  "kind": "template",
+  "origin": "synthetic",
+  "mat_id": "screen-s",
+  "family_hint": "spacer",
+  "intent": "Make a replacement for this broken spacer / standoff.",
+  "user_thickness_mm": 8.5,
+  "difficulty": "easy",
+  "augmentations": [
+    "clean",
+    "surface:screen"
+  ],
+  "seed": 109
+}

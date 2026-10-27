@@ -1,0 +1,16 @@
+{
+  "id": "demo-clip-tilt",
+  "title": "Snap retaining clip (synthetic, tilt)",
+  "kind": "template",
+  "origin": "synthetic",
+  "mat_id": "screen-m",
+  "family_hint": "clip",
+  "intent": "Make a replacement for this broken snap retaining clip.",
+  "user_thickness_mm": 3.0,
+  "difficulty": "medium",
+  "augmentations": [
+    "tilt",
+    "surface:screen"
+  ],
+  "seed": 104
+}

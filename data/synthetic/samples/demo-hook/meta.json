@@ -1,0 +1,15 @@
+{
+  "id": "demo-hook",
+  "title": "Wall hook (synthetic, paper)",
+  "kind": "template",
+  "origin": "synthetic",
+  "mat_id": "paper-a4",
+  "family_hint": "hook",
+  "intent": "Make a replacement for this broken wall hook.",
+  "user_thickness_mm": 4.5,
+  "difficulty": "easy",
+  "augmentations": [
+    "paper"
+  ],
+  "seed": 107
+}

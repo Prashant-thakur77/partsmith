@@ -25,3 +25,4 @@ test-results/
 apps/web/out/
 *.tsbuildinfo
 .DS_Store
+data/synthetic/bench/

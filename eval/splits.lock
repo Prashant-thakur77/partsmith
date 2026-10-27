@@ -1,0 +1,34 @@
+{
+  "version": 1,
+  "note": "Frozen bench definitions. Held-out real parts are only touched by `make bench`. Hash of a real split = sha256 over the sorted part ids and the bytes of each part's gt.yaml.",
+  "synthetic_bench": {
+    "origin": "synthetic",
+    "generator": "synth-1",
+    "seed": 7,
+    "n": 60,
+    "n_reference": 20,
+    "size": [
+      3000,
+      2250
+    ],
+    "jpeg_quality": 90,
+    "dataset_sha256": "a576c6980c08ae02aba4e9cfd1fc763da6f0df1c09c51f5d23c699d2712e32f2",
+    "manifest": "data/synthetic/bench_manifest.json"
+  },
+  "reference_objects_real": {
+    "status": "pending: no real photos collected yet",
+    "objects": [
+      "id1_card",
+      "sd_card",
+      "lego_2x4",
+      "aa_cell"
+    ]
+  },
+  "real_parts": {
+    "status": "pending: no real parts collected yet",
+    "gt_source": "ruler",
+    "dev": [],
+    "held_out": [],
+    "held_out_sha256": null
+  }
+}

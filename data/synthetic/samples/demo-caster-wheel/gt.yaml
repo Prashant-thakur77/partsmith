@@ -1,0 +1,116 @@
+gt_source: synthetic_exact
+origin: synthetic
+sample_id: demo-caster-wheel
+kind: template
+name: caster_wheel
+template: caster_wheel
+reference_object: null
+params: {bore_d: 7.3, diameter: 62.3, edge_fillet: 2.5, hub_d: 19.1, rim_thickness: 5.6, spoke_count: 5.0, tread_width: 14.9}
+code_sha: fb678f8087346c0095a987600c3f269e91e3ee072608784907b32d1ca13468c6
+mat_id: screen-l
+units: mm
+dims:
+- {name: length, view: top, value_mm: 62.292022}
+- {name: width, view: top, value_mm: 62.290524}
+- name: hole_1.diameter
+  view: top
+  value_mm: 12.8
+  center_mat_mm: [147.602768, 85.184517]
+  center_cad_mm: [-14.198248, -10.315631]
+- name: hole_2.diameter
+  view: top
+  value_mm: 12.8
+  center_mat_mm: [158.133993, 102.925495]
+  center_cad_mm: [-14.198248, 10.315631]
+- name: hole_3.diameter
+  view: top
+  value_mm: 7.3
+  center_mat_mm: [140.6592, 101.3025]
+  center_cad_mm: [0.0, 0.0]
+- name: hole_4.diameter
+  view: top
+  value_mm: 12.8
+  center_mat_mm: [127.475768, 89.718044]
+  center_cad_mm: [5.423248, -16.691042]
+- name: hole_5.diameter
+  view: top
+  value_mm: 12.8
+  center_mat_mm: [144.515648, 118.423549]
+  center_cad_mm: [5.423248, 16.691042]
+- name: hole_6.diameter
+  view: top
+  value_mm: 12.8
+  center_mat_mm: [125.567823, 110.260895]
+  center_cad_mm: [17.55, 0.0]
+- {name: thickness, view: side, value_mm: 14.9}
+info: {height_mm: 14.9, side_length_mm: 62.3, user_thickness_mm: 15.0, dim_definitions: 'length/width: min-area rectangle
+    of the orthographic top footprint; hole_k.diameter: see-through openings from above; thickness: short side of the side-view
+    footprint'}
+views:
+  top:
+    image: top.jpg
+    placement:
+      center_mm: [140.6592, 101.3025]
+      yaw_deg: 210.6938
+    cad_to_mat:
+    - [-0.859908, 0.51045, 0.0, 140.6592]
+    - [0.51045, 0.859908, 0.0, 101.3025]
+    - [0.0, 0.0, -1.0, 0.0]
+    - [0.0, 0.0, 0.0, 1.0]
+    part_height_mm: 14.9
+    camera:
+      K:
+      - [1431.256516, 0.0, 999.5]
+      - [0.0, 1431.256516, 749.5]
+      - [0.0, 0.0, 1.0]
+      R:
+      - [0.123502, 0.992136, -0.020354]
+      - [-0.985794, 0.120308, -0.117206]
+      - [-0.113835, 0.03454, 0.992899]
+      t_mm: [-116.796402, 163.316859, 396.445609]
+      size: [2000, 1500]
+      height_mm: 376.866
+      tilt_deg: 6.832
+      focal35_mm: 24.7703
+      exif_focal35_mm: 25
+    look:
+      surface: screen
+      part_bgr: [40, 42, 185]
+      blur_px: 0.366
+      glare: false
+      moire_amp: 0.0
+      exposure: 1.0
+  side:
+    image: side.jpg
+    placement:
+      center_mm: [170.3708, 77.1878]
+      yaw_deg: 315.006
+    cad_to_mat:
+    - [0.707181, 0.707033, 0.0, 170.3708]
+    - [0.707033, -0.707181, 0.0, 77.1878]
+    - [0.0, 0.0, -1.0, 0.0]
+    - [0.0, 0.0, 0.0, 1.0]
+    part_height_mm: 62.3
+    camera:
+      K:
+      - [1406.835214, 0.0, 999.5]
+      - [0.0, 1406.835214, 749.5]
+      - [0.0, 0.0, 1.0]
+      R:
+      - [0.987404, 0.157651, 0.013419]
+      - [-0.157767, 0.987444, 0.008018]
+      - [-0.011986, -0.010034, 0.999878]
+      t_mm: [-174.623582, -61.586687, 281.11801]
+      size: [2000, 1500]
+      height_mm: 278.247
+      tilt_deg: 0.896
+      focal35_mm: 24.3476
+      exif_focal35_mm: 24
+    look:
+      surface: screen
+      part_bgr: [52, 52, 55]
+      blur_px: 0.43
+      glare: false
+      moire_amp: 0.0
+      exposure: 1.0
+generator: {version: synth-1, seed: 103, preset: clean}

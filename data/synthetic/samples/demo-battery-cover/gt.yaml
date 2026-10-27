@@ -1,0 +1,87 @@
+gt_source: synthetic_exact
+origin: synthetic
+sample_id: demo-battery-cover
+kind: template
+name: battery_cover
+template: battery_cover
+reference_object: null
+params: {corner_radius: 2.9, groove_count: 6.0, latch_height: 3.0, latch_overhang: 0.7, latch_width: 8.0, length: 45.3, thickness: 1.4,
+  tongue_count: 1.0, tongue_length: 2.6, tongue_width: 4.9, width: 29.9}
+code_sha: d3616e422f48e8532ac6d73c9ddbb31da4a6d66dcff6ef6fe1d939910c61c890
+mat_id: screen-m
+units: mm
+dims:
+- {name: length, view: top, value_mm: 45.3}
+- {name: width, view: top, value_mm: 29.9}
+- {name: thickness, view: side, value_mm: 4.4}
+info: {height_mm: 4.4, side_length_mm: 45.3, user_thickness_mm: 1.5, dim_definitions: 'length/width: min-area rectangle of
+    the orthographic top footprint; hole_k.diameter: see-through openings from above; thickness: short side of the side-view
+    footprint'}
+views:
+  top:
+    image: top.jpg
+    placement:
+      center_mm: [130.4652, 69.1002]
+      yaw_deg: 291.3815
+    cad_to_mat:
+    - [0.364576, 0.931174, 0.0, 130.4652]
+    - [0.931174, -0.364576, 0.0, 69.1002]
+    - [0.0, 0.0, -1.0, 0.0]
+    - [0.0, 0.0, 0.0, 1.0]
+    part_height_mm: 4.4
+    camera:
+      K:
+      - [1447.896836, 0.0, 999.5]
+      - [0.0, 1447.896836, 749.5]
+      - [0.0, 0.0, 1.0]
+      R:
+      - [0.797877, -0.602515, 0.019206]
+      - [0.602454, 0.798098, 0.009474]
+      - [-0.021037, 0.004012, 0.999771]
+      t_mm: [-53.778934, -118.848242, 401.232405]
+      size: [2000, 1500]
+      height_mm: 398.982
+      tilt_deg: 1.227
+      focal35_mm: 25.0582
+      exif_focal35_mm: 25
+    look:
+      surface: screen
+      part_bgr: [32, 112, 228]
+      blur_px: 0.343
+      glare: false
+      moire_amp: 0.0
+      exposure: 1.0
+  side:
+    image: side.jpg
+    placement:
+      center_mm: [91.8024, 51.2988]
+      yaw_deg: 191.6502
+    cad_to_mat:
+    - [-0.979399, 0.201936, 0.0, 91.8024]
+    - [0.201936, 0.979399, 0.0, 51.2988]
+    - [0.0, 0.0, -1.0, 0.0]
+    - [0.0, 0.0, 0.0, 1.0]
+    part_height_mm: 29.9
+    camera:
+      K:
+      - [1547.113948, 0.0, 999.5]
+      - [0.0, 1547.113948, 749.5]
+      - [0.0, 0.0, 1.0]
+      R:
+      - [-0.995556, 0.094101, 0.003729]
+      - [-0.093361, -0.991367, 0.092058]
+      - [0.01236, 0.091301, 0.995747]
+      t_mm: [97.165195, 72.475849, 247.908903]
+      size: [2000, 1500]
+      height_mm: 253.889
+      tilt_deg: 5.286
+      focal35_mm: 26.7754
+      exif_focal35_mm: 27
+    look:
+      surface: screen
+      part_bgr: [40, 42, 185]
+      blur_px: 0.39
+      glare: false
+      moire_amp: 0.0
+      exposure: 1.0
+generator: {version: synth-1, seed: 110, preset: clean}

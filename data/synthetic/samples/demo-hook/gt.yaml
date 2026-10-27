@@ -1,0 +1,97 @@
+gt_source: synthetic_exact
+origin: synthetic
+sample_id: demo-hook
+kind: template
+name: hook
+template: hook
+reference_object: null
+params: {arm_thickness: 6.3, arm_width: 11.6, bend_radius: 8.8, corner_radius: 3.4, hole_count: 2.0, hole_d: 3.95, length: 49.7,
+  plate_thickness: 4.4, reach: 37.1, tip_length: 15.6, width: 20.3}
+code_sha: ca4a2cb916ec9f748f707e5331e9a136aaf343c64743bd41fe136eefe5591424
+mat_id: paper-a4
+units: mm
+dims:
+- {name: length, view: top, value_mm: 49.7}
+- {name: width, view: top, value_mm: 20.3}
+- name: hole_1.diameter
+  view: top
+  value_mm: 3.95
+  center_mat_mm: [98.119152, 175.200524]
+  center_cad_mm: [9.2875, 0.0]
+- name: hole_2.diameter
+  view: top
+  value_mm: 3.95
+  center_mat_mm: [88.256061, 178.419231]
+  center_cad_mm: [19.6625, 0.0]
+- {name: thickness, view: side, value_mm: 40.25}
+info: {height_mm: 40.25, side_length_mm: 49.7, user_thickness_mm: 4.5, dim_definitions: 'length/width: min-area rectangle
+    of the orthographic top footprint; hole_k.diameter: see-through openings from above; thickness: short side of the side-view
+    footprint'}
+views:
+  top:
+    image: top.jpg
+    placement:
+      center_mm: [106.9484, 172.3192]
+      yaw_deg: 198.0735
+    cad_to_mat:
+    - [-0.950659, 0.310237, 0.0, 106.9484]
+    - [0.310237, 0.950659, 0.0, 172.3192]
+    - [0.0, 0.0, -1.0, 0.0]
+    - [0.0, 0.0, 0.0, 1.0]
+    part_height_mm: 40.25
+    camera:
+      K:
+      - [1404.117111, 0.0, 999.5]
+      - [0.0, 1404.117111, 749.5]
+      - [0.0, 0.0, 1.0]
+      R:
+      - [-0.975535, -0.209502, 0.06664]
+      - [0.21557, -0.971046, 0.102949]
+      - [0.043143, 0.114796, 0.992452]
+      t_mm: [119.224179, 105.253309, 335.745087]
+      size: [2000, 1500]
+      height_mm: 351.992
+      tilt_deg: 7.044
+      focal35_mm: 24.3006
+      exif_focal35_mm: 24
+    look:
+      surface: paper
+      part_bgr: [40, 188, 222]
+      blur_px: 0.353
+      glare: false
+      moire_amp: 0.0
+      exposure: 1.0
+  side:
+    image: side.jpg
+    placement:
+      center_mm: [76.3944, 55.9648]
+      yaw_deg: 147.7989
+    cad_to_mat:
+    - [-0.846183, -0.532893, 0.0, 76.3944]
+    - [-0.532893, 0.846183, 0.0, 55.9648]
+    - [0.0, 0.0, -1.0, 0.0]
+    - [0.0, 0.0, 0.0, 1.0]
+    part_height_mm: 20.3
+    camera:
+      K:
+      - [1523.549015, 0.0, 999.5]
+      - [0.0, 1523.549015, 749.5]
+      - [0.0, 0.0, 1.0]
+      R:
+      - [-0.801298, -0.585461, -0.123113]
+      - [0.583537, -0.810224, 0.054966]
+      - [-0.13193, -0.027797, 0.990869]
+      t_mm: [152.768119, 41.275484, 427.244263]
+      size: [2000, 1500]
+      height_mm: 406.804
+      tilt_deg: 7.749
+      focal35_mm: 26.3675
+      exif_focal35_mm: 26
+    look:
+      surface: paper
+      part_bgr: [150, 92, 32]
+      blur_px: 0.444
+      glare: false
+      moire_amp: 0.0
+      exposure: 1.0
+generator: {version: synth-1, seed: 107, preset: paper}

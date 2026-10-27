@@ -1,0 +1,92 @@
+gt_source: synthetic_exact
+origin: synthetic
+sample_id: demo-clip-tilt
+kind: template
+name: clip
+template: clip
+reference_object: null
+params: {arm_height: 7.1, arm_thickness: 2.4, corner_radius: 1.8, hole_d: 3.7, hook_overhang: 1.4, length: 43.7, rib_count: 1.0,
+  thickness: 3.1, width: 15.9}
+code_sha: fa4f27dbfd12e338b12c5554f9a920a07a4a0094774a64abb808fc8e83e6476b
+mat_id: screen-m
+units: mm
+dims:
+- {name: length, view: top, value_mm: 43.7}
+- {name: width, view: top, value_mm: 15.9}
+- name: hole_1.diameter
+  view: top
+  value_mm: 3.7
+  center_mat_mm: [73.03783, 57.18426]
+  center_cad_mm: [-17.41, 0.0]
+- {name: thickness, view: side, value_mm: 10.2}
+info: {height_mm: 10.2, side_length_mm: 43.7, user_thickness_mm: 3.0, dim_definitions: 'length/width: min-area rectangle of
+    the orthographic top footprint; hole_k.diameter: see-through openings from above; thickness: short side of the side-view
+    footprint'}
+views:
+  top:
+    image: top.jpg
+    placement:
+      center_mm: [88.8545, 49.9082]
+      yaw_deg: 24.7036
+    cad_to_mat:
+    - [0.908482, -0.417924, 0.0, 88.8545]
+    - [-0.417924, -0.908482, 0.0, 49.9082]
+    - [0.0, 0.0, -1.0, 0.0]
+    - [0.0, 0.0, 0.0, 1.0]
+    part_height_mm: 10.2
+    camera:
+      K:
+      - [1539.6399, 0.0, 999.5]
+      - [0.0, 1539.6399, 749.5]
+      - [0.0, 0.0, 1.0]
+      R:
+      - [0.468967, -0.866487, -0.171087]
+      - [0.882714, 0.453296, 0.123849]
+      - [-0.029761, -0.209102, 0.977441]
+      t_mm: [4.157207, -125.068887, 422.793683]
+      size: [2000, 1500]
+      height_mm: 397.055
+      tilt_deg: 12.193
+      focal35_mm: 26.646
+      exif_focal35_mm: 27
+    look:
+      surface: screen
+      part_bgr: [150, 92, 32]
+      blur_px: 0.442
+      glare: false
+      moire_amp: 0.0
+      exposure: 1.0
+  side:
+    image: side.jpg
+    placement:
+      center_mm: [120.3867, 74.9494]
+      yaw_deg: 131.4701
+    cad_to_mat:
+    - [-0.662229, -0.749301, 0.0, 120.3867]
+    - [-0.749301, 0.662229, 0.0, 74.9494]
+    - [0.0, 0.0, -1.0, 0.0]
+    - [0.0, 0.0, 0.0, 1.0]
+    part_height_mm: 15.9
+    camera:
+      K:
+      - [1517.607692, 0.0, 999.5]
+      - [0.0, 1517.607692, 749.5]
+      - [0.0, 0.0, 1.0]
+      R:
+      - [0.724334, 0.687753, -0.048321]
+      - [-0.669325, 0.684653, -0.288538]
+      - [-0.16536, 0.241341, 0.956248]
+      t_mm: [-120.221718, 22.594701, 424.133235]
+      size: [2000, 1500]
+      height_mm: 404.866
+      tilt_deg: 17.011
+      focal35_mm: 26.2647
+      exif_focal35_mm: 26
+    look:
+      surface: screen
+      part_bgr: [52, 52, 55]
+      blur_px: 0.542
+      glare: false
+      moire_amp: 0.0
+      exposure: 1.0
+generator: {version: synth-1, seed: 104, preset: tilt}

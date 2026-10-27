@@ -1,0 +1,60 @@
+gt_source: synthetic_exact
+origin: synthetic
+sample_id: demo-ref-aa-cell
+kind: reference_object
+name: aa_cell
+template: null
+reference_object: aa_cell
+params: {}
+code_sha: a28d6fccf39affa5d061950c47b8434ed52d68b5d3144b27715e4db3744e0d20
+mat_id: screen-m
+units: mm
+dims:
+- {name: length, view: top, value_mm: 50.5}
+- {name: width, view: top, value_mm: 14.5}
+info: {height_mm: 14.495493, side_length_mm: 50.5, user_thickness_mm: 14.5, dim_definitions: 'length/width: min-area rectangle
+    of the orthographic top footprint; hole_k.diameter: see-through openings from above; thickness: short side of the side-view
+    footprint'}
+views:
+  top:
+    image: top.jpg
+    placement:
+      center_mm: [89.7547, 64.0837]
+      yaw_deg: 289.0742
+    cad_to_mat:
+    - [0.326792, 0.945096, 0.0, 89.7547]
+    - [0.945096, -0.326792, 0.0, 64.0837]
+    - [0.0, 0.0, -1.0, 0.0]
+    - [0.0, 0.0, 0.0, 1.0]
+    part_height_mm: 14.497747
+    camera:
+      K:
+      - [1412.16478, 0.0, 999.5]
+      - [0.0, 1412.16478, 749.5]
+      - [0.0, 0.0, 1.0]
+      R:
+      - [0.532811, -0.842591, -0.078446]
+      - [0.845764, 0.533313, 0.016159]
+      - [0.028221, -0.074956, 0.996787]
+      t_mm: [-4.627442, -122.606932, 371.550781]
+      size: [2000, 1500]
+      height_mm: 368.739
+      tilt_deg: 4.594
+      focal35_mm: 24.4398
+      exif_focal35_mm: 24
+    look:
+      surface: screen
+      part_bgr: [40, 120, 150]
+      blur_px: 0.539
+      glare: false
+      moire_amp: 0.0
+      exposure: 1.0
+generator: {version: synth-1, seed: 204, preset: clean}
+spec:
+  loose: true
+  note: "AA cell: diameter 13.5\u201314.5 mm, length 49.2\u201350.5 mm; modelled at 14.5 \xD7 50.5 mm (loose spec)"
+  dims:
+  - {name: length, nominal_mm: 50.5, lo_mm: 49.2, hi_mm: 50.5, view: top, note: "loose spec: accepted range 49.2\u201350.5\
+      \ mm"}
+  - {name: width, nominal_mm: 14.5, lo_mm: 13.5, hi_mm: 14.5, view: top, note: "loose spec: accepted range 13.5\u201314.5\
+      \ mm (diameter)"}

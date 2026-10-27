@@ -1,0 +1,91 @@
+gt_source: synthetic_exact
+origin: synthetic
+sample_id: demo-spacer
+kind: template
+name: spacer
+template: spacer
+reference_object: null
+params: {bore_d: 3.95, chamfer: 0.4, flat_count: 0.0, flat_depth: 0.8, height: 8.5, outer_d: 8.0}
+code_sha: 8ee1df3bdf29173c9101dce735c222bdbcd34157cd749cd863df77a8faf2a261
+mat_id: screen-s
+units: mm
+dims:
+- {name: length, view: top, value_mm: 8.0}
+- {name: width, view: top, value_mm: 7.997513}
+- name: hole_1.diameter
+  view: top
+  value_mm: 3.95
+  center_mat_mm: [77.2575, 28.3137]
+  center_cad_mm: [0.0, 0.0]
+- {name: thickness, view: side, value_mm: 8.0}
+info: {height_mm: 8.5, side_length_mm: 8.5, user_thickness_mm: 8.5, dim_definitions: 'length/width: min-area rectangle of
+    the orthographic top footprint; hole_k.diameter: see-through openings from above; thickness: short side of the side-view
+    footprint'}
+views:
+  top:
+    image: top.jpg
+    placement:
+      center_mm: [77.2575, 28.3137]
+      yaw_deg: 227.9287
+    cad_to_mat:
+    - [-0.670055, 0.742312, 0.0, 77.2575]
+    - [0.742312, 0.670055, 0.0, 28.3137]
+    - [0.0, 0.0, -1.0, 0.0]
+    - [0.0, 0.0, 0.0, 1.0]
+    part_height_mm: 8.5
+    camera:
+      K:
+      - [1546.988502, 0.0, 999.5]
+      - [0.0, 1546.988502, 749.5]
+      - [0.0, 0.0, 1.0]
+      R:
+      - [-0.904521, 0.425918, -0.020872]
+      - [-0.424556, -0.894886, 0.137595]
+      - [0.039926, 0.133319, 0.990269]
+      t_mm: [41.992777, 52.872437, 281.326176]
+      size: [2000, 1500]
+      height_mm: 284.987
+      tilt_deg: 8.0
+      focal35_mm: 26.7732
+      exif_focal35_mm: 27
+    look:
+      surface: screen
+      part_bgr: [32, 112, 228]
+      blur_px: 0.451
+      glare: false
+      moire_amp: 0.0
+      exposure: 1.0
+  side:
+    image: side.jpg
+    placement:
+      center_mm: [79.5806, 26.4797]
+      yaw_deg: 70.4498
+    cad_to_mat:
+    - [0.334633, -0.942349, 0.0, 79.5806]
+    - [-0.942349, -0.334633, 0.0, 26.4797]
+    - [0.0, 0.0, -1.0, 0.0]
+    - [0.0, 0.0, 0.0, 1.0]
+    part_height_mm: 7.997513
+    camera:
+      K:
+      - [1490.615743, 0.0, 999.5]
+      - [0.0, 1490.615743, 749.5]
+      - [0.0, 0.0, 1.0]
+      R:
+      - [-0.670647, -0.741478, -0.02104]
+      - [0.740299, -0.670831, 0.044088]
+      - [-0.046805, 0.013992, 0.998806]
+      t_mm: [58.319074, -10.422431, 293.114916]
+      size: [2000, 1500]
+      height_mm: 291.078
+      tilt_deg: 2.8
+      focal35_mm: 25.7976
+      exif_focal35_mm: 26
+    look:
+      surface: screen
+      part_bgr: [40, 188, 222]
+      blur_px: 0.575
+      glare: false
+      moire_amp: 0.0
+      exposure: 1.0
+generator: {version: synth-1, seed: 109, preset: clean}

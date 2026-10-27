@@ -1,0 +1,15 @@
+{
+  "id": "demo-ref-lego-2x4",
+  "title": "LEGO 2\u00d74 brick (synthetic, paper)",
+  "kind": "reference_object",
+  "origin": "synthetic",
+  "mat_id": "paper-a4",
+  "family_hint": "reference",
+  "intent": "Measure this LEGO 2\u00d74 brick (reference object).",
+  "user_thickness_mm": 9.6,
+  "difficulty": "easy",
+  "augmentations": [
+    "paper"
+  ],
+  "seed": 203
+}

@@ -1,0 +1,217 @@
+{
+ "origin": "synthetic",
+ "set": "demo",
+ "size": [
+  2000,
+  1500
+ ],
+ "jpeg_quality": 88,
+ "samples": [
+  {
+   "id": "demo-l-bracket",
+   "kind": "template",
+   "name": "l_bracket",
+   "preset": "clean",
+   "seed": 101,
+   "files": {
+    "gt.yaml": "7a7ac1910f209bcde570fb7f588d4699156b3522f49ad9de422f339fd4dd4984",
+    "meta.json": "f310566878611767e05f868d4501062bc97053421a02f2fba43e51ef8c7b8fe6",
+    "side.jpg": "bc16d87887c599e98237d2d815ab483ff50dfef3b1a473c6ebfa94ffffa3687f",
+    "top.jpg": "4c77fe6f95db640a31cddf1613a283d2c98224c1f54802e0ef191fa11475563a"
+   }
+  },
+  {
+   "id": "demo-cable-clip",
+   "kind": "template",
+   "name": "cable_clip",
+   "preset": "paper",
+   "seed": 102,
+   "files": {
+    "gt.yaml": "4e16485adcc6e34b6e38f6ddabcbbbb34e5dcf4f6818da67d69f996b98f37827",
+    "meta.json": "8b2b52e35224599a937cd1edc521088f3ae39ea28e7557516f8b51fe6421bbac",
+    "side.jpg": "a3f51f9c8d472b8397ac669df77a3a98527cc6d85923dc15e81da084a5a6f41f",
+    "top.jpg": "972be39d306a0ed27ad8210339c63f0080b428e7f80e0e8b38e7fb8cbbfbafaa"
+   }
+  },
+  {
+   "id": "demo-caster-wheel",
+   "kind": "template",
+   "name": "caster_wheel",
+   "preset": "clean",
+   "seed": 103,
+   "files": {
+    "gt.yaml": "4a039943f4b395d6fbd46afb513aa371ce79123ae8a957c5cacaa64be3e8892a",
+    "meta.json": "831b35839f727e726a325ba148607c15c6655783ba7b0210889dfa2bd71a3b12",
+    "side.jpg": "51a9777ea88a7c34af081eb465e331cf1b420ad769e2f19a175145803c21bbe9",
+    "top.jpg": "68c53a285b7d2db1be59f40ddd681a68010cd84926df354fc3304c40a5766ada"
+   }
+  },
+  {
+   "id": "demo-clip-tilt",
+   "kind": "template",
+   "name": "clip",
+   "preset": "tilt",
+   "seed": 104,
+   "files": {
+    "gt.yaml": "3570a8b604d6bba452b477eaddd3a5c41086fa403e5ce9be78c50593f9ac5941",
+    "meta.json": "2cb854e78217719667bcf03986763323832b010b8d791df8e45293c3e54b1518",
+    "side.jpg": "eb6a7900311bb5cae27f9c7d5b15293d1c5f3534610ec31bea0c241ea82aec09",
+    "top.jpg": "622665057986a61de9d2a3437f8f43058e0d0bec91b2fc28d0ce22a3480f18e4"
+   }
+  },
+  {
+   "id": "demo-cupboard-latch",
+   "kind": "template",
+   "name": "cupboard_latch",
+   "preset": "clean",
+   "seed": 105,
+   "files": {
+    "gt.yaml": "f66f82991e7877fee81bad2138eff4f58b8f2372fbfe2a4255d577994d4553a6",
+    "meta.json": "11744ecb3bf4375696f1e0e488feacc07f40a0544eae6db3db5444e0f4e2d9da",
+    "side.jpg": "72cbc77ab94cb64b6815fd84e27c712aac1a15d9afaff4788b39d3fef6755413",
+    "top.jpg": "6ebd07acd4cb81998b5d419f21950aeda2ac905fd6b21d572cba1fc69ae00377"
+   }
+  },
+  {
+   "id": "demo-hinge-leaf",
+   "kind": "template",
+   "name": "hinge_leaf",
+   "preset": "clean",
+   "seed": 106,
+   "files": {
+    "gt.yaml": "64db7962364e36ebb16bfced733935fb8570a881d87b3d06149bab256f89009d",
+    "meta.json": "e67b6b1d88eae17c07232a6e85fdcd142dfa6aed931b59932bb13f8cb67695f0",
+    "side.jpg": "032b958db03beb90775e0534a10759089483aa6fa4078551446c36725f05381a",
+    "top.jpg": "5967e94a36a3e9cc0e6de2995b72e11c1863baf5545c4a4c0c716f994b9dd6f7"
+   }
+  },
+  {
+   "id": "demo-hook",
+   "kind": "template",
+   "name": "hook",
+   "preset": "paper",
+   "seed": 107,
+   "files": {
+    "gt.yaml": "420476fda27ce56f734e3b9c79d89c3793ca9acc547edf029554954afe3c9421",
+    "meta.json": "f61816923a4c34cfc99b9c82ac52d19b51eed3bee005f862f7e0309b4fb2caca",
+    "side.jpg": "fafbd4cf7808e8bfc945737ebc63c1c549dbd25900e504066debfe9a3ccf26bd",
+    "top.jpg": "295105d54912a5da46706cf2af029cbe81a0e5c19fc862bc8f5fb59b585d110f"
+   }
+  },
+  {
+   "id": "demo-knob",
+   "kind": "template",
+   "name": "knob",
+   "preset": "clean",
+   "seed": 108,
+   "files": {
+    "gt.yaml": "ce8c151019a2bf69d26523158b918dde4ac94abe7dc544dc6c2c3eece69e1d32",
+    "meta.json": "e906325e9dcb1214f02c3c99d8c119347b4377ed2b6caf6a9c1f6a0b41020aa4",
+    "side.jpg": "830110b755284664948b41f28470cf060b10b106e622acc492eea1551afc53c7",
+    "top.jpg": "076fae2ca9e008da41fbee91e22bbd51bccb889ad09e35a4d9b3d231e3abf8d7"
+   }
+  },
+  {
+   "id": "demo-spacer",
+   "kind": "template",
+   "name": "spacer",
+   "preset": "clean",
+   "seed": 109,
+   "files": {
+    "gt.yaml": "ff8fe13655f79c119efe7cee4c19568a224d29a35681dc5a6ff0b4a4ee138c5b",
+    "meta.json": "1d8e899851d6729c9ffe6fe83c9448e62313d404b70c5eebebe76900fc878146",
+    "side.jpg": "c99e0429e74a11d94dd7e7a20942a734bad9b3d2c1697bff8d3bbba1273630d3",
+    "top.jpg": "0ff8c17b2708b4b4026193bb4f8aa01b6372eaf61316034f65f3835185f13596"
+   }
+  },
+  {
+   "id": "demo-battery-cover",
+   "kind": "template",
+   "name": "battery_cover",
+   "preset": "clean",
+   "seed": 110,
+   "files": {
+    "gt.yaml": "c530bb9fd8acc33d479c178590fccf0e0384d44233d71153daaefe938554613a",
+    "meta.json": "8e60f9c37fadae02c2bedfaf3fb5624b8612c6f0cc727f3c0673072664859656",
+    "side.jpg": "c7fa34420d647c7b819e0ec21b6b10f2fa7ac81357a2a016da7922e77818b4f8",
+    "top.jpg": "2b2f2e70f1cd058fb9eb0e1a784e21b55649e95f196768f1f57e2dc9cc1b54ca"
+   }
+  },
+  {
+   "id": "demo-hard-white-cover",
+   "kind": "template",
+   "name": "battery_cover",
+   "preset": "white-part",
+   "seed": 111,
+   "files": {
+    "gt.yaml": "1edb4dc3ac29898649c547ab272c3e62da63b7659e3a4b0b752320da64b4e8ca",
+    "meta.json": "e8e0d31b01b8f09eca6bf42399bc44d418d274c38fb48f82dfcda87115319bae",
+    "side.jpg": "6cc06c4f959e3357c69696a18aae13a1c7bff8374cbc2c0f7cba79d51889222f",
+    "top.jpg": "4c318268a27fcd8b99b264679a4ed4cd03a115a6152095a06d7b0e9150913166"
+   }
+  },
+  {
+   "id": "demo-hard-glare-clip",
+   "kind": "template",
+   "name": "clip",
+   "preset": "glare",
+   "seed": 112,
+   "files": {
+    "gt.yaml": "18707a5c61cc9a606a2d338816af23ccd84c9186a58339ecdee3d43b27ba8181",
+    "meta.json": "86c3b57dd103e921812dd1c7befb535f259892837f8787eb751e58dbde875b96",
+    "side.jpg": "0442d7d3159ef4870dff7d64b0d76d752fedd47aef0845ee14aca4e1aa36e86c",
+    "top.jpg": "5beafc89db3592c81beba9bc6eb6cb435de75960044ff5642aff0a0b97df2e23"
+   }
+  },
+  {
+   "id": "demo-ref-id1-card",
+   "kind": "reference_object",
+   "name": "id1_card",
+   "preset": "clean",
+   "seed": 201,
+   "files": {
+    "gt.yaml": "244607731de2a5e4b3e94b38830c957fcd3bbe97ab068330e529e49e948dd893",
+    "meta.json": "f0dae55e5cad35d57c55cdd258b4f626f15be00adf88b50b1b8001c5071cd2f4",
+    "top.jpg": "7b190ce469c16acb2d2718cef727b74aadb0cefcf75b53b9b882fe4d8ac2995b"
+   }
+  },
+  {
+   "id": "demo-ref-sd-card",
+   "kind": "reference_object",
+   "name": "sd_card",
+   "preset": "clean",
+   "seed": 202,
+   "files": {
+    "gt.yaml": "49e162e901daf7dbd7e80ac69121027982171cddb300bce8d135fa3955240b93",
+    "meta.json": "0eb1e15af6b47f513b06c12009947f0eb0cb9ecf10df90c3411da8cf17b134f1",
+    "side.jpg": "40052b0f4bcce090ffb7711d42a6d7b9c5e444d013453ff9d5ec4faa560da118",
+    "top.jpg": "fabdc6b576dc736222a87222458f4888cfe6100248d565573fc58ee5c9ced972"
+   }
+  },
+  {
+   "id": "demo-ref-lego-2x4",
+   "kind": "reference_object",
+   "name": "lego_2x4",
+   "preset": "paper",
+   "seed": 203,
+   "files": {
+    "gt.yaml": "92d9a1b6dbfaa8316114e580716deb2927e8819870ec69d50e462a499980d4e6",
+    "meta.json": "864bbc8f17dfb2be6c15d4d2c49e06a595645b1a3a4d9e63958f6a60627cac8c",
+    "side.jpg": "e91026c4b5d1f48b807fc62b78ec9703cbffc2867723cf06551190da91a38371",
+    "top.jpg": "541df528f6430d065018c29fe387eb505d99f263d0247d1e07bb7fd3fa5a326f"
+   }
+  },
+  {
+   "id": "demo-ref-aa-cell",
+   "kind": "reference_object",
+   "name": "aa_cell",
+   "preset": "clean",
+   "seed": 204,
+   "files": {
+    "gt.yaml": "68dc8e8cf52950297bc02fedb63429fe140b67ac4668d5ee9e05dff3aeabb7c8",
+    "meta.json": "8936b89a907fb78a6bd01ff40044b15fe9ac2b707db9a2dee1e1348f001732a8",
+    "top.jpg": "1b6a162fd0360cf4754b26b0ae944a4c92faceb22d6f7bd19858dc2aeeb6e26b"
+   }
+  }
+ ]
+}

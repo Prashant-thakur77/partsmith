@@ -1,0 +1,94 @@
+gt_source: synthetic_exact
+origin: synthetic
+sample_id: demo-ref-lego-2x4
+kind: reference_object
+name: lego_2x4
+template: null
+reference_object: lego_2x4
+params: {}
+code_sha: ed49dfcad642b82e51233bd2a9b3f07c948ebb37079939ec04917499f2d7aa65
+mat_id: paper-a4
+units: mm
+dims:
+- {name: length, view: top, value_mm: 31.8}
+- {name: width, view: top, value_mm: 15.8}
+- {name: thickness, view: side, value_mm: 11.3}
+info: {height_mm: 11.3, side_length_mm: 31.8, user_thickness_mm: 9.6, dim_definitions: 'length/width: min-area rectangle of
+    the orthographic top footprint; hole_k.diameter: see-through openings from above; thickness: short side of the side-view
+    footprint'}
+views:
+  top:
+    image: top.jpg
+    placement:
+      center_mm: [78.8998, 48.4548]
+      yaw_deg: 188.3566
+    cad_to_mat:
+    - [-0.989383, 0.145334, 0.0, 78.8998]
+    - [0.145334, 0.989383, 0.0, 48.4548]
+    - [0.0, 0.0, -1.0, 0.0]
+    - [0.0, 0.0, 0.0, 1.0]
+    part_height_mm: 11.3
+    camera:
+      K:
+      - [1453.3566, 0.0, 999.5]
+      - [0.0, 1453.3566, 749.5]
+      - [0.0, 0.0, 1.0]
+      R:
+      - [-0.845006, 0.531642, -0.057639]
+      - [-0.534422, -0.843371, 0.055847]
+      - [-0.01892, 0.077995, 0.996774]
+      t_mm: [20.5853, 156.60904, 367.358319]
+      size: [2000, 1500]
+      height_mm: 373.733
+      tilt_deg: 4.603
+      focal35_mm: 25.1527
+      exif_focal35_mm: 25
+    look:
+      surface: paper
+      part_bgr: [30, 40, 200]
+      blur_px: 0.511
+      glare: false
+      moire_amp: 0.0
+      exposure: 1.0
+  side:
+    image: side.jpg
+    placement:
+      center_mm: [58.9696, 63.3927]
+      yaw_deg: 172.5328
+    cad_to_mat:
+    - [-0.991519, -0.129959, 0.0, 58.9696]
+    - [-0.129959, 0.991519, 0.0, 63.3927]
+    - [0.0, 0.0, -1.0, 0.0]
+    - [0.0, 0.0, 0.0, 1.0]
+    part_height_mm: 15.8
+    camera:
+      K:
+      - [1407.372153, 0.0, 999.5]
+      - [0.0, 1407.372153, 749.5]
+      - [0.0, 0.0, 1.0]
+      R:
+      - [0.993599, -0.106882, 0.036565]
+      - [0.10645, 0.994225, 0.013572]
+      - [-0.037805, -0.009593, 0.999239]
+      t_mm: [-93.659626, -136.365599, 305.339434]
+      size: [2000, 1500]
+      height_mm: 299.832
+      tilt_deg: 2.235
+      focal35_mm: 24.3569
+      exif_focal35_mm: 24
+    look:
+      surface: paper
+      part_bgr: [30, 40, 200]
+      blur_px: 0.321
+      glare: false
+      moire_amp: 0.0
+      exposure: 1.0
+generator: {version: synth-1, seed: 203, preset: paper}
+spec:
+  loose: false
+  note: "LEGO 2\xD74 brick body 31.8 \xD7 15.8 \xD7 9.6 mm, studs \xD84.8 \xD7 1.7 mm (top-view outline = body)"
+  dims:
+  - {name: length, nominal_mm: 31.8, lo_mm: 31.75, hi_mm: 31.85, view: top, note: ''}
+  - {name: width, nominal_mm: 15.8, lo_mm: 15.75, hi_mm: 15.85, view: top, note: ''}
+  - {name: thickness, nominal_mm: 11.3, lo_mm: 11.2, hi_mm: 11.4, view: side, note: 'side view includes the studs: 9.6 body
+      + 1.7 stud'}

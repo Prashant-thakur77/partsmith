@@ -1,0 +1,93 @@
+gt_source: synthetic_exact
+origin: synthetic
+sample_id: demo-ref-sd-card
+kind: reference_object
+name: sd_card
+template: null
+reference_object: sd_card
+params: {}
+code_sha: 3b64e4d97eabb7a21a9cd2930483335a1ee632dc4ba12009096c391c16f63236
+mat_id: screen-m
+units: mm
+dims:
+- {name: length, view: top, value_mm: 32.0}
+- {name: width, view: top, value_mm: 24.0}
+- {name: thickness, view: side, value_mm: 2.1}
+info: {height_mm: 2.1, side_length_mm: 32.0, user_thickness_mm: 2.1, dim_definitions: 'length/width: min-area rectangle of
+    the orthographic top footprint; hole_k.diameter: see-through openings from above; thickness: short side of the side-view
+    footprint'}
+views:
+  top:
+    image: top.jpg
+    placement:
+      center_mm: [128.0456, 52.264]
+      yaw_deg: 5.8464
+    cad_to_mat:
+    - [0.994799, -0.101862, 0.0, 128.0456]
+    - [-0.101862, -0.994799, 0.0, 52.264]
+    - [0.0, 0.0, -1.0, 0.0]
+    - [0.0, 0.0, 0.0, 1.0]
+    part_height_mm: 2.1
+    camera:
+      K:
+      - [1404.270707, 0.0, 999.5]
+      - [0.0, 1404.270707, 749.5]
+      - [0.0, 0.0, 1.0]
+      R:
+      - [-0.071685, 0.997024, 0.028374]
+      - [-0.997271, -0.071141, -0.019736]
+      - [-0.017659, -0.029712, 0.999403]
+      t_mm: [-57.10936, 112.825584, 358.785445]
+      size: [2000, 1500]
+      height_mm: 354.724
+      tilt_deg: 1.981
+      focal35_mm: 24.3032
+      exif_focal35_mm: 24
+    look:
+      surface: screen
+      part_bgr: [38, 36, 34]
+      blur_px: 0.367
+      glare: false
+      moire_amp: 0.0
+      exposure: 1.0
+  side:
+    image: side.jpg
+    placement:
+      center_mm: [147.5634, 58.1506]
+      yaw_deg: 198.8423
+    cad_to_mat:
+    - [-0.946411, 0.322964, 0.0, 147.5634]
+    - [0.322964, 0.946411, 0.0, 58.1506]
+    - [0.0, 0.0, -1.0, 0.0]
+    - [0.0, 0.0, 0.0, 1.0]
+    part_height_mm: 24.0
+    camera:
+      K:
+      - [1505.468139, 0.0, 999.5]
+      - [0.0, 1505.468139, 749.5]
+      - [0.0, 0.0, 1.0]
+      R:
+      - [0.021256, 0.998704, -0.04625]
+      - [-0.995092, 0.025606, 0.095587]
+      - [0.096648, 0.043991, 0.994346]
+      t_mm: [-49.308487, 98.512682, 374.008453]
+      size: [2000, 1500]
+      height_mm: 383.591
+      tilt_deg: 6.096
+      focal35_mm: 26.0546
+      exif_focal35_mm: 26
+    look:
+      surface: screen
+      part_bgr: [38, 36, 34]
+      blur_px: 0.481
+      glare: false
+      moire_amp: 0.0
+      exposure: 1.0
+generator: {version: synth-1, seed: 202, preset: clean}
+spec:
+  loose: false
+  note: "full-size SD: 32.0 \xD7 24.0 \xD7 2.1 mm (corner chamfer modelled 4 \xD7 4 mm, not scored)"
+  dims:
+  - {name: length, nominal_mm: 32.0, lo_mm: 31.9, hi_mm: 32.1, view: top, note: ''}
+  - {name: width, nominal_mm: 24.0, lo_mm: 23.9, hi_mm: 24.1, view: top, note: ''}
+  - {name: thickness, nominal_mm: 2.1, lo_mm: 1.95, hi_mm: 2.25, view: side, note: ''}

@@ -1,0 +1,97 @@
+gt_source: synthetic_exact
+origin: synthetic
+sample_id: demo-l-bracket
+kind: template
+name: l_bracket
+template: l_bracket
+reference_object: null
+params: {base_holes: 2.0, bend_radius: 1.9, corner_radius: 1.9, gusset_count: 2.0, height: 32.1, hole_d: 3.65, length: 45.7,
+  thickness: 2.5, wall_holes: 2.0, width: 24.0}
+code_sha: 18ac10657e19c0ec64f30f04fb540d3d69441d254502fd8a7b36a1d383f183f3
+mat_id: screen-m
+units: mm
+dims:
+- {name: length, view: top, value_mm: 45.7}
+- {name: width, view: top, value_mm: 24.0}
+- name: hole_1.diameter
+  view: top
+  value_mm: 3.65
+  center_mat_mm: [145.645077, 78.348939]
+  center_cad_mm: [-14.8, 0.0]
+- name: hole_2.diameter
+  view: top
+  value_mm: 3.65
+  center_mat_mm: [135.306144, 45.959026]
+  center_cad_mm: [19.2, 0.0]
+- {name: thickness, view: side, value_mm: 32.1}
+info: {height_mm: 32.1, side_length_mm: 45.7, user_thickness_mm: 2.5, dim_definitions: 'length/width: min-area rectangle of
+    the orthographic top footprint; hole_k.diameter: see-through openings from above; thickness: short side of the side-view
+    footprint'}
+views:
+  top:
+    image: top.jpg
+    placement:
+      center_mm: [141.1446, 64.2498]
+      yaw_deg: 107.7032
+    cad_to_mat:
+    - [-0.304086, -0.952644, 0.0, 141.1446]
+    - [-0.952644, 0.304086, 0.0, 64.2498]
+    - [0.0, 0.0, -1.0, 0.0]
+    - [0.0, 0.0, 0.0, 1.0]
+    part_height_mm: 32.1
+    camera:
+      K:
+      - [1513.717595, 0.0, 999.5]
+      - [0.0, 1513.717595, 749.5]
+      - [0.0, 0.0, 1.0]
+      R:
+      - [-0.061699, 0.992087, 0.109343]
+      - [-0.993912, -0.071089, 0.084174]
+      - [0.091281, -0.103484, 0.990434]
+      t_mm: [-56.212532, 129.199025, 302.408894]
+      size: [2000, 1500]
+      height_mm: 304.245
+      tilt_deg: 7.932
+      focal35_mm: 26.1974
+      exif_focal35_mm: 26
+    look:
+      surface: screen
+      part_bgr: [52, 52, 55]
+      blur_px: 0.568
+      glare: false
+      moire_amp: 0.0
+      exposure: 1.0
+  side:
+    image: side.jpg
+    placement:
+      center_mm: [136.7238, 55.3764]
+      yaw_deg: 166.5342
+    cad_to_mat:
+    - [-0.972509, -0.232865, 0.0, 136.7238]
+    - [-0.232865, 0.972509, 0.0, 55.3764]
+    - [0.0, 0.0, -1.0, 0.0]
+    - [0.0, 0.0, 0.0, 1.0]
+    part_height_mm: 24.0
+    camera:
+      K:
+      - [1474.858476, 0.0, 999.5]
+      - [0.0, 1474.858476, 749.5]
+      - [0.0, 0.0, 1.0]
+      R:
+      - [0.724069, 0.689728, -3.0e-06]
+      - [-0.689725, 0.724066, 0.002827]
+      - [0.001952, -0.002045, 0.999996]
+      t_mm: [-115.465635, 31.809731, 307.988316]
+      size: [2000, 1500]
+      height_mm: 308.077
+      tilt_deg: 0.162
+      focal35_mm: 25.5249
+      exif_focal35_mm: 26
+    look:
+      surface: screen
+      part_bgr: [52, 52, 55]
+      blur_px: 0.593
+      glare: false
+      moire_amp: 0.0
+      exposure: 1.0
+generator: {version: synth-1, seed: 101, preset: clean}

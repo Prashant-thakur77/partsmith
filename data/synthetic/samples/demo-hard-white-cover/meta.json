@@ -1,0 +1,16 @@
+{
+  "id": "demo-hard-white-cover",
+  "title": "Battery compartment cover (synthetic, white-part)",
+  "kind": "template",
+  "origin": "synthetic",
+  "mat_id": "screen-m",
+  "family_hint": "cover",
+  "intent": "Make a replacement for this broken battery compartment cover.",
+  "user_thickness_mm": 1.5,
+  "difficulty": "hard",
+  "augmentations": [
+    "white-part",
+    "surface:screen"
+  ],
+  "seed": 111
+}
