@@ -55,3 +55,9 @@ A fresh session should read this file, `docs/ARCHITECTURE.md`, `docs/API.md` and
   notes, shadow suppression, dark screen stage + `contrast` gate check, thin side views, round profiles. Synthetic measure-only bench
   mean 1.503 → 0.628 mm (flat 0.172, tall features 0.984, side thickness 0.731, reference renders 0.194). Phase 1 gate (≤ 0.4 mm)
   still FAIL on synthetic overall: tall features are a single-photo ambiguity, handled in the full loop by camera-frame verification.
+- **Metrology round 3:** dark-stage segmentation (shaded walls stay part, edges at local level), stricter shadow model, gate
+  fragmentation after wall joining. Synthetic measure-only mean 0.667 → 0.466 mm (white parts on the dark stage 2.76 → 0.68 mm,
+  14/14 accepted; white-on-light correctly rejected 5/6). Side-view thickness of parts with lower features stays ambiguous from
+  one photo (reported as a range in notes, σ widened). Measure-only gate (≤ 0.4 mm): synthetic 0.466 FAIL, reference renders 0.170 PASS.
+- **API fixes from the live web suite** (`a705786`): atomic job writes, 409 codes, bench gallery files, cancel status, SSE headers,
+  forwarded-host links, shared Hinglish synonyms.

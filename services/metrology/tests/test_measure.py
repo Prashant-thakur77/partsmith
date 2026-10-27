@@ -254,13 +254,14 @@ def test_cast_shadow_on_paper_is_not_part(colour: tuple[int, int, int]) -> None:
     out = measure_photo(img, "top", segmenter=ThresholdSegmenter(), thickness_mm=10.0, K=cam.K)
     m = out.result.measurements
     assert m is not None
-    assert abs(m.length.value - 16.0) < TOL_MM and abs(m.width.value - 16.0) < TOL_MM
-    if colour[0] > 100:  # a mid-grey part is darker than the stage like its shadow: without suppression it grows
-        plain = measure_photo(
-            img, "top", segmenter=ThresholdSegmenter(suppress_shadows=False), thickness_mm=10.0, K=cam.K
-        )
-        assert plain.result.measurements is not None
-        assert plain.result.measurements.length.value - 16.0 > 1.0
+    if colour[0] < 100:
+        assert abs(m.length.value - 16.0) < TOL_MM and abs(m.width.value - 16.0) < TOL_MM
+    if colour[0] > 100:
+        # A mid-grey part has its own shadow's colour (same chroma, ~2/3 of the paper's brightness): it cannot be
+        # told from its shadow, so the gate sends it to a darker surface instead of trusting the outline.
+        c = next(x for x in out.result.capture.checks if str(x.name) == "contrast")
+        assert c.severity == "fail" and "darker surface" in c.reason
+        return
 
 
 def test_side_view_of_a_thin_tall_card() -> None:

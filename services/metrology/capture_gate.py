@@ -56,7 +56,7 @@ CONTRAST_MIN_SOLIDITY = 0.25
 # A part whose colour is the stage colour slightly darkened (white, off-white, light grey on a white stage) cannot be
 # told from its own shadow or reliably from the stage.
 CONE_CHROMA_TOL = 16.0  # same tolerance the segmenter uses to call a part shadow-coloured
-CONE_MIN_RATIO = 0.70  # wider than the segmenter's 0.78: light-grey parts on a white stage are sent to the dark stage
+CONE_MIN_RATIO = 0.50  # the segmenter's SHADOW_MIN_RATIO: such parts cannot be told from their own shadow
 
 
 def _check(

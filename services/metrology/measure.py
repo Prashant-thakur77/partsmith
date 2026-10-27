@@ -190,6 +190,9 @@ def _rasterize(poly: Polygon, origin_mm: tuple[float, float], ppm: float, shape:
 
 SEE_THROUGH_MIN_PX = 3  # smallest see-through region kept when parallax can make the visible lens arbitrarily thin
 SEE_THROUGH_MAX_RMS_REL = 0.08
+SEE_THROUGH_MIN_MM2 = 0.25
+SEE_THROUGH_MIN_FILL = 0.2  # area / disc on its longest side: a lens is at least this full, a crease is not
+MIN_CUTOUT_MM2 = 1.0  # irregular see-through openings smaller than this are not subtracted from the outline
 
 
 def expected_shift_mm(pose: PoseEstimate, height_mm: float, at_mm: tuple[float, float]) -> float:
@@ -206,8 +209,9 @@ def _restore_see_through(
 
     For a part of thickness h, a through-hole shows the mat only where its top and bottom openings overlap in the photo.
     When the parallax shift (h·distance-to-nadir/(Zc − h)) approaches the hole's diameter that lens becomes arbitrarily
-    thin, so with a shift ≥ 0.1 mm every enclosed background region of at least `SEE_THROUGH_MIN_PX` pixels in the raw
-    segmentation is kept as a candidate opening (the hole fit decides what it is).
+    thin, so with a shift ≥ 0.1 mm enclosed background regions in the raw segmentation are kept as candidate openings
+    (the hole fit decides what they are) when they are at least `SEE_THROUGH_MIN_MM2` (a lens narrower than ~0.5 mm
+    cannot be fitted anyway) and compact like a lens, not specks along a dark crease or seam.
     """
     if pose is None:
         return mask
@@ -218,9 +222,15 @@ def _restore_see_through(
     inv = (~raw & mask).astype(np.uint8)  # background inside the cleaned part
     n, lab, stats, _ = cv2.connectedComponentsWithStats(inv, connectivity=4)
     out = mask.copy()
+    min_px = max(SEE_THROUGH_MIN_PX, SEE_THROUGH_MIN_MM2 * ppm**2)
     for i in range(1, n):
-        if stats[i, cv2.CC_STAT_AREA] >= SEE_THROUGH_MIN_PX:
-            out[lab == i] = False
+        area = float(stats[i, cv2.CC_STAT_AREA])
+        if area < min_px:
+            continue
+        span = float(max(stats[i, cv2.CC_STAT_WIDTH], stats[i, cv2.CC_STAT_HEIGHT]))
+        if area / (math.pi * (span / 2) ** 2) < SEE_THROUGH_MIN_FILL:
+            continue
+        out[lab == i] = False
     return out
 
 
@@ -272,10 +282,16 @@ def _thick_footprint(
         gq = Polygon(q).buffer(0)
         tq = Polygon(smooth_ring(det.to_mm(c.points_px, H_top), 0.05)).buffer(0)
         cut = gq.union(tq)
-        if cut.area > 0.05:
-            cutouts.append(cut)
-            cx, cy = cut.centroid.x, cut.centroid.y
-            notes.append(f"through-opening near mat ({cx:.1f}, {cy:.1f}) mm is not a round vertical hole; outline only")
+        if cut.area < MIN_CUTOUT_MM2 or not ext.buffer(-0.2).contains(cut):
+            continue  # specks and slits along creases, or openings at the rim: not holes in the outline
+        trial = ext.difference(cut)
+        if trial.geom_type != "Polygon":
+            continue  # would split the outline in two: a gap, not a hole
+        cutouts.append(cut)
+        notes.append(
+            f"through-opening near mat ({cut.centroid.x:.1f}, {cut.centroid.y:.1f}) mm is not a round vertical hole; "
+            "outline only"
+        )
     fp = largest_polygon(ext.difference(unary_union(cutouts))) if cutouts else ext
     if fp is None:
         return None
@@ -483,8 +499,10 @@ def measure_photo(
         mask = _restore_see_through(mask, seg.mask, det, pose, float(thickness_mm or 0.0), ppm_img)
     field_: BoolMask | NDArray[np.float32] = mask
     if seg.prob is not None and mask.any():
-        inner = cv2.erode(mask.astype(np.uint8), np.ones((5, 5), np.uint8)) > 0
-        outer = cv2.dilate(mask.astype(np.uint8), np.ones((5, 5), np.uint8)) > 0
+        # The soft map decides the edge across a band of ±4 px around the mask boundary (the mask itself may include
+        # a pixel or two of blur halo); only deeper inside is the field forced to 1 (textured faces, bore walls).
+        inner = cv2.erode(mask.astype(np.uint8), np.ones((9, 9), np.uint8)) > 0
+        outer = cv2.dilate(mask.astype(np.uint8), np.ones((9, 9), np.uint8)) > 0
         field_ = np.where(inner, 1.0, np.where(outer, seg.prob, 0.0)).astype(np.float32)
 
     capture = run_gate(
@@ -592,8 +610,22 @@ def measure_photo(
         hole_fits=hole_fits,
     )
     if view == ViewKind.side:
+        sig = meas.width.sigma_mm
+        if footprint is not ground:
+            # The correction assumes the part stands the full stated height everywhere along this profile. A lower
+            # feature on the side away from the camera is trimmed with it, so the photo only bounds the thickness:
+            # between the corrected profile and the uncorrected one (which also counts the far walls' parallax).
+            upper = min_area_rect(np.asarray(ground.exterior.coords))[2]
+            lower = meas.width.value
+            if upper - lower > 0.3:
+                sig = math.hypot(sig, (upper - lower) / (2 * math.sqrt(3)))
+                meas.notes.append(
+                    f"side view: {lower:.2f} mm if the part is equally tall everywhere along this profile; a feature "
+                    f"lower than {thickness_mm:.1f} mm on the side away from the camera reads short (the photo allows up "
+                    f"to {upper:.2f} mm) — a side photo taken straight above the part narrows this"
+                )
         meas.thickness = Measured(
-            value=meas.width.value, source=Source.measured, sigma_mm=meas.width.sigma_mm, evidence=meas.width.evidence
+            value=meas.width.value, source=Source.measured, sigma_mm=round(sig, 3), evidence=meas.width.evidence
         )
         meas.notes.append("side view: thickness = short side of the profile")
         if stated_thickness_mm is not None and meas.thickness.value > stated_thickness_mm + max(

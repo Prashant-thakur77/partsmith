@@ -278,13 +278,15 @@ def _otsu(values: F64, bins: int = 256) -> tuple[float, float]:
     return float(edges[k + 1]), float(sb[k] / var_t) if var_t > 0 else 0.0
 
 
-SHADOW_MIN_RATIO = 0.70  # a cast shadow keeps at least this share of the stage's brightness (lamp + room light)
+# A cast shadow keeps at least this share of the stage's brightness: with ordinary room light filling in, a desk-lamp
+# shadow is rarely darker than half the lit surface. One bound for pixels, for the part's own colour and for the gate.
+SHADOW_MIN_RATIO = 0.50
 SHADOW_CHROMA_TOL = 8.0  # max colour distance (8-bit) from the darkened stage colour
 SHADOW_MAX_GRADIENT = 60.0  # grey levels per mm at 0.25 mm blur: penumbras stay below, part edges far above
 SHADOW_KEEP_FRACTION = 0.5
 # A part whose own colour is within this of the darkened stage colour is treated as shadow-coloured (no suppression).
 PART_SHADOW_CHROMA_TOL = 16.0
-PART_SHADOW_MIN_RATIO = 0.78  # white, off-white and light-grey parts on a white stage
+PART_SHADOW_MIN_RATIO = SHADOW_MIN_RATIO  # white, off-white and light/mid-grey parts on a white stage
 
 
 def _shadow_cone_distance(
@@ -294,6 +296,34 @@ def _shadow_cone_distance(
     bb = np.maximum(np.sum(bg * bg, axis=2), 1e-6)
     k = np.clip(np.sum(roi * bg, axis=2) / bb, k_min, k_max)
     return np.asarray(np.linalg.norm(roi - k[..., None] * bg, axis=2), dtype=np.float32)
+
+
+SHADOW_CUT_MIN_EDGE = 0.3
+
+
+def _cut_follows_edge(roi: NDArray[np.float32], core: BoolMask, kept: BoolMask) -> bool:
+    """True when the line between the kept part and the removed 'shadow' is a real edge.
+
+    A part meets its own shadow at a sharp step (its outline); a shadow-coloured patch inside a uniformly grey part
+    has no step there. Compare the image gradient along the cut with the gradient along the part's edge against the
+    bare stage: the cut must carry at least `SHADOW_CUT_MIN_EDGE` of it.
+    """
+    # Colour gradient (all three channels): a yellow part against grey shadowed paper differs in hue, not brightness.
+    g = np.asarray(cv2.GaussianBlur(roi, (0, 0), 1.0), dtype=np.float32)
+    gx, gy = cv2.Sobel(g, cv2.CV_32F, 1, 0), cv2.Sobel(g, cv2.CV_32F, 0, 1)
+    mag = np.sqrt(np.sum(gx * gx + gy * gy, axis=2))
+    k3 = np.ones((3, 3), np.uint8)
+    rim = kept & ~(cv2.erode(kept.astype(np.uint8), k3) > 0)
+    removed = core & ~kept
+    near_removed = cv2.dilate(removed.astype(np.uint8), np.ones((5, 5), np.uint8)) > 0
+    near_stage = cv2.dilate((~core).astype(np.uint8), np.ones((5, 5), np.uint8)) > 0
+    cut = rim & near_removed & ~near_stage
+    edge = rim & near_stage & ~near_removed
+    if cut.sum() < 10 or edge.sum() < 10:
+        return True
+    # The edge may lie a pixel either side of the rim: take the local maximum of the gradient.
+    mag_max = cv2.dilate(mag, np.ones((5, 5), np.uint8))
+    return bool(np.median(mag_max[cut]) >= SHADOW_CUT_MIN_EDGE * np.median(mag_max[edge]))
 
 
 def _smooth(roi: NDArray[np.float32], px_per_mm: float) -> NDArray[np.bool_]:
@@ -439,6 +469,26 @@ class ThresholdSegmenter:
         # itself looks like that (a light-grey or white part on a white stage), which the contrast check reports.
         shadow_zone: BoolMask = np.zeros(core.shape, dtype=bool)
         cone_d = _shadow_cone_distance(roi, bg)
+        # Judge colour on a lightly smoothed image (sensor noise would otherwise blur the shadow/part boundary).
+        roi_s = np.asarray(cv2.GaussianBlur(roi, (0, 0), 1.5), dtype=np.float32)
+        shadow_like = (_shadow_cone_distance(roi_s, bg) < max(SHADOW_CHROMA_TOL, noise)) & _smooth(roi, px_mm)
+
+        # Hysteresis: Otsu can split a part into its lit faces and its shaded walls (a light part on the dark stage:
+        # the walls are dimmer than the top but still brighter than the stage). Everything connected to the core that
+        # differs from the stage by more than the noise floor and is not shadow-coloured belongs to the part.
+        if thr > floor:
+            grow = ((dist > floor) & inside & ~shadow_like).astype(np.uint8)
+            if self.min_line_mm > 0:
+                opened = cv2.morphologyEx(grow, cv2.MORPH_OPEN, k)
+                grow = ((grow > 0) & (cv2.dilate(opened, k) > 0)).astype(np.uint8)
+            grow |= core.astype(np.uint8)
+            largest_fraction = _largest_fraction(grow > 0, px_mm**2)  # pieces after joining walls to faces
+            _, lab_g = cv2.connectedComponents(grow, connectivity=8)
+            ids = np.unique(lab_g[core])
+            grown = np.isin(lab_g, ids[ids > 0])
+            if grown.sum() > 1.02 * core.sum():
+                notes.append(f"mask grown from the brightest faces to {grown.sum() / px_mm**2:.0f} mm² (shaded walls)")
+            core = grown
         part_like_shadow = False
         if self.suppress_shadows:
             er = cv2.erode(core.astype(np.uint8), _disk(3)) > 0
@@ -450,10 +500,6 @@ class ThresholdSegmenter:
             if part_like_shadow:
                 notes.append("the part's colour looks like a shadow on this stage; shadows were not removed")
         if self.suppress_shadows and not part_like_shadow:
-            # Judge colour on a lightly smoothed image (sensor noise would otherwise blur the shadow/part boundary).
-            roi_s = np.asarray(cv2.GaussianBlur(roi, (0, 0), 1.5), dtype=np.float32)
-            shadow_like = _shadow_cone_distance(roi_s, bg) < max(SHADOW_CHROMA_TOL, noise)
-            shadow_like &= _smooth(roi, px_mm)
             kept = core & ~shadow_like
             if self.min_line_mm > 0:
                 kept_u8 = kept.astype(np.uint8)
@@ -461,7 +507,10 @@ class ThresholdSegmenter:
                 kept = (kept_u8 > 0) & (cv2.dilate(opened, k) > 0)
             kept = largest_component(kept)
             removed = int(np.count_nonzero(core)) - int(np.count_nonzero(kept))
-            if np.count_nonzero(kept) >= SHADOW_KEEP_FRACTION * np.count_nonzero(core):
+            cut_ok = removed <= 0.02 * np.count_nonzero(core) or _cut_follows_edge(roi, core, kept)
+            if not cut_ok:
+                notes.append("shadow-coloured areas inside the part were kept (no edge separates them from the part)")
+            elif np.count_nonzero(kept) >= SHADOW_KEEP_FRACTION * np.count_nonzero(core):
                 if removed > 0.02 * np.count_nonzero(core):
                     notes.append(f"cast shadow removed ({removed / px_mm**2:.0f} mm²)")
                     shadow_zone = cv2.dilate((core & ~kept).astype(np.uint8), _disk(5)) > 0
@@ -479,6 +528,12 @@ class ThresholdSegmenter:
         d_part = float(np.median(dist[eroded])) if eroded.any() else float(np.median(dist[core]))
         d_part = max(d_part, thr * 1.05)
         prob = np.clip(dist / d_part, 0.0, 1.0).astype(np.float32)
+        # Edge level from the nearby inside, not the part's median: a dim wall next to a bright top still has its
+        # 50 % crossing where it meets the stage.
+        d_s = np.asarray(cv2.GaussianBlur(dist, (0, 0), 1.0), dtype=np.float32)
+        level = np.asarray(cv2.dilate(np.where(core, d_s, 0.0).astype(np.float32), _disk(5)), dtype=np.float32)
+        near_edge = (level > 0) & ~eroded
+        prob = np.where(near_edge, np.clip(dist / np.maximum(level, floor), 0.0, 1.0), prob).astype(np.float32)
         if shadow_zone.any():
             # Next to a removed shadow the local background is the shadow, so score by distance to the shadow cone.
             dc = float(np.median(cone_d[eroded])) if eroded.any() else d_part

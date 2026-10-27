@@ -66,13 +66,20 @@ marker ring stays black on white). The threshold segmenter models whatever unifo
 `contrast` check fails with "The part blends into the background — switch the screen mat to the dark stage (or use a
 darker surface)" when the part's colour is the stage colour slightly darkened (white, off-white, light grey on white),
 when the outline has long stretches without contrast, when the segmentation fell apart into pieces, or when the mask is
-implausibly ragged. Cast shadows (same chroma as the stage, 70–100 % of its brightness, no sharp structure) are removed
-unless the part itself has that colour; edges next to a shadow are located against the shadow, not the bare stage.
+implausibly ragged. Cast shadows (same chroma as the stage, 50–100 % of its brightness — a desk-lamp shadow with room
+light filling in is rarely darker — and no sharp structure) are removed unless the part itself has that colour, and only
+where a real edge separates part and shadow; edges next to a shadow are located against the shadow, not the bare stage.
+Shadow-coloured parts (white, light and mid grey on a white stage) fail the contrast check. On any stage, the mask grows
+from the most contrasting faces into everything connected that differs from the stage by more than the noise floor and
+is not shadow-coloured, so a light part's dimmer shaded walls on the dark stage stay part; edges are located at 50 % of
+the local inside level, not of the part's median contrast.
 
 ## Side views, round profiles, tall features
 
 - Side view (part on its side): pass the top view's width as `thickness_mm`. A thin, tall object keeps only a small
   share of its photo outline after the height correction; that is accepted (guard 5 % for side views, 25 % for top).
+  The correction assumes the part is equally tall along the whole profile; a lower feature on the far side reads short.
+  When the corrected and uncorrected thickness differ, `notes` gives both bounds and σ covers the range.
 - `profile="round"`: a cylinder lying on its curved side (AA cell, wheel on its tread), `thickness_mm` = diameter.
   Curved sides come from silhouette rays tangent to the cylinder (mid-height plane, corrected by r(1/cos θ − 1)); the
   flat ends from the prism outline.

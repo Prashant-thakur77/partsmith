@@ -6,117 +6,117 @@ Synthetic bench: seed 7, n = 60 template samples + 20 reference-object renders, 
 
 ## Phase 1 exit gate (mean abs error ≤ 0.4 mm, accepted photos)
 
-- synthetic bench: mean 0.667 mm over N = 228 dims → **FAIL**
-- reference objects (reference_spec (published spec; synthetic render of the nominal model)): mean 0.170 mm over N = 40 dims → **PASS**
+- synthetic bench: mean 0.466 mm over N = 229 dims → **FAIL**
+- reference objects (reference_spec (published spec; synthetic render of the nominal model)): mean 0.170 mm over N = 37 dims → **PASS**
 - overall: **FAIL**
 
 ## synthetic
 
 Ground truth: synthetic_exact (template mesh, exact).
 
-Photos: 120 (mat + part detected: 120; capture gate passed: 100/120 = 83 % [0.76, 0.89]).
+Photos: 120 (mat + part detected: 120; capture gate passed: 98/120 = 82 % [0.74, 0.88]).
 
 | dims | N | mean abs [95 % CI] | median | P90 | max | ≤0.3 mm | ≤0.5 mm | bias |
 |---|---:|---|---:|---:|---:|---:|---:|---:|
-| accepted photos | 228 | 0.667 [0.437, 0.968] | 0.164 | 1.350 | 24.170 | 67 % | 76 % | -0.261 |
-| all detected photos | 278 | 0.806 [0.540, 1.146] | 0.168 | 1.397 | 24.170 | 65 % | 75 % | -0.229 |
+| accepted photos | 229 | 0.466 [0.368, 0.581] | 0.199 | 1.033 | 5.316 | 68 % | 77 % | -0.044 |
+| all detected photos | 279 | 0.549 [0.418, 0.709] | 0.197 | 1.097 | 14.799 | 66 % | 76 % | 0.076 |
 
-- pass@0.3 mm (every named dim of an accepted photo within 0.3 mm; a missed dim fails): 39/100 = 39 % [0.30, 0.49]
-- pass@0.5 mm (every named dim of an accepted photo within 0.5 mm; a missed dim fails): 53/100 = 53 % [0.43, 0.62]
-- expected rejections (white part on the light stage → dark-stage retake): 4/6 correctly rejected [0.30, 0.90]; not scored as errors; missed: syn-hinge-leaf-white-on-light-s939262, syn-spacer-white-on-light-s706141
+- pass@0.3 mm (every named dim of an accepted photo within 0.3 mm; a missed dim fails): 38/98 = 39 % [0.30, 0.49]
+- pass@0.5 mm (every named dim of an accepted photo within 0.5 mm; a missed dim fails): 52/98 = 53 % [0.43, 0.63]
+- expected rejections (white part on the light stage → dark-stage retake): 5/6 correctly rejected [0.44, 0.97]; not scored as errors; missed: syn-spacer-white-on-light-s706141
 
 | top view (accepted photos) | N | mean abs [95 % CI] | median | P90 | max | ≤0.3 mm | ≤0.5 mm | bias |
 |---|---:|---|---:|---:|---:|---:|---:|---:|
-| top view, flat parts | 83 | 0.223 [0.174, 0.282] | 0.150 | 0.459 | 1.342 | 77 % | 90 % | -0.162 |
-| top view, parts with tall features | 94 | 0.811 [0.399, 1.411] | 0.134 | 1.427 | 24.170 | 73 % | 77 % | 0.100 |
+| top view, flat parts | 82 | 0.226 [0.181, 0.273] | 0.165 | 0.544 | 0.936 | 79 % | 89 % | -0.153 |
+| top view, parts with tall features | 98 | 0.494 [0.324, 0.690] | 0.129 | 1.378 | 5.316 | 73 % | 79 % | 0.412 |
 
 A single top photo sees only the silhouette, and the height correction assumes every outline edge sits at the stated thickness, so features that stand taller than that (arms, uprights, knuckles) are displaced by parallax by an amount the photo cannot resolve; the full-loop bench scores the final model instead.
 
 | by dimension | N | mean abs [95 % CI] | median | P90 | max | ≤0.3 mm | ≤0.5 mm | bias |
 |---|---:|---|---:|---:|---:|---:|---:|---:|
-| hole Ø | 79 | 0.149 [0.119, 0.188] | 0.096 | 0.301 | 1.216 | 90 % | 99 % | -0.043 |
-| side:thickness | 51 | 1.122 [0.628, 1.872] | 0.424 | 2.749 | 16.297 | 39 % | 53 % | -1.087 |
-| top:length | 49 | 0.900 [0.258, 1.958] | 0.138 | 1.347 | 24.170 | 71 % | 76 % | -0.353 |
-| top:width | 49 | 0.793 [0.484, 1.166] | 0.263 | 2.693 | 5.049 | 55 % | 65 % | 0.340 |
+| hole Ø | 82 | 0.165 [0.133, 0.199] | 0.093 | 0.287 | 0.802 | 90 % | 98 % | -0.055 |
+| side:thickness | 49 | 0.812 [0.563, 1.104] | 0.484 | 2.624 | 3.622 | 39 % | 53 % | -0.773 |
+| top:length | 49 | 0.474 [0.261, 0.760] | 0.136 | 1.024 | 5.316 | 71 % | 76 % | 0.248 |
+| top:width | 49 | 0.617 [0.382, 0.894] | 0.231 | 1.745 | 3.928 | 57 % | 67 % | 0.413 |
 
 | by profile | N | mean abs [95 % CI] | median | P90 | max | ≤0.3 mm | ≤0.5 mm | bias |
 |---|---:|---|---:|---:|---:|---:|---:|---:|
-| side: flat | 22 | 0.376 [0.226, 0.565] | 0.249 | 0.832 | 1.900 | 55 % | 73 % | -0.299 |
-| side: tall features | 29 | 1.688 [0.887, 2.935] | 0.691 | 3.105 | 16.297 | 28 % | 38 % | -1.685 |
-| top: flat | 83 | 0.223 [0.174, 0.282] | 0.150 | 0.459 | 1.342 | 77 % | 90 % | -0.162 |
-| top: tall features | 94 | 0.811 [0.399, 1.411] | 0.134 | 1.427 | 24.170 | 73 % | 77 % | 0.100 |
+| side: flat | 21 | 0.348 [0.233, 0.481] | 0.232 | 0.749 | 1.086 | 52 % | 71 % | -0.264 |
+| side: tall features | 28 | 1.161 [0.769, 1.605] | 0.729 | 3.120 | 3.622 | 29 % | 39 % | -1.156 |
+| top: flat | 82 | 0.226 [0.181, 0.273] | 0.165 | 0.544 | 0.936 | 79 % | 89 % | -0.153 |
+| top: tall features | 98 | 0.494 [0.324, 0.690] | 0.129 | 1.378 | 5.316 | 73 % | 79 % | 0.412 |
 
 | by preset | N | mean abs [95 % CI] | median | P90 | max | ≤0.3 mm | ≤0.5 mm | bias |
 |---|---:|---|---:|---:|---:|---:|---:|---:|
-| blur | 29 | 0.684 [0.261, 1.203] | 0.172 | 1.835 | 5.315 | 72 % | 76 % | 0.395 |
-| clean | 37 | 0.372 [0.218, 0.571] | 0.136 | 0.960 | 3.037 | 70 % | 76 % | 0.216 |
-| glare | 35 | 0.440 [0.162, 0.806] | 0.112 | 0.590 | 4.953 | 74 % | 86 % | -0.010 |
-| low-light | 31 | 0.310 [0.124, 0.571] | 0.086 | 1.098 | 3.055 | 81 % | 87 % | -0.177 |
-| moire | 4 | 0.507 [0.073, 1.352] | 0.098 | 1.270 | 1.771 | 75 % | 75 % | 0.476 |
-| paper | 38 | 0.362 [0.215, 0.564] | 0.180 | 0.452 | 2.749 | 68 % | 89 % | -0.279 |
-| tilt | 32 | 0.526 [0.270, 0.848] | 0.178 | 1.055 | 3.251 | 62 % | 69 % | -0.280 |
-| white-part | 22 | 2.761 [0.813, 5.428] | 0.793 | 4.814 | 24.170 | 27 % | 36 % | -2.523 |
+| blur | 29 | 0.703 [0.280, 1.222] | 0.210 | 1.834 | 5.316 | 66 % | 76 % | 0.387 |
+| clean | 37 | 0.379 [0.225, 0.578] | 0.132 | 0.961 | 3.036 | 70 % | 78 % | 0.213 |
+| glare | 28 | 0.334 [0.143, 0.625] | 0.090 | 0.581 | 3.622 | 79 % | 86 % | -0.185 |
+| low-light | 31 | 0.323 [0.138, 0.579] | 0.097 | 1.081 | 3.056 | 77 % | 87 % | -0.182 |
+| moire | 4 | 0.491 [0.067, 1.321] | 0.086 | 1.243 | 1.735 | 75 % | 75 % | 0.463 |
+| paper | 38 | 0.364 [0.226, 0.553] | 0.265 | 0.479 | 2.516 | 76 % | 89 % | -0.275 |
+| tilt | 32 | 0.527 [0.272, 0.844] | 0.194 | 0.966 | 3.237 | 62 % | 69 % | -0.279 |
+| white-part | 30 | 0.680 [0.416, 1.021] | 0.496 | 1.156 | 3.611 | 43 % | 50 % | -0.026 |
 
 | by family / object | N | mean abs [95 % CI] | median | P90 | max | ≤0.3 mm | ≤0.5 mm | bias |
 |---|---:|---|---:|---:|---:|---:|---:|---:|
-| bracket | 19 | 1.908 [0.643, 3.745] | 0.374 | 4.204 | 16.297 | 47 % | 58 % | -0.204 |
-| cable_clip | 20 | 0.275 [0.141, 0.433] | 0.149 | 0.748 | 1.282 | 80 % | 85 % | 0.104 |
-| clip | 17 | 0.578 [0.248, 1.029] | 0.200 | 1.205 | 3.587 | 59 % | 59 % | 0.192 |
-| cover | 18 | 0.937 [0.377, 1.578] | 0.084 | 3.059 | 3.630 | 67 % | 67 % | -0.849 |
-| hinge | 20 | 1.812 [0.271, 4.441] | 0.166 | 2.929 | 24.170 | 60 % | 65 % | -1.532 |
-| hook | 25 | 0.799 [0.394, 1.294] | 0.177 | 2.123 | 4.953 | 56 % | 64 % | 0.197 |
-| knob | 18 | 0.170 [0.123, 0.217] | 0.166 | 0.291 | 0.316 | 94 % | 100 % | -0.121 |
-| latch | 24 | 0.199 [0.135, 0.265] | 0.138 | 0.407 | 0.647 | 71 % | 96 % | -0.083 |
-| spacer | 16 | 0.533 [0.268, 0.823] | 0.164 | 1.293 | 1.900 | 56 % | 62 % | -0.311 |
-| wheel | 51 | 0.214 [0.162, 0.277] | 0.153 | 0.568 | 0.853 | 73 % | 86 % | -0.212 |
+| bracket | 19 | 1.227 [0.598, 1.964] | 0.408 | 3.674 | 5.316 | 47 % | 53 % | 0.869 |
+| cable_clip | 24 | 0.267 [0.150, 0.401] | 0.172 | 0.634 | 1.311 | 75 % | 88 % | 0.091 |
+| clip | 20 | 0.584 [0.292, 0.992] | 0.209 | 1.098 | 3.588 | 55 % | 60 % | 0.298 |
+| cover | 18 | 0.931 [0.384, 1.543] | 0.099 | 3.060 | 3.622 | 67 % | 67 % | -0.822 |
+| hinge | 20 | 0.419 [0.179, 0.769] | 0.215 | 0.847 | 3.335 | 65 % | 80 % | -0.095 |
+| hook | 21 | 0.665 [0.333, 1.069] | 0.196 | 1.382 | 3.237 | 62 % | 62 % | 0.004 |
+| knob | 15 | 0.195 [0.142, 0.246] | 0.229 | 0.312 | 0.354 | 87 % | 100 % | -0.136 |
+| latch | 24 | 0.200 [0.135, 0.265] | 0.144 | 0.404 | 0.639 | 71 % | 96 % | -0.079 |
+| spacer | 17 | 0.411 [0.243, 0.595] | 0.208 | 0.913 | 1.086 | 59 % | 59 % | -0.153 |
+| wheel | 51 | 0.228 [0.175, 0.289] | 0.179 | 0.571 | 0.853 | 78 % | 86 % | -0.226 |
 
 | by mat | N | mean abs [95 % CI] | median | P90 | max | ≤0.3 mm | ≤0.5 mm | bias |
 |---|---:|---|---:|---:|---:|---:|---:|---:|
-| paper-a4 | 53 | 0.415 [0.278, 0.595] | 0.221 | 0.833 | 2.749 | 68 % | 83 % | -0.146 |
-| screen-l | 64 | 1.024 [0.442, 1.981] | 0.129 | 2.455 | 24.170 | 64 % | 70 % | -0.529 |
-| screen-m | 111 | 0.581 [0.328, 0.939] | 0.127 | 1.098 | 16.297 | 68 % | 77 % | -0.161 |
+| paper-a4 | 53 | 0.426 [0.294, 0.596] | 0.266 | 0.831 | 2.613 | 70 % | 85 % | -0.146 |
+| screen-l | 62 | 0.525 [0.326, 0.750] | 0.128 | 1.347 | 3.588 | 66 % | 71 % | -0.092 |
+| screen-m | 114 | 0.453 [0.304, 0.621] | 0.128 | 0.991 | 5.316 | 68 % | 76 % | 0.031 |
 
 ## reference_objects_synthetic
 
 Ground truth: reference_spec (published spec; synthetic render of the nominal model).
 
-Photos: 30 (mat + part detected: 30; capture gate passed: 24/30 = 80 % [0.63, 0.90]).
+Photos: 30 (mat + part detected: 30; capture gate passed: 22/30 = 73 % [0.56, 0.86]).
 
 | dims | N | mean abs [95 % CI] | median | P90 | max | ≤0.3 mm | ≤0.5 mm | bias |
 |---|---:|---|---:|---:|---:|---:|---:|---:|
-| accepted photos | 40 | 0.170 [0.106, 0.250] | 0.081 | 0.329 | 1.161 | 90 % | 90 % | -0.010 |
-| all detected photos | 50 | 0.153 [0.100, 0.219] | 0.070 | 0.307 | 1.161 | 90 % | 92 % | -0.006 |
+| accepted photos | 37 | 0.170 [0.107, 0.255] | 0.081 | 0.303 | 1.312 | 89 % | 92 % | 0.017 |
+| all detected photos | 50 | 0.158 [0.105, 0.227] | 0.076 | 0.298 | 1.312 | 90 % | 92 % | 0.004 |
 
-- pass@0.3 mm (every named dim of an accepted photo within 0.3 mm; a missed dim fails): 20/24 = 83 % [0.64, 0.93]
-- pass@0.5 mm (every named dim of an accepted photo within 0.5 mm; a missed dim fails): 20/24 = 83 % [0.64, 0.93]
-- inside the spec's accepted range: 21/40 = 52 % [0.37, 0.67]
+- pass@0.3 mm (every named dim of an accepted photo within 0.3 mm; a missed dim fails): 18/22 = 82 % [0.61, 0.93]
+- pass@0.5 mm (every named dim of an accepted photo within 0.5 mm; a missed dim fails): 19/22 = 86 % [0.67, 0.95]
+- inside the spec's accepted range: 17/37 = 46 % [0.31, 0.62]
 
 | by dimension | N | mean abs [95 % CI] | median | P90 | max | ≤0.3 mm | ≤0.5 mm | bias |
 |---|---:|---|---:|---:|---:|---:|---:|---:|
-| side:thickness | 8 | 0.120 [0.062, 0.188] | 0.100 | 0.253 | 0.289 | 100 % | 100 % | 0.014 |
-| top:length | 16 | 0.266 [0.116, 0.447] | 0.071 | 0.710 | 1.161 | 75 % | 75 % | -0.130 |
-| top:width | 16 | 0.098 [0.069, 0.130] | 0.081 | 0.196 | 0.263 | 100 % | 100 % | 0.098 |
+| side:thickness | 7 | 0.152 [0.079, 0.225] | 0.141 | 0.291 | 0.296 | 100 % | 100 % | 0.041 |
+| top:length | 15 | 0.245 [0.103, 0.424] | 0.078 | 0.573 | 1.312 | 73 % | 80 % | -0.082 |
+| top:width | 15 | 0.103 [0.070, 0.141] | 0.076 | 0.207 | 0.272 | 100 % | 100 % | 0.103 |
 
 | by preset | N | mean abs [95 % CI] | median | P90 | max | ≤0.3 mm | ≤0.5 mm | bias |
 |---|---:|---|---:|---:|---:|---:|---:|---:|
-| blur | 8 | 0.246 [0.159, 0.363] | 0.233 | 0.387 | 0.594 | 88 % | 88 % | 0.098 |
-| clean | 10 | 0.171 [0.083, 0.295] | 0.113 | 0.325 | 0.645 | 90 % | 90 % | -0.016 |
-| glare | 10 | 0.124 [0.040, 0.273] | 0.053 | 0.169 | 0.775 | 90 % | 90 % | -0.036 |
-| moire | 2 | 0.066 [0.065, 0.067] | 0.066 | 0.067 | 0.067 | 100 % | 100 % | 0.066 |
-| tilt | 10 | 0.174 [0.051, 0.401] | 0.076 | 0.206 | 1.161 | 90 % | 90 % | -0.080 |
+| blur | 8 | 0.279 [0.207, 0.377] | 0.254 | 0.395 | 0.583 | 75 % | 88 % | 0.133 |
+| clean | 10 | 0.164 [0.086, 0.270] | 0.115 | 0.314 | 0.559 | 90 % | 90 % | -0.005 |
+| glare | 7 | 0.051 [0.040, 0.062] | 0.048 | 0.069 | 0.072 | 100 % | 100 % | 0.051 |
+| moire | 2 | 0.077 [0.076, 0.078] | 0.077 | 0.078 | 0.078 | 100 % | 100 % | 0.077 |
+| tilt | 10 | 0.191 [0.051, 0.448] | 0.079 | 0.220 | 1.312 | 90 % | 90 % | -0.091 |
 
 | by family / object | N | mean abs [95 % CI] | median | P90 | max | ≤0.3 mm | ≤0.5 mm | bias |
 |---|---:|---|---:|---:|---:|---:|---:|---:|
-| aa_cell | 8 | 0.459 [0.208, 0.719] | 0.411 | 0.891 | 1.161 | 50 % | 50 % | -0.335 |
-| id1_card | 8 | 0.103 [0.068, 0.141] | 0.104 | 0.171 | 0.189 | 100 % | 100 % | 0.103 |
-| lego_2x4 | 12 | 0.134 [0.081, 0.192] | 0.079 | 0.286 | 0.299 | 100 % | 100 % | 0.065 |
-| sd_card | 12 | 0.057 [0.041, 0.077] | 0.050 | 0.097 | 0.138 | 100 % | 100 % | 0.055 |
+| aa_cell | 6 | 0.476 [0.185, 0.857] | 0.398 | 0.948 | 1.312 | 50 % | 50 % | -0.342 |
+| id1_card | 8 | 0.119 [0.077, 0.163] | 0.120 | 0.195 | 0.207 | 100 % | 100 % | 0.119 |
+| lego_2x4 | 11 | 0.153 [0.093, 0.217] | 0.097 | 0.296 | 0.314 | 91 % | 100 % | 0.083 |
+| sd_card | 12 | 0.066 [0.045, 0.094] | 0.049 | 0.135 | 0.170 | 100 % | 100 % | 0.066 |
 
 | by mat | N | mean abs [95 % CI] | median | P90 | max | ≤0.3 mm | ≤0.5 mm | bias |
 |---|---:|---|---:|---:|---:|---:|---:|---:|
-| paper-a4 | 5 | 0.230 [0.188, 0.272] | 0.238 | 0.285 | 0.299 | 100 % | 100 % | 0.230 |
-| screen-l | 12 | 0.147 [0.077, 0.244] | 0.081 | 0.283 | 0.594 | 92 % | 92 % | -0.017 |
-| screen-m | 23 | 0.168 [0.068, 0.293] | 0.066 | 0.544 | 1.161 | 87 % | 87 % | -0.059 |
+| paper-a4 | 5 | 0.247 [0.196, 0.298] | 0.272 | 0.307 | 0.314 | 80 % | 100 % | 0.247 |
+| screen-l | 12 | 0.150 [0.082, 0.245] | 0.084 | 0.282 | 0.583 | 92 % | 92 % | -0.011 |
+| screen-m | 20 | 0.163 [0.066, 0.298] | 0.064 | 0.242 | 1.312 | 90 % | 90 % | -0.025 |
 
 ## reference_objects_real
 
@@ -134,21 +134,23 @@ Ground truth: ruler (±0.5 mm).
 
 | source | sample | view | preset | reason | missed |
 |---|---|---|---|---|---|
+| reference_objects_synthetic | ref-aa-cell-glare-s425689 | top | glare | capture gate failed: The part blends into the background — switch the screen mat to the dark stage (or use a darker surface). |  |
 | reference_objects_synthetic | ref-aa-cell-moire-s66264 | top | moire | capture gate failed: Wavy stripes from the screen are visible — move the phone a little further away or rotate it slightly. |  |
 | reference_objects_synthetic | ref-id1-card-moire-s231112 | top | moire | capture gate failed: Wavy stripes from the screen are visible — move the phone a little further away or rotate it slightly. |  |
 | reference_objects_synthetic | ref-lego-2x4-moire-s713065 | top | moire | capture gate failed: Wavy stripes from the screen are visible — move the phone a little further away or rotate it slightly. |  |
 | reference_objects_synthetic | ref-sd-card-blur-s233099 | top | blur | capture gate failed: The photo is blurry — hold the phone still, tap to focus on the part and retake. |  |
 | synthetic | syn-cable-clip-moire-s62281 | top | moire | capture gate failed: Wavy stripes from the screen are visible — move the phone a little further away or rotate it slightly. |  |
-| synthetic | syn-cable-clip-white-part-s236478 | top | white-part | capture gate failed: The part blends into the background — switch the screen mat to the light stage (or use a lighter surface). | hole_2.diameter |
 | synthetic | syn-clip-moire-s830875 | top | moire | capture gate failed: Wavy stripes from the screen are visible — move the phone a little further away or rotate it slightly. |  |
-| synthetic | syn-clip-white-part-s310572 | top | white-part | capture gate failed: The part blends into the background — switch the screen mat to the light stage (or use a lighter surface). |  |
 | synthetic | syn-hinge-leaf-blur-s889433 | top | blur | capture gate failed: The photo is blurry — hold the phone still, tap to focus on the part and retake. |  |
 | synthetic | syn-hinge-leaf-moire-s207046 | top | moire | capture gate failed: Wavy stripes from the screen are visible — move the phone a little further away or rotate it slightly. |  |
+| synthetic | syn-hook-glare-s409132 | top | glare | capture gate failed: The part blends into the background — switch the screen mat to the dark stage (or use a darker surface). |  |
 | synthetic | syn-hook-tilt-s563265 | top | tilt | capture gate failed: The part touches the markers — move it into the middle of the plain area. |  |
+| synthetic | syn-knob-glare-s198000 | top | glare | capture gate failed: The part blends into the background — switch the screen mat to the dark stage (or use a darker surface). |  |
 | synthetic | syn-l-bracket-blur-s785210 | top | blur | capture gate failed: The photo is blurry — hold the phone still, tap to focus on the part and retake. |  |
 | synthetic | syn-l-bracket-moire-s114398 | top | moire | capture gate failed: Wavy stripes from the screen are visible — move the phone a little further away or rotate it slightly. |  |
 | synthetic | syn-spacer-moire-s143272 | top | moire | capture gate failed: Wavy stripes from the screen are visible — move the phone a little further away or rotate it slightly. |  |
-| synthetic | syn-spacer-moire-s601695 | top | moire | capture gate failed: Wavy stripes from the screen are visible — move the phone a little further away or rotate it slightly. |  |
+| synthetic | syn-spacer-moire-s601695 | top | moire | capture gate failed: Wavy stripes from the screen are visible — move the phone a little further away or rotate it slightly. | hole_1.diameter |
+| reference_objects_synthetic | ref-lego-2x4-glare-s431248 | side | glare | capture gate failed: The part blends into the background — switch the screen mat to the dark stage (or use a darker surface). |  |
 | reference_objects_synthetic | ref-lego-2x4-moire-s713065 | side | moire | capture gate failed: Wavy stripes from the screen are visible — move the phone a little further away or rotate it slightly. |  |
 | reference_objects_synthetic | ref-sd-card-moire-s61153 | side | moire | capture gate failed: Wavy stripes from the screen are visible — move the phone a little further away or rotate it slightly. |  |
 | synthetic | syn-cable-clip-blur-s254152 | side | blur | capture gate failed: The photo is blurry — hold the phone still, tap to focus on the part and retake. |  |
@@ -156,14 +158,14 @@ Ground truth: ruler (±0.5 mm).
 | synthetic | syn-clip-moire-s830875 | side | moire | capture gate failed: Wavy stripes from the screen are visible — move the phone a little further away or rotate it slightly. |  |
 | synthetic | syn-hinge-leaf-blur-s889433 | side | blur | capture gate failed: The photo is blurry — hold the phone still, tap to focus on the part and retake. |  |
 | synthetic | syn-hinge-leaf-moire-s207046 | side | moire | capture gate failed: Wavy stripes from the screen are visible — move the phone a little further away or rotate it slightly. |  |
+| synthetic | syn-hook-glare-s235877 | side | glare | capture gate failed: The part blends into the background — switch the screen mat to the dark stage (or use a darker surface). |  |
+| synthetic | syn-knob-glare-s390629 | side | glare | capture gate failed: The part blends into the background — switch the screen mat to the dark stage (or use a darker surface). |  |
 | synthetic | syn-l-bracket-blur-s816483 | side | blur | capture gate failed: The photo is blurry — hold the phone still, tap to focus on the part and retake. |  |
 | synthetic | syn-l-bracket-moire-s114398 | side | moire | capture gate failed: Wavy stripes from the screen are visible — move the phone a little further away or rotate it slightly. |  |
 | synthetic | syn-l-bracket-moire-s928384 | side | moire | capture gate failed: Wavy stripes from the screen are visible — move the phone a little further away or rotate it slightly. |  |
 | synthetic | syn-spacer-moire-s143272 | side | moire | capture gate failed: Wavy stripes from the screen are visible — move the phone a little further away or rotate it slightly. |  |
-| synthetic | syn-hinge-leaf-white-on-light-s939262 | top | white-on-light | missed rejection: the capture gate accepted a white part on the light stage |  |
 | synthetic | syn-spacer-white-on-light-s706141 | top | white-on-light | missed rejection: the capture gate accepted a white part on the light stage |  |
 | synthetic | syn-caster-wheel-tilt-s108404 | top | tilt | dimension(s) not measured | hole_1.diameter, hole_2.diameter, hole_3.diameter, hole_5.diameter, hole_6.diameter, hole_7.diameter |
 | synthetic | syn-hinge-leaf-white-part-s529109 | top | white-part | dimension(s) not measured | hole_1.diameter, hole_2.diameter |
-| synthetic | syn-spacer-white-part-s276343 | top | white-part | dimension(s) not measured | hole_1.diameter |
 
-Runtime: 438.3 s. Regenerate: `uv run python -m eval.measure_only`.
+Runtime: 262.9 s. Regenerate: `uv run python -m eval.measure_only`.
