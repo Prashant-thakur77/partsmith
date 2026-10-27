@@ -83,6 +83,7 @@ class MeasureOutput:
     segmentation: SegResult | None = None
     notes: list[str] = field(default_factory=list)
     H_top: F64 | None = None  # image px → mat mm on the top-face plane (None without a thickness)
+    hole_fits: list[SeeThroughFit] = field(default_factory=list)  # see-through cylinder fits behind `holes`
     top_px_per_mm: float | None = None  # local image px per mm at the part centre, on the plane used for measuring
 
     # Camera-frame comparison (verifier): the camera, the full-frame mask and the part placement.
@@ -668,6 +669,7 @@ def measure_photo(
         segmentation=seg,
         notes=meas.notes,
         H_top=H_top,
+        hole_fits=hole_fits,
         top_px_per_mm=_top_px_per_mm(det, footprint, H_display),
     )
 

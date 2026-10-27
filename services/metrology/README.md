@@ -90,6 +90,26 @@ the local inside level, not of the part's median contrast.
 `MeasureOutput.K`, `.R`, `.t_mm` (from the pose), `.photo_mask` (full frame), `.part_to_mat`, `.H_top` and
 `.top_px_per_mm` (local image px per mm at the part centre on the plane used for measuring).
 
+## Points, orbit and reconstruction gate (round 2)
+
+- `points.measure_features_from_points(img, det, pose, points, segment_points_call, *, thickness_mm, mask_source,
+  part_mask)`: each `FeaturePoint(id, kind, px, source="model"|"user")` becomes one point-prompted segmentation of a crop
+  (negative point on the nearest marker). Holes are fitted from two candidates — the top-opening rim on the top-face
+  plane (everything inside the rim that is not top face: bore wall and/or mat) and the segmenter's own region (see-through
+  cylinder when the mat shows through) — and the lower rms/r wins; slots likewise (see-through obround). Edges are made
+  sub-pixel by colour unmixing across the mask edge. Evidence: the prompt point, note "SAM point prompt (…)".
+  `merge_holes(meas, outline_hole_quality(out), features)`: a point hole replaces an outline hole only when its rms/r is
+  strictly lower; unmatched point holes are added. `region_grow_points()` is the deterministic (mock) point segmenter.
+- `orbit.measure_orbit(video | frames, segment_video_call, *, fps, K, ...)`: per-frame mat + pose (frames with < 4
+  markers or > 1.5 px residual are dropped and counted), masks from the video call or the threshold segmenter, best frame
+  per 15° azimuth bin (6–24 views). Footprint = intersection of the ground silhouettes (bottom slice of the visual hull);
+  height = hull height sampled on the outline, where it is tight (`max_height`, measured, "orbit, N frames");
+  `hull_upper_bound_mm` and `height_map` cover the inside, where silhouettes only bound it. `OrbitFrame.camera_view_kwargs`
+  gives the verifier's `CameraView` fields.
+- `recon_gate.gate_reconstruction(original_rectified, reconstructed, keep_mask, mat)`: markers must re-detect within 1 px,
+  the intact part must keep IoU ≥ 0.98 and colour Δ ≤ 12; the completion (new material attached to the part) comes back
+  as a mask, outline in mat mm and an area labelled `inferred`.
+
 ## Fit check
 
 The web page draws the `fit-outline` (mat frame) in `FIT_OUTLINE_RGB` (#E0218A); the threshold segmenter treats that

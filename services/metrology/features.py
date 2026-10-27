@@ -330,6 +330,46 @@ def fit_see_through_hole(
     )
 
 
+def _capsule_sd(q: F64, c: F64, theta: float, half: float, r: float) -> F64:
+    """Signed distance of points to an obround (capsule): centre c, axis angle theta, straight half-length, radius r."""
+    u = np.array([math.cos(theta), math.sin(theta)])
+    d = q - c
+    t = np.clip(d @ u, -half, half)
+    closest = c + t[:, None] * u
+    return np.asarray(np.linalg.norm(q - closest, axis=1) - r, dtype=np.float64)
+
+
+def fit_see_through_slot(
+    q_ground: F64, nadir: tuple[float, float], camera_height_mm: float, height_mm: float
+) -> SlotFit | None:
+    """Vertical slot of a part with thickness h fitted to its see-through region (mat-plane coordinates): the region
+    is the slot ∩ its top opening projected onto the mat plane (scaled by 1/s about the nadir), as for holes."""
+    q = np.asarray(q_ground, dtype=np.float64).reshape(-1, 2)
+    start = fit_slot(q)
+    if start is None or camera_height_mm <= height_mm:
+        return None
+    n = np.asarray(nadir, dtype=np.float64)
+    s = (camera_height_mm - height_mm) / camera_height_mm
+    shift = float(np.linalg.norm((np.array([start.cx, start.cy]) - n) * (1 / s - 1)))
+
+    def res(v: F64) -> F64:
+        c, th, half, r = v[:2], float(v[2]), abs(float(v[3])), abs(float(v[4]))
+        c2 = n + (c - n) / s
+        return np.maximum(_capsule_sd(q, c, th, half, r), _capsule_sd(q, c2, th, half / s, r / s))
+
+    r0 = start.width / 2 + shift / 2
+    half0 = max(start.length / 2 - start.width / 2, 0.1)
+    c0 = n + 2 * (np.array([start.cx, start.cy]) - n) / (1 + 1 / s)
+    sol = least_squares(res, np.array([c0[0], c0[1], start.angle_rad, half0, r0]), method="trf")
+    if not sol.success:
+        return None
+    cx, cy, th, half, r = sol.x
+    rr = res(sol.x)
+    return SlotFit(
+        float(cx), float(cy), 2 * abs(half) + 2 * abs(r), 2 * abs(r), float(th), float(np.sqrt(np.mean(rr**2)))
+    )
+
+
 # ---------------------------------------------------------------- footprint → measurements
 
 

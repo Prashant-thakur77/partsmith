@@ -95,6 +95,7 @@ class PrismPart:
     thickness_mm: float = 3.0
     top_bgr: BGR = (60, 70, 85)
     side_bgr: BGR = (40, 46, 56)
+    base_mm: float = 0.0  # height of the prism's bottom face above the mat (overhangs, raised ribs)
 
 
 def rect_poly(cx: float, cy: float, w: float, h: float, theta_deg: float = 0.0) -> F64:
@@ -200,24 +201,37 @@ def _fill_union(
 
 def prism_coverage(part: PrismPart, cam: Camera, ss: int = 4) -> tuple[F32, F32]:
     """Anti-aliased coverage of the whole part and of its top face (float32, full frame, 0..1)."""
+    return prisms_coverage([part], cam, ss)
+
+
+def prisms_coverage(parts: Sequence[PrismPart], cam: Camera, ss: int = 4) -> tuple[F32, F32]:
+    """Coverage of a union of prisms (an L-bracket = plate + flange, a plate with a raised rib) and of their top faces."""
     w, h = cam.size
     Kss = _ss_K(cam.K, ss)
     camss = Camera(Kss, cam.R, cam.t, (w * ss, h * ss))
-    z_top = -part.thickness_mm
-    rings = [np.asarray(part.outline_mm, dtype=np.float64), *[np.asarray(r, dtype=np.float64) for r in part.holes_mm]]
 
     def proj(r: F64, z: float) -> F64:
         return camss.project(np.c_[r, np.full(len(r), z)])
 
-    top = [proj(r, z_top) for r in rings]
-    bot = [proj(r, 0.0) for r in rings]
+    faces: list[list[F64]] = []
+    tops: list[list[F64]] = []
     walls: list[F64] = []
-    for t_r, b_r in zip(top, bot, strict=True):
-        n = len(t_r)
-        for i in range(n):
-            j = (i + 1) % n
-            walls.append(np.array([b_r[i], b_r[j], t_r[j], t_r[i]]))
-    allp = np.concatenate(top + bot)
+    for part in parts:
+        z_bot, z_top = -part.base_mm, -(part.base_mm + part.thickness_mm)
+        rings = [
+            np.asarray(part.outline_mm, dtype=np.float64),
+            *[np.asarray(r, dtype=np.float64) for r in part.holes_mm],
+        ]
+        top = [proj(r, z_top) for r in rings]
+        bot = [proj(r, z_bot) for r in rings]
+        faces += [top, bot]
+        tops.append(top)
+        for t_r, b_r in zip(top, bot, strict=True):
+            n = len(t_r)
+            for i in range(n):
+                k = (i + 1) % n
+                walls.append(np.array([b_r[i], b_r[k], t_r[k], t_r[i]]))
+    allp = np.concatenate([r for f in faces for r in f])
     x0 = max(math.floor(allp[:, 0].min() / ss) - 2, 0)
     y0 = max(math.floor(allp[:, 1].min() / ss) - 2, 0)
     x1 = min(math.ceil(allp[:, 0].max() / ss) + 3, w)
@@ -228,8 +242,8 @@ def prism_coverage(part: PrismPart, cam: Camera, ss: int = 4) -> tuple[F32, F32]
         return a_all, a_top
     roi = ((y1 - y0) * ss, (x1 - x0) * ss)
     off = (float(x0 * ss), float(y0 * ss))
-    m_all = _fill_union(roi, [top, bot], walls, off)
-    m_top = _fill_union(roi, [top], [], off)
+    m_all = _fill_union(roi, faces, walls, off)
+    m_top = _fill_union(roi, tops, [], off)
     a_all[y0:y1, x0:x1] = cv2.resize(m_all.astype(np.float32) / 255, (x1 - x0, y1 - y0), interpolation=cv2.INTER_AREA)
     a_top[y0:y1, x0:x1] = cv2.resize(m_top.astype(np.float32) / 255, (x1 - x0, y1 - y0), interpolation=cv2.INTER_AREA)
     return a_all, np.minimum(a_top, a_all)
@@ -358,7 +372,7 @@ def render_scene(
     R: F64,
     t: F64,
     size: tuple[int, int],
-    part: PrismPart | CoverageFn | tuple[F64, NDArray[np.int64]] | None = None,
+    part: PrismPart | list[PrismPart] | CoverageFn | tuple[F64, NDArray[np.int64]] | None = None,
     *,
     part_bgr: BGR = (60, 70, 85),
     ss: int = 2,
@@ -383,6 +397,9 @@ def render_scene(
         prism = part
         a_all, a_top = prism_coverage(part, cam)
         top_c, side_c = np.array(part.top_bgr, np.float32), np.array(part.side_bgr, np.float32)
+    elif isinstance(part, list):
+        a_all, a_top = prisms_coverage(part, cam)
+        top_c, side_c = np.array(part[0].top_bgr, np.float32), np.array(part[0].side_bgr, np.float32)
     elif isinstance(part, tuple):
         a_all = mesh_coverage(part[0], part[1], cam)
         a_top = a_all
