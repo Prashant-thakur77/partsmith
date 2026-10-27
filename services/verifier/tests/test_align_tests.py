@@ -13,8 +13,10 @@ from services.verifier.render import Frame, circle_polygon, rasterize_polygon
 L_SHAPE = np.array([[0, 0], [30, 0], [30, 8], [8, 8], [8, 20], [0, 20]], float)
 
 
-@pytest.mark.parametrize("truth", [Rigid2D(0, 0, 0), Rigid2D(37.0, 4.0, -2.5), Rigid2D(-120.0, -3.0, 1.0),
-                                   Rigid2D(65.0, 2.0, 2.0, mirror=True)])  # fmt: skip
+@pytest.mark.parametrize(
+    "truth",
+    [Rigid2D(0, 0, 0), Rigid2D(37.0, 4.0, -2.5), Rigid2D(-120.0, -3.0, 1.0), Rigid2D(65.0, 2.0, 2.0, mirror=True)],
+)
 def test_align_recovers_rigid_pose(truth: Rigid2D) -> None:
     model = L_SHAPE - L_SHAPE.mean(axis=0)
     hole = circle_polygon((5.0, -3.0), 3.0)
@@ -46,10 +48,14 @@ def _measured(v: float, source: Source = Source.measured) -> Measured:
 
 def _top(**kw: object) -> Measurements:
     base: dict[str, object] = dict(
-        view=ViewKind.top, origin="synthetic", outline_mm=[(0, 0), (1, 0), (1, 1)], length=_measured(40.0),
-        width=_measured(20.0), area_mm2=800.0,
+        view=ViewKind.top,
+        origin="synthetic",
+        outline_mm=[(0, 0), (1, 0), (1, 1)],
+        length=_measured(40.0),
+        width=_measured(20.0),
+        area_mm2=800.0,
         holes=[Hole(id="hole_1", center_mm=(-10.0, 0.0), diameter=_measured(4.2))],
-    )  # fmt: skip
+    )
     base.update(kw)
     return Measurements.model_validate(base)
 
@@ -66,9 +72,18 @@ def test_generated_tests_and_evaluation() -> None:
     assert ids[:2] == ["hole_1.diameter", "hole_1.center"]
     assert "hole_9.diameter" not in ids  # inferred values never become tests
     assert {"bbox.x", "bbox.y", "thickness", "valid", "single_solid", "watertight", "volume", "min_wall"} <= set(ids)
-    values = {"hole:hole_1.diameter": 4.30, "hole:hole_1.center_offset": 0.5, "bbox.x": 40.2, "bbox.y": 20.5,
-              "thickness": 3.0, "valid": True, "single_solid": True, "watertight": True, "volume": 100.0,
-              "min_wall": 0.7}  # fmt: skip
+    values = {
+        "hole:hole_1.diameter": 4.30,
+        "hole:hole_1.center_offset": 0.5,
+        "bbox.x": 40.2,
+        "bbox.y": 20.5,
+        "thickness": 3.0,
+        "valid": True,
+        "single_solid": True,
+        "watertight": True,
+        "volume": 100.0,
+        "min_wall": 0.7,
+    }
     res = {t.id: t for t in evaluate_tests(tests, values)}
     assert res["hole_1.diameter"].passed
     assert not res["hole_1.center"].passed and res["hole_1.center"].priority == "P1"

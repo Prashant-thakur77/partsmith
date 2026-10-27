@@ -194,9 +194,11 @@ def silhouette_camera(
     placement: npt.ArrayLike | None = None,
     dist: npt.ArrayLike | None = None,
     supersample: int = 1,
+    front_only: bool = False,
 ) -> BoolMask:
     """Silhouette as the phone camera saw it. Vertices are CAD-frame mm; `placement` (4x4) puts them on the mat;
-    (K, R, t) is the camera pose from the mat markers (mat frame -> camera). Triangles behind the camera are dropped."""
+    (K, R, t) is the camera pose from the mat markers (mat frame -> camera). Triangles behind the camera are dropped.
+    ``front_only`` also drops back-facing triangles (half the work; needs a closed, outward-wound mesh)."""
     v = np.asarray(vertices, dtype=np.float64)
     if placement is not None:
         P = np.asarray(placement, dtype=np.float64)
@@ -214,4 +216,10 @@ def silhouette_camera(
         uv = h[:, :2] / h[:, 2:3]
     f = np.asarray(faces)
     front = np.all(cam[f][:, :, 2] > 1e-6, axis=1)
+    if front_only:
+        tri = cam[f]
+        n = np.cross(tri[:, 1] - tri[:, 0], tri[:, 2] - tri[:, 0])
+        if placement is not None and np.linalg.det(np.asarray(placement, dtype=np.float64)[:3, :3]) < 0:
+            n = -n  # a mirroring placement flips the winding
+        front &= np.einsum("ij,ij->i", n, tri.mean(axis=1)) < 0
     return rasterize_triangles(uv[f[front]], height, width, supersample)

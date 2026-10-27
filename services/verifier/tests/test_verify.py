@@ -110,9 +110,13 @@ def test_side_view_is_compared(vpool: WarmPool, base: ExecResult) -> None:
 
     meas, photo = synthetic_top_measurement(base)
     side = Measurements(
-        view=ViewKind.side, origin=DataOrigin.synthetic, outline_mm=[(-20, 0), (20, 0), (20, 3), (-20, 3)],
-        length=Measured(value=40.0), width=Measured(value=3.0), area_mm2=120.0,
-    )  # fmt: skip
+        view=ViewKind.side,
+        origin=DataOrigin.synthetic,
+        outline_mm=[(-20, 0), (20, 0), (20, 3), (-20, 3)],
+        length=Measured(value=40.0),
+        width=Measured(value=3.0),
+        area_mm2=120.0,
+    )
     v = verify(base, {"top": meas, "side": side}, None, photo_masks={"top": photo}).verification
     sv = next(x for x in v.views if x.view == "side")
     assert sv.iou > 0.97 and sv.hausdorff_mm < 0.15

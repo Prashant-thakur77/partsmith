@@ -18,8 +18,14 @@ def test_parse_params_reads_the_block_without_exec(plate_code: str) -> None:
     assert [s.name for s in specs] == ["length", "width", "thickness", "hole_d", "hole_count"]
     t = specs[2]
     assert (t.default, t.min, t.max, t.step, t.unit, t.affects_fit, t.label) == (
-        3.0, 1.2, 8.0, 0.1, "mm", True, "Plate thickness"
-    )  # fmt: skip
+        3.0,
+        1.2,
+        8.0,
+        0.1,
+        "mm",
+        True,
+        "Plate thickness",
+    )
     assert not t.topology
     assert specs[4].topology and specs[4].unit == ""
 

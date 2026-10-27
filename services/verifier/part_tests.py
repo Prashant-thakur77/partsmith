@@ -1,7 +1,8 @@
 """Part tests generated from the PartSpec and the measurements, evaluated against values measured on the model.
 
 P0 (blocking): every measured hole diameter within +/-0.15 mm, footprint length/width within +/-0.3 mm, thickness within
-+/-0.3 mm when it was measured or stated by the user, and validity: valid solid, single solid, watertight mesh,
++/-0.3 mm when it was measured or stated by the user, side-view thickness (short side of the side silhouette) within
++/-0.3 mm, and validity: valid solid, single solid, watertight mesh,
 volume > 0, min wall >= 0.8 mm (FDM). P1 (reported, not blocking): hole centres within 0.3 mm, blind-hole depths.
 
 Values that were only *inferred* by a model never become a test: the verifier only checks numbers that came from a
@@ -141,6 +142,19 @@ def generate_tests(partspec: PartSpec | None, measurements: Mapping[str, Measure
                     BBOX_TOL_MM,
                 )
             )
+    side = measurements.get("side")
+    if side is not None and _trusted(side.width):
+        tests.append(
+            TestDef(
+                "side.thickness",
+                f"side-view thickness (short side of the side silhouette) == {side.width.value:.2f} +/- "
+                f"{THICKNESS_TOL_MM} mm",
+                "side.thickness",
+                "eq",
+                side.width.value,
+                THICKNESS_TOL_MM,
+            )
+        )
     th = expected_thickness(partspec, measurements)
     if th is not None:
         tests.append(

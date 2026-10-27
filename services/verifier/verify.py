@@ -1,13 +1,20 @@
 """verify(): the sole authority for ``verified`` (PLAN §6.5).
 
 For every measured view: register the model silhouette onto the measured one (rigid 2-D search, never scaling),
-compute IoU, boundary distances and over/under areas, and draw the residual overlay. Then measure the model's own
-features (hole diameters and centres, footprint length/width, plate thickness), compare them with the measured values,
-run the part tests, and apply the pass rule exactly:
+compute IoU, boundary distances and over/under areas, and draw the residual overlay. When the view comes with a camera
+pose (``camera_views``), the comparison moves into the photo's own pixel frame (`camera.py`): the model is placed on the
+mat, refined rigidly in the image and rendered through (K, R, t), which reproduces parallax and see-through holes; the
+rendered model is then measured with the metrology's own code so length, width and hole diameters are compared like
+for like. Without a pose the rectified orthographic comparison is used. Then compare the model's features with the
+measured values, run the part tests, and apply the pass rule:
 
     verified = all P0 tests pass
-               AND Hausdorff <= 0.5 mm AND IoU >= 0.97 on every measured view
+               AND Hausdorff <= 0.5 mm on every measured view
+               AND IoU >= 0.97 on the top view and on every view whose silhouette is >= 10 mm wide
                AND no blocking judge veto
+
+IoU depends on scale: on a thin side profile (1.5 mm) a 0.1 mm edge error alone costs ~12 % IoU. Thinner views are
+therefore gated on Hausdorff plus the side-view thickness test (+/-0.3 mm); their IoU is still reported.
 
 ``max_error_mm`` is the largest of every view's Hausdorff distance and every |feature residual|.
 ``status`` is "verified" when that holds, "failed" when the program did not run or the solid is invalid, and
@@ -44,6 +51,7 @@ from services.geom_worker.sandbox import ExecResult
 from services.verifier import VERIFIER_VERSION
 from services.verifier import metrics as M
 from services.verifier.align import Rigid2D, align
+from services.verifier.camera import CameraCompare, CameraView, compare_camera
 from services.verifier.part_tests import (
     CENTER_TOL_MM,
     DEPTH_TOL_MM,
@@ -54,10 +62,20 @@ from services.verifier.part_tests import (
     expected_thickness,
     generate_tests,
 )
-from services.verifier.render import BoolMask, FloatArray, Frame, circle_polygon, project, rasterize_polygon, silhouette
+from services.verifier.render import (
+    BoolMask,
+    FloatArray,
+    Frame,
+    apply_2d,
+    circle_polygon,
+    project,
+    rasterize_polygon,
+    silhouette,
+)
 from services.verifier.solid_features import SolidFeatures
 
 DEFAULT_PX_PER_MM = 20.0
+IOU_GATE_MIN_WIDTH_MM = 10.0
 HOLE_MATCH_MAX_MM = 3.0
 COMPARED_VIEWS = ("top", "side")
 
@@ -74,10 +92,16 @@ class PhotoMask:
 class ViewResult:
     view: str
     projection: str  # "top" | "side_xz" | "side_yz"
-    transform: Rigid2D
-    metrics: ViewMetrics
+    transform: Rigid2D  # rectified registration, model plane -> part frame
+    metrics: ViewMetrics  # the metrics that were gated (photo frame when a pose was given)
     model_mask: BoolMask
     photo: PhotoMask
+    matrix: FloatArray | None = None  # final model plane -> part frame (3x3, refined in the photo when posed)
+    frame: Literal["rectified", "camera"] = "rectified"
+    iou_gated: bool = True
+    gate_note: str = ""
+    camera: CameraCompare | None = None
+    rectified_metrics: ViewMetrics | None = None
 
 
 @dataclass
@@ -85,7 +109,9 @@ class VerifyOutput:
     verification: Verification
     overlays: dict[str, bytes] = field(default_factory=dict)
     views: dict[str, ViewResult] = field(default_factory=dict)
+    # Values the tests used ("bbox.x", "hole:hole_1.diameter", ...) plus the true CAD dimensions under "cad.*".
     model_values: dict[str, Value] = field(default_factory=dict)
+    view_gates: dict[str, list[str]] = field(default_factory=dict)  # view -> gates applied ("hausdorff", "iou")
 
 
 # ----------------------------------------------------------------------------------------------- helpers
@@ -114,9 +140,9 @@ def _slot_polygon(center: tuple[float, float], length: float, width: float, angl
     return out
 
 
-def footprint_lw(vertices: FloatArray) -> tuple[float, float]:
-    """Long and short side of the minimum-area rectangle around the top-view footprint (exact: hull of vertices)."""
-    uv = project(vertices, "top").astype(np.float32)
+def footprint_lw(vertices: FloatArray, projection: str = "top") -> tuple[float, float]:
+    """Long and short side of the minimum-area rectangle around a view's silhouette (exact: hull of vertices)."""
+    uv = project(vertices, projection).astype(np.float32)
     (_, _), (w, h), _ = cv2.minAreaRect(uv)
     return float(max(w, h)), float(min(w, h))
 
@@ -212,8 +238,14 @@ def verify(
     vetoes: Iterable[JudgeVeto] = (),
     px_per_mm: float = DEFAULT_PX_PER_MM,
     thresholds: Thresholds | None = None,
+    camera_views: Mapping[str, CameraView] | None = None,
+    refine_in_photo: bool = True,
 ) -> VerifyOutput:
-    """Compare the executed model with the measurements and decide ``verified`` (see module docstring)."""
+    """Compare the executed model with the measurements and decide ``verified`` (see module docstring).
+
+    ``photo_masks`` are rectified masks in each view's part frame (used for the rectified comparison and as the start
+    of the camera comparison); ``camera_views`` switch a view to the photo-frame comparison.
+    """
     t0 = time.perf_counter()
     th = thresholds or Thresholds(hausdorff_mm=HAUSDORFF_PASS_MM, iou=IOU_PASS)
     veto_list = list(vetoes)
@@ -248,6 +280,7 @@ def verify(
     overlays: dict[str, bytes] = {}
     view_results: dict[str, ViewResult] = {}
     view_metrics: list[ViewMetrics] = []
+    view_gates: dict[str, list[str]] = {}
 
     for view, meas in sorted(measurements.items()):
         if view not in COMPARED_VIEWS:
@@ -261,12 +294,32 @@ def verify(
                 best = r
         assert best is not None
         vr, dist = best
+        vr.matrix = vr.transform.matrix()
+        vr.rectified_metrics = vr.metrics
+        cam = (camera_views or {}).get(view)
+        if cam is not None:
+            cc = compare_camera(
+                view, vr.projection, mesh.vertices, mesh.faces, cam, vr.matrix, refine=refine_in_photo,
+                origin=meas.origin,
+            )  # fmt: skip
+            vr.camera, vr.frame, vr.metrics, vr.matrix = cc, "camera", cc.metrics, cc.model_to_part
+            overlays[f"residual_{view}.png"] = cc.overlay_png
+            reasons += cc.notes
+        else:
+            title = f"{view} view: IoU {vr.metrics.iou:.3f}, Hausdorff {vr.metrics.hausdorff_mm:.2f} mm"
+            overlays[f"residual_{view}.png"] = M.residual_heatmap(
+                vr.photo.mask, vr.model_mask, vr.photo.frame, distances=dist, title=title
+            )
+        min_w = float(meas.width.value)
+        vr.iou_gated = view == "top" or min_w >= IOU_GATE_MIN_WIDTH_MM
+        if not vr.iou_gated:
+            vr.gate_note = (
+                f"thin profile ({min_w:.1f} mm < {IOU_GATE_MIN_WIDTH_MM:g} mm wide), so IoU is reported but not gated; "
+                "gated on Hausdorff and the +/-0.3 mm thickness test"
+            )
+        view_gates[view] = ["hausdorff", "iou"] if vr.iou_gated else ["hausdorff", "thickness_test"]
         view_results[view] = vr
         view_metrics.append(vr.metrics)
-        title = f"{view} view: IoU {vr.metrics.iou:.3f}, Hausdorff {vr.metrics.hausdorff_mm:.2f} mm"
-        overlays[f"residual_{view}.png"] = M.residual_heatmap(
-            vr.photo.mask, vr.model_mask, vr.photo.frame, distances=dist, title=title
-        )
 
     residuals, values, hole_reasons = _model_values(exec_result, feats, measurements, partspec, view_results)
     tests = evaluate_tests(generate_tests(partspec, measurements), values)
@@ -274,7 +327,11 @@ def verify(
 
     # ---- the pass rule (PLAN §6.5), exactly
     p0_failed = [t for t in tests if t.priority == "P0" and not t.passed]
-    view_fail = [vm for vm in view_metrics if vm.hausdorff_mm > th.hausdorff_mm or vm.iou < th.iou]
+    view_fail = [
+        vr.metrics
+        for vr in view_results.values()
+        if vr.metrics.hausdorff_mm > th.hausdorff_mm or (vr.iou_gated and vr.metrics.iou < th.iou)
+    ]
     blocking = [v for v in veto_list if v.severity == "blocking"]
     verified = bool(view_metrics) and not p0_failed and not view_fail and not blocking
     invalid = validity is not None and not validity.is_valid
@@ -282,7 +339,7 @@ def verify(
         "failed" if invalid else "verified" if verified else "best_effort"
     )
 
-    reasons += _reasons(verified, tests, p0_failed, view_metrics, th, blocking, residuals)
+    reasons += _reasons(verified, tests, p0_failed, list(view_results.values()), th, blocking, residuals)
     reasons += hole_reasons
     errors = [vm.hausdorff_mm for vm in view_metrics] + [abs(r.delta_mm) for r in residuals]
     for name, data in overlays.items():
@@ -300,7 +357,7 @@ def verify(
         ms=int((time.perf_counter() - t0) * 1000),
         **base,
     )
-    return VerifyOutput(v, overlays, view_results, values)
+    return VerifyOutput(v, overlays, view_results, values, view_gates)
 
 
 def _validity(exec_result: ExecResult) -> Validity | None:
@@ -332,6 +389,19 @@ def _validity(exec_result: ExecResult) -> Validity | None:
     )
 
 
+def _match(exp_c: FloatArray, exp_d: FloatArray, got_c: FloatArray, got_d: FloatArray) -> dict[int, int]:
+    """Hungarian match of expected holes to found holes on centre distance (+ half the diameter difference)."""
+    if len(exp_c) == 0 or len(got_c) == 0:
+        return {}
+    cost = np.linalg.norm(exp_c[:, None, :] - got_c[None, :, :], axis=2) + 0.5 * np.abs(exp_d[:, None] - got_d[None, :])
+    rows, cols = linear_sum_assignment(cost)
+    return {
+        int(r): int(c)
+        for r, c in zip(rows, cols, strict=True)
+        if np.linalg.norm(exp_c[r] - got_c[c]) <= HOLE_MATCH_MAX_MM
+    }
+
+
 def _model_values(
     exec_result: ExecResult,
     feats: SolidFeatures | None,
@@ -339,8 +409,14 @@ def _model_values(
     partspec: PartSpec | None,
     views: Mapping[str, ViewResult],
 ) -> tuple[list[FeatureResidual], dict[str, Value], list[str]]:
+    """Model values for the tests, residual rows and notes.
+
+    With a posed top/side view the tested values come from the model's camera render measured by the metrology code
+    (like for like with the photo); the true CAD dimensions are kept under ``cad.*`` keys for display.
+    """
     si = exec_result.solid_info
     assert exec_result.mesh is not None
+    verts = exec_result.mesh.vertices
     validity = _validity(exec_result)
     values: dict[str, Value] = {
         "valid": si.valid if si else None,
@@ -357,12 +433,33 @@ def _model_values(
         residuals.append(FeatureResidual(feature_id=fid, quantity=qty, measured_mm=measured, model_mm=model,
                                          delta_mm=d, tol_mm=tol, passed=abs(d) <= tol + 1e-9))  # fmt: skip
 
+    def like_for_like(view: str) -> Measurements | None:
+        vr = views.get(view)
+        return vr.camera.model_measurements if vr is not None and vr.camera is not None else None
+
     top = measurements.get("top")
+    top_mm = like_for_like("top")
     if top is not None:
-        length, width = footprint_lw(exec_result.mesh.vertices)
+        length, width = footprint_lw(verts)
+        values["cad.length"], values["cad.width"] = length, width
+        if top_mm is not None:
+            length, width = top_mm.length.value, top_mm.width.value
+            notes.append("top view: length, width and holes compared like for like (model rendered with the photo's "
+                         "camera and measured with the same metrology code).")  # fmt: skip
         values["bbox.x"], values["bbox.y"] = length, width
         add("outline", "length", top.length.value, length, BBOX_TOL_MM)
         add("outline", "width", top.width.value, width, BBOX_TOL_MM)
+
+    side = measurements.get("side")
+    if side is not None:
+        vr_side = views.get("side")
+        proj = vr_side.projection if vr_side is not None else "side_xz"
+        cad_t = footprint_lw(verts, proj)[1]
+        values["cad.side.thickness"] = cad_t
+        side_mm = like_for_like("side")
+        model_t = side_mm.width.value if side_mm is not None else cad_t
+        values["side.thickness"] = model_t
+        add("side", "thickness", side.width.value, model_t, THICKNESS_TOL_MM)
 
     th = expected_thickness(partspec, measurements)
     if feats is not None and feats.plate_thickness_mm is not None:
@@ -371,35 +468,45 @@ def _model_values(
             add("plate", "thickness", th.value, feats.plate_thickness_mm, THICKNESS_TOL_MM)
 
     exp = expected_holes(partspec, measurements)
-    if exp and feats is not None:
-        T = views["top"].transform if "top" in views else Rigid2D()
-        model_holes = feats.holes
-        mc = T.apply(np.array([h.center_mm for h in model_holes])) if model_holes else np.zeros((0, 2))
-        ec = np.array([h.center_mm for h in exp])
-        matched: dict[int, int] = {}
-        if len(mc):
-            cost = np.linalg.norm(ec[:, None, :] - mc[None, :, :], axis=2)
-            cost = cost + 0.5 * np.abs(np.array([h.diameter_mm for h in exp])[:, None]
-                                       - np.array([h.diameter_mm for h in model_holes])[None, :])  # fmt: skip
-            rows, cols = linear_sum_assignment(cost)
-            for r, c in zip(rows, cols, strict=True):
-                if np.linalg.norm(ec[r] - mc[c]) <= HOLE_MATCH_MAX_MM:
-                    matched[int(r)] = int(c)
-        for i, eh in enumerate(exp):
-            if i not in matched:
-                notes.append(f"{eh.id} (diameter {eh.diameter_mm:.2f} mm at {eh.center_mm[0]:.1f}, "
-                             f"{eh.center_mm[1]:.1f}) has no matching hole in the model.")  # fmt: skip
-                continue
-            mh = model_holes[matched[i]]
-            c = mc[matched[i]]
-            values[f"hole:{eh.id}.diameter"] = mh.diameter_mm
-            values[f"hole:{eh.id}.center_offset"] = float(np.linalg.norm(c - ec[i]))
-            add(eh.id, "diameter", eh.diameter_mm, mh.diameter_mm, FEATURE_TOL_MM)
-            add(eh.id, "center_x", eh.center_mm[0], float(c[0]), CENTER_TOL_MM)
-            add(eh.id, "center_y", eh.center_mm[1], float(c[1]), CENTER_TOL_MM)
-            if eh.depth_mm is not None:
-                values[f"hole:{eh.id}.depth"] = mh.depth_mm
-                add(eh.id, "depth", eh.depth_mm, mh.depth_mm, DEPTH_TOL_MM)
+    if not exp:
+        return residuals, values, notes
+    ec = np.array([h.center_mm for h in exp], dtype=np.float64)
+    ed = np.array([h.diameter_mm for h in exp], dtype=np.float64)
+    vr_top = views.get("top")
+    M2 = vr_top.matrix if vr_top is not None and vr_top.matrix is not None else Rigid2D().matrix()
+    cad_holes = feats.holes if feats is not None else []
+    cad_c = apply_2d(M2, np.array([h.center_mm for h in cad_holes])) if cad_holes else np.zeros((0, 2))
+    cad_d = np.array([h.diameter_mm for h in cad_holes], dtype=np.float64)
+    cad_match = _match(ec, ed, cad_c, cad_d)
+    for i, j in cad_match.items():
+        values[f"cad.hole:{exp[i].id}.diameter"] = float(cad_d[j])
+
+    if top_mm is not None and vr_top is not None and vr_top.camera is not None:
+        # Model holes as measured from its render, moved into the photo's part frame through the mat.
+        to_photo = np.linalg.inv(vr_top.camera.part_to_mat) @ np.asarray(top_mm.part_to_mat, dtype=np.float64)
+        got_c = apply_2d(to_photo, np.array([h.center_mm for h in top_mm.holes])) if top_mm.holes else np.zeros((0, 2))
+        got_d = np.array([h.diameter.value for h in top_mm.holes], dtype=np.float64)
+        got_depth: list[float | None] = [None] * len(got_d)
+    else:
+        got_c, got_d = cad_c, cad_d
+        got_depth = [h.depth_mm for h in cad_holes]
+    matched = _match(ec, ed, got_c, got_d)
+    for i, eh in enumerate(exp):
+        if i not in matched:
+            notes.append(f"{eh.id} (diameter {eh.diameter_mm:.2f} mm at {eh.center_mm[0]:.1f}, "
+                         f"{eh.center_mm[1]:.1f}) has no matching hole in the model.")  # fmt: skip
+            continue
+        j = matched[i]
+        c = got_c[j]
+        values[f"hole:{eh.id}.diameter"] = float(got_d[j])
+        values[f"hole:{eh.id}.center_offset"] = float(np.linalg.norm(c - ec[i]))
+        add(eh.id, "diameter", eh.diameter_mm, float(got_d[j]), FEATURE_TOL_MM)
+        add(eh.id, "center_x", eh.center_mm[0], float(c[0]), CENTER_TOL_MM)
+        add(eh.id, "center_y", eh.center_mm[1], float(c[1]), CENTER_TOL_MM)
+        depth = got_depth[j]
+        if eh.depth_mm is not None and depth is not None:
+            values[f"hole:{eh.id}.depth"] = depth
+            add(eh.id, "depth", eh.depth_mm, depth, DEPTH_TOL_MM)
     return residuals, values, notes
 
 
@@ -407,7 +514,7 @@ def _reasons(
     verified: bool,
     tests: list[PartTest],
     p0_failed: list[PartTest],
-    views: list[ViewMetrics],
+    views: list[ViewResult],
     th: Thresholds,
     blocking: list[JudgeVeto],
     residuals: list[FeatureResidual],
@@ -416,17 +523,22 @@ def _reasons(
     n_p0 = sum(t.priority == "P0" for t in tests)
     if not views:
         out.append("No measured top or side view to compare against, so the part cannot be verified.")
-    for vm in views:
-        ok = vm.hausdorff_mm <= th.hausdorff_mm and vm.iou >= th.iou
+    for vr in views:
+        vm = vr.metrics
+        ok = vm.hausdorff_mm <= th.hausdorff_mm and (not vr.iou_gated or vm.iou >= th.iou)
         where = (
             f" (worst at x={vm.worst_point_mm[0]:.1f}, y={vm.worst_point_mm[1]:.1f} mm)"
             if vm.worst_point_mm and not ok
             else ""
         )
+        frame = "photo frame" if vr.frame == "camera" else "rectified"
+        iou = f"IoU {vm.iou:.3f} (needs >= {th.iou})" if vr.iou_gated else f"IoU {vm.iou:.3f} (not gated)"
         out.append(
-            f"{vm.view} view: IoU {vm.iou:.3f} (needs >= {th.iou}), Hausdorff {vm.hausdorff_mm:.2f} mm "
+            f"{vm.view} view ({frame}): {iou}, Hausdorff {vm.hausdorff_mm:.2f} mm "
             f"(needs <= {th.hausdorff_mm} mm){where}" + ("" if ok else " - fails")
         )
+        if vr.gate_note:
+            out.append(f"{vm.view} view: {vr.gate_note}.")
     if verified:
         out.insert(0, f"Verified: all {n_p0} P0 tests pass and every measured view is within tolerance.")
     for t in p0_failed:

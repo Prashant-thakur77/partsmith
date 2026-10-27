@@ -113,11 +113,14 @@ def residual_heatmap(
     *,
     distances: ContourDistances | None = None,
     title: str = "",
+    label_point_mm: tuple[float, float] | None = None,
     max_side_px: int = 1400,
     min_side_px: int = 640,
 ) -> bytes:
     """PNG overlay: grey = both agree, vermillion = over (model material the photo lacks), blue = under (photo
-    material the model lacks). The worst boundary point is circled and labelled in mm. Colour-blind-safe palette."""
+    material the model lacks). The worst boundary point is circled and labelled in mm. Colour-blind-safe palette.
+    ``label_point_mm`` overrides the coordinates printed next to the worst point (e.g. part-frame mm for a photo
+    crop whose `frame` is only a pixel scale)."""
     photo = np.asarray(photo_mask, dtype=bool)
     model = np.asarray(model_mask, dtype=bool)
     h, w = photo.shape
@@ -146,7 +149,8 @@ def residual_heatmap(
         p = frame.to_px(np.array(distances.worst_point_mm))
         c = (round((p[0] + 0.5) * scale - 0.5), round((p[1] + 0.5) * scale - 0.5))
         cv2.circle(img, c, 14, COLOR_WORST, 2, cv2.LINE_AA)
-        label = f"worst {distances.hausdorff_mm:.2f} mm at ({distances.worst_point_mm[0]:.1f}, {distances.worst_point_mm[1]:.1f})"
+        lp = label_point_mm or distances.worst_point_mm
+        label = f"worst {distances.hausdorff_mm:.2f} mm at ({lp[0]:.1f}, {lp[1]:.1f})"
         org = (min(max(c[0] + 18, 4), max(W - 9 * len(label), 4)), min(max(c[1] - 18, 18), H - 6))
         _put(img, label, org, 0.5, COLOR_WORST)
 
