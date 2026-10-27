@@ -73,3 +73,13 @@ A fresh session should read this file, `docs/ARCHITECTURE.md`, `docs/API.md` and
 - **Registry seeded + replays:** 12 parts published from the committed samples (6 verified, 6 best effort ≤ 2 mm), all origin
   synthetic. 16 labelled replays in `data/replays` (34 MB after JPEG re-encoding of display images); a fresh `PARTSMITH_HOME`
   serves them with every artifact URL resolving.
+- **Web performance:** Lighthouse mobile perf medians 95–97 (/, /parts, part page, /fix), desktop 100, a11y/BP/SEO 100;
+  first-load JS 152–176 kB; contract checks kept on every response (zod/mini).
+- **Final sweep (2026-10-27):** ruff + format clean; `mypy --strict` clean (194 files); `pytest -m "not live"` (incl. slow) passes;
+  web typecheck/lint/build clean; `make smoke` → 12 ⚠️ (mock), exit 0; `make dev` serves every page (200) with 12 seeded parts;
+  gitleaks: no leaks; no private files tracked. Scores in `docs/QUALITY.md`; human-only steps in `docs/HANDOFF.md`.
+
+## Next (for a fresh session)
+1. Keys → `PROVIDER_RECORD=1 make live` (HANDOFF §1); update README via `make bench-live`.
+2. Real photos → `data/real/...` → `uv run python -m eval.splits assign` → `make bench`.
+3. Remaining offline work: hinge/hook template knobs (in progress at the time of writing), Muse Code usage notes.

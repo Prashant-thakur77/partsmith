@@ -142,7 +142,9 @@ def bench_tables() -> str:
             out.append(f"\n_Pending — {(t or {}).get('note') or 'no data yet'}._")
             continue
         photos = t.get("photos") or ("real photos" if key == "real_ruler" else "synthetic renders")
-        out.append(f"\nN = {t.get('n')} · photos: {photos} · ground truth: `{t.get('ground_truth')}` · CI: {t.get('ci')}\n")
+        out.append(
+            f"\nN = {t.get('n')} · photos: {photos} · ground truth: `{t.get('ground_truth')}` · CI: {t.get('ci')}\n"
+        )
         out.append("| " + " | ".join(cols) + " |")
         out.append("|" + "---|" * len(cols))
         for r in t.get("rows", []):
