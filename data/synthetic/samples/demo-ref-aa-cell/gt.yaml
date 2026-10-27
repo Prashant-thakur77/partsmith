@@ -44,12 +44,14 @@ views:
       exif_focal35_mm: 24
     look:
       surface: screen
+      stage: light
       part_bgr: [40, 120, 150]
       blur_px: 0.539
       glare: false
       moire_amp: 0.0
       exposure: 1.0
-generator: {version: synth-1, seed: 204, preset: clean}
+generator: {version: synth-2, seed: 204, preset: clean}
+stage: light
 spec:
   loose: true
   note: "AA cell: diameter 13.5\u201314.5 mm, length 49.2\u201350.5 mm; modelled at 14.5 \xD7 50.5 mm (loose spec)"

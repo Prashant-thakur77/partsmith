@@ -10,7 +10,8 @@
   "difficulty": "medium",
   "augmentations": [
     "tilt",
-    "surface:screen"
+    "surface:screen",
+    "stage:light"
   ],
   "seed": 104
 }

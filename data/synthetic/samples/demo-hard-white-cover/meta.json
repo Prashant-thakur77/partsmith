@@ -10,7 +10,8 @@
   "difficulty": "hard",
   "augmentations": [
     "white-part",
-    "surface:screen"
+    "surface:screen",
+    "stage:dark"
   ],
   "seed": 111
 }

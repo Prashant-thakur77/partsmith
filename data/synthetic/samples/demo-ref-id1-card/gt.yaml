@@ -44,12 +44,14 @@ views:
       exif_focal35_mm: 25
     look:
       surface: screen
+      stage: light
       part_bgr: [120, 62, 28]
       blur_px: 0.571
       glare: false
       moire_amp: 0.0
       exposure: 1.0
-generator: {version: synth-1, seed: 201, preset: clean}
+generator: {version: synth-2, seed: 201, preset: clean}
+stage: light
 spec:
   loose: false
   note: "ISO/IEC 7810 ID-1: 85.60 \xD7 53.98 \xD7 0.76 mm, corner radius 3.18 mm"

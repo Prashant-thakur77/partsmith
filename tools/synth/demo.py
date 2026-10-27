@@ -1,5 +1,6 @@
 """The small committed demo set (`data/synthetic/samples/`): every family template at least once, screen and paper
-mats, two hard cases, and the four reference objects. All SYNTHETIC. Regenerate with
+mats, hard cases (a light part on the dark stage, a light part on the light stage that the capture gate
+should reject, glare), and the four reference objects. All SYNTHETIC. Regenerate with
 `uv run python -m tools.synth --demo --out data/synthetic/samples`."""
 
 from __future__ import annotations
@@ -27,6 +28,7 @@ DEMO: tuple[tuple[str, str, str, str, str | None, int], ...] = (
     ("demo-battery-cover", "template", "battery_cover", "clean", "screen-m", 110),
     ("demo-hard-white-cover", "template", "battery_cover", "white-part", "screen-m", 111),
     ("demo-hard-glare-clip", "template", "clip", "glare", "screen-m", 112),
+    ("demo-hard-white-on-light", "template", "battery_cover", "white-on-light", "screen-m", 113),
     ("demo-ref-id1-card", "reference_object", "id1_card", "clean", "screen-m", 201),
     ("demo-ref-sd-card", "reference_object", "sd_card", "clean", "screen-m", 202),
     ("demo-ref-lego-2x4", "reference_object", "lego_2x4", "paper", "paper-a4", 203),

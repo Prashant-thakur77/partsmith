@@ -10,7 +10,8 @@
   "difficulty": "easy",
   "augmentations": [
     "clean",
-    "surface:screen"
+    "surface:screen",
+    "stage:light"
   ],
   "seed": 202
 }

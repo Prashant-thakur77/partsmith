@@ -12,7 +12,7 @@ import sys
 from collections.abc import Sequence
 from pathlib import Path
 
-from .dataset import PRESETS, make_dataset
+from .dataset import BENCH_PRESETS, PRESETS, make_dataset
 from .demo import make_demo_set
 
 
@@ -21,8 +21,9 @@ def main(argv: Sequence[str] | None = None) -> int:
     ap.add_argument("--out", type=Path, required=True)
     ap.add_argument("--n", type=int, default=200, help="template samples")
     ap.add_argument("--n-reference", type=int, default=0, help="reference-object samples")
+    ap.add_argument("--n-reject", type=int, default=0, help="white-on-light photos the capture gate should reject")
     ap.add_argument("--seed", type=int, default=7)
-    ap.add_argument("--presets", default=",".join(PRESETS), help=f"comma list from {', '.join(PRESETS)}")
+    ap.add_argument("--presets", default=",".join(BENCH_PRESETS), help=f"comma list from {', '.join(PRESETS)}")
     ap.add_argument("--size", default="3000x2250", help="photo size WxH")
     ap.add_argument("--quality", type=int, default=90, help="JPEG quality")
     ap.add_argument("--jobs", type=int, default=1, help="parallel render processes")
@@ -40,6 +41,7 @@ def main(argv: Sequence[str] | None = None) -> int:
         seed=a.seed,
         presets=[p.strip() for p in a.presets.split(",") if p.strip()],
         n_reference=a.n_reference,
+        n_reject=a.n_reject,
         size=(w, h),
         jpeg_quality=a.quality,
         jobs=a.jobs,

@@ -94,6 +94,12 @@ class PhotoRow:
     extra_holes: int = 0
     seconds: float = 0.0
     notes: list[str] = field(default_factory=list)
+    expect_reject: bool = False  # a photo the capture gate SHOULD reject (white part on the light stage)
+    failed_checks: list[str] = field(default_factory=list)
+
+    @property
+    def correct_rejection(self) -> bool:
+        return self.expect_reject and not self.accepted and "contrast" in self.failed_checks
 
 
 @dataclass
@@ -110,7 +116,10 @@ class PhotoJob:
     origin: str = "synthetic"
     match_holes_by: str = "centre"  # or "diameter"
     side_of: str | None = None  # for side views: chain thickness from this sample's top-view width
-    profile: str = ""
+    profile: str = ""  # flat / tall features (report grouping only)
+    shape: str = "prism"  # measure_photo profile: "round" for cylinders lying on their curved side
+    stated_thickness_mm: float | None = None  # side views: the thickness the user stated for the top view
+    expect_reject: bool = False
 
 
 # ---------------------------------------------------------------- scoring (pure)
@@ -207,6 +216,8 @@ def run_photo(job: PhotoJob) -> tuple[PhotoRow, list[DimRow], float | None]:
             thickness_mm=job.thickness_mm,
             origin=DataOrigin(job.origin),
             mat_id=job.mat_id,
+            profile="round" if job.shape == "round" else "prism",
+            stated_thickness_mm=job.stated_thickness_mm,
         )
     except Exception as e:  # a crash is a failure to report, not a reason to stop the bench
         row = PhotoRow(
@@ -222,6 +233,7 @@ def run_photo(job: PhotoJob) -> tuple[PhotoRow, list[DimRow], float | None]:
             0,
             [str(g["name"]) for g in job.gt],
         )
+        row.expect_reject = job.expect_reject
         return row, [], None
     res = out.result
     meas = res.measurements
@@ -266,6 +278,8 @@ def run_photo(job: PhotoJob) -> tuple[PhotoRow, list[DimRow], float | None]:
         extra_holes=extra,
         seconds=round(time.perf_counter() - t0, 2),
         notes=[n for n in out.notes if "intrinsics" in n or "segmentation" in n][:2],
+        expect_reject=job.expect_reject,
+        failed_checks=[c.name for c in res.capture.checks if c.severity == "fail"],
     )
     width = meas.width.value if (meas is not None and job.view == "top") else None
     return row, dims, width
@@ -292,6 +306,7 @@ def synthetic_jobs(root: Path, manifest: Mapping[str, Any] | None = None) -> tup
         s = load_sample(m.path)
         gt = load_gt(m.path)
         preset = m.augmentations[0] if m.augmentations else ""
+        expect_reject = bool((gt.raw.get("expect") or {}).get("capture_gate") == "reject")
         if m.kind == "reference_object":
             ref = get_reference_object(gt.name)
             src, group, profile = SRC_REF_SYNTH, ref.key, ""
@@ -323,9 +338,11 @@ def synthetic_jobs(root: Path, manifest: Mapping[str, Any] | None = None) -> tup
                 None,
                 "synthetic",
                 profile=profile,
+                shape=shape_from_meta(m.title, m.intent, m.family_hint, "top"),
+                expect_reject=expect_reject,
             )
         )
-        if "side" in s.photos:
+        if "side" in s.photos and not expect_reject:
             side_gt = by_view["side"]
             if side_gt:
                 sides.append(
@@ -342,12 +359,31 @@ def synthetic_jobs(root: Path, manifest: Mapping[str, Any] | None = None) -> tup
                         "synthetic",
                         side_of=m.id,
                         profile=profile,
+                        shape=shape_from_meta(m.title, m.intent, m.family_hint, "side"),
+                        stated_thickness_mm=m.user_thickness_mm,
                     )
                 )
     return tops, sides
 
 
 TALL_MARGIN_MM = 1.0
+TOP_SPLIT_NOTE = (
+    "A single top photo sees only the silhouette, and the height correction assumes every outline edge sits at the "
+    "stated thickness, so features that stand taller than that (arms, uprights, knuckles) are displaced by parallax "
+    "by an amount the photo cannot resolve; the full-loop bench scores the final model instead."
+)
+ROUND_ON_SIDE_FAMILIES = ("wheel", "knob", "spacer")  # round in the top view, so laid on their side they roll
+
+
+def shape_from_meta(title: str, intent: str, family_hint: str | None, view: str) -> str:
+    """measure_photo profile from what a USER knows (meta.json, never gt.yaml): an AA cell lies on its curved side
+    in the top view; a wheel / knob / spacer laid on its side for the side photo rests on its tread."""
+    text = f"{title} {intent}".lower()
+    if view == "top" and "aa cell" in text:
+        return "round"
+    if view == "side" and family_hint in ROUND_ON_SIDE_FAMILIES:
+        return "round"
+    return "prism"
 
 
 def profile_of(height_mm: float, stated_thickness_mm: float | None) -> str:
@@ -383,7 +419,18 @@ def real_reference_jobs(real_dir: Path) -> list[PhotoJob]:
             thick = ref.user_thickness_mm if view == "top" else ref.dim("width").nominal_mm
             jobs.append(
                 PhotoJob(
-                    SRC_REF_REAL, f"{key}/{p.name}", view, str(p), thick, gt, "real", key, None, "reference_object"
+                    SRC_REF_REAL,
+                    f"{key}/{p.name}",
+                    view,
+                    str(p),
+                    thick,
+                    gt,
+                    "real",
+                    key,
+                    None,
+                    "reference_object",
+                    shape=shape_from_meta(ref.title, "", None, view),
+                    stated_thickness_mm=ref.user_thickness_mm if view == "side" else None,
                 )
             )
     return jobs
@@ -439,6 +486,7 @@ def real_part_jobs(real_dir: Path) -> list[PhotoJob]:
                     raw.get("mat_id"),
                     "real",
                     side_of=part.name,
+                    stated_thickness_mm=None if thick is None else float(thick),
                 )
             )
     return jobs
@@ -447,19 +495,26 @@ def real_part_jobs(real_dir: Path) -> list[PhotoJob]:
 # ---------------------------------------------------------------- bench data
 
 
-def ensure_bench(root: Path, *, n: int, n_reference: int, seed: int, jobs: int, regen: bool = False) -> dict[str, Any]:
+def ensure_bench(
+    root: Path, *, n: int, n_reference: int, seed: int, jobs: int, regen: bool = False, n_reject: int = 0
+) -> dict[str, Any]:
     """Generate the synthetic bench if it is missing or was made with different settings; return its manifest."""
-    from tools.synth import make_dataset
+    from tools.synth import GENERATOR_VERSION, make_dataset
 
     mpath = root / "manifest.json"
     if mpath.exists() and not regen:
         man: dict[str, Any] = json.loads(mpath.read_text())
-        if man.get("seed") == seed and man.get("n") == n and man.get("n_reference") == n_reference:
+        same = (man.get("seed"), man.get("n"), man.get("n_reference"), man.get("n_reject", 0), man.get("generator"))
+        if same == (seed, n, n_reference, n_reject, GENERATOR_VERSION):
             missing = [e["id"] for e in man["samples"] if not (root / e["id"] / "gt.yaml").exists()]
             if not missing:
                 return man
-    print(f"generating synthetic bench: n={n} + {n_reference} reference renders, seed={seed} -> {root}", flush=True)
-    return make_dataset(root, n=n, n_reference=n_reference, seed=seed, jobs=jobs, progress=True)
+    print(
+        f"generating synthetic bench: n={n} + {n_reference} reference renders + {n_reject} expected rejections, "
+        f"seed={seed} -> {root}",
+        flush=True,
+    )
+    return make_dataset(root, n=n, n_reference=n_reference, n_reject=n_reject, seed=seed, jobs=jobs, progress=True)
 
 
 def bench_manifest_summary(man: Mapping[str, Any]) -> dict[str, Any]:
@@ -467,8 +522,9 @@ def bench_manifest_summary(man: Mapping[str, Any]) -> dict[str, Any]:
     return {
         "origin": "synthetic",
         "note": "SYNTHETIC bench; regenerate with: uv run python -m tools.synth --out data/synthetic/bench "
-        f"--n {man['n']} --n-reference {man['n_reference']} --seed {man['seed']}",
+        f"--n {man['n']} --n-reference {man['n_reference']} --n-reject {man.get('n_reject', 0)} --seed {man['seed']}",
         **{k: man[k] for k in ("generator", "seed", "n", "n_reference", "presets", "size", "jpeg_quality")},
+        "n_reject": man.get("n_reject", 0),
         "dataset_sha256": man["dataset_sha256"],
         "samples": [
             {"id": e["id"], "seed": e["seed"], "kind": e["kind"], "preset": e["preset"], "files": e["files"]}
@@ -494,6 +550,7 @@ def run_bench(
     real_dir: Path = REAL_DIR,
     n: int = 60,
     n_reference: int = 20,
+    n_reject: int = 6,
     seed: int = DEFAULT_SEED,
     jobs: int = 4,
     regen: bool = False,
@@ -502,7 +559,7 @@ def run_bench(
 ) -> dict[str, Any]:
     """Run every source and return the report dict (not yet written)."""
     t0 = time.perf_counter()
-    man = ensure_bench(bench_dir, n=n, n_reference=n_reference, seed=seed, jobs=jobs, regen=regen)
+    man = ensure_bench(bench_dir, n=n, n_reference=n_reference, n_reject=n_reject, seed=seed, jobs=jobs, regen=regen)
     if write_manifest is not None:
         write_manifest.parent.mkdir(parents=True, exist_ok=True)
         write_manifest.write_text(json.dumps(bench_manifest_summary(man), indent=1) + "\n")
@@ -530,11 +587,20 @@ def _stats(errs: Iterable[float], seed: int) -> dict[str, Any]:
 
 
 def _section(source: str, photos: list[PhotoRow], dims: list[DimRow], seed: int) -> dict[str, Any]:
-    ph = [p for p in photos if p.source == source]
-    dm = [d for d in dims if d.source == source]
+    all_ph = [p for p in photos if p.source == source]
+    gate_tests = [p for p in all_ph if p.expect_reject]
+    ph = [p for p in all_ph if not p.expect_reject]
+    skip = {(p.sample_id, p.view) for p in gate_tests}
+    dm = [d for d in dims if d.source == source and (d.sample_id, d.view) not in skip]
     acc = [d for d in dm if d.accepted]
     out: dict[str, Any] = {
         "gt_source": GT_SOURCE_LABEL[source],
+        "expected_rejections": {
+            **rate(sum(p.correct_rejection for p in gate_tests), len(gate_tests)).to_dict(),
+            "missed": [p.sample_id for p in gate_tests if p.accepted],
+            "note": "white part on the light stage: the capture gate should send the user to the dark stage; "
+            "a correct rejection is not an error and its photo is not scored",
+        },
         "n_photos": len(ph),
         "n_detected": sum(p.detected for p in ph),
         "capture_gate_pass": rate(sum(p.accepted for p in ph), len(ph)).to_dict(),
@@ -571,6 +637,12 @@ def _section(source: str, photos: list[PhotoRow], dims: list[DimRow], seed: int)
     out["by_mat"] = by(lambda d: d.mat_id)
     if source == SRC_SYNTH:
         out["by_profile"] = by(lambda d: f"{d.view}: {d.profile}")
+        out["top_view_split"] = {
+            "top view, flat parts": _stats((d.error_mm for d in acc if d.view == "top" and d.profile == "flat"), seed),
+            "top view, parts with tall features": _stats(
+                (d.error_mm for d in acc if d.view == "top" and d.profile == "tall features"), seed
+            ),
+        }
     return out
 
 
@@ -578,37 +650,55 @@ def build_report(
     photos: list[PhotoRow], dims: list[DimRow], manifest: Mapping[str, Any] | None, *, seed: int
 ) -> dict[str, Any]:
     sections = {s: _section(s, photos, dims, seed) for s in (SRC_SYNTH, SRC_REF_SYNTH, SRC_REF_REAL, SRC_REAL)}
-    failures = [
-        {
-            "source": p.source,
-            "sample_id": p.sample_id,
-            "view": p.view,
-            "preset": p.preset,
-            "reason": ("mat or part not detected" if not p.detected else "capture gate failed")
-            + (f": {p.retake_reason}" if p.retake_reason else ""),
-            "missed": p.missed,
-        }
-        for p in photos
-        if not p.accepted
-    ] + [
-        {
-            "source": p.source,
-            "sample_id": p.sample_id,
-            "view": p.view,
-            "preset": p.preset,
-            "reason": "dimension(s) not measured" + (f"; {p.extra_holes} spurious hole(s)" if p.extra_holes else ""),
-            "missed": p.missed,
-        }
-        for p in photos
-        if p.accepted and (p.missed or p.extra_holes)
-    ]
+    failures = (
+        [
+            {
+                "source": p.source,
+                "sample_id": p.sample_id,
+                "view": p.view,
+                "preset": p.preset,
+                "reason": ("mat or part not detected" if not p.detected else "capture gate failed")
+                + (f": {p.retake_reason}" if p.retake_reason else ""),
+                "missed": p.missed,
+            }
+            for p in photos
+            if not p.accepted and not p.correct_rejection
+        ]
+        + [
+            {
+                "source": p.source,
+                "sample_id": p.sample_id,
+                "view": p.view,
+                "preset": p.preset,
+                "reason": "missed rejection: the capture gate accepted a white part on the light stage",
+                "missed": [],
+            }
+            for p in photos
+            if p.expect_reject and p.accepted
+        ]
+        + [
+            {
+                "source": p.source,
+                "sample_id": p.sample_id,
+                "view": p.view,
+                "preset": p.preset,
+                "reason": "dimension(s) not measured"
+                + (f"; {p.extra_holes} spurious hole(s)" if p.extra_holes else ""),
+                "missed": p.missed,
+            }
+            for p in photos
+            if p.accepted and not p.expect_reject and (p.missed or p.extra_holes)
+        ]
+    )
     gate = gate_verdict(sections)
     return {
         "bench": "measure_only",
         "date": dt.date.today().isoformat(),
         "segmenter": "ThresholdSegmenter (deterministic, no model)",
         "gate_threshold_mean_mm": GATE_MEAN_MM,
-        "synthetic_manifest": {k: manifest[k] for k in ("seed", "n", "n_reference", "dataset_sha256")}
+        "synthetic_manifest": {
+            k: manifest.get(k, 0) for k in ("seed", "n", "n_reference", "n_reject", "dataset_sha256")
+        }
         if manifest
         else None,
         "sections": sections,
@@ -717,6 +807,15 @@ def to_markdown(rep: Mapping[str, Any]) -> str:
         if "within_spec_accepted" in sec:
             w = sec["within_spec_accepted"]
             L.append(f"- inside the spec's accepted range: {w['k']}/{w['n']} = {_pct(w['rate'])} {_ci(w['ci95'], 2)}")
+        er = sec.get("expected_rejections") or {}
+        if er.get("n"):
+            L.append(
+                f"- expected rejections (white part on the light stage → dark-stage retake): {er['k']}/{er['n']} "
+                f"correctly rejected {_ci(er['ci95'], 2)}; not scored as errors"
+                + (f"; missed: {', '.join(er['missed'])}" if er.get("missed") else "")
+            )
+        if "top_view_split" in sec:
+            L += ["", *_err_table("top view (accepted photos)", sec["top_view_split"]), "", TOP_SPLIT_NOTE]
         for title, k in (
             ("by dimension", "by_dim"),
             ("by profile", "by_profile"),
@@ -762,6 +861,14 @@ def summary_lines(rep: Mapping[str, Any]) -> list[str]:
             f"mean {_f(s['mean_mm'])} {_ci(s['mean_ci95_mm'])}  median {_f(s['median_mm'])}  P90 {_f(s['p90_mm'])}  "
             f"max {_f(s['max_mm'])}  ≤0.5 {_pct(s['within_0_5'])}"
         )
+        for name, st in (sec.get("top_view_split") or {}).items():
+            lines.append(
+                f"  {name:38s} dims N={st['n']:3d}  mean {_f(st['mean_mm'])} {_ci(st['mean_ci95_mm'])}  "
+                f"median {_f(st['median_mm'])}  P90 {_f(st['p90_mm'])}"
+            )
+        er = sec.get("expected_rejections") or {}
+        if er.get("n"):
+            lines.append(f"  expected rejections (white part on light stage): {er['k']}/{er['n']} correctly rejected")
     g = rep["gate"]
     lines.append(
         f"EXIT GATE (mean ≤ {GATE_MEAN_MM} mm): synthetic {_f(g['synthetic']['mean_mm'])} "
@@ -776,6 +883,7 @@ def main(argv: Sequence[str] | None = None) -> int:
     ap = argparse.ArgumentParser(description=__doc__.split("\n\n")[0] if __doc__ else None)
     ap.add_argument("--n", type=int, default=60, help="synthetic template samples (default 60)")
     ap.add_argument("--n-reference", type=int, default=20, help="synthetic reference-object renders (default 20)")
+    ap.add_argument("--n-reject", type=int, default=6, help="white-on-light photos the gate should reject (default 6)")
     ap.add_argument("--seed", type=int, default=DEFAULT_SEED)
     ap.add_argument("--bench", type=Path, default=BENCH_DIR)
     ap.add_argument("--real", type=Path, default=REAL_DIR)
@@ -785,7 +893,14 @@ def main(argv: Sequence[str] | None = None) -> int:
     ap.add_argument("--strict", action="store_true", help="exit 1 when the gate fails")
     a = ap.parse_args(argv)
     rep = run_bench(
-        bench_dir=a.bench, real_dir=a.real, n=a.n, n_reference=a.n_reference, seed=a.seed, jobs=a.jobs, regen=a.regen
+        bench_dir=a.bench,
+        real_dir=a.real,
+        n=a.n,
+        n_reference=a.n_reference,
+        n_reject=a.n_reject,
+        seed=a.seed,
+        jobs=a.jobs,
+        regen=a.regen,
     )
     out = a.out or REPORTS_DIR / rep["date"]
     jp, mp = write_report(rep, out)

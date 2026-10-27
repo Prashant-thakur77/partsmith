@@ -9,7 +9,7 @@ photos (reference objects vs their published specs, or real parts vs a ruler); `
 
 | Path | What | In git |
 |---|---|---|
-| `samples/` | demo set: 12 template parts (every family template at least once, screen and paper mats, two hard cases) + the 4 reference objects, 2000×1500 JPEGs | yes |
+| `samples/` | demo set: 13 template parts (every family template at least once, screen and paper mats, three hard cases) + the 4 reference objects, 2000×1500 JPEGs | yes |
 | `bench/` | the measurement bench (`eval/measure_only.py` renders it from a seed when missing), 3000×2250 JPEGs | no (gitignored) |
 | `bench_manifest.json` | seeds, settings and sha256 of every bench file, so the bench can be re-rendered and checked | yes |
 
@@ -38,13 +38,19 @@ Named dimensions are computed from the mesh, never from a render:
 
 `clean`, `tilt` (12–18°), `blur` (σ 1.4–2.4 px), `glare` (reflection streak on the screen), `moire` (strong pixel
 grid + interference fringes), `low-light` (under-exposed, noisy, warm), `white-part` (white / light-grey / beige part
-on a white stage — hard on purpose), `paper` (plain-paper mat).
+on the **dark** screen stage, as the app tells the user to do), `paper` (plain-paper mat), and `white-on-light` (a
+light part on the light stage: the capture gate should reject it and ask for the dark stage — `gt.yaml` carries
+`expect: {capture_gate: reject}` and the benches count a rejection as correct, not as an error). The bench cycles the
+first eight; `--n-reject` adds white-on-light photos without changing any other sample.
+
+Screen photos say which stage the user chose (`stage:light` / `stage:dark` in `meta.json` augmentations); paper is
+always light.
 
 ## Regenerate
 
 ```bash
 uv run python -m tools.synth --demo --out data/synthetic/samples                  # this demo set
-uv run python -m tools.synth --out data/synthetic/bench --n 60 --n-reference 20 --seed 7 --jobs 4
+uv run python -m tools.synth --out data/synthetic/bench --n 60 --n-reference 20 --n-reject 6 --seed 7 --jobs 4
 ```
 
 Same seed → same bytes on the same library versions (OpenCV, Pillow/libjpeg, the CAD kernel's tessellation).

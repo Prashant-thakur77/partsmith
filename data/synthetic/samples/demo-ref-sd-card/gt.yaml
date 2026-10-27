@@ -45,6 +45,7 @@ views:
       exif_focal35_mm: 24
     look:
       surface: screen
+      stage: light
       part_bgr: [38, 36, 34]
       blur_px: 0.367
       glare: false
@@ -78,12 +79,14 @@ views:
       exif_focal35_mm: 26
     look:
       surface: screen
+      stage: light
       part_bgr: [38, 36, 34]
       blur_px: 0.481
       glare: false
       moire_amp: 0.0
       exposure: 1.0
-generator: {version: synth-1, seed: 202, preset: clean}
+generator: {version: synth-2, seed: 202, preset: clean}
+stage: light
 spec:
   loose: false
   note: "full-size SD: 32.0 \xD7 24.0 \xD7 2.1 mm (corner chamfer modelled 4 \xD7 4 mm, not scored)"

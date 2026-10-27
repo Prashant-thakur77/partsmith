@@ -55,6 +55,7 @@ class Look:
     lamp_dir_deg: float = 30.0
     # table
     table_bgr: BGR = (70.0, 92.0, 120.0)
+    stage_bgr: BGR | None = None  # screen mats only: the dark stage colour (None = the light stage, same as white)
     # part
     part_bgr: BGR = (60.0, 70.0, 85.0)
     face_bgr: F64 | None = None  # optional per-face albedo (n_faces, 3), overrides part_bgr
@@ -148,6 +149,7 @@ def render_surface(mat_id: str, cam: T.Camera, look: Look, rng: np.random.Genera
             black_bgr=_i3(look.black_bgr),
             surround_bgr=_i3(look.bezel_bgr),
             screen_margin_mm=margin,
+            stage_bgr=None if look.stage_bgr is None else _i3(look.stage_bgr),
         ).astype(np.float32)
         # Backlight: a smooth non-uniformity across the panel plus the pixel grid (sampled at pixel centres, so it
         # aliases into moiré exactly as a phone camera sees a screen; the box filter of a sensor pixel damps it).

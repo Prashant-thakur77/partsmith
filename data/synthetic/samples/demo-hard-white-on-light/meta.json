@@ -1,0 +1,17 @@
+{
+  "id": "demo-hard-white-on-light",
+  "title": "Battery compartment cover (synthetic, white-on-light)",
+  "kind": "template",
+  "origin": "synthetic",
+  "mat_id": "screen-m",
+  "family_hint": "cover",
+  "intent": "Make a replacement for this broken battery compartment cover.",
+  "user_thickness_mm": 1.5,
+  "difficulty": "hard",
+  "augmentations": [
+    "white-on-light",
+    "surface:screen",
+    "stage:light"
+  ],
+  "seed": 113
+}

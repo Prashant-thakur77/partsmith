@@ -45,6 +45,7 @@ views:
       exif_focal35_mm: 25
     look:
       surface: paper
+      stage: light
       part_bgr: [30, 40, 200]
       blur_px: 0.511
       glare: false
@@ -78,12 +79,14 @@ views:
       exif_focal35_mm: 24
     look:
       surface: paper
+      stage: light
       part_bgr: [30, 40, 200]
       blur_px: 0.321
       glare: false
       moire_amp: 0.0
       exposure: 1.0
-generator: {version: synth-1, seed: 203, preset: paper}
+generator: {version: synth-2, seed: 203, preset: paper}
+stage: light
 spec:
   loose: false
   note: "LEGO 2\xD74 brick body 31.8 \xD7 15.8 \xD7 9.6 mm, studs \xD84.8 \xD7 1.7 mm (top-view outline = body)"

@@ -46,6 +46,7 @@ views:
       exif_focal35_mm: 25
     look:
       surface: screen
+      stage: dark
       part_bgr: [222, 224, 224]
       blur_px: 0.463
       glare: false
@@ -79,9 +80,11 @@ views:
       exif_focal35_mm: 25
     look:
       surface: screen
+      stage: dark
       part_bgr: [176, 176, 172]
       blur_px: 0.533
       glare: false
       moire_amp: 0.0
       exposure: 1.0
-generator: {version: synth-1, seed: 111, preset: white-part}
+generator: {version: synth-2, seed: 111, preset: white-part}
+stage: dark

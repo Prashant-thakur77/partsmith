@@ -120,6 +120,45 @@ def test_real_jobs_from_folders(tmp_path: Path) -> None:
     assert M.real_reference_jobs(tmp_path / "missing") == [] and M.real_part_jobs(tmp_path / "missing") == []
 
 
+def test_shape_from_meta_uses_user_knowledge_only() -> None:
+    assert M.shape_from_meta("AA cell (lying on its side) (synthetic, clean)", "", "reference", "top") == "round"
+    assert M.shape_from_meta("Caster wheel (synthetic, clean)", "", "wheel", "side") == "round"
+    assert M.shape_from_meta("Caster wheel (synthetic, clean)", "", "wheel", "top") == "prism"
+    assert M.shape_from_meta("L-bracket", "", "bracket", "side") == "prism"
+
+
+def test_expected_rejections_are_not_errors() -> None:
+    ok = M.PhotoRow(M.SRC_SYNTH, "a", "top", "clean", "clip", True, True, None, 2, 2)
+    rej = M.PhotoRow(
+        M.SRC_SYNTH,
+        "b",
+        "top",
+        "white-on-light",
+        "clip",
+        True,
+        False,
+        "blends",
+        2,
+        2,
+        expect_reject=True,
+        failed_checks=["contrast"],
+    )
+    missed = M.PhotoRow(M.SRC_SYNTH, "c", "top", "white-on-light", "clip", True, True, None, 2, 2, expect_reject=True)
+    dims = [
+        M.DimRow(M.SRC_SYNTH, sid, "top", "length", 40.0, 40.0 + e, e, acc, profile="flat")
+        for sid, e, acc in (("a", 0.1, True), ("b", 5.0, False), ("c", 3.0, True))
+    ]
+    rep = M.build_report([ok, rej, missed], dims, None, seed=0)
+    sec = rep["sections"][M.SRC_SYNTH]
+    assert sec["expected_rejections"]["k"] == 1 and sec["expected_rejections"]["n"] == 2
+    assert sec["expected_rejections"]["missed"] == ["c"]
+    assert sec["n_photos"] == 1 and sec["accepted"]["n"] == 1 and sec["all_detected"]["n"] == 1
+    assert sec["top_view_split"]["top view, flat parts"]["n"] == 1
+    reasons = [f["reason"] for f in rep["failures"]]
+    assert len(reasons) == 1 and reasons[0].startswith("missed rejection")
+    assert M.TOP_SPLIT_NOTE in M.to_markdown(rep)
+
+
 def test_report_marks_empty_sources_pending() -> None:
     rep = M.build_report([], [], None, seed=0)
     md = M.to_markdown(rep)
@@ -137,6 +176,7 @@ def test_tiny_end_to_end(tmp_path: Path) -> None:
         real_dir=tmp_path / "real",
         n=2,
         n_reference=1,
+        n_reject=0,
         seed=4,
         jobs=1,
         write_manifest=tmp_path / "bench_manifest.json",

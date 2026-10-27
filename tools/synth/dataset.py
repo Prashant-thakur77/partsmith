@@ -29,7 +29,7 @@ from PIL import Image
 
 from services.metrology import testing as T
 from services.metrology.calibrate import intrinsics_from_focal35
-from services.metrology.mats import MatSpec, get_mat
+from services.metrology.mats import STAGE_COLOURS, MatSpec, get_mat
 
 from . import geometry as G
 from .reference_objects import ReferenceObject, get_reference_object, list_reference_objects
@@ -38,8 +38,21 @@ from .render import Look, Surface, render_photo
 F64 = NDArray[np.float64]
 Kind = Literal["template", "reference_object"]
 
-GENERATOR_VERSION = "synth-1"
-PRESETS: tuple[str, ...] = ("clean", "tilt", "blur", "glare", "moire", "low-light", "white-part", "paper")
+GENERATOR_VERSION = "synth-2"  # synth-2: screen stage (light / dark), white-on-light rejection set
+PRESETS: tuple[str, ...] = (
+    "clean",
+    "tilt",
+    "blur",
+    "glare",
+    "moire",
+    "low-light",
+    "white-part",
+    "paper",
+    "white-on-light",
+)
+# The bench cycles these (the original eight); white-on-light photos are added as a separate rejection set.
+BENCH_PRESETS: tuple[str, ...] = PRESETS[:8]
+EXPECT_REJECT_PRESETS = ("white-on-light",)  # the capture gate should send the user to the dark stage
 DIFFICULTY = {
     "clean": "easy",
     "paper": "easy",
@@ -49,7 +62,9 @@ DIFFICULTY = {
     "moire": "hard",
     "low-light": "hard",
     "white-part": "hard",
+    "white-on-light": "hard",
 }
+STAGES = ("light", "dark")
 SCREEN_MATS = ("screen-s", "screen-m", "screen-l")
 SCREEN_MAT_WEIGHTS = {"screen-s": 0.15, "screen-m": 0.5, "screen-l": 0.35}
 SCREEN_PITCH_MM = {"screen-s": 0.06, "screen-m": 0.1, "screen-l": 0.17}  # phone / tablet / laptop pixel pitch
@@ -86,6 +101,7 @@ class SampleSpec:
     jpeg_quality: int = 90
     sample_id: str | None = None
     title: str | None = None
+    stage: str | None = None  # screen stage "light" | "dark"; None = the preset's default (dark for white-part)
 
 
 @dataclass(frozen=True)
@@ -280,7 +296,18 @@ def _bgr(c: Sequence[float] | NDArray[np.float64]) -> tuple[float, float, float]
     return (float(c[0]), float(c[1]), float(c[2]))
 
 
-def sample_look(preset: str, surface: Surface, mat_id: str, rng: np.random.Generator) -> Look:
+def hex_bgr(hex_rgb: str) -> tuple[float, float, float]:
+    h = hex_rgb.lstrip("#")
+    r, g, b = (int(h[i : i + 2], 16) for i in (0, 2, 4))
+    return (float(b), float(g), float(r))
+
+
+def default_stage(preset: str, surface: Surface) -> str:
+    """The product puts light parts on the dark screen stage; everything else (and paper) uses the light stage."""
+    return "dark" if preset == "white-part" and surface == "screen" else "light"
+
+
+def sample_look(preset: str, surface: Surface, mat_id: str, rng: np.random.Generator, stage: str = "light") -> Look:
     """Appearance for one photo of the given preset (all randomness from `rng`)."""
     u = rng.uniform
     look = Look(surface=surface)
@@ -334,9 +361,13 @@ def sample_look(preset: str, surface: Surface, mat_id: str, rng: np.random.Gener
         look.exposure = u(0.42, 0.6)
         look.noise_read, look.noise_shot = u(2.5, 3.5), u(0.15, 0.25)
         look.wb_gain = (u(0.8, 0.9), 1.0, u(1.08, 1.18))
-    elif preset == "white-part":
+    elif preset in ("white-part", "white-on-light"):
         light = LIGHT_PART_COLOURS_BGR[int(rng.integers(len(LIGHT_PART_COLOURS_BGR)))]
         look.part_bgr = _bgr(light)
+    if stage == "dark" and surface == "screen":
+        # the dark stage is screen content too: same colour cast as the white (no extra random draw)
+        cast = np.asarray(look.white_bgr) / np.array([236.0, 234.0, 230.0])
+        look.stage_bgr = _bgr(np.asarray(hex_bgr(STAGE_COLOURS["dark"])) * cast)
     return look
 
 
@@ -445,10 +476,15 @@ def generate_sample(spec: SampleSpec, out_dir: str | Path, *, seed: int) -> Path
     if part.ref is not None and not part.ref.side_view:
         views = ["top"]
     surface: Surface = "paper" if spec.preset == "paper" else ("paper" if rng.uniform() < 0.2 else "screen")
-    if spec.preset in ("glare", "moire"):
-        surface = "screen"
+    if spec.preset in ("glare", "moire", "white-part"):
+        surface = "screen"  # white parts go on the dark screen stage, as the app instructs
     if spec.mat_id is not None:
         surface = "paper" if get_mat(spec.mat_id).kind.value == "paper" else "screen"
+    stage = spec.stage or default_stage(spec.preset, surface)
+    if stage not in STAGES:
+        raise ValueError(f"unknown stage {stage!r} (light | dark)")
+    if surface == "paper":
+        stage = "light"
 
     v_top = part.mesh.vertices
     v_side = G.lay_on_side(part.mesh.vertices)
@@ -474,7 +510,7 @@ def generate_sample(spec: SampleSpec, out_dir: str | Path, *, seed: int) -> Path
         if pl is None:
             raise ValueError(f"{spec.name}: {view} view does not fit mat {mat_id}")
         cam, f35 = sample_camera(mat, rng, tilt_range=tilt_range, size=spec.size)
-        look = sample_look(spec.preset, surface, mat_id, rng)
+        look = sample_look(spec.preset, surface, mat_id, rng, stage)
         if part.ref is not None and spec.preset != "white-part":
             look.part_bgr = _bgr(part.ref.colour_bgr)
         cen = v_cad[faces].mean(axis=1)
@@ -502,6 +538,7 @@ def generate_sample(spec: SampleSpec, out_dir: str | Path, *, seed: int) -> Path
             },
             "look": {
                 "surface": look.surface,
+                "stage": stage,
                 "part_bgr": [round(c) for c in look.part_bgr],
                 "blur_px": _r(look.blur_px, 3),
                 "glare": look.glare is not None,
@@ -533,6 +570,8 @@ def generate_sample(spec: SampleSpec, out_dir: str | Path, *, seed: int) -> Path
         dims.append({"name": "thickness", "view": "side", "value_mm": _r(sd["thickness"])})
 
     preset_augs = [spec.preset] + ([f"surface:{surface}"] if spec.preset != "paper" else [])
+    if surface == "screen":
+        preset_augs.append(f"stage:{stage}")  # the user picked the stage in the app
     meta = SampleMeta(
         id=sample_id,
         title=spec.title or f"{part.title} (synthetic, {spec.preset})",
@@ -568,7 +607,10 @@ def generate_sample(spec: SampleSpec, out_dir: str | Path, *, seed: int) -> Path
         },
         "views": gt_views,
         "generator": {"version": GENERATOR_VERSION, "seed": int(seed), "preset": spec.preset},
+        "stage": stage,
     }
+    if spec.preset in EXPECT_REJECT_PRESETS:
+        gt["expect"] = {"capture_gate": "reject", "check": "contrast", "why": "light part on the light stage"}
     if part.ref is not None:
         gt["spec"] = {
             "loose": part.ref.loose,
@@ -600,17 +642,19 @@ def dataset_specs(
     n_reference: int = 0,
     size: tuple[int, int] = (3000, 2250),
     jpeg_quality: int = 90,
+    n_reject: int = 0,
 ) -> list[tuple[SampleSpec, int]]:
-    """The (spec, seed) list `make_dataset` renders: templates round-robin in a seed-shuffled order, presets cycled,
-    then reference objects round-robin. Pure: no rendering."""
+    """The (spec, seed) list `make_dataset` renders: templates round-robin in a seed-shuffled order, presets cycled
+    (default: the eight bench presets), then reference objects round-robin, then `n_reject` white-on-light template
+    photos the capture gate should reject. Pure: no rendering. Adding reject samples never changes the others."""
     from services.agent.templates import list_templates
 
-    pres = list(presets or PRESETS)
+    pres = list(presets or BENCH_PRESETS)
     bad = [p for p in pres if p not in PRESETS]
     if bad:
         raise ValueError(f"unknown presets {bad}")
     rng = np.random.default_rng(np.random.SeedSequence([int(seed), 0xB3]))
-    seeds = [int(s) for s in np.random.SeedSequence(int(seed)).generate_state(n + n_reference)]
+    seeds = [int(s) for s in np.random.SeedSequence(int(seed)).generate_state(n + n_reference + n_reject)]
     names = [t.name for t in list_templates()]
     order = [names[i] for i in rng.permutation(len(names))]
     p_off = int(rng.integers(len(pres)))
@@ -621,7 +665,7 @@ def dataset_specs(
         )
         out.append((spec, seeds[i] % 1_000_000))
     refs = [r.key for r in list_reference_objects()]
-    ref_presets = [p for p in pres if p != "white-part"] or ["clean"]
+    ref_presets = [p for p in pres if p not in ("white-part", *EXPECT_REJECT_PRESETS)] or ["clean"]
     for j in range(n_reference):
         spec = SampleSpec(
             "reference_object",
@@ -631,6 +675,11 @@ def dataset_specs(
             jpeg_quality=jpeg_quality,
         )
         out.append((spec, seeds[n + j] % 1_000_000))
+    for k in range(n_reject):
+        spec = SampleSpec(
+            "template", order[(k + 3) % len(order)], "white-on-light", size=size, jpeg_quality=jpeg_quality
+        )
+        out.append((spec, seeds[n + n_reference + k] % 1_000_000))
     return out
 
 
@@ -645,6 +694,7 @@ def make_dataset(
     jpeg_quality: int = 90,
     jobs: int = 1,
     progress: bool = False,
+    n_reject: int = 0,
 ) -> dict[str, Any]:
     """Render `n` template samples (+ `n_reference` reference-object samples) into `out_root` and write
     `out_root/manifest.json` (seeds + sha256 of every file). Returns the manifest. `jobs > 1` renders in parallel
@@ -653,7 +703,9 @@ def make_dataset(
     root.mkdir(parents=True, exist_ok=True)
     entries: list[dict[str, Any]] = []
     failures: list[dict[str, Any]] = []
-    specs = dataset_specs(n, seed, presets, n_reference=n_reference, size=size, jpeg_quality=jpeg_quality)
+    specs = dataset_specs(
+        n, seed, presets, n_reference=n_reference, size=size, jpeg_quality=jpeg_quality, n_reject=n_reject
+    )
     work = [(spec, s, str(root)) for spec, s in specs]
     if jobs > 1 and len(work) > 1:
         from concurrent.futures import ProcessPoolExecutor
@@ -680,7 +732,8 @@ def make_dataset(
         "seed": int(seed),
         "n": int(n),
         "n_reference": int(n_reference),
-        "presets": list(presets or PRESETS),
+        "n_reject": int(n_reject),
+        "presets": list(presets or BENCH_PRESETS),
         "size": list(size),
         "jpeg_quality": int(jpeg_quality),
         "samples": entries,

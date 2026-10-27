@@ -12,7 +12,7 @@ names its ground-truth source; the three sources are never merged:
 ## Phase 1 — measurement only (no keys, no models)
 
 ```bash
-uv run python -m eval.measure_only                 # 60 synthetic parts + 20 reference renders, seed 7
+uv run python -m eval.measure_only                 # 60 synthetic parts + 20 reference renders + 6 rejections, seed 7
 uv run python -m eval.measure_only --n 200 --jobs 8 # the full synthetic set
 ```
 
@@ -27,6 +27,17 @@ segmenter on every photo, and writes `eval/reports/<date>/measure_only.{json,md}
   found, and dimensions that could not be measured (e.g. a hole that was not detected);
 - the Phase 1 exit gate: mean abs error ≤ 0.4 mm on accepted photos of the synthetic bench and of the reference
   objects (real photos when there are any, else the synthetic renders — the report says which).
+
+Expected rejections: white-on-light photos (`gt.yaml` `expect.capture_gate: reject`) are not scored; a rejection by
+the contrast check counts as correct, an accepted one is listed as a "missed rejection" failure.
+
+The synthetic section splits the top view into flat parts and parts with tall features (anything taller than the
+stated thickness + 1 mm): a single top photo cannot resolve heights above the stated thickness, so the second group
+shows the limit of the measurement, not of the model; the full-loop bench scores the final model instead.
+
+What the bench passes to `measure_photo` comes from `meta.json` only: `thickness_mm` = the user's thickness (top) or
+the measured top width (side), `stated_thickness_mm` = the user's thickness (side views), `profile="round"` for an
+AA cell (top view) and for wheels / knobs / spacers laid on their side (side view).
 
 Matching: `length`, `width` (top view) and `thickness` (side view) by name; holes by nearest centre on the mat
 (synthetic) or nearest diameter (ruler ground truth has no centres). The side view's top-face height is the width

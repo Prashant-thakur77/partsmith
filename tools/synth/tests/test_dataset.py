@@ -19,7 +19,7 @@ from tools.synth import (
     load_sample,
     make_dataset,
 )
-from tools.synth.dataset import ruler_thickness, sample_params
+from tools.synth.dataset import BENCH_PRESETS, hex_bgr, ruler_thickness, sample_params
 
 SMALL = (1200, 900)
 META_KEYS = {
@@ -91,7 +91,12 @@ def test_dataset_specs_cover_templates_and_presets() -> None:
     assert specs == dataset_specs(40, 7, n_reference=8)
     names = {s.name for s, _ in specs if s.kind == "template"}
     assert names == {t.name for t in list_templates()}
-    assert {s.preset for s, _ in specs if s.kind == "template"} == set(PRESETS)
+    assert {s.preset for s, _ in specs if s.kind == "template"} == set(BENCH_PRESETS)
+    more = dataset_specs(40, 7, n_reference=8, n_reject=3)
+    assert more[:48] == specs  # the rejection set never changes the bench
+    assert {s.preset for s, _ in more[48:]} == {"white-on-light"} and set(PRESETS) - set(BENCH_PRESETS) == {
+        "white-on-light"
+    }
     refs = [s.name for s, _ in specs if s.kind == "reference_object"]
     assert len(refs) == 8 and len(set(refs)) == 4
     assert len({seed for _, seed in specs}) == len(specs)
@@ -153,3 +158,23 @@ def test_render_then_measure_is_close_to_exact_gt(
     assert len(pairs) == len(gts) and (params is None or len(gts) == 3)
     for g, val in pairs:
         assert abs(val - g["value_mm"]) < 0.3, g["name"]
+
+
+def test_stage_light_and_dark(tmp_path: Path) -> None:
+    dark = generate_sample(
+        SampleSpec("template", "spacer", "white-part", size=(800, 600), views=("top",)), tmp_path, seed=2
+    )
+    gt = load_gt(dark)
+    assert gt.raw["stage"] == "dark" and gt.raw["views"]["top"]["look"]["surface"] == "screen"
+    assert "stage:dark" in load_sample(dark).meta.augmentations and "expect" not in gt.raw
+    rej = generate_sample(
+        SampleSpec("template", "spacer", "white-on-light", mat_id="screen-m", size=(800, 600), views=("top",)),
+        tmp_path,
+        seed=2,
+    )
+    g2 = load_gt(rej)
+    assert g2.raw["stage"] == "light" and g2.raw["expect"]["capture_gate"] == "reject"
+    assert load_sample(rej).meta.difficulty == "hard"
+    assert hex_bgr("#303030") == (48.0, 48.0, 48.0) and hex_bgr("#0A0B0C") == (12.0, 11.0, 10.0)
+    with pytest.raises(ValueError):
+        generate_sample(SampleSpec("template", "spacer", "clean", stage="purple", size=(800, 600)), tmp_path, seed=1)
