@@ -1,5 +1,5 @@
 import { expect, test, type Page } from "@playwright/test";
-import { setup } from "./helpers";
+import { asAdmin, setup } from "./helpers";
 
 test.beforeEach(({}, info) => {
   test.skip(info.project.name !== "desktop-light", "keyboard checks run once");
@@ -69,8 +69,9 @@ test("knobs: arrow keys re-bake, steppers and numeric entry work", async ({ page
 });
 
 test("steer queue: focusable listbox, arrows move, keys review", async ({ page }) => {
+  await asAdmin(page);
   const { log } = await setup(page);
-  await page.goto("/steer?id=steer_1");
+  await page.goto("/factory?id=steer_1");
   const lb = page.getByRole("listbox", { name: /Approval queue/ });
   await lb.focus();
   await page.keyboard.press("ArrowDown");

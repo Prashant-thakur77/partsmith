@@ -1030,7 +1030,7 @@
     },
     "FitCheckResult": {
       "additionalProperties": false,
-      "description": "Screen fit check: the real part photographed lying on the model's 1:1 outline (docs/API.md).",
+      "description": "Screen fit check: the real part photographed lying on the model's 1:1 outline (docs/API.md).\n\n`hausdorff_mm` and `mean_mm` are null when the photo could not be compared with the outline at all (no mat markers\nfound, or no part found on the outline); `passed` is then false, `iou` is 0 and `reasons` says what to retake.",
       "properties": {
         "passed": {
           "title": "Passed",
@@ -1041,12 +1041,26 @@
           "type": "number"
         },
         "hausdorff_mm": {
-          "title": "Hausdorff Mm",
-          "type": "number"
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Hausdorff Mm"
         },
         "mean_mm": {
-          "title": "Mean Mm",
-          "type": "number"
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Mean Mm"
         },
         "reasons": {
           "items": {
@@ -3026,6 +3040,23 @@
           ],
           "default": null,
           "title": "Iter"
+        },
+        "mode": {
+          "anyOf": [
+            {
+              "enum": [
+                "live",
+                "mock",
+                "replay"
+              ],
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Mode"
         }
       },
       "required": [
@@ -3165,6 +3196,23 @@
           ],
           "default": null,
           "title": "Iter"
+        },
+        "mode": {
+          "anyOf": [
+            {
+              "enum": [
+                "live",
+                "mock",
+                "replay"
+              ],
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Mode"
         }
       },
       "required": [

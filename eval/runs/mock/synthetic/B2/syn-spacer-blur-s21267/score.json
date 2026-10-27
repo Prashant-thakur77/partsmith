@@ -9,17 +9,18 @@
  "gt_source": "synthetic_exact",
  "status": "verified",
  "verified": true,
- "iterations": 4,
+ "iterations": 2,
  "iterations_to_converge": 1,
- "strategy": "free_code",
+ "strategy": "template",
  "template": "spacer",
- "verifier_max_error_mm": 0.1609999999999996,
+ "verifier_max_error_mm": 0.15399999999999991,
  "retake_reason": null,
+ "failed_checks": [],
  "usd": 0.0,
  "tokens_in": 0,
  "tokens_out": 0,
- "model_calls": 13,
- "model_ms": 364,
+ "model_calls": 16,
+ "model_ms": 347,
  "provider_modes": [
   "mock"
  ],
@@ -30,14 +31,17 @@
   "understand": [
    "mock:muse-spark-1.3"
   ],
+  "segment_points": [
+   "mock:sam-3.1"
+  ],
   "plan": [
    "mock:meta-models/muse-spark-open"
   ],
   "build": [
    "mock:meta-models/muse-spark-open"
   ],
-  "fix": [
-   "mock:meta-models/muse-spark-open"
+  "fix_agent": [
+   "mock:mock fix agent"
   ],
   "judge": [
    "mock:muse-glimmer"
@@ -52,36 +56,24 @@
   },
   {
    "iter": 2,
-   "hausdorff_mm": 0.1828004982133495,
-   "iou": 0.9267497603068073,
-   "max_error_mm": 0.3049999999999997
-  },
-  {
-   "iter": 3,
-   "hausdorff_mm": 0.1828004982133495,
-   "iou": 0.9267497603068073,
-   "max_error_mm": 0.3049999999999997
-  },
-  {
-   "iter": 4,
-   "hausdorff_mm": 0.15997010236410508,
-   "iou": 0.964824120603015,
-   "max_error_mm": 0.1609999999999996
+   "hausdorff_mm": 0.14524584290902035,
+   "iou": 0.9761744966442953,
+   "max_error_mm": 0.15399999999999991
   }
  ],
- "wall_s": 14.52,
+ "wall_s": 13.72,
  "dims": [
   {
    "name": "length",
    "gt_mm": 10.2,
-   "model_mm": 10.0689,
-   "error_mm": -0.1311
+   "model_mm": 10.25,
+   "error_mm": 0.05
   },
   {
    "name": "width",
    "gt_mm": 10.19683,
-   "model_mm": 10.0495,
-   "error_mm": -0.1473
+   "model_mm": 10.2468,
+   "error_mm": 0.05
   },
   {
    "name": "thickness",
@@ -92,8 +84,8 @@
   {
    "name": "hole_1.diameter",
    "gt_mm": 4.3,
-   "model_mm": 4.21,
-   "error_mm": -0.09
+   "model_mm": 4.15,
+   "error_mm": -0.15
   }
  ],
  "missed": [],
@@ -101,5 +93,6 @@
  "pass_0_3": true,
  "pass_0_5": true,
  "valid": true,
- "valid_reason": ""
+ "valid_reason": "",
+ "failure_category": null
 }

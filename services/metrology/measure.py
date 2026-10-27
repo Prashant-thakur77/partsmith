@@ -26,6 +26,8 @@ from scipy.ndimage import gaussian_filter1d
 from shapely.geometry import Polygon
 from shapely.ops import unary_union
 
+from services.common.images import decode_bgr
+
 from . import overlay as ov
 from .calibrate import (
     MatDetection,
@@ -106,11 +108,8 @@ class MeasureOutput:
 
 
 def decode_image(data: bytes) -> U8:
-    arr = np.frombuffer(data, np.uint8)
-    img = cv2.imdecode(arr, cv2.IMREAD_COLOR)
-    if img is None:
-        raise ValueError("could not decode the image")
-    return np.asarray(img, dtype=np.uint8)
+    """Photo bytes → BGR pixels as the browser shows them (EXIF orientation applied; tap points use this frame)."""
+    return decode_bgr(data)
 
 
 def _png(img: U8) -> bytes:

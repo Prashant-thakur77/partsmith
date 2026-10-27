@@ -13,11 +13,12 @@ import { ModeBanner } from "./mode-banner";
 
 export const NAV = [
   { href: "/fix", label: "Fix a part" },
-  { href: "/parts", label: "Registry" },
+  { href: "/parts", label: "Parts" },
   { href: "/agents", label: "For agents" },
-  { href: "/bench", label: "Bench" },
-  { href: "/steer", label: "Steer" },
-  { href: "/status", label: "Status" },
+  { href: "/results", label: "Results" },
+  { href: "/factory", label: "Factory" },
+  { href: "/models", label: "Models" },
+  { href: "/judges", label: "Judges" },
 ] as const;
 
 export function SiteHeader() {
@@ -75,7 +76,7 @@ export function SiteHeader() {
                 </button>
               </div>
               <nav aria-label="Mobile" className="mt-6 flex flex-col">
-                {[...NAV, { href: "/judges", label: "Judges" }, { href: "/calibrate", label: "Calibrate screen" }].map((n) => (
+                {[...NAV, { href: "/requests", label: "Requests" }, { href: "/lessons", label: "Lessons" }, { href: "/shop", label: "Repair shops" }, { href: "/calibrate", label: "Calibrate screen" }].map((n) => (
                   <Link
                     key={n.href}
                     href={n.href}

@@ -8,6 +8,7 @@ import { StatsView } from "@/components/landing/stats-view";
 import { HowItWorks } from "@/components/landing/how-it-works";
 import { HeroDemo } from "@/components/landing/hero-demo";
 import { RegistryPreview } from "@/components/landing/registry-preview";
+import { ReplayLoopLazy } from "@/components/landing/replay-loop-lazy";
 import { StatsStrip } from "@/components/landing/stats-strip";
 import { Container, Section } from "@/components/layout/page";
 import { Button } from "@/components/ui/button";
@@ -75,13 +76,17 @@ export default async function HomePage() {
           <HowItWorks />
         </Section>
 
+        <Section id="replay" title="Watch one run" description="A stored run played back from its own event log: the photo, the mask, every iteration's error, and the verifier's verdict.">
+          <ReplayLoopLazy />
+        </Section>
+
         <Section
           id="proof"
           title="The model proposes. Code decides."
           description="The agent writes CadQuery; a deterministic verifier renders it and compares silhouettes and features with your photo. Only the verifier can award the Verified badge. Accuracy is reported against three ground-truth sources that are never merged."
           actions={
             <Button asChild variant="ghost" size="sm">
-              <Link href="/bench">
+              <Link href="/results">
                 Full bench <ArrowRight aria-hidden />
               </Link>
             </Button>

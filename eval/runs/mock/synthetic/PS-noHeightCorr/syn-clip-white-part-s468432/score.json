@@ -9,17 +9,18 @@
  "gt_source": "synthetic_exact",
  "status": "best_effort",
  "verified": false,
- "iterations": 6,
+ "iterations": 5,
  "iterations_to_converge": null,
  "strategy": "template",
  "template": "clip",
  "verifier_max_error_mm": 9.2,
  "retake_reason": null,
+ "failed_checks": [],
  "usd": 0.0,
  "tokens_in": 0,
  "tokens_out": 0,
- "model_calls": 15,
- "model_ms": 433,
+ "model_calls": 74,
+ "model_ms": 323,
  "provider_modes": [
   "mock"
  ],
@@ -30,14 +31,17 @@
   "understand": [
    "mock:muse-spark-1.3"
   ],
+  "segment_points": [
+   "mock:sam-3.1"
+  ],
   "plan": [
    "mock:meta-models/muse-spark-open"
   ],
   "build": [
    "mock:meta-models/muse-spark-open"
   ],
-  "fix": [
-   "mock:meta-models/muse-spark-open"
+  "fix_agent": [
+   "mock:mock fix agent"
   ],
   "judge": [
    "mock:muse-glimmer"
@@ -46,42 +50,36 @@
  "convergence": [
   {
    "iter": 1,
-   "hausdorff_mm": 1.1056811632731207,
-   "iou": 0.8387882260259256,
+   "hausdorff_mm": 1.8845553067181204,
+   "iou": 0.8225093028154181,
    "max_error_mm": 9.2
   },
   {
    "iter": 2,
-   "hausdorff_mm": 2.9877829695535305,
-   "iou": 0.565117172493277,
-   "max_error_mm": 6.199999999999999
+   "hausdorff_mm": 1.2704974515269691,
+   "iou": 0.8443416678710797,
+   "max_error_mm": 9.2
   },
   {
    "iter": 3,
-   "hausdorff_mm": 2.9751357110944525,
-   "iou": 0.5597203063311611,
-   "max_error_mm": 6.199999999999999
+   "hausdorff_mm": 1.0024505700031745,
+   "iou": 0.8470400695601767,
+   "max_error_mm": 9.2
   },
   {
    "iter": 4,
-   "hausdorff_mm": 3.1152171034431224,
-   "iou": 0.551666042680644,
-   "max_error_mm": 6.199999999999999
+   "hausdorff_mm": 1.0050768184368104,
+   "iou": 0.8477219965177016,
+   "max_error_mm": 9.2
   },
   {
    "iter": 5,
-   "hausdorff_mm": 3.1152171034431224,
-   "iou": 0.551666042680644,
-   "max_error_mm": 6.199999999999999
-  },
-  {
-   "iter": 6,
-   "hausdorff_mm": 3.1152171034431224,
-   "iou": 0.551666042680644,
-   "max_error_mm": 6.199999999999999
+   "hausdorff_mm": 0.991724222858416,
+   "iou": 0.8472756293985344,
+   "max_error_mm": 9.2
   }
  ],
- "wall_s": 21.7,
+ "wall_s": 60.87,
  "dims": [
   {
    "name": "length",
@@ -98,8 +96,8 @@
   {
    "name": "thickness",
    "gt_mm": 10.9,
-   "model_mm": 11.0,
-   "error_mm": 0.1
+   "model_mm": 10.5,
+   "error_mm": -0.4
   },
   {
    "name": "hole_1.diameter",
@@ -113,5 +111,6 @@
  "pass_0_3": false,
  "pass_0_5": true,
  "valid": true,
- "valid_reason": ""
+ "valid_reason": "",
+ "failure_category": null
 }

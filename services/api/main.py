@@ -50,7 +50,7 @@ from services.api.common import (
     public_base,
 )
 from services.api.errors import ApiError, install
-from services.api.round2 import apply_preset, embed_router
+from services.api.round2 import apply_job_preset, apply_preset, embed_router
 from services.api.round2 import router as round2_router
 from services.api.uploads import check_audio, check_video, clean_image, parse_points
 from services.common import blobs
@@ -681,16 +681,23 @@ def job_runlog(job_id: str) -> FileResponse:
 
 
 @router.get("/jobs/{job_id}/bake", summary="Re-bake the job's current part program (before publishing)", tags=["jobs"])
-def job_bake(job_id: str, request: Request, download: bool = False, ack: bool = False) -> Any:
+def job_bake(
+    job_id: str, request: Request, download: bool = False, ack: bool = False, preset: str | None = None
+) -> Any:
     """Query: `<param>=<value>` knobs plus `format=` (repeat or comma-separate). Same BakeResult as part bakes.
-    `download=1` goes through the export gate: verified ships, best effort needs `ack=1`, failed is refused."""
+    `preset=` applies a fit preset (GET /jobs/{id}/presets) on top of the job's current values and the knobs, by the
+    same rule as part bakes. `download=1` goes through the export gate: verified ships, best effort needs `ack=1`,
+    failed is refused."""
     job = _job(job_id)
     params, fmts = _query_params(request), _formats(request)
     svc = _svc()
     if not hasattr(svc, "bake_job"):
         raise ApiError(501, "not_implemented", "this build's agent service has no bake_job")
+    params, preset_info = apply_job_preset(job_id, params, preset)
     res = _service_call(svc.bake_job, job_id, params, fmts, conflict="no_program")
     data = res.model_dump(mode="json") if hasattr(res, "model_dump") else dict(res)
+    if preset_info is not None:
+        data["preset"] = preset_info
     if download:
         fmt = fmts[0]
         if fmt != "view":  # the viewer mesh is a preview, not a printable export
@@ -878,19 +885,26 @@ def part_params(slug: str) -> list[ParamSpec]:
     return list(P.require_part(slug).params)
 
 
+PREVIEW_FORMATS = ("view", "glb")  # viewer formats; printable files go through the export gate
+
+
 @router.get(
     "/parts/{slug}/bake",
     summary="Bake at params (cached); `&download=1` returns the file",
     tags=["registry"],
     responses={200: {"model": BakeResult}},
 )
-def part_bake(slug: str, request: Request, download: bool = False, preset: str | None = None) -> Any:
+def part_bake(slug: str, request: Request, download: bool = False, preset: str | None = None, ack: bool = False) -> Any:
     """Query: `<param>=<value>` for any knob plus `format=stl|3mf|step|glb|view|py` (repeat or comma-separate;
     default stl,step,view). Out-of-range values are clamped and listed in `clamped`; unknown knobs are a 422 with
     `closest_matches`. `preset=` applies a fit preset (GET /parts/{slug}/presets) after the knob values. Identical
-    requests are content-addressed cache hits."""
+    requests are content-addressed cache hits. `download=1` goes through the export gate like bundle.zip: verified
+    ships, best effort needs `ack=1` (409 `needs_ack`), failed is refused (409 `not_shippable`); `format=view` and
+    `format=glb` are previews and stay open (the embed and AR viewers use them)."""
     part = P.require_part(slug)
     params, fmts = _query_params(request), _formats(request)
+    if download and fmts[0] not in PREVIEW_FORMATS:
+        gate.require(gate.decide_part(part), ack)  # before baking: a refused export costs nothing
     params, preset_info = apply_preset(part, params, preset)
     out = P.bake_output(part, params, fmts)
     if download:

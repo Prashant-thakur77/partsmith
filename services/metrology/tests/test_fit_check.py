@@ -74,6 +74,7 @@ def test_matching_part_passes() -> None:
     r = out.result
     assert isinstance(r, FitCheckResult)
     assert r.passed, r.reasons
+    assert r.hausdorff_mm is not None and r.mean_mm is not None
     assert r.iou > 0.98 and out.hd95_mm < 0.15 and r.hausdorff_mm < 0.3
     assert math.hypot(*out.placement_shift_mm) == pytest.approx(math.hypot(0.6, 0.4), abs=0.1)
     assert out.holes[0].measured_diameter_mm == pytest.approx(6.0, abs=0.15)
@@ -109,3 +110,7 @@ def test_no_part() -> None:
     fo = fit_outline_for(OUTLINE_PART, HOLES_PART, MAT)
     out = fit_check(sc.image, MAT, fo["outline_mm"], fo["holes"])
     assert not out.result.passed and out.result.reasons
+    # Nothing was compared: the distances are null (not NaN), and the JSON says so honestly.
+    assert out.result.hausdorff_mm is None and out.result.mean_mm is None
+    data = out.result.model_dump(mode="json")
+    assert data["hausdorff_mm"] is None and data["mean_mm"] is None

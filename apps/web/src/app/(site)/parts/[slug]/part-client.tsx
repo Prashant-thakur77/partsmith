@@ -1,7 +1,7 @@
 "use client";
 
 import { useMutation, useQuery } from "@tanstack/react-query";
-import { Info, Box, ChevronRight, Download, FileCode2, FileJson, FileText, Layers, Link2, Wand2 } from "lucide-react";
+import { Archive, Info, Box, ChevronRight, Download, FileCode2, FileJson, FileText, Layers, Lock, Wand2 } from "lucide-react";
 import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import * as React from "react";
@@ -10,6 +10,14 @@ import { ArView } from "@/components/registry/ar-view";
 import { KnobPanel } from "@/components/registry/knob-panel";
 import { useLivePart } from "@/components/registry/live-part";
 import { PartDetails } from "./part-details";
+import dynamic from "next/dynamic";
+import { useCapabilities } from "@/lib/capabilities";
+import { shipState } from "@/lib/ship";
+
+// Below the first screen on phones and only useful after interaction: loaded after hydration.
+const ExportGateNotice = dynamic(() => import("@/components/export-gate").then((m) => m.ExportGateNotice), { ssr: false });
+const FitPresets = dynamic(() => import("@/components/jobs/fit-presets").then((m) => m.FitPresets), { ssr: false });
+import { ShareButtons } from "@/components/registry/share-buttons";
 import { PartStatusBadge } from "@/components/registry/part-status";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -222,6 +230,8 @@ function VariantBox({ slug, onApply }: { slug: string; onApply: (p: Record<strin
 
 /** `withDetails`: render provenance, lineage, knob reference and matching here (only when the server could not). */
 export function PartClient({ slug, withDetails = true }: { slug: string; withDetails?: boolean }) {
+  const [gateAck, setGateAck] = React.useState(false);
+  const caps = useCapabilities();
   const router = useRouter();
   const pathname = usePathname();
   const origin = useOrigin();
@@ -263,8 +273,11 @@ export function PartClient({ slug, withDetails = true }: { slug: string; withDet
   }
 
   const values = live.values;
+  const ship = shipState(part.verification, part.ship);
+  const gate = { locked: ship !== "verified", ack: gateAck, setAck: setGateAck, open: ship === "verified" || (ship === "best_effort" && gateAck) };
   const facts = (live.changed ? live.bake.data?.facts : null) ?? part.facts ?? live.bake.data?.facts ?? null;
-  const dl = (format: "stl" | "3mf" | "step" | "py" | "glb") => api.bakeDownloadUrl(slug, values, format);
+  const dl = (format: "stl" | "3mf" | "step" | "py" | "glb") =>
+    api.bakeDownloadUrl(slug, values, format, ship === "best_effort" && gateAck);
   const glb = live.changed ? dl("glb") : (artifactUrl(part.artifacts.glb) ?? dl("glb"));
 
   return (
@@ -299,21 +312,20 @@ export function PartClient({ slug, withDetails = true }: { slug: string; withDet
             </div>
             <div className="flex flex-wrap gap-2">
               <ArView glbUrl={glb} title={part.title} />
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => {
-                  void navigator.clipboard?.writeText(window.location.href);
-                  toast("Link copied", { description: "Includes the current knob values." });
-                }}
-              >
-                <Link2 aria-hidden /> Copy link
-              </Button>
-              <Button asChild variant="primary" size="sm">
-                <a href={dl("stl")} download>
-                  <Download aria-hidden /> Download STL
-                </a>
-              </Button>
+              <ShareButtons title={part.title} verified={!!part.verification?.verified} />
+              {gate.open ? (
+                <Button asChild variant="primary" size="sm">
+                  <a href={dl("stl")} download>
+                    <Download aria-hidden /> Download STL
+                  </a>
+                </Button>
+              ) : (
+                <Button asChild variant="outline" size="sm">
+                  <a href="#downloads">
+                    <Lock aria-hidden /> {ship === "blocked" ? "No download (failed)" : "Download (not verified)"}
+                  </a>
+                </Button>
+              )}
             </div>
           </div>
         </Container>
@@ -335,6 +347,7 @@ export function PartClient({ slug, withDetails = true }: { slug: string; withDet
                   pending={live.bake.pending && live.changed}
                   error={live.bake.error}
                 />
+                <FitPresets slug={slug} params={part.params} values={values} onApply={(p) => live.setValues({ ...values, ...p })} />
               </CardContent>
             </Card>
             <Card>
@@ -357,11 +370,15 @@ export function PartClient({ slug, withDetails = true }: { slug: string; withDet
             </CardHeader>
             <CardContent>{facts ? <FactsList facts={facts} notes={{ ...part.facts_notes, ...(live.bake.data?.facts_notes ?? {}) }} /> : <p className="text-[13px] text-muted">Facts appear after the first bake.</p>}</CardContent>
           </Card>
-          <Card>
+          <Card id="downloads">
             <CardHeader>
               <CardTitle>Downloads</CardTitle>
             </CardHeader>
             <CardContent className="space-y-1.5">
+              {gate.locked ? (
+                <ExportGateNotice verification={part.verification} couponUrl={part.artifacts.coupon ? artifactUrl(part.artifacts.coupon) : undefined} ack={gate.ack} onAck={gate.setAck} />
+              ) : null}
+              <fieldset disabled={!gate.open} className="space-y-1.5 disabled:pointer-events-none disabled:opacity-45" aria-label="Download files">
               {(
                 [
                   { f: "stl", label: "STL", sub: "mesh for any slicer", icon: Box },
@@ -372,7 +389,9 @@ export function PartClient({ slug, withDetails = true }: { slug: string; withDet
               ).map((d) => (
                 <a
                   key={d.f}
-                  href={dl(d.f)}
+                  href={gate.open ? dl(d.f) : undefined}
+                  aria-disabled={!gate.open || undefined}
+                  tabIndex={gate.open ? undefined : -1}
                   download
                   className="flex items-center gap-3 rounded-md border border-border px-3 py-2 text-[13px] transition-colors hover:border-border-strong hover:bg-surface-2"
                 >
@@ -383,6 +402,21 @@ export function PartClient({ slug, withDetails = true }: { slug: string; withDet
                   <Download className="size-3.5 text-subtle" aria-hidden />
                 </a>
               ))}
+              {caps.has("get", "/parts/{slug}/bundle.zip") ? (
+                <a
+                  href={gate.open ? api.bundleZipUrl(slug, values, ship !== "verified") : undefined}
+                  aria-disabled={!gate.open || undefined}
+                  tabIndex={gate.open ? undefined : -1}
+                  download
+                  className="flex items-center gap-3 rounded-md border border-border px-3 py-2 text-[13px] transition-colors hover:border-border-strong hover:bg-surface-2"
+                >
+                  <Archive className="size-4 text-muted" aria-hidden />
+                  <span className="flex-1">
+                    <span className="font-medium">Everything (.zip)</span> <span className="text-subtle">· files, part.py, README, licence</span>
+                  </span>
+                  <Download className="size-3.5 text-subtle" aria-hidden />
+                </a>
+              ) : null}
               <a
                 href={api.templatePdfUrl(slug, values)}
                 className="flex items-center gap-3 rounded-md border border-border px-3 py-2 text-[13px] transition-colors hover:border-border-strong hover:bg-surface-2"
@@ -393,6 +427,7 @@ export function PartClient({ slug, withDetails = true }: { slug: string; withDet
                 </span>
                 <Download className="size-3.5 text-subtle" aria-hidden />
               </a>
+              </fieldset>
               <p className="pt-1 text-[11px] text-subtle">Downloads use the knob values above.</p>
               <div className="border-t border-border pt-3">
                 <FitFeedback slug={slug} reports={part.fit_reports.length} />
@@ -408,6 +443,7 @@ export function PartClient({ slug, withDetails = true }: { slug: string; withDet
               <TabsTrigger value="rest">REST</TabsTrigger>
               <TabsTrigger value="mcp">MCP</TabsTrigger>
               <TabsTrigger value="agent">Agent prompt</TabsTrigger>
+              <TabsTrigger value="embed">Embed</TabsTrigger>
             </TabsList>
             <TabsContent value="python">
               <CodeBlock title="python" code={pythonSnippet(slug, values, origin)} />
@@ -420,6 +456,13 @@ export function PartClient({ slug, withDetails = true }: { slug: string; withDet
             </TabsContent>
             <TabsContent value="agent">
               <CodeBlock title="paste into your agent" wrap code={agentPrompt(slug, part.title, origin)} />
+            </TabsContent>
+            <TabsContent value="embed">
+              <CodeBlock
+                title="HTML"
+                wrap
+                code={`<iframe src="${origin}/embed/parts/${slug}" width="640" height="480" title="${part.title} — PartSmith" loading="lazy" style="border:0;border-radius:12px"></iframe>`}
+              />
             </TabsContent>
           </Tabs>
         </Section>

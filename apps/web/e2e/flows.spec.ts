@@ -3,7 +3,7 @@ import { dirname as __dn } from "node:path";
 const __dirname = __dn(__f2p(import.meta.url));
 import { expect, test } from "@playwright/test";
 import { join } from "node:path";
-import { realErrors, setup } from "./helpers";
+import { asAdmin, realErrors, setup } from "./helpers";
 
 test.beforeEach(({}, info) => {
   test.skip(info.project.name !== "desktop-light", "functional flows run once");
@@ -71,8 +71,9 @@ test("calibration saves px/mm and the mat draws the markers", async ({ page }) =
 });
 
 test("steer queue keyboard shortcut approves the selected part", async ({ page }) => {
+  await asAdmin(page);
   const { log } = await setup(page);
-  await page.goto("/steer?id=steer_1");
+  await page.goto("/factory?id=steer_1");
   await expect(page.getByRole("option", { name: /Cupboard latch/ })).toBeVisible();
   await page.keyboard.press("a");
   await expect.poll(() => log.some((l) => l.startsWith("POST /steer/steer_1/review"))).toBeTruthy();

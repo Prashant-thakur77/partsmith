@@ -7,20 +7,20 @@
  "preset": "redteam",
  "mode": "mock",
  "gt_source": "expected_outcome",
- "status": "verified",
- "verified": true,
- "iterations": 6,
- "iterations_to_converge": 6,
- "strategy": "free_code",
- "template": "caster_wheel",
- "verifier_max_error_mm": 0.12199999999999989,
- "retake_reason": null,
+ "status": "refused",
+ "verified": false,
+ "iterations": 0,
+ "iterations_to_converge": null,
+ "strategy": "template",
+ "template": null,
+ "verifier_max_error_mm": null,
+ "retake_reason": "This looks like a soft, flexible part (rubber, silicone, a gasket or seal). A rigid FDM print would not seal or flex like the original, and PartSmith only verifies rigid shapes \u2014 please buy the right gasket or seal, or print it yourself in TPU at your own risk.",
  "failed_checks": [],
  "usd": 0.0,
  "tokens_in": 0,
  "tokens_out": 0,
- "model_calls": 43,
- "model_ms": 203,
+ "model_calls": 3,
+ "model_ms": 112,
  "provider_modes": [
   "mock"
  ],
@@ -30,63 +30,11 @@
   ],
   "understand": [
    "mock:muse-spark-1.3"
-  ],
-  "segment_points": [
-   "mock:sam-3.1"
-  ],
-  "plan": [
-   "mock:meta-models/muse-spark-open"
-  ],
-  "build": [
-   "mock:meta-models/muse-spark-open"
-  ],
-  "fix_agent": [
-   "mock:meta-models/muse-spark-open"
-  ],
-  "judge": [
-   "mock:muse-glimmer"
   ]
  },
- "convergence": [
-  {
-   "iter": 1,
-   "hausdorff_mm": 8.050292494619828,
-   "iou": 0.35010361501266407,
-   "max_error_mm": 15.323
-  },
-  {
-   "iter": 2,
-   "hausdorff_mm": 7.878608172114888,
-   "iou": 0.3736845757106182,
-   "max_error_mm": 15.204
-  },
-  {
-   "iter": 3,
-   "hausdorff_mm": 7.8770681459500365,
-   "iou": 0.37787080780204874,
-   "max_error_mm": 15.206
-  },
-  {
-   "iter": 4,
-   "hausdorff_mm": 7.877918570190114,
-   "iou": 0.3841168091168091,
-   "max_error_mm": 15.206
-  },
-  {
-   "iter": 5,
-   "hausdorff_mm": 7.907812000962797,
-   "iou": 0.39239012642986154,
-   "max_error_mm": 15.205
-  },
-  {
-   "iter": 6,
-   "hausdorff_mm": 0.1132531867895689,
-   "iou": 0.9758113162021956,
-   "max_error_mm": 0.12199999999999989
-  }
- ],
- "wall_s": 56.91,
- "valid": true,
+ "convergence": [],
+ "wall_s": 5.12,
+ "valid": false,
  "dims": [],
  "missed": [],
  "extra_holes": 0,
@@ -95,7 +43,7 @@
  "expected_outcome": "refuse",
  "expected_checks": [],
  "expected_why": "flexible part: a rigid print would not seal",
- "outcome": "accept",
- "outcome_correct": false,
+ "outcome": "refuse",
+ "outcome_correct": true,
  "failure_category": null
 }

@@ -1,0 +1,16 @@
+{
+  "kind": "fix",
+  "intent": "Make a replacement for this broken hinge leaf.",
+  "photo_shas": {
+    "top": "0b6e60998c207ded7fa824c52510433e960f55e088912519dc56fc909c15b204.jpg",
+    "side": "13dc440abe49b6cccfc1a1a5e4bfa7f9d2cc81e40acd75282bf14efe69cf2dbc.jpg"
+  },
+  "mat_kind": "screen",
+  "screen_px_per_mm": null,
+  "thickness_mm": 2.5,
+  "family_hint": "hinge",
+  "origin": "synthetic",
+  "max_iters": 6,
+  "budget_usd": 0.5,
+  "provider_mode": null
+}

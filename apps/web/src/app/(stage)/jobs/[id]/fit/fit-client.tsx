@@ -1,25 +1,26 @@
 "use client";
 
 import { useMutation, useQuery } from "@tanstack/react-query";
-import { BadgeCheck, Camera, Link2, Upload, X, XOctagon } from "lucide-react";
+import { BadgeCheck, Camera, Smartphone, Upload, X, XOctagon } from "lucide-react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import * as React from "react";
 import { CaptureReportView } from "@/components/fix/capture-report";
 import { ScreenMat } from "@/components/mat/screen-mat";
+import { PhoneHandoff } from "@/components/phone-handoff";
 import { StageShell } from "@/components/mat/stage-shell";
 import { useMatChoice } from "@/components/mat/use-mat-layout";
 import { Button } from "@/components/ui/button";
 import { ErrorState } from "@/components/ui/error-state";
 import { Mm } from "@/components/ui/mm";
 import { Spinner } from "@/components/ui/spinner";
-import { toast } from "@/components/ui/toast";
 import { api, artifactUrl } from "@/lib/api";
 import type { FitCheckResult, FitOutline } from "@/lib/api-types";
 import type { ScreenCalibration } from "@/lib/calibration";
 import type { StageTone } from "@/lib/stage";
 import { fmtNum } from "@/lib/format";
-import { useOrigin } from "@/lib/use-origin";
+import { useLiveFitChecks, type LiveFitCheck } from "@/lib/fit-events";
+import { I18nRegion, LangToggle, useT } from "@/lib/i18n";
 import { cn } from "@/lib/utils";
 
 /** The metrology segmenter treats exactly this colour as background, so the outline never pollutes the fit-check mask. */
@@ -73,13 +74,14 @@ function OutlineSvg({ o }: { o: FitOutline }) {
   );
 }
 
-function ResultPanel({ r, onClose }: { r: FitCheckResult; onClose: () => void }) {
+function ResultPanel({ r, onClose }: { r: FitCheckResult | LiveFitCheck; onClose: () => void }) {
+  const { t } = useT();
   return (
     <div className="absolute inset-y-3 right-3 z-30 flex w-[min(400px,calc(100vw-24px))] flex-col overflow-hidden rounded-xl border border-border bg-surface text-fg shadow-lg" role="dialog" aria-label="Fit check result">
       <div className={cn("flex items-center justify-between gap-2 px-4 py-3", r.passed ? "bg-ok-soft" : "bg-bad-soft")}>
         <div className="flex items-center gap-2">
           {r.passed ? <BadgeCheck className="size-5 text-ok" aria-hidden /> : <XOctagon className="size-5 text-bad" aria-hidden />}
-          <span className={cn("text-[15px] font-semibold", r.passed ? "text-ok" : "text-bad")}>{r.passed ? "It fits the outline" : "Does not match yet"}</span>
+          <span className={cn("text-[15px] font-semibold", r.passed ? "text-ok" : "text-bad")}>{r.passed ? t("fit.pass") : t("fit.fail")}</span>
         </div>
         <button type="button" onClick={onClose} aria-label="Close result" className="rounded p-1 text-muted hover:bg-surface/60 hover:text-fg">
           <X className="size-4" aria-hidden />
@@ -87,7 +89,7 @@ function ResultPanel({ r, onClose }: { r: FitCheckResult; onClose: () => void })
       </div>
       <div className="scrollbar-thin flex-1 space-y-4 overflow-y-auto p-4">
         {/* eslint-disable-next-line @next/next/no-img-element -- API overlay */}
-        <img src={artifactUrl(r.overlay_url)} alt="Verifier overlay: real part versus model outline" className="w-full rounded-md border border-border" />
+        {r.overlay_url ? <img src={artifactUrl(r.overlay_url)} alt="Verifier overlay: real part versus model outline" className="w-full rounded-md border border-border" /> : null}
         <dl className="grid grid-cols-3 gap-2">
           <div className="rounded-md border border-border p-2">
             <dt className="text-[11px] text-muted">Max error</dt>
@@ -99,17 +101,17 @@ function ResultPanel({ r, onClose }: { r: FitCheckResult; onClose: () => void })
           </div>
           <div className="rounded-md border border-border p-2">
             <dt className="text-[11px] text-muted">IoU</dt>
-            <dd className="font-mono text-[13px] tnum">{fmtNum(r.iou, 3)}</dd>
+            <dd className="font-mono text-[13px] tnum">{r.iou == null ? "—" : fmtNum(r.iou, 3)}</dd>
           </div>
         </dl>
         {r.reasons.length ? (
           <ul className="list-disc space-y-1 pl-4 text-[13px] text-muted">
-            {r.reasons.map((x) => (
+            {r.reasons.map((x: string) => (
               <li key={x}>{x}</li>
             ))}
           </ul>
         ) : null}
-        <CaptureReportView report={r.capture} />
+        {r.capture ? <CaptureReportView report={r.capture} /> : null}
       </div>
     </div>
   );
@@ -120,7 +122,10 @@ function useFitUpload(id: string, matId: string | null) {
 }
 
 function FitStage({ id, cal, stage }: { id: string; cal: ScreenCalibration; stage: StageTone }) {
-  const origin = useOrigin();
+  const { t } = useT();
+  const [showPhone, setShowPhone] = React.useState(false);
+  const live = useLiveFitChecks(id);
+  const latestLive = live.at(-1) ?? null;
   const { choice, isPending } = useMatChoice(cal.px_per_mm, null);
   const matId = choice?.layout.mat_id ?? null;
   const outline = useQuery({ queryKey: ["fit-outline", id, matId], queryFn: () => api.fitOutline(id, matId!), enabled: !!matId });
@@ -129,7 +134,8 @@ function FitStage({ id, cal, stage }: { id: string; cal: ScreenCalibration; stag
   const [showResult, setShowResult] = React.useState(true);
 
   if (isPending) return <Spinner className="text-white/60" label="Loading mat" />;
-  if (!choice) return <p className="max-w-sm p-6 text-center text-[14px] text-white/80">This window is too small for a 1:1 mat. Make it bigger or go full screen.</p>;
+  if (!choice) return <p className="max-w-sm p-6 text-center text-[14px] text-white/80">{t("mat.tooSmall")}</p>;
+  const shown = upload.data ?? latestLive;
 
   return (
     <>
@@ -142,7 +148,7 @@ function FitStage({ id, cal, stage }: { id: string; cal: ScreenCalibration; stag
             ? "Loading the model outline…"
             : outline.isError
               ? "Could not load the outline."
-              : "Lay the part exactly on the pink outline, then photograph straight down."}
+              : t("fit.title")}
         </p>
       </div>
       {outline.isError ? (
@@ -168,40 +174,53 @@ function FitStage({ id, cal, stage }: { id: string; cal: ScreenCalibration; stag
         />
         <Button size="sm" variant="primary" onClick={() => fileRef.current?.click()} disabled={upload.isPending || !outline.data}>
           {upload.isPending ? <Spinner className="text-accent-fg" label="Checking" /> : <Upload aria-hidden />}
-          {upload.isPending ? "Checking fit…" : "Upload photo"}
+          {upload.isPending ? t("fit.checking") : t("fit.upload")}
         </Button>
         <Button
           size="sm"
           variant="ghost"
           className="bg-black/60 text-white hover:bg-black/80 hover:text-white"
-          onClick={() => {
-            void navigator.clipboard?.writeText(`${origin}/jobs/${encodeURIComponent(id)}/fit?phone=1&mat=${matId}`);
-            toast("Phone link copied", { description: "Open it on your phone to take and send the photo." });
-          }}
+          onClick={() => setShowPhone((v) => !v)}
+          aria-pressed={showPhone}
         >
-          <Link2 aria-hidden /> Phone link
+          <Smartphone aria-hidden /> {t("mat.phone")}
         </Button>
       </div>
+      {showPhone && matId && !shown ? (
+        <div className="absolute bottom-14 left-3 z-20 space-y-2">
+          <PhoneHandoff path={`/jobs/${encodeURIComponent(id)}/fit?phone=1&mat=${matId}`} compact dark />
+          <p role="status" className="flex items-center gap-2 rounded-md bg-black/70 px-3 py-2 text-[13px] text-white">
+            <span className="size-2 animate-pulse-dot rounded-full bg-accent" aria-hidden /> {t("fit.waiting")}
+          </p>
+        </div>
+      ) : null}
       {upload.isError && showResult ? (
         <div className="absolute right-3 bottom-3 z-30 w-[min(400px,calc(100vw-24px))]">
           <ErrorState error={upload.error} compact what="the fit check" />
         </div>
       ) : null}
-      {upload.data && showResult ? <ResultPanel r={upload.data} onClose={() => setShowResult(false)} /> : null}
+      {shown && showResult ? <ResultPanel r={shown} onClose={() => setShowResult(false)} /> : null}
+      <div aria-live="assertive" className="sr-only">
+        {latestLive ? (latestLive.passed ? t("fit.pass") : t("fit.fail")) : ""}
+      </div>
     </>
   );
 }
 
 /** Phone mode: no mat, just take the photo and send it (the laptop shows the outline). */
 function PhoneUpload({ id, matId }: { id: string; matId: string }) {
+  const { t } = useT();
   const upload = useFitUpload(id, matId);
   const fileRef = React.useRef<HTMLInputElement>(null);
   return (
     <div className="mx-auto flex min-h-dvh max-w-md flex-col gap-5 bg-bg p-5">
       <div className="space-y-1.5 pt-6">
-        <div className="text-[12px] font-medium uppercase tracking-[0.08em] text-accent-text">Screen fit check</div>
-        <h1 className="text-2xl font-semibold tracking-tight">Photograph the part on the outline</h1>
-        <p className="text-[14px] leading-6 text-muted">Hold the phone flat above the screen, 20–35 cm up, with every black square in view.</p>
+        <div className="flex items-center justify-between gap-2">
+          <div className="text-[12px] font-medium uppercase tracking-[0.08em] text-accent-text">Screen fit check</div>
+          <LangToggle />
+        </div>
+        <h1 className="text-2xl font-semibold tracking-tight">{t("fit.phoneTitle")}</h1>
+        <p className="text-[14px] leading-6 text-muted">{t("fit.phoneBody")}</p>
       </div>
       <input
         ref={fileRef}
@@ -214,7 +233,7 @@ function PhoneUpload({ id, matId }: { id: string; matId: string }) {
       />
       <Button size="lg" variant="primary" onClick={() => fileRef.current?.click()} disabled={upload.isPending}>
         {upload.isPending ? <Spinner className="text-accent-fg" label="Checking" /> : <Camera aria-hidden />}
-        {upload.isPending ? "Checking fit…" : "Take photo"}
+        {upload.isPending ? t("fit.checking") : t("fit.takePhoto")}
       </Button>
       {upload.isError ? <ErrorState error={upload.error} compact what="the fit check" /> : null}
       {upload.data ? (
@@ -223,13 +242,21 @@ function PhoneUpload({ id, matId }: { id: string; matId: string }) {
         </div>
       ) : null}
       <Link href={`/jobs/${encodeURIComponent(id)}`} className="text-center text-[13px] text-muted underline underline-offset-2">
-        Back to the job
+        {t("fit.back")}
       </Link>
     </div>
   );
 }
 
 export function FitClient({ id }: { id: string }) {
+  return (
+    <I18nRegion>
+      <FitInner id={id} />
+    </I18nRegion>
+  );
+}
+
+function FitInner({ id }: { id: string }) {
   const sp = useSearchParams();
   const phone = sp.get("phone") === "1";
   const mat = sp.get("mat");

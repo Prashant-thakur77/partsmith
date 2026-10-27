@@ -3,6 +3,12 @@
 JPEG pixels are never re-encoded (that would cost measurement accuracy): the EXIF block is rewritten without its GPS
 directory and XMP packets (which can repeat the location) are dropped; camera fields such as the focal length stay,
 because intrinsics may be estimated from them. PNG and WebP are re-saved as PNG without metadata (lossless).
+
+EXIF orientation: the browser shows a photo rotated by its Orientation tag and sends tap points in that frame, and
+every decode (`services/common/images.py`) applies the tag the same way. So the tag must survive upload hygiene: a
+JPEG keeps it in the rewritten EXIF block; a PNG/WebP is saved upright (rotation applied, losslessly); and in the rare
+case a JPEG's EXIF block has to be dropped whole (unreadable, or too big once rewritten), the pixels are re-encoded
+upright (quality 95) so the photo still looks the way the user tapped it.
 """
 
 from __future__ import annotations
@@ -11,9 +17,10 @@ import io
 import json
 from typing import Any
 
-from PIL import Image
+from PIL import Image, ImageOps
 
 from services.api.errors import ApiError
+from services.common.images import exif_orientation
 
 MAX_IMAGE_BYTES = 25 * 1024 * 1024
 MAX_AUDIO_BYTES = 15 * 1024 * 1024
@@ -113,11 +120,24 @@ def clean_image(data: bytes, field: str = "photo") -> tuple[bytes, str]:
             422, "bad_image", f"{field}: the file does not decode as an image ({type(exc).__name__})"
         ) from exc
     if fmt == "JPEG":
-        return strip_jpeg_gps(data), "image/jpeg"
-    with Image.open(io.BytesIO(data)) as im:
+        cleaned = strip_jpeg_gps(data)
+        if exif_orientation(cleaned) != exif_orientation(data):  # the EXIF block had to go: keep what the user saw
+            cleaned = _upright_jpeg(data)
+        return cleaned, "image/jpeg"
+    with Image.open(io.BytesIO(data)) as raw:
+        upright = ImageOps.exif_transpose(raw)
         buf = io.BytesIO()
-        im.convert("RGBA" if im.mode in ("RGBA", "LA", "P") else "RGB").save(buf, format="PNG")
+        upright.convert("RGBA" if upright.mode in ("RGBA", "LA", "P") else "RGB").save(buf, format="PNG")
     return buf.getvalue(), "image/png"
+
+
+def _upright_jpeg(data: bytes) -> bytes:
+    """Re-encode with the EXIF rotation applied and no metadata (only when the EXIF block cannot be kept)."""
+    with Image.open(io.BytesIO(data)) as raw:
+        im = ImageOps.exif_transpose(raw).convert("RGB")
+        buf = io.BytesIO()
+        im.save(buf, format="JPEG", quality=95)
+    return buf.getvalue()
 
 
 AUDIO_TYPES = {

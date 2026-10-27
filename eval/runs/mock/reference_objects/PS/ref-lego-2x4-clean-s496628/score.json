@@ -15,11 +15,12 @@
  "template": null,
  "verifier_max_error_mm": 0.17482449637851827,
  "retake_reason": null,
+ "failed_checks": [],
  "usd": 0.0,
  "tokens_in": 0,
  "tokens_out": 0,
- "model_calls": 9,
- "model_ms": 243,
+ "model_calls": 13,
+ "model_ms": 226,
  "provider_modes": [
   "mock"
  ],
@@ -36,8 +37,8 @@
   "build": [
    "mock:meta-models/muse-spark-open"
   ],
-  "fix": [
-   "mock:meta-models/muse-spark-open"
+  "fix_agent": [
+   "mock:mock fix agent"
   ],
   "judge": [
    "mock:muse-glimmer"
@@ -57,7 +58,7 @@
    "max_error_mm": 0.17482449637851827
   }
  ],
- "wall_s": 13.21,
+ "wall_s": 13.86,
  "dims": [
   {
    "name": "length",
@@ -86,5 +87,6 @@
  "pass_0_3": true,
  "pass_0_5": true,
  "valid": true,
- "valid_reason": ""
+ "valid_reason": "",
+ "failure_category": null
 }

@@ -478,9 +478,10 @@ class AgentSession:
                     ThoughtEvent(
                         job=job.id,
                         stage=STAGE,
-                        model=MOCK_MODEL,
+                        model=str(action.get("model") or MOCK_MODEL),
                         text=str(action["thought"])[:500],
                         iter=self.run.iteration,
+                        mode="mock",
                     )
                 )
             if "tool" not in action:
@@ -498,6 +499,7 @@ class AgentSession:
                     ok=not res.text.startswith("error"),
                     ms=int((time.perf_counter() - t0) * 1000),
                     iter=self.run.iteration,
+                    mode="mock",
                 )
             )
             history.append({"tool": name, "args": args, "result": res.text})
@@ -541,7 +543,12 @@ class MockAgent:
 
     @staticmethod
     def act(tool: str, args: dict[str, Any], thought: str = "") -> Action:
-        return {"tool": tool, "args": args, "thought": f"{thought} (deterministic mock)" if thought else ""}
+        return {
+            "tool": tool,
+            "args": args,
+            "thought": f"{thought} (deterministic mock)" if thought else "",
+            "model": MOCK_MODEL,
+        }
 
     def plan(self) -> Generator[Action, Any, None]:
         r = yield self.act("inspect_residuals", {"view": "all"}, "Inspecting where the model and the photo disagree.")

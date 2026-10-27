@@ -1,0 +1,16 @@
+{
+  "id": "j_261028_9c37dec2",
+  "kind": "fix",
+  "status": "done",
+  "created_at": 1793136399.0058267,
+  "updated_at": 1793136416.6544125,
+  "title": "Battery compartment cover (synthetic, clean) (synthetic sample)",
+  "origin": "synthetic",
+  "provider_mode": "mock",
+  "verified": true,
+  "max_error_mm": 0.23331862342096513,
+  "iterations": 4,
+  "cost_usd": 0.0,
+  "part_slug": "demo-battery-cover",
+  "is_replay": false
+}

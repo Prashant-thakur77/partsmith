@@ -1,0 +1,16 @@
+{
+  "id": "j_261028_5cd35468",
+  "kind": "fix",
+  "status": "done",
+  "created_at": 1793136605.7162304,
+  "updated_at": 1793136847.0922072,
+  "title": "Caster wheel (synthetic, clean) (synthetic sample)",
+  "origin": "synthetic",
+  "provider_mode": "mock",
+  "verified": false,
+  "max_error_mm": 0.7040728035955218,
+  "iterations": 4,
+  "cost_usd": 0.0,
+  "part_slug": "demo-caster-wheel",
+  "is_replay": false
+}

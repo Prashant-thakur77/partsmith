@@ -26,15 +26,20 @@ named something that does not exist (slug, parameter, mat, sample, job, format, 
 `unknown_preset`, `need_not_found`, `lesson_not_found`, `batch_not_found`, `no_measurements`.
 
 **Export gate** (`services/registry/gate.py` over `services.verifier.ship.can_ship`): job publish, job-part downloads
-(`/jobs/{id}/bake?download=1`, any format but `view`), `/parts/{slug}/bundle.zip` and the MCP `bake` tool. Verified
+(`/jobs/{id}/bake?download=1`), published-part downloads (`/parts/{slug}/bake?download=1`), both for any format but
+`view` (a preview), `/parts/{slug}/bundle.zip` and the MCP `bake` tool. Verified
 ships; best effort answers `409 needs_ack` with the plain-words reason until the request repeats with `ack=1`; failed,
 unfinished, malformed or self-contradicting records answer `409 not_shippable`. Responses that pass carry
-`"ship": {"status": "verified"|"best_effort"|"blocked", "reason", "needs_ack", "source"}`. A job that lacks the state an action needs (no part program,
+`"ship": {"status": "verified"|"best_effort"|"blocked", "reason", "needs_ack", "source"}`; part detail always
+carries it, so a client can show the decision before anyone clicks download. A job that lacks the state an action needs (no part program,
 no model outline, nothing to preview) answers `409` with the matching code, never a 500.
 
 **Uploads**: photos must be JPEG, PNG or WebP, ≤ 25 MB and ≤ 60 MP, ≥ 200 px on the short side, and must fully decode.
 GPS metadata is removed before anything is stored: JPEG pixels are kept byte-for-byte (only the EXIF GPS directory and XMP
-packets are dropped; camera fields such as focal length stay), PNG/WebP are re-saved as PNG without metadata. Audio:
+packets are dropped; camera fields such as focal length stay), PNG/WebP are re-saved as PNG without metadata. The EXIF
+Orientation is honoured everywhere, as a browser does: a JPEG keeps its tag (and every server decode applies it), a PNG/WebP
+is saved upright, and a JPEG whose EXIF block cannot be kept is re-encoded upright. Pixel coordinates in requests (`points`)
+and responses are in that displayed frame. Audio:
 wav/webm/ogg/mp3/m4a/aac/flac, ≤ 15 MB.
 
 ## System
@@ -84,20 +89,21 @@ Screen calibration (ID-1 card 85.60 × 53.98 mm) happens in the browser and is s
 | POST | `/jobs/demo` | `{"sample": str}` → `JobSummary` — runs a bundled **synthetic** sample (labelled synthetic everywhere); unknown ids → `404 sample_not_found` + closest |
 | GET | `/jobs?limit=&include_replays=&kind=` | `[JobSummary]` (newest first) |
 | GET | `/jobs/{id}` | `JobDetail = {"summary": JobSummary, "events": [Event], "partspec": PartSpec\|null, "measurements": {view: Measurements}, "verification": Verification\|null, "code": str\|null, "params": [ParamSpec], "values": {name: float}, "artifacts": {kind: url}, "question": QuestionEvent\|null}` |
-| GET | `/jobs/{id}/events` | **SSE**: one `data: <Event JSON>` per event (`id:` = seq). Replays all past events first, then live ones. Ends after `done` — unless `?follow=1`: then the stream stays open (up to 30 min, keep-alives every 15 s) and delivers events appended after `done`, such as a fit check uploaded from a phone. `?from_seq=` (or the `Last-Event-ID` header) resumes. Events keep their original `ts` (the replay player paces on ts gaps). A `: keep-alive` comment is sent after 15 s without events; the stream starts with `retry: 3000`. Headers: `Cache-Control: no-cache, no-transform`, `X-Accel-Buffering: no` |
+| GET | `/jobs/{id}/events` | **SSE**: one `data: <Event JSON>` per event (`id:` = seq). Agentic fix rounds add `thought` (`{"stage","model","text","iter","mode"}`), `tool_call` (`{"stage","name","args","result","ok","ms","iter","mode"}`) and `focus` (`{"feature","view","at_mm","label","iter"}`, a location code picked from the verifier's worst residual) events; `iter` on `thought`/`tool_call` is the agent's turn within its session, on `focus` the fix round; `mode` is `live`\|`replay`\|`mock`, and a mock run's thoughts come from the deterministic policy (`model: "mock fix agent"`, text ending "(deterministic mock)"). A job that verifies on its first build runs no agent and has none of them. Replays all past events first, then live ones. Ends after `done` — unless `?follow=1`: then the stream stays open (up to 30 min, keep-alives every 15 s) and delivers events appended after `done`, such as a fit check uploaded from a phone. `?from_seq=` (or the `Last-Event-ID` header) resumes. Events keep their original `ts` (the replay player paces on ts gaps). A `: keep-alive` comment is sent after 15 s without events; the stream starts with `retry: 3000`. Headers: `Cache-Control: no-cache, no-transform`, `X-Accel-Buffering: no` |
 | POST | `/jobs/{id}/answer` | `{"id": str, "value": str\|float, "via": "text"\|"voice"}` → `JobSummary` (resumes a paused job; `409 no_pending_question` otherwise) |
 | POST | `/jobs/{id}/edit` | JSON `{"text": str}` or multipart `audio` (+ optional `text`) → `{"transcript": str, "edits": [{"param","from","to","reason"}], "not_understood": [str], "confidence": float, "mode": str, "bake": BakeResult}` (voice/text edit; clamped to PARAMS) |
 | POST | `/jobs/{id}/preview` | → `{"url": str, "label": "AI preview", "mode": str}` (Muse Image "see the fix") |
 | GET | `/jobs/{id}/fit-outline?mat_id=` | `409 no_model_outline` when the job has no model outline (Steer lanes, failed runs); otherwise `{"mat_id": str, "outline_mm": [[x,y]], "holes": [{"center_mm":[x,y],"diameter_mm":float}], "dims": [{"label": str, "from_mm":[x,y], "to_mm":[x,y], "value_mm": float}], "placement": {"cx_mm","cy_mm","theta_deg"}}` in the **mat frame** (`mat_id` default `screen-m`) |
-| POST | `/jobs/{id}/fit-check` | multipart `photo`, `mat_id` → `FitCheckResult = {"passed": bool, "iou": float, "hausdorff_mm": float, "mean_mm": float, "reasons": [str], "overlay_url": str, "capture": CaptureReport}`. **Live update:** the job also gets metric events `fit_check_passed` (1/0), `fit_check_iou`, `fit_check_hausdorff_mm` and a `measure_overlay` artifact labelled `fit check on <mat>: PASS\|FAIL`, so a page following `/events?follow=1` (the laptop showing the outline) turns green when a phone uploads |
-| GET | `/jobs/{id}/bake?<param>=<value>&format=…[&download=1]` | re-bake the job's current part program before it is published → `BakeResult` (same shape as part bakes; `&download=1` returns the first format's file through the export gate, `&ack=1` for best effort) |
+| POST | `/jobs/{id}/fit-check` | multipart `photo`, `mat_id` → `FitCheckResult = {"passed": bool, "iou": float, "hausdorff_mm": float\|null, "mean_mm": float\|null, "reasons": [str], "overlay_url": str, "capture": CaptureReport}`; `hausdorff_mm` / `mean_mm` are `null` when nothing could be compared (no mat markers or no part found on the outline; then `passed: false`, `iou: 0` and `reasons` says what to retake), and `fit_check_hausdorff_mm` is not emitted. **Live update:** the job also gets metric events `fit_check_passed` (1/0), `fit_check_iou`, `fit_check_hausdorff_mm` and a `measure_overlay` artifact labelled `fit check on <mat>: PASS\|FAIL`, so a page following `/events?follow=1` (the laptop showing the outline) turns green when a phone uploads |
+| GET | `/jobs/{id}/bake?<param>=<value>&format=…[&preset=][&download=1]` | re-bake the job's current part program before it is published → `BakeResult` (same shape as part bakes; `&download=1` returns the first format's file through the export gate, `&ack=1` for best effort). `preset=<id>` applies a fit preset on top of the job's current values and the knobs by the same server rule as part bakes (`"preset": {"id","title","delta_mm","changes"}` in the result; unknown id → `422 unknown_preset` + closest) |
+| GET | `/jobs/{id}/presets` | same shape as `/parts/{slug}/presets` with `"job_id"` instead of `"slug"`; `changes` are computed on the job's current values. `409 no_program` until the job has a part program |
 | POST | `/jobs/{id}/publish` | **admin**. `{"slug"?: str, "ack"?: bool}` (or `?ack=1`) → export gate, then part detail (+ `"ship"`) (as `GET /parts/{slug}`) + `"publish": {"slug","action": "created"\|"updated"\|"unchanged"\|"renamed","requested_slug","duplicate_of","version"}`; the job must be `done`; origin is preserved; thumbnails are rendered here. Publishing dedupes (see Registry) |
 | POST | `/jobs/{id}/cancel` | → `JobSummary` after the cancel took effect (`status: "cancelled"`); if the job has not stopped within 3 s the response says `status: "cancelling"` (it stops at its next check). Finished jobs are returned unchanged |
 | GET | `/jobs/{id}/run.jsonl` | the raw run log (`application/x-ndjson`) |
 | POST | `/transcribe` | multipart `audio`, `language_hint?` → `{"text": str, "mode": "live"\|"mock"\|"replay", "language": str\|null, "model": str, "note": str}` (fix intent and spoken answers; mock transcripts say so in `note`) |
 | GET | `/replays` | `[{"id": str, "title": str, "origin": DataOrigin, "provider_mode": str, "verified": bool, "max_error_mm": float\|null, "iterations": int}]` |
 
-`points` = feature taps in top-photo pixels, `{"top": [{"x": float, "y": float, "kind": "hole"|"slot"|"tab"|"broken_edge", "id"?: str}]}`
+`points` = feature taps in top-photo pixels as displayed (EXIF orientation applied, i.e. the browser's frame), `{"top": [{"x": float, "y": float, "kind": "hole"|"slot"|"tab"|"broken_edge", "id"?: str}]}`
 (`kind` defaults to `hole`, at most 32 points). Each tap becomes a point prompt for the segmenter and the feature is measured by
 code; a tap never sets a dimension. Malformed input → `422 invalid_points`; a clip that is not MP4/MOV/WebM → `415`.
 
@@ -113,7 +119,7 @@ code; a tap never sets a dimension. Malformed input → `422 invalid_points`; a 
 | GET | `/parts?q=&family=&verified=&origin=&sort=&cursor=&limit=&role=` | `{"items": [PartCard], "next_cursor": str\|null, "total": int}`; `role` = `part` (default: functional parts) \| `reference` (bench reference objects, tag `role:reference`) \| `all`; `sort` = `relevance` (default) \| `newest` \| `error` (smallest max error first) \| `title`; `limit` ≤ 100; `cursor` is opaque |
 | GET | `/parts/{slug}` | part detail (below) |
 | GET | `/parts/{slug}/params` | `[ParamSpec]` |
-| GET | `/parts/{slug}/bake?<param>=<value>&format=stl\|3mf\|step\|glb\|view\|py` | `BakeResult` + `facts_notes` (or the file with `&download=1`). `format` may repeat or be comma-separated (default `stl,step,view`; `formats=` also accepted). Out-of-range values are clamped and listed in `clamped`; unknown knobs → `422 unknown_param` + closest. Identical requests are cache hits (`cache_hit: true`). `preset=<id>` applies a fit preset after the knob values (`"preset": {"id","title","delta_mm","changes"}` in the result) |
+| GET | `/parts/{slug}/bake?<param>=<value>&format=stl\|3mf\|step\|glb\|view\|py` | `BakeResult` + `facts_notes` (or the file with `&download=1`). `format` may repeat or be comma-separated (default `stl,step,view`; `formats=` also accepted). Out-of-range values are clamped and listed in `clamped`; unknown knobs → `422 unknown_param` + closest. Identical requests are cache hits (`cache_hit: true`). `preset=<id>` applies a fit preset after the knob values (`"preset": {"id","title","delta_mm","changes"}` in the result). `&download=1` goes through the export gate like `bundle.zip`: verified downloads, best effort answers `409 needs_ack` until `&ack=1`, failed answers `409 not_shippable`; `format=view` and `format=glb` stay open (the embed and AR viewers' previews) |
 | GET | `/parts/{slug}/presets` | `{"slug", "fit_knobs": [str], "presets": [{"id","title","material","process","nozzle_mm","delta_mm","note","changes": [{"param","from","to","delta_mm"}]}], "note"}` |
 | GET | `/presets` | the 7 fit presets: `pla-fdm-0.4` (+0.20 mm), `petg-fdm-0.4` (+0.25), `abs-fdm-0.4` (+0.30), `pla-fdm-0.6` (+0.30), `petg-fdm-0.6` (+0.35), `abs-fdm-0.6` (+0.40), `resin-sla` (+0.10). A preset adds its clearance only to `affects_fit` mm knobs that are internal fits (hole, bore, pivot, pin, cable, gap, clearance, slot); outer dimensions never change. Documented starting points, not measurements |
 | GET | `/parts/{slug}/bundle.zip?<params>&preset=&ack=` | zip `<slug>/`: `part.py` (defaults baked to the values), `part.step`, `part.stl`, `part.3mf`, `verification.json` (record + sha256 of every file + ship decision), `README.md` (how to print, measured vs not measured, licence), `LICENSE`, `index.html` (offline viewer, mesh inline, three.js from a CDN). Export gate applies |
@@ -135,8 +141,10 @@ code; a tap never sets a dimension. Malformed input → `422 invalid_points`; a 
 
 `PartCard = {"slug","title","family","status","origin","verified","max_error_mm","thumbnail_url","thumbnail_2x_url","params_count","topology_knobs": [str],"summary","bbox_mm": [x,y,z]|null}`
 
-Part detail = `PartRecord` + `{"artifacts": {"stl","step","3mf","glb","view","py": url}, "lineage": [Lineage], "thumbnail_url", "thumbnail_2x_url", "facts_notes": {fact: how it is computed}, "fit_reports": [...], "origin": DataOrigin, "verified": bool}`.
-Artifact URLs are stable (`/parts/{slug}/bake?format=<fmt>&download=1`, default params, cached after the first bake).
+Part detail = `PartRecord` + `{"artifacts": {"stl","step","3mf","glb","view","py": url}, "lineage": [Lineage], "thumbnail_url", "thumbnail_2x_url", "facts_notes": {fact: how it is computed}, "fit_reports": [...], "origin": DataOrigin, "verified": bool, "ship": {"status": "verified"|"best_effort"|"blocked", "reason": str, "needs_ack": bool, "source": str}}`.
+`ship` is the export gate's decision for the part (the same one job publish and `bundle.zip` use; plain-words `reason`).
+Artifact URLs are stable (`/parts/{slug}/bake?format=<fmt>&download=1`, default params, cached after the first bake);
+for a best-effort part the downloads answer `409 needs_ack` until `&ack=1` is added.
 **Publishing dedupes** (`services/registry/publish.py::publish_part`, used by Steer approvals, job publishes and the
 seed): a part's identity is its program with PARAMS defaults normalised + its clamped values. An identical part returns
 the existing record (`unchanged`), or updates it with `version + 1` when its verification/facts/title changed
@@ -200,8 +208,19 @@ by slug and with `role=reference`.
 | GET | `/bench/files/{path}` | a report file under `eval/reports/` (png/jpg/svg/json/md/csv/txt; no traversal, no hidden files) |
 
 `failures[].overlay_url` is the overlay blob when it exists, else `/api/v1/bench/files/<report dir>/<overlay_file>`, else `null`.
-`{"status", "generated_at", "git_sha", "tables": {"synthetic"|"reference_objects"|"real_ruler": BenchTable}, "runs": [...], "failures": [{"title","reason","overlay_url"}]}`;
-`BenchTable = {"n": int, "ground_truth": "synthetic_exact"|"reference_spec"|"ruler", "ci": ..., "columns": [str], "rows": [...], "headline": {"median_abs_err_mm": float|null, ...}, "status": "ok"|"pending", "note": str}`.
+`{"status", "generated_at", "git_sha", "tables": {"synthetic"|"reference_objects"|"real_ruler"|"control"|"redteam": BenchTable}, "runs": [...], "failures": [{"title","reason","overlay_url"}]}`;
+`BenchTable = {"n": int, "ground_truth": GroundTruthSource, "ci": ..., "columns": [str], "rows": [...], "headline": {...}, "status": "ok"|"pending", "mode": str, "note": str}`.
+`GroundTruthSource` = `"synthetic_exact"|"reference_spec"|"ruler"|"caliper"|"expected_outcome"`. Tables are never merged.
+
+- **Dimension tables** (`synthetic` → `synthetic_exact`, `reference_objects` → `reference_spec`, `real_ruler` →
+  `ruler`): rows are per-sample mm errors; headline `{"median_abs_err_mm": float|null, ...}`.
+- **Gate tables** (`control`, `redteam` → `ground_truth: "expected_outcome"`): the ground truth is the expected
+  accept / reject / refuse outcome of each case, **not a mm value**. `columns` =
+  `["case","expected","expected_checks","outcome","failed_checks","correct"]`; `expected` is `accept` (control) or
+  `reject` / `refuse` (red team); `correct` is whether the outcome matched. Headline: `{"correct", "n",
+  "correct_rate", "ci95"}` (95 % Wilson), plus for `control` `false_reject_rate`, `false_reject_ci95`, `pass_at_0_5`,
+  and for `redteam` `reject_expected`, `refuse_expected`, `reject_correct`, `refuse_correct`. With no stored runs the
+  table is `status: "pending"` with empty `rows` and `headline: {"correct_rate": null}`.
 
 ## Agent docs and MCP
 - `/llms.txt` and `/prompt.txt` (also under `/api/v1/`): generated from the live registry and this route list (the web

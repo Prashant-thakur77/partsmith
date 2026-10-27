@@ -90,6 +90,21 @@ def fill_holes(mask: BoolMask, max_area_px: float | None = None) -> BoolMask:
     return out
 
 
+GLARE_MIN_WASH = 0.15  # a reflection moves the stage colour at least this far towards white …
+GLARE_MAX_TINT = 12.0  # … and adds no colour of its own (RGB distance from the stage→white line)
+
+
+def _washed_out(rgb: NDArray[np.floating[Any]], stage: NDArray[np.floating[Any]]) -> bool:
+    """True when `rgb` is the stage colour mixed with white: what glare on the stage looks like."""
+    d = np.full(3, 255.0) - stage
+    n2 = float(d @ d)
+    if n2 < 1e-6:
+        return False
+    v = np.asarray(rgb, np.float64) - stage
+    t = float(v @ d) / n2
+    return t >= GLARE_MIN_WASH and float(np.linalg.norm(v - t * d)) <= GLARE_MAX_TINT
+
+
 def components_mm2(mask: BoolMask, px_per_mm2: float, min_mm2: float = 1.0) -> list[float]:
     """Areas (mm², largest first) of the separate pieces of a foreground mask."""
     _, _, stats, _ = cv2.connectedComponentsWithStats(np.asarray(mask, np.uint8), connectivity=8)
@@ -527,6 +542,16 @@ class ThresholdSegmenter:
             thick = ((low > 0) & (cv2.dilate(op, k) > 0)).astype(np.uint8)
         _, lab_p = cv2.connectedComponents(low, connectivity=8)
         counts = np.bincount(lab_p[thick > 0].ravel(), minlength=int(lab_p.max()) + 1)[1:]
+        # A piece that holds none of the part and whose colour is just the stage's colour washed towards white is a
+        # reflection on the stage (glare), not a second object.
+        n_lab = int(lab_p.max()) + 1
+        has_core = np.bincount(lab_p[core > 0].ravel(), minlength=n_lab)[1:] > 0
+        stage_rgb = np.median(roi[(low == 0) & inside], axis=0) if ((low == 0) & inside).any() else None
+        glare = np.zeros(len(counts), bool)
+        if stage_rgb is not None:
+            for i in np.flatnonzero(~has_core & (counts / px_mm**2 >= 1.0)):
+                glare[i] = _washed_out(np.median(roi[lab_p == i + 1], axis=0), stage_rgb)
+        counts = counts[~glare]
         pieces = [round(float(c) / px_mm**2, 2) for c in sorted(counts, reverse=True) if c / px_mm**2 >= 1.0]
         part_like_shadow = False
         if self.suppress_shadows:

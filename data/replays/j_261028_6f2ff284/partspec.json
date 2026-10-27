@@ -1,0 +1,172 @@
+{
+  "family": "cable_clip",
+  "units": "mm",
+  "title": "Cable clip (family hint 'cable_clip')",
+  "base_profile": {
+    "kind": "polyline",
+    "points_mm": [
+      [
+        -17.159,
+        4.493
+      ],
+      [
+        -17.193,
+        -4.372
+      ],
+      [
+        -16.772,
+        -5.365
+      ],
+      [
+        -16.044,
+        -5.831
+      ],
+      [
+        15.432,
+        -5.934
+      ],
+      [
+        16.567,
+        -5.535
+      ],
+      [
+        17.171,
+        -4.617
+      ],
+      [
+        17.171,
+        3.955
+      ],
+      [
+        16.959,
+        4.93
+      ],
+      [
+        16.048,
+        5.637
+      ],
+      [
+        8.469,
+        5.705
+      ],
+      [
+        7.526,
+        5.946
+      ],
+      [
+        5.629,
+        5.694
+      ],
+      [
+        4.409,
+        5.941
+      ],
+      [
+        2.858,
+        5.664
+      ],
+      [
+        1.918,
+        5.953
+      ],
+      [
+        0.173,
+        5.752
+      ],
+      [
+        -1.462,
+        5.941
+      ],
+      [
+        -2.517,
+        5.732
+      ],
+      [
+        -6.556,
+        5.919
+      ],
+      [
+        -8.16,
+        5.673
+      ],
+      [
+        -15.691,
+        5.69
+      ],
+      [
+        -16.662,
+        5.287
+      ]
+    ],
+    "source": "measured",
+    "sigma_mm": 0.099
+  },
+  "thickness": {
+    "value": 2.5,
+    "source": "user_stated",
+    "sigma_mm": 0.3,
+    "evidence": null
+  },
+  "features": [
+    {
+      "kind": "through_hole",
+      "id": "hole_1",
+      "center_mm": [
+        -12.652,
+        -0.098
+      ],
+      "diameter": {
+        "value": 3.449,
+        "source": "measured",
+        "sigma_mm": 0.06,
+        "evidence": {
+          "view": "top",
+          "pixels": [
+            [
+              877.07,
+              606.38
+            ]
+          ],
+          "note": "see-through fit, h=2.5 mm: vertical cylinder whose top and bottom openings overlap by 2.80 mm in the photo; rms 0.017 mm over 130 edge points",
+          "citation": null
+        }
+      },
+      "countersink": false
+    },
+    {
+      "kind": "through_hole",
+      "id": "hole_2",
+      "center_mm": [
+        12.661,
+        -0.1
+      ],
+      "diameter": {
+        "value": 3.417,
+        "source": "measured",
+        "sigma_mm": 0.073,
+        "evidence": {
+          "view": "top",
+          "pixels": [
+            [
+              869.58,
+              514.62
+            ]
+          ],
+          "note": "see-through fit, h=2.5 mm: vertical cylinder whose top and bottom openings overlap by 2.63 mm in the photo; rms 0.025 mm over 124 edge points",
+          "citation": null
+        }
+      },
+      "countersink": false
+    }
+  ],
+  "broken_region": null,
+  "fit": {
+    "clearance_mm": 0.2,
+    "material": "PLA",
+    "printer": "FDM_0_4"
+  },
+  "unknowns": [],
+  "intent": "Make a replacement for this broken cable clip.",
+  "refusal": null,
+  "template_hint": "cable_clip"
+}

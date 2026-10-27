@@ -284,9 +284,7 @@ def fit_check(
     )
     if mo.footprint_mat is None or mo.detection is None or target is None:
         reason = capture.retake_reason or "No part found on the outline — lay the part on the drawn shape and retake."
-        res = FitCheckResult(
-            passed=False, iou=0.0, hausdorff_mm=float("nan"), mean_mm=float("nan"), reasons=[reason], capture=capture
-        )
+        res = FitCheckResult(passed=False, iou=0.0, hausdorff_mm=None, mean_mm=None, reasons=[reason], capture=capture)
         return FitCheckOutput(res, mo.overlay_png)
 
     cmp = compare_to_outline(mo.footprint_mat, target)

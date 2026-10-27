@@ -13,13 +13,14 @@
  "iterations_to_converge": null,
  "strategy": "template",
  "template": "hinge_leaf",
- "verifier_max_error_mm": 8.547495044176564,
+ "verifier_max_error_mm": 8.538768791841804,
  "retake_reason": null,
+ "failed_checks": [],
  "usd": 0.0,
  "tokens_in": 0,
  "tokens_out": 0,
  "model_calls": 9,
- "model_ms": 373,
+ "model_ms": 328,
  "provider_modes": [
   "mock"
  ],
@@ -40,12 +41,12 @@
  "convergence": [
   {
    "iter": 1,
-   "hausdorff_mm": 8.547495044176564,
-   "iou": 0.6722187082718392,
-   "max_error_mm": 8.547495044176564
+   "hausdorff_mm": 8.538768791841804,
+   "iou": 0.6532796945315696,
+   "max_error_mm": 8.538768791841804
   }
  ],
- "wall_s": 15.07,
+ "wall_s": 11.12,
  "dims": [
   {
    "name": "length",
@@ -80,5 +81,6 @@
  "pass_0_5": false,
  "valid": true,
  "valid_reason": "",
+ "failure_category": "topology_wrong",
  "failure": "worst thickness +1.00 mm; missing hole_2.diameter"
 }

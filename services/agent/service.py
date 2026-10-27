@@ -26,6 +26,7 @@ from partsmith_schemas import (
     JobSummary,
     LogEvent,
     Measurements,
+    ParamSpec,
     PartRecord,
     PartSpec,
     Provenance,
@@ -38,6 +39,7 @@ from services.agent import providers
 from services.agent.jobs import REPLAYS_DIR, Job, JobManager, context_hash, export_replay
 from services.agent.orchestrator import RunOptions, make_runner, png_bytes
 from services.common import blobs
+from services.common.images import decode_bgr
 from services.common.paths import REPO_ROOT
 from services.geom_worker.program import code_sha, parse_params, set_defaults
 
@@ -342,6 +344,14 @@ def _bake_result(code: str, params: dict[str, float], formats: tuple[str, ...], 
     return bo.to_bake_result(slug, url_for)
 
 
+def job_params(job_id: str) -> tuple[list[ParamSpec], dict[str, float]]:
+    """The job's knobs before publishing: PARAMS of its current part program and the values it holds now (what a
+    fit preset is applied on top of, like a published part's defaults)."""
+    code, values = _program(_job(job_id))
+    specs = parse_params(code)
+    return specs, {s.name: float(values.get(s.name, s.default)) for s in specs}
+
+
 def bake_job(job_id: str, params: dict[str, float], formats: tuple[str, ...] = ("view",)) -> BakeResult:
     """Re-bake the job's current part program with `params` (clamped to PARAMS). Does not change the job."""
     job = _job(job_id)
@@ -407,8 +417,9 @@ def _render_on_rectified(job: Job) -> tuple[bytes, bytes] | None:
     if not rect or not outline or not meas:
         return None
     photo = blobs.get(rect["sha"])
-    img = cv2.imdecode(np.frombuffer(photo, np.uint8), cv2.IMREAD_COLOR)
-    if img is None:
+    try:
+        img = decode_bgr(photo)
+    except ValueError:
         return None
     M = np.asarray(meas["part_to_mat"], dtype=np.float64)
     ppm = float(rect["px_per_mm"])
@@ -475,7 +486,11 @@ def fit_check(job_id: str, photo: bytes, mat_id: str) -> dict[str, Any]:
         LogEvent(
             job=job.id,
             msg=f"screen fit check on {mat_id}: {'PASS' if res.passed else 'FAIL'} "
-            f"(IoU {res.iou:.3f}, Hausdorff {res.hausdorff_mm:.2f} mm)",
+            + (
+                f"(IoU {res.iou:.3f}, Hausdorff {res.hausdorff_mm:.2f} mm)"
+                if res.hausdorff_mm is not None
+                else "(not compared)"
+            ),
         )
     )
     if job.summary.part_slug:

@@ -28,7 +28,7 @@ export function ModeBanner({ className, wide = false }: { className?: string; wi
     return (
       <Bar wide={wide} className={className} icon={Bot} tone="mock">
         <strong className="font-semibold">Mock mode:</strong> no API keys — results are deterministic mocks, not model output.{" "}
-        <Link href="/status" className="underline underline-offset-2 hover:text-fg">
+        <Link href="/models" className="underline underline-offset-2 hover:text-fg">
           Provider status
         </Link>
       </Bar>
@@ -38,7 +38,7 @@ export function ModeBanner({ className, wide = false }: { className?: string; wi
     return (
       <Bar wide={wide} className={className} icon={History} tone="mock">
         <strong className="font-semibold">Replay mode:</strong> model responses are recorded runs played back, not live calls.{" "}
-        <Link href="/status" className="underline underline-offset-2 hover:text-fg">
+        <Link href="/models" className="underline underline-offset-2 hover:text-fg">
           Provider status
         </Link>
       </Bar>
@@ -48,7 +48,7 @@ export function ModeBanner({ className, wide = false }: { className?: string; wi
     <Bar wide={wide} className={className} icon={Layers} tone="mock">
       <strong className="font-semibold">Mixed mode:</strong> {nonLive.length} of {s.providers.length} stages run on mocks or replays (
       {nonLive.map((p) => p.stage).join(", ")}).{" "}
-      <Link href="/status" className="underline underline-offset-2 hover:text-fg">
+      <Link href="/models" className="underline underline-offset-2 hover:text-fg">
         See which
       </Link>
     </Bar>

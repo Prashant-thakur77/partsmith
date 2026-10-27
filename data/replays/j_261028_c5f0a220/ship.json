@@ -1,0 +1,5 @@
+{
+  "ok": false,
+  "reason": "best effort: the outline length is 0.4 mm too short. Print the fit-test coupon first: it checks the critical holes and edges in a few minutes of printing.",
+  "requires_ack": true
+}

@@ -18,8 +18,9 @@ A tool named `submit` ends the loop (unless its result sets `data["continue"]`),
 On `max_turns` the loop returns what it has.
 
 Mock mode: `register_mock(stage, handler)` with `handler(req, history) -> {"tool": name, "args": {...}} | {"final": text}`
-(optional `"thought"`). The loop runs the REAL `call_tool`, so mocks exercise real tools. Replay mode serves recorded
-per-turn decisions (keyed by the conversation so far) and falls back to the mock on a miss.
+(optional `"thought"`, and `"model"` to name the mock in its events). Thought and tool-call events carry the driver's
+`mode`, so a mock turn is labelled mock everywhere. The loop runs the REAL `call_tool`, so mocks exercise real tools.
+Replay mode serves recorded per-turn decisions (keyed by the conversation so far) and falls back to the mock on a miss.
 """
 
 from __future__ import annotations
@@ -149,10 +150,11 @@ class MockDriver:
         if not isinstance(out, dict):
             raise ProviderError(f"mock for {self.stage!r} must return a dict, got {type(out).__name__}")
         thought = str(out.get("thought", ""))
+        model = str(out.get("model") or self.model)  # a domain mock may name itself (e.g. "mock fix agent")
         if "tool" in out:
             call = {"id": f"mock_{len(history) + 1}", "name": str(out["tool"]), "args": dict(out.get("args") or {})}
-            return Decision(thought=thought, calls=[call], model=self.model)
-        return Decision(text=str(out.get("final", "")), thought=thought, model=self.model)
+            return Decision(thought=thought, calls=[call], model=model)
+        return Decision(text=str(out.get("final", "")), thought=thought, model=model)
 
     def add_result(self, call: dict[str, Any], result: ToolResult) -> None:
         return None
@@ -500,7 +502,9 @@ def run_agent(
         )  # fmt: skip
         usage = usage + decision.usage
         usd += turn_usd
-        record_thought(stage=stage, model=decision.model or driver.model, text=decision.thought, iter=turn)
+        record_thought(
+            stage=stage, model=decision.model or driver.model, text=decision.thought, iter=turn, mode=driver.mode
+        )
         if decision.text:
             final_text = decision.text
         if not decision.calls:
@@ -522,7 +526,9 @@ def run_agent(
                     out = ToolResult(text=f"tool error: {type(exc).__name__}: {str(exc)[:300]}")
                     ok = False
             tool_ms = round((time.monotonic() - t1) * 1000)
-            record_tool_call(stage=stage, name=name, args=args, result=out.text, ok=ok, ms=tool_ms, iter=turn)
+            record_tool_call(
+                stage=stage, name=name, args=args, result=out.text, ok=ok, ms=tool_ms, iter=turn, mode=driver.mode
+            )
             history.append(
                 {
                     "turn": turn, "tool": name, "args": args, "result": out.text, "data": out.data, "ok": ok,

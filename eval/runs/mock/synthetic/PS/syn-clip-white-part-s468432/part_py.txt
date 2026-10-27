@@ -31,9 +31,9 @@ PARAMS = {  # name: (default, min, max, step, unit, affects_fit, label)
     "width": (15.0, 10.0, 40.0, 0.1, "mm", True, "Plate width"),
     "thickness": (3.0, 1.5, 6.0, 0.1, "mm", True, "Plate thickness"),
     "hole_d": (3.5, 2.5, 6.0, 0.05, "mm", True, "Screw hole diameter"),
-    "arm_height": (8.0, 4.0, 20.0, 0.1, "mm", True, "Hook arm height above the plate"),
+    "arm_height": (7.0, 4.0, 20.0, 0.1, "mm", True, "Hook arm height above the plate"),
     "arm_thickness": (2.0, 1.2, 4.0, 0.1, "mm", True, "Hook arm thickness"),
-    "hook_overhang": (0.6, 0.6, 3.0, 0.1, "mm", True, "Snap hook overhang"),
+    "hook_overhang": (0.7, 0.6, 3.0, 0.1, "mm", True, "Snap hook overhang"),
     "rib_count": (2, 0, 4, 1, "", False, "Stiffening ribs behind the arm"),
     "corner_radius": (2.0, 0.0, 6.0, 0.1, "mm", False, "Plate corner radius"),
 }
@@ -51,7 +51,7 @@ def build(p: dict[str, float]) -> cq.Workplane:
     if r > 0.2:
         plate = plate.edges("|Z and <X").fillet(r)
     # Screw hole in the free half of the plate.
-    edge = max(p["hole_d"] * 1.2, 4.0)
+    edge = 5.04  # hole centre to the plate end: fixed, so the hole stays put when its size changes
     plate = plate.faces(">Z").workplane().center(-length / 2 + edge, 0).hole(p["hole_d"])
 
     arm = cq.Workplane("XY").box(arm_t, width, z_top, centered=(False, True, False)).translate((x_in, 0, 0))
@@ -77,6 +77,21 @@ def build(p: dict[str, float]) -> cq.Workplane:
             rib = cq.Workplane("XZ", origin=(0, y, 0)).polyline(tri).close().extrude(rib_t / 2, both=True)
             part = part.union(rib)
     return part
+
+
+def interfaces(p: dict[str, float]) -> list[dict[str, str | float | list[float]]]:
+    """Mating interfaces for the functional probes: the gap under the hook lip holds the panel edge."""
+    length, t = p["length"], p["thickness"]
+    arm_h, lip = p["arm_height"], p["hook_overhang"]
+    x_in = length / 2 - min(4.0, length * 0.12) - p["arm_thickness"]
+    z0 = t + arm_h - min(max(lip * 1.5 + 1.0, 1.5), arm_h - 1.0)
+    return [
+        {
+            "id": "panel_gap", "label": "gap under the hook lip", "mate_label": "panel",
+            "at": [x_in - lip / 2, 0.0, (t + z0) / 2], "axis": [0.0, 0.0, 1.0],
+            "mates": [2.0, 3.0, 4.0, 5.0, 6.0, 8.0, 10.0, 12.0, 16.0, 18.0],
+        }
+    ]  # fmt: skip
 
 
 result = build({k: v[0] for k, v in PARAMS.items()})

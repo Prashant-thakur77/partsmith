@@ -1,0 +1,123 @@
+{
+  "family": "clip",
+  "units": "mm",
+  "title": "Snap retaining clip (family hint 'clip')",
+  "base_profile": {
+    "kind": "polyline",
+    "points_mm": [
+      [
+        -21.718,
+        -7.995
+      ],
+      [
+        -20.968,
+        -8.713
+      ],
+      [
+        -20.304,
+        -8.995
+      ],
+      [
+        21.732,
+        -8.916
+      ],
+      [
+        21.865,
+        6.755
+      ],
+      [
+        21.41,
+        7.009
+      ],
+      [
+        18.578,
+        7.007
+      ],
+      [
+        18.342,
+        8.87
+      ],
+      [
+        17.377,
+        9.049
+      ],
+      [
+        15.594,
+        8.941
+      ],
+      [
+        14.445,
+        8.426
+      ],
+      [
+        14.204,
+        7.22
+      ],
+      [
+        13.963,
+        7.025
+      ],
+      [
+        -20.498,
+        6.965
+      ],
+      [
+        -21.385,
+        6.451
+      ],
+      [
+        -21.884,
+        5.217
+      ],
+      [
+        -21.921,
+        -7.124
+      ]
+    ],
+    "source": "measured",
+    "sigma_mm": 0.1
+  },
+  "thickness": {
+    "value": 3.0,
+    "source": "user_stated",
+    "sigma_mm": 0.3,
+    "evidence": null
+  },
+  "features": [
+    {
+      "kind": "through_hole",
+      "id": "hole_1",
+      "center_mm": [
+        -16.83,
+        -1.005
+      ],
+      "diameter": {
+        "value": 3.546,
+        "source": "measured",
+        "sigma_mm": 0.061,
+        "evidence": {
+          "view": "top",
+          "pixels": [
+            [
+              960.91,
+              617.95
+            ]
+          ],
+          "note": "see-through fit, h=3.0 mm: vertical cylinder whose top and bottom openings overlap by 2.76 mm in the photo; rms 0.018 mm over 135 edge points",
+          "citation": null
+        }
+      },
+      "countersink": false
+    }
+  ],
+  "broken_region": null,
+  "fit": {
+    "clearance_mm": 0.2,
+    "material": "PLA",
+    "printer": "FDM_0_4"
+  },
+  "unknowns": [],
+  "intent": "Make a replacement for this broken snap retaining clip.",
+  "refusal": null,
+  "template_hint": "clip"
+}

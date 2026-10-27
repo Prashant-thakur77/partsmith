@@ -16,6 +16,7 @@ const NAMES: Record<string, string> = {
   moire: "Screen moiré",
   scale: "Scale",
   contrast: "Contrast",
+  single_part: "One part only",
 };
 
 /** The server capture gate's verdict, check by check, with its plain-words reasons. */

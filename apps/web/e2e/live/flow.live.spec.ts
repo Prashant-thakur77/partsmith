@@ -56,7 +56,7 @@ test("demo job → live workspace → verdict → knob re-bake → export", asyn
   test.info().annotations.push({ type: "job", description: jobId });
 });
 
-const PAGES = ["/", "/fix", "/jobs", "/jobs/demo", "/parts", "/status", "/bench", "/agents", "/judges", "/steer", "/calibrate"];
+const PAGES = ["/", "/fix", "/jobs", "/jobs/demo", "/parts", "/models", "/results", "/agents", "/judges", "/factory", "/calibrate", "/requests", "/lessons", "/shop"];
 const CONFIGS = [
   { name: "desktop-light", viewport: { width: 1440, height: 900 }, colorScheme: "light" as const, isMobile: false, deviceScaleFactor: 1 },
   { name: "desktop-dark", viewport: { width: 1440, height: 900 }, colorScheme: "dark" as const, isMobile: false, deviceScaleFactor: 1 },
@@ -80,7 +80,7 @@ test("every page renders real data without contract or console errors (screensho
     page.on("response", (r) => {
       if (r.status() >= 500 && !KNOWN_TRANSIENT(r.request().method(), r.url())) errors.push(`${current}: ${r.status()} ${r.url()}`);
       // Known backend issue (see report): /bench failure overlays point at blobs this server does not have.
-      if (r.status() === 404 && !(current === "/bench" && /\/blobs\//.test(r.url()))) errors.push(`${current}: 404 ${r.url()}`);
+      if (r.status() === 404 && !(current === "/results" && /\/blobs\//.test(r.url()))) errors.push(`${current}: 404 ${r.url()}`);
     });
     page.on("pageerror", (e) => errors.push(`${current}: pageerror: ${e.message}`));
     const dir = join(here, "..", "screenshots", `live-${cfg.name}`);

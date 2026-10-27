@@ -1,0 +1,16 @@
+{
+  "kind": "fix",
+  "intent": "Make a replacement for this broken battery compartment cover: a piece is missing at one end.",
+  "photo_shas": {
+    "top": "6e9ba59af1caa4ec44f208f27a3a3078832ba2593f94c265207afee629517c9d.jpg",
+    "side": "772d457a23370c2bc320257a1fef47ba2139360e8e4e010c651a983011a57fe7.jpg"
+  },
+  "mat_kind": "screen",
+  "screen_px_per_mm": null,
+  "thickness_mm": 2.0,
+  "family_hint": "cover",
+  "origin": "synthetic",
+  "max_iters": 6,
+  "budget_usd": 0.5,
+  "provider_mode": null
+}

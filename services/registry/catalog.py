@@ -70,12 +70,15 @@ def main_size_mm(part: PartRecord) -> float | None:
     return None
 
 
-def product_name(part: PartRecord, *, reference: bool = False) -> tuple[str, str]:
-    """(title, slug) for a part: "Cupboard door latch, 52 mm" / `cupboard-door-latch-52mm`."""
+def product_name(part: PartRecord, *, reference: bool = False, known_title: str | None = None) -> tuple[str, str]:
+    """(title, slug) for a part: "Cupboard door latch, 52 mm" / `cupboard-door-latch-52mm`. A reference object is named
+    after what it is (`known_title`, from the sample's own metadata), never after a model's guess of the part."""
     t = template_of(part)
     base = PRODUCT_NAMES.get(t.name, t.title) if t is not None else _NOISE.sub("", part.title).strip() or "Part"
     if reference:
-        base = _NOISE.sub("", part.title).strip() or base
+        base = _NOISE.sub("", known_title or part.title).strip() or base
+        if known_title:
+            base = re.sub(r"\s*\([^)]*\)", "", base).strip() or base  # "AA cell (lying on its side)" → "AA cell"
         base = re.sub(r"^(reference object[:\s—-]*)", "", base, flags=re.I)
         return f"Reference object — {base}", _slugify(f"reference {base}")
     size = main_size_mm(part)
@@ -85,11 +88,13 @@ def product_name(part: PartRecord, *, reference: bool = False) -> tuple[str, str
     return f"{base}, {shown} mm", _slugify(f"{base} {round(size)}mm")
 
 
-def rename(part: PartRecord, *, reference: bool = False, reg: Registry | None = None) -> PartRecord:
+def rename(
+    part: PartRecord, *, reference: bool = False, known_title: str | None = None, reg: Registry | None = None
+) -> PartRecord:
     """Give a published part its product title/slug (and the reference role when asked). Publishing goes through
     `publish_part`, so an identical part already listed under the product slug is reused, never duplicated."""
     reg = reg or get_registry()
-    title, slug = product_name(part, reference=reference)
+    title, slug = product_name(part, reference=reference, known_title=known_title)
     tags = [t for t in part.tags if t != ROLE_REFERENCE_TAG] + ([ROLE_REFERENCE_TAG] if reference else [])
     if part.slug == slug and part.title == title and tags == part.tags:
         return part

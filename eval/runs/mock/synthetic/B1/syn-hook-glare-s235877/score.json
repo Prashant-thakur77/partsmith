@@ -15,11 +15,12 @@
  "template": "hook",
  "verifier_max_error_mm": 4.947610352772983,
  "retake_reason": null,
+ "failed_checks": [],
  "usd": 0.0,
  "tokens_in": 0,
  "tokens_out": 0,
- "model_calls": 9,
- "model_ms": 367,
+ "model_calls": 11,
+ "model_ms": 335,
  "provider_modes": [
   "mock"
  ],
@@ -29,6 +30,9 @@
   ],
   "understand": [
    "mock:muse-spark-1.3"
+  ],
+  "segment_points": [
+   "mock:sam-3.1"
   ],
   "plan": [
    "mock:meta-models/muse-spark-open"
@@ -45,7 +49,7 @@
    "max_error_mm": 4.947610352772983
   }
  ],
- "wall_s": 11.33,
+ "wall_s": 10.12,
  "dims": [
   {
    "name": "length",
@@ -84,5 +88,6 @@
  "pass_0_5": false,
  "valid": true,
  "valid_reason": "",
+ "failure_category": "dim_off",
  "failure": "worst thickness +2.95 mm"
 }

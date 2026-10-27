@@ -1,0 +1,176 @@
+{
+  "family": "hook",
+  "units": "mm",
+  "title": "Wall hook (family hint 'hook')",
+  "base_profile": {
+    "kind": "polyline",
+    "points_mm": [
+      [
+        24.69,
+        8.864
+      ],
+      [
+        24.145,
+        9.786
+      ],
+      [
+        23.335,
+        10.536
+      ],
+      [
+        21.539,
+        11.099
+      ],
+      [
+        -22.304,
+        10.989
+      ],
+      [
+        -24.024,
+        9.931
+      ],
+      [
+        -24.551,
+        9.087
+      ],
+      [
+        -24.895,
+        7.664
+      ],
+      [
+        -24.903,
+        -4.464
+      ],
+      [
+        -24.678,
+        -6.967
+      ],
+      [
+        -23.691,
+        -8.467
+      ],
+      [
+        -22.903,
+        -8.968
+      ],
+      [
+        -21.751,
+        -9.289
+      ],
+      [
+        -4.303,
+        -9.305
+      ],
+      [
+        -3.872,
+        -9.501
+      ],
+      [
+        -3.625,
+        -10.679
+      ],
+      [
+        -2.2,
+        -11.033
+      ],
+      [
+        15.303,
+        -11.037
+      ],
+      [
+        19.204,
+        -10.707
+      ],
+      [
+        22.722,
+        -10.09
+      ],
+      [
+        23.901,
+        -9.632
+      ],
+      [
+        24.467,
+        -9.11
+      ],
+      [
+        24.878,
+        -5.965
+      ],
+      [
+        24.906,
+        7.563
+      ]
+    ],
+    "source": "measured",
+    "sigma_mm": 0.122
+  },
+  "thickness": {
+    "value": 4.5,
+    "source": "user_stated",
+    "sigma_mm": 0.3,
+    "evidence": null
+  },
+  "features": [
+    {
+      "kind": "through_hole",
+      "id": "hole_1",
+      "center_mm": [
+        -19.822,
+        0.999
+      ],
+      "diameter": {
+        "value": 3.91,
+        "source": "measured",
+        "sigma_mm": 0.045,
+        "evidence": {
+          "view": "top",
+          "pixels": [
+            [
+              821.75,
+              940.38
+            ]
+          ],
+          "note": "see-through fit, h=4.5 mm: vertical cylinder whose top and bottom openings overlap by 3.17 mm in the photo; rms 0.043 mm over 154 edge points",
+          "citation": null
+        }
+      },
+      "countersink": false
+    },
+    {
+      "kind": "through_hole",
+      "id": "hole_2",
+      "center_mm": [
+        -8.957,
+        0.983
+      ],
+      "diameter": {
+        "value": 3.898,
+        "source": "measured",
+        "sigma_mm": 0.043,
+        "evidence": {
+          "view": "top",
+          "pixels": [
+            [
+              863.57,
+              929.35
+            ]
+          ],
+          "note": "see-through fit, h=4.5 mm: vertical cylinder whose top and bottom openings overlap by 3.22 mm in the photo; rms 0.043 mm over 154 edge points",
+          "citation": null
+        }
+      },
+      "countersink": false
+    }
+  ],
+  "broken_region": null,
+  "fit": {
+    "clearance_mm": 0.2,
+    "material": "PLA",
+    "printer": "FDM_0_4"
+  },
+  "unknowns": [],
+  "intent": "Make a replacement for this broken wall hook.",
+  "refusal": null,
+  "template_hint": "hook"
+}

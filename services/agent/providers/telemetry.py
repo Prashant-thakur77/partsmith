@@ -110,13 +110,15 @@ def record_call(
     return event
 
 
-def record_thought(*, stage: str, model: str, text: str, iter: int | None = None) -> ThoughtEvent | None:
+def record_thought(
+    *, stage: str, model: str, text: str, iter: int | None = None, mode: Mode | None = None
+) -> ThoughtEvent | None:
     """A reasoning *summary* (or the model's visible note); never raw chain of thought."""
     ledger = _current.get()
     if ledger is None or not text.strip():
         return None
     event = ThoughtEvent(
-        job=ledger.job_id, ctx=ledger.ctx, ts=time.time(), stage=stage, model=model, text=text, iter=iter
+        job=ledger.job_id, ctx=ledger.ctx, ts=time.time(), stage=stage, model=model, text=text, iter=iter, mode=mode
     )
     ledger.trace.append(event)
     _emit(ledger, event)
@@ -124,14 +126,22 @@ def record_thought(*, stage: str, model: str, text: str, iter: int | None = None
 
 
 def record_tool_call(
-    *, stage: str, name: str, args: dict[str, Any], result: str, ok: bool, ms: int, iter: int | None = None
+    *,
+    stage: str,
+    name: str,
+    args: dict[str, Any],
+    result: str,
+    ok: bool,
+    ms: int,
+    iter: int | None = None,
+    mode: Mode | None = None,
 ) -> ToolCallEvent | None:
     ledger = _current.get()
     if ledger is None:
         return None
     event = ToolCallEvent(
         job=ledger.job_id, ctx=ledger.ctx, ts=time.time(), stage=stage, name=name, args=args, result=result[:2000],
-        ok=ok, ms=ms, iter=iter,
+        ok=ok, ms=ms, iter=iter, mode=mode,
     )  # fmt: skip
     ledger.trace.append(event)
     _emit(ledger, event)

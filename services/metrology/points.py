@@ -30,6 +30,8 @@ from partsmith_schemas.measurement import Hole, Measurements
 from scipy.ndimage import distance_transform_edt
 from shapely.geometry import Polygon
 
+from services.common.images import decode_bgr
+
 from .calibrate import MatDetection, PoseEstimate, apply_h, plane_homography
 from .features import fit_circle, fit_see_through_hole, fit_see_through_slot, fit_slot, min_area_rect
 from .measure import MeasureOutput
@@ -503,8 +505,11 @@ def region_grow_points(tolerance: float = 14.0) -> SegPointsCall:
     every pixel within `tolerance` (per channel) of the seed colour, never reaching a negative point."""
 
     def call(image_png: bytes, pos: list[PointPx], neg: list[PointPx], box: Box | None) -> list[tuple[BoolMask, float]]:
-        img = cv2.imdecode(np.frombuffer(image_png, np.uint8), cv2.IMREAD_COLOR)
-        if img is None or not pos:
+        try:
+            img = decode_bgr(image_png)
+        except ValueError:
+            return []
+        if not pos:
             return []
         h, w = img.shape[:2]
         sm = cv2.GaussianBlur(img, (0, 0), 0.8)

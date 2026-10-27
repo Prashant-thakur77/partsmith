@@ -101,6 +101,60 @@ def test_bundle_embed_presets_card(client: TestClient) -> None:
     assert card.status_code == 200 and Image.open(io.BytesIO(card.content)).size == (1200, 630)
 
 
+def test_job_presets_use_the_part_rule(client: TestClient, fake: FakeService) -> None:
+    """An unpublished job gets the same presets and the same preset → delta_mm rule as a published part."""
+    from services.registry import presets
+
+    jid = _demo(client, fake)
+    pr = client.get(f"/api/v1/jobs/{jid}/presets").json()
+    specs, values = fake.job_params(jid)
+    assert pr["job_id"] == jid and pr["fit_knobs"] == [p.name for p in presets.fit_knobs(specs)] == ["bore_d"]
+    assert pr["presets"] == presets.for_part(specs, values) and len(pr["presets"]) == 7
+    b = client.get(f"/api/v1/jobs/{jid}/bake?format=view&preset=abs-fdm-0.4").json()
+    assert b["preset"]["id"] == "abs-fdm-0.4" and b["preset"]["delta_mm"] == 0.30
+    (ch,) = b["preset"]["changes"]
+    assert ch["param"] == "bore_d" and ch["to"] == pytest.approx(values["bore_d"] + 0.30)
+    assert b["params"]["bore_d"] == pytest.approx(ch["to"])
+    assert b["params"]["height"] == pytest.approx(values["height"])  # outer sizes never change
+    k = client.get(f"/api/v1/jobs/{jid}/bake?format=view&height=12&preset=pla-fdm-0.4").json()
+    assert k["params"]["height"] == 12.0 and k["params"]["bore_d"] == pytest.approx(values["bore_d"] + 0.20)
+    assert "preset" not in client.get(f"/api/v1/jobs/{jid}/bake?format=view").json()
+    e = _err(client.get(f"/api/v1/jobs/{jid}/bake?preset=pla-fdm-04"), 422, "unknown_preset")
+    assert "pla-fdm-0.4" in e["closest_matches"]
+    _err(client.get("/api/v1/jobs/j_nope/presets"), 404, "job_not_found")
+
+
+def test_part_detail_ship_and_gated_bake_download(client: TestClient) -> None:
+    """Part detail carries the export gate's decision; `/bake?download=1` enforces it like bundle.zip."""
+    add_part("cable_clip", "desk-cable-clip")
+    add_part("hook", "rough-hook", verified=False, max_error_mm=0.8)
+    failed = make_part("spacer", "broken-spacer", verified=False)
+    assert failed.verification is not None
+    failed.verification = failed.verification.model_copy(update={"status": "failed", "reasons": ["no solid"]})
+    get_registry().upsert_part(failed)
+
+    ok = client.get("/api/v1/parts/desk-cable-clip").json()["ship"]
+    assert ok["status"] == "verified" and ok["needs_ack"] is False and ok["reason"]
+    rough = client.get("/api/v1/parts/rough-hook").json()["ship"]
+    assert rough["status"] == "best_effort" and rough["needs_ack"] is True and "0.8" in rough["reason"]
+    assert client.get("/api/v1/parts/broken-spacer").json()["ship"]["status"] == "blocked"
+
+    # verified: unchanged, downloads directly
+    r = client.get("/api/v1/parts/desk-cable-clip/bake?format=stl&download=1")
+    assert r.status_code == 200 and len(r.content) > 84
+    # best effort: the bake download can no longer bypass the bundle.zip gate
+    e = _err(client.get("/api/v1/parts/rough-hook/bake?format=stl&download=1"), 409, "needs_ack")
+    assert "ack=1" in e["message"] and "0.8" in e["message"]
+    _err(client.get("/api/v1/parts/rough-hook/bake?format=step&download=1&preset=pla-fdm-0.4"), 409, "needs_ack")
+    assert client.get("/api/v1/parts/rough-hook/bake?format=stl&download=1&ack=1").status_code == 200
+    assert client.get("/api/v1/parts/rough-hook/bake?format=view&download=1").status_code == 200  # preview stays open
+    assert client.get("/api/v1/parts/rough-hook/bake?format=glb&download=1").status_code == 200  # AR preview too
+    assert client.get("/api/v1/parts/rough-hook/bake?format=stl").status_code == 200  # a bake result is not an export
+    # failed: refused even with ack
+    _err(client.get("/api/v1/parts/broken-spacer/bake?format=stl&download=1&ack=1"), 409, "not_shippable")
+    _err(client.get("/api/v1/parts/broken-spacer/bundle.zip?ack=1"), 409, "not_shippable")
+
+
 def test_requests_votes_photo_status(client: TestClient, monkeypatch: pytest.MonkeyPatch) -> None:
     files = {"photo": ("p.jpg", _jpeg(), "image/jpeg")}
     n = client.post("/api/v1/needs", data={"query": "mixer jar coupler 22 mm"}, files=files).json()

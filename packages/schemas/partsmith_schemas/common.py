@@ -37,6 +37,8 @@ class GroundTruthSource(StrEnum):
     reference_spec = "reference_spec"
     ruler = "ruler"
     caliper = "caliper"
+    expected_outcome = "expected_outcome"
+    """The expected refusal/accept outcome of a gate case (control and red-team suites), not a mm value."""
 
 
 class Citation(Strict):

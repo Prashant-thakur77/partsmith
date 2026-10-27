@@ -1,0 +1,16 @@
+{
+  "kind": "fix",
+  "intent": "Make a replacement for this broken wall hook.",
+  "photo_shas": {
+    "top": "3d02c8fc9730053cecd4213f9b0a456549ff4b39185bc891a980b29087dca10a.jpg",
+    "side": "0c7224ac82b3fbd3352bd4eb4d4d4b83963566a0617baa688d278528e5bc4c8f.jpg"
+  },
+  "mat_kind": "paper",
+  "screen_px_per_mm": null,
+  "thickness_mm": 4.5,
+  "family_hint": "hook",
+  "origin": "synthetic",
+  "max_iters": 6,
+  "budget_usd": 0.5,
+  "provider_mode": null
+}

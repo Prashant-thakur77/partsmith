@@ -148,8 +148,8 @@ export function JudgesClient() {
 
   const steps = [
     { n: "1", title: "Watch a stored run", body: "Below: photo → mm → CAD → verify, played back from its run log.", href: "#replay", icon: History },
-    { n: "2", title: "Check the numbers", body: "Bench tables with N, CI and ground-truth source.", href: "/bench", icon: Gauge },
-    { n: "3", title: "See which model ran where", body: "Live vs mock per stage, open-weights paths, cost.", href: "/status", icon: Server },
+    { n: "2", title: "Check the numbers", body: "Results tables with N, CI and ground-truth source.", href: "/results", icon: Gauge },
+    { n: "3", title: "See which model ran where", body: "Live vs mock per stage, open-weights paths, cost.", href: "/models", icon: Server },
     { n: "4", title: "Use it from an agent", body: "REST, MCP and llms.txt in one page.", href: "/agents", icon: Terminal },
   ];
 

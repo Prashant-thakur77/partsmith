@@ -180,6 +180,17 @@ class FakeService:
             "gps_free": not has_gps(photo),
         }
 
+    def job_params(self, job_id: str) -> Any:
+        from services.geom_worker.program import parse_params
+
+        job = self.mgr.get(job_id)
+        code = job.read_text("part.py") if job else None
+        if not code:
+            raise KeyError(job_id)
+        specs = parse_params(code)
+        values = (job.read_json("values.json") if job else None) or {}
+        return specs, {s.name: float(values.get(s.name, s.default)) for s in specs}
+
     def bake_job(self, job_id: str, params: dict[str, float], formats: Any) -> Any:
         from services.geom_worker.bake import bake
 
@@ -325,6 +336,35 @@ def test_blobs_cache_headers_and_errors(client: TestClient) -> None:
 
 
 # ------------------------------------------------------------------------------------------------- jobs
+
+
+def test_upload_hygiene_keeps_the_exif_orientation() -> None:
+    """Tap points arrive in the photo's displayed (EXIF-rotated) frame, so cleaning an upload must not lose the
+    rotation: JPEG keeps the tag (pixels byte-for-byte), PNG/WebP are saved upright."""
+    from services.api.uploads import clean_image
+    from services.common.images import decode_bgr, exif_orientation
+
+    im = Image.new("RGB", (640, 480), (200, 200, 205))
+    im.paste((255, 0, 0), (0, 0, 64, 48))  # a red corner, to see where the pixels went
+    exif = Image.Exif()
+    exif[0x0112] = 6
+    exif[ExifTags.IFD.GPSInfo] = {1: "N", 2: (12.0, 34.0, 56.0), 3: "E", 4: (76.0, 54.0, 32.0)}
+    for fmt in ("JPEG", "WEBP", "PNG"):
+        buf = io.BytesIO()
+        im.save(
+            buf, fmt, exif=exif, **({"quality": 95} if fmt == "JPEG" else {"lossless": True} if fmt == "WEBP" else {})
+        )
+        raw = buf.getvalue()
+        assert exif_orientation(raw) == 6
+        clean, _ = clean_image(raw)
+        assert not has_gps(clean)
+        shown = decode_bgr(clean)
+        assert shown.shape[:2] == (640, 480), fmt  # displayed: rotated 90° clockwise
+        assert shown[5, -5, 2] > 200 and shown[5, -5, 0] < 60, fmt  # the stored top-left corner is now top-right
+        if fmt == "JPEG":
+            assert exif_orientation(clean) == 6 and clean[clean.index(b"\xff\xda") :] == raw[raw.index(b"\xff\xda") :]
+        else:
+            assert exif_orientation(clean) == 1
 
 
 def test_fix_upload_strips_gps_and_validates(client: TestClient, fake: FakeService) -> None:

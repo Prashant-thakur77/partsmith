@@ -7,19 +7,20 @@
  "preset": "clean",
  "mode": "mock",
  "gt_source": "reference_spec",
- "status": "best_effort",
- "verified": false,
+ "status": "verified",
+ "verified": true,
  "iterations": 1,
- "iterations_to_converge": null,
+ "iterations_to_converge": 1,
  "strategy": "free_code",
  "template": null,
- "verifier_max_error_mm": 6.9950000000000045,
+ "verifier_max_error_mm": 0.47187455859913513,
  "retake_reason": null,
+ "failed_checks": [],
  "usd": 0.0,
  "tokens_in": 0,
  "tokens_out": 0,
  "model_calls": 5,
- "model_ms": 121,
+ "model_ms": 102,
  "provider_modes": [
   "mock"
  ],
@@ -40,26 +41,26 @@
  "convergence": [
   {
    "iter": 1,
-   "hausdorff_mm": 4.499175222608851,
-   "iou": 0.7413503013246046,
-   "max_error_mm": 6.9950000000000045
+   "hausdorff_mm": 0.47187455859913513,
+   "iou": 0.996423549550651,
+   "max_error_mm": 0.47187455859913513
   }
  ],
- "wall_s": 6.4,
+ "wall_s": 5.53,
  "dims": [
   {
    "name": "length",
    "gt_mm": 50.5,
-   "model_mm": 42.9627,
-   "error_mm": -7.5373,
-   "within_spec": false
+   "model_mm": 49.9386,
+   "error_mm": -0.5614,
+   "within_spec": true
   },
   {
    "name": "width",
    "gt_mm": 14.5,
-   "model_mm": 12.243,
-   "error_mm": -2.257,
-   "within_spec": false
+   "model_mm": 14.232,
+   "error_mm": -0.268,
+   "within_spec": true
   }
  ],
  "missed": [],
@@ -68,5 +69,6 @@
  "pass_0_5": false,
  "valid": true,
  "valid_reason": "",
- "failure": "worst length -7.54 mm"
+ "failure_category": "dim_off",
+ "failure": "worst length -0.56 mm"
 }

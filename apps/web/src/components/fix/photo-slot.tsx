@@ -29,6 +29,9 @@ export function PhotoSlot({
   gate = true,
   onGate,
   compact = false,
+  points,
+  onPoints,
+  pointsHint,
 }: {
   view: "top" | "side" | "mating";
   title: string;
@@ -40,7 +43,13 @@ export function PhotoSlot({
   gate?: boolean;
   onGate?: (passed: boolean | null) => void;
   compact?: boolean;
+  /** Tap-to-point: feature taps in image pixels, drawn on the preview (docs/API.md `points`). */
+  points?: TapPoint[];
+  onPoints?: (p: TapPoint[]) => void;
+  pointsHint?: string;
 }) {
+  const [natural, setNatural] = React.useState<{ w: number; h: number } | null>(null);
+  const [tapKind, setTapKind] = React.useState<TapKind>("hole");
   const camRef = React.useRef<HTMLInputElement>(null);
   const fileRef = React.useRef<HTMLInputElement>(null);
   const [busy, setBusy] = React.useState(false);
@@ -126,7 +135,15 @@ export function PhotoSlot({
         <div className="grid grid-cols-1 gap-4 p-3 sm:grid-cols-[160px_minmax(0,1fr)]">
           <div className="relative aspect-[4/3] overflow-hidden rounded-md border border-border bg-surface-2">
             {/* eslint-disable-next-line @next/next/no-img-element -- local object URL preview */}
-            <img src={value.info.url} alt={`${title} preview`} className="absolute inset-0 size-full object-cover" />
+            <img
+              src={value.info.url}
+              alt={`${title} preview`}
+              className="absolute inset-0 size-full object-contain"
+              onLoad={(e) => setNatural({ w: e.currentTarget.naturalWidth, h: e.currentTarget.naturalHeight })}
+            />
+            {onPoints && natural ? (
+              <PointLayer natural={natural} points={points ?? []} onPoints={onPoints} title={title} kind={tapKind} />
+            ) : null}
             <button
               type="button"
               onClick={() => fileRef.current?.click()}
@@ -136,6 +153,19 @@ export function PhotoSlot({
             </button>
           </div>
           <div className="min-w-0 space-y-3">
+            {onPoints ? (
+              <div className="space-y-1.5">
+              <TapKindPicker value={tapKind} onChange={setTapKind} />
+              <p className="flex flex-wrap items-center gap-x-2 text-[12px] text-muted">
+                <span>{pointsHint}</span>
+                {points?.length ? (
+                  <button type="button" onClick={() => onPoints([])} className="font-medium text-accent-text underline-offset-2 hover:underline">
+                    Clear
+                  </button>
+                ) : null}
+              </p>
+              </div>
+            ) : null}
             <ul className="space-y-1" aria-label="Instant checks">
               {value.info.checks.map((c) => {
                 const Icon = c.level === "ok" ? CheckCircle2 : c.level === "warn" ? AlertTriangle : XCircle;
@@ -165,6 +195,87 @@ export function PhotoSlot({
           </div>
         </div>
       )}
+    </div>
+  );
+}
+
+export const TAP_KINDS = ["hole", "slot", "tab", "broken_edge"] as const;
+export type TapKind = (typeof TAP_KINDS)[number];
+export type TapPoint = { x: number; y: number; kind: TapKind };
+const TAP_LABEL: Record<TapKind, string> = { hole: "Hole", slot: "Slot", tab: "Tab", broken_edge: "Broken edge" };
+const TAP_MARK: Record<TapKind, string> = { hole: "H", slot: "S", tab: "T", broken_edge: "B" };
+const MAX_TAPS = 32;
+
+function TapKindPicker({ value, onChange }: { value: TapKind; onChange: (k: TapKind) => void }) {
+  return (
+    <div role="radiogroup" aria-label="What a tap marks" className="inline-flex flex-wrap gap-1">
+      {TAP_KINDS.map((k) => (
+        <button
+          key={k}
+          type="button"
+          role="radio"
+          aria-checked={value === k}
+          onClick={() => onChange(k)}
+          className={cn(
+            "h-7 rounded-md border px-2 text-[12px]",
+            value === k ? "border-accent bg-accent-soft font-medium text-fg" : "border-border text-muted hover:text-fg",
+          )}
+        >
+          {TAP_LABEL[k]}
+        </button>
+      ))}
+    </div>
+  );
+}
+
+/**
+ * Click/tap layer over an object-contain preview: maps taps to image pixels and draws numbered markers.
+ * Keyboard users get a button per marker to remove it.
+ */
+function PointLayer({ natural, points, onPoints, title, kind }: { natural: { w: number; h: number }; points: TapPoint[]; onPoints: (p: TapPoint[]) => void; title: string; kind: TapKind }) {
+  const ref = React.useRef<HTMLDivElement>(null);
+  const [box, setBox] = React.useState({ w: 0, h: 0 });
+  React.useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    const ro = new ResizeObserver(([e]) => e && setBox({ w: e.contentRect.width, h: e.contentRect.height }));
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, []);
+  const scale = box.w && box.h ? Math.min(box.w / natural.w, box.h / natural.h) : 0;
+  const ox = (box.w - natural.w * scale) / 2;
+  const oy = (box.h - natural.h * scale) / 2;
+  return (
+    <div
+      ref={ref}
+      className="absolute inset-0 cursor-crosshair"
+      onClick={(e) => {
+        if (!scale) return;
+        const r = e.currentTarget.getBoundingClientRect();
+        const x = (e.clientX - r.left - ox) / scale;
+        const y = (e.clientY - r.top - oy) / scale;
+        if (x < 0 || y < 0 || x > natural.w || y > natural.h) return;
+        onPoints([...points, { x: Math.round(x), y: Math.round(y), kind }].slice(-MAX_TAPS));
+      }}
+      aria-label={`${title}: tap to mark features`}
+      role="group"
+    >
+      {points.map(({ x, y, kind: k }, i) => (
+        <button
+          key={`${x}-${y}-${i}`}
+          type="button"
+          aria-label={`Remove point ${i + 1} (${TAP_LABEL[k].toLowerCase()})`}
+          onClick={(e) => {
+            e.stopPropagation();
+            onPoints(points.filter((_, j) => j !== i));
+          }}
+          className="absolute flex h-5 min-w-5 px-0.5 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full border-2 border-white bg-accent font-mono text-[10px] font-bold text-accent-fg shadow-md"
+          style={{ left: ox + x * scale, top: oy + y * scale }}
+        >
+          {TAP_MARK[k]}
+          {i + 1}
+        </button>
+      ))}
     </div>
   );
 }

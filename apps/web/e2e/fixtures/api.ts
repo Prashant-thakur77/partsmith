@@ -21,6 +21,7 @@ const NOW = 1_793_100_000;
 
 export const status = {
   mode: "mock",
+  admin: "token",
   providers: [
     { stage: "measure", role: "Segmenter", provider: "meta", model: "sam-3.1", mode: "mock", key_env: "MODEL_API_KEY", key_present: false, open_weights: false, where: "Meta Model API", note: "MODEL_API_KEY missing → deterministic mock" },
     { stage: "understand", role: "Reader", provider: "meta", model: "muse-spark-1.3", mode: "mock", key_env: "MODEL_API_KEY", key_present: false, open_weights: false, where: "Meta Model API", note: "MODEL_API_KEY missing → deterministic mock" },
@@ -54,6 +55,7 @@ const verification = {
     { id: "t1", description: "hole_1 Ø == 4.50 ± 0.15", value: 4.5, expected: 4.52, tol: 0.15, passed: true, priority: "P0" },
     { id: "t2", description: "bbox.x == 40.0 ± 0.3", value: 40.0, expected: 40.12, tol: 0.3, passed: true, priority: "P0" },
     { id: "t3", description: "single watertight solid", value: null, expected: null, tol: null, passed: true, priority: "P0" },
+    { id: "f1", description: "M4 screw passes through hole_1", value: 4.5, expected: 4.3, tol: 0.2, passed: true, priority: "P1" },
   ],
   validity: { is_valid: true, single_solid: true, watertight: true, volume_mm3: 5120.4, bbox_mm: [40, 20, 30], min_wall_mm: 2.8, issues: [] },
   vetoes: [],
@@ -161,6 +163,9 @@ export const jobEvents = [
   ev({ t: "stage", stage: "execute", status: "ok", ms: 640, label: "sandbox ok" }),
   ev({ t: "iteration", iter: 1, strategy: "template", edits: [{ param: "length", to: 38 }], analysis: "Initial fit from template defaults.", diff: "", hausdorff_mm: 1.84, iou: 0.912, passed_tests: 3, total_tests: 6 }),
   ev({ t: "metric", iter: 1, name: "hausdorff_mm", value: 1.84, threshold: 0.5, unit: "mm" }),
+  ev({ t: "thought", stage: "fix", model: "meta-models/muse-spark-open-1026", text: "The base leg reads 2.1 mm short against the measured outline; lengthen it before touching the holes.", iter: 2 }),
+  ev({ t: "tool_call", stage: "fix", name: "set_param", args: { name: "length", value: 40.1 }, result: "length 38.00 → 40.10 mm", ok: true, ms: 4, iter: 2 }),
+  ev({ t: "focus", feature: "hole_1", view: "top", at_mm: [-10, 0, 1.5], label: "hole_1 (Ø 4.52 mm measured)", iter: 2 }),
   ev({ t: "stage", stage: "fix", status: "ok", ms: 800, label: "length +2.1 mm, hole_d +0.3 mm", iter: 2 }),
   ev({ t: "iteration", iter: 2, strategy: "template", edits: [{ param: "length", from: 38, to: 40.1 }], analysis: "Base leg was 2.1 mm short; holes slightly small.", diff: "--- a/part.py\n+++ b/part.py\n@@ -21,3 +21,3 @@\n-    \"length\": (38.0, 18.0, 120.0, 0.1, \"mm\", True, \"Base leg length\"),\n+    \"length\": (40.1, 18.0, 120.0, 0.1, \"mm\", True, \"Base leg length\"),\n", hausdorff_mm: 0.71, iou: 0.958, passed_tests: 5, total_tests: 6 }),
   ev({ t: "metric", iter: 2, name: "hausdorff_mm", value: 0.71, threshold: 0.5, unit: "mm" }),
@@ -177,6 +182,11 @@ export const jobEvents = [
   art("step", "part.step"),
   art("code", "part.py"),
   art("verification", "verification.json"),
+  art("zip", "bundle.zip", undefined, "everything in one zip (model, part.py, cards)"),
+  art("video", "orbit.mp4", undefined, "orbit clip"),
+  art("feature_mask", "mask.png", undefined, "top: feature masks"),
+  art("reconstruction", "render.png", undefined, "Muse Image proposal (mock), accepted by code gate: IoU 0.981 · Hausdorff 0.42 mm"),
+  art("install_card", "render.png", undefined, "install card (mock)"),
   ev({ t: "done", verified: true, status: "verified", summary: { max_error_mm: 0.31 } }),
 ];
 
@@ -188,7 +198,7 @@ export const jobDetail = {
     units: "mm",
     title: "L-bracket",
     base_profile: { kind: "polyline", points_mm: [[-20, -10], [20, -10], [20, 10], [-20, 10]], source: "measured", sigma_mm: 0.05 },
-    thickness: { value: 3, source: "user_stated", sigma_mm: 0 },
+    thickness: { value: 3, source: "cited", sigma_mm: 0.1, evidence: { citation: { url: "https://example.com/datasheet", title: "Bracket datasheet (fixture)", quote: "Material thickness 3.0 mm" } } },
     features: [
       { kind: "through_hole", id: "hole_1", center_mm: [-10, 0], diameter: { value: 4.52, source: "measured", sigma_mm: 0.04 } },
       { kind: "through_hole", id: "hole_2", center_mm: [10, 0], diameter: { value: 4.49, source: "measured", sigma_mm: 0.04 } },
@@ -210,7 +220,7 @@ export const jobDetail = {
       slots: [],
       length: { value: 40.12, source: "measured", sigma_mm: 0.06 },
       width: { value: 19.94, source: "measured", sigma_mm: 0.06 },
-      thickness: { value: 3, source: "user_stated", sigma_mm: 0 },
+      thickness: { value: 3, source: "cited", sigma_mm: 0.1, evidence: { citation: { url: "https://example.com/datasheet", title: "Bracket datasheet (fixture)", quote: "Material thickness 3.0 mm" } } },
       area_mm2: 768.2,
       mask_source: "synthetic-gt",
       notes: [],
@@ -220,8 +230,62 @@ export const jobDetail = {
   code: lb.code,
   params: lb.params,
   values: lb.defaults,
-  artifacts: { photo: `${A}/photo.png`, view: `${A}/view-l-bracket.json`, stl: `${A}/part.stl`, threemf: `${A}/part.3mf`, step: `${A}/part.step`, code: `${A}/part.py`, verification: `${A}/verification.json` },
+  artifacts: { photo: `${A}/photo.png`, view: `${A}/view-l-bracket.json`, stl: `${A}/part.stl`, threemf: `${A}/part.3mf`, step: `${A}/part.step`, code: `${A}/part.py`, verification: `${A}/verification.json`, zip: `${A}/bundle.zip` },
   question: null,
+};
+
+/** A best-effort job: the export gate must lock its downloads behind an acknowledgement. */
+export const bestEffortDetail = {
+  ...jobDetail,
+  summary: { ...jobSummary, id: "job_best", verified: false, max_error_mm: 0.83, part_slug: null, title: "Cupboard latch" },
+  verification: { ...verification, verified: false, status: "best_effort", max_error_mm: 0.83, views: [{ ...verification.views[0]!, hausdorff_mm: 0.83 }] },
+  artifacts: { ...jobDetail.artifacts, coupon: `${A}/coupon.stl` },
+};
+
+export const presets = [
+  { id: "pla-fdm-0.4", title: "PLA · FDM 0.4 mm nozzle", material: "PLA", process: "FDM", nozzle_mm: 0.4, delta_mm: 0.2, note: "Typical desktop printer." },
+  { id: "petg-fdm-0.4", title: "PETG · FDM 0.4 mm nozzle", material: "PETG", process: "FDM", nozzle_mm: 0.4, delta_mm: 0.25, note: "" },
+  { id: "resin-sla", title: "Resin · SLA/MSLA", material: "Resin", process: "SLA", nozzle_mm: null, delta_mm: 0.1, note: "Resin is precise." },
+];
+
+export const lessons = [
+  { id: "l_1", scope: "bracket", rule: "Start hole_d 0.3 mm above the measured diameter for FDM prints.", evidence: { job_id: "job_demo_1", param: "hole_d", first: 4.2, final: 4.5 }, status: "promoted", promoted_by: "admin", created_at: NOW - 7200, links: [{ kind: "job", id: "job_demo_1", url: "/api/v1/jobs/job_demo_1", page: "/jobs/job_demo_1" }] },
+  { id: "l_2", scope: "global", rule: "Switch to free code after two template rounds that do not reduce the error.", evidence: { job_id: "job_demo_1", switch: "template→free_code" }, status: "candidate", promoted_by: null, created_at: NOW - 3600, links: [{ kind: "job", id: "job_demo_1", url: "/api/v1/jobs/job_demo_1", page: "/jobs/job_demo_1" }] },
+];
+
+export const batch = {
+  id: "b_1",
+  name: "Saturday counter",
+  created_at: NOW - 1800,
+  customers: [{ name: "Asha", contact: "98xxxxxx01", jobs: ["job_demo_1"] }],
+  rows: [{ customer: "Asha", contact: "98xxxxxx01", job_id: "job_demo_1", title: "L-bracket (synthetic sample)", status: "done", verified: true, max_error_mm: 0.31, origin: "synthetic", part_slug: "l-bracket", grams_pla: 6.35, price_inr: 19.05, orientation: "base leg down", supports: false, print_minutes: 38, material: "PLA", layer_mm: 0.2, walls: 3, infill_percent: 40 }],
+  price: { inr_per_g_pla: 3, inr_base_per_part: 0 },
+};
+
+export const needs = [
+  { id: "need_1", query: "Usha cooler wheel, 32 mm", votes: 4, status: "open", created_at: NOW - 5000, photo_url: null, counted: true },
+  { id: "need_2", query: "Mixer jar coupler", votes: 2, status: "in_progress", created_at: NOW - 9000, photo_url: null, counted: true },
+];
+
+const op = (props?: string[]) => (props ? { requestBody: { content: { "multipart/form-data": { schema: { properties: Object.fromEntries(props.map((p) => [p, {}])) } } } } } : {});
+/** Feature-detection document: the round-2 routes and fields the UI looks for. */
+export const openapi = {
+  openapi: "3.1.0",
+  info: { title: "PartSmith", version: "0.1.0" },
+  paths: Object.fromEntries(
+    (
+      [
+        ["/jobs/fix", "post", ["top", "side", "mating", "orbit", "intent", "mat_kind", "thickness_mm", "family_hint", "screen_px_per_mm", "points"]],
+        ["/presets", "get"],
+        ["/parts/{slug}/presets", "get"],
+        ["/parts/{slug}/bundle.zip", "get"],
+        ["/parts/{slug}/card.png", "get"],
+        ["/lessons", "get"],
+        ["/batches", "get"],
+        ["/needs/{id}/vote", "post"],
+      ] as [string, string, string[]?][]
+    ).map(([p, m, f]) => [`/api/v1${p}`, { [m]: op(f) }]),
+  ),
 };
 
 export const pausedDetail = {
@@ -242,7 +306,7 @@ export const pausedEvents = [
 ];
 
 export const replays = [
-  { id: "job_demo_1", title: "L-bracket (synthetic sample)", origin: "synthetic", provider_mode: "mock", verified: true, max_error_mm: 0.31, iterations: 3 },
+  { id: "job_replay_1", title: "L-bracket (synthetic sample)", origin: "synthetic", provider_mode: "mock", verified: true, max_error_mm: 0.31, iterations: 3 },
 ];
 
 const pendingTable = (gt: string) => ({ n: 0, ground_truth: gt, ci: null, columns: [], rows: [], headline: { median_abs_err_mm: null }, status: "pending", note: "not run yet" });
@@ -347,7 +411,7 @@ function sse(events: unknown[]): string {
 
 const json = (route: Route, body: unknown, status = 200) => route.fulfill({ status, contentType: "application/json", body: JSON.stringify(body) });
 
-export type MockOptions = { offline?: boolean; emptyRegistry?: boolean; noBench?: boolean; contrastFail?: boolean };
+export type MockOptions = { offline?: boolean; emptyRegistry?: boolean; noBench?: boolean; contrastFail?: boolean; liveFitCheck?: boolean };
 
 export const captureContrastFail = {
   passed: false,
@@ -375,7 +439,16 @@ export async function mockApi(page: Page, opts: MockOptions = {}): Promise<strin
       if (name === "verification.json") return json(route, verification);
       return route.fulfill({ status: 200, contentType: "application/octet-stream", body: "fixture" });
     }
-    if (path === "/openapi.json") return json(route, { openapi: "3.1.0", info: { title: "PartSmith", version: "0.1.0" }, paths: {} });
+    if (path === "/openapi.json") return json(route, openapi);
+    if (path === "/presets") return json(route, presets);
+    if (path === "/lessons") return json(route, lessons);
+    if (path === "/batches" && method === "GET") return json(route, [{ id: batch.id, name: batch.name, created_at: batch.created_at, customers: 1, jobs: 1 }]);
+    if (path === "/batches" && method === "POST") return json(route, { ...batch, id: "b_2", name: JSON.parse(route.request().postData() ?? "{}").name, customers: [], rows: [] });
+    if (path === "/batches/b_1") return json(route, batch);
+    if (path === "/batches/b_1/jobs") return json(route, batch);
+    if (path === "/needs" && method === "GET") return json(route, needs);
+    const vote = path.match(/^\/needs\/([^/]+)\/vote$/);
+    if (vote) return json(route, { ...(needs.find((n) => n.id === vote[1]) ?? needs[0]!), votes: 5, counted: true });
     if (path === "/health") return json(route, { ok: true, version: "0.1.0" });
     if (path === "/status") return json(route, status);
     if (path === "/stats") return json(route, stats);
@@ -410,6 +483,7 @@ export async function mockApi(page: Page, opts: MockOptions = {}): Promise<strin
         return json(route, bakeResult(slug, params));
       }
       if (sub === "/matching") return json(route, partCards.filter((c) => c.slug !== slug).slice(0, 3));
+      if (sub === "/presets") return json(route, { slug, fit_knobs: ["hole_d"], presets: [], note: "Clearances are documented starting points, not measurements." });
       if (sub === "/params") return json(route, partRecord(slug).params);
       if (sub === "/variant") return json(route, { params: { thickness: 5 }, applied: ["thickness 3.0 → 5.0 mm"], not_applied: ["make it blue"], confidence: 0.82, mode: "mock" });
     }
@@ -432,8 +506,21 @@ export async function mockApi(page: Page, opts: MockOptions = {}): Promise<strin
       const id = job[1]!;
       const sub = job[2];
       const paused = id === "job_paused";
-      if (!sub) return json(route, paused ? pausedDetail : { ...jobDetail, events: jobEvents.slice(0, 4) });
+      if (id === "job_replay_1" && !sub) return json(route, { ...jobDetail, summary: { ...jobSummary, id, is_replay: true }, events: jobEvents });
+      if (!sub) return json(route, paused ? pausedDetail : id === "job_best" ? bestEffortDetail : { ...jobDetail, events: jobEvents.slice(0, 4) });
       if (sub === "/events") {
+        if (url.searchParams.get("follow") === "1" && opts.liveFitCheck) {
+          // The phone's fit check arrives a moment after the laptop page opened (ts = now).
+          const t = Date.now() / 1000 + 1;
+          const fit = [
+            { job: id, seq: 900, ts: t, ctx: "", t: "metric", iter: 3, name: "fit_check_passed", value: 1, threshold: null, unit: "" },
+            { job: id, seq: 901, ts: t, ctx: "", t: "metric", iter: 3, name: "fit_check_iou", value: 0.981, threshold: null, unit: "" },
+            { job: id, seq: 902, ts: t, ctx: "", t: "metric", iter: 3, name: "fit_check_hausdorff_mm", value: 0.38, threshold: null, unit: "mm" },
+            { job: id, seq: 903, ts: t, ctx: "", t: "artifact", kind: "measure_overlay", sha: "sha_fit", url: `${A}/render.png`, iter: 3, label: "fit check on screen-m: PASS" },
+          ];
+          await new Promise((r) => setTimeout(r, 1500));
+          return route.fulfill({ status: 200, contentType: "text/event-stream", headers: { "Cache-Control": "no-cache" }, body: sse(fit) });
+        }
         return route.fulfill({ status: 200, contentType: "text/event-stream", headers: { "Cache-Control": "no-cache" }, body: sse(paused ? pausedEvents : jobEvents) });
       }
       if (sub === "/bake") {
@@ -443,7 +530,11 @@ export async function mockApi(page: Page, opts: MockOptions = {}): Promise<strin
         });
         return json(route, bakeResult("l-bracket", params));
       }
-      if (sub === "/publish") return json(route, partRecord("l-bracket"));
+      if (sub === "/publish") {
+        if (id === "job_best" && !JSON.parse(route.request().postData() ?? "{}").ack)
+          return json(route, { error: { code: "needs_ack", message: "hole_1 is 0.8 mm off its measured position. Print the fit-test coupon first." } }, 409);
+        return json(route, partRecord("l-bracket"));
+      }
       if (sub === "/cancel") return json(route, { ...pausedDetail.summary, status: "cancelled" });
       if (sub === "/answer") return json(route, { ...pausedDetail.summary, status: "running" });
       if (sub === "/edit")

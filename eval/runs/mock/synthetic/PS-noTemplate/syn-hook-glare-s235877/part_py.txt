@@ -3,16 +3,16 @@ import cadquery as cq
 
 FAMILY = 'hook'
 OUTLINE = [(24.989, -11.355), (25.305, -10.035), (25.282, -3.839), (26.539, -2.086), (26.572, 7.718), (26.402, 8.2), (25.328, 8.927), (25.226, 10.633), (24.795, 11.8), (23.95, 12.795), (23.103, 13.351), (21.828, 13.661), (-22.639, 13.696), (-23.891, 13.508), (-24.842, 13.052), (-26.155, 11.567), (-26.564, 9.822), (-26.572, -9.958), (-26.091, -11.757), (-25.498, -12.549), (-24.358, -13.359), (-22.491, -13.711), (21.583, -13.693), (22.596, -13.546), (23.675, -13.031)]
-HOLES = [(-19.914, -0.188), (-6.708, -0.190)]
+HOLES = [(-19.913, -0.412), (-6.762, -0.419)]
 SLOTS = []
 BOSSES = []
 MEASURE_MAP = {'thickness': 'thickness', 'side.thickness': 'thickness', 'hole_1.diameter': 'hole_1_d', 'hole_2.diameter': 'hole_2_d'}
 
 PARAMS = {  # name: (default, min, max, step, unit, affects_fit, label)
     "thickness": (3.0, 0.80, 40.0, 0.01, "mm", True, "Plate thickness"),
-    "outline_offset": (0.0, -1.0, 1.0, 0.02, "mm", True, "Outline offset (+ grows the outline)"),
-    "hole_1_d": (5.23, 2.23, 8.23, 0.05, "mm", True, "hole_1 diameter"),
-    "hole_2_d": (5.23, 2.23, 8.23, 0.05, "mm", True, "hole_2 diameter"),
+    "outline_offset": (-0.2, -1.0, 1.0, 0.02, "mm", True, "Outline offset (+ grows the outline)"),
+    "hole_1_d": (4.96, 1.96, 7.96, 0.05, "mm", True, "hole_1 diameter"),
+    "hole_2_d": (4.96, 1.96, 7.96, 0.05, "mm", True, "hole_2 diameter"),
 }
 
 

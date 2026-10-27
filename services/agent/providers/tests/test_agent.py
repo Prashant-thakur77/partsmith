@@ -71,6 +71,22 @@ def test_mock_loop_runs_real_tools_and_emits_trace(events: list[Any]) -> None:
     assert thought.text == "hole looks small" and thought.stage == "fix_agent" and thought.iter == 1
     tc = _by_type(events, ToolCallEvent)
     assert [(t.name, t.ok, t.iter) for t in tc] == [("measure", True, 1), ("submit", True, 2)]
+    assert thought.mode == "mock" and all(t.mode == "mock" for t in tc)
+
+
+def test_a_domain_mock_names_itself_in_every_event(events: list[Any]) -> None:
+    """A mock that returns `"model"` is labelled with that name (and mode mock) on model_call and thought events."""
+    providers.register_mock(
+        "fix_agent",
+        lambda req, history: {"tool": "submit", "args": {"hole_d": 3.0}, "thought": "done (mock)", "model": "mock x"},
+    )
+    with providers.job_context("job", events.append):
+        providers.run_agent("fix_agent", REQ, TOOLS, Tools())
+    (mc,) = _by_type(events, ModelCallEvent)
+    (thought,) = _by_type(events, ThoughtEvent)
+    (tc,) = _by_type(events, ToolCallEvent)
+    assert (mc.model, mc.mode, mc.provider) == ("mock x", "mock", "mock")
+    assert (thought.model, thought.mode, tc.mode) == ("mock x", "mock", "mock")
 
 
 def test_builtin_mock_submits_schema_minimal_args() -> None:

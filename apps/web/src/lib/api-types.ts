@@ -9,7 +9,7 @@ const num = z.number();
 const point2 = z.tuple([num, num]);
 
 // ── common ────────────────────────────────────────────────────────────────────
-export const SourceSchema = z.enum(["measured", "user_stated", "inferred"]);
+export const SourceSchema = z.enum(["measured", "user_stated", "inferred", "cited"]);
 export type Source = z.output<typeof SourceSchema>;
 
 export const DataOriginSchema = z.enum(["real", "synthetic", "reference_object", "replay"]);
@@ -18,14 +18,17 @@ export type DataOrigin = z.output<typeof DataOriginSchema>;
 export const ProviderModeSchema = z.enum(["live", "mock", "replay"]);
 export type ProviderMode = z.output<typeof ProviderModeSchema>;
 
-export const GroundTruthSourceSchema = z.enum(["synthetic_exact", "reference_spec", "ruler", "caliper"]);
+export const GroundTruthSourceSchema = z.enum(["synthetic_exact", "reference_spec", "ruler", "caliper", "expected_outcome"]);
 export type GroundTruthSource = z.output<typeof GroundTruthSourceSchema>;
+
+export const CitationSchema = z.object({ url: z.string(), title: z._default(z.string(), ""), quote: z._default(z.string(), "") });
+export type Citation = z.output<typeof CitationSchema>;
 
 export const MeasuredSchema = z.object({
   value: num,
   source: z._default(SourceSchema, "measured"),
   sigma_mm: z._default(num, 0),
-  evidence: z.nullish(z.object({ view: z.nullish(z.string()), note: z.nullish(z.string()) })),
+  evidence: z.nullish(z.object({ view: z.nullish(z.string()), note: z.nullish(z.string()), citation: z.nullish(CitationSchema) })),
 });
 export type Measured = z.output<typeof MeasuredSchema>;
 
@@ -53,6 +56,8 @@ export type ProviderStatus = z.output<typeof ProviderStatusSchema>;
 
 export const StatusSchema = z.object({
   mode: z.enum(["live", "mock", "replay", "mixed"]),
+  /** "token" when the server requires an admin token for writes, "open (dev)" when it does not. */
+  admin: z.optional(z.string()),
   providers: z.array(ProviderStatusSchema),
   warnings: z._default(z.array(z.string()), []),
   jobs: z.object({ total: z.int(), verified: z.int() }),
@@ -106,7 +111,7 @@ export type MatLayout = z.output<typeof MatLayoutSchema>;
 
 // ── capture / measurement ─────────────────────────────────────────────────────
 export const CaptureCheckSchema = z.object({
-  name: z.enum(["markers", "reprojection", "blur", "coverage", "tilt", "exposure", "glare", "moire", "scale", "contrast"]),
+  name: z.enum(["markers", "reprojection", "blur", "coverage", "tilt", "exposure", "glare", "moire", "scale", "contrast", "single_part"]),
   passed: z.boolean(),
   severity: z.enum(["ok", "warn", "fail"]),
   value: z.nullish(num),
@@ -138,7 +143,7 @@ export const SlotSchema = z.object({
   angle_deg: num,
 });
 
-export const ViewKindSchema = z.enum(["top", "side", "mating", "fit_check"]);
+export const ViewKindSchema = z.enum(["top", "side", "mating", "fit_check", "orbit"]);
 
 export const MeasurementsSchema = z.object({
   view: ViewKindSchema,
@@ -377,7 +382,39 @@ export const DoneEventSchema = z.object({
   summary: z._default(z.record(z.string(), z.unknown()), {}),
 });
 
+export const ThoughtEventSchema = z.object({
+  ...ev,
+  t: z.literal("thought"),
+  stage: z.string(),
+  model: z._default(z.string(), ""),
+  text: z.string(),
+  iter: z.nullish(z.int()),
+});
+export const ToolCallEventSchema = z.object({
+  ...ev,
+  t: z.literal("tool_call"),
+  stage: z.string(),
+  name: z.string(),
+  args: z._default(z.record(z.string(), z.unknown()), {}),
+  result: z._default(z.string(), ""),
+  ok: z._default(z.boolean(), true),
+  ms: z._default(num, 0),
+  iter: z.nullish(z.int()),
+});
+export const FocusEventSchema = z.object({
+  ...ev,
+  t: z.literal("focus"),
+  feature: z._default(z.string(), ""),
+  view: z._default(z.string(), "top"),
+  at_mm: z.nullish(z.tuple([num, num, num])),
+  label: z._default(z.string(), ""),
+  iter: z.nullish(z.int()),
+});
+
 export const EventSchema = z.discriminatedUnion("t", [
+  ThoughtEventSchema,
+  ToolCallEventSchema,
+  FocusEventSchema,
   StageEventSchema,
   MetricEventSchema,
   ArtifactEventSchema,
@@ -389,6 +426,9 @@ export const EventSchema = z.discriminatedUnion("t", [
   DoneEventSchema,
 ]);
 export type JobEvent = z.output<typeof EventSchema>;
+export type ThoughtEvent = z.output<typeof ThoughtEventSchema>;
+export type ToolCallEvent = z.output<typeof ToolCallEventSchema>;
+export type FocusEvent = z.output<typeof FocusEventSchema>;
 export type StageEvent = z.output<typeof StageEventSchema>;
 export type MetricEvent = z.output<typeof MetricEventSchema>;
 export type ArtifactEvent = z.output<typeof ArtifactEventSchema>;
@@ -486,10 +526,11 @@ export type FitOutline = z.output<typeof FitOutlineSchema>;
 export const FitCheckResultSchema = z.object({
   passed: z.boolean(),
   iou: num,
-  hausdorff_mm: num,
-  mean_mm: num,
+  // null when the photo could not be compared (e.g. no mat markers found); the reasons say why.
+  hausdorff_mm: z.nullable(num),
+  mean_mm: z.nullable(num),
   reasons: z._default(z.array(z.string()), []),
-  overlay_url: z.string(),
+  overlay_url: z.nullish(z.string()),
   capture: CaptureReportSchema,
 });
 export type FitCheckResult = z.output<typeof FitCheckResultSchema>;
@@ -554,6 +595,15 @@ export const LineageEntrySchema = z.object({
 });
 export type LineageEntry = z.output<typeof LineageEntrySchema>;
 
+/** The server's export-gate decision (`can_ship`), attached to part detail. */
+export const ShipDecisionSchema = z.object({
+  status: z.enum(["verified", "best_effort", "blocked"]),
+  reason: z._default(z.string(), ""),
+  needs_ack: z._default(z.boolean(), false),
+  source: z._default(z.string(), ""),
+});
+export type ShipDecision = z.output<typeof ShipDecisionSchema>;
+
 export const PartRecordSchema = z.object({
   id: z.string(),
   slug: z.string(),
@@ -581,6 +631,7 @@ export const PartRecordSchema = z.object({
   fit_reports: z._default(z.array(z.record(z.string(), z.unknown())), []),
   origin: z.optional(DataOriginSchema),
   verified: z.optional(z.boolean()),
+  ship: z.optional(ShipDecisionSchema),
 });
 export type PartRecord = z.output<typeof PartRecordSchema>;
 
@@ -603,6 +654,9 @@ export const NeedSchema = z.object({
   votes: z._default(z.int(), 1),
   status: z._default(z.enum(["open", "in_progress", "fulfilled"]), "open"),
   created_at: z._default(num, 0),
+  photo_url: z.nullish(z.string()),
+  /** false when this client had already voted (one vote per client fingerprint). */
+  counted: z.optional(z.boolean()),
 });
 export type Need = z.output<typeof NeedSchema>;
 

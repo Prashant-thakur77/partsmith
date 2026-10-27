@@ -184,7 +184,8 @@ def seed(
             result["failed"].append(f"{sid}: publish failed: {type(exc).__name__}: {exc}")
             continue
         outcome = dedupe_published(part.slug, reg=reg) if reg.get_part(part.slug) else publish_part(part, reg=reg)
-        final = catalog.rename(outcome.part, reference=reference, reg=reg)  # product title + slug, reference role
+        known = str(s.get("title") or "") if reference else None  # what the object is, not the model's guess
+        final = catalog.rename(outcome.part, reference=reference, known_title=known, reg=reg)  # product title + slug
         result["seeded"].append(final.slug)
         _write_state(state, sid, job.id, f"published ({outcome.action})", final.slug)
         log(

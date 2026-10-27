@@ -4,6 +4,7 @@
  * (backend unreachable). The browser calls the same-origin `/api/v1` path, which next.config.ts rewrites to the API.
  */
 import { z } from "zod/mini";
+import { adminToken } from "./admin";
 import {
   ApiErrorBodySchema,
   BakeResultSchema,
@@ -103,7 +104,12 @@ async function request<S extends z.ZodMiniType>(
   try {
     // Server-side calls (SSR prefetch) must never hang a page render.
     const signal = rest.signal ?? (typeof window === "undefined" ? AbortSignal.timeout(3000) : undefined);
-    res = await fetch(url, { ...rest, signal, headers: { Accept: "application/json", ...(rest.headers ?? {}) } });
+    const token = adminToken();
+    res = await fetch(url, {
+      ...rest,
+      signal,
+      headers: { Accept: "application/json", ...(token ? { Authorization: `Bearer ${token}` } : {}), ...(rest.headers ?? {}) },
+    });
   } catch (err) {
     if (err instanceof DOMException && err.name === "AbortError") throw err;
     throw new ApiOfflineError(err);
@@ -159,6 +165,10 @@ export type FixJobInput = {
   thicknessMm?: number | null;
   familyHint?: string | null;
   screenPxPerMm?: number | null;
+  /** Optional 6–8 s orbit clip ("walk around it", MP4/MOV/WebM); only sent when the server accepts an `orbit` field. */
+  orbit?: File | null;
+  /** Tap-to-point feature hints on the top photo (image pixels + kind); a tap is a segmenter prompt, never a dimension. */
+  points?: { x: number; y: number; kind: "hole" | "slot" | "tab" | "broken_edge" }[] | null;
 };
 
 export type BakeFormat = "stl" | "3mf" | "step" | "glb" | "view" | "py";
@@ -191,6 +201,8 @@ export const api = {
     if (input.thicknessMm != null) fd.set("thickness_mm", String(input.thicknessMm));
     if (input.familyHint) fd.set("family_hint", input.familyHint);
     if (input.screenPxPerMm != null) fd.set("screen_px_per_mm", String(input.screenPxPerMm));
+    if (input.orbit) fd.set("orbit", input.orbit);
+    if (input.points?.length) fd.set("points", JSON.stringify({ top: input.points }));
     return request(JobSummarySchema, "/jobs/fix", { method: "POST", body: fd });
   },
   demoSamples: () => request(z.array(DemoSampleSchema), "/jobs/demo/samples"),
@@ -220,8 +232,8 @@ export const api = {
     request(BakeResultSchema, `/jobs/${encodeURIComponent(id)}/bake`, { query: { ...params, format }, signal }),
   jobBakeDownloadUrl: (id: string, params: ParamQuery, format: BakeFormat) =>
     apiUrl(`/jobs/${encodeURIComponent(id)}/bake`, { ...params, format, download: 1 }),
-  publish: (id: string, slug?: string) =>
-    request(PartRecordSchema, `/jobs/${encodeURIComponent(id)}/publish`, json(slug ? { slug } : {})),
+  publish: (id: string, slug?: string, ack?: boolean) =>
+    request(PartRecordSchema, `/jobs/${encodeURIComponent(id)}/publish`, json({ ...(slug ? { slug } : {}), ...(ack ? { ack: true } : {}) })),
   /** `status` is "cancelling" when the job had not stopped within the server's wait (it stops at its next check). */
   cancel: (id: string) =>
     request(z.extend(JobSummarySchema, { status: z.union([JobStatusSchema, z.literal("cancelling")]) }), `/jobs/${encodeURIComponent(id)}/cancel`, {
@@ -266,17 +278,26 @@ export const api = {
   partParams: (slug: string) => request(z.array(ParamSpecSchema), `/parts/${encodeURIComponent(slug)}/params`),
   bake: (slug: string, params: ParamQuery, format: BakeFormat = "view", signal?: AbortSignal) =>
     request(BakeResultSchema, `/parts/${encodeURIComponent(slug)}/bake`, { query: { ...params, format }, signal }),
-  bakeDownloadUrl: (slug: string, params: ParamQuery, format: BakeFormat) =>
-    apiUrl(`/parts/${encodeURIComponent(slug)}/bake`, { ...params, format, download: 1 }),
+  bakeDownloadUrl: (slug: string, params: ParamQuery, format: BakeFormat, ack = false) =>
+    apiUrl(`/parts/${encodeURIComponent(slug)}/bake`, { ...params, format, download: 1, ack: ack ? 1 : undefined }),
   variant: (slug: string, want: string) =>
     request(VariantResultSchema, `/parts/${encodeURIComponent(slug)}/variant`, { query: { want } }),
   matching: (slug: string) => request(z.array(PartCardSchema), `/parts/${encodeURIComponent(slug)}/matching`),
   thumbnailUrl: (slug: string, scale: 1 | 2 = 1) => apiUrl(`/parts/${encodeURIComponent(slug)}/thumbnail.png`, { scale }),
   feedback: (slug: string, body: { result: "fits" | "tight" | "loose" | "pass" | "fail"; kind: "print" | "screen_fit"; note: string }) =>
     request(FeedbackResultSchema, `/parts/${encodeURIComponent(slug)}/feedback`, json(body)),
+  bundleZipUrl: (slug: string, params: ParamQuery, ack: boolean) =>
+    apiUrl(`/parts/${encodeURIComponent(slug)}/bundle.zip`, { ...params, ack: ack ? 1 : undefined }),
   templatePdfUrl: (slug: string, params: ParamQuery) => apiUrl(`/parts/${encodeURIComponent(slug)}/template.pdf`, params),
   families: () => request(z.array(FamilySchema), "/families"),
-  createNeed: (query: string) => request(NeedSchema, "/needs", json({ query })),
+  createNeed: (query: string, photo?: File | null) => {
+    if (!photo) return request(NeedSchema, "/needs", json({ query }));
+    const fd = new FormData();
+    fd.set("query", query);
+    fd.set("photo", photo);
+    return request(NeedSchema, "/needs", { method: "POST", body: fd });
+  },
+  voteNeed: (id: string) => request(NeedSchema, `/needs/${encodeURIComponent(id)}/vote`, { method: "POST" }),
   needs: () => request(z.array(NeedSchema), "/needs"),
   stats: () => request(StatsSchema, "/stats"),
 

@@ -159,3 +159,20 @@ def test_single_part() -> None:
     )
     c1 = next(x for x in out1.result.capture.checks if str(x.name) == "single_part")
     assert c1.severity == "ok", c1.reason
+
+
+@pytest.mark.parametrize(
+    ("piece", "glare"),
+    [
+        ((236.0, 228.0, 222.0), True),  # light-blue stage washed towards white: a reflection
+        ((250.0, 248.0, 246.0), True),
+        ((40.0, 40.0, 200.0), False),  # a red part (BGR) next to the first one: a second object
+        ((150.0, 140.0, 130.0), False),  # darker than the stage: not glare
+        ((206.0, 196.0, 190.0), False),  # the stage itself
+    ],
+)
+def test_glare_on_the_stage_is_not_a_second_object(piece: tuple[float, float, float], glare: bool) -> None:
+    from services.metrology.segment import _washed_out
+
+    stage = np.array([226.0, 214.0, 206.0])  # light-blue screen stage (BGR)
+    assert _washed_out(np.array(piece), stage) is glare

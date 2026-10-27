@@ -95,3 +95,34 @@ actually ran, the cited URL is one the search returned, the name was requested, 
 `Source.cited` and never overrides a measured value. Muse Image reconstructions get the original pixels pasted back outside the
 broken region (intact area identical by construction) and then pass the metrology gate (markers ≤ 1 px, intact IoU ≥ 0.98)
 before the completion enters the outline as inferred.
+
+**2026-10-28 — Every photo decode applies EXIF orientation itself.** The browser draws a phone photo rotated by its EXIF
+Orientation tag and sends tap points in those pixels, so the server must see the same frame. Whether a decoder honours the tag
+depends on library, flags and version (OpenCV 5 `IMREAD_COLOR` does; `IMREAD_UNCHANGED` and plain Pillow do not), so photo
+decodes go through `services/common/images.py::decode_bgr` (decode with the tag ignored, then apply it ourselves, the same
+transform as Pillow's `exif_transpose`); the provider helpers (`image_size`, `decode_image_rgb`, `fit_image`) and `fit_png`
+apply it too, and images sent to models are re-encoded upright. Upload hygiene keeps the tag on JPEG (pixels untouched),
+saves PNG/WebP upright, and re-encodes a JPEG upright only when its EXIF block cannot be kept.
+
+**2026-10-28 — One export gate for every download, shown before the click.** `/parts/{slug}/bake?download=1` now goes through
+the same `gate.decide_part` as `bundle.zip` (verified ships, best effort needs `ack=1`, failed is refused; `format=view`
+and `format=glb` previews stay open for the embed and AR viewers), so the bake route is no longer a way around the bundle gate. Part detail carries the
+decision as `ship`, the same shape job publish returns. Fit presets on unpublished jobs (`/jobs/{id}/bake?preset=`,
+`/jobs/{id}/presets`) reuse the part rule (`round2.preset_values`) on the job's current values, so the web never copies it.
+
+**2026-10-28 — Mock agent turns say they are mock.** The deterministic fix-agent policy names itself (`"model": "mock fix
+agent"`) and `run_agent` stamps the driver's `mode` on `thought` and `tool_call` events, so a mock trace can never pass for a
+model's reasoning. `FitCheckResult.hausdorff_mm`/`mean_mm` are `null` (not NaN) when nothing could be compared.
+
+**2026-10-28 — Two objects on the mat stop the job; glare does not count as an object.** `single_part` joins the
+measurement-stopping checks (with contrast, coverage, markers, scale, reprojection). Before, it only logged a warning, and the
+red-team "two parts" photo went on to verify a model of one of them. Counting pieces now skips a piece that holds none of the
+part and whose colour is the stage colour washed towards white (≥ 15 % of the way, ≤ 12 RGB off that line): a reflection,
+not a second object. On the 112 one-part synthetic photos (control, demo samples, bench) no photo fails `single_part`;
+red-team 10/10, control 6/6 (mock). A second white object beside a part on a light stage would also read as glare; white
+parts already need the dark stage.
+
+**2026-10-28 — Reference objects are named from their sample, never from the model.** A reference object's title and slug
+come from the sample's own metadata ("Full-size SD card"), not from the job's PartSpec title, which a model (or the mock)
+wrote ("battery compartment cover"). Committed replays re-encode `install_card` and `reconstruction` images as JPEG like the
+other display-only images (the 19 replays: 112 MB → 58 MB).

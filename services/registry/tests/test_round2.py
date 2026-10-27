@@ -34,6 +34,16 @@ def test_product_names_and_cleanup_of_demo_slugs() -> None:
     assert {f["family"] for f in reg.families(include_reference=False)} == {"latch"}
 
 
+def test_reference_objects_are_named_from_the_sample_not_the_model() -> None:
+    guessed = make_part("battery_cover", "x").model_copy(update={"title": "Battery compartment cover"})
+    title, slug = catalog.product_name(guessed, reference=True, known_title="Full-size SD card (synthetic, clean)")
+    assert (title, slug) == ("Reference object — Full-size SD card", "reference-full-size-sd-card")
+    _, slug = catalog.product_name(
+        guessed, reference=True, known_title="AA cell (lying on its side) (synthetic, clean)"
+    )
+    assert slug == "reference-aa-cell"
+
+
 def test_fit_presets_touch_only_internal_fits() -> None:
     part = make_part("cable_clip")
     values, changes = presets.apply("petg-fdm-0.4", part.params, part.defaults)

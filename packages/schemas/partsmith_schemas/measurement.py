@@ -111,12 +111,15 @@ class Measurements(Strict):
 
 
 class FitCheckResult(Strict):
-    """Screen fit check: the real part photographed lying on the model's 1:1 outline (docs/API.md)."""
+    """Screen fit check: the real part photographed lying on the model's 1:1 outline (docs/API.md).
+
+    `hausdorff_mm` and `mean_mm` are null when the photo could not be compared with the outline at all (no mat markers
+    found, or no part found on the outline); `passed` is then false, `iou` is 0 and `reasons` says what to retake."""
 
     passed: bool
     iou: float
-    hausdorff_mm: float
-    mean_mm: float
+    hausdorff_mm: float | None
+    mean_mm: float | None
     reasons: list[str] = Field(default_factory=list)
     overlay_url: str = ""
     capture: CaptureReport

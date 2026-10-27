@@ -10,6 +10,8 @@ const COLS = [
       { href: "/mat", label: "Screen mat" },
       { href: "/calibrate", label: "Calibrate screen" },
       { href: "/jobs", label: "Recent jobs" },
+      { href: "/requests", label: "Part requests" },
+      { href: "/shop", label: "Repair shops" },
     ],
   },
   {
@@ -24,10 +26,11 @@ const COLS = [
   {
     title: "Proof",
     links: [
-      { href: "/bench", label: "Bench results" },
-      { href: "/status", label: "Model status" },
+      { href: "/results", label: "Results" },
+      { href: "/models", label: "Models" },
       { href: "/judges", label: "Judge path" },
-      { href: "/steer", label: "Steer factory" },
+      { href: "/factory", label: "Factory" },
+      { href: "/lessons", label: "Lessons" },
     ],
   },
 ] as const;

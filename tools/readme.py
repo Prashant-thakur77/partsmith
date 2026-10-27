@@ -30,50 +30,72 @@ USES: tuple[Use, ...] = (
     Use(
         "SAM 3.1",
         "Meta Model API",
-        "Text-prompted masks of the part — the pixels the verifier measures in mm",
+        "The measuring instrument: text-prompted part masks, point-prompted feature cuts (holes, slots, tapped points) and "
+        "video tracking of a walk-around clip. Code turns every mask into millimetres",
         (
             ("services/agent/providers/routing.py", r"SAM_31 = Route"),
             ("services/metrology/segment.py", r"class ProviderSegmenter"),
+            ("services/agent/evidence.py", r'getattr\(providers, "segment_points"'),
+            ("services/agent/evidence.py", r'getattr\(providers, "segment_video"'),
         ),
     ),
     Use(
         "Muse Spark 1.3",
         "Meta Model API",
-        "Understand stage: names features, family, broken region, unknowns (strict PartSpec JSON)",
-        (("services/agent/orchestrator.py", r'self\.call\("understand"'),),
+        "Understand stage: family, features, broken region, unknowns (strict PartSpec JSON), and the pixel it saw each "
+        "hole or slot at, which SAM 3.1 then cuts and code measures",
+        (
+            ("services/agent/orchestrator.py", r'self\.call\("understand"'),
+            ("services/agent/evidence.py", r"def feature_points"),
+        ),
     ),
     Use(
         "Muse Spark Open",
         "open weights (Baseten / Fireworks / Together)",
-        "Planner, CadQuery builder and fixer in the verify loop",
+        "CadQuery builder, and the fix agent that operates PartSmith's own tools (inspect residuals, measure, segment, "
+        "render, run tests, set knobs) until the verifier agrees",
         (
             ("services/agent/orchestrator.py", r'self\.call\("build"'),
-            ("services/agent/orchestrator.py", r'self\.call\("fix"'),
+            ("services/agent/agent_loop.py", r"run_agent\(STAGE, req, TOOLS"),
         ),
     ),
     Use(
         "Muse Glimmer 30B",
         "open weights (llama.cpp on a Modal GPU)",
-        "Independent veto-only judge and capture triage",
-        (("services/agent/orchestrator.py", r'schema_name="judge"'), ("infra/modal/glimmer.py", r"^app = ")),
-    ),
-    Use(
-        "Muse Voice Transcribe",
-        "Meta Model API",
-        "Hindi/English voice edits and spoken answers",
-        (("services/media/voice.py", r"providers\.transcribe\("),),
-    ),
-    Use(
-        "Muse Image",
-        "Meta Model API",
-        '"See the fix" in-place preview (labelled AI preview)',
-        (("services/media/preview.py", r"providers\.generate_image\("),),
+        "Independent veto-only judge, shown side-by-side photo and model crops zoomed on the verifier's worst spots",
+        (
+            ("services/agent/orchestrator.py", r"evidence\.hotspot_crops\(rnd\)"),
+            ("infra/modal/glimmer.py", r"^app = "),
+        ),
     ),
     Use(
         "Muse Wonder",
         "Meta Model API",
-        "Steer factory planner: plans a family of parts for the registry",
-        (("services/registry/steer.py", r'providers\.complete\("steer_plan"'),),
+        "Finds a published spec for the named appliance with web search. Code accepts a value only if a search really "
+        "ran and its URL is one the search returned; cited values fill unknowns and never override a measurement. "
+        "Also plans part families for the factory",
+        (
+            ("services/agent/evidence.py", r'getattr\(providers, "lookup_spec"'),
+            ("services/agent/providers/spec.py", r"def accept_values"),
+            ("services/registry/steer.py", r'providers\.complete\("steer_plan"'),
+        ),
+    ),
+    Use(
+        "Muse Image",
+        "Meta Model API",
+        "Completes the broken region of the photo (accepted only if markers and the intact part are unchanged), an "
+        "in-place repair preview and an install card (both labelled AI images)",
+        (
+            ("services/agent/evidence.py", r'getattr\(providers, "reconstruct"'),
+            ("services/metrology/recon_gate.py", r"def gate_reconstruction"),
+            ("services/media/preview.py", r"providers\.generate_image\("),
+        ),
+    ),
+    Use(
+        "Muse Voice Transcribe",
+        "Meta Model API",
+        'Hindi/English voice edits ("make the hole a bit bigger") mapped to knob changes, and spoken answers',
+        (("services/media/voice.py", r"providers\.transcribe\("),),
     ),
     Use(
         "SAM 3 (open weights)",
@@ -158,7 +180,50 @@ def bench_tables() -> str:
     return "\n".join(out)
 
 
-BLOCKS = {"meta-tooling": meta_table, "bench": bench_tables}
+def _load(name: str) -> dict[str, Any] | None:
+    f = REPORT.parent / name
+    return json.loads(f.read_text()) if f.exists() else None
+
+
+def evidence() -> str:
+    """The trust checks: suites with expected outcomes, mesh-vs-program edits, lying-model attacks, the impact log."""
+    out = ["| Check | Result | Source |", "|---|---|---|"]
+    rep = _load("report.json") or {}
+    mock = " (mock providers)" if rep.get("mode") == "mock" else ""
+    for key, what in (
+        ("control", "Intact parts, normal photos → accepted"),
+        ("redteam", "Photos that must be rejected or refused"),
+    ):
+        h = (rep.get("tables", {}).get(key) or {}).get("headline")
+        if h:
+            out.append(
+                f"| {what}{mock} | {h['correct']}/{h['n']} handled as expected, 95 % CI {h['ci95']} | "
+                f"`eval/reports/latest/report.json` → `tables.{key}` |"
+            )
+    pvm = (_load("program_vs_mesh.json") or {}).get("summary")
+    if pvm:
+        out.append(
+            f"| Edit a hole: scale the mesh vs change the program's knob ({pvm['parts']} parts, {pvm['rows']} edits) | "
+            f"hole spacing moved {pvm['mesh_hole_spacing_shift_median_mm']} mm (median) with mesh scaling, "
+            f"{pvm['knob_hole_spacing_shift_median_mm']} mm with the knob | `eval/reports/latest/program_vs_mesh.md` |"
+        )
+    byp = _load("bypass.json")
+    if byp:
+        out.append(
+            f"| A model that lies or cheats (says verified, edits the record, loosens limits, rescales to fit, smuggles imports, exports without consent) | "
+            f"{byp['blocked']}/{byp['attempts']} attempts blocked by code | `eval/reports/latest/bypass.json` |"
+        )
+    imp = _load("impact.json") or {}
+    if imp.get("status") == "ok":
+        out.append(f"| Real repairs logged | {imp.get('n_sessions')} sessions | `eval/reports/latest/impact.json` |")
+    else:
+        out.append(
+            f"| Real repairs logged | pending: {imp.get('note', 'no sessions yet')} | `data/impact/sessions.yaml` |"
+        )
+    return "\n".join(out)
+
+
+BLOCKS = {"meta-tooling": meta_table, "bench": bench_tables, "evidence": evidence}
 
 
 def render(text: str) -> str:

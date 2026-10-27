@@ -39,19 +39,18 @@ def data_url(data: bytes, mime: str | None = None) -> str:
 
 
 def image_size(data: bytes) -> tuple[int, int]:
-    """(width, height) without decoding pixels."""
-    from PIL import Image
+    """(width, height) as displayed (EXIF orientation applied, like every photo decode), without decoding pixels."""
+    from services.common.images import oriented_size
 
-    with Image.open(io.BytesIO(data)) as im:
-        w, h = im.size
-    return int(w), int(h)
+    return oriented_size(data)
 
 
 def decode_image_rgb(data: bytes) -> NDArray[np.uint8]:
-    from PIL import Image
+    """RGB pixels as displayed: EXIF orientation applied (services/common/images.py explains why)."""
+    from PIL import Image, ImageOps
 
     with Image.open(io.BytesIO(data)) as im:
-        return np.asarray(im.convert("RGB"), dtype=np.uint8)
+        return np.asarray(ImageOps.exif_transpose(im).convert("RGB"), dtype=np.uint8)
 
 
 def encode_png(rgb: NDArray[Any]) -> bytes:
@@ -63,13 +62,16 @@ def encode_png(rgb: NDArray[Any]) -> bytes:
 
 
 def fit_image(data: bytes, max_side: int) -> bytes:
-    """Downscale so the longest side is at most `max_side` (PNG out); returns the input unchanged when it fits."""
-    from PIL import Image
+    """Downscale so the longest side is at most `max_side` (PNG out, EXIF orientation applied); returns the input
+    unchanged when it fits and needs no rotation."""
+    from PIL import Image, ImageOps
 
-    with Image.open(io.BytesIO(data)) as im:
-        if max(im.size) <= max_side:
+    with Image.open(io.BytesIO(data)) as raw:
+        rotated = raw.getexif().get(0x0112, 1) not in (1, None)
+        if max(raw.size) <= max_side and not rotated:
             return data
-        scale = max_side / max(im.size)
+        im = ImageOps.exif_transpose(raw)
+        scale = min(1.0, max_side / max(im.size))
         small = im.convert("RGB").resize(
             (max(1, round(im.width * scale)), max(1, round(im.height * scale))), Image.Resampling.LANCZOS
         )

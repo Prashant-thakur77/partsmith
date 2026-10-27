@@ -5,7 +5,9 @@ import { ArrowRight, Check, ExternalLink, FileDown, Monitor, Printer } from "luc
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import * as React from "react";
-import { PhotoSlot, type SlotValue } from "@/components/fix/photo-slot";
+import { PhotoSlot, type SlotValue, type TapPoint } from "@/components/fix/photo-slot";
+import { VideoSlot } from "@/components/fix/video-slot";
+import { useCapabilities } from "@/lib/capabilities";
 import { Container } from "@/components/layout/page";
 import { TranscribeButton } from "@/components/voice-button";
 import { Badge } from "@/components/ui/badge";
@@ -17,6 +19,7 @@ import { api } from "@/lib/api";
 import { calibrationDrift, useCalibration } from "@/lib/calibration";
 import { FAMILIES } from "@/lib/families";
 import { fmtNum, titleCase } from "@/lib/format";
+import { useT } from "@/lib/i18n";
 import { cn } from "@/lib/utils";
 import { radioGroupKeys } from "@/lib/a11y";
 
@@ -55,6 +58,7 @@ function Step({ n, title, done, children, aside }: { n: number; title: string; d
 }
 
 export function FixClient() {
+  const { t } = useT();
   const router = useRouter();
   const { calibration, ready } = useCalibration();
   const drift = ready && calibration ? calibrationDrift(calibration) : null;
@@ -67,6 +71,12 @@ export function FixClient() {
   const [intent, setIntent] = React.useState("");
   const [thickness, setThickness] = React.useState("");
   const [family, setFamily] = React.useState("");
+  const [orbit, setOrbit] = React.useState<File | null>(null);
+  const [points, setPoints] = React.useState<TapPoint[]>([]);
+  const caps = useCapabilities();
+  const fixFields = caps.fields("post", "/jobs/fix");
+  const canOrbit = fixFields.has("orbit");
+  const canPoints = fixFields.has("points");
 
   const start = useMutation({
     mutationFn: () =>
@@ -79,6 +89,8 @@ export function FixClient() {
         thicknessMm: thickness.trim() ? Number(thickness) : null,
         familyHint: family || null,
         screenPxPerMm: mat === "screen" ? (calibration?.px_per_mm ?? null) : null,
+        orbit: canOrbit ? orbit : null,
+        points: canPoints ? points : null,
       }),
     onSuccess: (job) => router.push(`/jobs/${encodeURIComponent(job.id)}`),
   });
@@ -91,12 +103,12 @@ export function FixClient() {
     <Container className="pb-8 sm:pb-10">
       <div className="grid grid-cols-1 gap-10 lg:grid-cols-[minmax(0,1fr)_300px]">
         <div className="space-y-12">
-          <Step n={1} title="Choose your mat" done={mat === "paper" || calibrated}>
+          <Step n={1} title={t("fix.step1")} done={mat === "paper" || calibrated}>
             <div role="radiogroup" onKeyDown={radioGroupKeys} aria-label="Mat type" className="grid grid-cols-1 gap-3 sm:grid-cols-2">
               {(
                 [
-                  { v: "screen", icon: Monitor, title: "Screen mat", badge: "recommended", body: "Your laptop or tablet screen, drawn at 1:1 after a one-time card calibration." },
-                  { v: "paper", icon: Printer, title: "Paper mat", badge: "A4 PDF", body: "Print on plain paper at 100 % scale. The PDF has a 50 mm check ruler." },
+                  { v: "screen", icon: Monitor, title: t("fix.screenMat"), badge: t("fix.recommended"), body: t("fix.screenMatBody") },
+                  { v: "paper", icon: Printer, title: t("fix.paperMat"), badge: "A4 PDF", body: t("fix.paperMatBody") },
                 ] as const
               ).map((o) => (
                 <button
@@ -128,24 +140,24 @@ export function FixClient() {
                   ) : calibrated ? (
                     <>
                       <span className="inline-flex items-center gap-1.5 font-medium text-fg">
-                        <Check className="size-4 text-ok" aria-hidden /> This screen is calibrated
+                        <Check className="size-4 text-ok" aria-hidden /> {t("fix.calibrated")}
                       </span>
                       <span className="block font-mono text-[12px] text-muted tnum">{fmtNum(calibration!.px_per_mm, 3)} px/mm</span>
                     </>
                   ) : (
                     <>
-                      <span className="font-medium text-fg">{drift ? "Recheck the screen scale" : "Calibrate this screen once"}</span>
-                      <span className="block text-muted">{drift ?? "30 seconds with any bank or ID card."}</span>
+                      <span className="font-medium text-fg">{drift ? t("fix.recheck") : t("fix.calibrateOnce")}</span>
+                      <span className="block text-muted">{drift ?? t("fix.calibrateOnceBody")}</span>
                     </>
                   )}
                 </div>
                 <div className="flex flex-wrap gap-2">
                   <Button asChild variant={calibrated ? "outline" : "solid"} size="sm">
-                    <Link href="/calibrate?next=/fix">{calibrated ? "Recalibrate" : "Calibrate with a card"}</Link>
+                    <Link href="/calibrate?next=/fix">{calibrated ? t("fix.recalibrate") : t("fix.calibrate")}</Link>
                   </Button>
                   <Button asChild variant={calibrated ? "solid" : "outline"} size="sm">
                     <Link href="/mat" target="_blank">
-                      Open screen mat <ExternalLink aria-hidden />
+                      {t("fix.openMat")} <ExternalLink aria-hidden />
                     </Link>
                   </Button>
                 </div>
@@ -153,68 +165,75 @@ export function FixClient() {
             ) : (
               <div className="flex flex-col gap-3 rounded-lg border border-border bg-surface-2 p-4 sm:flex-row sm:items-center sm:justify-between">
                 <p className="text-[13px] leading-5 text-muted">
-                  Print at <strong className="text-fg">100 % / actual size</strong>, then check the 50 mm ruler with anything straight.
+                  {t("fix.printHint")}
                 </p>
                 <Button asChild variant="solid" size="sm">
                   <a href={api.matPdfUrl("paper-a4")} download>
-                    <FileDown aria-hidden /> Download A4 mat (PDF)
+                    <FileDown aria-hidden /> {t("fix.downloadPdf")}
                   </a>
                 </Button>
               </div>
             )}
             <p className="text-[12.5px] leading-5 text-subtle">
-              Tip: open the mat on the laptop, then open this page on your phone to take the photos. White or light-grey part?{" "}
+              {t("fix.tip")}{" "}
               <Link href="/mat?stage=dark" target="_blank" className="text-accent-text underline underline-offset-2">
-                Open the mat with the dark stage
+                {t("fix.darkStageLink")}
               </Link>
               .
             </p>
           </Step>
 
-          <Step n={2} title="Photograph the part on the mat" done={!!top && topGate === true}>
+          <Step n={2} title={t("fix.step2")} done={!!top && topGate === true}>
             <div className="space-y-3">
               <PhotoSlot
                 view="top"
                 matKind={mat}
-                title="Top view"
-                hint="Straight down from 20–35 cm, part in the plain middle, black squares visible around it."
+                title={t("fix.top")}
+                hint={t("fix.topHint")}
                 required
                 value={top}
-                onChange={setTop}
+                onChange={(v) => {
+                  setTop(v);
+                  setPoints([]);
+                }}
+                points={points}
+                onPoints={setPoints}
+                pointsHint={t("fix.points", { n: points.length }) + (canPoints ? "" : " " + t("fix.pointsLocal"))}
                 onGate={setTopGate}
               />
               <PhotoSlot
                 view="side"
                 matKind={mat}
-                title="Side view"
-                hint="Lay the part on its side on the mat and shoot straight down — this gives the thickness."
+                title={t("fix.side")}
+                hint={t("fix.sideHint")}
                 value={side}
                 onChange={setSide}
                 compact
               />
               <PhotoSlot
                 view="mating"
-                title="Where it fits"
-                hint="The hole, rail or shaft it attaches to. Helps get the fit right."
+                title={t("fix.mating")}
+                hint={t("fix.matingHint")}
                 value={mating}
                 onChange={setMating}
                 gate={false}
                 compact
               />
+              {canOrbit ? <VideoSlot title={t("fix.orbit")} hint={t("fix.orbitHint")} value={orbit} onChange={setOrbit} /> : null}
             </div>
           </Step>
 
-          <Step n={3} title="Tell it what you need" done={intent.trim().length > 0}>
+          <Step n={3} title={t("fix.step3")} done={intent.trim().length > 0}>
             <div className="space-y-2">
               <div className="flex items-end justify-between gap-2">
-                <Label htmlFor="intent">What broke, and what should change?</Label>
-                <TranscribeButton label="Say it" onText={(t) => setIntent((cur) => (cur ? `${cur} ${t}` : t))} />
+                <Label htmlFor="intent">{t("fix.intentLabel")}</Label>
+                <TranscribeButton label={t("fix.sayIt")} onText={(x) => setIntent((cur) => (cur ? `${cur} ${x}` : x))} />
               </div>
               <Textarea
                 id="intent"
                 value={intent}
                 onChange={(e) => setIntent(e.target.value)}
-                placeholder="e.g. The hook snapped off here — make it 1 mm thicker."
+                placeholder={t("fix.intentPlaceholder")}
                 rows={3}
               />
               <div className="flex flex-wrap gap-1.5">
@@ -232,7 +251,7 @@ export function FixClient() {
             </div>
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
               <div className="space-y-1.5">
-                <Label htmlFor="thickness">Thickness, if you know it</Label>
+                <Label htmlFor="thickness">{t("fix.thickness")}</Label>
                 <div className="relative">
                   <Input
                     id="thickness"
@@ -247,13 +266,13 @@ export function FixClient() {
                   <span className="pointer-events-none absolute top-1/2 right-3 -translate-y-1/2 font-mono text-[12px] text-subtle">mm</span>
                 </div>
                 <p id="thickness-help" className={cn("text-[12px]", thicknessBad ? "text-bad" : "text-subtle")}>
-                  {thicknessBad ? "Enter a number in millimetres." : "Used as a user-stated value and labelled so."}
+                  {thicknessBad ? t("fix.thicknessBad") : t("fix.thicknessHelp")}
                 </p>
               </div>
               <div className="space-y-1.5">
-                <Label htmlFor="family">Kind of part</Label>
+                <Label htmlFor="family">{t("fix.kind")}</Label>
                 <Select id="family" value={family} onChange={(e) => setFamily(e.target.value)} className="w-full">
-                  <option value="">Let PartSmith decide</option>
+                  <option value="">{t("fix.kindAuto")}</option>
                   {FAMILIES.map((f) => (
                     <option key={f} value={f}>
                       {titleCase(f)}
@@ -268,24 +287,24 @@ export function FixClient() {
 
         <aside className="lg:sticky lg:top-24 lg:self-start">
           <div className="space-y-4 rounded-xl border border-border bg-surface p-5 shadow-sm">
-            <h2 className="text-[14px] font-semibold">Ready to run</h2>
+            <h2 className="text-[14px] font-semibold">{t("fix.ready")}</h2>
             <ul className="space-y-2 text-[13px]">
-              <Check2 ok={mat === "paper" || calibrated} label={mat === "screen" ? "Screen calibrated" : "Paper mat printed at 100 %"} />
-              <Check2 ok={!!top && !topBlocked} label="Top photo added" />
-              <Check2 ok={topGate === true} label={topGate === false ? "Capture gate: retake suggested" : "Capture gate passed"} warn={topGate === false} />
-              <Check2 ok={!!side} label="Side photo (optional)" optional />
-              <Check2 ok={intent.trim().length > 0} label="Intent (optional)" optional />
+              <Check2 ok={mat === "paper" || calibrated} label={mat === "screen" ? t("fix.checkScreen") : t("fix.checkPaper")} />
+              <Check2 ok={!!top && !topBlocked} label={t("fix.checkTop")} />
+              <Check2 ok={topGate === true} label={topGate === false ? t("fix.checkGateRetake") : t("fix.checkGate")} warn={topGate === false} />
+              <Check2 ok={!!side} label={t("fix.checkSide")} optional />
+              <Check2 ok={intent.trim().length > 0} label={t("fix.checkIntent")} optional />
             </ul>
             {start.isError ? <ErrorState error={start.error} compact what="the job" /> : null}
             <Button variant="primary" size="lg" className="w-full" disabled={!canStart} onClick={() => start.mutate()}>
               {start.isPending ? <Spinner className="text-accent-fg" label="Starting" /> : null}
-              {start.isPending ? "Starting job…" : "Start the fix"}
+              {start.isPending ? t("fix.starting") : t("fix.start")}
               {!start.isPending ? <ArrowRight aria-hidden /> : null}
             </Button>
             <p className="text-[12px] leading-5 text-subtle">
               {topGate === false
-                ? "You can still start; the job will stop at the capture stage with the same reasons."
-                : "Opens the live workspace. Nothing is published to the registry without your OK."}
+                ? t("fix.startNoteRetake")
+                : t("fix.startNote")}
             </p>
           </div>
         </aside>

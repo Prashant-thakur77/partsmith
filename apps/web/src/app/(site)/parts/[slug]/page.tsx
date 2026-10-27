@@ -19,6 +19,19 @@ async function fetchPart(slug: string) {
   }
 }
 
+async function apiHasRoute(path: string): Promise<boolean> {
+  try {
+    const base = (process.env.API_URL ?? "http://localhost:8000").replace(/\/$/, "");
+    const r = await fetch(`${base}/api/v1/openapi.json`, { next: { revalidate: 3600 }, signal: AbortSignal.timeout(1500) });
+    if (!r.ok) return false;
+    const doc = (await r.json()) as { paths?: Record<string, unknown> };
+    const norm = (p: string) => p.replace(/\{[^}]*\}/g, "{}");
+    return Object.keys(doc.paths ?? {}).some((k) => norm(k) === norm(path));
+  } catch {
+    return false;
+  }
+}
+
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
   const { slug } = await params;
   const part = await fetchPart(decodeURIComponent(slug));
@@ -26,7 +39,17 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
   const err = part.verification?.verified ? part.verification.max_error_mm : null;
   const status = part.verification?.verified ? "" : part.status === "best_effort" ? " Best effort (not verified)." : "";
   const description = `${(part.summary || part.title).replace(/\.+$/, "")}. ${part.params.length} knobs${err != null ? `, verified at ${err.toFixed(2)} mm max error vs photo` : ""}. STL, 3MF, STEP and CadQuery source.${status}`;
-  return { title: part.title, description, openGraph: { title: `${part.title} · PartSmith`, description } };
+  // Per-part share card (rendered by the API) when this backend serves one. The route list is read from the API's
+  // OpenAPI document once an hour (cached), so the page does not wait on rendering a PNG.
+  const card = `/api/v1/parts/${encodeURIComponent(part.slug)}/card.png`;
+  const hasCard = await apiHasRoute("/api/v1/parts/{slug}/card.png");
+  const images = hasCard ? [{ url: card, width: 1200, height: 630, alt: `${part.title} — PartSmith` }] : undefined;
+  return {
+    title: part.title,
+    description,
+    openGraph: { title: `${part.title} · PartSmith`, description, ...(images ? { images } : {}) },
+    twitter: { card: "summary_large_image", ...(images ? { images: images.map((i) => i.url) } : {}) },
+  };
 }
 
 export default async function PartPage({ params }: { params: Promise<{ slug: string }> }) {

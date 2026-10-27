@@ -1,7 +1,7 @@
 {
  "report": "eval/run.py",
- "generated_at": "2026-10-27T18:21:29+00:00",
- "git_sha": "fc0cf1666f8be9e1ae541bf5a83d038a6def5df5",
+ "generated_at": "2026-10-27T22:16:43+00:00",
+ "git_sha": "dccb06efecd0811d430833f0b1c63cbe019c9f06",
  "git_dirty": true,
  "mode": "mock",
  "stages": {
@@ -10,7 +10,7 @@
     "provider": "mock",
     "model": "meta-models/muse-spark-open",
     "mode": "mock",
-    "calls": 86,
+    "calls": 81,
     "tokens_in": 0,
     "tokens_out": 0,
     "usd": 0.0
@@ -21,7 +21,7 @@
     "provider": "mock",
     "model": "meta-models/muse-spark-open",
     "mode": "mock",
-    "calls": 127,
+    "calls": 2,
     "tokens_in": 0,
     "tokens_out": 0,
     "usd": 0.0
@@ -30,9 +30,9 @@
   "fix_agent": [
    {
     "provider": "mock",
-    "model": "meta-models/muse-spark-open",
+    "model": "mock fix agent",
     "mode": "mock",
-    "calls": 218,
+    "calls": 876,
     "tokens_in": 0,
     "tokens_out": 0,
     "usd": 0.0
@@ -43,7 +43,7 @@
     "provider": "mock",
     "model": "muse-glimmer",
     "mode": "mock",
-    "calls": 49,
+    "calls": 44,
     "tokens_in": 0,
     "tokens_out": 0,
     "usd": 0.0
@@ -54,7 +54,7 @@
     "provider": "mock",
     "model": "meta-models/muse-spark-open",
     "mode": "mock",
-    "calls": 63,
+    "calls": 60,
     "tokens_in": 0,
     "tokens_out": 0,
     "usd": 0.0
@@ -65,7 +65,7 @@
     "provider": "mock",
     "model": "sam-3.1",
     "mode": "mock",
-    "calls": 334,
+    "calls": 328,
     "tokens_in": 0,
     "tokens_out": 0,
     "usd": 0.0
@@ -76,7 +76,7 @@
     "provider": "mock",
     "model": "sam-3.1",
     "mode": "mock",
-    "calls": 7,
+    "calls": 35,
     "tokens_in": 0,
     "tokens_out": 0,
     "usd": 0.0
@@ -87,7 +87,7 @@
     "provider": "mock",
     "model": "muse-spark-1.3",
     "mode": "mock",
-    "calls": 73,
+    "calls": 72,
     "tokens_in": 0,
     "tokens_out": 0,
     "usd": 0.0
@@ -130,6 +130,8 @@
    "REPROJ_WARN_PX": 1.0,
    "SCALE_FAIL": 0.03,
    "SCALE_WARN": 0.015,
+   "SINGLE_PART_MIN_MM2": 20.0,
+   "SINGLE_PART_REL": 0.05,
    "STAGE_EDGE_MARGIN_MM": 1.0,
    "TILT_FAIL_DEG": 25.0,
    "TILT_WARN_DEG": 15.0

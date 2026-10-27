@@ -44,3 +44,8 @@ export async function expectAccessible(page: Page) {
 export function realErrors(errors: string[]): string[] {
   return errors.filter((e) => !/Download the React DevTools|GPU stall|WebGL: INVALID|swiftshader/i.test(e));
 }
+
+/** Store an admin token on this device (Factory approvals, repair-shop batches, lesson promotion). */
+export async function asAdmin(page: Page) {
+  await page.addInitScript(() => window.localStorage.setItem("partsmith.admin-token", "test-admin-token"));
+}

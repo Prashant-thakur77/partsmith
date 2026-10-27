@@ -6,16 +6,18 @@ from __future__ import annotations
 import difflib
 import json
 import os
+from collections.abc import Mapping, Sequence
 from typing import Annotated, Any
 
 from fastapi import APIRouter, Depends, Query, Request
 from fastapi.responses import FileResponse, HTMLResponse, Response
 from partsmith_schemas import PartFacts, PartRecord
+from partsmith_schemas.verification import ParamSpec
 from pydantic import BaseModel, Field
 
 from services.agent import providers
 from services.api.auth import require_admin
-from services.api.common import API, _query_params, _svc
+from services.api.common import API, _job, _query_params, _service_call, _svc
 from services.api.errors import ApiError
 from services.common import blobs
 from services.common.paths import REPO_ROOT
@@ -35,8 +37,15 @@ def _web(path: str) -> str:
 # ------------------------------------------------------------------------------------------------- presets
 
 
-def apply_preset(part: PartRecord, params: dict[str, float], preset: str | None) -> tuple[dict[str, float], Any]:
-    """(params with the preset applied on top, preset info or None). 422 `unknown_preset` with the closest ids."""
+PRESET_NOTE = "Clearances are documented starting points, not measurements; print the fit-test coupon to tune."
+
+
+def preset_values(
+    specs: Sequence[ParamSpec], base: Mapping[str, float], params: dict[str, float], preset: str | None
+) -> tuple[dict[str, float], Any]:
+    """(params with the preset applied on top of `base` + `params`, preset info or None). The one preset rule for
+    published parts (base = defaults) and unpublished jobs (base = the job's current values). 422 `unknown_preset`
+    with the closest ids."""
     if not preset:
         return params, None
     if preset not in presets.BY_ID:
@@ -44,13 +53,30 @@ def apply_preset(part: PartRecord, params: dict[str, float], preset: str | None)
         raise ApiError(
             422, "unknown_preset", f"no fit preset {preset!r}", difflib.get_close_matches(preset, ids) or ids
         )
-    unknown = [k for k in params if k not in part.defaults]
+    unknown = [k for k in params if k not in base]
     if unknown:  # let the bake report unknown knobs with closest matches
         return params, None
-    base = {**part.defaults, **params}
-    values, changes = presets.apply(preset, part.params, base)
+    values, changes = presets.apply(preset, specs, {**base, **params})
     p = presets.BY_ID[preset]
     return values, {"id": p.id, "title": p.title, "delta_mm": p.delta_mm, "changes": changes}
+
+
+def apply_preset(part: PartRecord, params: dict[str, float], preset: str | None) -> tuple[dict[str, float], Any]:
+    return preset_values(part.params, part.defaults, params, preset)
+
+
+def job_knobs(job_id: str) -> tuple[list[ParamSpec], dict[str, float]]:
+    """The job's PARAMS and current values (409 `no_program` while it has no part program)."""
+    _job(job_id)
+    specs, values = _service_call(_svc().job_params, job_id, conflict="no_program")
+    return list(specs), dict(values)
+
+
+def apply_job_preset(job_id: str, params: dict[str, float], preset: str | None) -> tuple[dict[str, float], Any]:
+    if not preset:
+        return params, None
+    specs, values = job_knobs(job_id)
+    return preset_values(specs, values, params, preset)
 
 
 @router.get("/presets", summary="All fit presets (material × process clearances)", tags=["registry"])
@@ -66,7 +92,19 @@ def part_presets(slug: str) -> dict[str, Any]:
         "slug": slug,
         "fit_knobs": [p.name for p in presets.fit_knobs(part.params)],
         "presets": presets.for_part(part.params, part.defaults),
-        "note": "Clearances are documented starting points, not measurements; print the fit-test coupon to tune.",
+        "note": PRESET_NOTE,
+    }
+
+
+@router.get("/jobs/{job_id}/presets", summary="Fit presets and what each changes on this job's model", tags=["jobs"])
+def job_presets(job_id: str) -> dict[str, Any]:
+    """Same shape as `/parts/{slug}/presets`, computed on the job's current values (before publishing)."""
+    specs, values = job_knobs(job_id)
+    return {
+        "job_id": job_id,
+        "fit_knobs": [p.name for p in presets.fit_knobs(specs)],
+        "presets": presets.for_part(specs, values),
+        "note": PRESET_NOTE,
     }
 
 

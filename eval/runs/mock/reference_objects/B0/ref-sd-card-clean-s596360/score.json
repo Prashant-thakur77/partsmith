@@ -15,11 +15,12 @@
  "template": "battery_cover",
  "verifier_max_error_mm": 3.3181556755183883,
  "retake_reason": null,
+ "failed_checks": [],
  "usd": 0.0,
  "tokens_in": 0,
  "tokens_out": 0,
  "model_calls": 7,
- "model_ms": 233,
+ "model_ms": 235,
  "provider_modes": [
   "mock"
  ],
@@ -45,7 +46,7 @@
    "max_error_mm": 3.3181556755183883
   }
  ],
- "wall_s": 13.42,
+ "wall_s": 11.21,
  "dims": [
   {
    "name": "length",
@@ -75,5 +76,6 @@
  "pass_0_5": false,
  "valid": true,
  "valid_reason": "",
+ "failure_category": "dim_off",
  "failure": "worst thickness +3.40 mm"
 }

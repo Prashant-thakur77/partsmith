@@ -1,0 +1,16 @@
+{
+  "id": "j_261028_074ddf77",
+  "kind": "fix",
+  "status": "done",
+  "created_at": 1793136848.9923723,
+  "updated_at": 1793136875.4428618,
+  "title": "Snap retaining clip (synthetic, tilt) (synthetic sample)",
+  "origin": "synthetic",
+  "provider_mode": "mock",
+  "verified": false,
+  "max_error_mm": 1.4808642862747938,
+  "iterations": 6,
+  "cost_usd": 0.0,
+  "part_slug": "demo-clip-tilt",
+  "is_replay": false
+}

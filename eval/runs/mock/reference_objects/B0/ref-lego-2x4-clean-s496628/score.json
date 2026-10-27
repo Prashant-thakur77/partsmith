@@ -13,13 +13,14 @@
  "iterations_to_converge": null,
  "strategy": "free_code",
  "template": null,
- "verifier_max_error_mm": 8.751999999999999,
+ "verifier_max_error_mm": 1.4049999999999994,
  "retake_reason": null,
+ "failed_checks": [],
  "usd": 0.0,
  "tokens_in": 0,
  "tokens_out": 0,
  "model_calls": 7,
- "model_ms": 229,
+ "model_ms": 209,
  "provider_modes": [
   "mock"
  ],
@@ -40,26 +41,26 @@
  "convergence": [
   {
    "iter": 1,
-   "hausdorff_mm": 7.07778743233735,
-   "iou": 0.5443249151469827,
-   "max_error_mm": 8.751999999999999
+   "hausdorff_mm": 1.3046446390353141,
+   "iou": 0.944651379350483,
+   "max_error_mm": 1.4049999999999994
   }
  ],
- "wall_s": 11.03,
+ "wall_s": 9.52,
  "dims": [
   {
    "name": "length",
    "gt_mm": 31.8,
-   "model_mm": 23.0295,
-   "error_mm": -8.7705,
-   "within_spec": false
+   "model_mm": 31.8361,
+   "error_mm": 0.0361,
+   "within_spec": true
   },
   {
    "name": "width",
    "gt_mm": 15.8,
-   "model_mm": 11.4,
-   "error_mm": -4.4,
-   "within_spec": false
+   "model_mm": 15.7599,
+   "error_mm": -0.0401,
+   "within_spec": true
   },
   {
    "name": "thickness",
@@ -75,5 +76,6 @@
  "pass_0_5": false,
  "valid": true,
  "valid_reason": "",
- "failure": "worst length -8.77 mm"
+ "failure_category": "dim_off",
+ "failure": "worst thickness -1.70 mm"
 }

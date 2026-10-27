@@ -1,0 +1,12 @@
+{
+  "length": 34.3,
+  "width": 11.6,
+  "base_thickness": 2.5,
+  "cable_d": 5.6,
+  "wall": 1.6,
+  "opening": 0.75,
+  "channel_count": 2.0,
+  "channel_gap": 3.0,
+  "hole_d": 3.5,
+  "hole_count": 2.0
+}

@@ -13,13 +13,14 @@
  "iterations_to_converge": null,
  "strategy": "free_code",
  "template": "battery_cover",
- "verifier_max_error_mm": 0.6920000000000002,
+ "verifier_max_error_mm": 0.6180000000000021,
  "retake_reason": null,
+ "failed_checks": [],
  "usd": 0.0,
  "tokens_in": 0,
  "tokens_out": 0,
- "model_calls": 13,
- "model_ms": 256,
+ "model_calls": 45,
+ "model_ms": 228,
  "provider_modes": [
   "mock"
  ],
@@ -36,8 +37,8 @@
   "build": [
    "mock:meta-models/muse-spark-open"
   ],
-  "fix": [
-   "mock:meta-models/muse-spark-open"
+  "fix_agent": [
+   "mock:mock fix agent"
   ],
   "judge": [
    "mock:muse-glimmer"
@@ -58,30 +59,30 @@
   },
   {
    "iter": 3,
-   "hausdorff_mm": 3.6164485761282728,
-   "iou": 0.7784148397976391,
-   "max_error_mm": 3.8470000000000004
+   "hausdorff_mm": 3.5996058129338877,
+   "iou": 0.788002033553635,
+   "max_error_mm": 3.8289999999999997
   },
   {
    "iter": 4,
-   "hausdorff_mm": 3.6194295723581282,
-   "iou": 0.7809812847749115,
-   "max_error_mm": 3.849
+   "hausdorff_mm": 3.6131101341531497,
+   "iou": 0.7887872628726287,
+   "max_error_mm": 3.8310000000000004
   },
   {
    "iter": 5,
-   "hausdorff_mm": 0.5648491522438093,
-   "iou": 0.9496461071789687,
-   "max_error_mm": 0.6180000000000021
+   "hausdorff_mm": 3.5877217448197287,
+   "iou": 0.7937319025719639,
+   "max_error_mm": 3.811
   },
   {
    "iter": 6,
-   "hausdorff_mm": 0.5850269270215711,
-   "iou": 0.9369926555856204,
-   "max_error_mm": 0.6920000000000002
+   "hausdorff_mm": 0.5648491522438093,
+   "iou": 0.9496461071789687,
+   "max_error_mm": 0.6180000000000021
   }
  ],
- "wall_s": 17.99,
+ "wall_s": 41.15,
  "dims": [
   {
    "name": "length",
@@ -100,9 +101,9 @@
   {
    "name": "thickness",
    "gt_mm": 2.1,
-   "model_mm": 2.35,
-   "error_mm": 0.25,
-   "within_spec": false
+   "model_mm": 2.1,
+   "error_mm": 0.0,
+   "within_spec": true
   }
  ],
  "missed": [],
@@ -111,5 +112,6 @@
  "pass_0_5": false,
  "valid": true,
  "valid_reason": "",
+ "failure_category": "dim_off",
  "failure": "worst length +0.61 mm"
 }

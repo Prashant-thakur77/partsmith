@@ -17,7 +17,7 @@ export function ApiHealth() {
   return (
     <Tooltip content={text}>
       <Link
-        href="/status"
+        href="/models"
         className="inline-flex h-8 items-center gap-2 rounded-md px-2 text-[12px] text-muted hover:bg-surface-2 hover:text-fg"
         aria-label={text}
       >

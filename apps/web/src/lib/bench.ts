@@ -30,6 +30,7 @@ export const GT_LABEL: Record<string, string> = {
   reference_spec: "published spec",
   ruler: "ruler ±0.5 mm",
   caliper: "caliper",
+  expected_outcome: "expected accept / reject / refuse per case",
 };
 
 export function gtLabel(gt: string | undefined, fallback = "not stated"): string {

@@ -4,12 +4,15 @@
  */
 import { expect, test } from "@playwright/test";
 import { z } from "zod/mini";
+import * as R2 from "../../src/lib/api-r2";
 import * as S from "../../src/lib/api-types";
+import { PresetListSchema } from "../../src/components/jobs/fit-presets";
 
 const API = `${(process.env.LIVE_API_URL ?? "http://localhost:8000").replace(/\/$/, "")}/api/v1`;
 
+const ADMIN = process.env.PARTSMITH_ADMIN_TOKEN;
 async function check<T extends z.ZodMiniType>(request: import("@playwright/test").APIRequestContext, path: string, schema: T): Promise<z.output<T>> {
-  const res = await request.get(`${API}${path}`);
+  const res = await request.get(`${API}${path}`, ADMIN ? { headers: { Authorization: `Bearer ${ADMIN}` } } : undefined);
   expect(res.status(), `${path} status`).toBeLessThan(400);
   const body: unknown = await res.json();
   const parsed = schema.safeParse(body);
@@ -74,4 +77,24 @@ test("job detail and SSE events match the web contract", async ({ request }) => 
     // Steer lanes have no photo outline (the API currently answers 500 there — reported as a backend bug).
     if (j.status === "done" && j.kind === "fix") await check(request, `/jobs/${j.id}/fit-outline?mat_id=screen-m`, S.FitOutlineSchema);
   }
+});
+
+test("round-2 endpoints match the web contract", async ({ request }) => {
+  const doc = (await (await request.get(`${API}/openapi.json`)).json()) as { paths: Record<string, Record<string, unknown>> };
+  for (const p of ["/presets", "/parts/{slug}/presets", "/parts/{slug}/bundle.zip", "/parts/{slug}/card.png", "/lessons", "/batches", "/needs/{id}/vote"])
+    expect(Object.keys(doc.paths).some((k) => k.replace(/\{[^}]*\}/g, "{}") === `/api/v1${p}`.replace(/\{[^}]*\}/g, "{}")), `openapi has ${p}`).toBeTruthy();
+  await check(request, "/presets", PresetListSchema);
+  await check(request, "/lessons", z.array(R2.LessonSchema));
+  await check(request, "/batches", z.array(R2.BatchListItemSchema));
+  const list = await check(request, "/parts?limit=5", S.PartListSchema);
+  const card = list.items.find((c) => c.verified) ?? list.items[0]!;
+  await check(request, `/parts/${card.slug}/presets`, z.object({ slug: z.string(), fit_knobs: z.array(z.string()) }));
+  const png = await request.get(`${API}/parts/${card.slug}/card.png`);
+  expect(png.status()).toBe(200);
+  expect(png.headers()["content-type"]).toContain("image/png");
+  const zip = await request.get(`${API}/parts/${card.slug}/bundle.zip?ack=1`);
+  expect(zip.status(), "bundle.zip").toBe(200);
+  expect((await zip.body()).subarray(0, 2).toString()).toBe("PK");
+  const status = await check(request, "/status", S.StatusSchema);
+  expect(["token", "open (dev)"]).toContain(status.admin);
 });

@@ -1,8 +1,8 @@
-import type { DataOrigin, ProviderMode, Source } from "@/lib/api-types";
+import type { Citation, DataOrigin, ProviderMode, Source } from "@/lib/api-types";
 import { fmtNum } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import { Badge } from "./badge";
-import { OriginBadge, SourceBadge } from "./provenance";
+import { CitationMark, OriginBadge, SourceBadge } from "./provenance";
 
 /**
  * The one way a length is shown: Geist Mono tabular numerals, always with a unit, optional ± sigma and provenance badges.
@@ -19,6 +19,7 @@ export function Mm({
   className,
   size = "md",
   signed = false,
+  citation,
 }: {
   value: number | null | undefined;
   sigma?: number | null;
@@ -30,6 +31,8 @@ export function Mm({
   className?: string;
   size?: "sm" | "md" | "lg" | "xl";
   signed?: boolean;
+  /** For `source="cited"`: where the value came from (shown as a footnote). */
+  citation?: Citation | null;
 }) {
   const sizes = { sm: "text-[12px]", md: "text-[13px]", lg: "text-base", xl: "text-2xl font-medium tracking-tight" } as const;
   const ok = value !== null && value !== undefined && Number.isFinite(value);
@@ -46,6 +49,7 @@ export function Mm({
           </span>
         ) : null}
       </span>
+      {citation ? <CitationMark citation={citation} /> : null}
       {source ? <SourceBadge source={source} /> : null}
       {origin && origin !== "real" ? <OriginBadge origin={origin} /> : null}
       {mode && mode !== "live" ? (

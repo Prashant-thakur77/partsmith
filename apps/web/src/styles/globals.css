@@ -273,3 +273,17 @@
 .ps-range:focus-visible::-moz-range-thumb {
   box-shadow: 0 0 0 3px var(--surface), 0 0 0 5px var(--ring);
 }
+
+@keyframes stamp {
+  0% {
+    transform: scale(1.6) rotate(-6deg);
+    opacity: 0;
+  }
+  70% {
+    transform: scale(0.96) rotate(-2deg);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(1) rotate(-2deg);
+  }
+}

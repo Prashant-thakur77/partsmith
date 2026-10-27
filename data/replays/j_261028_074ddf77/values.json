@@ -1,0 +1,11 @@
+{
+  "length": 43.5,
+  "width": 16.3,
+  "thickness": 3.0,
+  "hole_d": 3.6,
+  "arm_height": 7.0,
+  "arm_thickness": 2.0,
+  "hook_overhang": 1.8,
+  "rib_count": 2.0,
+  "corner_radius": 2.0
+}

@@ -6,7 +6,7 @@
  * two-point measure tool, axes gizmo and an mm grid. Rendering is on demand (no idle GPU use).
  */
 import { GizmoHelper, GizmoViewport, Grid, Html, OrbitControls, OrthographicCamera, PerspectiveCamera } from "@react-three/drei";
-import { Canvas, useThree, type ThreeEvent } from "@react-three/fiber";
+import { Canvas, useFrame, useThree, type ThreeEvent } from "@react-three/fiber";
 import * as React from "react";
 import * as THREE from "three";
 import { LineMaterial } from "three/examples/jsm/lines/LineMaterial.js";
@@ -29,6 +29,8 @@ export type CadSceneProps = {
   fitNonce: number;
   colors: ViewerColors;
   onContextLost?: () => void;
+  /** Agent focus point (part frame, mm); the camera flies there and a marker pulses. */
+  focus?: { at: [number, number, number]; key: string } | null;
 };
 
 const AXIS_INDEX = { x: 0, y: 1, z: 2 } as const;
@@ -202,6 +204,48 @@ function MeasureMarks({ points, radius, color }: { points: THREE.Vector3[]; radi
   );
 }
 
+/** Fly the orbit target to the focus point (keeping the viewing direction) and pulse a marker there for ~2.5 s. */
+function FocusFly({ focus, radius, color }: { focus: { at: [number, number, number]; key: string }; radius: number; color: string }) {
+  const { camera, controls, invalidate } = useThree();
+  const marker = React.useRef<THREE.Mesh>(null);
+  const anim = React.useRef<{ t0: number; fromT: THREE.Vector3; toT: THREE.Vector3; fromP: THREE.Vector3; toP: THREE.Vector3 } | null>(null);
+  React.useEffect(() => {
+    const c = controls as unknown as { target?: THREE.Vector3; update?: () => void } | null;
+    if (!c?.target) return;
+    const to = new THREE.Vector3(...focus.at);
+    const offset = camera.position.clone().sub(c.target);
+    const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    anim.current = { t0: performance.now() - (reduce ? 10_000 : 0), fromT: c.target.clone(), toT: to, fromP: camera.position.clone(), toP: to.clone().add(offset.multiplyScalar(0.75)) };
+    invalidate();
+  }, [focus.key, focus.at, camera, controls, invalidate]);
+  useFrame(() => {
+    const a = anim.current;
+    const c = controls as unknown as { target?: THREE.Vector3; update?: () => void } | null;
+    if (!a || !c?.target) return;
+    const t = (performance.now() - a.t0) / 1000;
+    const k = Math.min(1, t / 0.7);
+    const e = 1 - Math.pow(1 - k, 3);
+    if (k <= 1) {
+      c.target.lerpVectors(a.fromT, a.toT, e);
+      camera.position.lerpVectors(a.fromP, a.toP, e);
+      c.update?.();
+    }
+    if (marker.current) {
+      const pulse = t < 2.5 ? 1 + 0.35 * Math.sin(t * 8) : 1;
+      marker.current.scale.setScalar(pulse);
+      (marker.current.material as THREE.MeshBasicMaterial).opacity = t < 2.5 ? 0.9 : 0.55;
+    }
+    if (t < 2.6) invalidate();
+  });
+  const r = Math.max(0.4, radius * 0.035);
+  return (
+    <mesh ref={marker} position={focus.at} renderOrder={12}>
+      <sphereGeometry args={[r, 20, 14]} />
+      <meshBasicMaterial color={color} transparent opacity={0.9} depthTest={false} />
+    </mesh>
+  );
+}
+
 function SceneContent(props: CadSceneProps) {
   const { data, ortho, showEdges, showGrid, section, measuring, points, onPick, fitNonce, colors } = props;
   const { center, radius, min } = useBounds(data);
@@ -237,6 +281,7 @@ function SceneContent(props: CadSceneProps) {
         />
       ) : null}
       <MeasureMarks points={points} radius={radius} color={colors.measure} />
+      {props.focus ? <FocusFly focus={props.focus} radius={radius} color={colors.measure} /> : null}
       <Fitter data={data} ortho={ortho} nonce={fitNonce} />
       <GizmoHelper alignment="bottom-left" margin={[52, 52]}>
         <GizmoViewport axisColors={["#e5484d", "#30a46c", "#3e63dd"]} labelColor="#ffffff" axisHeadScale={0.9} />

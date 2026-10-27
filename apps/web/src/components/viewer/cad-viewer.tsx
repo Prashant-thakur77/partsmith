@@ -84,6 +84,7 @@ export function CadViewer({
   overlay,
   poster,
   poster2x,
+  focus,
 }: {
   viewUrl: string | null | undefined;
   className?: string;
@@ -96,6 +97,8 @@ export function CadViewer({
   poster?: string | null;
   /** 2× poster (used on large screens; phones get the 1× file). */
   poster2x?: string | null;
+  /** Agent focus: the camera flies to `at` (part frame, mm) and a marker pulses; `label` is shown as a caption. */
+  focus?: { at: [number, number, number]; key: string; label?: string } | null;
 }) {
   const boxRef = React.useRef<HTMLDivElement>(null);
   const [armed, setArmed] = React.useState(false);
@@ -194,6 +197,7 @@ export function CadViewer({
               fitNonce={fitNonce}
               colors={colors}
               onContextLost={() => setLost(true)}
+              focus={focus ? { at: focus.at, key: focus.key } : null}
             />
           </div>
         </SceneBoundary>
@@ -248,6 +252,12 @@ export function CadViewer({
       {dims ? (
         <div className="pointer-events-none absolute right-3 bottom-3 z-10 rounded-md border border-border bg-surface/90 px-2 py-1 font-mono text-[11px] text-muted tnum shadow-sm backdrop-blur">
           {fmtNum(dims[0]!, 1)} × {fmtNum(dims[1]!, 1)} × {fmtNum(dims[2]!, 1)} mm
+        </div>
+      ) : null}
+
+      {focus?.label && data ? (
+        <div className="pointer-events-none absolute top-14 left-3 z-10 max-w-[70%] rounded-md bg-inverse px-2.5 py-1 text-[12px] text-inverse-fg shadow-md" role="status">
+          Agent is looking at: {focus.label}
         </div>
       ) : null}
 

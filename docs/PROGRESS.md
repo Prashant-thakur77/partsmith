@@ -87,3 +87,41 @@ A fresh session should read this file, `docs/ARCHITECTURE.md`, `docs/API.md` and
 2. Real photos → `data/real/...` → `uv run python -m eval.splits assign` → `make bench`.
 3. Remaining offline work: thin side views of hinge-like parts read below the stated plate thickness (metrology); hook
    hole positions are unreliable when a tall arm dominates the top view (needs the side photo in the plate frame); Muse Code notes.
+
+## 2026-10-27 — Round 2 (refinement): research → plan → build
+
+Research: gap analysis against past winning entries, deep Meta capability study (summaries drove PLAN.md §20, private).
+Plan highlights: Spark tool-calling agent operates our metrology/verifier (code still decides); Spark points → SAM 3.1 point
+prompts → feature fits; phone orbit video → SAM 3.1 video tracking + per-frame ArUco poses → multi-view verification and
+visual-hull height; Muse Image completes broken regions behind a code gate; Muse Wonder web search for cited OEM specs;
+realtime voice; Glimmer judge on hotspot crops; single export gate + lying-brain test; functional probe tests; measured
+program-vs-mesh; registry clean-up, zip/embed, presets, admin token, requests/lessons, usage counter, open-weights evidence
+pack, QR phone handoff, repair-shop batches, share cards, Hinglish UI, landing replay loop; red-team/control suites, failure
+taxonomy, provenance, impact log.
+Schemas (`732ee27`): Source.cited + Citation, thought/tool_call/focus events, orbit view, new artifact kinds.
+Seven workstreams in flight: providers, verifier, synth/eval, API/registry, metrology, web, agent loop.
+- **Interruption (Oct 27 late):** earlyoom killed the VS Code process hosting the session while 7 workers ran tests/renders/
+  builds in parallel on a 15 GB machine. Round-2 work is partially in the working tree (uncommitted). New rule: at most 2 workers
+  at a time, `--jobs 2` / `NPROC=2`, no Playwright/Lighthouse/next build while Python benches run.
+  Resume order: (1) providers + metrology, (2) verifier + agent loop, (3) API/registry + synth/eval, (4) web. Each worker checks
+  its own partial edits (`git status`) and finishes its round-2 task (PLAN.md §20; brief in the lead's scratchpad ROUND2_BRIEF.md).
+- **Round 2 committed (Oct 28, 2 workers at a time):** metrology points/orbit/recon gate (`11c3ed1`, `4d7ab79`: orbit height
+  within ~0.3 mm on demo clips, single_part check); providers tool loop + SAM points/video + Wonder citations + Muse Image
+  edits + realtime voice (`25042a8`); verifier probes + can_ship + 16/16 lying-brain + program-vs-mesh 2.77 mm vs 0.00 mm
+  (`66078af`), orbit views + broken-region verification (`cc3fed8`); API/registry catalogue, export gate, bundles, presets,
+  requests, lessons, batches, usage, open-weights endpoint (`fc0cf16`); agentic fixer (`ef58595`, same 6 verified as the
+  pipeline, lower error on 6 more); synth orbit clips/broken parts/red-team/taxonomy/provenance (`51174b5`); refusals + upload
+  fields (`061ce7c`, red-team 9/10, control 6/6).
+- **Web round 2 (`dccb06e`):** QR two-device fit flow, Agent tab (thought/tool/focus), cited footnotes, orbit + tap-to-point
+  capture, three-state export gate, requests/lessons/shop/factory, presets, share cards, Hinglish, landing replay loop;
+  133 e2e passed (75 skipped by design), e2e:live 9/9, Lighthouse mobile 95–97 / a11y 100.
+- **Backend gaps + fresh evidence (Oct 28):** fit-check nulls in the contract, `expected_outcome` ground truth, mock agent
+  events labelled mock, job presets, `ship` on part detail and the bake download gated (GLB/view stay previews), one EXIF-aware
+  decoder for every photo path. `single_part` now stops the job and glare on the stage no longer counts as a second object
+  (red-team 10/10, control 6/6, no false `single_part` on 112 one-part photos). Reference objects named from their sample.
+  Fresh mock seed with refreshed replays: 15 of 19 replays show the agent's thoughts, tool calls and focus; replays 58 MB.
+  Fresh mock bench + measurement bench (synthetic 0.468 mm, reference renders 0.178 mm). README rewritten judge-first
+  (proposes→decides table, generated evidence block, every Meta use with file:line, written-but-not-claimed).
+- **Weak spots seen in the fresh seed (mock):** broken-part demos stay far off (cover tab 2.28 mm, latch corner 3.87 mm, hook
+  tip 13.56 mm) and are not published; white parts 2.9–3.4 mm; the glare clip correctly fails capture.
+- **Next:** QUALITY re-score → iterate on the broken-part loop (largest error) → keys → live runs.

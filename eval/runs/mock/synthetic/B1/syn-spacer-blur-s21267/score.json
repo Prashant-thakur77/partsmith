@@ -15,11 +15,12 @@
  "template": "spacer",
  "verifier_max_error_mm": 0.3049999999999997,
  "retake_reason": null,
+ "failed_checks": [],
  "usd": 0.0,
  "tokens_in": 0,
  "tokens_out": 0,
- "model_calls": 9,
- "model_ms": 382,
+ "model_calls": 10,
+ "model_ms": 343,
  "provider_modes": [
   "mock"
  ],
@@ -29,6 +30,9 @@
   ],
   "understand": [
    "mock:muse-spark-1.3"
+  ],
+  "segment_points": [
+   "mock:sam-3.1"
   ],
   "plan": [
    "mock:meta-models/muse-spark-open"
@@ -45,7 +49,7 @@
    "max_error_mm": 0.3049999999999997
   }
  ],
- "wall_s": 12.49,
+ "wall_s": 10.8,
  "dims": [
   {
    "name": "length",
@@ -77,5 +81,6 @@
  "pass_0_3": true,
  "pass_0_5": true,
  "valid": true,
- "valid_reason": ""
+ "valid_reason": "",
+ "failure_category": null
 }

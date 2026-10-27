@@ -47,6 +47,7 @@ from services.agent.jobs import Job, JobCancelled, QuestionTimeout, Runner, cont
 from services.agent.providers import Completion, ModelRequest, ProviderError
 from services.agent.templates import Template, get_template, knobs_at, list_templates
 from services.common import blobs
+from services.common.images import decode_bgr, exif_orientation
 from services.geom_worker.program import ProgramError, clamp, code_sha, module_literals, parse_params, set_defaults
 from services.geom_worker.sandbox import ExecResult, check_code, run_program
 from services.metrology.calibrate import MatNotFoundError, detect_mat, estimate_pose
@@ -64,7 +65,7 @@ StageName = Literal[
 
 DEFAULT_MAX_ITERS = 6
 # Part-mask checks that make the measurement itself unreliable: the job stops with the retake reason.
-FATAL_PART_CHECKS = ("contrast", "coverage", "markers", "scale", "reprojection")
+FATAL_PART_CHECKS = ("contrast", "coverage", "markers", "scale", "reprojection", "single_part")
 ROUND_FAMILIES = ("wheel", "knob", "spacer")
 HIDDEN_HOLE_RE = re.compile(r"possible hidden hole near mat \(([-\d.]+), ([-\d.]+)\) mm, about Ø([\d.]+) mm")
 NOTE_KEYS = ("hidden hole", "taller than", "clearly above the stated", "not a round vertical hole")
@@ -288,14 +289,16 @@ def png_bytes(img: np.ndarray[Any, Any]) -> bytes:
 
 
 def fit_png(png: bytes, max_side: int = MODEL_IMAGE_MAX_PX) -> tuple[bytes, float]:
-    """Downscale a PNG so its long side is at most `max_side`. Returns (png, scale)."""
-    img = cv2.imdecode(np.frombuffer(png, np.uint8), cv2.IMREAD_COLOR)
-    if img is None:
+    """Downscale an image so its long side is at most `max_side`. Returns (png, scale). A photo with an EXIF rotation
+    is always re-encoded upright, so a model sees the pixels our measurements and the user's taps use."""
+    try:
+        img = decode_bgr(png)
+    except ValueError:
         return png, 1.0
     h, w = img.shape[:2]
     s = min(1.0, max_side / max(h, w))
     if s >= 1.0:
-        return png, 1.0
+        return (png, 1.0) if exif_orientation(png) == 1 else (png_bytes(img), 1.0)
     small = cv2.resize(img, (round(w * s), round(h * s)), interpolation=cv2.INTER_AREA)
     return png_bytes(small), s
 

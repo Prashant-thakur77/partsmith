@@ -62,6 +62,27 @@ def test_both_fix_modes_verify_and_replay(sample_root: Path, mode: str) -> None:
 
 
 @pytest.mark.slow
+def test_mock_job_through_the_fix_loop_shows_the_agent_trace(sample_root: Path) -> None:
+    """A mock job that needs fix rounds goes through the agentic fixer: its persisted events carry thought, tool_call
+    and focus events from the real tool loop, and every model-side event says it is the deterministic mock."""
+    job = _run(sample_root, "latch-01")
+    assert job.events[-1].summary["fix_mode"] == "agent"
+    events = load_job(job.dir).events  # what the API and the web read back (run.jsonl), not only the live list
+    thoughts = [e for e in events if e.t == "thought"]
+    calls = [e for e in events if e.t == "tool_call"]
+    focus = [e for e in events if e.t == "focus"]
+    assert len(thoughts) >= 1 and len(calls) >= 1 and len(focus) >= 1
+    assert all(e.stage == agent_loop.STAGE for e in thoughts + calls)
+    assert all(e.model == agent_loop.MOCK_MODEL and e.mode == "mock" for e in thoughts)
+    assert all(e.text.endswith("(deterministic mock)") for e in thoughts)
+    assert all(e.mode == "mock" for e in calls)
+    agent_calls = [e for e in events if e.t == "model_call" and e.stage == agent_loop.STAGE]
+    assert agent_calls and all(e.mode == "mock" and e.model == agent_loop.MOCK_MODEL for e in agent_calls)
+    rounds = [e for e in events if e.t == "iteration" and e.iter > 1]
+    assert rounds, "latch-01 must need at least one fix round for this test to mean anything"
+
+
+@pytest.mark.slow
 def test_lying_agent_cannot_verify_a_bad_part(sample_root: Path) -> None:
     """An agent that commits a wrong size and then claims success: code keeps the best model and does not verify."""
     state = {"n": 0}
@@ -195,10 +216,16 @@ def test_completion_is_used_only_when_the_code_gate_accepts(
         if not proposals:
             out = np.roll(img, 5, axis=1)  # a warped image: the markers move
         else:
-            ys, xs = np.nonzero(~keep)
+            close = np.linalg.norm(img.astype(np.float64) - np.array(spec.part_bgr, np.float64), axis=2) < 40
+            _, lab, stats, _ = cv2.connectedComponentsWithStats(close.astype(np.uint8))
+            part = lab == 1 + int(np.argmax(stats[1:, cv2.CC_STAT_AREA]))  # the part, not marker edges
+            xy = np.argwhere(part)[:, ::-1].astype(np.float64)
+            axis = np.linalg.eigh(np.cov((xy - xy.mean(axis=0)).T))[1][:, -1]  # the part's long axis (x, y)
+            grow = 24.0  # px: the part's own end shape, moved this far along its long axis (the sides run straight on)
+            shift = np.array([[1, 0, grow * axis[0]], [0, 1, grow * axis[1]]], np.float32)
+            moved = cv2.warpAffine(part.astype(np.uint8), shift, part.shape[::-1], flags=cv2.INTER_NEAREST) > 0
             out = img.copy()
-            cy, cx = int(ys.mean()), int(xs.max()) - 10  # a blob at the right end of the allowed band
-            cv2.circle(out, (cx, cy), 18, tuple(int(c) for c in spec.part_bgr), -1)
+            out[moved & ~part] = spec.part_bgr
         proposals.append(instruction)
         _, buf = cv2.imencode(".png", out)
         return types.SimpleNamespace(data=bytes(buf.tobytes()), mode="mock")

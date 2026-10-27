@@ -15,11 +15,12 @@
  "template": null,
  "verifier_max_error_mm": 5.664,
  "retake_reason": null,
+ "failed_checks": [],
  "usd": 0.0,
  "tokens_in": 0,
  "tokens_out": 0,
- "model_calls": 10,
- "model_ms": 254,
+ "model_calls": 27,
+ "model_ms": 228,
  "provider_modes": [
   "mock"
  ],
@@ -36,8 +37,8 @@
   "build": [
    "mock:meta-models/muse-spark-open"
   ],
-  "fix": [
-   "mock:meta-models/muse-spark-open"
+  "fix_agent": [
+   "mock:mock fix agent"
   ],
   "judge": [
    "mock:muse-glimmer"
@@ -52,31 +53,31 @@
   },
   {
    "iter": 2,
-   "hausdorff_mm": 3.06541566358317,
-   "iou": 0.7947081136090295,
-   "max_error_mm": 3.110999999999997
+   "hausdorff_mm": 1.4340549829878437,
+   "iou": 0.9061531651173086,
+   "max_error_mm": 5.664
   },
   {
    "iter": 3,
-   "hausdorff_mm": 3.318768150248732,
-   "iou": 0.7807882893121789,
-   "max_error_mm": 3.318768150248732
+   "hausdorff_mm": 1.3738601069850414,
+   "iou": 0.9151552585771239,
+   "max_error_mm": 5.664
   }
  ],
- "wall_s": 12.5,
+ "wall_s": 19.4,
  "dims": [
   {
    "name": "length",
    "gt_mm": 31.8,
-   "model_mm": 34.1294,
-   "error_mm": 2.3294,
+   "model_mm": 33.329,
+   "error_mm": 1.529,
    "within_spec": false
   },
   {
    "name": "width",
    "gt_mm": 15.8,
-   "model_mm": 16.5469,
-   "error_mm": 0.7469,
+   "model_mm": 15.7468,
+   "error_mm": -0.0532,
    "within_spec": false
   },
   {
@@ -93,5 +94,6 @@
  "pass_0_5": false,
  "valid": true,
  "valid_reason": "",
- "failure": "worst length +2.33 mm"
+ "failure_category": "dim_off",
+ "failure": "worst thickness -1.70 mm"
 }

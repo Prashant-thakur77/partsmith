@@ -319,7 +319,15 @@ def load_job(run_dir: Path, *, is_replay: bool = False) -> Job:
 
 
 # Large lossless images are re-encoded for committed replays (the judge path only displays them).
-REPLAY_JPEG_KINDS = {"rectified", "measure_overlay", "mask_overlay", "residual_heatmap", "render_overlay"}
+REPLAY_JPEG_KINDS = {
+    "rectified",
+    "measure_overlay",
+    "mask_overlay",
+    "residual_heatmap",
+    "render_overlay",
+    "install_card",
+    "reconstruction",
+}
 REPLAY_MAX_SIDE_PX = 1600
 REPLAY_JPEG_QUALITY = 85
 

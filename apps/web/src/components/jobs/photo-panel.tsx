@@ -9,7 +9,7 @@ import { Switch } from "../ui/toggle";
 import { WipeSlider } from "./wipe-slider";
 import { radioGroupKeys } from "@/lib/a11y";
 
-export type ViewImages = Partial<Record<"photo" | "rectified" | "mask_overlay" | "measure_overlay" | "residual_heatmap" | "render_overlay", string>>;
+export type ViewImages = Partial<Record<"photo" | "rectified" | "mask_overlay" | "measure_overlay" | "residual_heatmap" | "render_overlay" | "feature_mask", string>>;
 
 const VIEW_RE = /^(top|side|mating)\b/i;
 const RESIDUAL_RE = /residual_(top|side|mating)/i;
@@ -17,7 +17,7 @@ const RESIDUAL_RE = /residual_(top|side|mating)/i;
 /** Group image artifacts by view (top / side / mating) using the server's labels; latest event per kind wins. */
 export function imagesByView(events: ArtifactEvent[], fallback: Record<string, string>): Record<string, ViewImages> {
   const out: Record<string, ViewImages> = {};
-  const kinds = new Set(["photo", "rectified", "mask_overlay", "measure_overlay", "residual_heatmap", "render_overlay"]);
+  const kinds = new Set(["photo", "rectified", "mask_overlay", "measure_overlay", "residual_heatmap", "render_overlay", "feature_mask"]);
   for (const e of events) {
     if (!kinds.has(e.kind)) continue;
     const view = (RESIDUAL_RE.exec(e.label)?.[1] ?? VIEW_RE.exec(e.label)?.[1] ?? "top").toLowerCase();
@@ -124,10 +124,11 @@ function FramedImage({ src, alt, bbox, fit, zoom, maskUrl }: { src: string; alt:
   );
 }
 
-type Mode = "rectified" | "measured" | "residual" | "original" | "compare";
+type Mode = "rectified" | "features" | "measured" | "residual" | "original" | "compare";
 
 const MODES: { m: Mode; label: string; needs: (v: ViewImages) => boolean }[] = [
   { m: "rectified", label: "On the mat", needs: (v) => !!(v.rectified ?? v.photo) },
+  { m: "features", label: "Features", needs: (v) => !!v.feature_mask },
   { m: "measured", label: "Measured", needs: (v) => !!v.measure_overlay },
   { m: "residual", label: "Model vs photo", needs: (v) => !!v.residual_heatmap },
   { m: "compare", label: "Wipe", needs: (v) => !!(v.rectified && (v.render_overlay ?? v.mask_overlay)) },
@@ -138,7 +139,7 @@ const MODES: { m: Mode; label: string; needs: (v: ViewImages) => boolean }[] = [
  * The photo side of the workspace: per view, the rectified photo with the part mask tinted on top (the mask draws in),
  * the measured-dimensions image, the verifier's model-vs-photo residual map, a wipe comparison and the original photo.
  */
-export function PhotoPanel({ views, className }: { views: Record<string, ViewImages>; className?: string }) {
+export function PhotoPanel({ views, className, focusLabel }: { views: Record<string, ViewImages>; className?: string; focusLabel?: string }) {
   const viewNames = Object.keys(views).sort((a, b) => ["top", "side", "mating"].indexOf(a) - ["top", "side", "mating"].indexOf(b));
   const [view, setView] = React.useState<string | null>(null);
   const active = view && views[view] ? view : (viewNames[0] ?? null);
@@ -151,7 +152,9 @@ export function PhotoPanel({ views, className }: { views: Record<string, ViewIma
 
   const base = artifactUrl(v.rectified ?? v.photo);
   const src =
-    current === "measured"
+    current === "features"
+      ? artifactUrl(v.feature_mask)
+      : current === "measured"
       ? artifactUrl(v.measure_overlay)
       : current === "residual"
         ? artifactUrl(v.residual_heatmap)
@@ -234,6 +237,11 @@ export function PhotoPanel({ views, className }: { views: Record<string, ViewIma
         </div>
       </div>
       <div className="relative min-h-[240px] flex-1 overflow-hidden bg-[var(--viewer-bg)]">
+        {focusLabel ? (
+          <div className="pointer-events-none absolute top-2 left-2 z-10 inline-flex items-center gap-1.5 rounded-md bg-inverse px-2 py-1 text-[12px] text-inverse-fg shadow-md" role="status">
+            <span className="size-2 animate-pulse-dot rounded-full bg-accent" aria-hidden /> Agent: {focusLabel}
+          </div>
+        ) : null}
         {!src ? (
           <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 text-[13px] text-muted">
             <ImageOff className="size-6 text-subtle" aria-hidden />

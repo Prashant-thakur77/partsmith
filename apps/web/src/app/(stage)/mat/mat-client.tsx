@@ -6,6 +6,7 @@ import { StageShell } from "@/components/mat/stage-shell";
 import { useMatChoice } from "@/components/mat/use-mat-layout";
 import { Spinner } from "@/components/ui/spinner";
 import { fmtNum } from "@/lib/format";
+import { I18nRegion } from "@/lib/i18n";
 import type { ScreenCalibration } from "@/lib/calibration";
 import type { StageTone } from "@/lib/stage";
 
@@ -39,9 +40,17 @@ function MatStage({ cal, preferred, stage }: { cal: ScreenCalibration; preferred
 }
 
 export function MatClient() {
+  return (
+    <I18nRegion>
+      <MatInner />
+    </I18nRegion>
+  );
+}
+
+function MatInner() {
   const preferred = useSearchParams().get("mat");
   return (
-    <StageShell exitHref="/fix" title="Screen mat" calibrateNext="/mat">
+    <StageShell exitHref="/fix" title="Screen mat" calibrateNext="/mat" phonePath="/fix">
       {(cal, stage) => <MatStage cal={cal} preferred={preferred} stage={stage} />}
     </StageShell>
   );

@@ -26,6 +26,7 @@ from services.geom_worker import bake as geom_bake
 from services.geom_worker.program import clamp, closest_names, params_sha
 from services.geom_worker.sandbox import WarmPool
 from services.media.voice import RELATIVE_WORDS, map_utterance, snap_clamp
+from services.registry import gate
 from services.registry.store import Registry, get_registry
 
 API = "/api/v1"
@@ -759,4 +760,5 @@ def part_detail(part: PartRecord, reg: Registry | None = None) -> dict[str, Any]
     d["fit_reports"] = reg.fit_reports(part.slug)
     d["origin"] = part.provenance.origin.value
     d["verified"] = bool(part.verification and part.verification.verified)
+    d["ship"] = gate.decide_part(part).to_dict()  # the export gate's decision, same as jobs and bundle.zip
     return d

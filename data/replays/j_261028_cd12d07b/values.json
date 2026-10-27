@@ -1,0 +1,12 @@
+{
+  "length": 45.7,
+  "width": 24.2,
+  "height": 32.0,
+  "thickness": 2.5,
+  "hole_d": 3.65,
+  "base_holes": 2.0,
+  "wall_holes": 2.0,
+  "gusset_count": 2.0,
+  "bend_radius": 2.0,
+  "corner_radius": 2.0
+}

@@ -1,0 +1,17 @@
+# PartSmith impact log — REAL repair sessions only, entered by hand after each one. Never invent entries.
+# Totals: `uv run python -m eval.impact` → eval/reports/<date>/impact.{json,md} (pending while `sessions` is empty).
+#
+# Fields per session:
+#   session: short id (e.g. s01)                     date: YYYY-MM-DD
+#   place: where it happened (hostel room, shop, …)  part: what broke (e.g. cupboard turn-button latch)
+#   appliance: what it belongs to (brand + model when known)
+#   replacement_price_inr: price of a replacement part, or null when it is not sold separately
+#   price_source: URL of the listing you checked, or "not stocked"
+#   run_id: the PartSmith job id (time to verified is read from that run's events)
+#   fit_result: fits | tight | loose | failed | not_tested
+#   print_grams: printed weight in grams (slicer estimate or scale), or null
+#   notes: free text
+currency: INR
+rupees_per_gram: null        # your filament cost in ₹ per gram, e.g. the price of the spool you used ÷ its weight
+rupees_per_gram_source: ""   # where that number comes from (receipt, listing URL)
+sessions: []

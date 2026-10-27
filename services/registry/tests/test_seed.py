@@ -64,14 +64,14 @@ def test_seed_is_idempotent_and_exports_replays(monkeypatch: pytest.MonkeyPatch,
     monkeypatch.setattr(S, "SAMPLES_DIR", tmp_path / "no-committed-samples")
     out = S.seed(log=lambda m: None)
     # product names from the part's own knobs, never the sample folder; a reference object is tagged, not listed
-    assert out["seeded"] == ["spacer-8mm", "spacer-8mm-height6mm", "reference-spacer-standoff"]
+    assert out["seeded"] == ["spacer-8mm", "spacer-8mm-height6mm", "reference-id-1-card"]
     assert out["failed"] == ["bad-glare-01: best effort 5.00 mm > 2 mm, not published"]
     reg = get_registry()
     part = reg.get_part("spacer-8mm")
     assert part is not None and part.title == "Spacer, 8 mm" and part.provenance.origin == DataOrigin.synthetic
     assert reg.thumbnail("spacer-8mm") is not None
     assert {p.slug for p in reg.search("", role="part", limit=50)[0]} == {"spacer-8mm", "spacer-8mm-height6mm"}
-    assert [p.slug for p in reg.search("", role="reference")[0]] == ["reference-spacer-standoff"]
+    assert [p.slug for p in reg.search("", role="reference")[0]] == ["reference-id-1-card"]
     assert not any(s.startswith(("spacer-easy", "demo-")) for s in reg.slugs())
     index = json.loads((jobs.REPLAYS_DIR / S.INDEX_NAME).read_text())
     assert set(index) == {"spacer-easy-01", "spacer-easy-02", "bad-glare-01", "ref-id1-card"}  # every run is a replay

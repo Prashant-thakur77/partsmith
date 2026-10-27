@@ -1,11 +1,11 @@
 {
- "generated_at": "2026-10-27T18:21:29+00:00",
- "git_sha": "fc0cf1666f8be9e1ae541bf5a83d038a6def5df5",
+ "generated_at": "2026-10-27T22:16:43+00:00",
+ "git_sha": "dccb06efecd0811d430833f0b1c63cbe019c9f06",
  "mode": "mock",
  "modes": [
   "mock"
  ],
- "mock_calls": 957,
+ "mock_calls": 1498,
  "providers_summary": {
   "build": {
    "model": "",
@@ -14,7 +14,7 @@
    "calls": 0,
    "tokens": 0,
    "modes": {
-    "mock": 86
+    "mock": 81
    },
    "routes": []
   },
@@ -25,7 +25,7 @@
    "calls": 0,
    "tokens": 0,
    "modes": {
-    "mock": 127
+    "mock": 2
    },
    "routes": []
   },
@@ -36,7 +36,7 @@
    "calls": 0,
    "tokens": 0,
    "modes": {
-    "mock": 218
+    "mock": 876
    },
    "routes": []
   },
@@ -47,7 +47,7 @@
    "calls": 0,
    "tokens": 0,
    "modes": {
-    "mock": 49
+    "mock": 44
    },
    "routes": []
   },
@@ -58,7 +58,7 @@
    "calls": 0,
    "tokens": 0,
    "modes": {
-    "mock": 63
+    "mock": 60
    },
    "routes": []
   },
@@ -69,7 +69,7 @@
    "calls": 0,
    "tokens": 0,
    "modes": {
-    "mock": 334
+    "mock": 328
    },
    "routes": []
   },
@@ -80,7 +80,7 @@
    "calls": 0,
    "tokens": 0,
    "modes": {
-    "mock": 7
+    "mock": 35
    },
    "routes": []
   },
@@ -91,7 +91,7 @@
    "calls": 0,
    "tokens": 0,
    "modes": {
-    "mock": 73
+    "mock": 72
    },
    "routes": []
   }
@@ -107,11 +107,11 @@
      "modes": [
       "mock"
      ],
-     "calls": 334,
+     "calls": 328,
      "tokens": 0
     }
    ],
-   "calls": 334,
+   "calls": 328,
    "tokens": 0,
    "open_tokens": 0
   },
@@ -124,11 +124,11 @@
      "modes": [
       "mock"
      ],
-     "calls": 73,
+     "calls": 72,
      "tokens": 0
     }
    ],
-   "calls": 73,
+   "calls": 72,
    "tokens": 0,
    "open_tokens": 0
   },
@@ -141,11 +141,11 @@
      "modes": [
       "mock"
      ],
-     "calls": 7,
+     "calls": 35,
      "tokens": 0
     }
    ],
-   "calls": 7,
+   "calls": 35,
    "tokens": 0,
    "open_tokens": 0
   },
@@ -158,11 +158,11 @@
      "modes": [
       "mock"
      ],
-     "calls": 63,
+     "calls": 60,
      "tokens": 0
     }
    ],
-   "calls": 63,
+   "calls": 60,
    "tokens": 0,
    "open_tokens": 0
   },
@@ -175,11 +175,11 @@
      "modes": [
       "mock"
      ],
-     "calls": 86,
+     "calls": 81,
      "tokens": 0
     }
    ],
-   "calls": 86,
+   "calls": 81,
    "tokens": 0,
    "open_tokens": 0
   },
@@ -187,16 +187,16 @@
    "models": [
     {
      "provider": "mock",
-     "model": "meta-models/muse-spark-open",
-     "open_weights": true,
+     "model": "mock fix agent",
+     "open_weights": null,
      "modes": [
       "mock"
      ],
-     "calls": 218,
+     "calls": 876,
      "tokens": 0
     }
    ],
-   "calls": 218,
+   "calls": 876,
    "tokens": 0,
    "open_tokens": 0
   },
@@ -209,11 +209,11 @@
      "modes": [
       "mock"
      ],
-     "calls": 49,
+     "calls": 44,
      "tokens": 0
     }
    ],
-   "calls": 49,
+   "calls": 44,
    "tokens": 0,
    "open_tokens": 0
   },
@@ -226,11 +226,11 @@
      "modes": [
       "mock"
      ],
-     "calls": 127,
+     "calls": 2,
      "tokens": 0
     }
    ],
-   "calls": 127,
+   "calls": 2,
    "tokens": 0,
    "open_tokens": 0
   }

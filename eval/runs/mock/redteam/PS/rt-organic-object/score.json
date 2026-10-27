@@ -7,20 +7,20 @@
  "preset": "redteam",
  "mode": "mock",
  "gt_source": "expected_outcome",
- "status": "best_effort",
+ "status": "refused",
  "verified": false,
- "iterations": 6,
- "iterations_to_converge": 6,
- "strategy": "free_code",
- "template": "battery_cover",
- "verifier_max_error_mm": 0.3359999999999985,
- "retake_reason": null,
+ "iterations": 0,
+ "iterations_to_converge": null,
+ "strategy": "template",
+ "template": null,
+ "verifier_max_error_mm": null,
+ "retake_reason": "This is a free-form object (a figurine, statue or sculpture), not a functional part with dimensions to measure. PartSmith rebuilds parametric replacement parts; it does not copy free-form shapes.",
  "failed_checks": [],
  "usd": 0.0,
  "tokens_in": 0,
  "tokens_out": 0,
- "model_calls": 50,
- "model_ms": 219,
+ "model_calls": 3,
+ "model_ms": 115,
  "provider_modes": [
   "mock"
  ],
@@ -30,60 +30,11 @@
   ],
   "understand": [
    "mock:muse-spark-1.3"
-  ],
-  "plan": [
-   "mock:meta-models/muse-spark-open"
-  ],
-  "build": [
-   "mock:meta-models/muse-spark-open"
-  ],
-  "fix_agent": [
-   "mock:meta-models/muse-spark-open"
-  ],
-  "judge": [
-   "mock:muse-glimmer"
   ]
  },
- "convergence": [
-  {
-   "iter": 1,
-   "hausdorff_mm": 6.788488612315886,
-   "iou": 0.7853351118854467,
-   "max_error_mm": 6.788488612315886
-  },
-  {
-   "iter": 2,
-   "hausdorff_mm": 6.056494369264077,
-   "iou": 0.8047721428270309,
-   "max_error_mm": 6.056494369264077
-  },
-  {
-   "iter": 3,
-   "hausdorff_mm": 6.026541338098145,
-   "iou": 0.8061798941798942,
-   "max_error_mm": 6.026541338098145
-  },
-  {
-   "iter": 4,
-   "hausdorff_mm": 5.85830246844634,
-   "iou": 0.8079941182292477,
-   "max_error_mm": 5.85830246844634
-  },
-  {
-   "iter": 5,
-   "hausdorff_mm": 5.681810036086946,
-   "iou": 0.8077557052320459,
-   "max_error_mm": 5.681810036086946
-  },
-  {
-   "iter": 6,
-   "hausdorff_mm": 0.1149098934969267,
-   "iou": 0.9966558625302259,
-   "max_error_mm": 0.3359999999999985
-  }
- ],
- "wall_s": 28.14,
- "valid": true,
+ "convergence": [],
+ "wall_s": 3.98,
+ "valid": false,
  "dims": [],
  "missed": [],
  "extra_holes": 0,
@@ -92,7 +43,7 @@
  "expected_outcome": "refuse",
  "expected_checks": [],
  "expected_why": "organic free-form object, not a functional plastic part",
- "outcome": "accept",
- "outcome_correct": false,
+ "outcome": "refuse",
+ "outcome_correct": true,
  "failure_category": null
 }

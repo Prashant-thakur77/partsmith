@@ -120,6 +120,18 @@ def test_tables_headline_mock_label_and_mcnemar() -> None:
     assert R.MOCK_TITLE not in live["synthetic"]["title"]
 
 
+def test_every_table_ground_truth_is_a_schema_value() -> None:
+    """`/bench` tables carry `ground_truth`; each value must be a GroundTruthSource the web schema knows."""
+    from partsmith_schemas import GroundTruthSource
+
+    assert set(R.GROUND_TRUTH) == set(R.ALL_SUITES)
+    for suite, gt in R.GROUND_TRUTH.items():
+        assert GroundTruthSource(gt).value == gt, suite
+    for suite in R.GATE_SUITES:
+        assert R.GROUND_TRUTH[suite] == GroundTruthSource.expected_outcome
+        assert R.gate_table(suite, [], "mock")["ground_truth"] == "expected_outcome"
+
+
 def test_regression_check() -> None:
     rep: dict[str, Any] = {
         "mode": "mock",

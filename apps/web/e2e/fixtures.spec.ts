@@ -1,6 +1,7 @@
 import { expect, test } from "@playwright/test";
 import { z } from "zod/mini";
 import * as S from "../src/lib/api-types";
+import * as R2 from "../src/lib/api-r2";
 import * as F from "./fixtures/api";
 
 test("mock fixtures satisfy the same Zod contract as the live API", ({}, info) => {
@@ -18,6 +19,10 @@ test("mock fixtures satisfy the same Zod contract as the live API", ({}, info) =
     ["replays", z.array(S.ReplaySchema), F.replays],
     ["fit outline", S.FitOutlineSchema, F.fitOutline],
     ["bake", S.BakeResultSchema, F.bakeResult("l-bracket", { length: 40 })],
+    ["best-effort detail", S.JobDetailSchema, { ...F.bestEffortDetail, events: F.jobEvents }],
+    ["lessons", z.array(R2.LessonSchema), F.lessons],
+    ["batch", R2.BatchSchema, F.batch],
+    ["needs", z.array(S.NeedSchema), F.needs],
   ];
   for (const [name, schema, data] of cases) {
     const r = schema.safeParse(data);

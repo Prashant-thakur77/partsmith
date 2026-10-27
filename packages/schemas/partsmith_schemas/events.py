@@ -132,6 +132,7 @@ class ThoughtEvent(_Ev):
     model: str = ""
     text: str
     iter: int | None = None
+    mode: Literal["live", "mock", "replay"] | None = None  # mock = a deterministic policy wrote it, no model ran
 
 
 class ToolCallEvent(_Ev):
@@ -145,6 +146,7 @@ class ToolCallEvent(_Ev):
     ok: bool = True
     ms: int = 0
     iter: int | None = None
+    mode: Literal["live", "mock", "replay"] | None = None  # mode of the turn that asked for the call
 
 
 class FocusEvent(_Ev):

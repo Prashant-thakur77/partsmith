@@ -10,16 +10,17 @@
  "status": "best_effort",
  "verified": false,
  "iterations": 1,
- "iterations_to_converge": null,
+ "iterations_to_converge": 1,
  "strategy": "free_code",
  "template": null,
- "verifier_max_error_mm": 10.197000000000003,
+ "verifier_max_error_mm": 0.1459195799970205,
  "retake_reason": null,
+ "failed_checks": [],
  "usd": 0.0,
  "tokens_in": 0,
  "tokens_out": 0,
  "model_calls": 5,
- "model_ms": 138,
+ "model_ms": 108,
  "provider_modes": [
   "mock"
  ],
@@ -40,25 +41,25 @@
  "convergence": [
   {
    "iter": 1,
-   "hausdorff_mm": 9.254267403968662,
-   "iou": 0.7742917639824857,
-   "max_error_mm": 10.197000000000003
+   "hausdorff_mm": 0.1459195799970205,
+   "iou": 0.9988699948951524,
+   "max_error_mm": 0.1459195799970205
   }
  ],
- "wall_s": 7.4,
+ "wall_s": 5.92,
  "dims": [
   {
    "name": "length",
    "gt_mm": 85.6,
-   "model_mm": 75.5419,
-   "error_mm": -10.0581,
+   "model_mm": 85.7413,
+   "error_mm": 0.1413,
    "within_spec": false
   },
   {
    "name": "width",
    "gt_mm": 53.98,
-   "model_mm": 47.6749,
-   "error_mm": -6.3051,
+   "model_mm": 54.1109,
+   "error_mm": 0.1309,
    "within_spec": false
   },
   {
@@ -71,9 +72,9 @@
  ],
  "missed": [],
  "extra_holes": 0,
- "pass_0_3": false,
- "pass_0_5": false,
+ "pass_0_3": true,
+ "pass_0_5": true,
  "valid": true,
  "valid_reason": "",
- "failure": "worst length -10.06 mm"
+ "failure_category": null
 }

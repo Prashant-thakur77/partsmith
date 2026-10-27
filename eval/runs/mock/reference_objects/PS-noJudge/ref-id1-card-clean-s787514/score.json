@@ -9,17 +9,18 @@
  "gt_source": "reference_spec",
  "status": "best_effort",
  "verified": false,
- "iterations": 3,
+ "iterations": 1,
  "iterations_to_converge": 1,
  "strategy": "free_code",
  "template": null,
  "verifier_max_error_mm": 0.1459195799970205,
  "retake_reason": null,
+ "failed_checks": [],
  "usd": 0.0,
  "tokens_in": 0,
  "tokens_out": 0,
- "model_calls": 7,
- "model_ms": 123,
+ "model_calls": 9,
+ "model_ms": 103,
  "provider_modes": [
   "mock"
  ],
@@ -36,8 +37,8 @@
   "build": [
    "mock:meta-models/muse-spark-open"
   ],
-  "fix": [
-   "mock:meta-models/muse-spark-open"
+  "fix_agent": [
+   "mock:mock fix agent"
   ]
  },
  "convergence": [
@@ -46,21 +47,9 @@
    "hausdorff_mm": 0.1459195799970205,
    "iou": 0.9988699948951524,
    "max_error_mm": 0.1459195799970205
-  },
-  {
-   "iter": 2,
-   "hausdorff_mm": 0.1459195799970205,
-   "iou": 0.9988699948951524,
-   "max_error_mm": 0.1459195799970205
-  },
-  {
-   "iter": 3,
-   "hausdorff_mm": 0.1459195799970205,
-   "iou": 0.9988699948951524,
-   "max_error_mm": 0.1459195799970205
   }
  ],
- "wall_s": 7.36,
+ "wall_s": 7.35,
  "dims": [
   {
    "name": "length",
@@ -89,5 +78,6 @@
  "pass_0_3": true,
  "pass_0_5": true,
  "valid": true,
- "valid_reason": ""
+ "valid_reason": "",
+ "failure_category": null
 }

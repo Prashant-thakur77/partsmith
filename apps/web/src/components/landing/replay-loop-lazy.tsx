@@ -1,0 +1,23 @@
+"use client";
+
+import dynamic from "next/dynamic";
+import * as React from "react";
+
+const ReplayLoop = dynamic(() => import("./replay-loop").then((m) => m.ReplayLoop), {
+  ssr: false,
+  loading: () => <div className="aspect-[16/10] animate-pulse rounded-xl border border-border bg-surface-2 sm:aspect-[16/7]" />,
+});
+
+/** Mounts the replay loop only when it scrolls near the viewport, so it never weighs on the first paint. */
+export function ReplayLoopLazy() {
+  const ref = React.useRef<HTMLDivElement>(null);
+  const [show, setShow] = React.useState(false);
+  React.useEffect(() => {
+    const el = ref.current;
+    if (!el || show) return;
+    const io = new IntersectionObserver(([e]) => e?.isIntersecting && setShow(true), { rootMargin: "300px" });
+    io.observe(el);
+    return () => io.disconnect();
+  }, [show]);
+  return <div ref={ref}>{show ? <ReplayLoop /> : <div className="aspect-[16/10] rounded-xl border border-border bg-surface-2 sm:aspect-[16/7]" />}</div>;
+}

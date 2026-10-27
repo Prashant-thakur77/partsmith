@@ -15,11 +15,12 @@
  "template": null,
  "verifier_max_error_mm": 0.40199999999999925,
  "retake_reason": null,
+ "failed_checks": [],
  "usd": 0.0,
  "tokens_in": 0,
  "tokens_out": 0,
  "model_calls": 7,
- "model_ms": 234,
+ "model_ms": 210,
  "provider_modes": [
   "mock"
  ],
@@ -45,7 +46,7 @@
    "max_error_mm": 0.40199999999999925
   }
  ],
- "wall_s": 11.0,
+ "wall_s": 10.07,
  "dims": [
   {
    "name": "length",
@@ -74,5 +75,6 @@
  "pass_0_3": false,
  "pass_0_5": true,
  "valid": true,
- "valid_reason": ""
+ "valid_reason": "",
+ "failure_category": null
 }

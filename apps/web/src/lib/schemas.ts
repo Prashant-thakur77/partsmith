@@ -166,8 +166,8 @@ export interface Fit {
 export interface FitCheckResult {
   passed: boolean;
   iou: number;
-  hausdorff_mm: number;
-  mean_mm: number;
+  hausdorff_mm: number | null;
+  mean_mm: number | null;
   reasons?: Array<string>;
   overlay_url?: string;
   capture: CaptureReport;
@@ -487,6 +487,7 @@ export interface ThoughtEvent {
   model?: string;
   text: string;
   iter?: number | null;
+  mode?: "live" | "mock" | "replay" | null;
 }
 
 export interface Thresholds {
@@ -515,6 +516,7 @@ export interface ToolCallEvent {
   ok?: boolean;
   ms?: number;
   iter?: number | null;
+  mode?: "live" | "mock" | "replay" | null;
 }
 
 export interface Unknown {

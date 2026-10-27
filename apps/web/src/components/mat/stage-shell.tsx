@@ -4,13 +4,15 @@
  * Full-screen shell for calibrated surfaces: dark surround, wake lock, optional fullscreen, Esc to exit, auto-hiding chrome.
  * Shows a calibration gate when the screen has not been calibrated (or zoom/display changed).
  */
-import { ArrowLeft, Expand, Lightbulb, Ruler, X } from "lucide-react";
+import { ArrowLeft, Expand, Lightbulb, Ruler, Smartphone, X } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import * as React from "react";
 import { calibrationDrift, useCalibration, useDisplayKey, type ScreenCalibration } from "@/lib/calibration";
 import { STAGE_COLOURS, setStageTone, useStageTone, type StageTone } from "@/lib/stage";
+import { useT } from "@/lib/i18n";
 import { cn } from "@/lib/utils";
+import { PhoneHandoff } from "../phone-handoff";
 import { Button } from "../ui/button";
 import { Spinner } from "../ui/spinner";
 import { radioGroupKeys } from "@/lib/a11y";
@@ -69,6 +71,7 @@ export function StageShell({
   toolbar,
   tips = true,
   calibrateNext,
+  phonePath,
 }: {
   exitHref: string;
   title: string;
@@ -76,8 +79,11 @@ export function StageShell({
   toolbar?: React.ReactNode;
   tips?: boolean;
   calibrateNext: string;
+  /** Page the phone should open (shown as a QR code from the toolbar). */
+  phonePath?: string;
 }) {
   const router = useRouter();
+  const { t } = useT();
   const { calibration, ready } = useCalibration();
   useDisplayKey();
   const drift = ready && calibration ? calibrationDrift(calibration) : null;
@@ -90,6 +96,7 @@ export function StageShell({
     if (p === "dark" || p === "light") setStageTone(p);
   }, []);
   const [showTips, setShowTips] = React.useState(false);
+  const [showPhone, setShowPhone] = React.useState(false);
   useWakeLock(!!ok);
 
   React.useEffect(() => {
@@ -116,18 +123,18 @@ export function StageShell({
             <Ruler className="size-5 text-muted" aria-hidden />
           </div>
           <div className="space-y-1.5">
-            <h1 className="text-lg font-semibold">{drift ? "Recheck your screen scale" : "Calibrate this screen first"}</h1>
+            <h1 className="text-lg font-semibold">{drift ? t("mat.recheck") : t("mat.calibrateFirst")}</h1>
             <p className="text-[14px] leading-6 text-muted">
               {drift ??
-                "The mat has to be drawn at true size. It takes 30 seconds with any bank or ID card, once per screen."}
+                t("mat.calibrateWhy")}
             </p>
           </div>
           <div className="flex flex-wrap gap-2">
             <Button asChild variant="primary">
-              <Link href={`/calibrate?next=${encodeURIComponent(calibrateNext)}`}>Calibrate with a card</Link>
+              <Link href={`/calibrate?next=${encodeURIComponent(calibrateNext)}`}>{t("fix.calibrate")}</Link>
             </Button>
             <Button asChild variant="ghost">
-              <Link href={exitHref}>Back</Link>
+              <Link href={exitHref}>{t("mat.back")}</Link>
             </Button>
           </div>
         </div>
@@ -146,37 +153,48 @@ export function StageShell({
         <div className="pointer-events-auto flex items-center gap-1.5">
           <Button asChild size="sm" variant="ghost" className="bg-black/60 text-white hover:bg-black/80 hover:text-white">
             <Link href={exitHref}>
-              <ArrowLeft aria-hidden /> Exit <span className="hidden text-white/60 sm:inline">(Esc)</span>
+              <ArrowLeft aria-hidden /> {t("mat.exit")} <span className="hidden text-white/60 sm:inline">(Esc)</span>
             </Link>
           </Button>
         </div>
         <div className="pointer-events-auto flex flex-wrap items-center justify-end gap-1.5">
           <div className="flex items-center gap-2 rounded-md bg-black/60 py-1 pr-1 pl-2.5">
-            <span className="hidden text-[12px] text-white/70 md:inline">Use Dark for white or light-grey parts.</span>
-            <span className="text-[12px] font-medium text-white/90">Stage</span>
+            <span className="hidden text-[12px] text-white/70 md:inline">{t("mat.stageHint")}</span>
+            <span className="text-[12px] font-medium text-white/90">{t("mat.stage")}</span>
             <div role="radiogroup" onKeyDown={radioGroupKeys} aria-label="Stage colour" className="inline-flex rounded-[5px] bg-white/10 p-0.5">
-              {(["light", "dark"] as const).map((t) => (
+              {(["light", "dark"] as const).map((tone) => (
                 <button
-                  key={t}
+                  key={tone}
                   type="button"
                   role="radio"
-                  aria-checked={stage === t}
-                  onClick={() => setStageTone(t)}
+                  aria-checked={stage === tone}
+                  onClick={() => setStageTone(tone)}
                   className={cn(
                     "inline-flex h-6 items-center gap-1.5 rounded-[4px] px-2 text-[12px] font-medium text-white/75 capitalize hover:text-white",
-                    stage === t && "bg-white text-black hover:text-black",
+                    stage === tone && "bg-white text-black hover:text-black",
                   )}
                 >
-                  <span aria-hidden className="size-2.5 rounded-full border border-black/30" style={{ background: STAGE_COLOURS[t] }} />
-                  {t}
+                  <span aria-hidden className="size-2.5 rounded-full border border-black/30" style={{ background: STAGE_COLOURS[tone] }} />
+                  {tone}
                 </button>
               ))}
             </div>
           </div>
           {toolbar}
+          {phonePath ? (
+            <Button
+              size="sm"
+              variant="ghost"
+              className="hidden bg-black/60 text-white hover:bg-black/80 hover:text-white md:inline-flex"
+              onClick={() => setShowPhone((v) => !v)}
+              aria-pressed={showPhone}
+            >
+              <Smartphone aria-hidden /> {t("mat.phone")}
+            </Button>
+          ) : null}
           {tips ? (
             <Button size="sm" variant="ghost" className="bg-black/60 text-white hover:bg-black/80 hover:text-white" onClick={() => setShowTips((v) => !v)} aria-pressed={showTips}>
-              <Lightbulb aria-hidden /> Tips
+              <Lightbulb aria-hidden /> {t("mat.tips")}
             </Button>
           ) : null}
           <Button
@@ -185,18 +203,23 @@ export function StageShell({
             className="bg-black/60 text-white hover:bg-black/80 hover:text-white"
             onClick={() => (document.fullscreenElement ? void document.exitFullscreen() : void document.documentElement.requestFullscreen?.())}
           >
-            <Expand aria-hidden /> Full screen
+            <Expand aria-hidden /> {t("mat.full")}
           </Button>
         </div>
       </div>
+      {showPhone && phonePath ? (
+        <div className="absolute top-14 right-3 z-30">
+          <PhoneHandoff path={phonePath} compact dark />
+        </div>
+      ) : null}
       {showTips ? (
         <div className="absolute bottom-3 left-1/2 z-20 w-[min(560px,calc(100vw-24px))] -translate-x-1/2 rounded-lg bg-black/80 p-4 text-[13px] leading-5 text-white/85 shadow-lg backdrop-blur">
           <div className="flex items-start justify-between gap-3">
             <ul className="space-y-1.5">
-              <li>Lay the screen flat (laptop opened 180° or a tablet) and set brightness to about 70 %.</li>
-              <li>Kill glare: no lamp or window reflected in the screen. Move the light, not the part.</li>
-              <li>Put the part in the plain middle; keep the black squares visible around it. Use the Dark stage for white or light-grey parts.</li>
-              <li>Photograph straight down from 20–35 cm with your phone. Night-shift / blue-light filters are fine.</li>
+              <li>{t("mat.tip1")}</li>
+              <li>{t("mat.tip2")}</li>
+              <li>{t("mat.tip3")}</li>
+              <li>{t("mat.tip4")}</li>
             </ul>
             <button type="button" aria-label="Hide tips" onClick={() => setShowTips(false)} className="rounded p-1 text-white/70 hover:bg-white/10 hover:text-white">
               <X className="size-4" aria-hidden />

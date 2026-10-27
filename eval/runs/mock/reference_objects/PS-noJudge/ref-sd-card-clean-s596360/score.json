@@ -11,15 +11,16 @@
  "verified": false,
  "iterations": 6,
  "iterations_to_converge": null,
- "strategy": "template",
+ "strategy": "free_code",
  "template": "battery_cover",
- "verifier_max_error_mm": 3.2480540394035726,
+ "verifier_max_error_mm": 0.7348366639341085,
  "retake_reason": null,
+ "failed_checks": [],
  "usd": 0.0,
  "tokens_in": 0,
  "tokens_out": 0,
- "model_calls": 12,
- "model_ms": 230,
+ "model_calls": 32,
+ "model_ms": 228,
  "provider_modes": [
   "mock"
  ],
@@ -36,8 +37,8 @@
   "build": [
    "mock:meta-models/muse-spark-open"
   ],
-  "fix": [
-   "mock:meta-models/muse-spark-open"
+  "fix_agent": [
+   "mock:mock fix agent"
   ]
  },
  "convergence": [
@@ -49,64 +50,64 @@
   },
   {
    "iter": 2,
-   "hausdorff_mm": 3.2800677466986143,
-   "iou": 0.7835545722713865,
-   "max_error_mm": 3.2800677466986143
+   "hausdorff_mm": 3.2480540394035726,
+   "iou": 0.794275161588181,
+   "max_error_mm": 3.2480540394035726
   },
   {
    "iter": 3,
-   "hausdorff_mm": 3.2480540394035726,
-   "iou": 0.7907663896583564,
-   "max_error_mm": 3.2480540394035726
+   "hausdorff_mm": 3.263198007563619,
+   "iou": 0.7988548208348726,
+   "max_error_mm": 3.263198007563619
   },
   {
    "iter": 4,
-   "hausdorff_mm": 3.2555720139027278,
-   "iou": 0.7908822443706165,
-   "max_error_mm": 3.2555720139027278
+   "hausdorff_mm": 3.263370294591867,
+   "iou": 0.8001845018450184,
+   "max_error_mm": 3.263370294591867
   },
   {
    "iter": 5,
-   "hausdorff_mm": 3.2480540394035726,
-   "iou": 0.7919128508124077,
-   "max_error_mm": 3.2480540394035726
+   "hausdorff_mm": 3.313808902706387,
+   "iou": 0.8025806451612904,
+   "max_error_mm": 3.313808902706387
   },
   {
    "iter": 6,
-   "hausdorff_mm": 3.2540165034144253,
-   "iou": 0.7914359542266519,
-   "max_error_mm": 3.2540165034144253
+   "hausdorff_mm": 0.7348366639341085,
+   "iou": 0.9359868691013541,
+   "max_error_mm": 0.7348366639341085
   }
  ],
- "wall_s": 18.72,
+ "wall_s": 29.4,
  "dims": [
   {
    "name": "length",
    "gt_mm": 32.0,
-   "model_mm": 31.9,
-   "error_mm": -0.1,
+   "model_mm": 31.9673,
+   "error_mm": -0.0327,
    "within_spec": true
   },
   {
    "name": "width",
    "gt_mm": 24.0,
-   "model_mm": 23.9,
-   "error_mm": -0.1,
+   "model_mm": 23.9249,
+   "error_mm": -0.0751,
    "within_spec": true
   },
   {
    "name": "thickness",
    "gt_mm": 2.1,
-   "model_mm": 5.5,
-   "error_mm": 3.4,
-   "within_spec": false
+   "model_mm": 2.1,
+   "error_mm": 0.0,
+   "within_spec": true
   }
  ],
  "missed": [],
  "extra_holes": 0,
- "pass_0_3": false,
- "pass_0_5": false,
+ "pass_0_3": true,
+ "pass_0_5": true,
  "valid": true,
  "valid_reason": "",
- "failure": "worst thickness +3.40 mm"
+ "failure_category": null
 }

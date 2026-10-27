@@ -23,7 +23,7 @@ export function BenchView({ report, state }: { report?: BenchReport; state: "pen
         return (
           <Link
             key={t.key}
-            href={`/bench#${t.key}`}
+            href={`/results#${t.key}`}
             className="group flex flex-col gap-3 rounded-xl border border-border bg-surface p-5 transition-colors hover:border-border-strong"
           >
             <div className="flex items-center justify-between gap-2">

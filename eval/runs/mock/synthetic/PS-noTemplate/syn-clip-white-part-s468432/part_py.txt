@@ -3,7 +3,7 @@ import cadquery as cq
 
 FAMILY = 'clip'
 OUTLINE = [(-20.319, -7.456), (18.845, -7.394), (19.879, -6.684), (20.38, -5.298), (20.25, 5.553), (19.493, 6.65), (18.28, 7.111), (-13.518, 7.054), (-13.729, 7.482), (-16.286, 7.493), (-16.486, 7.029), (-20.229, 6.977), (-20.386, 6.461)]
-HOLES = [(16.485, -0.133)]
+HOLES = [(16.325, -0.208)]
 SLOTS = []
 BOSSES = []
 MEASURE_MAP = {'thickness': 'thickness', 'side.thickness': 'thickness', 'hole_1.diameter': 'hole_1_d'}
@@ -11,7 +11,7 @@ MEASURE_MAP = {'thickness': 'thickness', 'side.thickness': 'thickness', 'hole_1.
 PARAMS = {  # name: (default, min, max, step, unit, affects_fit, label)
     "thickness": (3.0, 0.80, 40.0, 0.01, "mm", True, "Plate thickness"),
     "outline_offset": (0.0, -1.0, 1.0, 0.02, "mm", True, "Outline offset (+ grows the outline)"),
-    "hole_1_d": (3.55, 0.55, 6.55, 0.05, "mm", True, "hole_1 diameter"),
+    "hole_1_d": (3.31, 0.50, 6.31, 0.05, "mm", True, "hole_1 diameter"),
 }
 
 

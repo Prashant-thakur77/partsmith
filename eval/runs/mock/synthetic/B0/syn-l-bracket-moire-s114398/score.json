@@ -15,6 +15,9 @@
  "template": null,
  "verifier_max_error_mm": null,
  "retake_reason": "Wavy stripes from the screen are visible \u2014 move the phone a little further away or rotate it slightly.",
+ "failed_checks": [
+  "moire"
+ ],
  "usd": 0,
  "tokens_in": 0,
  "tokens_out": 0,
@@ -23,7 +26,7 @@
  "provider_modes": [],
  "providers": {},
  "convergence": [],
- "wall_s": 0.69,
+ "wall_s": 0.63,
  "valid": false,
  "valid_reason": "no part program",
  "dims": [],
@@ -38,5 +41,6 @@
   "thickness"
  ],
  "extra_holes": 0,
+ "failure_category": "capture_reject",
  "failure": "job failed: Wavy stripes from the screen are visible \u2014 move the phone a little further away or rotate it slightly."
 }

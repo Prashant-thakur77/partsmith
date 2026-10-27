@@ -9,17 +9,18 @@
  "gt_source": "synthetic_exact",
  "status": "best_effort",
  "verified": false,
- "iterations": 6,
+ "iterations": 1,
  "iterations_to_converge": null,
  "strategy": "template",
  "template": "battery_cover",
  "verifier_max_error_mm": 4.017,
  "retake_reason": null,
+ "failed_checks": [],
  "usd": 0.0,
  "tokens_in": 0,
  "tokens_out": 0,
- "model_calls": 15,
- "model_ms": 436,
+ "model_calls": 21,
+ "model_ms": 356,
  "provider_modes": [
   "mock"
  ],
@@ -36,8 +37,8 @@
   "build": [
    "mock:meta-models/muse-spark-open"
   ],
-  "fix": [
-   "mock:meta-models/muse-spark-open"
+  "fix_agent": [
+   "mock:mock fix agent"
   ],
   "judge": [
    "mock:muse-glimmer"
@@ -49,39 +50,9 @@
    "hausdorff_mm": 0.5581989545969367,
    "iou": 0.8900052882072977,
    "max_error_mm": 4.017
-  },
-  {
-   "iter": 2,
-   "hausdorff_mm": 1.950074660588167,
-   "iou": 0.44627761112626124,
-   "max_error_mm": 2.5170000000000003
-  },
-  {
-   "iter": 3,
-   "hausdorff_mm": 2.0166167926690326,
-   "iou": 0.44807849550286183,
-   "max_error_mm": 2.5170000000000003
-  },
-  {
-   "iter": 4,
-   "hausdorff_mm": 2.0166167926690326,
-   "iou": 0.44807849550286183,
-   "max_error_mm": 2.5170000000000003
-  },
-  {
-   "iter": 5,
-   "hausdorff_mm": 2.0166167926690326,
-   "iou": 0.44807849550286183,
-   "max_error_mm": 2.5170000000000003
-  },
-  {
-   "iter": 6,
-   "hausdorff_mm": 2.0166167926690326,
-   "iou": 0.44807849550286183,
-   "max_error_mm": 2.5170000000000003
   }
  ],
- "wall_s": 20.15,
+ "wall_s": 20.31,
  "dims": [
   {
    "name": "length",
@@ -108,5 +79,6 @@
  "pass_0_5": false,
  "valid": true,
  "valid_reason": "",
+ "failure_category": "dim_off",
  "failure": "worst width +0.70 mm"
 }

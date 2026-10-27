@@ -1,15 +1,17 @@
-/** Live steer run: brief → plan → lanes build → approve the first queued part with the keyboard. `pnpm e2e:live`. */
+/** Live Factory (steer) run: brief → plan → lanes build → approve the first queued part with the keyboard. `pnpm e2e:live`. */
 import { expect, test } from "@playwright/test";
 import { watchErrors } from "./watch";
 
 test("steer: brief → lanes → approve with the 'a' key → published", async ({ page }) => {
   test.setTimeout(240_000);
   const errors = watchErrors(page);
-  await page.goto("/steer");
+  const token = process.env.PARTSMITH_ADMIN_TOKEN;
+  if (token) await page.addInitScript((t) => window.localStorage.setItem("partsmith.admin-token", t), token);
+  await page.goto("/factory");
   await page.getByLabel("Brief").fill("Cable clips for a desk, 6 and 8 mm cables");
   await page.getByRole("spinbutton", { name: "Parts" }).fill("2");
   await page.getByRole("button", { name: "Plan and build" }).click();
-  await page.waitForURL(/\/steer\?id=s_/, { timeout: 30_000 });
+  await page.waitForURL(/\/factory\?id=s_/, { timeout: 30_000 });
   const first = page.getByRole("option").first();
   await expect(first).toBeVisible({ timeout: 180_000 });
   const title = (await first.locator("div.truncate").first().textContent())?.trim() ?? "";

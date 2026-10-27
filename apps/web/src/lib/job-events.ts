@@ -11,6 +11,9 @@ import {
   EventSchema,
   type ArtifactEvent,
   type DoneEvent,
+  type FocusEvent,
+  type ThoughtEvent,
+  type ToolCallEvent,
   type IterationEvent,
   type JobEvent,
   type MetricEvent,
@@ -161,6 +164,11 @@ export type EventSummary = {
   tokens: number;
   logs: Extract<JobEvent, { t: "log" }>[];
   convergence: { iter: number; hausdorff_mm: number | null; iou: number | null }[];
+  /** Agent visibility (round 2): reasoning summaries, tool calls, where the agent is looking. */
+  agent: (ThoughtEvent | ToolCallEvent | FocusEvent)[];
+  focus: FocusEvent | null;
+  /** One readable line per iteration: knob edits and how the error moved. */
+  progress: { iter: number; text: string }[];
 };
 
 export function summarizeEvents(events: JobEvent[]): EventSummary {
@@ -175,6 +183,8 @@ export function summarizeEvents(events: JobEvent[]): EventSummary {
   let question: QuestionEvent | null = null;
   let done: DoneEvent | null = null;
   let current: StageState | null = null;
+  const agent: EventSummary["agent"] = [];
+  let focus: FocusEvent | null = null;
 
   for (const e of events) {
     switch (e.t) {
@@ -209,6 +219,14 @@ export function summarizeEvents(events: JobEvent[]): EventSummary {
       case "done":
         done = e;
         break;
+      case "thought":
+      case "tool_call":
+        agent.push(e);
+        break;
+      case "focus":
+        agent.push(e);
+        focus = e;
+        break;
     }
   }
   if (question && answered.has((question as QuestionEvent).id)) question = null;
@@ -227,6 +245,7 @@ export function summarizeEvents(events: JobEvent[]): EventSummary {
     byIter.set(m.iter, row);
   }
   const convergence = [...byIter.values()].sort((a, b) => a.iter - b.iter);
+  const progress = progressLines(iterations);
 
   return {
     stages,
@@ -242,5 +261,38 @@ export function summarizeEvents(events: JobEvent[]): EventSummary {
     tokens: modelCalls.reduce((a, m) => a + m.tokens_in + m.tokens_out, 0),
     logs,
     convergence,
+    agent,
+    focus,
+    progress,
   };
+}
+
+function num(v: unknown): number | null {
+  return typeof v === "number" && Number.isFinite(v) ? v : null;
+}
+
+/** "hole_d 4.20→4.50 mm · Hausdorff 1.84→0.71 mm" — built only from the iteration events' own numbers. */
+export function progressLines(iterations: IterationEvent[]): { iter: number; text: string }[] {
+  const out: { iter: number; text: string }[] = [];
+  let prevH: number | null = null;
+  for (const it of iterations) {
+    const parts: string[] = [];
+    for (const e of it.edits.slice(0, 3)) {
+      const name = typeof e.param === "string" ? e.param : null;
+      const from = num(e.from);
+      const to = num(e.to);
+      if (!name || to === null) continue;
+      // Counts (holes, ribs, flats …) have no unit; angles end in _deg; everything else is mm.
+      const count = /count|holes|ribs|gussets|flats|channels|spokes|grips/.test(name);
+      const unit = count ? "" : name.endsWith("_deg") ? "°" : " mm";
+      const f = (v: number) => (count ? String(Math.round(v)) : v.toFixed(2));
+      parts.push(from !== null ? `${name} ${f(from)}→${f(to)}${unit}` : `${name} → ${f(to)}${unit}`);
+    }
+    const h = it.hausdorff_mm ?? null;
+    if (h !== null) parts.push(prevH !== null ? `Hausdorff ${prevH.toFixed(2)}→${h.toFixed(2)} mm` : `Hausdorff ${h.toFixed(2)} mm`);
+    if (it.total_tests) parts.push(`${it.passed_tests}/${it.total_tests} tests`);
+    if (h !== null) prevH = h;
+    if (parts.length) out.push({ iter: it.iter, text: parts.join(" · ") });
+  }
+  return out;
 }

@@ -9,6 +9,9 @@ import { ConvergenceChart } from "@/components/jobs/convergence-chart";
 import { EditPanel } from "@/components/jobs/edit-panel";
 import { ExportMenu, PreviewDialog } from "@/components/jobs/export-menu";
 import { JobStatusBadge } from "@/components/jobs/job-badges";
+import { AgentLog, ProgressLines } from "@/components/jobs/agent-log";
+import { FitPresets } from "@/components/jobs/fit-presets";
+import { JobExtras } from "@/components/jobs/job-extras";
 import { PhotoPanel, imagesByView } from "@/components/jobs/photo-panel";
 import { QuestionPanel } from "@/components/jobs/question-panel";
 import { ResidualTable } from "@/components/jobs/residual-table";
@@ -28,11 +31,13 @@ import { toast } from "@/components/ui/toast";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { VerifiedBadge } from "@/components/ui/verified-badge";
 import { CadViewer } from "@/components/viewer/cad-viewer";
-import { api, artifactUrl } from "@/lib/api";
-import type { ArtifactEvent, BakeResult, JobDetail, JobEvent, Measurements } from "@/lib/api-types";
+import { ApiError, api, artifactUrl } from "@/lib/api";
+import type { ArtifactEvent, BakeResult, JobDetail, JobEvent, Measurements, PartTest } from "@/lib/api-types";
 import { fmtNum, fmtUsd, paramLabel, splitTitle } from "@/lib/format";
 import { useBake, useCountTo, useJobBake } from "@/lib/hooks";
 import { STAGE_LABELS, summarizeEvents, useJobEvents, type EventSummary, type StreamState } from "@/lib/job-events";
+import { VOTE_ENABLED, VoteBanner } from "@/components/vote-banner";
+import { I18nRegion, LangToggle, useT } from "@/lib/i18n";
 import { cn } from "@/lib/utils";
 
 function mergeEvents(a: JobEvent[], b: JobEvent[]): JobEvent[] {
@@ -85,22 +90,66 @@ function MeasurementsCard({ m }: { m: Measurements }) {
       </div>
       <dl className="space-y-2 text-[13px]">
         <Row label="Length">
-          <Mm value={m.length.value} sigma={m.length.sigma_mm} source={m.length.source} />
+          <Mm value={m.length.value} sigma={m.length.sigma_mm} source={m.length.source} citation={m.length.evidence?.citation} />
         </Row>
         <Row label="Width">
-          <Mm value={m.width.value} sigma={m.width.sigma_mm} source={m.width.source} />
+          <Mm value={m.width.value} sigma={m.width.sigma_mm} source={m.width.source} citation={m.width.evidence?.citation} />
         </Row>
         {m.thickness ? (
           <Row label="Thickness">
-            <Mm value={m.thickness.value} sigma={m.thickness.sigma_mm} source={m.thickness.source} />
+            <Mm value={m.thickness.value} sigma={m.thickness.sigma_mm} source={m.thickness.source} citation={m.thickness.evidence?.citation} />
           </Row>
         ) : null}
         {m.holes.map((h) => (
           <Row key={h.id} label={`${h.id.replace("_", " ")} Ø`}>
-            <Mm value={h.diameter.value} sigma={h.diameter.sigma_mm} source={h.diameter.source} />
+            <Mm value={h.diameter.value} sigma={h.diameter.sigma_mm} source={h.diameter.source} citation={h.diameter.evidence?.citation} />
           </Row>
         ))}
       </dl>
+    </div>
+  );
+}
+
+const BROKEN_STRATEGY: Record<string, string> = {
+  mirror: "mirroring the intact side",
+  mating_part: "fitting the mating part",
+  template: "the part template",
+  user: "your description",
+};
+
+function PartTests({ tests }: { tests: PartTest[] }) {
+  const p0 = tests.filter((t) => t.priority === "P0");
+  const p1 = tests.filter((t) => t.priority === "P1");
+  const row = (t: PartTest) => (
+    <li key={t.id} className="flex items-start gap-2">
+      <Badge tone={t.passed ? "ok" : t.priority === "P0" ? "bad" : "warn"} className="shrink-0">
+        {t.passed ? "pass" : "fail"}
+      </Badge>
+      <span className="text-muted">
+        {t.description}
+        {t.value != null && t.expected != null ? (
+          <span className="ml-1 font-mono tnum">
+            ({fmtNum(t.value)} vs {fmtNum(t.expected)}
+            {t.tol != null ? ` ± ${fmtNum(t.tol)}` : ""})
+          </span>
+        ) : null}
+      </span>
+    </li>
+  );
+  return (
+    <div className="space-y-3">
+      {p0.length ? (
+        <div className="space-y-1.5">
+          <Eyebrow>Part tests (must pass)</Eyebrow>
+          <ul className="space-y-1 text-[12px]">{p0.map(row)}</ul>
+        </div>
+      ) : null}
+      {p1.length ? (
+        <div className="space-y-1.5">
+          <Eyebrow>Functional probes (advisory)</Eyebrow>
+          <ul className="space-y-1 text-[12px]">{p1.map(row)}</ul>
+        </div>
+      ) : null}
     </div>
   );
 }
@@ -117,13 +166,17 @@ function Row({ label, children }: { label: string; children: React.ReactNode }) 
 function JobActions({ id, summary }: { id: string; summary: JobDetail["summary"] }) {
   const qc = useQueryClient();
   const publish = useMutation({
-    mutationFn: () => api.publish(id),
+    mutationFn: (ack: boolean) => api.publish(id, undefined, ack),
     onSuccess: (part) => {
       toast("Published to the registry", { description: part.title, tone: "ok" });
       void qc.invalidateQueries({ queryKey: ["job", id] });
     },
-    onError: (e) => toast("Could not publish", { description: e instanceof Error ? e.message : String(e), tone: "bad" }),
+    onError: (e) => {
+      if (e instanceof ApiError && e.code === "needs_ack") return; // shown inline: the plain-words reason + "publish anyway"
+      toast("Could not publish", { description: e instanceof Error ? e.message : String(e), tone: "bad" });
+    },
   });
+  const needsAck = publish.error instanceof ApiError && publish.error.code === "needs_ack" ? publish.error.message : null;
   const cancel = useMutation({
     mutationFn: () => api.cancel(id),
     onSuccess: (r) => {
@@ -143,9 +196,25 @@ function JobActions({ id, summary }: { id: string; summary: JobDetail["summary"]
         </Link>
       </Button>
     );
+  if (summary.status === "done" && needsAck)
+    return (
+      <div role="alert" className="flex max-w-md flex-col gap-2 rounded-md border border-warn-border bg-warn-soft p-2.5 text-[12.5px]">
+        <p>
+          <span className="font-medium">Best effort, not verified.</span> {needsAck}
+        </p>
+        <div className="flex gap-2">
+          <Button variant="outline" size="sm" onClick={() => publish.mutate(true)} disabled={publish.isPending}>
+            I understand, publish as best effort
+          </Button>
+          <Button variant="ghost" size="sm" onClick={() => publish.reset()}>
+            Not now
+          </Button>
+        </div>
+      </div>
+    );
   if (summary.status === "done")
     return (
-      <Button variant="primary" size="sm" onClick={() => publish.mutate()} disabled={publish.isPending}>
+      <Button variant="primary" size="sm" onClick={() => publish.mutate(false)} disabled={publish.isPending}>
         {publish.isPending ? <Spinner className="text-accent-fg" label="Publishing" /> : <Upload aria-hidden />} Publish
       </Button>
     );
@@ -175,6 +244,9 @@ export function WorkspaceClient({ id }: { id: string }) {
 
   const [values, setValues] = React.useState<Record<string, number> | null>(null);
   const [editBake, setEditBake] = React.useState<BakeResult | null>(null);
+  const [manualFocus, setManualFocus] = React.useState<{ at: [number, number, number]; key: string; label?: string } | null>(null);
+  const { t } = useT();
+  const artifactEvents = React.useMemo(() => events.filter((e): e is ArtifactEvent => e.t === "artifact"), [events]);
   React.useEffect(() => {
     if (d && values === null && Object.keys(d.values).length) setValues(d.values);
   }, [d, values]);
@@ -235,9 +307,11 @@ export function WorkspaceClient({ id }: { id: string }) {
   const doneStatus = s.done?.status ?? (sum.status === "done" ? (sum.verified ? "verified" : "best_effort") : sum.status === "failed" ? "failed" : null);
   const usd = s.usd || sum.cost_usd;
   const heading = splitTitle(sum.title || d.partspec?.title || "Fix job");
+  const autoFocus = s.focus?.at_mm ? { at: s.focus.at_mm, key: `a${s.focus.seq}`, label: s.focus.feature || s.focus.label } : null;
+  const focusPoint = manualFocus ?? autoFocus;
 
   return (
-    <div className="pb-10">
+    <I18nRegion className="pb-10">
       <div aria-live="polite" role="status" className="sr-only">
         {liveMsg}
       </div>
@@ -275,14 +349,21 @@ export function WorkspaceClient({ id }: { id: string }) {
             <PreviewDialog jobId={id} photoUrl={artifactUrl(artifacts.photo)} disabled={!artifacts.view} />
             <Button asChild variant="outline" size="sm" className={cn(!artifacts.view && "pointer-events-none opacity-50")}>
               <Link href={`/jobs/${encodeURIComponent(id)}/fit`} aria-disabled={!artifacts.view}>
-                <ScanLine aria-hidden /> Screen fit check
+                <ScanLine aria-hidden /> {t("ws.fitCheck")}
               </Link>
             </Button>
-            <ExportMenu artifacts={artifacts} />
+            <ExportMenu artifacts={artifacts} verification={verification} />
+            <LangToggle />
             <JobActions id={id} summary={sum} />
           </div>
         </div>
       </div>
+
+      {verification?.verified && VOTE_ENABLED ? (
+        <div className="px-4 pt-4 sm:px-6">
+          <VoteBanner />
+        </div>
+      ) : null}
 
       {contractErrors.length ? (
         <div className="px-4 pt-4 sm:px-6">
@@ -310,12 +391,12 @@ export function WorkspaceClient({ id }: { id: string }) {
             <div className="space-y-1">
               <div className="font-medium text-fg">
                 {doneStatus === "refused"
-                  ? "PartSmith won't make this part"
+                  ? t("ws.refused")
                   : doneStatus === "failed"
-                    ? "The job failed"
+                    ? t("ws.failed")
                     : doneStatus === "cancelled"
                       ? "The job was cancelled"
-                      : "Best effort — not verified"}
+                      : t("ws.bestEffort")}
               </div>
               {d.partspec?.refusal ? <p className="text-muted">{d.partspec.refusal}</p> : null}
               {verification?.reasons.length ? (
@@ -339,13 +420,14 @@ export function WorkspaceClient({ id }: { id: string }) {
             className="h-[360px] sm:h-[460px] xl:h-[520px]"
             label="Model"
             emptyText={done ? "No model was produced." : "The model appears after the first build."}
+            focus={focusPoint}
           />
         </div>
 
         {/* left: photo + measurements */}
         <div className="flex flex-col gap-4 xl:order-1">
           <div className="overflow-hidden rounded-lg border border-border bg-surface">
-            <PhotoPanel views={views} className="h-[360px] sm:h-[420px] xl:h-[520px]" />
+            <PhotoPanel views={views} focusLabel={focusPoint?.label} className="h-[360px] sm:h-[420px] xl:h-[520px]" />
           </div>
         </div>
 
@@ -353,22 +435,35 @@ export function WorkspaceClient({ id }: { id: string }) {
         <aside className="flex min-w-0 flex-col gap-4 xl:order-3 xl:row-span-2">
           <div className="rounded-lg border border-border bg-surface p-4">
             <div className="mb-2 flex items-center justify-between">
-              <Eyebrow>Silhouette error per iteration</Eyebrow>
+              <Eyebrow>{t("ws.errorChart")}</Eyebrow>
               {lastIterErr != null ? <Mm value={counting ?? lastIterErr} size="sm" /> : null}
             </div>
             <ConvergenceChart data={s.convergence} threshold={threshold} />
+            <ProgressLines lines={s.progress} className="mt-3 border-t border-border pt-3" />
           </div>
           <div className="rounded-lg border border-border bg-surface">
-            <Tabs defaultValue="trace">
-              <TabsList className="px-3">
-                <TabsTrigger value="trace">Trace</TabsTrigger>
+            <Tabs defaultValue={s.agent.length ? "agent" : "trace"}>
+              <TabsList className="px-3" aria-label="Job details">
+                {s.agent.length ? (
+                  <TabsTrigger value="agent">
+                    {t("ws.agent")} <span className="font-mono text-[11px] text-subtle tnum">{s.agent.length}</span>
+                  </TabsTrigger>
+                ) : null}
+                <TabsTrigger value="trace">{t("ws.trace")}</TabsTrigger>
                 <TabsTrigger value="iterations">
-                  Iterations <span className="font-mono text-[11px] text-subtle tnum">{s.iterations.length}</span>
+                  {t("ws.iterations")} <span className="font-mono text-[11px] text-subtle tnum">{s.iterations.length}</span>
                 </TabsTrigger>
-                <TabsTrigger value="residuals">Residuals</TabsTrigger>
-                <TabsTrigger value="code">Code</TabsTrigger>
+                <TabsTrigger value="residuals">{t("ws.residuals")}</TabsTrigger>
+                <TabsTrigger value="code">{t("ws.code")}</TabsTrigger>
               </TabsList>
               <div className="scrollbar-thin max-h-[640px] overflow-y-auto px-4 pb-4" tabIndex={0} role="region" aria-label="Job details">
+                <TabsContent value="agent">
+                  <AgentLog
+                    events={s.agent}
+                    modelCalls={s.modelCalls}
+                    onFocus={(e) => e.at_mm && setManualFocus({ at: e.at_mm, key: `m${e.seq}-${Date.now()}`, label: e.feature || e.label })}
+                  />
+                </TabsContent>
                 <TabsContent value="trace">
                   <TraceTimeline summary={s} live={live} />
                   {s.logs.filter((l) => l.level !== "info").length ? (
@@ -389,20 +484,22 @@ export function WorkspaceClient({ id }: { id: string }) {
                 </TabsContent>
                 <TabsContent value="residuals" className="space-y-4">
                   <ResidualTable residuals={verification?.residuals ?? []} />
-                  {verification?.tests.length ? (
-                    <div className="space-y-1.5">
-                      <Eyebrow>Part tests</Eyebrow>
-                      <ul className="space-y-1 text-[12px]">
-                        {verification.tests.map((t) => (
-                          <li key={t.id} className="flex items-start gap-2">
-                            <Badge tone={t.passed ? "ok" : "bad"} className="shrink-0">
-                              {t.passed ? "pass" : "fail"}
-                            </Badge>
-                            <span className="text-muted">{t.description}</span>
-                          </li>
-                        ))}
-                      </ul>
+                  {verification?.tests.length ? <PartTests tests={verification.tests} /> : null}
+                  {d?.partspec?.broken_region ? (
+                    <div className="space-y-1 rounded-md border border-border bg-surface-2 p-2.5 text-[12px] leading-5">
+                      <Eyebrow>Broken region</Eyebrow>
+                      <p className="text-muted">
+                        Rebuilt by <span className="font-medium text-fg">{BROKEN_STRATEGY[d.partspec.broken_region.strategy] ?? d.partspec.broken_region.strategy}</span>
+                        {d.partspec.broken_region.note ? ` · ${d.partspec.broken_region.note}` : ""}.{verification?.reasons.length ? " The verifier's notes below say how it was checked." : ""}
+                      </p>
                     </div>
+                  ) : null}
+                  {verification?.reasons.length ? (
+                    <ul className="list-disc space-y-0.5 pl-4 text-[12px] text-muted" aria-label="Verifier notes">
+                      {verification.reasons.map((r) => (
+                        <li key={r}>{r}</li>
+                      ))}
+                    </ul>
                   ) : null}
                   {verification?.views.length ? (
                     <div className="space-y-1.5">
@@ -464,13 +561,11 @@ export function WorkspaceClient({ id }: { id: string }) {
                   bake={changed ? knobBake.data : editBake}
                   pending={changed && knobBake.pending}
                   error={knobBake.error}
-                  title="Knobs"
+                  title={t("ws.knobs")}
                   columns={2}
                 />
-                <p className="mt-3 text-[12px] text-subtle">
-                  {slug ? "Re-bakes the published registry part." : "Re-bakes this job's program; publish to put it in the registry."} Knob changes are not
-                  re-verified against the photo.
-                </p>
+                <FitPresets values={values ?? d.values} onApply={(p) => setValues((cur) => ({ ...(cur ?? d.values), ...p }))} params={d.params} />
+                <p className="mt-3 text-[12px] text-subtle">{slug ? t("ws.knobNotePart") : t("ws.knobNoteJob")}</p>
               </>
             ) : (
               <div className="space-y-1">
@@ -504,7 +599,8 @@ export function WorkspaceClient({ id }: { id: string }) {
             ) : null}
           </div>
         </div>
+        <JobExtras artifactEvents={artifactEvents} rectified={views.top?.rectified ?? views.top?.photo} />
       </div>
-    </div>
+    </I18nRegion>
   );
 }

@@ -12,7 +12,7 @@ PARAMS = {  # name: (default, min, max, step, unit, affects_fit, label)
     "thickness": (9.6, 0.80, 40.0, 0.01, "mm", True, "Plate thickness"),
     "outline_offset": (0.0, -1.0, 1.0, 0.02, "mm", True, "Outline offset (+ grows the outline)"),
     "boss_d": (4.88, 0.5, 10.88, 0.05, "mm", True, "Boss diameter (seen on the side)"),
-    "boss_h": (1.3, 0.2, 7.30, 0.05, "mm", True, "Boss height above the top face"),
+    "boss_h": (1.65, 0.2, 7.30, 0.05, "mm", True, "Boss height above the top face"),
 }
 
 

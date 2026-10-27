@@ -9,17 +9,18 @@
  "gt_source": "synthetic_exact",
  "status": "best_effort",
  "verified": false,
- "iterations": 6,
+ "iterations": 2,
  "iterations_to_converge": null,
  "strategy": "template",
  "template": "clip",
- "verifier_max_error_mm": 1.0430426999373552,
+ "verifier_max_error_mm": 0.9559569727891949,
  "retake_reason": null,
+ "failed_checks": [],
  "usd": 0.0,
  "tokens_in": 0,
  "tokens_out": 0,
- "model_calls": 15,
- "model_ms": 412,
+ "model_calls": 48,
+ "model_ms": 317,
  "provider_modes": [
   "mock"
  ],
@@ -30,14 +31,17 @@
   "understand": [
    "mock:muse-spark-1.3"
   ],
+  "segment_points": [
+   "mock:sam-3.1"
+  ],
   "plan": [
    "mock:meta-models/muse-spark-open"
   ],
   "build": [
    "mock:meta-models/muse-spark-open"
   ],
-  "fix": [
-   "mock:meta-models/muse-spark-open"
+  "fix_agent": [
+   "mock:mock fix agent"
   ],
   "judge": [
    "mock:muse-glimmer"
@@ -46,42 +50,18 @@
  "convergence": [
   {
    "iter": 1,
-   "hausdorff_mm": 1.0430426999373552,
-   "iou": 0.8387281581208823,
-   "max_error_mm": 1.0430426999373552
+   "hausdorff_mm": 1.4295268432591597,
+   "iou": 0.8451706608569354,
+   "max_error_mm": 1.4295268432591597
   },
   {
    "iter": 2,
-   "hausdorff_mm": 1.0430426999373552,
-   "iou": 0.8387281581208823,
-   "max_error_mm": 1.0430426999373552
-  },
-  {
-   "iter": 3,
-   "hausdorff_mm": 1.0430426999373552,
-   "iou": 0.8387281581208823,
-   "max_error_mm": 1.0430426999373552
-  },
-  {
-   "iter": 4,
-   "hausdorff_mm": 1.0430426999373552,
-   "iou": 0.8387281581208823,
-   "max_error_mm": 1.0430426999373552
-  },
-  {
-   "iter": 5,
-   "hausdorff_mm": 1.0430426999373552,
-   "iou": 0.8387281581208823,
-   "max_error_mm": 1.0430426999373552
-  },
-  {
-   "iter": 6,
-   "hausdorff_mm": 1.0430426999373552,
-   "iou": 0.8387281581208823,
-   "max_error_mm": 1.0430426999373552
+   "hausdorff_mm": 0.9559569727891949,
+   "iou": 0.8524506217995611,
+   "max_error_mm": 0.9559569727891949
   }
  ],
- "wall_s": 13.37,
+ "wall_s": 40.78,
  "dims": [
   {
    "name": "length",
@@ -98,8 +78,8 @@
   {
    "name": "thickness",
    "gt_mm": 10.9,
-   "model_mm": 11.0,
-   "error_mm": 0.1
+   "model_mm": 10.0,
+   "error_mm": -0.9
   },
   {
    "name": "hole_1.diameter",
@@ -111,7 +91,9 @@
  "missed": [],
  "extra_holes": 0,
  "pass_0_3": false,
- "pass_0_5": true,
+ "pass_0_5": false,
  "valid": true,
- "valid_reason": ""
+ "valid_reason": "",
+ "failure_category": "dim_off",
+ "failure": "worst thickness -0.90 mm"
 }

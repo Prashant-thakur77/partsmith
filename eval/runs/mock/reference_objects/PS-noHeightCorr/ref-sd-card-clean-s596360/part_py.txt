@@ -9,7 +9,7 @@ BOSSES = []
 MEASURE_MAP = {'thickness': 'thickness', 'side.thickness': 'thickness'}
 
 PARAMS = {  # name: (default, min, max, step, unit, affects_fit, label)
-    "thickness": (2.35, 0.80, 40.0, 0.01, "mm", True, "Plate thickness"),
+    "thickness": (2.1, 0.80, 40.0, 0.01, "mm", True, "Plate thickness"),
     "outline_offset": (0.0, -1.0, 1.0, 0.02, "mm", True, "Outline offset (+ grows the outline)"),
 }
 

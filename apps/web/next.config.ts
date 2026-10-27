@@ -21,6 +21,14 @@ const nextConfig: NextConfig = {
       ],
     };
   },
+  // Plain-word routes (round 2); old links keep working.
+  async redirects() {
+    return [
+      { source: "/bench", destination: "/results", permanent: true },
+      { source: "/steer", destination: "/factory", permanent: true },
+      { source: "/status", destination: "/models", permanent: true },
+    ];
+  },
   async headers() {
     return [
       {

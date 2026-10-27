@@ -1,9 +1,13 @@
 "use client";
 
 import { useMutation } from "@tanstack/react-query";
-import { Box, Download, FileCode2, FileText, Image as ImageIcon, Layers, ScanLine, Sparkles, Wrench } from "lucide-react";
+import { Archive, Box, Download, FileCode2, FileText, Image as ImageIcon, Layers, Lock, ScanLine, Sparkles, Wrench } from "lucide-react";
 import Link from "next/link";
+import * as React from "react";
 import { api, artifactUrl } from "@/lib/api";
+import type { Verification } from "@/lib/api-types";
+import { useT } from "@/lib/i18n";
+import { ExportGateNotice, gateReason, useExportGate } from "../export-gate";
 import { Button } from "../ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogTitle, DialogTrigger } from "../ui/dialog";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "../ui/dropdown-menu";
@@ -20,16 +24,39 @@ const ITEMS = [
   { kind: "template_pdf", label: "1:1 paper template", sub: "PDF, print at 100 %", icon: FileText, file: "template.pdf" },
   { kind: "repair_card", label: "Repair card", sub: "printable summary", icon: Wrench, file: "repair-card.pdf" },
   { kind: "coupon", label: "Fit-test coupon", sub: "small test print for the fit", icon: Box, file: "coupon.stl" },
+  { kind: "zip", label: "Everything (.zip)", sub: "files, part.py, README, licence", icon: Archive, file: "partsmith-bundle.zip" },
   { kind: "verification", label: "verification.json", sub: "the verifier's record", icon: FileText, file: "verification.json" },
 ] as const;
 
-export function ExportMenu({ artifacts, disabled }: { artifacts: Record<string, string>; disabled?: boolean }) {
+/**
+ * Export menu with the export gate: verified models download in one click; best-effort ones first show why they are
+ * locked, suggest the fit-test coupon and need an explicit acknowledgement.
+ */
+export function ExportMenu({ artifacts, disabled, verification }: { artifacts: Record<string, string>; disabled?: boolean; verification?: Verification | null }) {
   const any = ITEMS.some((i) => artifacts[i.kind]);
+  const gate = useExportGate(verification);
+  const { t } = useT();
+  const [gateOpen, setGateOpen] = React.useState(false);
+  if (gate.locked && !gate.ack)
+    return (
+      <Dialog open={gateOpen} onOpenChange={setGateOpen}>
+        <DialogTrigger asChild>
+          <Button variant="solid" size="sm" disabled={disabled || !any}>
+            <Lock aria-hidden /> {t("ws.export")}
+          </Button>
+        </DialogTrigger>
+        <DialogContent>
+          <DialogTitle>{t("gate.title")}</DialogTitle>
+          <DialogDescription className="sr-only">{gateReason(verification, t)}</DialogDescription>
+          <ExportGateNotice verification={verification} couponUrl={artifactUrl(artifacts.coupon)} ack={gate.ack} onAck={(v) => gate.setAck(v)} />
+        </DialogContent>
+      </Dialog>
+    );
   return (
-    <DropdownMenu>
+    <DropdownMenu defaultOpen={gate.locked && gate.ack}>
       <DropdownMenuTrigger asChild>
         <Button variant="solid" size="sm" disabled={disabled || !any}>
-          <Download aria-hidden /> Export
+          <Download aria-hidden /> {t("ws.export")}
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-64">

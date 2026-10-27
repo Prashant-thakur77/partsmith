@@ -20,7 +20,7 @@
  "tokens_in": 0,
  "tokens_out": 0,
  "model_calls": 13,
- "model_ms": 159,
+ "model_ms": 178,
  "provider_modes": [
   "mock"
  ],
@@ -41,7 +41,7 @@
    "mock:meta-models/muse-spark-open"
   ],
   "fix_agent": [
-   "mock:meta-models/muse-spark-open"
+   "mock:mock fix agent"
   ],
   "judge": [
    "mock:muse-glimmer"
@@ -61,7 +61,7 @@
    "max_error_mm": 0.2685852171106551
   }
  ],
- "wall_s": 7.8,
+ "wall_s": 7.99,
  "dims": [
   {
    "name": "length",
