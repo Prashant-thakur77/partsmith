@@ -43,3 +43,7 @@ A fresh session should read this file, `docs/ARCHITECTURE.md`, `docs/API.md` and
   tall features 1.741 mm; white-part preset 7.45 mm), synthetic reference-object renders 0.346 mm (N=40, PASS). Real reference
   objects and real ruler parts: pending (no photos). Fixes in progress: see-through holes, shadows, dark screen stage for white parts,
   side views of thin parts, round profiles; camera-frame verification for tall features.
+- **API + MCP + registry ops** (`services/api`, `services/mcp`, `services/registry`): 47 tests pass. Every route in docs/API.md,
+  SSE with replay + `from_seq`, MCP tools over `/mcp` and stdio, Steer factory, seeding with a publish gate, CPU thumbnails.
+  First seed run (mock providers, 5 samples): 1 published (best effort 0.354 mm), 4 best effort at 3–17 mm → blocked on the
+  metrology/verifier fixes in progress.

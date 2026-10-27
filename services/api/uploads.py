@@ -1,0 +1,145 @@
+"""Upload hygiene: size/type limits, decode validation and lossless removal of GPS metadata.
+
+JPEG pixels are never re-encoded (that would cost measurement accuracy): the EXIF block is rewritten without its GPS
+directory and XMP packets (which can repeat the location) are dropped; camera fields such as the focal length stay,
+because intrinsics may be estimated from them. PNG and WebP are re-saved as PNG without metadata (lossless).
+"""
+
+from __future__ import annotations
+
+import io
+
+from PIL import Image
+
+from services.api.errors import ApiError
+
+MAX_IMAGE_BYTES = 25 * 1024 * 1024
+MAX_AUDIO_BYTES = 15 * 1024 * 1024
+MAX_PIXELS = 60_000_000
+MIN_SIDE_PX = 200
+IMAGE_FORMATS = {"JPEG", "PNG", "WEBP"}
+GPS_IFD = 0x8825
+_XMP = b"http://ns.adobe.com/xap/1.0/\x00"
+
+
+def _exif_without_gps(segment: bytes) -> bytes | None:
+    """APP1 Exif segment (marker + length + payload) with the GPS IFD removed; None drops the segment."""
+    payload = segment[4:]
+    exif = Image.Exif()
+    try:
+        exif.load(payload)
+    except Exception:  # unreadable EXIF: drop it entirely rather than risk leaking location
+        return None
+    if GPS_IFD not in exif:
+        return segment
+    del exif[GPS_IFD]
+    exif._ifds.pop(GPS_IFD, None)
+    data = exif.tobytes()
+    if len(data) + 2 > 0xFFFF:
+        return None
+    return b"\xff\xe1" + (len(data) + 2).to_bytes(2, "big") + data
+
+
+def strip_jpeg_gps(data: bytes) -> bytes:
+    """Lossless: rewrite APP1/Exif without GPS, drop XMP packets, keep every other byte as is."""
+    if data[:2] != b"\xff\xd8":
+        return data
+    out = bytearray(b"\xff\xd8")
+    i = 2
+    n = len(data)
+    while i + 4 <= n:
+        if data[i] != 0xFF:
+            break
+        marker = data[i + 1]
+        if marker == 0xFF:  # fill byte
+            i += 1
+            continue
+        if marker in (0xDA, 0xD9):  # start of scan / end of image: the rest is entropy-coded data
+            break
+        if 0xD0 <= marker <= 0xD7 or marker == 0x01:
+            out += data[i : i + 2]
+            i += 2
+            continue
+        seglen = int.from_bytes(data[i + 2 : i + 4], "big")
+        seg = data[i : i + 2 + seglen]
+        if marker == 0xE1 and seg[4:10] == b"Exif\x00\x00":
+            cleaned = _exif_without_gps(seg)
+            if cleaned:
+                out += cleaned
+        elif marker == 0xE1 and seg[4 : 4 + len(_XMP)] == _XMP:
+            pass
+        else:
+            out += seg
+        i += 2 + seglen
+    out += data[i:]
+    return bytes(out)
+
+
+def has_gps(data: bytes) -> bool:
+    try:
+        with Image.open(io.BytesIO(data)) as im:
+            return GPS_IFD in im.getexif()
+    except Exception:
+        return False
+
+
+def clean_image(data: bytes, field: str = "photo") -> tuple[bytes, str]:
+    """Validate an uploaded photo and strip location metadata. Returns (bytes, mime). Raises ApiError (413/415/422)."""
+    if not data:
+        raise ApiError(422, "empty_upload", f"{field}: the file is empty")
+    if len(data) > MAX_IMAGE_BYTES:
+        raise ApiError(413, "too_large", f"{field}: {len(data) / 1e6:.1f} MB > {MAX_IMAGE_BYTES / 1e6:.0f} MB limit")
+    try:
+        with Image.open(io.BytesIO(data)) as im:
+            fmt = im.format or ""
+            w, h = im.size
+            if fmt not in IMAGE_FORMATS:
+                raise ApiError(
+                    415,
+                    "unsupported_media_type",
+                    f"{field}: {fmt or 'unknown'} images are not accepted; send JPEG, PNG or WebP",
+                )
+            if w * h > MAX_PIXELS:
+                raise ApiError(413, "too_large", f"{field}: {w}x{h} px is over the {MAX_PIXELS / 1e6:.0f} MP limit")
+            if min(w, h) < MIN_SIDE_PX:
+                raise ApiError(422, "too_small", f"{field}: {w}x{h} px is too small to measure (min {MIN_SIDE_PX} px)")
+            im.load()  # full decode: truncated or corrupt files fail here
+    except ApiError:
+        raise
+    except Exception as exc:
+        raise ApiError(
+            422, "bad_image", f"{field}: the file does not decode as an image ({type(exc).__name__})"
+        ) from exc
+    if fmt == "JPEG":
+        return strip_jpeg_gps(data), "image/jpeg"
+    with Image.open(io.BytesIO(data)) as im:
+        buf = io.BytesIO()
+        im.convert("RGBA" if im.mode in ("RGBA", "LA", "P") else "RGB").save(buf, format="PNG")
+    return buf.getvalue(), "image/png"
+
+
+AUDIO_TYPES = {
+    "audio/wav",
+    "audio/x-wav",
+    "audio/wave",
+    "audio/webm",
+    "audio/ogg",
+    "audio/mpeg",
+    "audio/mp4",
+    "audio/m4a",
+    "audio/x-m4a",
+    "audio/aac",
+    "audio/flac",
+    "video/webm",
+}
+
+
+def check_audio(data: bytes, mime: str | None, field: str = "audio") -> str:
+    if not data:
+        raise ApiError(422, "empty_upload", f"{field}: the file is empty")
+    if len(data) > MAX_AUDIO_BYTES:
+        raise ApiError(413, "too_large", f"{field}: {len(data) / 1e6:.1f} MB > {MAX_AUDIO_BYTES / 1e6:.0f} MB limit")
+    m = (mime or "audio/wav").split(";")[0].strip().lower()
+    if m not in AUDIO_TYPES:
+        raise ApiError(415, "unsupported_media_type", f"{field}: {m} is not an accepted audio type")
+    return m

@@ -61,3 +61,14 @@ outline) → ask the human. Measured values always overwrite what the model says
 so the IoU ≥ 0.97 gate applies to the top view and to any view whose silhouette is at least 10 mm wide; thinner views are gated on
 Hausdorff ≤ 0.5 mm plus a thickness test (±0.3 mm). Views with a known camera pose are compared in the photo frame (model rendered
 with the real K, R, t), which handles parallax and see-through holes in thick parts exactly.
+
+**2026-10-27 — Registry publishing and seeding.** The registry is seeded only by running committed samples through the real
+pipeline (`services/registry/seed.py`); origin stays `synthetic` on every seeded part. Verified runs publish; best-effort runs
+publish only when their max error is ≤ 2.0 mm and keep the "best effort" status on their page. Every seeded run is also exported
+as a labelled replay for the judge path. Steer factory lanes build a template at planned parameters and check it against its own
+rendered silhouette — a synthetic self-check, labelled as such; approval publishes with origin `synthetic`.
+
+**2026-10-27 — Thumbnails, uploads and MCP placement.** Part thumbnails are rendered on CPU (z-buffered triangles, Lambert shading,
+B-rep edges from view.json; transparent background, 1× and 2×) at publish time — no GL in the server. Uploaded JPEGs keep their
+pixels byte-for-byte; only the EXIF GPS block and XMP are stripped (camera focal length stays, the metrology needs it). The MCP
+server is mounted on the API app at `/mcp` (stateless streamable HTTP) and also runs over stdio (`python -m services.mcp --stdio`).

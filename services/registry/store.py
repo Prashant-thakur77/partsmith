@@ -72,6 +72,16 @@ class FitReportRow(Base):
     created_at: Mapped[float] = mapped_column(Float)
 
 
+class ThumbRow(Base):
+    __tablename__ = "thumbnails"
+    slug: Mapped[str] = mapped_column(String(120), primary_key=True)
+    code_sha: Mapped[str] = mapped_column(String(64))
+    params_sha: Mapped[str] = mapped_column(String(64))
+    key_1x: Mapped[str] = mapped_column(String(80))
+    key_2x: Mapped[str] = mapped_column(String(80))
+    created_at: Mapped[float] = mapped_column(Float)
+
+
 def _url() -> str:
     return os.environ.get("DATABASE_URL") or f"sqlite:///{home() / 'partsmith.db'}"
 
@@ -123,6 +133,9 @@ class Registry:
             row = s.get(PartRow, slug)
             if row:
                 s.delete(row)
+            thumb = s.get(ThumbRow, slug)
+            if thumb:
+                s.delete(thumb)
 
     def search(
         self,
@@ -190,6 +203,29 @@ class Registry:
             "reference_object": int(by_origin.get("reference_object", 0)),
             "grams_pla": round(float(grams), 1),
         }
+
+    # ---- thumbnails ------------------------------------------------------------------------------------------------
+    def set_thumbnail(self, slug: str, *, code_sha: str, params_sha: str, key_1x: str, key_2x: str) -> None:
+        """Remember the blob keys of a part's rendered thumbnail (1x and 2x) and what they were rendered from."""
+        row = ThumbRow(
+            slug=slug, code_sha=code_sha, params_sha=params_sha, key_1x=key_1x, key_2x=key_2x, created_at=time.time()
+        )
+        with self._lock, self.session() as s:
+            s.merge(row)
+
+    def thumbnail(self, slug: str) -> dict[str, Any] | None:
+        with self.session() as s:
+            row = s.get(ThumbRow, slug)
+            if row is None:
+                return None
+            return {"code_sha": row.code_sha, "params_sha": row.params_sha, "key_1x": row.key_1x, "key_2x": row.key_2x}
+
+    def thumbnails(self) -> dict[str, dict[str, Any]]:
+        with self.session() as s:
+            return {
+                r.slug: {"code_sha": r.code_sha, "params_sha": r.params_sha, "key_1x": r.key_1x, "key_2x": r.key_2x}
+                for r in s.scalars(select(ThumbRow))
+            }
 
     # ---- needs -------------------------------------------------------------------------------------------------------
     def add_need(self, query: str) -> Need:
