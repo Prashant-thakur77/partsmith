@@ -15,7 +15,7 @@ from __future__ import annotations
 
 import math
 from dataclasses import dataclass, field
-from typing import Literal
+from typing import Literal, Protocol
 
 import cv2
 import numpy as np
@@ -166,7 +166,17 @@ def smooth_ring(pts: F64, sigma_mm: float = CONTOUR_SMOOTH_MM) -> F64:
     )
 
 
-def _footprint_from_contours(contours: list[Contour], det: MatDetection, H: F64) -> Polygon | None:
+class PlaneMapper(Protocol):
+    """What the footprint functions need from a mat detection: the ground homography and pixel -> mm mapping.
+    `MatDetection` satisfies it; the verifier passes a stand-in built from the model's camera."""
+
+    @property
+    def H(self) -> F64: ...
+
+    def to_mm(self, pts_px: F64, H: F64 | None = None) -> F64: ...
+
+
+def footprint_from_contours(contours: list[Contour], det: PlaneMapper, H: F64) -> Polygon | None:
     outers = [i for i, c in enumerate(contours) if not c.is_hole]
     if not outers:
         return None
@@ -234,9 +244,9 @@ def _restore_see_through(
     return out
 
 
-def _thick_footprint(
+def thick_footprint(
     contours: list[Contour],
-    det: MatDetection,
+    det: PlaneMapper,
     pose: PoseEstimate,
     h: float,
     H_top: F64,
@@ -298,8 +308,8 @@ def _thick_footprint(
     return fp, fits
 
 
-def _round_footprint(
-    contours: list[Contour], det: MatDetection, pose: PoseEstimate, diameter: float, prism: Polygon
+def round_footprint(
+    contours: list[Contour], det: PlaneMapper, pose: PoseEstimate, diameter: float, prism: Polygon
 ) -> Polygon | None:
     """Footprint of a cylinder (diameter = `diameter`) lying on the mat, from its photo silhouette.
 
@@ -516,7 +526,7 @@ def measure_photo(
     calib = calibration_from(det, pose, px_per_mm, scale_correction)
 
     contours = mask_contour_subpx(field_, min_area_px=2.0) if mask.any() else []
-    ground = _footprint_from_contours(contours, det, det.H) if contours else None
+    ground = footprint_from_contours(contours, det, det.H) if contours else None
     if ground is None:
         return MeasureOutput(
             result=MeasureResult(capture=capture, calibration=calib),
@@ -542,9 +552,9 @@ def measure_photo(
     if thick and pose is not None and zc is not None and thickness_mm is not None:
         min_keep = MIN_KEEP_SIDE if view == ViewKind.side else MIN_KEEP_TOP
         H_top = plane_homography(pose, thickness_mm, det.H)
-        corrected = _thick_footprint(contours, det, pose, thickness_mm, H_top, notes, min_keep=min_keep)
+        corrected = thick_footprint(contours, det, pose, thickness_mm, H_top, notes, min_keep=min_keep)
         if corrected is not None and profile == "round":
-            rounded = _round_footprint(contours, det, pose, thickness_mm, corrected[0])
+            rounded = round_footprint(contours, det, pose, thickness_mm, corrected[0])
             if rounded is not None:
                 footprint = rounded
                 H_display = plane_homography(pose, thickness_mm / 2, det.H)

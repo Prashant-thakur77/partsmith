@@ -10,6 +10,7 @@ whose extreme points are the outermost pixel centres, so they get none.
 from __future__ import annotations
 
 from dataclasses import replace
+from typing import Any
 
 import cv2
 import numpy as np
@@ -112,6 +113,7 @@ def synthetic_camera_view(
     view: str = "top",
     projection: str = "top",
     top_height_mm: float | None = None,
+    cam_kwargs: dict[str, Any] | None = None,
 ) -> tuple[Measurements, CameraView]:
     """SYNTHETIC posed photo of the model: render its silhouette through (K, R, t) with the part lying on the mat at
     `part_to_mat`, then measure that mask with the metrology code. Returns the Measurements (origin synthetic) and a
@@ -128,7 +130,7 @@ def synthetic_camera_view(
     mask[crop.y0 : crop.y0 + crop.h, crop.x0 : crop.x0 + crop.w] = render_in_crop(probe, P, v, f, crop)
     centre = (v @ P[:3, :3].T + P[:3, 3])[:, :2].mean(axis=0)
     ppm = local_px_per_mm(probe, (float(centre[0]), float(centre[1])))
-    cam = replace(probe, image_mask=mask, px_per_mm_local=ppm, top_height_mm=top_height_mm)
+    cam = replace(probe, image_mask=mask, px_per_mm_local=ppm, top_height_mm=top_height_mm, **(cam_kwargs or {}))
     meas = measure_mask_like_metrology(mask, cam, view, origin=DataOrigin.synthetic)
     if meas is None:
         raise ValueError("the part is not visible in the synthetic photo")

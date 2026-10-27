@@ -123,3 +123,37 @@ def test_wide_side_view_still_gates_iou(vpool: WarmPool) -> None:
     assert v.views[0].iou < 0.97 and v.views[0].hausdorff_mm < 0.5
     assert next(x for x in v.tests if x.id == "side.thickness").passed
     assert not v.verified
+
+
+def test_see_through_bore_of_a_tall_part_is_found(vpool: WarmPool) -> None:
+    """A 10 mm tall spacer: its bore shows the mat only through a lens; both sides must still find hole_1."""
+    from services.agent.templates import get_template
+
+    t = get_template("spacer")
+    r = run_program(t.code, t.defaults, pool=vpool, outputs=())
+    r.cleanup()
+    # 50 mm from the camera nadir the bore's top and bottom openings shift ~1.8 mm apart in the photo.
+    meas, cam = synthetic_camera_view(
+        r, K=K, R=R, t_mm=T, image_size=(W, H), part_to_mat=mat_placement(80.0, 130.0, 30.0), top_height_mm=10.0
+    )
+    assert len(meas.holes) == 1
+    v = verify(r, {"top": meas}, None, camera_views={"top": cam}).verification
+    test = next(x for x in v.tests if x.id == "hole_1.diameter")
+    assert test.passed and test.value is not None, v.reasons
+    assert v.verified, v.reasons
+
+
+def test_tall_thin_side_view_keeps_the_height_correction(vpool: WarmPool) -> None:
+    """A 2.5 mm plate lying on its 25 mm edge: the corrected side outline keeps only a small share of the photo's
+    outline, which the metrology accepts for side views; the model side must do the same."""
+    code = "import cadquery as cq\nresult = cq.Workplane('XY').box(40, 25, 2.5, centered=(True, True, False))\n"
+    r = run_program(code, pool=vpool, outputs=())
+    r.cleanup()
+    meas, cam = synthetic_camera_view(
+        r, K=K, R=R, t_mm=T, image_size=(W, H), part_to_mat=A, view="side", projection="side_xz", top_height_mm=25.0
+    )
+    assert meas.width.value == pytest.approx(2.5, abs=0.3)
+    out = verify(r, {"side": meas}, None, camera_views={"side": cam})
+    st = next(x for x in out.verification.tests if x.id == "side.thickness")
+    assert st.passed and st.value == pytest.approx(2.5, abs=0.3), out.verification.reasons
+    assert out.views["side"].frame == "camera"

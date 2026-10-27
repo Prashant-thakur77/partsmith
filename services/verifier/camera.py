@@ -23,8 +23,8 @@ Steps for one view with a pose:
 
 from __future__ import annotations
 
-from dataclasses import dataclass, field
-from typing import Any
+from dataclasses import dataclass, field, replace
+from typing import Any, Literal
 
 import cv2
 import numpy as np
@@ -53,7 +53,7 @@ class CameraView:
     - ``top_height_mm``: height of the plane the metrology also mapped contours onto (its height correction);
       None = mat plane only. ``scale_correction``: true mm per nominal mat mm (card / ruler).
     - ``H_ground``: the image -> mat homography the metrology used (default: derived from K, R, t).
-    - ``see_through_holes``: fit holes as see-through cylinders like the metrology (default: when a height is set).
+    - ``profile``: the ``profile`` passed to ``measure_photo`` ("round" = a cylinder lying on its curved side).
     """
 
     K: npt.ArrayLike
@@ -67,7 +67,7 @@ class CameraView:
     top_height_mm: float | None = None
     scale_correction: float = 1.0
     H_ground: npt.ArrayLike | None = None
-    see_through_holes: bool | None = None
+    profile: Literal["prism", "round"] = "prism"
     cad_to_mat: npt.ArrayLike | None = None
 
     @property
@@ -247,6 +247,26 @@ def _sample(field_: FloatArray, pts: FloatArray) -> FloatArray:
 # ------------------------------------------------------------------ like-for-like measurement
 
 
+@dataclass(frozen=True)
+class _MatView:
+    """The two things the metrology footprint code reads from a `MatDetection`: its ground homography and
+    `to_mm` (undistort, then map through a homography)."""
+
+    cam: CameraView
+    H: FloatArray
+
+    def to_mm(self, pts_px: FloatArray, H: FloatArray | None = None) -> FloatArray:
+        return _apply_h(self.H if H is None else H, _undistort(self.cam, np.asarray(pts_px, dtype=np.float64)))
+
+
+def metrology_pose(cam: CameraView) -> Any:
+    """The camera as a metrology `PoseEstimate` (K, dist, R, t)."""
+    from services.metrology.calibrate import PoseEstimate
+
+    dist = np.zeros(5) if cam.dist is None else _arr(cam.dist).ravel()
+    return PoseEstimate(_arr(cam.K), dist, _arr(cam.R), _arr(cam.t_mm).reshape(3), "synthetic", 0.0)
+
+
 def measure_mask_like_metrology(
     mask_full: BoolMask | None,
     cam: CameraView,
@@ -256,58 +276,56 @@ def measure_mask_like_metrology(
     crop_mask: BoolMask | None = None,
     crop_xy: tuple[int, int] = (0, 0),
 ) -> Measurements | None:
-    """Measure a camera-frame mask with the metrology's own code (contours -> homography -> build_measurements).
+    """Measure a camera-frame mask with the metrology's own footprint code, exactly as `measure_photo` does after
+    segmentation: sub-pixel contours -> mat-plane footprint; with a stated height, the thick-part footprint (outer ring
+    on the mat plane and the top plane intersected, see-through cylinder fits cut out as discs, side views allowed to
+    keep less of their outline), or the round-profile footprint; then `build_measurements`.
 
-    Pass either the full-frame mask or a crop plus its offset. Returns None when no footprint is found.
+    The metrology functions are called directly (with a small adapter standing in for its mat detection), so the two
+    sides cannot drift apart. Pass either the full-frame mask or a crop plus its offset. None when nothing is found.
     """
-    from shapely.geometry import Polygon
-
-    from services.metrology.features import SigmaModel, build_measurements, fit_see_through_hole, largest_polygon
-    from services.metrology.measure import smooth_ring
+    from services.metrology.calibrate import plane_homography as metrology_plane_homography
+    from services.metrology.features import SigmaModel, build_measurements
+    from services.metrology.measure import (
+        MIN_KEEP_SIDE,
+        MIN_KEEP_TOP,
+        footprint_from_contours,
+        round_footprint,
+        thick_footprint,
+    )
     from services.metrology.segment import mask_contour_subpx
 
     mask = crop_mask if crop_mask is not None else mask_full
     if mask is None or not np.any(mask):
         return None
     off = np.array(crop_xy if crop_mask is not None else (0, 0), dtype=np.float64)
-    contours = mask_contour_subpx(np.asarray(mask, dtype=bool))
-    outers = [i for i, c in enumerate(contours) if not c.is_hole]
-    if not outers:
-        return None
-    oi = max(outers, key=lambda i: contours[i].area_px)
-
-    def footprint(H: FloatArray) -> tuple[Polygon | None, list[FloatArray]]:
-        ext = smooth_ring(_apply_h(H, _undistort(cam, contours[oi].points_px + off)))
-        holes = [
-            smooth_ring(_apply_h(H, _undistort(cam, c.points_px + off)))
-            for c in contours
-            if c.is_hole and c.parent == oi and len(c.points_px) >= 8
-        ]
-        return largest_polygon(Polygon(ext, holes).buffer(0)), holes
-
-    Hg = ground_homography(cam)
-    ground, ground_holes = footprint(Hg)
+    contours = [
+        replace(c, points_px=c.points_px + off)
+        for c in mask_contour_subpx(np.asarray(mask, dtype=bool), min_area_px=2.0)
+    ]
+    det = _MatView(cam, ground_homography(cam))
+    ground = footprint_from_contours(contours, det, det.H) if contours else None
     if ground is None:
         return None
-    poly = ground
+    footprint = ground
+    fits: list[Any] = []
     notes = ["model silhouette rendered with the photo's camera and measured with the metrology code"]
     h = cam.top_height_mm
-    fits = []
-    if h is not None and h > 0:
-        top, _ = footprint(plane_homography(cam, h))
-        inter = largest_polygon(ground.intersection(top)) if top is not None else None
-        if inter is not None and inter.area > 0.5 * ground.area:
-            poly = inter
-            notes.append(f"height-corrected like the photo ({h:.2f} mm top face)")
-        see_through = cam.see_through_holes if cam.see_through_holes is not None else True
-        if see_through:
-            C = camera_centre(cam)
-            for q in ground_holes:
-                f = fit_see_through_hole(q, (float(C[0]), float(C[1])), float(-C[2]), h)
-                if f is not None:
-                    fits.append(f)
+    pose = metrology_pose(cam)
+    if h is not None and h > 0 and pose.camera_height_mm > h:
+        min_keep = MIN_KEEP_SIDE if view == ViewKind.side.value else MIN_KEEP_TOP
+        H_top = metrology_plane_homography(pose, h, det.H)
+        corrected = thick_footprint(contours, det, pose, h, H_top, notes, min_keep=min_keep)
+        if corrected is not None and cam.profile == "round":
+            rounded = round_footprint(contours, det, pose, h, corrected[0])
+            if rounded is not None:
+                footprint, corrected = rounded, None
+                notes.append(f"round profile like the photo (cylinder of diameter {h:.2f} mm lying down)")
+        if corrected is not None:
+            footprint, fits = corrected
+            notes.append(f"height-corrected like the photo ({h:.2f} mm top face, see-through hole fits)")
     meas, _ = build_measurements(
-        poly,
+        footprint,
         view=ViewKind(view),
         origin=origin,
         sigma=SigmaModel(),

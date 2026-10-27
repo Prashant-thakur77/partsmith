@@ -488,8 +488,10 @@ class FixRun:
         self.vetoes: list[JudgeVeto] = []
         self.best: Round | None = None
         self.current: Round | None = None
-        self.heights: dict[str, tuple[float | None, str]] = {}  # view -> (height passed to the metrology, profile)
-        self.pending_heights: dict[str, tuple[float | None, str]] = {}
+        self.heights: dict[
+            str, tuple[float | None, Literal["prism", "round"]]
+        ] = {}  # view -> (height passed to the metrology, profile)
+        self.pending_heights: dict[str, tuple[float | None, Literal["prism", "round"]]] = {}
         self.noted: set[tuple[str, str]] = set()
         self.hidden_holes: dict[str, tuple[float, float]] = {}  # question id -> part-frame centre
 
@@ -765,8 +767,6 @@ class FixRun:
             return None
         h, w = mo.photo_mask.shape[:2]
         height, profile = self.heights.get(view, (None, "prism"))
-        if profile == "round":
-            return None  # the camera-frame comparison re-measures prisms only; a round profile stays rectified
         return CameraView(
             K=mo.K,
             R=mo.R,
@@ -779,6 +779,7 @@ class FixRun:
             top_height_mm=height,
             scale_correction=1.0,
             H_ground=det.H,
+            profile=profile,
         )
 
     def camera_views(self) -> dict[str, CameraView]:
