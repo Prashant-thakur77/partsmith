@@ -40,3 +40,13 @@ Transcribe. `OPEN_WEIGHTS_ONLY=1` restricts every chain to open-weight models. T
 request/response under `$PARTSMITH_HOME/recordings/<hash>.json`; the hash excludes the provider, timestamps and mock-only
 context, so a recorded run replays even if a fallback provider answered. Missing recordings fall back to mock with a warning.
 Masks travel between the Modal SAM 3 app and the API in one run-length wire format (`providers/media.py`).
+
+**2026-10-27 — Fork-per-job warm CAD worker, single-threaded OCCT.** A warm parent imports CadQuery once and forks a fresh,
+rlimited, network-isolated child per job (netns when unprivileged user namespaces exist, socket patch otherwise), so a knob
+rebuild costs ~0.1–1 s instead of a 1–2 s cold import. Forking after OCCT has started its thread pool deadlocks, so the warm-up
+and all meshing run single-threaded with an absolute chord tolerance. `mem_mb` is added on top of the warm baseline.
+
+**2026-10-27 — Verifier raster and alignment rules.** Silhouettes are rasterised per triangle at 4× supersampling (OpenCV's
+fill grows shapes by ~0.5 px). Model-to-photo alignment is a rigid 2-D search that may mirror (a part lying upside down shows
+its mirror image) but never scales — rescaling to force a fit would hide real errors. Minimum wall thickness is the 2nd
+percentile of inward ray casts from the B-rep surface.

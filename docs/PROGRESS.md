@@ -26,3 +26,7 @@ A fresh session should read this file, `docs/ARCHITECTURE.md`, `docs/API.md` and
 - **Metrology** (`0002f31`): `uv run pytest services/metrology tools/mat tools/calib` → 69 passed. Synthetic accuracy (not a bench result):
   1 mm and 8 mm plates measured within 0.06 mm with height correction; uncorrected 8 mm plate off by 1.77 mm (the test asserts the
   correction helps by > 4×). Real phone photos and live SAM 3.1 are untested.
+- **Geometry** (geom worker, verifier, 10 templates): `uv run pytest services/geom_worker services/verifier services/agent/templates`
+  → 114 passed (fast + slow). **Phase 2 exit gate:** `uv run python -m services.verifier.selfcheck` → 10/10 templates pass
+  (self-consistency Hausdorff ≤ 0.05 mm vs 0.15 mm limit; ±1 mm length perturbation detected with the right sign, never verified).
+  Synthetic measurements derived from each template's own silhouette.
