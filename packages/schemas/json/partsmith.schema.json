@@ -446,6 +446,24 @@
           "title": "Rectified Px Per Mm",
           "type": "number"
         },
+        "rectified_origin_mm": {
+          "default": [
+            0.0,
+            0.0
+          ],
+          "maxItems": 2,
+          "minItems": 2,
+          "prefixItems": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "number"
+            }
+          ],
+          "title": "Rectified Origin Mm",
+          "type": "array"
+        },
         "scale_correction": {
           "default": 1.0,
           "title": "Scale Correction",
@@ -953,6 +971,52 @@
         }
       },
       "title": "Fit",
+      "type": "object"
+    },
+    "FitCheckResult": {
+      "additionalProperties": false,
+      "description": "Screen fit check: the real part photographed lying on the model's 1:1 outline (docs/API.md).",
+      "properties": {
+        "passed": {
+          "title": "Passed",
+          "type": "boolean"
+        },
+        "iou": {
+          "title": "Iou",
+          "type": "number"
+        },
+        "hausdorff_mm": {
+          "title": "Hausdorff Mm",
+          "type": "number"
+        },
+        "mean_mm": {
+          "title": "Mean Mm",
+          "type": "number"
+        },
+        "reasons": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Reasons",
+          "type": "array"
+        },
+        "overlay_url": {
+          "default": "",
+          "title": "Overlay Url",
+          "type": "string"
+        },
+        "capture": {
+          "$ref": "#/$defs/CaptureReport"
+        }
+      },
+      "required": [
+        "passed",
+        "iou",
+        "hausdorff_mm",
+        "mean_mm",
+        "capture"
+      ],
+      "title": "FitCheckResult",
       "type": "object"
     },
     "Hole": {
@@ -1619,10 +1683,11 @@
           "type": "array"
         },
         "mask_source": {
-          "default": "mock-threshold",
+          "default": "threshold",
           "enum": [
             "sam-3.1",
             "sam3-open",
+            "threshold",
             "mock-threshold",
             "synthetic-gt"
           ],

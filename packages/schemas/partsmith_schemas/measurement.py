@@ -55,6 +55,7 @@ class Calibration(Strict):
     reproj_error_px: float
     reproj_error_mm: float
     rectified_px_per_mm: float
+    rectified_origin_mm: tuple[float, float] = (0.0, 0.0)  # mat-frame mm of the rectified image's top-left pixel
     scale_correction: float = 1.0  # screen card calibration or paper 50 mm ruler correction factor
     pose: CameraPose | None = None
 
@@ -91,9 +92,21 @@ class Measurements(Strict):
     symmetry_score: float | None = None
     height_correction_scale: float = 1.0
     part_to_mat: list[list[float]] = Field(default_factory=list)  # 3x3 affine, part frame -> mat frame (mm)
-    mask_source: Literal["sam-3.1", "sam3-open", "mock-threshold", "synthetic-gt"] = "mock-threshold"
+    mask_source: Literal["sam-3.1", "sam3-open", "threshold", "mock-threshold", "synthetic-gt"] = "threshold"
     mask_confidence: float | None = None
     notes: list[str] = Field(default_factory=list)
+
+
+class FitCheckResult(Strict):
+    """Screen fit check: the real part photographed lying on the model's 1:1 outline (docs/API.md)."""
+
+    passed: bool
+    iou: float
+    hausdorff_mm: float
+    mean_mm: float
+    reasons: list[str] = Field(default_factory=list)
+    overlay_url: str = ""
+    capture: CaptureReport
 
 
 class MeasureResult(Strict):
@@ -110,6 +123,7 @@ __all__ = [
     "CameraPose",
     "CaptureCheck",
     "CaptureReport",
+    "FitCheckResult",
     "Hole",
     "MatKind",
     "MeasureResult",

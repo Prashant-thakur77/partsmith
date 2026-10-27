@@ -1,0 +1,74 @@
+[
+  {
+    "mat_id": "screen-s",
+    "kind": "screen",
+    "title": "Phone screen mat",
+    "width_mm": 120.0,
+    "height_mm": 54.0,
+    "stage": {
+      "x_mm": 13.0,
+      "y_mm": 13.0,
+      "w_mm": 94.0,
+      "h_mm": 28.0
+    },
+    "min_screen_mm": {
+      "w": 124.0,
+      "h": 58.0
+    },
+    "url": "/mats/screen-s.json"
+  },
+  {
+    "mat_id": "screen-m",
+    "kind": "screen",
+    "title": "Tablet / 13-inch laptop screen mat",
+    "width_mm": 210.0,
+    "height_mm": 130.0,
+    "stage": {
+      "x_mm": 21.0,
+      "y_mm": 21.0,
+      "w_mm": 168.0,
+      "h_mm": 88.0
+    },
+    "min_screen_mm": {
+      "w": 214.0,
+      "h": 134.0
+    },
+    "url": "/mats/screen-m.json"
+  },
+  {
+    "mat_id": "screen-l",
+    "kind": "screen",
+    "title": "15-inch laptop screen mat",
+    "width_mm": 320.0,
+    "height_mm": 180.0,
+    "stage": {
+      "x_mm": 26.0,
+      "y_mm": 26.0,
+      "w_mm": 268.0,
+      "h_mm": 128.0
+    },
+    "min_screen_mm": {
+      "w": 324.0,
+      "h": 184.0
+    },
+    "url": "/mats/screen-l.json"
+  },
+  {
+    "mat_id": "paper-a4",
+    "kind": "paper",
+    "title": "Plain-paper A4 mat",
+    "width_mm": 190.0,
+    "height_mm": 245.0,
+    "stage": {
+      "x_mm": 28.0,
+      "y_mm": 28.0,
+      "w_mm": 134.0,
+      "h_mm": 189.0
+    },
+    "min_screen_mm": {
+      "w": 210.0,
+      "h": 297.0
+    },
+    "url": "/mats/paper-a4.json"
+  }
+]
