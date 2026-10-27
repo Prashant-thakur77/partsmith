@@ -2,14 +2,23 @@ import { ArrowRight, Calculator, Eye, ShieldCheck } from "lucide-react";
 import Link from "next/link";
 import { AgentsStrip } from "@/components/landing/agents-strip";
 import { BenchStrip } from "@/components/landing/bench-strip";
+import { BenchView } from "@/components/landing/bench-view";
+import { RegistryView } from "@/components/landing/registry-view";
+import { StatsView } from "@/components/landing/stats-view";
 import { HowItWorks } from "@/components/landing/how-it-works";
-import { LiveKnobDemo } from "@/components/landing/live-knob-demo";
+import { HeroDemo } from "@/components/landing/hero-demo";
 import { RegistryPreview } from "@/components/landing/registry-preview";
 import { StatsStrip } from "@/components/landing/stats-strip";
 import { Container, Section } from "@/components/layout/page";
 import { Button } from "@/components/ui/button";
+import { api } from "@/lib/api";
 
-export default function HomePage() {
+/**
+ * Below-the-fold sections render on the server (no client JS); if the API could not be reached at render time the same
+ * sections render as client components that fetch in the browser.
+ */
+export default async function HomePage() {
+  const [stats, bench, preview] = await Promise.allSettled([api.stats(), api.bench(), api.parts({ limit: 8, sort: "newest" })]);
   return (
     <>
       <div className="relative overflow-hidden border-b border-border">
@@ -54,13 +63,13 @@ export default function HomePage() {
               <span className="shrink-0 font-medium text-fg">Try the knobs</span>
               <span className="hidden sm:inline">Real registry parts · re-baked on the server as you drag</span>
             </div>
-            <LiveKnobDemo />
+            <HeroDemo />
           </div>
         </Container>
       </div>
 
       <Container className="space-y-20 py-14 sm:py-16">
-        <StatsStrip />
+        {stats.status === "fulfilled" ? <StatsView stats={stats.value} state="ok" /> : <StatsStrip />}
 
         <Section id="how" title="How it works" description="Three steps. The middle one is a phone photo.">
           <HowItWorks />
@@ -78,7 +87,7 @@ export default function HomePage() {
             </Button>
           }
         >
-          <BenchStrip />
+          {bench.status === "fulfilled" ? <BenchView report={bench.value} state="ok" /> : <BenchStrip />}
         </Section>
 
         <Section
@@ -93,7 +102,7 @@ export default function HomePage() {
             </Button>
           }
         >
-          <RegistryPreview />
+          {preview.status === "fulfilled" ? <RegistryView items={preview.value.items} /> : <RegistryPreview />}
         </Section>
 
         <AgentsStrip />

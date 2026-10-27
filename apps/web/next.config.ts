@@ -1,3 +1,4 @@
+import bundleAnalyzer from "@next/bundle-analyzer";
 import type { NextConfig } from "next";
 
 const apiUrl = (process.env.API_URL ?? "http://localhost:8000").replace(/\/$/, "");
@@ -33,4 +34,7 @@ const nextConfig: NextConfig = {
   },
 };
 
-export default nextConfig;
+// `ANALYZE=1 pnpm build` writes .next/analyze/client.json (module sizes per chunk).
+const withAnalyzer = bundleAnalyzer({ enabled: process.env.ANALYZE === "1", openAnalyzer: false, analyzerMode: "json" });
+
+export default withAnalyzer(nextConfig);

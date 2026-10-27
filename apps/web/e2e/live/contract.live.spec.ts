@@ -3,12 +3,12 @@
  * Run with `pnpm e2e:live` (needs `uvicorn services.api.main:app` on LIVE_API_URL, default http://localhost:8000).
  */
 import { expect, test } from "@playwright/test";
-import type { z } from "zod";
+import { z } from "zod/mini";
 import * as S from "../../src/lib/api-types";
 
 const API = `${(process.env.LIVE_API_URL ?? "http://localhost:8000").replace(/\/$/, "")}/api/v1`;
 
-async function check<T extends z.ZodType>(request: import("@playwright/test").APIRequestContext, path: string, schema: T): Promise<z.output<T>> {
+async function check<T extends z.ZodMiniType>(request: import("@playwright/test").APIRequestContext, path: string, schema: T): Promise<z.output<T>> {
   const res = await request.get(`${API}${path}`);
   expect(res.status(), `${path} status`).toBeLessThan(400);
   const body: unknown = await res.json();
@@ -23,19 +23,19 @@ test("system, registry and bench endpoints match the web contract", async ({ req
   await check(request, "/health", S.HealthSchema);
   await check(request, "/status", S.StatusSchema);
   await check(request, "/stats", S.StatsSchema);
-  await check(request, "/families", S.FamilySchema.array());
-  await check(request, "/mats", S.MatLayoutSchema.array());
+  await check(request, "/families", z.array(S.FamilySchema));
+  await check(request, "/mats", z.array(S.MatLayoutSchema));
   await check(request, "/bench", S.BenchReportSchema);
-  await check(request, "/needs", S.NeedSchema.array());
-  await check(request, "/replays", S.ReplaySchema.array());
-  await check(request, "/jobs/demo/samples", S.DemoSampleSchema.array());
-  await check(request, "/steer?limit=5", S.SteerSummarySchema.array());
+  await check(request, "/needs", z.array(S.NeedSchema));
+  await check(request, "/replays", z.array(S.ReplaySchema));
+  await check(request, "/jobs/demo/samples", z.array(S.DemoSampleSchema));
+  await check(request, "/steer?limit=5", z.array(S.SteerSummarySchema));
   const list = await check(request, "/parts?limit=50", S.PartListSchema);
   expect(list.items.length, "seeded registry").toBeGreaterThan(0);
   for (const card of list.items) {
     const part = await check(request, `/parts/${card.slug}`, S.PartRecordSchema);
-    await check(request, `/parts/${card.slug}/params`, S.ParamSpecSchema.array());
-    await check(request, `/parts/${card.slug}/matching`, S.PartCardSchema.array());
+    await check(request, `/parts/${card.slug}/params`, z.array(S.ParamSpecSchema));
+    await check(request, `/parts/${card.slug}/matching`, z.array(S.PartCardSchema));
     const first = part.params.find((p) => !p.topology);
     if (first) {
       const v = Math.min(first.max, first.default + first.step);
@@ -61,7 +61,7 @@ test("part downloads, AR glb, template PDF and thumbnails resolve", async ({ req
 });
 
 test("job detail and SSE events match the web contract", async ({ request }) => {
-  const jobs = await check(request, "/jobs?limit=10", S.JobSummarySchema.array());
+  const jobs = await check(request, "/jobs?limit=10", z.array(S.JobSummarySchema));
   for (const j of jobs.slice(0, 5)) {
     await check(request, `/jobs/${j.id}`, S.JobDetailSchema);
     const res = await request.get(`${API}/jobs/${j.id}/events`, { timeout: 30_000 });

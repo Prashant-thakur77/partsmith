@@ -1,12 +1,21 @@
 "use client";
 
-import * as TogglePrimitive from "@radix-ui/react-toggle";
 import * as React from "react";
 import { cn } from "@/lib/utils";
 
-export function Toggle({ className, ...props }: React.ComponentProps<typeof TogglePrimitive.Root>) {
+/** Pressed/unpressed button (aria-pressed). */
+export function Toggle({
+  className,
+  pressed,
+  onPressedChange,
+  ...props
+}: Omit<React.ButtonHTMLAttributes<HTMLButtonElement>, "onChange"> & { pressed: boolean; onPressedChange: (v: boolean) => void }) {
   return (
-    <TogglePrimitive.Root
+    <button
+      type="button"
+      aria-pressed={pressed}
+      data-state={pressed ? "on" : "off"}
+      onClick={() => onPressedChange(!pressed)}
       className={cn(
         "inline-flex h-8 items-center justify-center gap-1.5 rounded-md px-2 text-[12px] font-medium text-muted transition-colors hover:bg-surface-2 hover:text-fg data-[state=on]:bg-surface-3 data-[state=on]:text-fg [&_svg]:size-4",
         className,
@@ -45,12 +54,7 @@ export function Switch({
           checked ? "border-transparent bg-accent" : "border-border-strong bg-surface-3",
         )}
       >
-        <span
-          className={cn(
-            "absolute size-3.5 rounded-full bg-white shadow-sm transition-transform",
-            checked ? "translate-x-[13px]" : "translate-x-[1px]",
-          )}
-        />
+        <span className={cn("absolute size-3.5 rounded-full bg-white shadow-sm transition-transform", checked ? "translate-x-[13px]" : "translate-x-[1px]")} />
       </span>
       {label}
     </button>

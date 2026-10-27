@@ -1,12 +1,11 @@
 "use client";
 
-import { Menu } from "lucide-react";
+import { Menu, X } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import * as React from "react";
 import { cn } from "@/lib/utils";
 import { Button } from "../ui/button";
-import { Sheet, SheetContent, SheetDescription, SheetTitle, SheetTrigger } from "../ui/sheet";
 import { ThemeToggle } from "../theme-toggle";
 import { ApiHealth } from "./api-health";
 import { Logo } from "./logo";
@@ -23,7 +22,7 @@ export const NAV = [
 
 export function SiteHeader() {
   const pathname = usePathname();
-  const [open, setOpen] = React.useState(false);
+  const menu = React.useRef<HTMLDialogElement>(null);
   const wide = /^\/jobs\/(?!demo$)[^/]+$/.test(pathname);
   const active = (href: string) => pathname === href || pathname.startsWith(`${href}/`);
   return (
@@ -54,43 +53,51 @@ export function SiteHeader() {
             <Button asChild variant="primary" size="sm" className="hidden sm:inline-flex">
               <Link href="/fix">Fix a broken part</Link>
             </Button>
-            <Sheet open={open} onOpenChange={setOpen}>
-              <SheetTrigger asChild>
-                <Button variant="ghost" size="icon" className="lg:hidden" aria-label="Open menu">
-                  <Menu aria-hidden />
-                </Button>
-              </SheetTrigger>
-              <SheetContent side="right" className="p-5">
-                <SheetTitle className="sr-only">Menu</SheetTitle>
-                <SheetDescription className="sr-only">Site navigation</SheetDescription>
+            <Button variant="ghost" size="icon" className="lg:hidden" aria-label="Open menu" aria-haspopup="dialog" onClick={() => menu.current?.showModal()}>
+              <Menu aria-hidden />
+            </Button>
+            {/* Native modal dialog: focus trap, Esc to close and inert background come from the browser. */}
+            <dialog
+              ref={menu}
+              aria-label="Menu"
+              onClick={(e) => e.target === e.currentTarget && menu.current?.close()}
+              className="fixed inset-y-0 right-0 left-auto m-0 h-dvh max-h-dvh w-[min(320px,100vw)] max-w-none border-l border-border bg-surface p-5 text-fg shadow-lg backdrop:bg-black/40"
+            >
+              <div className="flex items-center justify-between">
                 <Logo />
-                <nav aria-label="Mobile" className="mt-6 flex flex-col">
-                  {[...NAV, { href: "/judges", label: "Judges" }, { href: "/calibrate", label: "Calibrate screen" }].map((n) => (
-                    <Link
-                      key={n.href}
-                      href={n.href}
-                      onClick={() => setOpen(false)}
-                      aria-current={active(n.href) ? "page" : undefined}
-                      className={cn(
-                        "border-b border-border py-3 text-[15px] font-medium text-muted hover:text-fg",
-                        active(n.href) && "text-fg",
-                      )}
-                    >
-                      {n.label}
-                    </Link>
-                  ))}
-                </nav>
-                <div className="mt-6 flex items-center justify-between">
-                  <span className="text-[13px] text-muted">Theme</span>
-                  <ThemeToggle />
-                </div>
-                <Button asChild variant="primary" className="mt-6">
-                  <Link href="/fix" onClick={() => setOpen(false)}>
-                    Fix a broken part
+                <button
+                  type="button"
+                  onClick={() => menu.current?.close()}
+                  aria-label="Close menu"
+                  className="inline-flex size-8 items-center justify-center rounded-md text-muted hover:bg-surface-2 hover:text-fg"
+                >
+                  <X className="size-4" aria-hidden />
+                </button>
+              </div>
+              <nav aria-label="Mobile" className="mt-6 flex flex-col">
+                {[...NAV, { href: "/judges", label: "Judges" }, { href: "/calibrate", label: "Calibrate screen" }].map((n) => (
+                  <Link
+                    key={n.href}
+                    href={n.href}
+                    prefetch={false}
+                    onClick={() => menu.current?.close()}
+                    aria-current={active(n.href) ? "page" : undefined}
+                    className={cn("border-b border-border py-3 text-[15px] font-medium text-muted hover:text-fg", active(n.href) && "text-fg")}
+                  >
+                    {n.label}
                   </Link>
-                </Button>
-              </SheetContent>
-            </Sheet>
+                ))}
+              </nav>
+              <div className="mt-6 flex items-center justify-between">
+                <span className="text-[13px] text-muted">Theme</span>
+                <ThemeToggle />
+              </div>
+              <Button asChild variant="primary" className="mt-6 w-full">
+                <Link href="/fix" onClick={() => menu.current?.close()}>
+                  Fix a broken part
+                </Link>
+              </Button>
+            </dialog>
           </div>
         </div>
       </div>

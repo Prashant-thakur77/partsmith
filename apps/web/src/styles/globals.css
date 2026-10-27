@@ -219,3 +219,57 @@
     scroll-behavior: auto !important;
   }
 }
+
+/* Native range slider (components/ui/slider.tsx): filled track up to --pct, round thumb. */
+.ps-range {
+  appearance: none;
+  -webkit-appearance: none;
+  background: transparent;
+}
+.ps-range::-webkit-slider-runnable-track {
+  height: 4px;
+  border-radius: 999px;
+  background: linear-gradient(to right, var(--fg) var(--pct), var(--surface-3) var(--pct));
+}
+.ps-range::-moz-range-track {
+  height: 4px;
+  border-radius: 999px;
+  background: var(--surface-3);
+}
+.ps-range::-moz-range-progress {
+  height: 4px;
+  border-radius: 999px;
+  background: var(--fg);
+}
+.ps-range::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  margin-top: -6px;
+  width: 16px;
+  height: 16px;
+  border-radius: 999px;
+  border: 2px solid var(--fg);
+  background: var(--surface);
+  box-shadow: var(--shadow-sm);
+  transition: transform 120ms;
+}
+.ps-range::-moz-range-thumb {
+  width: 12px;
+  height: 12px;
+  border-radius: 999px;
+  border: 2px solid var(--fg);
+  background: var(--surface);
+}
+.ps-range:hover::-webkit-slider-thumb,
+.ps-range:focus-visible::-webkit-slider-thumb {
+  transform: scale(1.1);
+}
+.ps-range:focus-visible {
+  outline: none;
+}
+.ps-range:focus-visible::-webkit-slider-thumb {
+  box-shadow: 0 0 0 3px var(--surface), 0 0 0 5px var(--ring);
+}
+.ps-range:focus-visible::-moz-range-thumb {
+  box-shadow: 0 0 0 3px var(--surface), 0 0 0 5px var(--ring);
+}

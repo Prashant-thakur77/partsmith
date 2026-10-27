@@ -2,6 +2,7 @@
 import { FamilySchema, PartListSchema } from "./api-types";
 import { AGENT_RULES, MCP_TOOLS, REST_GROUPS } from "./agent-docs";
 import { mcpUrl } from "./snippets";
+import { z } from "zod/mini";
 
 function apiBase(): string {
   return `${(process.env.API_URL ?? "http://localhost:8000").replace(/\/$/, "")}/api/v1`;
@@ -16,7 +17,7 @@ async function getJson(path: string): Promise<unknown> {
 async function registrySection(origin: string): Promise<string> {
   try {
     const [fam, parts] = await Promise.all([getJson("/families"), getJson("/parts?verified=true&limit=50&sort=newest")]);
-    const families = FamilySchema.array().parse(fam);
+    const families = z.array(FamilySchema).parse(fam);
     const list = PartListSchema.parse(parts);
     const lines = ["## Families", ...families.map((f) => `- ${f.family}: ${f.title} (${f.verified} verified of ${f.count})`), "", "## Verified parts"];
     for (const p of list.items) {

@@ -1,7 +1,7 @@
 "use client";
 
-import * as ToastPrimitive from "@radix-ui/react-toast";
-import { CheckCircle2, Info, XCircle } from "lucide-react";
+/** Minimal toasts: a polite live region with up to 4 messages, each dismissible, auto-hiding after 5 s. */
+import { CheckCircle2, Info, X, XCircle } from "lucide-react";
 import * as React from "react";
 import { cn } from "@/lib/utils";
 
@@ -13,15 +13,17 @@ let nextId = 1;
 const listeners = new Set<Listener>();
 const emit = () => listeners.forEach((l) => l(items));
 
-/** Show a toast from anywhere (client side). */
-export function toast(title: string, opts: { description?: string; tone?: ToastItem["tone"] } = {}): void {
-  items = [...items, { id: nextId++, title, description: opts.description, tone: opts.tone ?? "info" }].slice(-4);
-  emit();
-}
-
 function dismiss(id: number) {
   items = items.filter((t) => t.id !== id);
   emit();
+}
+
+/** Show a toast from anywhere (client side). */
+export function toast(title: string, opts: { description?: string; tone?: ToastItem["tone"] } = {}): void {
+  const id = nextId++;
+  items = [...items, { id, title, description: opts.description, tone: opts.tone ?? "info" }].slice(-4);
+  emit();
+  setTimeout(() => dismiss(id), 5000);
 }
 
 const icons = { info: Info, ok: CheckCircle2, bad: XCircle } as const;
@@ -36,26 +38,26 @@ export function Toaster() {
     };
   }, []);
   return (
-    <ToastPrimitive.Provider swipeDirection="right" duration={5000}>
+    <section aria-label="Notifications" aria-live="polite" className="pointer-events-none fixed right-0 bottom-0 z-[60] flex w-full max-w-sm flex-col gap-2 p-4">
       {list.map((t) => {
         const Icon = icons[t.tone];
         return (
-          <ToastPrimitive.Root
+          <div
             key={t.id}
-            onOpenChange={(open) => !open && dismiss(t.id)}
-            className="flex items-start gap-3 rounded-lg border border-border bg-surface p-3.5 pr-4 shadow-lg data-[state=open]:animate-fade-up data-[swipe=end]:animate-fade-in"
+            role={t.tone === "bad" ? "alert" : "status"}
+            className="pointer-events-auto flex animate-fade-up items-start gap-3 rounded-lg border border-border bg-surface p-3.5 pr-2 shadow-lg"
           >
             <Icon className={cn("mt-0.5 size-4 shrink-0", toneCls[t.tone])} aria-hidden />
-            <div className="min-w-0">
-              <ToastPrimitive.Title className="text-[13px] font-medium text-fg">{t.title}</ToastPrimitive.Title>
-              {t.description ? (
-                <ToastPrimitive.Description className="mt-0.5 text-[12px] leading-5 text-muted">{t.description}</ToastPrimitive.Description>
-              ) : null}
+            <div className="min-w-0 flex-1">
+              <p className="text-[13px] font-medium text-fg">{t.title}</p>
+              {t.description ? <p className="mt-0.5 text-[12px] leading-5 text-muted">{t.description}</p> : null}
             </div>
-          </ToastPrimitive.Root>
+            <button type="button" onClick={() => dismiss(t.id)} aria-label="Dismiss" className="rounded p-1 text-subtle hover:bg-surface-2 hover:text-fg">
+              <X className="size-3.5" aria-hidden />
+            </button>
+          </div>
         );
       })}
-      <ToastPrimitive.Viewport className="fixed right-0 bottom-0 z-[60] flex w-full max-w-sm flex-col gap-2 p-4 outline-none" />
-    </ToastPrimitive.Provider>
+    </section>
   );
 }

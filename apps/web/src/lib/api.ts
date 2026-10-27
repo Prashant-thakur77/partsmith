@@ -3,7 +3,7 @@
  * Every response is validated with Zod; failures surface as `ApiError` (HTTP error body) or `ApiOfflineError`
  * (backend unreachable). The browser calls the same-origin `/api/v1` path, which next.config.ts rewrites to the API.
  */
-import { z } from "zod";
+import { z } from "zod/mini";
 import {
   ApiErrorBodySchema,
   BakeResultSchema,
@@ -92,7 +92,7 @@ export function artifactUrl(url: string | null | undefined): string | undefined 
   return `${API_PREFIX}/${url}`;
 }
 
-async function request<S extends z.ZodType>(
+async function request<S extends z.ZodMiniType>(
   schema: S,
   path: string,
   init?: RequestInit & { query?: Record<string, string | number | boolean | null | undefined> },
@@ -175,7 +175,7 @@ export const api = {
   status: () => request(StatusSchema, "/status"),
 
   // mats
-  mats: () => request(MatLayoutSchema.array(), "/mats"),
+  mats: () => request(z.array(MatLayoutSchema), "/mats"),
   mat: (matId: string) => request(MatLayoutSchema, `/mats/${encodeURIComponent(matId)}`),
   matPdfUrl: (matId: string) => apiUrl(`/mats/${encodeURIComponent(matId)}/pdf`),
 
@@ -193,10 +193,10 @@ export const api = {
     if (input.screenPxPerMm != null) fd.set("screen_px_per_mm", String(input.screenPxPerMm));
     return request(JobSummarySchema, "/jobs/fix", { method: "POST", body: fd });
   },
-  demoSamples: () => request(DemoSampleSchema.array(), "/jobs/demo/samples"),
+  demoSamples: () => request(z.array(DemoSampleSchema), "/jobs/demo/samples"),
   createDemoJob: (sample: string) => request(JobSummarySchema, "/jobs/demo", json({ sample })),
   jobs: (limit = 20, includeReplays = false) =>
-    request(JobSummarySchema.array(), "/jobs", { query: { limit, include_replays: includeReplays ? "true" : undefined } }),
+    request(z.array(JobSummarySchema), "/jobs", { query: { limit, include_replays: includeReplays ? "true" : undefined } }),
   job: (id: string) => request(JobDetailSchema, `/jobs/${encodeURIComponent(id)}`),
   jobEventsUrl: (id: string, fromSeq?: number) => apiUrl(`/jobs/${encodeURIComponent(id)}/events`, { from_seq: fromSeq }),
   answer: (id: string, body: { id: string; value: string | number; via: "text" | "voice" }) =>
@@ -224,7 +224,7 @@ export const api = {
     request(PartRecordSchema, `/jobs/${encodeURIComponent(id)}/publish`, json(slug ? { slug } : {})),
   /** `status` is "cancelling" when the job had not stopped within the server's wait (it stops at its next check). */
   cancel: (id: string) =>
-    request(JobSummarySchema.extend({ status: z.union([JobStatusSchema, z.literal("cancelling")]) }), `/jobs/${encodeURIComponent(id)}/cancel`, {
+    request(z.extend(JobSummarySchema, { status: z.union([JobStatusSchema, z.literal("cancelling")]) }), `/jobs/${encodeURIComponent(id)}/cancel`, {
       method: "POST",
     }),
   transcribe: (audio: Blob, languageHint?: string) => {
@@ -234,7 +234,7 @@ export const api = {
     return request(TranscribeResultSchema, "/transcribe", { method: "POST", body: fd });
   },
   runLogUrl: (id: string) => apiUrl(`/jobs/${encodeURIComponent(id)}/run.jsonl`),
-  replays: () => request(ReplaySchema.array(), "/replays"),
+  replays: () => request(z.array(ReplaySchema), "/replays"),
 
   // stateless measure / verify
   measure: (photo: File, view: "top" | "side", opts: { matKind?: "screen" | "paper"; matId?: string | null; thicknessMm?: number } = {}) => {
@@ -263,26 +263,26 @@ export const api = {
       },
     }),
   part: (slug: string) => request(PartRecordSchema, `/parts/${encodeURIComponent(slug)}`),
-  partParams: (slug: string) => request(ParamSpecSchema.array(), `/parts/${encodeURIComponent(slug)}/params`),
+  partParams: (slug: string) => request(z.array(ParamSpecSchema), `/parts/${encodeURIComponent(slug)}/params`),
   bake: (slug: string, params: ParamQuery, format: BakeFormat = "view", signal?: AbortSignal) =>
     request(BakeResultSchema, `/parts/${encodeURIComponent(slug)}/bake`, { query: { ...params, format }, signal }),
   bakeDownloadUrl: (slug: string, params: ParamQuery, format: BakeFormat) =>
     apiUrl(`/parts/${encodeURIComponent(slug)}/bake`, { ...params, format, download: 1 }),
   variant: (slug: string, want: string) =>
     request(VariantResultSchema, `/parts/${encodeURIComponent(slug)}/variant`, { query: { want } }),
-  matching: (slug: string) => request(PartCardSchema.array(), `/parts/${encodeURIComponent(slug)}/matching`),
+  matching: (slug: string) => request(z.array(PartCardSchema), `/parts/${encodeURIComponent(slug)}/matching`),
   thumbnailUrl: (slug: string, scale: 1 | 2 = 1) => apiUrl(`/parts/${encodeURIComponent(slug)}/thumbnail.png`, { scale }),
   feedback: (slug: string, body: { result: "fits" | "tight" | "loose" | "pass" | "fail"; kind: "print" | "screen_fit"; note: string }) =>
     request(FeedbackResultSchema, `/parts/${encodeURIComponent(slug)}/feedback`, json(body)),
   templatePdfUrl: (slug: string, params: ParamQuery) => apiUrl(`/parts/${encodeURIComponent(slug)}/template.pdf`, params),
-  families: () => request(FamilySchema.array(), "/families"),
+  families: () => request(z.array(FamilySchema), "/families"),
   createNeed: (query: string) => request(NeedSchema, "/needs", json({ query })),
-  needs: () => request(NeedSchema.array(), "/needs"),
+  needs: () => request(z.array(NeedSchema), "/needs"),
   stats: () => request(StatsSchema, "/stats"),
 
   // steer
-  steer: (brief: string, count: number) => request(SteerStateSchema.pick({ id: true }), "/steer", json({ brief, count })),
-  steerRuns: (limit = 10) => request(SteerSummarySchema.array(), "/steer", { query: { limit } }),
+  steer: (brief: string, count: number) => request(z.pick(SteerStateSchema, { id: true }), "/steer", json({ brief, count })),
+  steerRuns: (limit = 10) => request(z.array(SteerSummarySchema), "/steer", { query: { limit } }),
   steerRun: (id: string) => request(SteerStateSchema, `/steer/${encodeURIComponent(id)}`),
   steerReview: (id: string, body: { slug: string; action: "approve" | "send_back" | "reject"; note: string }) =>
     request(SteerStateSchema, `/steer/${encodeURIComponent(id)}/review`, json(body)),

@@ -2,12 +2,15 @@ import type { Metadata } from "next";
 import { HydrationBoundary, QueryClient, dehydrate } from "@tanstack/react-query";
 import { Suspense } from "react";
 import { PartRecordSchema } from "@/lib/api-types";
+import { Container } from "@/components/layout/page";
+import { api } from "@/lib/api";
 import { PartClient } from "./part-client";
+import { PartDetails } from "./part-details";
 
 async function fetchPart(slug: string) {
   try {
     const base = (process.env.API_URL ?? "http://localhost:8000").replace(/\/$/, "");
-    const res = await fetch(`${base}/api/v1/parts/${encodeURIComponent(slug)}`, { next: { revalidate: 60 }, signal: AbortSignal.timeout(2500) });
+    const res = await fetch(`${base}/api/v1/parts/${encodeURIComponent(slug)}`, { cache: "no-store", signal: AbortSignal.timeout(2500) });
     if (!res.ok) return null;
     const parsed = PartRecordSchema.safeParse(await res.json());
     return parsed.success ? parsed.data : null;
@@ -33,11 +36,18 @@ export default async function PartPage({ params }: { params: Promise<{ slug: str
   const qc = new QueryClient();
   const part = await fetchPart(s);
   if (part) qc.setQueryData(["part", s], part);
+  // Static sections (provenance, lineage, knob reference, matching) render here without client JS.
+  const matching = part ? await api.matching(s).catch((e: unknown) => e) : null;
   return (
     <HydrationBoundary state={dehydrate(qc)}>
       <Suspense>
-        <PartClient slug={s} />
+        <PartClient slug={s} withDetails={!part} />
       </Suspense>
+      {part ? (
+        <Container className="space-y-14 pt-6 pb-8">
+          <PartDetails part={part} matching={matching} />
+        </Container>
+      ) : null}
     </HydrationBoundary>
   );
 }

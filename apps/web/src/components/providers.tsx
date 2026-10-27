@@ -4,7 +4,6 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import * as React from "react";
 import { ApiError, ApiOfflineError } from "@/lib/api";
 import { Toaster } from "./ui/toast";
-import { TooltipProvider } from "./ui/tooltip";
 
 export function Providers({ children }: { children: React.ReactNode }) {
   const [client] = React.useState(
@@ -25,10 +24,8 @@ export function Providers({ children }: { children: React.ReactNode }) {
   );
   return (
     <QueryClientProvider client={client}>
-      <TooltipProvider delayDuration={200}>
-        {children}
-        <Toaster />
-      </TooltipProvider>
+      {children}
+      <Toaster />
     </QueryClientProvider>
   );
 }

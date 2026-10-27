@@ -1,13 +1,13 @@
 /** Parsing for the geom worker's `view.json`: triangles + B-rep edge polylines, millimetres, CAD frame (Z up). */
-import { z } from "zod";
+import { z } from "zod/mini";
 
 const nums = z.array(z.number());
 
 export const ViewJsonSchema = z.object({
-  units: z.literal("mm").default("mm"),
-  bbox: z.union([nums, z.array(nums), z.object({ min: nums, max: nums }), z.record(z.string(), z.number())]).optional(),
-  mesh: z.object({ positions: nums, normals: nums.optional(), indices: nums.optional() }),
-  edges: z.array(nums).default([]),
+  units: z._default(z.literal("mm"), "mm"),
+  bbox: z.optional(z.union([nums, z.array(nums), z.object({ min: nums, max: nums }), z.record(z.string(), z.number())])),
+  mesh: z.object({ positions: nums, normals: z.optional(nums), indices: z.optional(nums) }),
+  edges: z._default(z.array(nums), []),
 });
 
 export type ViewData = {

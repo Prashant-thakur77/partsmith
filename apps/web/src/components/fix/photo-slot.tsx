@@ -4,13 +4,13 @@ import { useMutation } from "@tanstack/react-query";
 import { AlertTriangle, Camera, CheckCircle2, ImagePlus, RefreshCw, Trash2, XCircle } from "lucide-react";
 import * as React from "react";
 import { api } from "@/lib/api";
-import { checkPhoto, type PhotoInfo } from "@/lib/photo-checks";
+import type { PhotoInfo } from "@/lib/photo-checks";
 import { cn } from "@/lib/utils";
 import { Badge } from "../ui/badge";
 import { Button } from "../ui/button";
 import { ErrorState } from "../ui/error-state";
 import { Spinner } from "../ui/spinner";
-import { CaptureReportView } from "./capture-report";
+const CaptureReportView = React.lazy(() => import("./capture-report").then((m) => ({ default: m.CaptureReportView })));
 
 export type SlotValue = { file: File; info: PhotoInfo } | null;
 
@@ -55,6 +55,8 @@ export function PhotoSlot({
     if (!file) return;
     setBusy(true);
     try {
+      // Image-analysis code loads only when a photo is chosen.
+      const { checkPhoto } = await import("@/lib/photo-checks");
       const info = await checkPhoto(file);
       onChange({ file, info });
       measure.reset();
@@ -151,7 +153,9 @@ export function PhotoSlot({
                   <Spinner className="size-3.5" label="Checking" /> Server capture gate: finding markers, checking blur, tilt and glare…
                 </div>
               ) : measure.data ? (
-                <CaptureReportView report={measure.data.capture} />
+                <React.Suspense fallback={<Spinner className="size-3.5" label="Loading" />}>
+                  <CaptureReportView report={measure.data.capture} />
+                </React.Suspense>
               ) : measure.error ? (
                 <ErrorState error={measure.error} compact what="the capture check" onRetry={() => measure.mutate(value.file)} className="py-4" />
               ) : null
