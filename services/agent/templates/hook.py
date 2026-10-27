@@ -11,6 +11,9 @@ SUMMARY = (
 TAGS = ["hook", "coat hook", "towel", "wall", "hanger", "screw-on"]
 # Where each knob moves the outline (normalised model frame; see services/agent/templates/__init__.py).
 REGIONS = {
+    "hole_shift": [("holes_x", -1.0, 1.0, -1.0, 1.0, 1)],
+    "hole_y": [("holes_y", -1.0, 1.0, -1.0, 1.0, 1)],
+    "hole_spread": [("holes", -1.0, 1.0, -1.0, 1.0, 0)],
     "tip_length": [("holes", -1.0, 1.0, -1.0, 1.0, 0), ("xz", -0.6, 1.0, 0.0, 1.0, 1)],
     "bend_radius": [("holes", -1.0, 1.0, -1.0, 1.0, 0), ("xz", -1.0, 1.0, 0.0, 1.0, 1)],
     "arm_thickness": [("xz", -1.0, -0.6, 0.0, 1.0, 1)],
@@ -41,6 +44,9 @@ PARAMS = {  # name: (default, min, max, step, unit, affects_fit, label)
     "bend_radius": (8.0, 4.0, 20.0, 0.1, "mm", False, "Bend radius (arm centreline)"),
     "tip_length": (14.0, 3.0, 40.0, 0.1, "mm", False, "Tip length past the bend"),
     "corner_radius": (4.0, 0.0, 10.0, 0.1, "mm", False, "Plate corner radius"),
+    "hole_shift": (0.0, -15.0, 15.0, 0.1, "mm", True, "Hole row shift along the plate"),
+    "hole_y": (0.0, -15.0, 15.0, 0.1, "mm", True, "Hole row offset across the plate"),
+    "hole_spread": (1.0, 0.3, 2.0, 0.05, "", True, "Hole spacing (x the automatic spacing)"),
 }
 
 
@@ -69,7 +75,16 @@ def build(p: dict[str, float]) -> cq.Workplane:
         plate = plate.edges("|Z").fillet(r)
     x_h0 = xe + a / 2 + 2.0
     step = (length / 2 - x_h0) / n
-    pts = [(x_h0 + step * (i + 0.5), 0.0) for i in range(n)]
+    xs = [x_h0 + step * (i + 0.5) for i in range(n)]
+    xm = sum(xs) / n
+    lim_x, lim_y = length / 2 - hole_d * 1.2, max(width / 2 - hole_d - 0.5, 0.0)
+    hy = min(max(p["hole_y"], -lim_y), lim_y)
+    moved = p["hole_shift"] != 0.0 or p["hole_spread"] != 1.0 or p["hole_y"] != 0.0
+    pts: list[tuple[float, float]] = [] if moved else [(x, 0.0) for x in xs]
+    for x in xs if moved else []:
+        xh = min(max(xm + (x - xm) * p["hole_spread"] + p["hole_shift"], -lim_x), lim_x)
+        if all(abs(xh - q[0]) > hole_d * 2.2 for q in pts):  # clamped holes must not overlap
+            pts.append((xh, hy))
     plate = plate.faces(">Z").workplane().pushPoints(pts).cskHole(hole_d, hole_d * 2.0, 90)
 
     arm = (

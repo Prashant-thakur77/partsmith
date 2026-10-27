@@ -71,6 +71,8 @@ def max_delta(spec: ParamSpec, current: float) -> float:
         return MAX_DELTA_DEG
     if spec.unit == "":
         return float(max(MAX_REL_DELTA * abs(current), spec.step, 0.05 * (spec.max - spec.min)))
+    if spec.min < 0:  # an offset, not a size: "20 % of the current value" means nothing around zero
+        return float(max(MAX_ABS_DELTA_MM, 0.25 * (spec.max - spec.min)))
     return float(min(MAX_ABS_DELTA_MM, max(MAX_REL_DELTA * abs(current), MIN_DELTA_MM)))
 
 

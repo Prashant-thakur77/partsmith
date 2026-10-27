@@ -120,7 +120,7 @@ def test_region_hints_pick_the_knob_that_shapes_the_worst_spot():
     worst = [{"view": "top", "plane": "xy", "norm": [0.1, 0.9], "hausdorff_mm": 3.0, "kind": "extra"}]
     hints = mock_brain.region_hints(worst, regions, {p.name for p in t.params if p.topology})
     names = [h["param"] for h in hints]
-    assert names[:2] == ["knuckle_phase", "knuckle_count"]  # pattern knobs before size knobs
+    assert names[:3] == ["knuckle_phase", "knuckle_offset", "knuckle_count"]  # pattern knobs before size knobs
     assert "corner_radius" not in names
     gap = next(h for h in hints if h["param"] == "knuckle_gap")
     assert gap["sign"] == 1  # extra material where a larger gap removes material -> raise the gap
@@ -144,3 +144,26 @@ def test_bosses_read_from_a_side_silhouette_with_a_regular_bump_row():
     one_bump = unary_union([body, box(10, 4.0, 15, 9.0)])
     assert mock_brain.side_bosses({"outline_mm": np.asarray(one_bump.exterior.coords)[:-1].tolist()}, 9.6, top) == {}
     assert Polygon(outline).is_valid
+
+
+def test_knuckles_counted_along_the_outline_edge():
+    import numpy as np
+    from shapely.geometry import box
+    from shapely.ops import unary_union
+
+    leaf = box(-30, -15, 30, 10)
+    ends = unary_union([leaf, box(-30, 10, -10, 15), box(10, 10, 30, 15)])  # 2 knuckles at the ends
+    inset = unary_union([leaf, box(-18, 10, -6, 15), box(6, 10, 18, 15)])  # 2 knuckles set in from the ends
+    r = mock_brain.edge_runs(np.asarray(ends.exterior.coords)[:-1].tolist())
+    assert r["count"] == 2 and all(r["at_ends"])
+    r = mock_brain.edge_runs(np.asarray(inset.exterior.coords)[:-1].tolist())
+    assert r["count"] == 2 and not any(r["at_ends"])
+
+
+def test_hole_row_moves_with_the_template_hole_knobs():
+    t = get_template("hook")
+    regions = {k: [list(b) for b in v] for k, v in t.regions.items()}
+    holes = {"measured": [[10.0, 3.0, 4.0], [22.0, 3.0, 4.0]], "model": [[14.0, 0.0, 4.0], [26.0, 0.0, 4.0]]}
+    by_name = {p.name: p for p in t.params}
+    edits = mock_brain._hole_row_edits(holes, regions, by_name, t.defaults, set())
+    assert {e["param"]: e["to"] for e in edits} == {"hole_shift": -4.0, "hole_y": 3.0}

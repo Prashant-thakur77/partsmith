@@ -79,7 +79,11 @@ A fresh session should read this file, `docs/ARCHITECTURE.md`, `docs/API.md` and
   web typecheck/lint/build clean; `make smoke` → 12 ⚠️ (mock), exit 0; `make dev` serves every page (200) with 12 seeded parts;
   gitleaks: no leaks; no private files tracked. Scores in `docs/QUALITY.md`; human-only steps in `docs/HANDOFF.md`.
 
+- **Template round:** hinge_leaf knuckle_offset/knuckle_fill + knuckle counting from the outline, hook hole_shift/hole_y/
+  hole_spread, pattern knobs probed first. Demo samples (mock): still 6/17 verified; hinge 3.21 → 1.32 mm, clip-tilt 1.71 → 0.78 mm.
+
 ## Next (for a fresh session)
 1. Keys → `PROVIDER_RECORD=1 make live` (HANDOFF §1); update README via `make bench-live`.
 2. Real photos → `data/real/...` → `uv run python -m eval.splits assign` → `make bench`.
-3. Remaining offline work: hinge/hook template knobs (in progress at the time of writing), Muse Code usage notes.
+3. Remaining offline work: thin side views of hinge-like parts read below the stated plate thickness (metrology); hook
+   hole positions are unreliable when a tall arm dominates the top view (needs the side photo in the plate frame); Muse Code notes.

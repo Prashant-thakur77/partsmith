@@ -1394,6 +1394,26 @@ class FixRun:
         ppm = vr.photo.frame.px_per_mm
         return count_openings(vr.photo.mask, ppm), count_openings(vr.model_mask, ppm)
 
+    def hole_layout(self, rnd: Round) -> dict[str, list[list[float]]]:
+        """Measured and model through-holes, both in the MODEL's top-view frame (x, y, diameter mm)."""
+        top = self.measurements.get("top")
+        if rnd.out is None or rnd.exec_result is None or top is None or "top" not in rnd.out.views:
+            return {}
+        vr = rnd.out.views["top"]
+        if vr.matrix is None:
+            return {}
+        Mi = np.linalg.inv(np.asarray(vr.matrix, dtype=np.float64))
+        measured = []
+        for h in top.holes:
+            q = Mi @ np.array([h.center_mm[0], h.center_mm[1], 1.0])
+            measured.append([round(float(q[0]), 3), round(float(q[1]), 3), h.diameter.value])
+        model = [
+            [round(float(h["center_mm"][0]), 3), round(float(h["center_mm"][1]), 3), float(h["diameter_mm"])]
+            for h in (rnd.exec_result.features or {}).get("holes", [])
+            if h.get("through")
+        ]
+        return {"measured": measured, "model": model}
+
     def worst_spots(self, rnd: Round) -> list[dict[str, Any]]:
         """Where each failing view is worst, in the MODEL's own frame (so a template can say which knob shapes that
         region), plus whether the model has extra or missing material there."""
@@ -1492,6 +1512,7 @@ class FixRun:
                 "measured_holes": photo_n,
                 "model_holes": model_n,
                 "worst": spots,
+                "holes": self.hole_layout(rnd),
                 "regions": {k: [list(b) for b in v] for k, v in regions.items()},
                 "vetoes": [x.model_dump(mode="json") for x in self.vetoes],
             },

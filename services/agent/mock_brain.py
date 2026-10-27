@@ -89,6 +89,48 @@ def count_lobes(outline: Sequence[Sequence[float]], min_depth_mm: float = 0.2) -
     return n
 
 
+def edge_runs(outline: Sequence[Sequence[float]], min_rise_mm: float = 1.0) -> dict[str, Any]:
+    """Raised runs along the bumpier long edge of a top outline (part frame, long axis X): hinge knuckles, tabs.
+    Returns {"count", "at_ends"} or {} when neither long edge has a stepped profile."""
+    import numpy as np
+    from shapely.geometry import LineString, Polygon
+
+    poly = Polygon(outline).buffer(0)
+    if poly.is_empty or len(outline) < 8:
+        return {}
+    x0, y0, x1, y1 = poly.bounds
+    xs = np.arange(x0 + 0.2, x1 - 0.2, 0.2)
+    lo, hi = [], []
+    for x in xs:
+        b = poly.intersection(LineString([(x, y0 - 1), (x, y1 + 1)])).bounds
+        lo.append(b[1] if b else np.nan)
+        hi.append(b[3] if b else np.nan)
+    best: dict[str, Any] = {}
+    for prof in (np.asarray(hi), -np.asarray(lo)):
+        if np.isnan(prof).any():
+            continue
+        low, top = float(np.percentile(prof, 10)), float(np.percentile(prof, 90))
+        if top - low < min_rise_mm:
+            continue
+        up = prof > (low + top) / 2
+        runs = []
+        i = 0
+        while i < len(xs):
+            if up[i]:
+                j = i
+                while j + 1 < len(xs) and up[j + 1]:
+                    j += 1
+                if xs[j] - xs[i] >= 1.0:
+                    runs.append((float(xs[i]), float(xs[j])))
+                i = j + 1
+            else:
+                i += 1
+        if len(runs) >= 1 and (not best or top - low > best["rise"]):
+            ends = (runs[0][0] - x0 < 1.5, x1 - runs[-1][1] < 1.5)
+            best = {"count": len(runs), "at_ends": ends, "rise": top - low}
+    return best
+
+
 def shape_cues(top: Mapping[str, Any]) -> dict[str, Any]:
     """What a model would notice in the top photo: size, roundness, holes and where they are."""
     L = float(top["length"]["value"])
@@ -351,15 +393,28 @@ def template_values(
         for k in count_knobs:
             vals[k.name] = float(len(holes))
         cues = shape_cues(top)
+        knuckle = [p for p in t.params if p.topology and "knuckles on" in p.label.lower()]
+        phase = [p for p in t.params if p.topology and "mating leaf" in p.label.lower()]
+        if knuckle:  # count the knuckles along the edge, and see whether they reach the leaf's ends
+            runs = edge_runs(top.get("outline_mm") or [])
+            if runs:
+                vals[knuckle[0].name] = float(runs["count"])
+                if phase:
+                    vals[phase[0].name] = 0.0 if any(runs["at_ends"]) else 1.0
         lobes = int(cues["lobes"])
         if cues["round"] and lobes >= 3:  # count the grip flutes seen around the rim
             for p in t.params:
                 if p.topology and any(w in p.label.lower() for w in ("flute", "notch", "lobe")):
                     vals[p.name] = float(lobes)
     side_h = ((side or {}).get("thickness") or {}).get("value")
+    th = spec.get("thickness") or {}
     if mm.get("height") and side_h:  # the side photo shows the part's full height
         vals[mm["height"]] = _round(float(side_h), LENGTH_ROUND_MM)
-    th = spec.get("thickness") or {}
+    sk = mm.get("side.thickness")
+    if sk and side_h and th.get("value") and sk != mm.get("height") and sk != mm.get("thickness"):
+        p = t.param(sk)
+        if "above the plate" in p.label.lower():  # a feature standing on the plate: full height minus the plate
+            vals[sk] = _round(float(side_h) - float(th["value"]), THICKNESS_ROUND_MM)
     if mm.get("thickness") and th.get("value"):
         vals[mm["thickness"]] = _round(float(th["value"]), THICKNESS_ROUND_MM)
     for key, value in answers.items():
@@ -627,7 +682,7 @@ def _explore(
         if improved:
             why = f"the last change of {p.name} lowered the Hausdorff distance {hd_b:.2f} → {hd_a:.2f} mm"
             return [{"param": p.name, "to": to + step, "reason": f"probe>: {why}"}], f"continue moving {p.name}"
-        if tag == "probe+":
+        if tag == "probe+" and p.min <= frm - step <= p.max:
             why = f"{p.name} {step:+.2f} did not help; try the other direction"
             return [{"param": p.name, "to": frm - step, "reason": f"probe-: {why}"}], f"reverse {p.name}"
         if tag in ("probe>", "probe="):
@@ -697,6 +752,48 @@ def _explore(
     return [], "no knob left to probe"
 
 
+HOLE_ROW_TOL_MM = 0.3
+
+
+def _hole_row_edits(
+    holes: Mapping[str, Any],
+    regions: Mapping[str, Sequence[Sequence[Any]]],
+    by_name: Mapping[str, ParamSpec],
+    values: Mapping[str, float],
+    failed: Collection[tuple[str, float]],
+) -> list[dict[str, Any]]:
+    """Pair each measured hole with the nearest model hole (both in the model frame); the mean offset moves the knobs
+    a template declares under planes "holes_x" / "holes_y" (effect = direction a raise moves the holes)."""
+    measured, model = list(holes.get("measured") or []), list(holes.get("model") or [])
+    if not measured or not model:
+        return []
+    dx: list[float] = []
+    dy: list[float] = []
+    for mx, my, _ in measured:
+        nx, ny, _ = min(model, key=lambda q: math.hypot(q[0] - mx, q[1] - my))
+        dx.append(mx - nx)
+        dy.append(my - ny)
+    mdx, mdy = sum(dx) / len(dx), sum(dy) / len(dy)
+    edits: list[dict[str, Any]] = []
+    for axis, d in (("holes_x", mdx), ("holes_y", mdy)):
+        if abs(d) <= HOLE_ROW_TOL_MM:
+            continue
+        for name, boxes in regions.items():
+            eff = next((int(b[5]) for b in boxes if str(b[0]) == axis and int(b[5]) != 0), 0)
+            p = by_name.get(name)
+            if not eff or p is None:
+                continue
+            cur = float(values.get(name, p.default))
+            to = round(cur + eff * d, 3)
+            if any(q == name and abs(t - to) < 0.06 for q, t in failed):
+                continue
+            edits.append(
+                {"param": name, "from": cur, "to": to, "reason": f"measured holes sit {d:+.2f} mm along {axis[-1]}"}
+            )
+            break
+    return edits
+
+
 def region_hints(
     worst: Sequence[Mapping[str, Any]],
     regions: Mapping[str, Sequence[Sequence[Any]]],
@@ -714,7 +811,9 @@ def region_hints(
                 plane, a0, a1, b0, b1, eff = str(box[0]), *(float(x) for x in box[1:5]), int(box[5])
                 if plane == w["plane"] and a0 - 0.05 <= a <= a1 + 0.05 and b0 - 0.05 <= b <= b1 + 0.05:
                     # topology knobs first: a pattern error (a knuckle on the wrong side) is not a size error
-                    cands.append((0.0 if name in topology else (a1 - a0) * (b1 - b0), order, name, eff))
+                    # pattern knobs first (counts, phases, shifts: effect 0): a pattern error is not a size error
+                    pattern = name in topology or eff == 0
+                    cands.append((0.0 if pattern else (a1 - a0) * (b1 - b0), order, name, eff))
                     break
         kind = str(w.get("kind", "unclear"))
         want = 1 if kind == "missing" else -1 if kind == "extra" else 0
@@ -849,6 +948,11 @@ def fix(req: ModelRequest) -> dict[str, Any]:
             "code_patch": None,
         }
 
+    # 2a. the model's hole row sits elsewhere than the photo's: move it with the template's hole-position knobs
+    row = _hole_row_edits(ctx.get("holes") or {}, ctx.get("regions") or {}, by_name, values, failed)
+    if row:
+        return {"analysis": f"The hole row is off: {row[0]['reason']}. ({MOCK_TAG})", "edits": row, "code_patch": None}
+
     # 2. holes the photo has and the model lacks (or the other way round): change a hole-count knob
     missing = sum(1 for t in ver.get("tests", []) if str(t["id"]).endswith(".diameter") and t.get("value") is None)
     measured_n, model_n = int(ctx.get("measured_holes", 0)), int(ctx.get("model_holes", 0))
@@ -886,7 +990,7 @@ def fix(req: ModelRequest) -> dict[str, Any]:
         hints = region_hints(ctx.get("worst") or [], ctx.get("regions") or {}, topo)
         hints = [h for h in hints if not _tried_and_failed(str(h["param"]), values, h, by_name, failed)]
         regions = ctx.get("regions") or {}
-        pos_names = {k for k, boxes in regions.items() if any(str(b[0]) == "holes" for b in boxes)}
+        pos_names = {k for k, boxes in regions.items() if any(str(b[0]).startswith("holes") for b in boxes)}
         miss = max(centers, default=0.0)
         probe_edits, why = _explore(specs, values, measure_map, history, views, miss, cres, hints, pos_names)
         for e in probe_edits:
