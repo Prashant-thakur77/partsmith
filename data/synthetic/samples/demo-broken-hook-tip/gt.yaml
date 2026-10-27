@@ -1,0 +1,145 @@
+gt_source: synthetic_exact
+origin: synthetic
+sample_id: demo-broken-hook-tip
+kind: template
+name: hook
+template: hook
+reference_object: null
+params: {arm_thickness: 6.3, arm_width: 13.1, bend_radius: 6.5, corner_radius: 3.2, hole_count: 1.0, hole_d: 4.15, hole_shift: 0.0,
+  hole_spread: 0.9, hole_y: 0.0, length: 66.4, plate_thickness: 3.1, reach: 29.0, tip_length: 12.1, width: 19.3}
+code_sha: d90c8db43c4c2bfd13fc8e456ac8133eb4b55b9f85bda16da2fb11955c9f0cb9
+mat_id: screen-m
+units: mm
+dims:
+- {name: length, view: top, value_mm: 66.4}
+- {name: width, view: top, value_mm: 19.3}
+- name: hole_1.diameter
+  view: top
+  value_mm: 4.15
+  center_mat_mm: [57.421103, 74.183489]
+  center_cad_mm: [13.95, 0.0]
+- {name: thickness, view: side, value_mm: 32.15}
+- {name: length, view: orbit, value_mm: 66.4}
+- {name: width, view: orbit, value_mm: 19.3}
+- {name: height, view: orbit, value_mm: 32.15}
+info: {height_mm: 32.15, side_length_mm: 66.4, user_thickness_mm: 3.0, dim_definitions: 'length/width: min-area rectangle
+    of the orthographic top footprint; hole_k.diameter: see-through openings from above; thickness: short side of the side-view
+    footprint'}
+views:
+  top:
+    image: top.jpg
+    placement:
+      center_mm: [64.9276, 62.4253]
+      yaw_deg: 237.4456
+    cad_to_mat:
+    - [-0.5381, 0.842881, 0.0, 64.9276]
+    - [0.842881, 0.5381, 0.0, 62.4253]
+    - [0.0, 0.0, -1.0, 0.0]
+    - [0.0, 0.0, 0.0, 1.0]
+    part_height_mm: 18.481
+    camera:
+      K:
+      - [1396.92877, 0.0, 999.5]
+      - [0.0, 1396.92877, 749.5]
+      - [0.0, 0.0, 1.0]
+      R:
+      - [0.957991, -0.285837, -0.023466]
+      - [0.285327, 0.958158, -0.022848]
+      - [0.029015, 0.015193, 0.999464]
+      t_mm: [-74.807886, -98.78511, 370.069843]
+      size: [2000, 1500]
+      height_mm: 373.884
+      tilt_deg: 1.877
+      focal35_mm: 24.1762
+      exif_focal35_mm: 24
+    look:
+      surface: screen
+      stage: light
+      part_bgr: [62, 138, 52]
+      blur_px: 0.557
+      glare: false
+      moire_amp: 0.0
+      exposure: 1.0
+  side:
+    image: side.jpg
+    placement:
+      center_mm: [79.4911, 63.271]
+      yaw_deg: 118.7327
+    cad_to_mat:
+    - [-0.480724, -0.876872, 0.0, 79.4911]
+    - [-0.876872, 0.480724, 0.0, 63.271]
+    - [0.0, 0.0, -1.0, 0.0]
+    - [0.0, 0.0, 0.0, 1.0]
+    part_height_mm: 19.3
+    camera:
+      K:
+      - [1441.251352, 0.0, 999.5]
+      - [0.0, 1441.251352, 749.5]
+      - [0.0, 0.0, 1.0]
+      R:
+      - [0.992626, 0.088486, 0.08285]
+      - [-0.080699, 0.992387, -0.093033]
+      - [-0.090451, 0.085661, 0.99221]
+      t_mm: [-109.070972, -59.138044, 275.344088]
+      size: [2000, 1500]
+      height_mm: 269.664
+      tilt_deg: 7.156
+      focal35_mm: 24.9432
+      exif_focal35_mm: 25
+    look:
+      surface: screen
+      stage: light
+      part_bgr: [52, 52, 55]
+      blur_px: 0.585
+      glare: false
+      moire_amp: 0.0
+      exposure: 1.0
+  orbit:
+    video: orbit.mp4
+    frames_file: gt_frames.json
+    encoder: ffmpeg/libx264
+    fps: 15
+    n_frames: 118
+    duration_s: 7.89
+    size: [1920, 1080]
+    sweep_deg: 156.002
+    tilt_deg: [28.303, 53.835]
+    distance_mm: [255.922, 232.28]
+    focal35_mm: 27.507
+    placement:
+      center_mm: [122.6844, 65.7239]
+      yaw_deg: 258.039
+    cad_to_mat:
+    - [-0.207246, 0.978289, 0.0, 122.6844]
+    - [0.978289, 0.207246, 0.0, 65.7239]
+    - [0.0, 0.0, -1.0, 0.0]
+    - [0.0, 0.0, 0.0, 1.0]
+    look:
+      surface: screen
+      stage: light
+      part_bgr: [150, 92, 32]
+generator: {version: synth-2, seed: 121, preset: clean}
+stage: light
+broken:
+  kind: tip
+  description: the top of the part snapped off
+  intact: dims, params and info describe the INTACT part; the photos show it broken
+  cutter_polygon_cad_mm:
+  - [-35.2, -11.65]
+  - [35.2, -11.65]
+  - [35.2, 11.65]
+  - [-35.2, 11.65]
+  z_range_mm: [18.481, 33.15]
+  removed_footprint_cad_mm:
+  - [-32.2, -6.55]
+  - [-32.2, 6.55]
+  - [-7.301, 6.55]
+  - [-7.301, -6.55]
+  removed_footprint_mat_mm:
+  - [76.7336, 31.76]
+  - [87.7753, 38.8091]
+  - [74.3771, 59.796]
+  - [63.3354, 52.7469]
+  removed_area_ratio: 0.2563
+  broken_dims: {length: 66.4, width: 19.3}
+  broken_height_mm: 18.481

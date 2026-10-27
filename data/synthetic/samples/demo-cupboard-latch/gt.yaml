@@ -7,7 +7,7 @@ template: cupboard_latch
 reference_object: null
 params: {catch_length: 15.7, edge_fillet: 0.9, grip_count: 1.0, length: 55.3, pivot_d: 3.7, pivot_offset: 7.5, step_depth: 2.2,
   thickness: 7.3, width: 15.9}
-code_sha: 16c8eaf891f7ae799038cddaafafcbf17dc92b4de9b8142e7a6f3da0d72cb165
+code_sha: af00d6aaeee94f59e04ff9a6c2ff926232913a80a6a5e2f115714a8e8a2e94c2
 mat_id: screen-m
 units: mm
 dims:

@@ -97,6 +97,31 @@ B1 vs PS on pass@0.5. In mock mode every table is titled "pipeline check — det
 performance": the baselines still run their real code paths, but every model answer is the deterministic mock's.
 `--live` refuses unless the build stage has a live provider (see `make smoke`).
 
+## Control and red-team suites
+
+`eval/run.py` also runs two expected-outcome suites with the headline config (PS): `control` (6 intact template parts,
+normal photos → must be accepted; reports the false-rejection rate) and `redteam` (10 photos that must be rejected by
+the capture gate — naming the acceptable checks — or refused: empty mat, a re-photographed screen, a hand in frame, a
+partial mat, a foreign marker board, a clay figurine, a silicone gasket, two parts, a part on the markers, a helmet
+buckle). Each table gives the share handled as expected with a Wilson 95 % CI. The photos are rendered into
+`data/synthetic/suites/` (seed 11) when missing.
+
+## Failure taxonomy, provenance, open weights, impact
+
+- Every failed run gets one category, by the first matching rule: refused → timeout → scale_fail → seg_fail →
+  capture_reject → codegen_error → topology_wrong → judge_veto → dim_off (`eval/taxonomy.py`). The report counts them
+  per suite and config (`failure_taxonomy`). Red-team misses are reported by the red-team table instead.
+- `provenance.json` (next to each report; `measure_only.provenance.json` for the measurement bench): models, providers
+  and modes per stage from the runs' events, git sha, verifier and capture-gate thresholds read from the code, seeds,
+  dataset hashes, generator and template versions.
+- `open_weights.json` (`eval/reports/latest/`): per stage which model and provider served it and whether it is open
+  weights (from the routing table), calls and tokens, the share of builder tokens on open weights (live and replay
+  calls only — mock calls show routing, not usage), and the PS-open / PS-open-all rows once a live run exists
+  ("pending live run" until then).
+- `uv run python -m eval.impact` → `impact.{json,md}` from `data/impact/sessions.yaml` (real repair sessions entered by
+  hand: price + source URL or "not stocked", run id → time to verified, fit result, printed grams; ₹/g stated in the
+  file). "pending" while the log is empty.
+
 ## Splits
 
 `eval/splits.lock` freezes the synthetic bench definition (seed, sizes, dataset sha256) and will hold the real-part

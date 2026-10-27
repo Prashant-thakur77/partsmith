@@ -1,0 +1,125 @@
+gt_source: synthetic_exact
+origin: synthetic
+sample_id: demo-broken-cover-tab
+kind: template
+name: battery_cover
+template: battery_cover
+reference_object: null
+params: {corner_radius: 3.2, groove_count: 5.0, latch_height: 3.2, latch_overhang: 0.7, latch_width: 12.5, length: 52.7, thickness: 1.85,
+  tongue_count: 1.0, tongue_length: 2.5, tongue_width: 5.2, width: 30.3}
+code_sha: d3616e422f48e8532ac6d73c9ddbb31da4a6d66dcff6ef6fe1d939910c61c890
+mat_id: screen-m
+units: mm
+dims:
+- {name: length, view: top, value_mm: 52.7}
+- {name: width, view: top, value_mm: 30.3}
+- {name: thickness, view: side, value_mm: 5.05}
+info: {height_mm: 5.05, side_length_mm: 52.7, user_thickness_mm: 2.0, dim_definitions: 'length/width: min-area rectangle of
+    the orthographic top footprint; hole_k.diameter: see-through openings from above; thickness: short side of the side-view
+    footprint'}
+views:
+  top:
+    image: top.jpg
+    placement:
+      center_mm: [111.6938, 72.3274]
+      yaw_deg: 152.2593
+    cad_to_mat:
+    - [-0.885063, -0.465471, 0.0, 111.6938]
+    - [-0.465471, 0.885063, 0.0, 72.3274]
+    - [0.0, 0.0, -1.0, 0.0]
+    - [0.0, 0.0, 0.0, 1.0]
+    part_height_mm: 5.05
+    camera:
+      K:
+      - [1576.881796, 0.0, 999.5]
+      - [0.0, 1576.881796, 749.5]
+      - [0.0, 0.0, 1.0]
+      R:
+      - [0.830774, -0.555222, -0.039267]
+      - [0.546743, 0.827239, -0.129416]
+      - [0.104338, 0.086047, 0.990813]
+      t_mm: [-70.779469, -108.801153, 256.299819]
+      size: [2000, 1500]
+      height_mm: 270.805
+      tilt_deg: 7.773
+      focal35_mm: 27.2905
+      exif_focal35_mm: 27
+    look:
+      surface: screen
+      stage: light
+      part_bgr: [32, 112, 228]
+      blur_px: 0.559
+      glare: false
+      moire_amp: 0.0
+      exposure: 1.0
+  side:
+    image: side.jpg
+    placement:
+      center_mm: [141.5823, 64.3306]
+      yaw_deg: 292.4044
+    cad_to_mat:
+    - [0.381141, 0.924517, 0.0, 141.5823]
+    - [0.924517, -0.381141, 0.0, 64.3306]
+    - [0.0, 0.0, -1.0, 0.0]
+    - [0.0, 0.0, 0.0, 1.0]
+    part_height_mm: 30.3
+    camera:
+      K:
+      - [1577.403431, 0.0, 999.5]
+      - [0.0, 1577.403431, 749.5]
+      - [0.0, 0.0, 1.0]
+      R:
+      - [-0.801924, -0.5872, 0.110064]
+      - [0.596221, -0.798303, 0.085049]
+      - [0.037923, 0.133825, 0.990279]
+      t_mm: [122.125132, -2.654525, 370.072058]
+      size: [2000, 1500]
+      height_mm: 379.69
+      tilt_deg: 7.995
+      focal35_mm: 27.2996
+      exif_focal35_mm: 27
+    look:
+      surface: screen
+      stage: light
+      part_bgr: [40, 42, 185]
+      blur_px: 0.313
+      glare: false
+      moire_amp: 0.0
+      exposure: 1.0
+generator: {version: synth-2, seed: 122, preset: clean}
+stage: light
+broken:
+  kind: tab
+  description: a piece is missing at one end
+  intact: dims, params and info describe the INTACT part; the photos show it broken
+  cutter_polygon_cad_mm:
+  - [28.35, -3.8969]
+  - [16.776, -3.8969]
+  - [16.6566, -1.0714]
+  - [17.2256, 1.7542]
+  - [17.6507, 4.5797]
+  - [17.5873, 7.4052]
+  - [16.776, 10.2307]
+  - [28.35, 10.2307]
+  z_range_mm: [-1.0, 6.05]
+  removed_footprint_cad_mm:
+  - [16.776, -3.8969]
+  - [16.6566, -1.0714]
+  - [17.2256, 1.7542]
+  - [17.6507, 4.5797]
+  - [17.5873, 7.4052]
+  - [16.776, 10.2307]
+  - [26.35, 10.2307]
+  - [26.35, -3.8969]
+  removed_footprint_mat_mm:
+  - [98.6598, 61.0697]
+  - [97.4504, 63.626]
+  - [95.6315, 65.8619]
+  - [93.9401, 68.1648]
+  - [92.6811, 70.6951]
+  - [92.0839, 73.5735]
+  - [83.6103, 69.1171]
+  - [90.1863, 56.6133]
+  removed_area_ratio: 0.0831
+  broken_dims: {length: 52.7, width: 30.3}
+  broken_height_mm: 5.05

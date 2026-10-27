@@ -1,0 +1,113 @@
+{
+ "suite": "control",
+ "config": "PS",
+ "sample_id": "ctl-hook-s21548",
+ "split": "held_out",
+ "kind": "control",
+ "preset": "control",
+ "mode": "mock",
+ "gt_source": "expected_outcome",
+ "status": "best_effort",
+ "verified": false,
+ "iterations": 4,
+ "iterations_to_converge": null,
+ "strategy": "free_code",
+ "template": "hook",
+ "verifier_max_error_mm": 2.523068215959354,
+ "retake_reason": null,
+ "failed_checks": [],
+ "usd": 0.0,
+ "tokens_in": 0,
+ "tokens_out": 0,
+ "model_calls": 49,
+ "model_ms": 186,
+ "provider_modes": [
+  "mock"
+ ],
+ "providers": {
+  "segment": [
+   "mock:sam-3.1"
+  ],
+  "understand": [
+   "mock:muse-spark-1.3"
+  ],
+  "segment_points": [
+   "mock:sam-3.1"
+  ],
+  "plan": [
+   "mock:meta-models/muse-spark-open"
+  ],
+  "build": [
+   "mock:meta-models/muse-spark-open"
+  ],
+  "fix_agent": [
+   "mock:meta-models/muse-spark-open"
+  ],
+  "judge": [
+   "mock:muse-glimmer"
+  ]
+ },
+ "convergence": [
+  {
+   "iter": 1,
+   "hausdorff_mm": 5.3838106481936165,
+   "iou": 0.7717055262140925,
+   "max_error_mm": 6.1540000000000035
+  },
+  {
+   "iter": 2,
+   "hausdorff_mm": 1.6605247911590837,
+   "iou": 0.9450808096657775,
+   "max_error_mm": 3.8610000000000007
+  },
+  {
+   "iter": 3,
+   "hausdorff_mm": 1.0812936455199906,
+   "iou": 0.9495309088763448,
+   "max_error_mm": 3.8660000000000005
+  },
+  {
+   "iter": 4,
+   "hausdorff_mm": 2.523068215959354,
+   "iou": 0.9381871788046928,
+   "max_error_mm": 2.523068215959354
+  }
+ ],
+ "wall_s": 30.46,
+ "dims": [
+  {
+   "name": "length",
+   "gt_mm": 54.2,
+   "model_mm": 54.7377,
+   "error_mm": 0.5377
+  },
+  {
+   "name": "width",
+   "gt_mm": 18.4,
+   "model_mm": 18.604,
+   "error_mm": 0.204
+  },
+  {
+   "name": "thickness",
+   "gt_mm": 36.2,
+   "model_mm": 3.5,
+   "error_mm": -32.7
+  }
+ ],
+ "missed": [
+  "hole_1.diameter"
+ ],
+ "extra_holes": 1,
+ "pass_0_3": false,
+ "pass_0_5": false,
+ "valid": true,
+ "valid_reason": "",
+ "expected_outcome": "accept",
+ "expected_checks": [],
+ "expected_why": "intact part, normal photo",
+ "outcome": "accept",
+ "outcome_correct": true,
+ "failure_category": "topology_wrong",
+ "overlay": "overlay.png",
+ "failure": "worst thickness -32.70 mm; missing hole_1.diameter"
+}

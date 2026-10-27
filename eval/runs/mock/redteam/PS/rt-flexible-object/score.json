@@ -1,0 +1,101 @@
+{
+ "suite": "redteam",
+ "config": "PS",
+ "sample_id": "rt-flexible-object",
+ "split": "held_out",
+ "kind": "redteam",
+ "preset": "redteam",
+ "mode": "mock",
+ "gt_source": "expected_outcome",
+ "status": "verified",
+ "verified": true,
+ "iterations": 6,
+ "iterations_to_converge": 6,
+ "strategy": "free_code",
+ "template": "caster_wheel",
+ "verifier_max_error_mm": 0.12199999999999989,
+ "retake_reason": null,
+ "failed_checks": [],
+ "usd": 0.0,
+ "tokens_in": 0,
+ "tokens_out": 0,
+ "model_calls": 43,
+ "model_ms": 203,
+ "provider_modes": [
+  "mock"
+ ],
+ "providers": {
+  "segment": [
+   "mock:sam-3.1"
+  ],
+  "understand": [
+   "mock:muse-spark-1.3"
+  ],
+  "segment_points": [
+   "mock:sam-3.1"
+  ],
+  "plan": [
+   "mock:meta-models/muse-spark-open"
+  ],
+  "build": [
+   "mock:meta-models/muse-spark-open"
+  ],
+  "fix_agent": [
+   "mock:meta-models/muse-spark-open"
+  ],
+  "judge": [
+   "mock:muse-glimmer"
+  ]
+ },
+ "convergence": [
+  {
+   "iter": 1,
+   "hausdorff_mm": 8.050292494619828,
+   "iou": 0.35010361501266407,
+   "max_error_mm": 15.323
+  },
+  {
+   "iter": 2,
+   "hausdorff_mm": 7.878608172114888,
+   "iou": 0.3736845757106182,
+   "max_error_mm": 15.204
+  },
+  {
+   "iter": 3,
+   "hausdorff_mm": 7.8770681459500365,
+   "iou": 0.37787080780204874,
+   "max_error_mm": 15.206
+  },
+  {
+   "iter": 4,
+   "hausdorff_mm": 7.877918570190114,
+   "iou": 0.3841168091168091,
+   "max_error_mm": 15.206
+  },
+  {
+   "iter": 5,
+   "hausdorff_mm": 7.907812000962797,
+   "iou": 0.39239012642986154,
+   "max_error_mm": 15.205
+  },
+  {
+   "iter": 6,
+   "hausdorff_mm": 0.1132531867895689,
+   "iou": 0.9758113162021956,
+   "max_error_mm": 0.12199999999999989
+  }
+ ],
+ "wall_s": 56.91,
+ "valid": true,
+ "dims": [],
+ "missed": [],
+ "extra_holes": 0,
+ "pass_0_3": false,
+ "pass_0_5": false,
+ "expected_outcome": "refuse",
+ "expected_checks": [],
+ "expected_why": "flexible part: a rigid print would not seal",
+ "outcome": "accept",
+ "outcome_correct": false,
+ "failure_category": null
+}

@@ -14,10 +14,12 @@
    "preset": "clean",
    "seed": 101,
    "files": {
-    "gt.yaml": "ad4d5bf424c281e43576b1c963fe542f81acb9b76d61a36b10b5e6e12e06d9d7",
-    "meta.json": "b9d3bb80fe9df97fe23ded7c252a61fbd101abd98aec48a14e0d92a9fbf5921b",
-    "side.jpg": "ec449b07b3718ecf4f113a3fd1b7f4f79a93b8d6ceaf797781e6dc0681a76b19",
-    "top.jpg": "4435899d7d1e0efbce88d4d067a17fde944d5844cf789e68e989621bab7516a0"
+    "gt.yaml": "59b4a67786d94d00aa3b8cd6da2fd1ca6f790bfc59195bba408c62c0fb382757",
+    "gt_frames.json": "d444df8ca6c755964ac627432abd1e283aa562e218cc624e58ac722d9489575e",
+    "meta.json": "6b261038e4f467e4e701ab1d7e22a000795799e6926a323a315e3242c250d84f",
+    "orbit.mp4": "e89040dce32f38f01b1b54cad0c1f5e63660c36378b85c18c86dfac29e31fbb4",
+    "side.jpg": "4e550a33d00210c6c3fe2152b986e23135dca3b7a246e3cea7681127eb9d701d",
+    "top.jpg": "19da3655f6782a2d2e0f8cef2d5e56eaa2bbe7fdd8423232daf873d53d83ff31"
    }
   },
   {
@@ -27,10 +29,10 @@
    "preset": "paper",
    "seed": 102,
    "files": {
-    "gt.yaml": "2dd8d29790dd2b0d0b2e09860d61092f74e5d43bbb0c6ee2832510da519b2571",
+    "gt.yaml": "056b26b55ce77272a4cfceb83af18d20f69e3744146df5630b1cb2a520e408ec",
     "meta.json": "8b2b52e35224599a937cd1edc521088f3ae39ea28e7557516f8b51fe6421bbac",
-    "side.jpg": "d2960fef5344fefcd2b5573cba539e7868583f44e6fca636627777f5e4bbd56c",
-    "top.jpg": "5f1002148b2fc6534bf3c427eb5f0e3b8e7c8e259466dcde698983a68bdc71c6"
+    "side.jpg": "12d863f7a6f21af8b66fb5b76d31bb243da8f55aa10f28e48351e8e8ed504714",
+    "top.jpg": "13083a8d874526b385600c712cd0cb069b6edf7aad09d35f6c87115bfff5c969"
    }
   },
   {
@@ -40,8 +42,10 @@
    "preset": "clean",
    "seed": 103,
    "files": {
-    "gt.yaml": "82c75c1fcf9049da6444d90fae63101a51e6bb20ed3f0904873036a945d7b326",
-    "meta.json": "e75c089a841a5e0df44c9b52dfa2cb8036a6ab2d8db20b220f6a40ca54d5fca7",
+    "gt.yaml": "d551c293d3e492f6ee45337f1f840fbd323c576742c2b13e99b3f0583a67f723",
+    "gt_frames.json": "03037162964fe4fa219bdc04dbfb32b28c9c58319a8d991dec098e0f6dbc6f62",
+    "meta.json": "d1c8f32840bef9010d35f32e767033bec116b1ea96acd3e4a9c630db4a9e4ee1",
+    "orbit.mp4": "50e8e678a5e80b404fff83ca3e0fc0adb13195f7d31d303ff13f2e953d830d33",
     "side.jpg": "b31e70b392ee12f24a155927765a9e606640f66324ff9ebf1e3c899b8f78c13d",
     "top.jpg": "017d95df24286e63d2cc047932d573698ac94b5dcf9c26609758b84c96b6ad38"
    }
@@ -53,10 +57,12 @@
    "preset": "tilt",
    "seed": 104,
    "files": {
-    "gt.yaml": "332f2e430a3b8251dd453db829907ee011b3314e20eae9808e866de67b540d45",
-    "meta.json": "fc23340daf8528733092116285a766e8ae06c221254c48798fdaec367b1dee0d",
-    "side.jpg": "d25658dfe656e6cc180a03d3d642c9498c0d6b367a0c54a88e2f30734d48b664",
-    "top.jpg": "460fdc3751d396b95258782b754fcbd99c91e0d1b480bf18d33d3fdd96f20cc4"
+    "gt.yaml": "4b9dd62ef75222e3f778e256445d6d0f914ded9a846a2525895c468b80b532c7",
+    "gt_frames.json": "1e0889bc9f48e220296b1ce8a78544235f373c314c20fec7c3c3403b469b91d2",
+    "meta.json": "f642da162f46e49a1db0b4657335724b35e62ed055d0769e13deb86078402e9d",
+    "orbit.mp4": "be431b9b26936865ac86e51c4a304d4cf82d9fca02f16cf2bb70800b4728d1f6",
+    "side.jpg": "d16dfa77cd12ec8dec4ab76ceb0eb32eb4003747aa8f230c9f8f37ac45d52cbb",
+    "top.jpg": "ff2879d6de14f751bc8f033e9c4ac66fbe2b8f80eba729e8d3fa1957242ad67b"
    }
   },
   {
@@ -66,7 +72,7 @@
    "preset": "clean",
    "seed": 105,
    "files": {
-    "gt.yaml": "e92ea2a1f21bf4129c810a68aa7688d415af9faa843184db414b44cb02af05b2",
+    "gt.yaml": "488012b9d8bd4ca615ca2040101e8e0196439fc2aa5d5f1081aace3e38f7a8cc",
     "meta.json": "5d845dd0862c7bb8c05db37b54f6eaa84dd284fb5716b83f072ff40d160ed7be",
     "side.jpg": "a594be58c6cf1897a89d6ee6527e88fd0d070d1a001c4e75924e3e27e1a44ebc",
     "top.jpg": "15dfb0a2989649c486b7a004c37f02016bb795805fca37f2b98509690ecbdc87"
@@ -79,10 +85,10 @@
    "preset": "clean",
    "seed": 106,
    "files": {
-    "gt.yaml": "e1ffcb15b284dde0a4b0eea45784dc4b98d302695ab878b8ef348d01594ad5a7",
+    "gt.yaml": "d246967a491f39dfd771da29b7ab810f795fb7c33f33a7f8fe2b03443d879d86",
     "meta.json": "3595cf8c8ccdac5e9e3559eff57d934205c21a93789919bc15ef5a9aa8dc75e9",
-    "side.jpg": "7c8140b9e8912b58cdbabf76ab80df86f52312607ab699b994ea0fbf6cb42629",
-    "top.jpg": "41236a0f8a1f6fb8d10010d3f5484df5b06ee553e3df7ce91e7b598e437e0e3f"
+    "side.jpg": "13dc440abe49b6cccfc1a1a5e4bfa7f9d2cc81e40acd75282bf14efe69cf2dbc",
+    "top.jpg": "0b6e60998c207ded7fa824c52510433e960f55e088912519dc56fc909c15b204"
    }
   },
   {
@@ -92,10 +98,12 @@
    "preset": "paper",
    "seed": 107,
    "files": {
-    "gt.yaml": "9fc595fc99d8655cfbf5e619513d8d6e0d1094cc5025ecacec613ad21b8e9538",
-    "meta.json": "f61816923a4c34cfc99b9c82ac52d19b51eed3bee005f862f7e0309b4fb2caca",
-    "side.jpg": "1259ba9a1647a320268320fe532a63dda30dc2778dc6d7c91d77208f34a9ea9b",
-    "top.jpg": "abb94531c5ffbee803e2c7da1e1023d6593fa615211219cb2dbe09634da68301"
+    "gt.yaml": "c79535b3382cb9b7960d25becd1827a944f4237bf8538d14b681c3c39f8670fa",
+    "gt_frames.json": "39afacdb9b96471d6566b6fc3c19435d864de739a716fe8f05d956f5bf6131c3",
+    "meta.json": "6b49691d988cb0a8c2be00094430171596ab0d26f81bdf6f8d29d421db1679ac",
+    "orbit.mp4": "8768c072c88a47a4e77caf1a4470a0f3a2d045a488e8560a3cf2b082c41eca7a",
+    "side.jpg": "0c7224ac82b3fbd3352bd4eb4d4d4b83963566a0617baa688d278528e5bc4c8f",
+    "top.jpg": "3d02c8fc9730053cecd4213f9b0a456549ff4b39185bc891a980b29087dca10a"
    }
   },
   {
@@ -105,8 +113,10 @@
    "preset": "clean",
    "seed": 108,
    "files": {
-    "gt.yaml": "0f696b3be75cfe6ef4ad88130da18ece8cb2d6b0d12e266a2db639223ecec68a",
-    "meta.json": "442d02fbde41e0088dfef426f707ed1bc2e3da92a9bfe5dc7650968eb833a463",
+    "gt.yaml": "38b846fd4ace56a9eba571f99590472068c1d93c4f5bfd76b1f5c115216448bc",
+    "gt_frames.json": "7b30c83f88d697d817e758d0d3a5b557353322b987fe34f50e49f96811a262cd",
+    "meta.json": "839b13ebb8283ab2f8886e9e254b8dcbe0363e67eed01ca4013bab1400650c04",
+    "orbit.mp4": "fc77b95ab15851a1cb728c811b6e881a33f750be640d025ab24fff6578755ca7",
     "side.jpg": "0c775702ad70047c333cf84e4d7f73f495db36e08af039d4726ccd176f5c9048",
     "top.jpg": "cd45040f2d8a7f7616ab6f60a9da490acdf84ce1d5d054b6fd1ed51f983da8f1"
    }
@@ -157,10 +167,10 @@
    "preset": "glare",
    "seed": 112,
    "files": {
-    "gt.yaml": "61e8509e1d42989dd394b9e3a7c3596b4fdde1cabc5c8af8937b5fcbda44a71e",
+    "gt.yaml": "2769d78915ee37439e9f377434c20c2dddc89c4a7dd5a8d391b09cfdb8f45d26",
     "meta.json": "6319038e9885dbb94aba58adbec36795edf4e07967c96775b744bd6c614206f3",
-    "side.jpg": "624176cab90ec1ebabfda981265dc1be85f0b94ea2b446f4fac7cbaed32c6ae3",
-    "top.jpg": "dfe3f8dfe5d3707654baf77e0e412fc007aa562b53e44f21c00cecd36329e980"
+    "side.jpg": "5d25fab83407f9354d25a3932c4a5cf3fee9577c3aa3f208a062acbac7b91e7f",
+    "top.jpg": "4e3688815569af0eb0b1942137bde8c3e3a85695af14e3f150430f3b798165d1"
    }
   },
   {
@@ -174,6 +184,47 @@
     "meta.json": "6f84085a91b3cf2ebe763851530c3748ad77da9998101855582db31868b7e75d",
     "side.jpg": "f67c9aae344b53edc3e86bc862c85caef148e857de0388adf91cb8fed31453e8",
     "top.jpg": "e552e620fbb6c78cbb653465399233314bc53158f7e911234d95ff3e33bbd24b"
+   }
+  },
+  {
+   "id": "demo-broken-hook-tip",
+   "kind": "template",
+   "name": "hook",
+   "preset": "clean",
+   "seed": 121,
+   "files": {
+    "gt.yaml": "ca5bf3a2a224625a85e86b74a4d25652afb66848157dcc0005474c66bc7bd919",
+    "gt_frames.json": "fe362eb12509775ff24fefa16a38d704797a2d6fa3273d454690c719cc83514f",
+    "meta.json": "4f2207411c7934b6017d3eb30607b01e9e148d71076e58d951e72fc5b468b9f2",
+    "orbit.mp4": "77ce78de86ef91f241b87ca2eff602b921ffa1a8a4f21bbc4968b2be940daa51",
+    "side.jpg": "a33b8054b0a34cfae63ed192afb39e73b1f1609b85557d72c7f71e84135c928c",
+    "top.jpg": "e2a0118d8b8e013c80082ea66860df65e394b63e454e31f13f03d82df4472f64"
+   }
+  },
+  {
+   "id": "demo-broken-cover-tab",
+   "kind": "template",
+   "name": "battery_cover",
+   "preset": "clean",
+   "seed": 122,
+   "files": {
+    "gt.yaml": "902cf66a07b7c8203ebfb48a3259b6e5d59c879c3d1713ba69dd8cd905964d27",
+    "meta.json": "751da435d44d881e01906028c03fbc09171c7fe8cedd29b445935de5c496e83f",
+    "side.jpg": "772d457a23370c2bc320257a1fef47ba2139360e8e4e010c651a983011a57fe7",
+    "top.jpg": "6e9ba59af1caa4ec44f208f27a3a3078832ba2593f94c265207afee629517c9d"
+   }
+  },
+  {
+   "id": "demo-broken-latch-corner",
+   "kind": "template",
+   "name": "cupboard_latch",
+   "preset": "paper",
+   "seed": 123,
+   "files": {
+    "gt.yaml": "54e594a954ea00ee71fb2e50217b3c64e22c5e1c904e30fe7aa028d301e99015",
+    "meta.json": "6ac893683ae6e10e43a46a6048a5a4edce13e8be614cf3df5f76b72619eda042",
+    "side.jpg": "b7698942d7e313d427aa13c4c789d19228124373f27e6be7ecdd9218d1c23c24",
+    "top.jpg": "94f6c1e09b79709c97c7b12fd32a28d9cb16742632424d96b02a0c501d01af79"
    }
   },
   {

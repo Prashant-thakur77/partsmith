@@ -42,7 +42,7 @@ from typing import Any
 import numpy as np
 import yaml
 
-from . import charts
+from . import charts, taxonomy
 from .metrics import error_stats, rate
 from .stats import cluster_bootstrap_mean, mcnemar_paired
 
@@ -56,8 +56,18 @@ REAL_DIR = REPO / "data" / "real"
 BENCH_HOME = REPO / "var" / "bench"  # PARTSMITH_HOME of bench jobs: keeps them out of the app's job list
 BENCH_N, BENCH_N_REF, BENCH_SEED = 60, 20, 7  # the frozen synthetic bench (eval/splits.lock)
 
-SUITES = ("synthetic", "reference_objects", "real_ruler")
-GROUND_TRUTH = {"synthetic": "synthetic_exact", "reference_objects": "reference_spec", "real_ruler": "ruler"}
+SUITES = ("synthetic", "reference_objects", "real_ruler")  # dimension-scored suites (tables never merged)
+GATE_SUITES = ("control", "redteam")  # expected-outcome suites: accept / reject / refuse
+ALL_SUITES = SUITES + GATE_SUITES
+SUITES_DIR = REPO / "data" / "synthetic" / "suites"
+SUITE_SEED = 11
+GROUND_TRUTH = {
+    "synthetic": "synthetic_exact",
+    "reference_objects": "reference_spec",
+    "real_ruler": "ruler",
+    "control": "expected_outcome",
+    "redteam": "expected_outcome",
+}
 GT_NOTE = {
     "synthetic": "exact: the template mesh the photo was rendered from",
     "reference_objects": "published spec (AA cell: loose spec)",
@@ -134,6 +144,30 @@ def split_of(suite: str, sample_id: str, splits: Mapping[str, Any]) -> str:
     if sample_id in (real.get("dev") or []):
         return "dev"
     return "unassigned"
+
+
+def gate_config(configs: Sequence[str]) -> str:
+    """Control / red-team photos test the product, so they run with the headline config only."""
+    return HEADLINE_CONFIG if HEADLINE_CONFIG in configs or not configs else configs[0]
+
+
+def ensure_suite(name: str) -> Path:
+    """Render data/synthetic/suites/<name>/ when it is missing or was made by another generator version."""
+    from tools.synth import GENERATOR_VERSION
+    from tools.synth.suites import make_suite
+
+    root = SUITES_DIR / name
+    man = root / "manifest.json"
+    if man.exists():
+        m = json.loads(man.read_text())
+        if (
+            m.get("generator") == GENERATOR_VERSION
+            and m.get("seed") == SUITE_SEED
+            and all((root / e["id"] / "gt.yaml").exists() for e in m["samples"])
+        ):
+            return root
+    make_suite(name, root, seed=SUITE_SEED)
+    return root
 
 
 def ensure_bench_samples(ids: Sequence[str] | None = None) -> list[tuple[str, str, str]]:
@@ -219,6 +253,16 @@ def collect_tasks(
         if not ruler:
             notes.append("real_ruler: no real parts with ruler ground truth yet (data/real/<part>/gt.yaml)")
         plan += [("real_ruler", p.name, str(p), "real", "real", None) for p in ruler]
+    gate_plan: list[tuple[str, str, str, str, str, str | None]] = []
+    for gs in (g for g in GATE_SUITES if g in suites):
+        root = ensure_suite(gs)
+        ids = [e["id"] for e in json.loads((root / "manifest.json").read_text())["samples"]]
+        gate_plan += [(gs, sid, str(root / sid), gs, gs, None) for sid in ids]
+        notes.append(f"{gs}: {len(ids)} synthetic photos with expected outcomes, run with {gate_config(configs)} only")
+    for suite, sid, sdir, kind, preset, photo in gate_plan:
+        cfg = gate_config(configs)
+        run_dir = RUNS_DIR / mode / suite / cfg / sid
+        tasks.append(Task(suite, cfg, sid, sdir, "held_out", kind, "", preset, photo, mode, str(run_dir)))
     for cfg in configs:
         for suite, sid, sdir, kind, preset, photo in plan:
             run_dir = RUNS_DIR / mode / suite / cfg / sid
@@ -323,8 +367,15 @@ def run_task(task: Task) -> dict[str, Any]:
     code, values = job.read_text("part.py"), job.read_json("values.json") or {}
     if code:
         (out / "part_py.txt").write_text(code)  # not .py: stored programs must not be linted/imported
-    score.update(score_model(code, {k: float(v) for k, v in values.items()}, task))
-    if not score.get("pass_0_5"):
+    if task.suite == "redteam":
+        score.update(valid=bool(code), dims=[], missed=[], extra_holes=0, pass_0_3=False, pass_0_5=False)
+    else:
+        score.update(score_model(code, {k: float(v) for k, v in values.items()}, task))
+    if task.suite in GATE_SUITES:
+        score.update(gate_outcome(score, task))
+    # red-team misses are reported by the red-team table, not as build failures
+    score["failure_category"] = None if task.suite == "redteam" or gate_ok(score) else taxonomy.classify(score, events)
+    if not score.get("pass_0_5") and task.suite != "redteam":
         png = failure_overlay(events) if task.config == HEADLINE_CONFIG else None  # the gallery shows PS only
         if png is not None:
             (out / "overlay.png").write_bytes(png)
@@ -359,7 +410,8 @@ def job_summary(events: Sequence[Mapping[str, Any]]) -> dict[str, Any]:
         "strategy": summ.get("strategy"),
         "template": summ.get("template"),
         "verifier_max_error_mm": summ.get("max_error_mm"),
-        "retake_reason": summ.get("retake_reason"),
+        "retake_reason": summ.get("retake_reason") or summ.get("reason"),
+        "failed_checks": taxonomy.failed_checks(summ),
         "usd": round(sum(float(c.get("usd") or 0) for c in calls), 6),
         "tokens_in": sum(int(c.get("tokens_in") or 0) for c in calls),
         "tokens_out": sum(int(c.get("tokens_out") or 0) for c in calls),
@@ -369,6 +421,38 @@ def job_summary(events: Sequence[Mapping[str, Any]]) -> dict[str, Any]:
         "providers": providers,
         "convergence": [{"iter": i, **m} for i, m in sorted(curve.items())],
     }
+
+
+def gate_outcome(score: Mapping[str, Any], task: Task) -> dict[str, Any]:
+    """What the product did with a control / red-team photo, vs what it should have done (gt.yaml `expect`)."""
+    from tools.synth.suites import expected
+
+    exp = expected(yaml.safe_load((Path(task.sample_dir) / "gt.yaml").read_text()) or {})
+    status = str(score.get("status") or "")
+    checks = list(score.get("failed_checks") or [])
+    if status == "refused":
+        outcome = "refuse"
+    elif status == "failed" and (checks or score.get("retake_reason")):
+        outcome = "reject"  # stopped at capture / measurement with a retake reason
+    elif status in ("crashed", "no_done_event"):
+        outcome = "error"
+    else:
+        outcome = "accept"  # the job went on to build a part (verified, best effort or a failed build)
+    correct = outcome == exp.outcome and (outcome != "reject" or not exp.checks or bool(set(checks) & set(exp.checks)))
+    return {
+        "expected_outcome": exp.outcome,
+        "expected_checks": list(exp.checks),
+        "expected_why": exp.why,
+        "outcome": outcome,
+        "outcome_correct": correct,
+    }
+
+
+def gate_ok(score: Mapping[str, Any]) -> bool:
+    """A run that needs no failure category: it passed (control photos must also be accepted)."""
+    if score.get("suite") == "control":
+        return bool(score.get("outcome_correct")) and bool(score.get("pass_0_5"))
+    return bool(score.get("pass_0_5"))
 
 
 def failure_overlay(events: Sequence[Mapping[str, Any]], max_side: int = 480) -> bytes | None:
@@ -701,7 +785,81 @@ def build_tables(scores: Sequence[Mapping[str, Any]], mode: str, notes: Sequence
             "note": note,
             "mcnemar_B1_vs_PS": mcnemar_b1_ps(held),
         }
+    for gs in GATE_SUITES:
+        tables[gs] = gate_table(gs, [s for s in scores if s["suite"] == gs], mode)
     return tables
+
+
+GATE_COLUMNS = ["case", "expected", "expected_checks", "outcome", "failed_checks", "correct"]
+
+
+def gate_table(suite: str, runs: Sequence[Mapping[str, Any]], mode: str) -> dict[str, Any]:
+    """Control: share of intact parts accepted (false rejections); red-team: share handled as expected."""
+    prefix = f"{MOCK_TITLE} · " if mode == "mock" else ""
+    what = "intact parts, normal photos → accept" if suite == "control" else "photos that must be rejected or refused"
+    if not runs:
+        return {
+            "title": f"{prefix}{suite} ({what})",
+            "n": 0,
+            "ground_truth": GROUND_TRUTH[suite],
+            "ci": CI_TEXT,
+            "columns": [],
+            "rows": [],
+            "headline": {"correct_rate": None},
+            "status": "pending",
+            "mode": mode,
+            "note": f"pending: no {suite} runs stored",
+        }
+    rows = [
+        {
+            "case": r["sample_id"],
+            "expected": r.get("expected_outcome"),
+            "expected_checks": ",".join(r.get("expected_checks") or []) or "any",
+            "outcome": r.get("outcome"),
+            "failed_checks": ",".join(r.get("failed_checks") or []) or "–",
+            "correct": bool(r.get("outcome_correct")),
+        }
+        for r in sorted(runs, key=lambda x: str(x["sample_id"]))
+    ]
+    k = sum(r["correct"] for r in rows)
+    rr = rate(k, len(rows))
+    head: dict[str, Any] = {"correct": k, "n": len(rows), "correct_rate": _f(rr.rate), "ci95": _ci(rr.ci95, 2)}
+    if suite == "control":
+        fr = rate(sum(r["outcome"] != "accept" for r in rows), len(rows))
+        head["false_reject_rate"] = _f(fr.rate)
+        head["false_reject_ci95"] = _ci(fr.ci95, 2)
+        head["pass_at_0_5"] = _f(rate(sum(bool(r.get("pass_0_5")) for r in runs), len(runs)).rate)
+    else:
+        by = {o: sum(r["expected"] == o for r in rows) for o in ("reject", "refuse")}
+        head.update({f"{o}_expected": n for o, n in by.items()})
+        head.update(
+            {f"{o}_correct": sum(r["correct"] for r in rows if r["expected"] == o) for o in ("reject", "refuse")}
+        )
+    return {
+        "title": f"{prefix}{suite} ({what})",
+        "n": len(rows),
+        "ground_truth": GROUND_TRUTH[suite],
+        "ci": "95 % Wilson",
+        "columns": GATE_COLUMNS,
+        "rows": rows,
+        "headline": head,
+        "status": "ok",
+        "mode": mode,
+        "note": f"{k}/{len(rows)} handled as expected ({head['ci95']}); config {runs[0]['config']}",
+    }
+
+
+def failure_taxonomy(scores: Sequence[Mapping[str, Any]]) -> dict[str, dict[str, dict[str, int]]]:
+    """Count per failure category, per suite and config (runs without a category are not failures)."""
+    out: dict[str, dict[str, dict[str, int]]] = {}
+    for suite in dict.fromkeys(s["suite"] for s in scores):
+        if suite == "redteam":
+            continue
+        for cfg in dict.fromkeys(s["config"] for s in scores if s["suite"] == suite):
+            runs = [s for s in scores if s["suite"] == suite and s["config"] == cfg]
+            cats = [s.get("failure_category", taxonomy.classify(s)) if not gate_ok(s) else None for s in runs]
+            out.setdefault(suite, {})[cfg] = {**taxonomy.counts(cats), "runs": len(runs)}
+    return out
 
 
 def mcnemar_b1_ps(runs: Sequence[Mapping[str, Any]]) -> dict[str, Any] | None:
@@ -749,7 +907,7 @@ def failures_gallery(
     from services.common import blobs
 
     gal = out_dir / "gallery"
-    fails = [s for s in scores if not s.get("pass_0_5") and s["config"] == HEADLINE_CONFIG]
+    fails = [s for s in scores if not s.get("pass_0_5") and s["config"] == HEADLINE_CONFIG and s["suite"] in SUITES]
     fails.sort(key=lambda s: (s.get("split") != "held_out", s["suite"], s["sample_id"]))
     out: list[dict[str, Any]] = []
     for s in fails[:limit]:
@@ -859,6 +1017,8 @@ def build_report(scores: Sequence[Mapping[str, Any]], mode: str, notes: Sequence
         "failures": failures_gallery(scores, mode, out_dir),
         "charts": write_charts(scores, mode, out_dir),
         "measure_only": latest_measure_only(),
+        "failure_taxonomy": failure_taxonomy(scores),
+        "taxonomy_categories": dict(taxonomy.DESCRIPTIONS),
     }
 
 
@@ -899,6 +1059,12 @@ def to_markdown(rep: Mapping[str, Any]) -> str:
         if t["status"] != "ok":
             L.append("**pending**")
             continue
+        if suite in GATE_SUITES:
+            L.append("| " + " | ".join(GATE_COLUMNS) + " |")
+            L.append("|" + "---|" * len(GATE_COLUMNS))
+            for r in t["rows"]:
+                L.append("| " + " | ".join(str(r.get(c)) for c in GATE_COLUMNS) + " |")
+            continue
         L.append("| " + " | ".join(short) + " |")
         L.append("|" + "---|" * len(short))
         for r in t["rows"]:
@@ -913,6 +1079,19 @@ def to_markdown(rep: Mapping[str, Any]) -> str:
         for c in rep.get("charts") or []:
             if suite in c:
                 L.append(f"\n![{c}]({c})")
+    tax = rep.get("failure_taxonomy") or {}
+    if tax:
+        cats = list(taxonomy.CATEGORIES)
+        L += [
+            "",
+            "## Failure taxonomy (one category per failed run)",
+            "",
+            "| suite | config | runs | " + " | ".join(cats) + " |",
+            "|" + "---|" * (len(cats) + 3),
+        ]
+        for suite, cfgs in tax.items():
+            for cfg, c in cfgs.items():
+                L.append(f"| {suite} | {cfg} | {c['runs']} | " + " | ".join(str(c[k]) for k in cats) + " |")
     L += ["", "## Failure gallery (PS)", ""]
     if not rep["failures"]:
         L.append("None.")
@@ -934,13 +1113,45 @@ def to_markdown(rep: Mapping[str, Any]) -> str:
     return "\n".join(L)
 
 
-def write_report(rep: Mapping[str, Any], out_dir: Path) -> tuple[Path, Path]:
+def write_report(
+    rep: Mapping[str, Any],
+    out_dir: Path,
+    scores: Sequence[Mapping[str, Any]] = (),
+    seed: int | None = None,
+    *,
+    latest: bool = True,
+) -> tuple[Path, Path]:
+    """report.{json,md} + provenance.json + open_weights.json in `out_dir` (and in eval/reports/latest/ unless
+    `latest=False`, e.g. a smoke run written elsewhere with --out)."""
+    from . import open_weights, provenance
+
     jp, mp = out_dir / "report.json", out_dir / "report.md"
     jp.write_text(json.dumps(rep, indent=1) + "\n")
     mp.write_text(to_markdown(rep))
-    latest = REPORTS_DIR / "latest"
-    latest.mkdir(parents=True, exist_ok=True)
-    (latest / "report.json").write_text(json.dumps(rep, indent=1) + "\n")
+    targets = [out_dir]
+    if latest:
+        (REPORTS_DIR / "latest").mkdir(parents=True, exist_ok=True)
+        (REPORTS_DIR / "latest" / "report.json").write_text(json.dumps(rep, indent=1) + "\n")
+        targets.append(REPORTS_DIR / "latest")
+    run_dirs = [RUNS_DIR / str(s.get("mode")) / s["suite"] / s["config"] / s["sample_id"] for s in scores]
+    calls = open_weights.read_model_calls(run_dirs)
+    prov = provenance.build(
+        report="eval/run.py",
+        mode=str(rep["mode"]),
+        model_calls=calls,
+        seeds={"synthetic_bench": BENCH_SEED, "subset": seed, "suites": SUITE_SEED},
+        extra={"configs": rep.get("configs"), "n_runs": len(scores)},
+    )
+    provenance.write(prov, *(t / "provenance.json" for t in targets))
+    rows = {k: t.get("rows") or [] for k, t in rep["tables"].items() if k in SUITES}
+    ow = {
+        "generated_at": rep["generated_at"],
+        "git_sha": rep.get("git_sha"),
+        "mode": rep["mode"],
+        **open_weights.build(calls, rows),
+    }
+    for p in (t / "open_weights.json" for t in targets):
+        p.write_text(json.dumps(ow, indent=1) + "\n")
     return jp, mp
 
 
@@ -1012,7 +1223,7 @@ def live_ready() -> str | None:
 
 def main(argv: Sequence[str] | None = None) -> int:
     ap = argparse.ArgumentParser(prog="python -m eval.run", description="PartSmith-Bench: full loop vs ground truth.")
-    ap.add_argument("--suite", action="append", choices=SUITES, help="repeatable; default all")
+    ap.add_argument("--suite", action="append", choices=ALL_SUITES, help="repeatable; default all")
     ap.add_argument("--configs", default=None, help=f"comma list from {', '.join(CONFIGS)}")
     ap.add_argument("--limit", type=int, default=None, help="synthetic samples (seeded subset; 0 = all 60)")
     ap.add_argument("--n-ref", type=int, default=None, help="reference-object renders (default: 4 in mock, all live)")
@@ -1043,7 +1254,7 @@ def main(argv: Sequence[str] | None = None) -> int:
             if why:
                 print(f"refusing --live: {why}", file=sys.stderr)
                 return 2
-        suites = a.suite or list(SUITES)
+        suites = a.suite or list(ALL_SUITES)
         default_cfgs = list(CONFIGS) if a.live else list(MOCK_CONFIGS)
         cfgs = [c.strip() for c in a.configs.split(",")] if a.configs else default_cfgs
         unknown = [c for c in cfgs if c not in CONFIGS]
@@ -1066,10 +1277,20 @@ def main(argv: Sequence[str] | None = None) -> int:
         scores = run_tasks(tasks, jobs=a.jobs, live=a.live)
     out = a.out or REPORTS_DIR / dt.date.today().isoformat()
     rep = build_report(scores, mode, notes, out)
-    jp, mp = write_report(rep, out)
+    jp, mp = write_report(rep, out, scores, a.seed, latest=a.out is None)
     for suite, t in rep["tables"].items():
         if t["status"] != "ok":
             print(f"{suite:18s} pending — {t['note']}")
+            continue
+        if suite in GATE_SUITES:
+            h = t["headline"]
+            extra = f"  false rejects {h['false_reject_rate']}" if suite == "control" else ""
+            print(f"{suite:18s} handled as expected {h['correct']}/{h['n']} {h['ci95']}{extra}")
+            for r in t["rows"]:
+                if not r["correct"]:
+                    print(
+                        f"{'':18s}   ✗ {r['case']}: expected {r['expected']} ({r['expected_checks']}), got {r['outcome']} ({r['failed_checks']})"
+                    )
             continue
         for r in t["rows"]:
             print(
@@ -1080,8 +1301,14 @@ def main(argv: Sequence[str] | None = None) -> int:
             )
     if mode == "mock":
         print(f"NOTE: {MOCK_TITLE}")
+    for suite, cfgs in rep["failure_taxonomy"].items():
+        for cfg, c in cfgs.items():
+            nz = {k: v for k, v in c.items() if k != "runs" and v}
+            if nz:
+                print(f"failures {suite}/{cfg}: " + ", ".join(f"{k} {v}" for k, v in nz.items()))
     print(
-        f"wrote {jp.relative_to(REPO) if jp.is_relative_to(REPO) else jp}, {mp.name}, eval/reports/latest/report.json"
+        f"wrote {jp.relative_to(REPO) if jp.is_relative_to(REPO) else jp}, {mp.name}, provenance.json, "
+        "open_weights.json" + (" (+ eval/reports/latest/)" if a.out is None else "")
     )
     if a.write_baseline:
         BASELINE.write_text(json.dumps(baseline_from(rep), indent=1) + "\n")

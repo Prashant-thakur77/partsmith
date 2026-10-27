@@ -11,6 +11,7 @@
   "augmentations": [
     "clean",
     "surface:screen",
+    "video:orbit",
     "stage:light"
   ],
   "seed": 101

@@ -1,0 +1,86 @@
+{
+ "suite": "redteam",
+ "config": "PS",
+ "sample_id": "rt-two-parts",
+ "split": "held_out",
+ "kind": "redteam",
+ "preset": "redteam",
+ "mode": "mock",
+ "gt_source": "expected_outcome",
+ "status": "verified",
+ "verified": true,
+ "iterations": 4,
+ "iterations_to_converge": 4,
+ "strategy": "free_code",
+ "template": "clip",
+ "verifier_max_error_mm": 0.13672477048089005,
+ "retake_reason": null,
+ "failed_checks": [],
+ "usd": 0.0,
+ "tokens_in": 0,
+ "tokens_out": 0,
+ "model_calls": 33,
+ "model_ms": 210,
+ "provider_modes": [
+  "mock"
+ ],
+ "providers": {
+  "segment": [
+   "mock:sam-3.1"
+  ],
+  "understand": [
+   "mock:muse-spark-1.3"
+  ],
+  "plan": [
+   "mock:meta-models/muse-spark-open"
+  ],
+  "build": [
+   "mock:meta-models/muse-spark-open"
+  ],
+  "fix_agent": [
+   "mock:meta-models/muse-spark-open"
+  ],
+  "judge": [
+   "mock:muse-glimmer"
+  ]
+ },
+ "convergence": [
+  {
+   "iter": 1,
+   "hausdorff_mm": 2.0403014866364884,
+   "iou": 0.8346949891067538,
+   "max_error_mm": 2.0403014866364884
+  },
+  {
+   "iter": 2,
+   "hausdorff_mm": 1.040450024218558,
+   "iou": 0.9516360885190089,
+   "max_error_mm": 1.2109999999999985
+  },
+  {
+   "iter": 3,
+   "hausdorff_mm": 0.47446129034032414,
+   "iou": 0.9779121846648547,
+   "max_error_mm": 0.6099999999999994
+  },
+  {
+   "iter": 4,
+   "hausdorff_mm": 0.13672477048089005,
+   "iou": 0.9937667817414653,
+   "max_error_mm": 0.13672477048089005
+  }
+ ],
+ "wall_s": 19.65,
+ "valid": true,
+ "dims": [],
+ "missed": [],
+ "extra_holes": 0,
+ "pass_0_3": false,
+ "pass_0_5": false,
+ "expected_outcome": "reject",
+ "expected_checks": [],
+ "expected_why": "one part per photo, otherwise the measurement mixes them",
+ "outcome": "accept",
+ "outcome_correct": false,
+ "failure_category": null
+}

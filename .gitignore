@@ -26,3 +26,4 @@ apps/web/out/
 *.tsbuildinfo
 .DS_Store
 data/synthetic/bench/
+data/synthetic/suites/

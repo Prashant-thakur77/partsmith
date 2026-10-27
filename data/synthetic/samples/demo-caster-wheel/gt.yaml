@@ -6,7 +6,7 @@ name: caster_wheel
 template: caster_wheel
 reference_object: null
 params: {bore_d: 7.3, diameter: 62.3, edge_fillet: 2.5, hub_d: 19.1, rim_thickness: 5.6, spoke_count: 5.0, tread_width: 14.9}
-code_sha: fb678f8087346c0095a987600c3f269e91e3ee072608784907b32d1ca13468c6
+code_sha: 0b79e548f279c63316b145964b3275d93a5a9128a6698da5040d8180c1b6423c
 mat_id: screen-l
 units: mm
 dims:
@@ -43,6 +43,9 @@ dims:
   center_mat_mm: [125.567823, 110.260895]
   center_cad_mm: [17.55, 0.0]
 - {name: thickness, view: side, value_mm: 14.9}
+- {name: length, view: orbit, value_mm: 62.292022}
+- {name: width, view: orbit, value_mm: 62.290524}
+- {name: height, view: orbit, value_mm: 14.9}
 info: {height_mm: 14.9, side_length_mm: 62.3, user_thickness_mm: 15.0, dim_definitions: 'length/width: min-area rectangle
     of the orthographic top footprint; hole_k.diameter: see-through openings from above; thickness: short side of the side-view
     footprint'}
@@ -115,5 +118,29 @@ views:
       glare: false
       moire_amp: 0.0
       exposure: 1.0
+  orbit:
+    video: orbit.mp4
+    frames_file: gt_frames.json
+    encoder: ffmpeg/libx264
+    fps: 15
+    n_frames: 106
+    duration_s: 7.1
+    size: [1920, 1080]
+    sweep_deg: -133.167
+    tilt_deg: [26.824, 45.168]
+    distance_mm: [284.124, 247.805]
+    focal35_mm: 24.9148
+    placement:
+      center_mm: [101.4447, 101.7257]
+      yaw_deg: 152.7002
+    cad_to_mat:
+    - [-0.888619, -0.458646, 0.0, 101.4447]
+    - [-0.458646, 0.888619, 0.0, 101.7257]
+    - [0.0, 0.0, -1.0, 0.0]
+    - [0.0, 0.0, 0.0, 1.0]
+    look:
+      surface: screen
+      stage: light
+      part_bgr: [40, 42, 185]
 generator: {version: synth-2, seed: 103, preset: clean}
 stage: light

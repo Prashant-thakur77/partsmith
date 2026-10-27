@@ -5,9 +5,9 @@ kind: template
 name: cable_clip
 template: cable_clip
 reference_object: null
-params: {base_thickness: 2.4, cable_d: 6.1, channel_count: 3.0, hole_count: 2.0, hole_d: 3.2, length: 34.3, opening: 0.68,
-  wall: 1.8, width: 11.5}
-code_sha: f98c8764ff9f077d6da883236abcf56a8b5b3316248cab14cbb566e6d4bcabce
+params: {base_thickness: 2.4, cable_d: 6.1, channel_count: 3.0, channel_gap: 0.9, hole_count: 2.0, hole_d: 3.6, length: 34.3,
+  opening: 0.68, wall: 1.8, width: 11.5}
+code_sha: 9ce73360b59174402aa751c7d6fc631c048fcc70875d17db82b99aa4b42d0b33
 mat_id: paper-a4
 units: mm
 dims:
@@ -15,84 +15,84 @@ dims:
 - {name: width, view: top, value_mm: 11.5}
 - name: hole_1.diameter
   view: top
-  value_mm: 3.2
-  center_mat_mm: [114.710281, 178.496383]
-  center_cad_mm: [-12.95, 0.0]
+  value_mm: 3.6
+  center_mat_mm: [138.951294, 69.605453]
+  center_cad_mm: [-12.65, 0.0]
 - name: hole_2.diameter
   view: top
-  value_mm: 3.2
-  center_mat_mm: [90.044719, 186.397017]
-  center_cad_mm: [12.95, 0.0]
-- {name: thickness, view: side, value_mm: 4.488596}
-info: {height_mm: 4.488596, side_length_mm: 34.3, user_thickness_mm: 2.5, dim_definitions: 'length/width: min-area rectangle
+  value_mm: 3.6
+  center_mat_mm: [117.448706, 82.936947]
+  center_cad_mm: [12.65, 0.0]
+- {name: thickness, view: side, value_mm: 4.286388}
+info: {height_mm: 4.286388, side_length_mm: 34.3, user_thickness_mm: 2.5, dim_definitions: 'length/width: min-area rectangle
     of the orthographic top footprint; hole_k.diameter: see-through openings from above; thickness: short side of the side-view
     footprint'}
 views:
   top:
     image: top.jpg
     placement:
-      center_mm: [102.3775, 182.4467]
-      yaw_deg: 197.7608
+      center_mm: [128.2, 76.2712]
+      yaw_deg: 211.7987
     cad_to_mat:
-    - [-0.952338, 0.305044, 0.0, 102.3775]
-    - [0.305044, 0.952338, 0.0, 182.4467]
+    - [-0.849905, 0.526937, 0.0, 128.2]
+    - [0.526937, 0.849905, 0.0, 76.2712]
     - [0.0, 0.0, -1.0, 0.0]
     - [0.0, 0.0, 0.0, 1.0]
-    part_height_mm: 4.488596
+    part_height_mm: 4.286388
     camera:
       K:
-      - [1429.754031, 0.0, 999.5]
-      - [0.0, 1429.754031, 749.5]
+      - [1536.316839, 0.0, 999.5]
+      - [0.0, 1536.316839, 749.5]
       - [0.0, 0.0, 1.0]
       R:
-      - [0.668742, -0.742212, 0.043658]
-      - [0.734106, 0.66846, 0.11937]
-      - [-0.117781, -0.047778, 0.99189]
-      t_mm: [37.723715, -144.293901, 367.986535]
+      - [0.4476, 0.892909, 0.048659]
+      - [-0.889646, 0.439139, 0.125245]
+      - [0.090465, -0.099349, 0.990932]
+      t_mm: [-159.209401, 30.129569, 410.248821]
       size: [2000, 1500]
-      height_mm: 349.425
-      tilt_deg: 7.302
-      focal35_mm: 24.7442
-      exif_focal35_mm: 25
+      height_mm: 402.555
+      tilt_deg: 7.722
+      focal35_mm: 26.5885
+      exif_focal35_mm: 27
     look:
       surface: paper
       stage: light
-      part_bgr: [62, 138, 52]
-      blur_px: 0.408
+      part_bgr: [30, 30, 32]
+      blur_px: 0.366
       glare: false
       moire_amp: 0.0
       exposure: 1.0
   side:
     image: side.jpg
     placement:
-      center_mm: [98.1434, 149.2007]
-      yaw_deg: 123.7769
+      center_mm: [110.755, 39.6776]
+      yaw_deg: 188.5171
     cad_to_mat:
-    - [-0.555961, -0.831209, 0.0, 98.1434]
-    - [-0.831209, 0.555961, 0.0, 149.2007]
+    - [-0.988972, 0.148105, 0.0, 110.755]
+    - [0.148105, 0.988972, 0.0, 39.6776]
     - [0.0, 0.0, -1.0, 0.0]
     - [0.0, 0.0, 0.0, 1.0]
     part_height_mm: 11.5
     camera:
       K:
-      - [1416.776363, 0.0, 999.5]
-      - [0.0, 1416.776363, 749.5]
+      - [1535.278712, 0.0, 999.5]
+      - [0.0, 1535.278712, 749.5]
       - [0.0, 0.0, 1.0]
       R:
-      - [-0.309442, 0.950902, -0.005539]
-      - [-0.948131, -0.308084, 0.07831]
-      - [0.072758, 0.029484, 0.996914]
-      t_mm: [-84.721716, 126.29835, 331.820363]
+      - [-0.793005, -0.608742, 0.02402]
+      - [0.608799, -0.793304, -0.005689]
+      - [0.022518, 0.010112, 0.999695]
+      t_mm: [159.084385, 35.145621, 381.44656]
       size: [2000, 1500]
-      height_mm: 341.156
-      tilt_deg: 4.503
-      focal35_mm: 24.5196
-      exif_focal35_mm: 25
+      height_mm: 384.952
+      tilt_deg: 1.414
+      focal35_mm: 26.5705
+      exif_focal35_mm: 27
     look:
       surface: paper
       stage: light
-      part_bgr: [62, 138, 52]
-      blur_px: 0.441
+      part_bgr: [52, 52, 55]
+      blur_px: 0.39
       glare: false
       moire_amp: 0.0
       exposure: 1.0

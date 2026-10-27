@@ -1,0 +1,16 @@
+{
+  "id": "demo-broken-latch-corner",
+  "title": "Cupboard turn-button latch \u2014 broken (synthetic, paper)",
+  "kind": "template",
+  "origin": "synthetic",
+  "mat_id": "paper-a4",
+  "family_hint": "latch",
+  "intent": "Make a replacement for this broken cupboard turn-button latch: a corner cracked off.",
+  "user_thickness_mm": 5.0,
+  "difficulty": "easy",
+  "augmentations": [
+    "paper",
+    "broken:corner"
+  ],
+  "seed": 123
+}

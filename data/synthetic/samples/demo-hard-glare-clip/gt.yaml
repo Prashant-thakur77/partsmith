@@ -7,7 +7,7 @@ template: clip
 reference_object: null
 params: {arm_height: 9.2, arm_thickness: 2.0, corner_radius: 1.6, hole_d: 4.45, hook_overhang: 1.1, length: 33.4, rib_count: 3.0,
   thickness: 2.1, width: 14.0}
-code_sha: fa4f27dbfd12e338b12c5554f9a920a07a4a0094774a64abb808fc8e83e6476b
+code_sha: 9c94c94e4f9492b89df5e579a3eca4da4698dd7a95dbcffdfadcea4592888eeb
 mat_id: screen-m
 units: mm
 dims:
@@ -16,8 +16,8 @@ dims:
 - name: hole_1.diameter
   view: top
   value_mm: 4.45
-  center_mat_mm: [111.936722, 88.483359]
-  center_cad_mm: [-11.36, 0.0]
+  center_mat_mm: [111.656484, 88.590441]
+  center_cad_mm: [-11.66, 0.0]
 - {name: thickness, view: side, value_mm: 11.3}
 info: {height_mm: 11.3, side_length_mm: 33.4, user_thickness_mm: 2.0, dim_definitions: 'length/width: min-area rectangle of
     the orthographic top footprint; hole_k.diameter: see-through openings from above; thickness: short side of the side-view

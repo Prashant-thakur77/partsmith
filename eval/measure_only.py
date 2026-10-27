@@ -841,10 +841,19 @@ def to_markdown(rep: Mapping[str, Any]) -> str:
 
 
 def write_report(rep: Mapping[str, Any], out_dir: Path) -> tuple[Path, Path]:
+    from . import provenance
+
     out_dir.mkdir(parents=True, exist_ok=True)
     jp, mp = out_dir / "measure_only.json", out_dir / "measure_only.md"
     jp.write_text(json.dumps(rep, indent=1, default=float) + "\n")
     mp.write_text(to_markdown(rep))
+    prov = provenance.build(
+        report="eval/measure_only.py",
+        mode="deterministic (threshold segmenter, no model calls)",
+        seeds={"synthetic_bench": (rep.get("synthetic_manifest") or {}).get("seed")},
+        extra={"gate_threshold_mean_mm": GATE_MEAN_MM, "synthetic_manifest": rep.get("synthetic_manifest")},
+    )
+    provenance.write(prov, out_dir / "measure_only.provenance.json")
     return jp, mp
 
 

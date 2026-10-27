@@ -1,0 +1,109 @@
+{
+ "suite": "control",
+ "config": "PS",
+ "sample_id": "ctl-spacer-s435219",
+ "split": "held_out",
+ "kind": "control",
+ "preset": "control",
+ "mode": "mock",
+ "gt_source": "expected_outcome",
+ "status": "verified",
+ "verified": true,
+ "iterations": 3,
+ "iterations_to_converge": 3,
+ "strategy": "free_code",
+ "template": "spacer",
+ "verifier_max_error_mm": 0.11168314721962691,
+ "retake_reason": null,
+ "failed_checks": [],
+ "usd": 0.0,
+ "tokens_in": 0,
+ "tokens_out": 0,
+ "model_calls": 22,
+ "model_ms": 166,
+ "provider_modes": [
+  "mock"
+ ],
+ "providers": {
+  "segment": [
+   "mock:sam-3.1"
+  ],
+  "understand": [
+   "mock:muse-spark-1.3"
+  ],
+  "segment_points": [
+   "mock:sam-3.1"
+  ],
+  "plan": [
+   "mock:meta-models/muse-spark-open"
+  ],
+  "build": [
+   "mock:meta-models/muse-spark-open"
+  ],
+  "fix_agent": [
+   "mock:meta-models/muse-spark-open"
+  ],
+  "judge": [
+   "mock:muse-glimmer"
+  ]
+ },
+ "convergence": [
+  {
+   "iter": 1,
+   "hausdorff_mm": 0.638410775175411,
+   "iou": 0.7823529411764706,
+   "max_error_mm": 0.8140000000000001
+  },
+  {
+   "iter": 2,
+   "hausdorff_mm": 0.5097496299688756,
+   "iou": 0.8517536103743,
+   "max_error_mm": 0.5097496299688756
+  },
+  {
+   "iter": 3,
+   "hausdorff_mm": 0.11168314721962691,
+   "iou": 0.970615243342516,
+   "max_error_mm": 0.11168314721962691
+  }
+ ],
+ "wall_s": 5.91,
+ "dims": [
+  {
+   "name": "length",
+   "gt_mm": 8.799976,
+   "model_mm": 8.768,
+   "error_mm": -0.032
+  },
+  {
+   "name": "width",
+   "gt_mm": 7.848628,
+   "model_mm": 7.8481,
+   "error_mm": -0.0005
+  },
+  {
+   "name": "thickness",
+   "gt_mm": 8.5,
+   "model_mm": 8.5,
+   "error_mm": 0.0
+  },
+  {
+   "name": "hole_1.diameter",
+   "gt_mm": 4.25,
+   "model_mm": 4.19,
+   "error_mm": -0.06
+  }
+ ],
+ "missed": [],
+ "extra_holes": 0,
+ "pass_0_3": true,
+ "pass_0_5": true,
+ "valid": true,
+ "valid_reason": "",
+ "expected_outcome": "accept",
+ "expected_checks": [],
+ "expected_why": "intact part, normal photo",
+ "outcome": "accept",
+ "outcome_correct": true,
+ "failure_category": null
+}

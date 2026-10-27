@@ -17,6 +17,7 @@ import hashlib
 import io
 import json
 import math
+import shutil
 from collections.abc import Mapping, Sequence
 from dataclasses import asdict, dataclass, field
 from pathlib import Path
@@ -102,6 +103,7 @@ class SampleSpec:
     sample_id: str | None = None
     title: str | None = None
     stage: str | None = None  # screen stage "light" | "dark"; None = the preset's default (dark for white-part)
+    broken: str | None = None  # template parts only: "tip" | "tab" | "corner" (GT stays the intact part)
 
 
 @dataclass(frozen=True)
@@ -147,7 +149,8 @@ class SampleMeta:
 @dataclass(frozen=True)
 class Sample:
     meta: SampleMeta
-    photos: dict[str, bytes]  # view -> JPEG bytes
+    photos: dict[str, bytes]  # view -> JPEG bytes (top, side, mating)
+    videos: dict[str, Path] = field(default_factory=dict)  # view -> clip path (orbit.mp4)
 
 
 @dataclass(frozen=True)
@@ -463,6 +466,62 @@ def default_sample_id(spec: SampleSpec, seed: int) -> str:
     return f"{prefix}-{spec.name.replace('_', '-')}-{spec.preset}-s{seed}"
 
 
+def _render_orbit_view(
+    spec: SampleSpec, part: _Part, mat_id: str, surface: Surface, stage: str, seed: int, folder: Path
+) -> dict[str, Any]:
+    """Render `orbit.mp4` + `gt_frames.json` (per-frame K, R, t) into `folder`; return the gt.yaml view entry. Uses its
+    own random stream, so adding an orbit never changes the stills of the same sample."""
+    from . import orbit as O
+
+    orng = np.random.default_rng(np.random.SeedSequence([int(seed), 0x0B1]))
+    mat = get_mat(mat_id)
+    v_cad = part.mesh.vertices
+    pl = place(_hull_xy(v_cad), mat, orng, _margin(float(v_cad[:, 2].max())))
+    if pl is None:
+        raise ValueError(f"{spec.name}: orbit view does not fit mat {mat_id}")
+    plan = O.sample_plan(orng)
+    look = sample_look(spec.preset, surface, mat_id, orng, stage)
+    if part.ref is not None and spec.preset != "white-part":
+        look.part_bgr = _bgr(part.ref.colour_bgr)
+    look.face_bgr = _face_colours(part, look, v_cad[part.mesh.faces].mean(axis=1))
+    cams = O.orbit_cameras(plan, pl.center_mm, orng)
+    frames = O.render_orbit(mat_id, cams, pl.apply(v_cad), part.mesh.faces, look, orng, pl.center_mm)
+    encoder = O.encode_mp4(frames, plan.fps, plan.size, folder / "orbit.mp4")
+    per_frame = [
+        {"i": i, "t_s": _r(i / plan.fps, 4), "K": _mat_list(c.K), "R": _mat_list(c.R), "t_mm": [_r(x) for x in c.t]}
+        for i, c in enumerate(cams)
+    ]
+    (folder / "gt_frames.json").write_text(
+        json.dumps(
+            {
+                "origin": "synthetic",
+                "gt_source": "synthetic_exact",
+                "fps": plan.fps,
+                "size": list(plan.size),
+                "cad_to_mat": _mat_list(pl.matrix()),
+                "frames": per_frame,
+            }
+        )
+        + "\n"
+    )
+    return {
+        "video": "orbit.mp4",
+        "frames_file": "gt_frames.json",
+        "encoder": encoder,
+        "fps": plan.fps,
+        "n_frames": plan.n_frames,
+        "duration_s": plan.duration_s,
+        "size": list(plan.size),
+        "sweep_deg": _r(plan.sweep_deg, 3),
+        "tilt_deg": [_r(x, 3) for x in plan.tilt_deg],
+        "distance_mm": [_r(x, 3) for x in plan.distance_mm],
+        "focal35_mm": _r(plan.focal35_mm, 4),
+        "placement": {"center_mm": [_r(c) for c in pl.center_mm], "yaw_deg": _r(pl.yaw_deg)},
+        "cad_to_mat": _mat_list(pl.matrix()),
+        "look": {"surface": look.surface, "stage": stage, "part_bgr": [round(c) for c in look.part_bgr]},
+    }
+
+
 def generate_sample(spec: SampleSpec, out_dir: str | Path, *, seed: int) -> Path:
     """Render one sample into `out_dir/<sample_id>/` (top.jpg, optional side.jpg, meta.json, gt.yaml); return that
     folder. Deterministic from `seed`."""
@@ -470,6 +529,22 @@ def generate_sample(spec: SampleSpec, out_dir: str | Path, *, seed: int) -> Path
         raise ValueError(f"unknown preset {spec.preset!r} (known: {', '.join(PRESETS)})")
     rng = np.random.default_rng(np.random.SeedSequence([int(seed), 0x5E7]))
     part = _resolve_part(spec, rng)
+    intact = part.mesh
+    brk: Any = None
+    if spec.broken is not None:
+        if spec.kind != "template" or part.template is None:
+            raise ValueError("only template parts can be broken")
+        from services.agent.templates import get_template
+
+        from . import broken as B
+
+        brk = B.plan_break(spec.broken, intact, np.random.default_rng(np.random.SeedSequence([int(seed), 0xB2])))
+        part.mesh = B.broken_mesh(get_template(part.template).code, dict(intact.params), brk)
+        part.title = f"{part.title} — broken"
+        part.intent = (
+            f"Make a replacement for this broken {get_template(part.template).title.lower()}: {brk.description}."
+        )
+    want_orbit = "orbit" in spec.views
     views = [v for v in spec.views if v in ("top", "side")]
     if "top" not in views:
         views.insert(0, "top")
@@ -495,8 +570,13 @@ def generate_sample(spec: SampleSpec, out_dir: str | Path, *, seed: int) -> Path
         raise ValueError(f"{spec.name}: the part does not fit any {surface} mat stage")
     mat = get_mat(mat_id)
     sample_id = spec.sample_id or default_sample_id(spec, seed)
-    folder = Path(out_dir) / sample_id
-    folder.mkdir(parents=True, exist_ok=True)
+    final = Path(out_dir) / sample_id
+    # render into a hidden staging folder and swap it in at the end: a crashed or killed render never leaves a
+    # half-written sample (no meta.json, missing clip) where readers look
+    folder = Path(out_dir) / f".{sample_id}.partial"
+    if folder.exists():
+        shutil.rmtree(folder)
+    folder.mkdir(parents=True)
 
     faces = part.mesh.faces
     tilt_range = (12.0, 18.0) if spec.preset == "tilt" else (0.0, 8.0)
@@ -552,9 +632,9 @@ def generate_sample(spec: SampleSpec, out_dir: str | Path, *, seed: int) -> Path
         (float(gt_views["top"]["placement"]["center_mm"][0]), float(gt_views["top"]["placement"]["center_mm"][1])),
         float(gt_views["top"]["placement"]["yaw_deg"]),
     )
-    for name, val in G.top_dims(part.mesh).items():
+    for name, val in G.top_dims(intact).items():
         dims.append({"name": name, "view": "top", "value_mm": _r(val)})
-    for hole in G.visible_holes(part.mesh):
+    for hole in G.visible_holes(intact):
         c = top_pl.apply_xy(np.array([hole.center_cad_mm]))[0]
         dims.append(
             {
@@ -565,11 +645,20 @@ def generate_sample(spec: SampleSpec, out_dir: str | Path, *, seed: int) -> Path
                 "center_cad_mm": [_r(x) for x in hole.center_cad_mm],
             }
         )
-    sd = G.side_dims(part.mesh)
+    sd = G.side_dims(intact)
     if "side" in views:
         dims.append({"name": "thickness", "view": "side", "value_mm": _r(sd["thickness"])})
+    if want_orbit:
+        gt_views["orbit"] = _render_orbit_view(spec, part, mat_id, surface, stage, seed, folder)
+        for name, val in G.top_dims(intact).items():
+            dims.append({"name": name, "view": "orbit", "value_mm": _r(val)})
+        dims.append({"name": "height", "view": "orbit", "value_mm": _r(intact.height_mm)})
 
     preset_augs = [spec.preset] + ([f"surface:{surface}"] if spec.preset != "paper" else [])
+    if want_orbit:
+        preset_augs.append("video:orbit")
+    if brk is not None:
+        preset_augs.append(f"broken:{brk.kind}")
     if surface == "screen":
         preset_augs.append(f"stage:{stage}")  # the user picked the stage in the app
     meta = SampleMeta(
@@ -593,13 +682,13 @@ def generate_sample(spec: SampleSpec, out_dir: str | Path, *, seed: int) -> Path
         "name": spec.name,
         "template": part.template,
         "reference_object": part.ref.key if part.ref else None,
-        "params": {k: _r(v) for k, v in sorted(part.mesh.params.items())},
-        "code_sha": part.mesh.code_sha,
+        "params": {k: _r(v) for k, v in sorted(intact.params.items())},
+        "code_sha": intact.code_sha,
         "mat_id": mat_id,
         "units": "mm",
         "dims": dims,
         "info": {
-            "height_mm": _r(part.mesh.height_mm),
+            "height_mm": _r(intact.height_mm),
             "side_length_mm": _r(sd["side_length"]),
             "user_thickness_mm": part.user_thickness_mm,
             "dim_definitions": "length/width: min-area rectangle of the orthographic top footprint; "
@@ -609,6 +698,26 @@ def generate_sample(spec: SampleSpec, out_dir: str | Path, *, seed: int) -> Path
         "generator": {"version": GENERATOR_VERSION, "seed": int(seed), "preset": spec.preset},
         "stage": stage,
     }
+    if brk is not None:
+        from . import broken as B
+
+        removed = B.removed_footprint(intact, brk)
+        top_place = G.Placement(top_pl.center_mm, top_pl.yaw_deg)
+        ring = np.asarray(removed.exterior.coords)[:-1] if not removed.is_empty else np.zeros((0, 2))
+        gt["broken"] = {
+            "kind": brk.kind,
+            "description": brk.description,
+            "intact": "dims, params and info describe the INTACT part; the photos show it broken",
+            "cutter_polygon_cad_mm": [[_r(x, 4), _r(y, 4)] for x, y in brk.polygon_cad_mm],
+            "z_range_mm": [_r(brk.z_range_mm[0], 4), _r(brk.z_range_mm[1], 4)],
+            "removed_footprint_cad_mm": [[_r(x, 4), _r(y, 4)] for x, y in ring],
+            "removed_footprint_mat_mm": [[_r(x, 4), _r(y, 4)] for x, y in top_place.apply_xy(ring)]
+            if len(ring)
+            else [],
+            "removed_area_ratio": _r(B.area_ratio(removed, intact), 4),
+            "broken_dims": {k: _r(v) for k, v in G.top_dims(part.mesh).items()},
+            "broken_height_mm": _r(part.mesh.height_mm),
+        }
     if spec.preset in EXPECT_REJECT_PRESETS:
         gt["expect"] = {"capture_gate": "reject", "check": "contrast", "why": "light part on the light stage"}
     if part.ref is not None:
@@ -619,12 +728,12 @@ def generate_sample(spec: SampleSpec, out_dir: str | Path, *, seed: int) -> Path
         }
     for fname, data in files.items():
         (folder / fname).write_bytes(data)
-    for stale in ("top.jpg", "side.jpg"):
-        if stale not in files and (folder / stale).exists():
-            (folder / stale).unlink()
-    (folder / "meta.json").write_text(json.dumps(meta.to_dict(), indent=2) + "\n")
     (folder / "gt.yaml").write_text(yaml.safe_dump(gt, sort_keys=False, width=120, default_flow_style=None))
-    return folder
+    (folder / "meta.json").write_text(json.dumps(meta.to_dict(), indent=2) + "\n")
+    if final.exists():
+        shutil.rmtree(final)
+    folder.rename(final)
+    return final
 
 
 # ---------------------------------------------------------------- datasets
@@ -643,10 +752,12 @@ def dataset_specs(
     size: tuple[int, int] = (3000, 2250),
     jpeg_quality: int = 90,
     n_reject: int = 0,
+    n_orbit: int = 0,
 ) -> list[tuple[SampleSpec, int]]:
     """The (spec, seed) list `make_dataset` renders: templates round-robin in a seed-shuffled order, presets cycled
     (default: the eight bench presets), then reference objects round-robin, then `n_reject` white-on-light template
-    photos the capture gate should reject. Pure: no rendering. Adding reject samples never changes the others."""
+    photos the capture gate should reject, then `n_orbit` template samples with a walk-around clip (top photo + orbit).
+    Pure: no rendering. Adding reject or orbit samples never changes the others."""
     from services.agent.templates import list_templates
 
     pres = list(presets or BENCH_PRESETS)
@@ -654,7 +765,7 @@ def dataset_specs(
     if bad:
         raise ValueError(f"unknown presets {bad}")
     rng = np.random.default_rng(np.random.SeedSequence([int(seed), 0xB3]))
-    seeds = [int(s) for s in np.random.SeedSequence(int(seed)).generate_state(n + n_reference + n_reject)]
+    seeds = [int(s) for s in np.random.SeedSequence(int(seed)).generate_state(n + n_reference + n_reject + n_orbit)]
     names = [t.name for t in list_templates()]
     order = [names[i] for i in rng.permutation(len(names))]
     p_off = int(rng.integers(len(pres)))
@@ -680,6 +791,17 @@ def dataset_specs(
             "template", order[(k + 3) % len(order)], "white-on-light", size=size, jpeg_quality=jpeg_quality
         )
         out.append((spec, seeds[n + n_reference + k] % 1_000_000))
+    orbit_presets = ("clean", "tilt", "paper", "low-light", "blur", "glare")
+    for k in range(n_orbit):
+        spec = SampleSpec(
+            "template",
+            order[(k + 5) % len(order)],
+            orbit_presets[k % len(orbit_presets)],
+            views=("top", "orbit"),
+            size=size,
+            jpeg_quality=jpeg_quality,
+        )
+        out.append((spec, seeds[n + n_reference + n_reject + k] % 1_000_000))
     return out
 
 
@@ -695,6 +817,7 @@ def make_dataset(
     jobs: int = 1,
     progress: bool = False,
     n_reject: int = 0,
+    n_orbit: int = 0,
 ) -> dict[str, Any]:
     """Render `n` template samples (+ `n_reference` reference-object samples) into `out_root` and write
     `out_root/manifest.json` (seeds + sha256 of every file). Returns the manifest. `jobs > 1` renders in parallel
@@ -704,7 +827,14 @@ def make_dataset(
     entries: list[dict[str, Any]] = []
     failures: list[dict[str, Any]] = []
     specs = dataset_specs(
-        n, seed, presets, n_reference=n_reference, size=size, jpeg_quality=jpeg_quality, n_reject=n_reject
+        n,
+        seed,
+        presets,
+        n_reference=n_reference,
+        size=size,
+        jpeg_quality=jpeg_quality,
+        n_reject=n_reject,
+        n_orbit=n_orbit,
     )
     work = [(spec, s, str(root)) for spec, s in specs]
     if jobs > 1 and len(work) > 1:
@@ -733,6 +863,7 @@ def make_dataset(
         "n": int(n),
         "n_reference": int(n_reference),
         "n_reject": int(n_reject),
+        "n_orbit": int(n_orbit),
         "presets": list(presets or BENCH_PRESETS),
         "size": list(size),
         "jpeg_quality": int(jpeg_quality),
@@ -770,7 +901,8 @@ def load_sample(path: str | Path) -> Sample:
     p = Path(path)
     meta = SampleMeta.from_dict(json.loads((p / "meta.json").read_text()), p)
     photos = {v: (p / f"{v}.jpg").read_bytes() for v in ("top", "side", "mating") if (p / f"{v}.jpg").exists()}
-    return Sample(meta=meta, photos=photos)
+    videos = {v: p / f"{v}.mp4" for v in ("orbit",) if (p / f"{v}.mp4").exists()}
+    return Sample(meta=meta, photos=photos, videos=videos)
 
 
 def load_gt(path: str | Path) -> GroundTruth:

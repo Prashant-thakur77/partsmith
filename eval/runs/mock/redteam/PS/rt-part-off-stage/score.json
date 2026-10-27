@@ -1,0 +1,50 @@
+{
+ "suite": "redteam",
+ "config": "PS",
+ "sample_id": "rt-part-off-stage",
+ "split": "held_out",
+ "kind": "redteam",
+ "preset": "redteam",
+ "mode": "mock",
+ "gt_source": "expected_outcome",
+ "status": "failed",
+ "verified": false,
+ "iterations": 0,
+ "iterations_to_converge": null,
+ "strategy": "template",
+ "template": null,
+ "verifier_max_error_mm": null,
+ "retake_reason": "No part found on the stage \u2014 place the part in the plain area inside the markers.",
+ "failed_checks": [
+  "coverage"
+ ],
+ "usd": 0.0,
+ "tokens_in": 0,
+ "tokens_out": 0,
+ "model_calls": 2,
+ "model_ms": 107,
+ "provider_modes": [
+  "mock"
+ ],
+ "providers": {
+  "segment": [
+   "mock:sam-3.1"
+  ]
+ },
+ "convergence": [],
+ "wall_s": 3.47,
+ "valid": false,
+ "dims": [],
+ "missed": [],
+ "extra_holes": 0,
+ "pass_0_3": false,
+ "pass_0_5": false,
+ "expected_outcome": "reject",
+ "expected_checks": [
+  "coverage"
+ ],
+ "expected_why": "the part overlaps the marker ring",
+ "outcome": "reject",
+ "outcome_correct": true,
+ "failure_category": null
+}

@@ -7,7 +7,7 @@ template: l_bracket
 reference_object: null
 params: {base_holes: 2.0, bend_radius: 1.9, corner_radius: 1.9, gusset_count: 2.0, height: 32.1, hole_d: 3.65, length: 45.7,
   thickness: 2.5, wall_holes: 2.0, width: 24.0}
-code_sha: 18ac10657e19c0ec64f30f04fb540d3d69441d254502fd8a7b36a1d383f183f3
+code_sha: e4bcd8a00f950e4dbf0af119e79aea4ca38d0d3a8caf17c060852834eec62e0a
 mat_id: screen-m
 units: mm
 dims:
@@ -16,14 +16,17 @@ dims:
 - name: hole_1.diameter
   view: top
   value_mm: 3.65
-  center_mat_mm: [145.645077, 78.348939]
-  center_cad_mm: [-14.8, 0.0]
+  center_mat_mm: [145.386603, 77.539191]
+  center_cad_mm: [-13.95, 0.0]
 - name: hole_2.diameter
   view: top
   value_mm: 3.65
-  center_mat_mm: [135.306144, 45.959026]
-  center_cad_mm: [19.2, 0.0]
+  center_mat_mm: [135.564617, 46.768773]
+  center_cad_mm: [18.35, 0.0]
 - {name: thickness, view: side, value_mm: 32.1}
+- {name: length, view: orbit, value_mm: 45.7}
+- {name: width, view: orbit, value_mm: 24.0}
+- {name: height, view: orbit, value_mm: 32.1}
 info: {height_mm: 32.1, side_length_mm: 45.7, user_thickness_mm: 2.5, dim_definitions: 'length/width: min-area rectangle of
     the orthographic top footprint; hole_k.diameter: see-through openings from above; thickness: short side of the side-view
     footprint'}
@@ -96,5 +99,29 @@ views:
       glare: false
       moire_amp: 0.0
       exposure: 1.0
+  orbit:
+    video: orbit.mp4
+    frames_file: gt_frames.json
+    encoder: ffmpeg/libx264
+    fps: 15
+    n_frames: 94
+    duration_s: 6.27
+    size: [1920, 1080]
+    sweep_deg: 127.849
+    tilt_deg: [31.809, 53.819]
+    distance_mm: [300.866, 219.853]
+    focal35_mm: 25.0048
+    placement:
+      center_mm: [54.471, 65.1228]
+      yaw_deg: 57.7252
+    cad_to_mat:
+    - [0.533981, -0.845497, 0.0, 54.471]
+    - [-0.845497, -0.533981, 0.0, 65.1228]
+    - [0.0, 0.0, -1.0, 0.0]
+    - [0.0, 0.0, 0.0, 1.0]
+    look:
+      surface: screen
+      stage: light
+      part_bgr: [30, 30, 32]
 generator: {version: synth-2, seed: 101, preset: clean}
 stage: light

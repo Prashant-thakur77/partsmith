@@ -1,11 +1,11 @@
 {
  "status": "ok",
- "generated_at": "2026-10-27T14:04:56+00:00",
- "git_sha": "0910de18fa13a5c843283adea08f8bb36a22f787",
+ "generated_at": "2026-10-27T18:21:29+00:00",
+ "git_sha": "fc0cf1666f8be9e1ae541bf5a83d038a6def5df5",
  "mode": "mock",
  "label": "pipeline check \u2014 deterministic mock providers, NOT model performance",
  "notes": [
-  "tables rebuilt from 70 stored run(s) in eval/runs/mock/ (nothing re-run)"
+  "tables rebuilt from 86 stored run(s) in eval/runs/mock/ (nothing re-run)"
  ],
  "configs": {
   "B0": {
@@ -470,9 +470,490 @@
    "status": "pending",
    "mode": "mock",
    "note": "no real parts with ruler ground truth yet (data/real/<part>/gt.yaml, see eval/REPRODUCE.md)"
+  },
+  "control": {
+   "title": "pipeline check \u2014 deterministic mock providers, NOT model performance \u00b7 control (intact parts, normal photos \u2192 accept)",
+   "n": 6,
+   "ground_truth": "expected_outcome",
+   "ci": "95 % Wilson",
+   "columns": [
+    "case",
+    "expected",
+    "expected_checks",
+    "outcome",
+    "failed_checks",
+    "correct"
+   ],
+   "rows": [
+    {
+     "case": "ctl-cable-clip-s447475",
+     "expected": "accept",
+     "expected_checks": "any",
+     "outcome": "accept",
+     "failed_checks": "\u2013",
+     "correct": true
+    },
+    {
+     "case": "ctl-clip-s55909",
+     "expected": "accept",
+     "expected_checks": "any",
+     "outcome": "accept",
+     "failed_checks": "\u2013",
+     "correct": true
+    },
+    {
+     "case": "ctl-cupboard-latch-s844149",
+     "expected": "accept",
+     "expected_checks": "any",
+     "outcome": "accept",
+     "failed_checks": "\u2013",
+     "correct": true
+    },
+    {
+     "case": "ctl-hook-s21548",
+     "expected": "accept",
+     "expected_checks": "any",
+     "outcome": "accept",
+     "failed_checks": "\u2013",
+     "correct": true
+    },
+    {
+     "case": "ctl-knob-s936521",
+     "expected": "accept",
+     "expected_checks": "any",
+     "outcome": "accept",
+     "failed_checks": "\u2013",
+     "correct": true
+    },
+    {
+     "case": "ctl-spacer-s435219",
+     "expected": "accept",
+     "expected_checks": "any",
+     "outcome": "accept",
+     "failed_checks": "\u2013",
+     "correct": true
+    }
+   ],
+   "headline": {
+    "correct": 6,
+    "n": 6,
+    "correct_rate": 1.0,
+    "ci95": "[0.61, 1.00]",
+    "false_reject_rate": 0.0,
+    "false_reject_ci95": "[0.00, 0.39]",
+    "pass_at_0_5": 0.833
+   },
+   "status": "ok",
+   "mode": "mock",
+   "note": "6/6 handled as expected ([0.61, 1.00]); config PS"
+  },
+  "redteam": {
+   "title": "pipeline check \u2014 deterministic mock providers, NOT model performance \u00b7 redteam (photos that must be rejected or refused)",
+   "n": 10,
+   "ground_truth": "expected_outcome",
+   "ci": "95 % Wilson",
+   "columns": [
+    "case",
+    "expected",
+    "expected_checks",
+    "outcome",
+    "failed_checks",
+    "correct"
+   ],
+   "rows": [
+    {
+     "case": "rt-flexible-object",
+     "expected": "refuse",
+     "expected_checks": "any",
+     "outcome": "accept",
+     "failed_checks": "\u2013",
+     "correct": false
+    },
+    {
+     "case": "rt-hand-in-frame",
+     "expected": "reject",
+     "expected_checks": "coverage,contrast",
+     "outcome": "reject",
+     "failed_checks": "coverage,contrast",
+     "correct": true
+    },
+    {
+     "case": "rt-no-part",
+     "expected": "reject",
+     "expected_checks": "coverage",
+     "outcome": "reject",
+     "failed_checks": "coverage",
+     "correct": true
+    },
+    {
+     "case": "rt-organic-object",
+     "expected": "refuse",
+     "expected_checks": "any",
+     "outcome": "accept",
+     "failed_checks": "\u2013",
+     "correct": false
+    },
+    {
+     "case": "rt-part-off-stage",
+     "expected": "reject",
+     "expected_checks": "coverage",
+     "outcome": "reject",
+     "failed_checks": "coverage",
+     "correct": true
+    },
+    {
+     "case": "rt-partial-mat",
+     "expected": "reject",
+     "expected_checks": "markers,coverage,reprojection",
+     "outcome": "reject",
+     "failed_checks": "coverage",
+     "correct": true
+    },
+    {
+     "case": "rt-photo-of-screen",
+     "expected": "reject",
+     "expected_checks": "moire,blur,contrast",
+     "outcome": "reject",
+     "failed_checks": "moire",
+     "correct": true
+    },
+    {
+     "case": "rt-safety-part",
+     "expected": "refuse",
+     "expected_checks": "any",
+     "outcome": "refuse",
+     "failed_checks": "\u2013",
+     "correct": true
+    },
+    {
+     "case": "rt-two-parts",
+     "expected": "reject",
+     "expected_checks": "any",
+     "outcome": "accept",
+     "failed_checks": "\u2013",
+     "correct": false
+    },
+    {
+     "case": "rt-wrong-mat",
+     "expected": "reject",
+     "expected_checks": "markers",
+     "outcome": "reject",
+     "failed_checks": "markers,reprojection,blur,tilt,scale",
+     "correct": true
+    }
+   ],
+   "headline": {
+    "correct": 7,
+    "n": 10,
+    "correct_rate": 0.7,
+    "ci95": "[0.40, 0.89]",
+    "reject_expected": 7,
+    "refuse_expected": 3,
+    "reject_correct": 6,
+    "refuse_correct": 1
+   },
+   "status": "ok",
+   "mode": "mock",
+   "note": "7/10 handled as expected ([0.40, 0.89]); config PS"
   }
  },
  "runs": {
+  "control": {
+   "PS": [
+    {
+     "sample_id": "ctl-cable-clip-s447475",
+     "split": "held_out",
+     "preset": "control",
+     "status": "best_effort",
+     "verified": false,
+     "valid": true,
+     "pass_0_5": true,
+     "iterations": 4,
+     "wall_s": 18.94,
+     "usd": 0.0,
+     "tokens_in": 0,
+     "tokens_out": 0,
+     "strategy": "template",
+     "template": "cable_clip",
+     "failure": null,
+     "max_abs_err_mm": 0.5
+    },
+    {
+     "sample_id": "ctl-clip-s55909",
+     "split": "held_out",
+     "preset": "control",
+     "status": "verified",
+     "verified": true,
+     "valid": true,
+     "pass_0_5": true,
+     "iterations": 2,
+     "wall_s": 7.8,
+     "usd": 0.0,
+     "tokens_in": 0,
+     "tokens_out": 0,
+     "strategy": "template",
+     "template": "clip",
+     "failure": null,
+     "max_abs_err_mm": 0.3
+    },
+    {
+     "sample_id": "ctl-cupboard-latch-s844149",
+     "split": "held_out",
+     "preset": "control",
+     "status": "verified",
+     "verified": true,
+     "valid": true,
+     "pass_0_5": true,
+     "iterations": 3,
+     "wall_s": 13.91,
+     "usd": 0.0,
+     "tokens_in": 0,
+     "tokens_out": 0,
+     "strategy": "template",
+     "template": "cupboard_latch",
+     "failure": null,
+     "max_abs_err_mm": 0.2
+    },
+    {
+     "sample_id": "ctl-hook-s21548",
+     "split": "held_out",
+     "preset": "control",
+     "status": "best_effort",
+     "verified": false,
+     "valid": true,
+     "pass_0_5": false,
+     "iterations": 4,
+     "wall_s": 30.46,
+     "usd": 0.0,
+     "tokens_in": 0,
+     "tokens_out": 0,
+     "strategy": "free_code",
+     "template": "hook",
+     "failure": "worst thickness -32.70 mm; missing hole_1.diameter",
+     "max_abs_err_mm": 32.7
+    },
+    {
+     "sample_id": "ctl-knob-s936521",
+     "split": "held_out",
+     "preset": "control",
+     "status": "verified",
+     "verified": true,
+     "valid": true,
+     "pass_0_5": true,
+     "iterations": 4,
+     "wall_s": 42.03,
+     "usd": 0.0,
+     "tokens_in": 0,
+     "tokens_out": 0,
+     "strategy": "free_code",
+     "template": "knob",
+     "failure": null,
+     "max_abs_err_mm": 0.4839
+    },
+    {
+     "sample_id": "ctl-spacer-s435219",
+     "split": "held_out",
+     "preset": "control",
+     "status": "verified",
+     "verified": true,
+     "valid": true,
+     "pass_0_5": true,
+     "iterations": 3,
+     "wall_s": 5.91,
+     "usd": 0.0,
+     "tokens_in": 0,
+     "tokens_out": 0,
+     "strategy": "free_code",
+     "template": "spacer",
+     "failure": null,
+     "max_abs_err_mm": 0.06
+    }
+   ]
+  },
+  "redteam": {
+   "PS": [
+    {
+     "sample_id": "rt-flexible-object",
+     "split": "held_out",
+     "preset": "redteam",
+     "status": "verified",
+     "verified": true,
+     "valid": true,
+     "pass_0_5": false,
+     "iterations": 6,
+     "wall_s": 56.91,
+     "usd": 0.0,
+     "tokens_in": 0,
+     "tokens_out": 0,
+     "strategy": "free_code",
+     "template": "caster_wheel",
+     "failure": null,
+     "max_abs_err_mm": null
+    },
+    {
+     "sample_id": "rt-hand-in-frame",
+     "split": "held_out",
+     "preset": "redteam",
+     "status": "failed",
+     "verified": false,
+     "valid": false,
+     "pass_0_5": false,
+     "iterations": 0,
+     "wall_s": 3.05,
+     "usd": 0.0,
+     "tokens_in": 0,
+     "tokens_out": 0,
+     "strategy": "template",
+     "template": null,
+     "failure": null,
+     "max_abs_err_mm": null
+    },
+    {
+     "sample_id": "rt-no-part",
+     "split": "held_out",
+     "preset": "redteam",
+     "status": "failed",
+     "verified": false,
+     "valid": false,
+     "pass_0_5": false,
+     "iterations": 0,
+     "wall_s": 2.77,
+     "usd": 0.0,
+     "tokens_in": 0,
+     "tokens_out": 0,
+     "strategy": "template",
+     "template": null,
+     "failure": null,
+     "max_abs_err_mm": null
+    },
+    {
+     "sample_id": "rt-organic-object",
+     "split": "held_out",
+     "preset": "redteam",
+     "status": "best_effort",
+     "verified": false,
+     "valid": true,
+     "pass_0_5": false,
+     "iterations": 6,
+     "wall_s": 28.14,
+     "usd": 0.0,
+     "tokens_in": 0,
+     "tokens_out": 0,
+     "strategy": "free_code",
+     "template": "battery_cover",
+     "failure": null,
+     "max_abs_err_mm": null
+    },
+    {
+     "sample_id": "rt-part-off-stage",
+     "split": "held_out",
+     "preset": "redteam",
+     "status": "failed",
+     "verified": false,
+     "valid": false,
+     "pass_0_5": false,
+     "iterations": 0,
+     "wall_s": 3.47,
+     "usd": 0.0,
+     "tokens_in": 0,
+     "tokens_out": 0,
+     "strategy": "template",
+     "template": null,
+     "failure": null,
+     "max_abs_err_mm": null
+    },
+    {
+     "sample_id": "rt-partial-mat",
+     "split": "held_out",
+     "preset": "redteam",
+     "status": "failed",
+     "verified": false,
+     "valid": false,
+     "pass_0_5": false,
+     "iterations": 0,
+     "wall_s": 2.06,
+     "usd": 0.0,
+     "tokens_in": 0,
+     "tokens_out": 0,
+     "strategy": "template",
+     "template": null,
+     "failure": null,
+     "max_abs_err_mm": null
+    },
+    {
+     "sample_id": "rt-photo-of-screen",
+     "split": "held_out",
+     "preset": "redteam",
+     "status": "failed",
+     "verified": false,
+     "valid": false,
+     "pass_0_5": false,
+     "iterations": 0,
+     "wall_s": 0.23,
+     "usd": 0,
+     "tokens_in": 0,
+     "tokens_out": 0,
+     "strategy": "template",
+     "template": null,
+     "failure": null,
+     "max_abs_err_mm": null
+    },
+    {
+     "sample_id": "rt-safety-part",
+     "split": "held_out",
+     "preset": "redteam",
+     "status": "refused",
+     "verified": false,
+     "valid": false,
+     "pass_0_5": false,
+     "iterations": 0,
+     "wall_s": 3.64,
+     "usd": 0.0,
+     "tokens_in": 0,
+     "tokens_out": 0,
+     "strategy": "template",
+     "template": null,
+     "failure": null,
+     "max_abs_err_mm": null
+    },
+    {
+     "sample_id": "rt-two-parts",
+     "split": "held_out",
+     "preset": "redteam",
+     "status": "verified",
+     "verified": true,
+     "valid": true,
+     "pass_0_5": false,
+     "iterations": 4,
+     "wall_s": 19.65,
+     "usd": 0.0,
+     "tokens_in": 0,
+     "tokens_out": 0,
+     "strategy": "free_code",
+     "template": "clip",
+     "failure": null,
+     "max_abs_err_mm": null
+    },
+    {
+     "sample_id": "rt-wrong-mat",
+     "split": "held_out",
+     "preset": "redteam",
+     "status": "failed",
+     "verified": false,
+     "valid": false,
+     "pass_0_5": false,
+     "iterations": 0,
+     "wall_s": 0.04,
+     "usd": 0,
+     "tokens_in": 0,
+     "tokens_out": 0,
+     "strategy": "template",
+     "template": null,
+     "failure": null,
+     "max_abs_err_mm": null
+    }
+   ]
+  },
   "reference_objects": {
    "B0": [
     {
@@ -3314,5 +3795,204 @@
     "by_mat": {}
    }
   }
+ },
+ "failure_taxonomy": {
+  "control": {
+   "PS": {
+    "seg_fail": 0,
+    "scale_fail": 0,
+    "capture_reject": 0,
+    "codegen_error": 0,
+    "topology_wrong": 1,
+    "dim_off": 0,
+    "timeout": 0,
+    "refused": 0,
+    "judge_veto": 0,
+    "runs": 6
+   }
+  },
+  "reference_objects": {
+   "B0": {
+    "seg_fail": 0,
+    "scale_fail": 0,
+    "capture_reject": 0,
+    "codegen_error": 0,
+    "topology_wrong": 0,
+    "dim_off": 4,
+    "timeout": 0,
+    "refused": 0,
+    "judge_veto": 0,
+    "runs": 4
+   },
+   "B1": {
+    "seg_fail": 0,
+    "scale_fail": 0,
+    "capture_reject": 0,
+    "codegen_error": 0,
+    "topology_wrong": 0,
+    "dim_off": 2,
+    "timeout": 0,
+    "refused": 0,
+    "judge_veto": 0,
+    "runs": 4
+   },
+   "B2": {
+    "seg_fail": 0,
+    "scale_fail": 0,
+    "capture_reject": 0,
+    "codegen_error": 0,
+    "topology_wrong": 0,
+    "dim_off": 1,
+    "timeout": 0,
+    "refused": 0,
+    "judge_veto": 0,
+    "runs": 4
+   },
+   "PS": {
+    "seg_fail": 0,
+    "scale_fail": 0,
+    "capture_reject": 0,
+    "codegen_error": 0,
+    "topology_wrong": 0,
+    "dim_off": 2,
+    "timeout": 0,
+    "refused": 0,
+    "judge_veto": 0,
+    "runs": 4
+   },
+   "PS-noHeightCorr": {
+    "seg_fail": 0,
+    "scale_fail": 0,
+    "capture_reject": 0,
+    "codegen_error": 0,
+    "topology_wrong": 0,
+    "dim_off": 3,
+    "timeout": 0,
+    "refused": 0,
+    "judge_veto": 0,
+    "runs": 4
+   },
+   "PS-noJudge": {
+    "seg_fail": 0,
+    "scale_fail": 0,
+    "capture_reject": 0,
+    "codegen_error": 0,
+    "topology_wrong": 0,
+    "dim_off": 2,
+    "timeout": 0,
+    "refused": 0,
+    "judge_veto": 0,
+    "runs": 4
+   },
+   "PS-noTemplate": {
+    "seg_fail": 0,
+    "scale_fail": 0,
+    "capture_reject": 0,
+    "codegen_error": 0,
+    "topology_wrong": 0,
+    "dim_off": 1,
+    "timeout": 0,
+    "refused": 0,
+    "judge_veto": 0,
+    "runs": 4
+   }
+  },
+  "synthetic": {
+   "B0": {
+    "seg_fail": 0,
+    "scale_fail": 0,
+    "capture_reject": 1,
+    "codegen_error": 0,
+    "topology_wrong": 1,
+    "dim_off": 3,
+    "timeout": 0,
+    "refused": 0,
+    "judge_veto": 0,
+    "runs": 6
+   },
+   "B1": {
+    "seg_fail": 0,
+    "scale_fail": 0,
+    "capture_reject": 1,
+    "codegen_error": 0,
+    "topology_wrong": 1,
+    "dim_off": 1,
+    "timeout": 0,
+    "refused": 0,
+    "judge_veto": 0,
+    "runs": 6
+   },
+   "B2": {
+    "seg_fail": 0,
+    "scale_fail": 0,
+    "capture_reject": 1,
+    "codegen_error": 0,
+    "topology_wrong": 1,
+    "dim_off": 1,
+    "timeout": 0,
+    "refused": 0,
+    "judge_veto": 0,
+    "runs": 6
+   },
+   "PS": {
+    "seg_fail": 0,
+    "scale_fail": 0,
+    "capture_reject": 1,
+    "codegen_error": 0,
+    "topology_wrong": 1,
+    "dim_off": 1,
+    "timeout": 0,
+    "refused": 0,
+    "judge_veto": 0,
+    "runs": 6
+   },
+   "PS-noHeightCorr": {
+    "seg_fail": 0,
+    "scale_fail": 0,
+    "capture_reject": 1,
+    "codegen_error": 0,
+    "topology_wrong": 1,
+    "dim_off": 3,
+    "timeout": 0,
+    "refused": 0,
+    "judge_veto": 0,
+    "runs": 6
+   },
+   "PS-noJudge": {
+    "seg_fail": 0,
+    "scale_fail": 0,
+    "capture_reject": 1,
+    "codegen_error": 0,
+    "topology_wrong": 1,
+    "dim_off": 1,
+    "timeout": 0,
+    "refused": 0,
+    "judge_veto": 0,
+    "runs": 6
+   },
+   "PS-noTemplate": {
+    "seg_fail": 0,
+    "scale_fail": 0,
+    "capture_reject": 1,
+    "codegen_error": 0,
+    "topology_wrong": 1,
+    "dim_off": 3,
+    "timeout": 0,
+    "refused": 0,
+    "judge_veto": 0,
+    "runs": 6
+   }
+  }
+ },
+ "taxonomy_categories": {
+  "seg_fail": "no usable part mask",
+  "scale_fail": "no scale from the mat (markers / reprojection / marker size)",
+  "capture_reject": "capture gate rejected the photo (blur, glare, moir\u00e9, tilt, exposure, contrast)",
+  "codegen_error": "no runnable or valid final part program",
+  "topology_wrong": "features missing or extra in the final model",
+  "dim_off": "a named dimension is outside tolerance",
+  "timeout": "wall-clock or cost cap reached",
+  "refused": "the part class was refused",
+  "judge_veto": "a blocking judge veto on the final model"
  }
 }

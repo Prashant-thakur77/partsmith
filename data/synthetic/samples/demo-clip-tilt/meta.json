@@ -11,6 +11,7 @@
   "augmentations": [
     "tilt",
     "surface:screen",
+    "video:orbit",
     "stage:light"
   ],
   "seed": 104

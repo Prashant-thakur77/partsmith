@@ -7,7 +7,7 @@ template: clip
 reference_object: null
 params: {arm_height: 7.1, arm_thickness: 2.4, corner_radius: 1.8, hole_d: 3.7, hook_overhang: 1.4, length: 43.7, rib_count: 1.0,
   thickness: 3.1, width: 15.9}
-code_sha: fa4f27dbfd12e338b12c5554f9a920a07a4a0094774a64abb808fc8e83e6476b
+code_sha: 9c94c94e4f9492b89df5e579a3eca4da4698dd7a95dbcffdfadcea4592888eeb
 mat_id: screen-m
 units: mm
 dims:
@@ -16,9 +16,12 @@ dims:
 - name: hole_1.diameter
   view: top
   value_mm: 3.7
-  center_mat_mm: [73.03783, 57.18426]
-  center_cad_mm: [-17.41, 0.0]
+  center_mat_mm: [73.582919, 56.933505]
+  center_cad_mm: [-16.81, 0.0]
 - {name: thickness, view: side, value_mm: 10.2}
+- {name: length, view: orbit, value_mm: 43.7}
+- {name: width, view: orbit, value_mm: 15.9}
+- {name: height, view: orbit, value_mm: 10.2}
 info: {height_mm: 10.2, side_length_mm: 43.7, user_thickness_mm: 3.0, dim_definitions: 'length/width: min-area rectangle of
     the orthographic top footprint; hole_k.diameter: see-through openings from above; thickness: short side of the side-view
     footprint'}
@@ -91,5 +94,29 @@ views:
       glare: false
       moire_amp: 0.0
       exposure: 1.0
+  orbit:
+    video: orbit.mp4
+    frames_file: gt_frames.json
+    encoder: ffmpeg/libx264
+    fps: 15
+    n_frames: 102
+    duration_s: 6.82
+    size: [1920, 1080]
+    sweep_deg: -171.889
+    tilt_deg: [37.175, 35.96]
+    distance_mm: [237.818, 282.312]
+    focal35_mm: 24.449
+    placement:
+      center_mm: [123.3523, 53.8564]
+      yaw_deg: 180.2895
+    cad_to_mat:
+    - [-0.999987, 0.005053, 0.0, 123.3523]
+    - [0.005053, 0.999987, 0.0, 53.8564]
+    - [0.0, 0.0, -1.0, 0.0]
+    - [0.0, 0.0, 0.0, 1.0]
+    look:
+      surface: screen
+      stage: light
+      part_bgr: [40, 188, 222]
 generator: {version: synth-2, seed: 104, preset: tilt}
 stage: light

@@ -1,0 +1,109 @@
+{
+ "suite": "control",
+ "config": "PS",
+ "sample_id": "ctl-cupboard-latch-s844149",
+ "split": "held_out",
+ "kind": "control",
+ "preset": "control",
+ "mode": "mock",
+ "gt_source": "expected_outcome",
+ "status": "verified",
+ "verified": true,
+ "iterations": 3,
+ "iterations_to_converge": 3,
+ "strategy": "template",
+ "template": "cupboard_latch",
+ "verifier_max_error_mm": 0.32912847701699266,
+ "retake_reason": null,
+ "failed_checks": [],
+ "usd": 0.0,
+ "tokens_in": 0,
+ "tokens_out": 0,
+ "model_calls": 21,
+ "model_ms": 152,
+ "provider_modes": [
+  "mock"
+ ],
+ "providers": {
+  "segment": [
+   "mock:sam-3.1"
+  ],
+  "understand": [
+   "mock:muse-spark-1.3"
+  ],
+  "segment_points": [
+   "mock:sam-3.1"
+  ],
+  "plan": [
+   "mock:meta-models/muse-spark-open"
+  ],
+  "build": [
+   "mock:meta-models/muse-spark-open"
+  ],
+  "fix_agent": [
+   "mock:meta-models/muse-spark-open"
+  ],
+  "judge": [
+   "mock:muse-glimmer"
+  ]
+ },
+ "convergence": [
+  {
+   "iter": 1,
+   "hausdorff_mm": 0.9931151574889145,
+   "iou": 0.948061698061698,
+   "max_error_mm": 0.9931151574889145
+  },
+  {
+   "iter": 2,
+   "hausdorff_mm": 0.5993300788527289,
+   "iou": 0.9550623373064804,
+   "max_error_mm": 0.5993300788527289
+  },
+  {
+   "iter": 3,
+   "hausdorff_mm": 0.32912847701699266,
+   "iou": 0.9835344215755856,
+   "max_error_mm": 0.32912847701699266
+  }
+ ],
+ "wall_s": 13.91,
+ "dims": [
+  {
+   "name": "length",
+   "gt_mm": 36.196395,
+   "model_mm": 35.9964,
+   "error_mm": -0.2
+  },
+  {
+   "name": "width",
+   "gt_mm": 11.6,
+   "model_mm": 11.6,
+   "error_mm": 0.0
+  },
+  {
+   "name": "thickness",
+   "gt_mm": 8.3,
+   "model_mm": 8.2987,
+   "error_mm": -0.0013
+  },
+  {
+   "name": "hole_1.diameter",
+   "gt_mm": 5.15,
+   "model_mm": 5.0,
+   "error_mm": -0.15
+  }
+ ],
+ "missed": [],
+ "extra_holes": 0,
+ "pass_0_3": true,
+ "pass_0_5": true,
+ "valid": true,
+ "valid_reason": "",
+ "expected_outcome": "accept",
+ "expected_checks": [],
+ "expected_why": "intact part, normal photo",
+ "outcome": "accept",
+ "outcome_correct": true,
+ "failure_category": null
+}

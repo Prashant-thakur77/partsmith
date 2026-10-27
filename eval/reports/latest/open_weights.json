@@ -1,0 +1,254 @@
+{
+ "generated_at": "2026-10-27T18:21:29+00:00",
+ "git_sha": "fc0cf1666f8be9e1ae541bf5a83d038a6def5df5",
+ "mode": "mock",
+ "modes": [
+  "mock"
+ ],
+ "mock_calls": 957,
+ "providers_summary": {
+  "build": {
+   "model": "",
+   "provider": "",
+   "open_weights": false,
+   "calls": 0,
+   "tokens": 0,
+   "modes": {
+    "mock": 86
+   },
+   "routes": []
+  },
+  "fix": {
+   "model": "",
+   "provider": "",
+   "open_weights": false,
+   "calls": 0,
+   "tokens": 0,
+   "modes": {
+    "mock": 127
+   },
+   "routes": []
+  },
+  "fix_agent": {
+   "model": "",
+   "provider": "",
+   "open_weights": false,
+   "calls": 0,
+   "tokens": 0,
+   "modes": {
+    "mock": 218
+   },
+   "routes": []
+  },
+  "judge": {
+   "model": "",
+   "provider": "",
+   "open_weights": false,
+   "calls": 0,
+   "tokens": 0,
+   "modes": {
+    "mock": 49
+   },
+   "routes": []
+  },
+  "plan": {
+   "model": "",
+   "provider": "",
+   "open_weights": false,
+   "calls": 0,
+   "tokens": 0,
+   "modes": {
+    "mock": 63
+   },
+   "routes": []
+  },
+  "segment": {
+   "model": "",
+   "provider": "",
+   "open_weights": false,
+   "calls": 0,
+   "tokens": 0,
+   "modes": {
+    "mock": 334
+   },
+   "routes": []
+  },
+  "segment_points": {
+   "model": "",
+   "provider": "",
+   "open_weights": false,
+   "calls": 0,
+   "tokens": 0,
+   "modes": {
+    "mock": 7
+   },
+   "routes": []
+  },
+  "understand": {
+   "model": "",
+   "provider": "",
+   "open_weights": false,
+   "calls": 0,
+   "tokens": 0,
+   "modes": {
+    "mock": 73
+   },
+   "routes": []
+  }
+ },
+ "label": "MOCK calls only: shows the routing, not real usage",
+ "stages": {
+  "segment": {
+   "models": [
+    {
+     "provider": "mock",
+     "model": "sam-3.1",
+     "open_weights": false,
+     "modes": [
+      "mock"
+     ],
+     "calls": 334,
+     "tokens": 0
+    }
+   ],
+   "calls": 334,
+   "tokens": 0,
+   "open_tokens": 0
+  },
+  "understand": {
+   "models": [
+    {
+     "provider": "mock",
+     "model": "muse-spark-1.3",
+     "open_weights": false,
+     "modes": [
+      "mock"
+     ],
+     "calls": 73,
+     "tokens": 0
+    }
+   ],
+   "calls": 73,
+   "tokens": 0,
+   "open_tokens": 0
+  },
+  "segment_points": {
+   "models": [
+    {
+     "provider": "mock",
+     "model": "sam-3.1",
+     "open_weights": false,
+     "modes": [
+      "mock"
+     ],
+     "calls": 7,
+     "tokens": 0
+    }
+   ],
+   "calls": 7,
+   "tokens": 0,
+   "open_tokens": 0
+  },
+  "plan": {
+   "models": [
+    {
+     "provider": "mock",
+     "model": "meta-models/muse-spark-open",
+     "open_weights": true,
+     "modes": [
+      "mock"
+     ],
+     "calls": 63,
+     "tokens": 0
+    }
+   ],
+   "calls": 63,
+   "tokens": 0,
+   "open_tokens": 0
+  },
+  "build": {
+   "models": [
+    {
+     "provider": "mock",
+     "model": "meta-models/muse-spark-open",
+     "open_weights": true,
+     "modes": [
+      "mock"
+     ],
+     "calls": 86,
+     "tokens": 0
+    }
+   ],
+   "calls": 86,
+   "tokens": 0,
+   "open_tokens": 0
+  },
+  "fix_agent": {
+   "models": [
+    {
+     "provider": "mock",
+     "model": "meta-models/muse-spark-open",
+     "open_weights": true,
+     "modes": [
+      "mock"
+     ],
+     "calls": 218,
+     "tokens": 0
+    }
+   ],
+   "calls": 218,
+   "tokens": 0,
+   "open_tokens": 0
+  },
+  "judge": {
+   "models": [
+    {
+     "provider": "mock",
+     "model": "muse-glimmer",
+     "open_weights": true,
+     "modes": [
+      "mock"
+     ],
+     "calls": 49,
+     "tokens": 0
+    }
+   ],
+   "calls": 49,
+   "tokens": 0,
+   "open_tokens": 0
+  },
+  "fix": {
+   "models": [
+    {
+     "provider": "mock",
+     "model": "meta-models/muse-spark-open",
+     "open_weights": true,
+     "modes": [
+      "mock"
+     ],
+     "calls": 127,
+     "tokens": 0
+    }
+   ],
+   "calls": 127,
+   "tokens": 0,
+   "open_tokens": 0
+  }
+ },
+ "builder": {
+  "stages": [
+   "build",
+   "fix",
+   "fix_agent",
+   "plan"
+  ],
+  "calls": 0,
+  "calls_on_open_weights": 0,
+  "tokens": 0,
+  "tokens_on_open_weights": 0,
+  "share_tokens_open_weights": null,
+  "share_calls_open_weights": null,
+  "note": "live and replay calls only; mock calls are excluded"
+ },
+ "open_configs": "pending live run"
+}

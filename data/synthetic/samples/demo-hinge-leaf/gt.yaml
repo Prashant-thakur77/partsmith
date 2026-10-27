@@ -5,9 +5,9 @@ kind: template
 name: hinge_leaf
 template: hinge_leaf
 reference_object: null
-params: {corner_radius: 3.7, hole_count: 4.0, hole_d: 3.4, knuckle_count: 2.0, knuckle_gap: 0.25, knuckle_wall: 1.2, leaf_width: 29.4,
-  length: 58.4, pin_d: 3.4, thickness: 2.7}
-code_sha: c0fb3b395988d57509a70c9ec3b3b8f581cb1aecce16bf483afe050ea655e5f4
+params: {corner_radius: 3.5, hole_count: 4.0, hole_d: 4.3, knuckle_count: 2.0, knuckle_fill: 0.95, knuckle_gap: 0.25, knuckle_offset: 0.0,
+  knuckle_phase: 1.0, knuckle_wall: 1.2, leaf_width: 29.4, length: 58.4, pin_d: 3.4, thickness: 2.7}
+code_sha: 6ce5bb8fb23ab79eace3e05eb93535c7aef3df59ff51e0090dde5bdeec86614f
 mat_id: screen-l
 units: mm
 dims:
@@ -15,24 +15,24 @@ dims:
 - {name: width, view: top, value_mm: 29.39975}
 - name: hole_1.diameter
   view: top
-  value_mm: 3.4
-  center_mat_mm: [151.226227, 60.801203]
-  center_cad_mm: [-22.4, -4.35]
+  value_mm: 4.3
+  center_mat_mm: [117.614904, 136.052297]
+  center_cad_mm: [-22.2, -4.35]
 - name: hole_2.diameter
   view: top
-  value_mm: 3.4
-  center_mat_mm: [157.178537, 74.496985]
-  center_cad_mm: [-7.466667, -4.35]
+  value_mm: 4.3
+  center_mat_mm: [115.436241, 121.413532]
+  center_cad_mm: [-7.4, -4.35]
 - name: hole_3.diameter
   view: top
-  value_mm: 3.4
-  center_mat_mm: [163.130847, 88.192767]
-  center_cad_mm: [7.466667, -4.35]
+  value_mm: 4.3
+  center_mat_mm: [113.257578, 106.774767]
+  center_cad_mm: [7.4, -4.35]
 - name: hole_4.diameter
   view: top
-  value_mm: 3.4
-  center_mat_mm: [169.083157, 101.888549]
-  center_cad_mm: [22.4, -4.35]
+  value_mm: 4.3
+  center_mat_mm: [111.078915, 92.136003]
+  center_cad_mm: [22.2, -4.35]
 - {name: thickness, view: side, value_mm: 5.999216}
 info: {height_mm: 5.999216, side_length_mm: 58.4, user_thickness_mm: 2.5, dim_definitions: 'length/width: min-area rectangle
     of the orthographic top footprint; hole_k.diameter: see-through openings from above; thickness: short side of the side-view
@@ -41,68 +41,68 @@ views:
   top:
     image: top.jpg
     placement:
-      center_mm: [164.1442, 79.611]
-      yaw_deg: 293.4902
+      center_mm: [110.0443, 114.7345]
+      yaw_deg: 98.4651
     cad_to_mat:
-    - [0.398592, 0.917128, 0.0, 164.1442]
-    - [0.917128, -0.398592, 0.0, 79.611]
+    - [-0.147207, -0.989106, 0.0, 110.0443]
+    - [-0.989106, 0.147207, 0.0, 114.7345]
     - [0.0, 0.0, -1.0, 0.0]
     - [0.0, 0.0, 0.0, 1.0]
     part_height_mm: 5.999216
     camera:
       K:
-      - [1449.834213, 0.0, 999.5]
-      - [0.0, 1449.834213, 749.5]
+      - [1393.217734, 0.0, 999.5]
+      - [0.0, 1393.217734, 749.5]
       - [0.0, 0.0, 1.0]
       R:
-      - [-0.890445, -0.452894, -0.044656]
-      - [0.454974, -0.883704, -0.10984]
-      - [0.010284, -0.118124, 0.992946]
-      t_mm: [186.201476, 8.581894, 428.673825]
+      - [0.942781, 0.333017, -0.016205]
+      - [-0.332864, 0.942905, 0.011445]
+      - [0.019091, -0.005396, 0.999803]
+      t_mm: [-166.814581, -46.965985, 374.08406]
       size: [2000, 1500]
-      height_mm: 416.392
-      tilt_deg: 6.81
-      focal35_mm: 25.0918
-      exif_focal35_mm: 25
+      height_mm: 376.176
+      tilt_deg: 1.137
+      focal35_mm: 24.1119
+      exif_focal35_mm: 24
     look:
       surface: screen
       stage: light
-      part_bgr: [62, 138, 52]
-      blur_px: 0.442
+      part_bgr: [32, 112, 228]
+      blur_px: 0.502
       glare: false
       moire_amp: 0.0
       exposure: 1.0
   side:
     image: side.jpg
     placement:
-      center_mm: [111.5212, 133.0354]
-      yaw_deg: 190.8024
+      center_mm: [147.123, 68.1724]
+      yaw_deg: 340.6366
     cad_to_mat:
-    - [-0.982279, 0.187422, 0.0, 111.5212]
-    - [0.187422, 0.982279, 0.0, 133.0354]
+    - [0.943435, 0.331559, 0.0, 147.123]
+    - [0.331559, -0.943435, 0.0, 68.1724]
     - [0.0, 0.0, -1.0, 0.0]
     - [0.0, 0.0, 0.0, 1.0]
     part_height_mm: 29.39975
     camera:
       K:
-      - [1486.547047, 0.0, 999.5]
-      - [0.0, 1486.547047, 749.5]
+      - [1444.502831, 0.0, 999.5]
+      - [0.0, 1444.502831, 749.5]
       - [0.0, 0.0, 1.0]
       R:
-      - [-0.916385, 0.399532, 0.024759]
-      - [-0.396172, -0.914061, 0.086835]
-      - [0.057325, 0.069765, 0.995915]
-      t_mm: [114.609742, 149.983033, 365.971381]
+      - [0.050518, -0.992277, 0.11329]
+      - [0.996962, 0.056837, 0.053259]
+      - [-0.059286, 0.110255, 0.992134]
+      t_mm: [68.14577, -157.234889, 408.06201]
       size: [2000, 1500]
-      height_mm: 380.338
-      tilt_deg: 5.181
-      focal35_mm: 25.7271
-      exif_focal35_mm: 26
+      height_mm: 404.198
+      tilt_deg: 7.191
+      focal35_mm: 24.9995
+      exif_focal35_mm: 25
     look:
       surface: screen
       stage: light
-      part_bgr: [30, 30, 32]
-      blur_px: 0.463
+      part_bgr: [32, 112, 228]
+      blur_px: 0.571
       glare: false
       moire_amp: 0.0
       exposure: 1.0

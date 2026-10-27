@@ -1,0 +1,106 @@
+{
+ "suite": "control",
+ "config": "PS",
+ "sample_id": "ctl-knob-s936521",
+ "split": "held_out",
+ "kind": "control",
+ "preset": "control",
+ "mode": "mock",
+ "gt_source": "expected_outcome",
+ "status": "verified",
+ "verified": true,
+ "iterations": 4,
+ "iterations_to_converge": 4,
+ "strategy": "free_code",
+ "template": "knob",
+ "verifier_max_error_mm": 0.20827397030066588,
+ "retake_reason": null,
+ "failed_checks": [],
+ "usd": 0.0,
+ "tokens_in": 0,
+ "tokens_out": 0,
+ "model_calls": 33,
+ "model_ms": 167,
+ "provider_modes": [
+  "mock"
+ ],
+ "providers": {
+  "segment": [
+   "mock:sam-3.1"
+  ],
+  "understand": [
+   "mock:muse-spark-1.3"
+  ],
+  "plan": [
+   "mock:meta-models/muse-spark-open"
+  ],
+  "build": [
+   "mock:meta-models/muse-spark-open"
+  ],
+  "fix_agent": [
+   "mock:meta-models/muse-spark-open"
+  ],
+  "judge": [
+   "mock:muse-glimmer"
+  ]
+ },
+ "convergence": [
+  {
+   "iter": 1,
+   "hausdorff_mm": 0.9185357102192226,
+   "iou": 0.9554100012596045,
+   "max_error_mm": 0.9185357102192226
+  },
+  {
+   "iter": 2,
+   "hausdorff_mm": 0.7325762690370732,
+   "iou": 0.9724755361232563,
+   "max_error_mm": 0.7325762690370732
+  },
+  {
+   "iter": 3,
+   "hausdorff_mm": 0.6904384191277088,
+   "iou": 0.9715905551056009,
+   "max_error_mm": 0.6904384191277088
+  },
+  {
+   "iter": 4,
+   "hausdorff_mm": 0.20827397030066588,
+   "iou": 0.9942883541220444,
+   "max_error_mm": 0.20827397030066588
+  }
+ ],
+ "wall_s": 42.03,
+ "dims": [
+  {
+   "name": "length",
+   "gt_mm": 28.6,
+   "model_mm": 28.1161,
+   "error_mm": -0.4839
+  },
+  {
+   "name": "width",
+   "gt_mm": 28.493592,
+   "model_mm": 28.034,
+   "error_mm": -0.4596
+  },
+  {
+   "name": "thickness",
+   "gt_mm": 15.9,
+   "model_mm": 16.0,
+   "error_mm": 0.1
+  }
+ ],
+ "missed": [],
+ "extra_holes": 0,
+ "pass_0_3": false,
+ "pass_0_5": true,
+ "valid": true,
+ "valid_reason": "",
+ "expected_outcome": "accept",
+ "expected_checks": [],
+ "expected_why": "intact part, normal photo",
+ "outcome": "accept",
+ "outcome_correct": true,
+ "failure_category": null
+}

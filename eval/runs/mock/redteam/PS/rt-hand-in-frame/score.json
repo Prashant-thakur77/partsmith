@@ -1,0 +1,52 @@
+{
+ "suite": "redteam",
+ "config": "PS",
+ "sample_id": "rt-hand-in-frame",
+ "split": "held_out",
+ "kind": "redteam",
+ "preset": "redteam",
+ "mode": "mock",
+ "gt_source": "expected_outcome",
+ "status": "failed",
+ "verified": false,
+ "iterations": 0,
+ "iterations_to_converge": null,
+ "strategy": "template",
+ "template": null,
+ "verifier_max_error_mm": null,
+ "retake_reason": "The part touches the markers \u2014 move it into the middle of the plain area.",
+ "failed_checks": [
+  "coverage",
+  "contrast"
+ ],
+ "usd": 0.0,
+ "tokens_in": 0,
+ "tokens_out": 0,
+ "model_calls": 2,
+ "model_ms": 101,
+ "provider_modes": [
+  "mock"
+ ],
+ "providers": {
+  "segment": [
+   "mock:sam-3.1"
+  ]
+ },
+ "convergence": [],
+ "wall_s": 3.05,
+ "valid": false,
+ "dims": [],
+ "missed": [],
+ "extra_holes": 0,
+ "pass_0_3": false,
+ "pass_0_5": false,
+ "expected_outcome": "reject",
+ "expected_checks": [
+  "coverage",
+  "contrast"
+ ],
+ "expected_why": "a hand covers the part and runs off the stage",
+ "outcome": "reject",
+ "outcome_correct": true,
+ "failure_category": null
+}

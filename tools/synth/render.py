@@ -13,6 +13,7 @@ Frames: mat frame x right, y down, z into the table (a part sits at z ∈ [−h,
 from __future__ import annotations
 
 import math
+from collections.abc import Callable
 from dataclasses import dataclass, field
 from typing import Literal
 
@@ -346,6 +347,10 @@ def finish_photo(img: F32, look: Look, rng: np.random.Generator) -> U8:
     return np.asarray(np.clip(np.round(out), 0, 255), dtype=np.uint8)
 
 
+SurfaceFn = Callable[[T.Camera, Look, np.random.Generator], tuple[F32, F32, F32]]
+OverlayFn = Callable[[F32, F32, F32], F32]
+
+
 def render_photo(
     mat_id: str,
     cam: T.Camera,
@@ -353,9 +358,15 @@ def render_photo(
     faces: I64,
     look: Look,
     rng: np.random.Generator,
+    *,
+    surface: SurfaceFn | None = None,
+    overlay: OverlayFn | None = None,
 ) -> Render:
-    """One synthetic photo: surface, glare, shadow, exactly-covered shaded part, camera effects."""
-    surf, u, v = render_surface(mat_id, cam, look, rng)
+    """One synthetic photo: surface, glare, shadow, exactly-covered shaded part, camera effects.
+
+    `surface` replaces the mat rendering (red-team boards); `overlay(img, u, v)` paints on top of the part before the
+    camera effects (a hand in frame). An empty `faces` array renders the mat alone."""
+    surf, u, v = surface(cam, look, rng) if surface is not None else render_surface(mat_id, cam, look, rng)
     surf = add_glare_streak(surf, u, v, look)
     if look.moire_amp > 0:  # interference fringes live on the screen, not on the part sitting on it
         h, w = surf.shape[:2]
@@ -363,17 +374,24 @@ def render_photo(
         a = math.radians(look.moire_angle_deg)
         wave = look.moire_amp * np.sin(2 * np.pi * (xx * math.cos(a) + yy * math.sin(a)) / look.moire_period_px)
         surf = surf + wave[..., None]
-    sh = shadow_map(vertices_mat, faces, u, v, look)
-    surf = surf * (1.0 - sh[..., None])
-    alpha = T.mesh_coverage(vertices_mat, faces, cam)
-    prem, cov = shade_part(vertices_mat, faces, cam, look)
-    colour = np.divide(prem, cov[..., None], out=np.zeros_like(prem), where=cov[..., None] > 1e-3)
-    gap = (alpha > 0) & (cov <= 1e-3)
-    if gap.any():  # rare sliver pixels the painter missed: borrow the neighbourhood colour
-        k = (0, 0)
-        num = cv2.GaussianBlur(prem, k, 2.0)
-        den = cv2.GaussianBlur(cov, k, 2.0)
-        fill = np.divide(num, den[..., None], out=np.zeros_like(num), where=den[..., None] > 1e-4)
-        colour[gap] = fill[gap]
-    img = np.asarray(surf * (1 - alpha[..., None]) + colour * alpha[..., None], dtype=np.float32)
+    w_img, h_img = cam.size
+    if len(faces) == 0:
+        img = np.asarray(surf, dtype=np.float32)
+        alpha = np.zeros((h_img, w_img), np.float32)
+    else:
+        sh = shadow_map(vertices_mat, faces, u, v, look)
+        surf = surf * (1.0 - sh[..., None])
+        alpha = T.mesh_coverage(vertices_mat, faces, cam)
+        prem, cov = shade_part(vertices_mat, faces, cam, look)
+        colour = np.divide(prem, cov[..., None], out=np.zeros_like(prem), where=cov[..., None] > 1e-3)
+        gap = (alpha > 0) & (cov <= 1e-3)
+        if gap.any():  # rare sliver pixels the painter missed: borrow the neighbourhood colour
+            k = (0, 0)
+            num = cv2.GaussianBlur(prem, k, 2.0)
+            den = cv2.GaussianBlur(cov, k, 2.0)
+            fill = np.divide(num, den[..., None], out=np.zeros_like(num), where=den[..., None] > 1e-4)
+            colour[gap] = fill[gap]
+        img = np.asarray(surf * (1 - alpha[..., None]) + colour * alpha[..., None], dtype=np.float32)
+    if overlay is not None:
+        img = overlay(img, u, v)
     return Render(image=finish_photo(img, look, rng), alpha=alpha, camera=cam)

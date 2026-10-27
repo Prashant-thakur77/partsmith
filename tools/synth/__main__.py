@@ -22,6 +22,8 @@ def main(argv: Sequence[str] | None = None) -> int:
     ap.add_argument("--n", type=int, default=200, help="template samples")
     ap.add_argument("--n-reference", type=int, default=0, help="reference-object samples")
     ap.add_argument("--n-reject", type=int, default=0, help="white-on-light photos the capture gate should reject")
+    ap.add_argument("--n-orbit", type=int, default=0, help="template samples with a walk-around clip")
+    ap.add_argument("--suite", choices=("control", "redteam"), default=None, help="render a control/red-team suite")
     ap.add_argument("--seed", type=int, default=7)
     ap.add_argument("--presets", default=",".join(BENCH_PRESETS), help=f"comma list from {', '.join(PRESETS)}")
     ap.add_argument("--size", default="3000x2250", help="photo size WxH")
@@ -31,8 +33,14 @@ def main(argv: Sequence[str] | None = None) -> int:
     ap.add_argument("--demo", action="store_true", help="render the committed demo set instead")
     a = ap.parse_args(argv)
     if a.demo:
-        man = make_demo_set(a.out)
+        man = make_demo_set(a.out, jobs=a.jobs)
         print(f"demo set: {len(man['samples'])} samples -> {a.out}")
+        return 0
+    if a.suite:
+        from .suites import make_suite
+
+        sm = make_suite(a.suite, a.out, seed=a.seed)
+        print(f"{a.suite} suite: {len(sm['samples'])} samples -> {a.out}")
         return 0
     w, h = (int(x) for x in a.size.lower().split("x"))
     man = make_dataset(
@@ -42,6 +50,7 @@ def main(argv: Sequence[str] | None = None) -> int:
         presets=[p.strip() for p in a.presets.split(",") if p.strip()],
         n_reference=a.n_reference,
         n_reject=a.n_reject,
+        n_orbit=a.n_orbit,
         size=(w, h),
         jpeg_quality=a.quality,
         jobs=a.jobs,

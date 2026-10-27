@@ -154,7 +154,7 @@ def test_cluster_bootstrap_and_charts() -> None:
 def test_markdown_and_report_shape(tmp_path: Path) -> None:
     rep = R.build_report([_score("PS", "a", errs=[0.1], passed=True, conv=[0.8, 0.1])], "mock", [], tmp_path)
     assert set(rep) >= {"generated_at", "git_sha", "mode", "tables", "runs", "failures", "measure_only", "charts"}
-    assert set(rep["tables"]) == set(R.SUITES) and rep["runs"]["synthetic"]["PS"][0]["sample_id"] == "a"
+    assert set(rep["tables"]) == set(R.ALL_SUITES) and rep["runs"]["synthetic"]["PS"][0]["sample_id"] == "a"
     md = R.to_markdown(rep)
     assert "NOT MODEL PERFORMANCE" in md and "**pending**" in md
     mo = R.latest_measure_only()

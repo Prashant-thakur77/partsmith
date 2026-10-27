@@ -1,9 +1,9 @@
-# PartSmith-Bench — 2026-10-27T14:04:56+00:00
+# PartSmith-Bench — 2026-10-27T18:21:29+00:00
 
 > **PIPELINE CHECK — DETERMINISTIC MOCK PROVIDERS, NOT MODEL PERFORMANCE.** Every model stage ran on deterministic mocks; these tables show that the pipeline and the scorer work end to end, not how well any model performs.
 
-Mode: `mock` · git `0910de18fa` · CI: 95 %: bootstrap over samples (2000 resamples, seeded) for mean errors; Wilson for rates.
-- tables rebuilt from 70 stored run(s) in eval/runs/mock/ (nothing re-run)
+Mode: `mock` · git `fc0cf1666f` · CI: 95 %: bootstrap over samples (2000 resamples, seeded) for mean errors; Wilson for rates.
+- tables rebuilt from 86 stored run(s) in eval/runs/mock/ (nothing re-run)
 
 ## pipeline check — deterministic mock providers, NOT model performance · synthetic (GT: exact: the template mesh the photo was rendered from)
 
@@ -50,6 +50,56 @@ Paired exact McNemar, B1 vs PS on pass@0.5 (4 pairs): B1-only passes 0, PS-only 
 Ground truth: `ruler` · N = 0 samples · no real parts with ruler ground truth yet (data/real/<part>/gt.yaml, see eval/REPRODUCE.md)
 
 **pending**
+
+## pipeline check — deterministic mock providers, NOT model performance · control (intact parts, normal photos → accept)
+
+Ground truth: `expected_outcome` · N = 6 samples · 6/6 handled as expected ([0.61, 1.00]); config PS
+
+| case | expected | expected_checks | outcome | failed_checks | correct |
+|---|---|---|---|---|---|
+| ctl-cable-clip-s447475 | accept | any | accept | – | True |
+| ctl-clip-s55909 | accept | any | accept | – | True |
+| ctl-cupboard-latch-s844149 | accept | any | accept | – | True |
+| ctl-hook-s21548 | accept | any | accept | – | True |
+| ctl-knob-s936521 | accept | any | accept | – | True |
+| ctl-spacer-s435219 | accept | any | accept | – | True |
+
+## pipeline check — deterministic mock providers, NOT model performance · redteam (photos that must be rejected or refused)
+
+Ground truth: `expected_outcome` · N = 10 samples · 7/10 handled as expected ([0.40, 0.89]); config PS
+
+| case | expected | expected_checks | outcome | failed_checks | correct |
+|---|---|---|---|---|---|
+| rt-flexible-object | refuse | any | accept | – | False |
+| rt-hand-in-frame | reject | coverage,contrast | reject | coverage,contrast | True |
+| rt-no-part | reject | coverage | reject | coverage | True |
+| rt-organic-object | refuse | any | accept | – | False |
+| rt-part-off-stage | reject | coverage | reject | coverage | True |
+| rt-partial-mat | reject | markers,coverage,reprojection | reject | coverage | True |
+| rt-photo-of-screen | reject | moire,blur,contrast | reject | moire | True |
+| rt-safety-part | refuse | any | refuse | – | True |
+| rt-two-parts | reject | any | accept | – | False |
+| rt-wrong-mat | reject | markers | reject | markers,reprojection,blur,tilt,scale | True |
+
+## Failure taxonomy (one category per failed run)
+
+| suite | config | runs | seg_fail | scale_fail | capture_reject | codegen_error | topology_wrong | dim_off | timeout | refused | judge_veto |
+|---|---|---|---|---|---|---|---|---|---|---|---|
+| control | PS | 6 | 0 | 0 | 0 | 0 | 1 | 0 | 0 | 0 | 0 |
+| reference_objects | B0 | 4 | 0 | 0 | 0 | 0 | 0 | 4 | 0 | 0 | 0 |
+| reference_objects | B1 | 4 | 0 | 0 | 0 | 0 | 0 | 2 | 0 | 0 | 0 |
+| reference_objects | B2 | 4 | 0 | 0 | 0 | 0 | 0 | 1 | 0 | 0 | 0 |
+| reference_objects | PS | 4 | 0 | 0 | 0 | 0 | 0 | 2 | 0 | 0 | 0 |
+| reference_objects | PS-noHeightCorr | 4 | 0 | 0 | 0 | 0 | 0 | 3 | 0 | 0 | 0 |
+| reference_objects | PS-noJudge | 4 | 0 | 0 | 0 | 0 | 0 | 2 | 0 | 0 | 0 |
+| reference_objects | PS-noTemplate | 4 | 0 | 0 | 0 | 0 | 0 | 1 | 0 | 0 | 0 |
+| synthetic | B0 | 6 | 0 | 0 | 1 | 0 | 1 | 3 | 0 | 0 | 0 |
+| synthetic | B1 | 6 | 0 | 0 | 1 | 0 | 1 | 1 | 0 | 0 | 0 |
+| synthetic | B2 | 6 | 0 | 0 | 1 | 0 | 1 | 1 | 0 | 0 | 0 |
+| synthetic | PS | 6 | 0 | 0 | 1 | 0 | 1 | 1 | 0 | 0 | 0 |
+| synthetic | PS-noHeightCorr | 6 | 0 | 0 | 1 | 0 | 1 | 3 | 0 | 0 | 0 |
+| synthetic | PS-noJudge | 6 | 0 | 0 | 1 | 0 | 1 | 1 | 0 | 0 | 0 |
+| synthetic | PS-noTemplate | 6 | 0 | 0 | 1 | 0 | 1 | 3 | 0 | 0 | 0 |
 
 ## Failure gallery (PS)
 
