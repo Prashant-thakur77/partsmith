@@ -72,3 +72,10 @@ rendered silhouette — a synthetic self-check, labelled as such; approval publi
 B-rep edges from view.json; transparent background, 1× and 2×) at publish time — no GL in the server. Uploaded JPEGs keep their
 pixels byte-for-byte; only the EXIF GPS block and XMP are stripped (camera focal length stays, the metrology needs it). The MCP
 server is mounted on the API app at `/mcp` (stateless streamable HTTP) and also runs over stdio (`python -m services.mcp --stdio`).
+
+**2026-10-27 — Bench mechanics.** `eval/run.py` drives the real job service (`sync=True`, non-interactive) for each suite and
+config; bench jobs live under `$PARTSMITH_HOME/bench` so they never appear in the app or the registry. Ablations are `RunOptions`
+switches (`single_shot`, `mat_scale`, `numeric_feedback`, `templates`, `judge`, `height_correction`) whose defaults are the product
+behaviour. Only the scorer reads `gt.yaml`; it re-executes the final `part.py` in the sandbox and measures it the way the ground
+truth was measured. Mean-error CIs use a cluster bootstrap over parts (dimensions of one part are correlated). Mock-mode tables are
+always titled "pipeline check — deterministic mock providers, NOT model performance".

@@ -55,6 +55,26 @@ def bootstrap_ci(
     return (float(lo), float(hi))
 
 
+def cluster_bootstrap_mean(
+    groups: Sequence[Sequence[float]], *, n_boot: int = 2000, alpha: float = 0.05, seed: int = 0
+) -> tuple[float, float]:
+    """Percentile bootstrap CI of the pooled mean when values come in correlated groups (e.g. all dimensions of one
+    part): whole groups are resampled. Empty groups are dropped; (nan, nan) when nothing is left."""
+    gs = [np.asarray(g, dtype=np.float64) for g in groups if len(g)]
+    if not gs:
+        return (math.nan, math.nan)
+    sums = np.array([g.sum() for g in gs])
+    counts = np.array([len(g) for g in gs], dtype=np.float64)
+    if len(gs) == 1:
+        v = float(sums[0] / counts[0])
+        return (v, v)
+    rng = np.random.default_rng(seed)
+    idx = rng.integers(0, len(gs), size=(n_boot, len(gs)))
+    boots = sums[idx].sum(axis=1) / counts[idx].sum(axis=1)
+    lo, hi = np.quantile(boots, [alpha / 2, 1 - alpha / 2])
+    return (float(lo), float(hi))
+
+
 def binom_two_sided_p(k: int, n: int) -> float:
     """Exact two-sided p-value of k successes in n fair-coin trials (doubling the smaller tail, capped at 1)."""
     if n == 0:
@@ -80,4 +100,12 @@ def mcnemar_paired(a_pass: Sequence[bool], b_pass: Sequence[bool]) -> tuple[int,
     return b, c, mcnemar_exact(b, c)
 
 
-__all__ = ["Z95", "binom_two_sided_p", "bootstrap_ci", "mcnemar_exact", "mcnemar_paired", "wilson_ci"]
+__all__ = [
+    "Z95",
+    "binom_two_sided_p",
+    "bootstrap_ci",
+    "cluster_bootstrap_mean",
+    "mcnemar_exact",
+    "mcnemar_paired",
+    "wilson_ci",
+]

@@ -1,0 +1,81 @@
+{
+ "suite": "synthetic",
+ "config": "B1",
+ "sample_id": "syn-clip-white-part-s468432",
+ "split": "held_out",
+ "kind": "template",
+ "preset": "white-part",
+ "mode": "mock",
+ "gt_source": "synthetic_exact",
+ "status": "best_effort",
+ "verified": false,
+ "iterations": 1,
+ "iterations_to_converge": null,
+ "strategy": "template",
+ "template": "clip",
+ "verifier_max_error_mm": 0.6010407640085683,
+ "retake_reason": null,
+ "usd": 0.0,
+ "tokens_in": 0,
+ "tokens_out": 0,
+ "model_calls": 9,
+ "model_ms": 441,
+ "provider_modes": [
+  "mock"
+ ],
+ "providers": {
+  "segment": [
+   "mock:sam-3.1"
+  ],
+  "understand": [
+   "mock:muse-spark-1.3"
+  ],
+  "plan": [
+   "mock:meta-models/muse-spark-open"
+  ],
+  "build": [
+   "mock:meta-models/muse-spark-open"
+  ]
+ },
+ "convergence": [
+  {
+   "iter": 1,
+   "hausdorff_mm": 0.6010407640085683,
+   "iou": 0.9567712567062266,
+   "max_error_mm": 0.6010407640085683
+  }
+ ],
+ "wall_s": 14.76,
+ "dims": [
+  {
+   "name": "length",
+   "gt_mm": 40.7,
+   "model_mm": 41.0,
+   "error_mm": 0.3
+  },
+  {
+   "name": "width",
+   "gt_mm": 14.6,
+   "model_mm": 15.0,
+   "error_mm": 0.4
+  },
+  {
+   "name": "thickness",
+   "gt_mm": 10.9,
+   "model_mm": 11.0,
+   "error_mm": 0.1
+  },
+  {
+   "name": "hole_1.diameter",
+   "gt_mm": 3.35,
+   "model_mm": 3.0,
+   "error_mm": -0.35
+  }
+ ],
+ "missed": [],
+ "extra_holes": 0,
+ "pass_0_3": false,
+ "pass_0_5": true,
+ "valid": true,
+ "valid_reason": ""
+}

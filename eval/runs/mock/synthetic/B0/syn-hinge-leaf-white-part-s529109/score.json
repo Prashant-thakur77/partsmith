@@ -1,0 +1,84 @@
+{
+ "suite": "synthetic",
+ "config": "B0",
+ "sample_id": "syn-hinge-leaf-white-part-s529109",
+ "split": "held_out",
+ "kind": "template",
+ "preset": "white-part",
+ "mode": "mock",
+ "gt_source": "synthetic_exact",
+ "status": "best_effort",
+ "verified": false,
+ "iterations": 1,
+ "iterations_to_converge": null,
+ "strategy": "template",
+ "template": "hinge_leaf",
+ "verifier_max_error_mm": 17.849999999999994,
+ "retake_reason": null,
+ "usd": 0.0,
+ "tokens_in": 0,
+ "tokens_out": 0,
+ "model_calls": 9,
+ "model_ms": 347,
+ "provider_modes": [
+  "mock"
+ ],
+ "providers": {
+  "segment": [
+   "mock:sam-3.1"
+  ],
+  "understand": [
+   "mock:muse-spark-1.3"
+  ],
+  "plan": [
+   "mock:meta-models/muse-spark-open"
+  ],
+  "build": [
+   "mock:meta-models/muse-spark-open"
+  ]
+ },
+ "convergence": [
+  {
+   "iter": 1,
+   "hausdorff_mm": 17.849999999999994,
+   "iou": 0.09706975244752872,
+   "max_error_mm": 17.849999999999994
+  }
+ ],
+ "wall_s": 13.83,
+ "dims": [
+  {
+   "name": "length",
+   "gt_mm": 55.7,
+   "model_mm": 24.0,
+   "error_mm": -31.7
+  },
+  {
+   "name": "width",
+   "gt_mm": 22.399326,
+   "model_mm": 13.9993,
+   "error_mm": -8.4
+  },
+  {
+   "name": "thickness",
+   "gt_mm": 5.199985,
+   "model_mm": 6.1999,
+   "error_mm": 0.9999
+  },
+  {
+   "name": "hole_1.diameter",
+   "gt_mm": 3.15,
+   "model_mm": 3.5,
+   "error_mm": 0.35
+  }
+ ],
+ "missed": [
+  "hole_2.diameter"
+ ],
+ "extra_holes": 0,
+ "pass_0_3": false,
+ "pass_0_5": false,
+ "valid": true,
+ "valid_reason": "",
+ "failure": "worst length -31.70 mm; missing hole_2.diameter"
+}

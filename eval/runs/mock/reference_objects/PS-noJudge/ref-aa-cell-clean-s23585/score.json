@@ -1,0 +1,93 @@
+{
+ "suite": "reference_objects",
+ "config": "PS-noJudge",
+ "sample_id": "ref-aa-cell-clean-s23585",
+ "split": "held_out",
+ "kind": "reference_object",
+ "preset": "clean",
+ "mode": "mock",
+ "gt_source": "reference_spec",
+ "status": "verified",
+ "verified": true,
+ "iterations": 4,
+ "iterations_to_converge": 4,
+ "strategy": "free_code",
+ "template": "battery_cover",
+ "verifier_max_error_mm": 0.15811388300841783,
+ "retake_reason": null,
+ "usd": 0.0,
+ "tokens_in": 0,
+ "tokens_out": 0,
+ "model_calls": 8,
+ "model_ms": 138,
+ "provider_modes": [
+  "mock"
+ ],
+ "providers": {
+  "segment": [
+   "mock:sam-3.1"
+  ],
+  "understand": [
+   "mock:muse-spark-1.3"
+  ],
+  "plan": [
+   "mock:meta-models/muse-spark-open"
+  ],
+  "build": [
+   "mock:meta-models/muse-spark-open"
+  ],
+  "fix": [
+   "mock:meta-models/muse-spark-open"
+  ]
+ },
+ "convergence": [
+  {
+   "iter": 1,
+   "hausdorff_mm": 2.3500000000000014,
+   "iou": 0.8788917262351158,
+   "max_error_mm": 11.5
+  },
+  {
+   "iter": 2,
+   "hausdorff_mm": 2.3500000000000014,
+   "iou": 0.8788917262351158,
+   "max_error_mm": 11.5
+  },
+  {
+   "iter": 3,
+   "hausdorff_mm": 2.3500000000000014,
+   "iou": 0.8788917262351158,
+   "max_error_mm": 11.5
+  },
+  {
+   "iter": 4,
+   "hausdorff_mm": 0.15811388300841783,
+   "iou": 0.9979448578556468,
+   "max_error_mm": 0.15811388300841783
+  }
+ ],
+ "wall_s": 8.29,
+ "dims": [
+  {
+   "name": "length",
+   "gt_mm": 50.5,
+   "model_mm": 49.848,
+   "error_mm": -0.652,
+   "within_spec": true
+  },
+  {
+   "name": "width",
+   "gt_mm": 14.5,
+   "model_mm": 14.224,
+   "error_mm": -0.276,
+   "within_spec": true
+  }
+ ],
+ "missed": [],
+ "extra_holes": 0,
+ "pass_0_3": false,
+ "pass_0_5": false,
+ "valid": true,
+ "valid_reason": "",
+ "failure": "worst length -0.65 mm"
+}

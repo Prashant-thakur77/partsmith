@@ -1,0 +1,115 @@
+{
+ "suite": "synthetic",
+ "config": "PS-noHeightCorr",
+ "sample_id": "syn-hinge-leaf-white-part-s529109",
+ "split": "held_out",
+ "kind": "template",
+ "preset": "white-part",
+ "mode": "mock",
+ "gt_source": "synthetic_exact",
+ "status": "best_effort",
+ "verified": false,
+ "iterations": 6,
+ "iterations_to_converge": null,
+ "strategy": "free_code",
+ "template": "hinge_leaf",
+ "verifier_max_error_mm": 19.733537442638106,
+ "retake_reason": null,
+ "usd": 0.0,
+ "tokens_in": 0,
+ "tokens_out": 0,
+ "model_calls": 15,
+ "model_ms": 556,
+ "provider_modes": [
+  "mock"
+ ],
+ "providers": {
+  "segment": [
+   "mock:sam-3.1"
+  ],
+  "understand": [
+   "mock:muse-spark-1.3"
+  ],
+  "plan": [
+   "mock:meta-models/muse-spark-open"
+  ],
+  "build": [
+   "mock:meta-models/muse-spark-open"
+  ],
+  "fix": [
+   "mock:meta-models/muse-spark-open"
+  ],
+  "judge": [
+   "mock:muse-glimmer"
+  ]
+ },
+ "convergence": [
+  {
+   "iter": 1,
+   "hausdorff_mm": 19.4,
+   "iou": 0.10726208577908784,
+   "max_error_mm": 19.4
+  },
+  {
+   "iter": 2,
+   "hausdorff_mm": 17.6,
+   "iou": 0.10724874062369921,
+   "max_error_mm": 17.6
+  },
+  {
+   "iter": 3,
+   "hausdorff_mm": 17.85,
+   "iou": 0.10724600747536528,
+   "max_error_mm": 17.85
+  },
+  {
+   "iter": 4,
+   "hausdorff_mm": 17.85,
+   "iou": 0.10724600747536528,
+   "max_error_mm": 17.85
+  },
+  {
+   "iter": 5,
+   "hausdorff_mm": 19.733537442638106,
+   "iou": 0.1914088039267348,
+   "max_error_mm": 19.733537442638106
+  },
+  {
+   "iter": 6,
+   "hausdorff_mm": 19.68660712261003,
+   "iou": 0.23167364302510512,
+   "max_error_mm": 19.68660712261003
+  }
+ ],
+ "wall_s": 25.04,
+ "dims": [
+  {
+   "name": "length",
+   "gt_mm": 55.7,
+   "model_mm": 19.762,
+   "error_mm": -35.938
+  },
+  {
+   "name": "width",
+   "gt_mm": 22.399326,
+   "model_mm": 2.369,
+   "error_mm": -20.0303
+  },
+  {
+   "name": "thickness",
+   "gt_mm": 5.199985,
+   "model_mm": 2.5,
+   "error_mm": -2.7
+  }
+ ],
+ "missed": [
+  "hole_1.diameter",
+  "hole_2.diameter"
+ ],
+ "extra_holes": 0,
+ "pass_0_3": false,
+ "pass_0_5": false,
+ "valid": true,
+ "valid_reason": "",
+ "failure": "worst length -35.94 mm; missing hole_1.diameter, hole_2.diameter"
+}

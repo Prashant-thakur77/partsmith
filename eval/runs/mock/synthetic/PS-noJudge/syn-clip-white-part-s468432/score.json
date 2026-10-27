@@ -1,0 +1,115 @@
+{
+ "suite": "synthetic",
+ "config": "PS-noJudge",
+ "sample_id": "syn-clip-white-part-s468432",
+ "split": "held_out",
+ "kind": "template",
+ "preset": "white-part",
+ "mode": "mock",
+ "gt_source": "synthetic_exact",
+ "status": "best_effort",
+ "verified": false,
+ "iterations": 6,
+ "iterations_to_converge": null,
+ "strategy": "template",
+ "template": "clip",
+ "verifier_max_error_mm": 0.7000000000000002,
+ "retake_reason": null,
+ "usd": 0.0,
+ "tokens_in": 0,
+ "tokens_out": 0,
+ "model_calls": 14,
+ "model_ms": 570,
+ "provider_modes": [
+  "mock"
+ ],
+ "providers": {
+  "segment": [
+   "mock:sam-3.1"
+  ],
+  "understand": [
+   "mock:muse-spark-1.3"
+  ],
+  "plan": [
+   "mock:meta-models/muse-spark-open"
+  ],
+  "build": [
+   "mock:meta-models/muse-spark-open"
+  ],
+  "fix": [
+   "mock:meta-models/muse-spark-open"
+  ]
+ },
+ "convergence": [
+  {
+   "iter": 1,
+   "hausdorff_mm": 0.6010407640085683,
+   "iou": 0.9567712567062266,
+   "max_error_mm": 0.6010407640085683
+  },
+  {
+   "iter": 2,
+   "hausdorff_mm": 0.7000000000000002,
+   "iou": 0.9386418421084296,
+   "max_error_mm": 0.7000000000000002
+  },
+  {
+   "iter": 3,
+   "hausdorff_mm": 0.7000000000000002,
+   "iou": 0.94005977151855,
+   "max_error_mm": 0.7000000000000002
+  },
+  {
+   "iter": 4,
+   "hausdorff_mm": 0.7000000000000002,
+   "iou": 0.9375933975681577,
+   "max_error_mm": 0.7000000000000002
+  },
+  {
+   "iter": 5,
+   "hausdorff_mm": 7.8,
+   "iou": 0.8106750392464678,
+   "max_error_mm": 7.895
+  },
+  {
+   "iter": 6,
+   "hausdorff_mm": 1.4000000000000004,
+   "iou": 0.9244081632653062,
+   "max_error_mm": 1.495002288818359
+  }
+ ],
+ "wall_s": 31.15,
+ "dims": [
+  {
+   "name": "length",
+   "gt_mm": 40.7,
+   "model_mm": 41.0,
+   "error_mm": 0.3
+  },
+  {
+   "name": "width",
+   "gt_mm": 14.6,
+   "model_mm": 15.4,
+   "error_mm": 0.8
+  },
+  {
+   "name": "thickness",
+   "gt_mm": 10.9,
+   "model_mm": 11.0,
+   "error_mm": 0.1
+  },
+  {
+   "name": "hole_1.diameter",
+   "gt_mm": 3.35,
+   "model_mm": 3.2,
+   "error_mm": -0.15
+  }
+ ],
+ "missed": [],
+ "extra_holes": 0,
+ "pass_0_3": false,
+ "pass_0_5": false,
+ "valid": true,
+ "valid_reason": "",
+ "failure": "worst width +0.80 mm"
+}

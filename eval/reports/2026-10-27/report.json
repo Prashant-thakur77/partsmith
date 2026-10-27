@@ -1,0 +1,3240 @@
+{
+ "status": "ok",
+ "generated_at": "2026-10-27T11:43:17+00:00",
+ "git_sha": "3237b2faba9c5b3d5d1c97056c30fc33758778e3",
+ "mode": "mock",
+ "label": "pipeline check \u2014 deterministic mock providers, NOT model performance",
+ "notes": [
+  "tables rebuilt from 70 stored run(s) in eval/runs/mock/ (nothing re-run)"
+ ],
+ "configs": {
+  "B0": {
+   "description": "single shot from the raw photo, no mat scale",
+   "options": {
+    "single_shot": true,
+    "mat_scale": false
+   },
+   "env": {}
+  },
+  "B1": {
+   "description": "single shot with the mat measurements (no loop)",
+   "options": {
+    "single_shot": true
+   },
+   "env": {}
+  },
+  "B2": {
+   "description": "full loop, visual-only feedback (overlays, no residual numbers)",
+   "options": {
+    "numeric_feedback": false
+   },
+   "env": {}
+  },
+  "PS": {
+   "description": "full PartSmith loop with numeric residuals",
+   "options": {},
+   "env": {}
+  },
+  "PS-noTemplate": {
+   "description": "PS without the template library (free code only)",
+   "options": {
+    "templates": false
+   },
+   "env": {}
+  },
+  "PS-noJudge": {
+   "description": "PS without the judge",
+   "options": {
+    "judge": false
+   },
+   "env": {}
+  },
+  "PS-noHeightCorr": {
+   "description": "PS without the parallax (height) correction",
+   "options": {
+    "height_correction": false
+   },
+   "env": {}
+  },
+  "PS-open": {
+   "description": "PS; builder/fixer must be served by open weights (default chain)",
+   "options": {},
+   "env": {}
+  },
+  "PS-open-all": {
+   "description": "PS with every stage on open weights",
+   "options": {},
+   "env": {
+    "OPEN_WEIGHTS_ONLY": "1"
+   }
+  }
+ },
+ "tables": {
+  "synthetic": {
+   "title": "pipeline check \u2014 deterministic mock providers, NOT model performance \u00b7 synthetic (GT: exact: the template mesh the photo was rendered from)",
+   "n": 6,
+   "ground_truth": "synthetic_exact",
+   "ci": "95 %: bootstrap over samples (2000 resamples, seeded) for mean errors; Wilson for rates",
+   "columns": [
+    "config",
+    "n",
+    "median_abs_err_mm",
+    "mean_abs_err_mm",
+    "mean_ci95",
+    "p90_mm",
+    "pass@0.5",
+    "pass@0.5_ci95",
+    "verified_rate",
+    "verified_ci95",
+    "valid_rate",
+    "median_iters",
+    "median_wall_s",
+    "usd_per_job",
+    "tokens_per_job",
+    "provider_modes"
+   ],
+   "rows": [
+    {
+     "config": "B0",
+     "description": "single shot from the raw photo, no mat scale",
+     "n": 6,
+     "dims": 20,
+     "median_abs_err_mm": 0.725,
+     "mean_abs_err_mm": 3.765,
+     "mean_ci95": "[1.063, 7.300]",
+     "p90_mm": 8.13,
+     "pass@0.3": 0.167,
+     "pass@0.5": 0.167,
+     "pass@0.5_ci95": "[0.03, 0.56]",
+     "verified_rate": 0.0,
+     "verified_ci95": "[0.00, 0.39]",
+     "valid_rate": 0.833,
+     "median_iters": 1.0,
+     "median_wall_s": 11.3,
+     "usd_per_job": 0.0,
+     "tokens_per_job": 0.0,
+     "provider_modes": "mock"
+    },
+    {
+     "config": "B1",
+     "description": "single shot with the mat measurements (no loop)",
+     "n": 6,
+     "dims": 20,
+     "median_abs_err_mm": 0.3,
+     "mean_abs_err_mm": 2.43,
+     "mean_ci95": "[0.214, 6.477]",
+     "p90_mm": 3.495,
+     "pass@0.3": 0.333,
+     "pass@0.5": 0.5,
+     "pass@0.5_ci95": "[0.19, 0.81]",
+     "verified_rate": 0.0,
+     "verified_ci95": "[0.00, 0.39]",
+     "valid_rate": 0.833,
+     "median_iters": 1.0,
+     "median_wall_s": 13.7,
+     "usd_per_job": 0.0,
+     "tokens_per_job": 0.0,
+     "provider_modes": "mock"
+    },
+    {
+     "config": "B2",
+     "description": "full loop, visual-only feedback (overlays, no residual numbers)",
+     "n": 6,
+     "dims": 19,
+     "median_abs_err_mm": 0.164,
+     "mean_abs_err_mm": 5.306,
+     "mean_ci95": "[0.946, 11.954]",
+     "p90_mm": 21.486,
+     "pass@0.3": 0.167,
+     "pass@0.5": 0.167,
+     "pass@0.5_ci95": "[0.03, 0.56]",
+     "verified_rate": 0.0,
+     "verified_ci95": "[0.00, 0.39]",
+     "valid_rate": 0.833,
+     "median_iters": 6.0,
+     "median_wall_s": 18.9,
+     "usd_per_job": 0.0,
+     "tokens_per_job": 0.0,
+     "provider_modes": "mock"
+    },
+    {
+     "config": "PS",
+     "description": "full PartSmith loop with numeric residuals",
+     "n": 6,
+     "dims": 19,
+     "median_abs_err_mm": 0.1,
+     "mean_abs_err_mm": 3.638,
+     "mean_ci95": "[0.314, 10.946]",
+     "p90_mm": 6.964,
+     "pass@0.3": 0.167,
+     "pass@0.5": 0.167,
+     "pass@0.5_ci95": "[0.03, 0.56]",
+     "verified_rate": 0.167,
+     "verified_ci95": "[0.03, 0.56]",
+     "valid_rate": 0.833,
+     "median_iters": 6.0,
+     "median_wall_s": 31.4,
+     "usd_per_job": 0.0,
+     "tokens_per_job": 0.0,
+     "provider_modes": "mock"
+    },
+    {
+     "config": "PS-noTemplate",
+     "description": "PS without the template library (free code only)",
+     "n": 6,
+     "dims": 19,
+     "median_abs_err_mm": 0.164,
+     "mean_abs_err_mm": 5.306,
+     "mean_ci95": "[0.946, 11.954]",
+     "p90_mm": 21.486,
+     "pass@0.3": 0.167,
+     "pass@0.5": 0.167,
+     "pass@0.5_ci95": "[0.03, 0.56]",
+     "verified_rate": 0.0,
+     "verified_ci95": "[0.00, 0.39]",
+     "valid_rate": 0.833,
+     "median_iters": 3.0,
+     "median_wall_s": 15.2,
+     "usd_per_job": 0.0,
+     "tokens_per_job": 0.0,
+     "provider_modes": "mock"
+    },
+    {
+     "config": "PS-noJudge",
+     "description": "PS without the judge",
+     "n": 6,
+     "dims": 19,
+     "median_abs_err_mm": 0.1,
+     "mean_abs_err_mm": 3.638,
+     "mean_ci95": "[0.314, 10.946]",
+     "p90_mm": 6.964,
+     "pass@0.3": 0.167,
+     "pass@0.5": 0.167,
+     "pass@0.5_ci95": "[0.03, 0.56]",
+     "verified_rate": 0.167,
+     "verified_ci95": "[0.03, 0.56]",
+     "valid_rate": 0.833,
+     "median_iters": 6.0,
+     "median_wall_s": 28.4,
+     "usd_per_job": 0.0,
+     "tokens_per_job": 0.0,
+     "provider_modes": "mock"
+    },
+    {
+     "config": "PS-noHeightCorr",
+     "description": "PS without the parallax (height) correction",
+     "n": 6,
+     "dims": 19,
+     "median_abs_err_mm": 0.9,
+     "mean_abs_err_mm": 3.864,
+     "mean_ci95": "[0.639, 10.936]",
+     "p90_mm": 6.366,
+     "pass@0.3": 0.0,
+     "pass@0.5": 0.167,
+     "pass@0.5_ci95": "[0.03, 0.56]",
+     "verified_rate": 0.0,
+     "verified_ci95": "[0.00, 0.39]",
+     "valid_rate": 0.833,
+     "median_iters": 6.0,
+     "median_wall_s": 23.3,
+     "usd_per_job": 0.0,
+     "tokens_per_job": 0.0,
+     "provider_modes": "mock"
+    }
+   ],
+   "headline": {
+    "config": "PS",
+    "median_abs_err_mm": 0.1,
+    "mean_abs_err_mm": 3.638,
+    "pass_at_0_5": 0.167,
+    "verified_rate": 0.167,
+    "n": 6
+   },
+   "median_abs_err_mm": 0.1,
+   "status": "ok",
+   "mode": "mock",
+   "note": "headline = PS on the held-out split (6 samples); MOCK providers: these numbers check the pipeline, they do not measure any model",
+   "mcnemar_B1_vs_PS": {
+    "n_pairs": 6,
+    "b1_only": 2,
+    "ps_only": 0,
+    "p_value": 0.5,
+    "metric": "pass@0.5"
+   }
+  },
+  "reference_objects": {
+   "title": "pipeline check \u2014 deterministic mock providers, NOT model performance \u00b7 reference objects (GT: published spec (AA cell: loose spec))",
+   "n": 4,
+   "ground_truth": "reference_spec",
+   "ci": "95 %: bootstrap over samples (2000 resamples, seeded) for mean errors; Wilson for rates",
+   "columns": [
+    "config",
+    "n",
+    "median_abs_err_mm",
+    "mean_abs_err_mm",
+    "mean_ci95",
+    "p90_mm",
+    "pass@0.5",
+    "pass@0.5_ci95",
+    "verified_rate",
+    "verified_ci95",
+    "valid_rate",
+    "median_iters",
+    "median_wall_s",
+    "usd_per_job",
+    "tokens_per_job",
+    "provider_modes"
+   ],
+   "rows": [
+    {
+     "config": "B0",
+     "description": "single shot from the raw photo, no mat scale",
+     "n": 4,
+     "dims": 11,
+     "median_abs_err_mm": 3.74,
+     "mean_abs_err_mm": 4.411,
+     "mean_ci95": "[3.367, 5.730]",
+     "p90_mm": 7.5,
+     "pass@0.3": 0.0,
+     "pass@0.5": 0.0,
+     "pass@0.5_ci95": "[0.00, 0.49]",
+     "verified_rate": 0.0,
+     "verified_ci95": "[0.00, 0.49]",
+     "valid_rate": 1.0,
+     "median_iters": 1.0,
+     "median_wall_s": 8.8,
+     "usd_per_job": 0.0,
+     "tokens_per_job": 0.0,
+     "provider_modes": "mock"
+    },
+    {
+     "config": "B1",
+     "description": "single shot with the mat measurements (no loop)",
+     "n": 4,
+     "dims": 11,
+     "median_abs_err_mm": 0.4,
+     "mean_abs_err_mm": 1.342,
+     "mean_ci95": "[1.080, 1.600]",
+     "p90_mm": 3.74,
+     "pass@0.3": 0.0,
+     "pass@0.5": 0.0,
+     "pass@0.5_ci95": "[0.00, 0.49]",
+     "verified_rate": 0.0,
+     "verified_ci95": "[0.00, 0.49]",
+     "valid_rate": 1.0,
+     "median_iters": 1.0,
+     "median_wall_s": 10.8,
+     "usd_per_job": 0.0,
+     "tokens_per_job": 0.0,
+     "provider_modes": "mock"
+    },
+    {
+     "config": "B2",
+     "description": "full loop, visual-only feedback (overlays, no residual numbers)",
+     "n": 4,
+     "dims": 11,
+     "median_abs_err_mm": 0.09,
+     "mean_abs_err_mm": 0.634,
+     "mean_ci95": "[0.177, 1.188]",
+     "p90_mm": 1.7,
+     "pass@0.3": 0.25,
+     "pass@0.5": 0.25,
+     "pass@0.5_ci95": "[0.05, 0.70]",
+     "verified_rate": 0.5,
+     "verified_ci95": "[0.15, 0.85]",
+     "valid_rate": 1.0,
+     "median_iters": 5.0,
+     "median_wall_s": 16.1,
+     "usd_per_job": 0.0,
+     "tokens_per_job": 0.0,
+     "provider_modes": "mock"
+    },
+    {
+     "config": "PS",
+     "description": "full PartSmith loop with numeric residuals",
+     "n": 4,
+     "dims": 11,
+     "median_abs_err_mm": 0.09,
+     "mean_abs_err_mm": 0.634,
+     "mean_ci95": "[0.177, 1.188]",
+     "p90_mm": 1.7,
+     "pass@0.3": 0.25,
+     "pass@0.5": 0.25,
+     "pass@0.5_ci95": "[0.05, 0.70]",
+     "verified_rate": 0.5,
+     "verified_ci95": "[0.15, 0.85]",
+     "valid_rate": 1.0,
+     "median_iters": 5.0,
+     "median_wall_s": 20.4,
+     "usd_per_job": 0.0,
+     "tokens_per_job": 0.0,
+     "provider_modes": "mock"
+    },
+    {
+     "config": "PS-noTemplate",
+     "description": "PS without the template library (free code only)",
+     "n": 4,
+     "dims": 8,
+     "median_abs_err_mm": 0.066,
+     "mean_abs_err_mm": 0.352,
+     "mean_ci95": "[0.040, 0.591]",
+     "p90_mm": 0.966,
+     "pass@0.3": 0.25,
+     "pass@0.5": 0.25,
+     "pass@0.5_ci95": "[0.05, 0.70]",
+     "verified_rate": 0.5,
+     "verified_ci95": "[0.15, 0.85]",
+     "valid_rate": 0.75,
+     "median_iters": 1.0,
+     "median_wall_s": 10.9,
+     "usd_per_job": 0.0,
+     "tokens_per_job": 0.0,
+     "provider_modes": "mock"
+    },
+    {
+     "config": "PS-noJudge",
+     "description": "PS without the judge",
+     "n": 4,
+     "dims": 11,
+     "median_abs_err_mm": 0.09,
+     "mean_abs_err_mm": 0.634,
+     "mean_ci95": "[0.177, 1.188]",
+     "p90_mm": 1.7,
+     "pass@0.3": 0.25,
+     "pass@0.5": 0.25,
+     "pass@0.5_ci95": "[0.05, 0.70]",
+     "verified_rate": 0.5,
+     "verified_ci95": "[0.15, 0.85]",
+     "valid_rate": 1.0,
+     "median_iters": 5.0,
+     "median_wall_s": 17.5,
+     "usd_per_job": 0.0,
+     "tokens_per_job": 0.0,
+     "provider_modes": "mock"
+    },
+    {
+     "config": "PS-noHeightCorr",
+     "description": "PS without the parallax (height) correction",
+     "n": 4,
+     "dims": 11,
+     "median_abs_err_mm": 0.7,
+     "mean_abs_err_mm": 1.297,
+     "mean_ci95": "[1.052, 1.504]",
+     "p90_mm": 3.74,
+     "pass@0.3": 0.0,
+     "pass@0.5": 0.0,
+     "pass@0.5_ci95": "[0.00, 0.49]",
+     "verified_rate": 0.25,
+     "verified_ci95": "[0.05, 0.70]",
+     "valid_rate": 1.0,
+     "median_iters": 6.0,
+     "median_wall_s": 10.4,
+     "usd_per_job": 0.0,
+     "tokens_per_job": 0.0,
+     "provider_modes": "mock"
+    }
+   ],
+   "headline": {
+    "config": "PS",
+    "median_abs_err_mm": 0.09,
+    "mean_abs_err_mm": 0.634,
+    "pass_at_0_5": 0.25,
+    "verified_rate": 0.5,
+    "n": 4
+   },
+   "median_abs_err_mm": 0.09,
+   "status": "ok",
+   "mode": "mock",
+   "note": "headline = PS on the held-out split (4 samples); MOCK providers: these numbers check the pipeline, they do not measure any model",
+   "mcnemar_B1_vs_PS": {
+    "n_pairs": 4,
+    "b1_only": 0,
+    "ps_only": 1,
+    "p_value": 1.0,
+    "metric": "pass@0.5"
+   }
+  },
+  "real_ruler": {
+   "title": "pipeline check \u2014 deterministic mock providers, NOT model performance \u00b7 real ruler (GT: school ruler, \u00b10.5 mm (never caliper accuracy))",
+   "n": 0,
+   "ground_truth": "ruler",
+   "ci": "95 %: bootstrap over samples (2000 resamples, seeded) for mean errors; Wilson for rates",
+   "columns": [],
+   "rows": [],
+   "headline": {
+    "median_abs_err_mm": null
+   },
+   "median_abs_err_mm": null,
+   "status": "pending",
+   "mode": "mock",
+   "note": "pending: no real parts with ruler ground truth yet (data/real/<part>/gt.yaml, see eval/REPRODUCE.md)"
+  }
+ },
+ "runs": {
+  "reference_objects": {
+   "B0": [
+    {
+     "sample_id": "ref-aa-cell-clean-s23585",
+     "split": "held_out",
+     "preset": "clean",
+     "status": "best_effort",
+     "verified": false,
+     "valid": true,
+     "pass_0_5": false,
+     "iterations": 1,
+     "wall_s": 6.81,
+     "usd": 0.0,
+     "tokens_in": 0,
+     "tokens_out": 0,
+     "strategy": "template",
+     "template": "battery_cover",
+     "failure": "worst length -7.50 mm",
+     "max_abs_err_mm": 7.5
+    },
+    {
+     "sample_id": "ref-id1-card-clean-s787514",
+     "split": "held_out",
+     "preset": "clean",
+     "status": "best_effort",
+     "verified": false,
+     "valid": true,
+     "pass_0_5": false,
+     "iterations": 1,
+     "wall_s": 6.34,
+     "usd": 0.0,
+     "tokens_in": 0,
+     "tokens_out": 0,
+     "strategy": "template",
+     "template": "battery_cover",
+     "failure": "worst length -9.60 mm",
+     "max_abs_err_mm": 9.6
+    },
+    {
+     "sample_id": "ref-lego-2x4-clean-s496628",
+     "split": "held_out",
+     "preset": "clean",
+     "status": "best_effort",
+     "verified": false,
+     "valid": true,
+     "pass_0_5": false,
+     "iterations": 1,
+     "wall_s": 10.76,
+     "usd": 0.0,
+     "tokens_in": 0,
+     "tokens_out": 0,
+     "strategy": "template",
+     "template": "battery_cover",
+     "failure": "worst length -5.80 mm",
+     "max_abs_err_mm": 5.8
+    },
+    {
+     "sample_id": "ref-sd-card-clean-s596360",
+     "split": "held_out",
+     "preset": "clean",
+     "status": "best_effort",
+     "verified": false,
+     "valid": true,
+     "pass_0_5": false,
+     "iterations": 1,
+     "wall_s": 12.76,
+     "usd": 0.0,
+     "tokens_in": 0,
+     "tokens_out": 0,
+     "strategy": "template",
+     "template": "battery_cover",
+     "failure": "worst thickness +3.40 mm",
+     "max_abs_err_mm": 3.4
+    }
+   ],
+   "B1": [
+    {
+     "sample_id": "ref-aa-cell-clean-s23585",
+     "split": "held_out",
+     "preset": "clean",
+     "status": "best_effort",
+     "verified": false,
+     "valid": true,
+     "pass_0_5": false,
+     "iterations": 1,
+     "wall_s": 7.92,
+     "usd": 0.0,
+     "tokens_in": 0,
+     "tokens_out": 0,
+     "strategy": "template",
+     "template": "battery_cover",
+     "failure": "worst width +1.50 mm",
+     "max_abs_err_mm": 1.5
+    },
+    {
+     "sample_id": "ref-id1-card-clean-s787514",
+     "split": "held_out",
+     "preset": "clean",
+     "status": "best_effort",
+     "verified": false,
+     "valid": true,
+     "pass_0_5": false,
+     "iterations": 1,
+     "wall_s": 7.99,
+     "usd": 0.0,
+     "tokens_in": 0,
+     "tokens_out": 0,
+     "strategy": "template",
+     "template": "battery_cover",
+     "failure": "worst thickness +3.74 mm",
+     "max_abs_err_mm": 3.74
+    },
+    {
+     "sample_id": "ref-lego-2x4-clean-s496628",
+     "split": "held_out",
+     "preset": "clean",
+     "status": "best_effort",
+     "verified": false,
+     "valid": true,
+     "pass_0_5": false,
+     "iterations": 1,
+     "wall_s": 13.63,
+     "usd": 0.0,
+     "tokens_in": 0,
+     "tokens_out": 0,
+     "strategy": "template",
+     "template": "battery_cover",
+     "failure": "worst thickness -4.80 mm",
+     "max_abs_err_mm": 4.8
+    },
+    {
+     "sample_id": "ref-sd-card-clean-s596360",
+     "split": "held_out",
+     "preset": "clean",
+     "status": "best_effort",
+     "verified": false,
+     "valid": true,
+     "pass_0_5": false,
+     "iterations": 1,
+     "wall_s": 16.35,
+     "usd": 0.0,
+     "tokens_in": 0,
+     "tokens_out": 0,
+     "strategy": "template",
+     "template": "battery_cover",
+     "failure": "worst thickness +3.40 mm",
+     "max_abs_err_mm": 3.4
+    }
+   ],
+   "B2": [
+    {
+     "sample_id": "ref-aa-cell-clean-s23585",
+     "split": "held_out",
+     "preset": "clean",
+     "status": "verified",
+     "verified": true,
+     "valid": true,
+     "pass_0_5": false,
+     "iterations": 4,
+     "wall_s": 11.43,
+     "usd": 0.0,
+     "tokens_in": 0,
+     "tokens_out": 0,
+     "strategy": "free_code",
+     "template": "battery_cover",
+     "failure": "worst length -0.65 mm",
+     "max_abs_err_mm": 0.652
+    },
+    {
+     "sample_id": "ref-id1-card-clean-s787514",
+     "split": "held_out",
+     "preset": "clean",
+     "status": "best_effort",
+     "verified": false,
+     "valid": true,
+     "pass_0_5": false,
+     "iterations": 6,
+     "wall_s": 9.82,
+     "usd": 0.0,
+     "tokens_in": 0,
+     "tokens_out": 0,
+     "strategy": "template",
+     "template": "battery_cover",
+     "failure": "worst thickness +3.74 mm",
+     "max_abs_err_mm": 3.74
+    },
+    {
+     "sample_id": "ref-lego-2x4-clean-s496628",
+     "split": "held_out",
+     "preset": "clean",
+     "status": "best_effort",
+     "verified": false,
+     "valid": true,
+     "pass_0_5": false,
+     "iterations": 6,
+     "wall_s": 20.86,
+     "usd": 0.0,
+     "tokens_in": 0,
+     "tokens_out": 0,
+     "strategy": "free_code",
+     "template": "battery_cover",
+     "failure": "worst thickness -1.70 mm",
+     "max_abs_err_mm": 1.7
+    },
+    {
+     "sample_id": "ref-sd-card-clean-s596360",
+     "split": "held_out",
+     "preset": "clean",
+     "status": "verified",
+     "verified": true,
+     "valid": true,
+     "pass_0_5": true,
+     "iterations": 4,
+     "wall_s": 20.88,
+     "usd": 0.0,
+     "tokens_in": 0,
+     "tokens_out": 0,
+     "strategy": "free_code",
+     "template": "battery_cover",
+     "failure": null,
+     "max_abs_err_mm": 0.0896
+    }
+   ],
+   "PS": [
+    {
+     "sample_id": "ref-aa-cell-clean-s23585",
+     "split": "held_out",
+     "preset": "clean",
+     "status": "verified",
+     "verified": true,
+     "valid": true,
+     "pass_0_5": false,
+     "iterations": 4,
+     "wall_s": 10.69,
+     "usd": 0.0,
+     "tokens_in": 0,
+     "tokens_out": 0,
+     "strategy": "free_code",
+     "template": "battery_cover",
+     "failure": "worst length -0.65 mm",
+     "max_abs_err_mm": 0.652
+    },
+    {
+     "sample_id": "ref-id1-card-clean-s787514",
+     "split": "held_out",
+     "preset": "clean",
+     "status": "best_effort",
+     "verified": false,
+     "valid": true,
+     "pass_0_5": false,
+     "iterations": 6,
+     "wall_s": 17.15,
+     "usd": 0.0,
+     "tokens_in": 0,
+     "tokens_out": 0,
+     "strategy": "template",
+     "template": "battery_cover",
+     "failure": "worst thickness +3.74 mm",
+     "max_abs_err_mm": 3.74
+    },
+    {
+     "sample_id": "ref-lego-2x4-clean-s496628",
+     "split": "held_out",
+     "preset": "clean",
+     "status": "best_effort",
+     "verified": false,
+     "valid": true,
+     "pass_0_5": false,
+     "iterations": 6,
+     "wall_s": 23.57,
+     "usd": 0.0,
+     "tokens_in": 0,
+     "tokens_out": 0,
+     "strategy": "free_code",
+     "template": "battery_cover",
+     "failure": "worst thickness -1.70 mm",
+     "max_abs_err_mm": 1.7
+    },
+    {
+     "sample_id": "ref-sd-card-clean-s596360",
+     "split": "held_out",
+     "preset": "clean",
+     "status": "verified",
+     "verified": true,
+     "valid": true,
+     "pass_0_5": true,
+     "iterations": 4,
+     "wall_s": 27.32,
+     "usd": 0.0,
+     "tokens_in": 0,
+     "tokens_out": 0,
+     "strategy": "free_code",
+     "template": "battery_cover",
+     "failure": null,
+     "max_abs_err_mm": 0.0896
+    }
+   ],
+   "PS-noHeightCorr": [
+    {
+     "sample_id": "ref-aa-cell-clean-s23585",
+     "split": "held_out",
+     "preset": "clean",
+     "status": "verified",
+     "verified": true,
+     "valid": true,
+     "pass_0_5": false,
+     "iterations": 4,
+     "wall_s": 6.42,
+     "usd": 0.0,
+     "tokens_in": 0,
+     "tokens_out": 0,
+     "strategy": "free_code",
+     "template": "battery_cover",
+     "failure": "worst length +1.62 mm",
+     "max_abs_err_mm": 1.6227
+    },
+    {
+     "sample_id": "ref-id1-card-clean-s787514",
+     "split": "held_out",
+     "preset": "clean",
+     "status": "best_effort",
+     "verified": false,
+     "valid": true,
+     "pass_0_5": false,
+     "iterations": 6,
+     "wall_s": 8.5,
+     "usd": 0.0,
+     "tokens_in": 0,
+     "tokens_out": 0,
+     "strategy": "template",
+     "template": "battery_cover",
+     "failure": "worst thickness +3.74 mm",
+     "max_abs_err_mm": 3.74
+    },
+    {
+     "sample_id": "ref-lego-2x4-clean-s496628",
+     "split": "held_out",
+     "preset": "clean",
+     "status": "best_effort",
+     "verified": false,
+     "valid": true,
+     "pass_0_5": false,
+     "iterations": 6,
+     "wall_s": 12.22,
+     "usd": 0.0,
+     "tokens_in": 0,
+     "tokens_out": 0,
+     "strategy": "free_code",
+     "template": "battery_cover",
+     "failure": "worst length +2.32 mm",
+     "max_abs_err_mm": 2.3226
+    },
+    {
+     "sample_id": "ref-sd-card-clean-s596360",
+     "split": "held_out",
+     "preset": "clean",
+     "status": "best_effort",
+     "verified": false,
+     "valid": true,
+     "pass_0_5": false,
+     "iterations": 6,
+     "wall_s": 15.26,
+     "usd": 0.0,
+     "tokens_in": 0,
+     "tokens_out": 0,
+     "strategy": "template",
+     "template": "battery_cover",
+     "failure": "worst thickness +3.85 mm",
+     "max_abs_err_mm": 3.85
+    }
+   ],
+   "PS-noJudge": [
+    {
+     "sample_id": "ref-aa-cell-clean-s23585",
+     "split": "held_out",
+     "preset": "clean",
+     "status": "verified",
+     "verified": true,
+     "valid": true,
+     "pass_0_5": false,
+     "iterations": 4,
+     "wall_s": 8.29,
+     "usd": 0.0,
+     "tokens_in": 0,
+     "tokens_out": 0,
+     "strategy": "free_code",
+     "template": "battery_cover",
+     "failure": "worst length -0.65 mm",
+     "max_abs_err_mm": 0.652
+    },
+    {
+     "sample_id": "ref-id1-card-clean-s787514",
+     "split": "held_out",
+     "preset": "clean",
+     "status": "best_effort",
+     "verified": false,
+     "valid": true,
+     "pass_0_5": false,
+     "iterations": 6,
+     "wall_s": 15.91,
+     "usd": 0.0,
+     "tokens_in": 0,
+     "tokens_out": 0,
+     "strategy": "template",
+     "template": "battery_cover",
+     "failure": "worst thickness +3.74 mm",
+     "max_abs_err_mm": 3.74
+    },
+    {
+     "sample_id": "ref-lego-2x4-clean-s496628",
+     "split": "held_out",
+     "preset": "clean",
+     "status": "best_effort",
+     "verified": false,
+     "valid": true,
+     "pass_0_5": false,
+     "iterations": 6,
+     "wall_s": 19.02,
+     "usd": 0.0,
+     "tokens_in": 0,
+     "tokens_out": 0,
+     "strategy": "free_code",
+     "template": "battery_cover",
+     "failure": "worst thickness -1.70 mm",
+     "max_abs_err_mm": 1.7
+    },
+    {
+     "sample_id": "ref-sd-card-clean-s596360",
+     "split": "held_out",
+     "preset": "clean",
+     "status": "verified",
+     "verified": true,
+     "valid": true,
+     "pass_0_5": true,
+     "iterations": 4,
+     "wall_s": 22.36,
+     "usd": 0.0,
+     "tokens_in": 0,
+     "tokens_out": 0,
+     "strategy": "free_code",
+     "template": "battery_cover",
+     "failure": null,
+     "max_abs_err_mm": 0.0896
+    }
+   ],
+   "PS-noTemplate": [
+    {
+     "sample_id": "ref-aa-cell-clean-s23585",
+     "split": "held_out",
+     "preset": "clean",
+     "status": "verified",
+     "verified": true,
+     "valid": true,
+     "pass_0_5": false,
+     "iterations": 1,
+     "wall_s": 7.91,
+     "usd": 0.0,
+     "tokens_in": 0,
+     "tokens_out": 0,
+     "strategy": "free_code",
+     "template": null,
+     "failure": "worst length -0.65 mm",
+     "max_abs_err_mm": 0.652
+    },
+    {
+     "sample_id": "ref-id1-card-clean-s787514",
+     "split": "held_out",
+     "preset": "clean",
+     "status": "failed",
+     "verified": false,
+     "valid": false,
+     "pass_0_5": false,
+     "iterations": 1,
+     "wall_s": 6.63,
+     "usd": 0.0,
+     "tokens_in": 0,
+     "tokens_out": 0,
+     "strategy": "free_code",
+     "template": null,
+     "failure": "no valid final model (no part program)",
+     "max_abs_err_mm": null
+    },
+    {
+     "sample_id": "ref-lego-2x4-clean-s496628",
+     "split": "held_out",
+     "preset": "clean",
+     "status": "best_effort",
+     "verified": false,
+     "valid": true,
+     "pass_0_5": false,
+     "iterations": 3,
+     "wall_s": 13.94,
+     "usd": 0.0,
+     "tokens_in": 0,
+     "tokens_out": 0,
+     "strategy": "free_code",
+     "template": null,
+     "failure": "worst thickness -1.70 mm",
+     "max_abs_err_mm": 1.7
+    },
+    {
+     "sample_id": "ref-sd-card-clean-s596360",
+     "split": "held_out",
+     "preset": "clean",
+     "status": "verified",
+     "verified": true,
+     "valid": true,
+     "pass_0_5": true,
+     "iterations": 1,
+     "wall_s": 14.89,
+     "usd": 0.0,
+     "tokens_in": 0,
+     "tokens_out": 0,
+     "strategy": "free_code",
+     "template": null,
+     "failure": null,
+     "max_abs_err_mm": 0.0896
+    }
+   ]
+  },
+  "synthetic": {
+   "B0": [
+    {
+     "sample_id": "syn-battery-cover-glare-s261884",
+     "split": "held_out",
+     "preset": "glare",
+     "status": "best_effort",
+     "verified": false,
+     "valid": true,
+     "pass_0_5": false,
+     "iterations": 1,
+     "wall_s": 11.14,
+     "usd": 0.0,
+     "tokens_in": 0,
+     "tokens_out": 0,
+     "strategy": "template",
+     "template": "battery_cover",
+     "failure": "worst length -8.10 mm",
+     "max_abs_err_mm": 8.1
+    },
+    {
+     "sample_id": "syn-clip-white-part-s468432",
+     "split": "held_out",
+     "preset": "white-part",
+     "status": "best_effort",
+     "verified": false,
+     "valid": true,
+     "pass_0_5": false,
+     "iterations": 1,
+     "wall_s": 12.74,
+     "usd": 0.0,
+     "tokens_in": 0,
+     "tokens_out": 0,
+     "strategy": "template",
+     "template": "clip",
+     "failure": "worst length -2.70 mm",
+     "max_abs_err_mm": 2.7
+    },
+    {
+     "sample_id": "syn-hinge-leaf-white-part-s529109",
+     "split": "held_out",
+     "preset": "white-part",
+     "status": "best_effort",
+     "verified": false,
+     "valid": true,
+     "pass_0_5": false,
+     "iterations": 1,
+     "wall_s": 13.83,
+     "usd": 0.0,
+     "tokens_in": 0,
+     "tokens_out": 0,
+     "strategy": "template",
+     "template": "hinge_leaf",
+     "failure": "worst length -31.70 mm; missing hole_2.diameter",
+     "max_abs_err_mm": 31.7
+    },
+    {
+     "sample_id": "syn-hook-glare-s235877",
+     "split": "held_out",
+     "preset": "glare",
+     "status": "best_effort",
+     "verified": false,
+     "valid": true,
+     "pass_0_5": false,
+     "iterations": 1,
+     "wall_s": 10.42,
+     "usd": 0.0,
+     "tokens_in": 0,
+     "tokens_out": 0,
+     "strategy": "template",
+     "template": "hook",
+     "failure": "worst length -6.80 mm",
+     "max_abs_err_mm": 6.8
+    },
+    {
+     "sample_id": "syn-l-bracket-moire-s114398",
+     "split": "held_out",
+     "preset": "moire",
+     "status": "failed",
+     "verified": false,
+     "valid": false,
+     "pass_0_5": false,
+     "iterations": 0,
+     "wall_s": 0.61,
+     "usd": 0,
+     "tokens_in": 0,
+     "tokens_out": 0,
+     "strategy": "template",
+     "template": null,
+     "failure": "job failed: Wavy stripes from the screen are visible \u2014 move the phone a little further away or rotate it slightly.",
+     "max_abs_err_mm": null
+    },
+    {
+     "sample_id": "syn-spacer-blur-s21267",
+     "split": "held_out",
+     "preset": "blur",
+     "status": "best_effort",
+     "verified": false,
+     "valid": true,
+     "pass_0_5": true,
+     "iterations": 1,
+     "wall_s": 11.5,
+     "usd": 0.0,
+     "tokens_in": 0,
+     "tokens_out": 0,
+     "strategy": "template",
+     "template": "spacer",
+     "failure": null,
+     "max_abs_err_mm": 0.3
+    }
+   ],
+   "B1": [
+    {
+     "sample_id": "syn-battery-cover-glare-s261884",
+     "split": "held_out",
+     "preset": "glare",
+     "status": "best_effort",
+     "verified": false,
+     "valid": true,
+     "pass_0_5": true,
+     "iterations": 1,
+     "wall_s": 13.16,
+     "usd": 0.0,
+     "tokens_in": 0,
+     "tokens_out": 0,
+     "strategy": "template",
+     "template": "battery_cover",
+     "failure": null,
+     "max_abs_err_mm": 0.3
+    },
+    {
+     "sample_id": "syn-clip-white-part-s468432",
+     "split": "held_out",
+     "preset": "white-part",
+     "status": "best_effort",
+     "verified": false,
+     "valid": true,
+     "pass_0_5": true,
+     "iterations": 1,
+     "wall_s": 14.76,
+     "usd": 0.0,
+     "tokens_in": 0,
+     "tokens_out": 0,
+     "strategy": "template",
+     "template": "clip",
+     "failure": null,
+     "max_abs_err_mm": 0.4
+    },
+    {
+     "sample_id": "syn-hinge-leaf-white-part-s529109",
+     "split": "held_out",
+     "preset": "white-part",
+     "status": "best_effort",
+     "verified": false,
+     "valid": true,
+     "pass_0_5": false,
+     "iterations": 1,
+     "wall_s": 15.78,
+     "usd": 0.0,
+     "tokens_in": 0,
+     "tokens_out": 0,
+     "strategy": "template",
+     "template": "hinge_leaf",
+     "failure": "worst length -31.70 mm; missing hole_2.diameter",
+     "max_abs_err_mm": 31.7
+    },
+    {
+     "sample_id": "syn-hook-glare-s235877",
+     "split": "held_out",
+     "preset": "glare",
+     "status": "best_effort",
+     "verified": false,
+     "valid": true,
+     "pass_0_5": false,
+     "iterations": 1,
+     "wall_s": 10.71,
+     "usd": 0.0,
+     "tokens_in": 0,
+     "tokens_out": 0,
+     "strategy": "template",
+     "template": "hook",
+     "failure": "worst thickness +2.95 mm",
+     "max_abs_err_mm": 2.95
+    },
+    {
+     "sample_id": "syn-l-bracket-moire-s114398",
+     "split": "held_out",
+     "preset": "moire",
+     "status": "failed",
+     "verified": false,
+     "valid": false,
+     "pass_0_5": false,
+     "iterations": 0,
+     "wall_s": 0.77,
+     "usd": 0,
+     "tokens_in": 0,
+     "tokens_out": 0,
+     "strategy": "template",
+     "template": null,
+     "failure": "job failed: Wavy stripes from the screen are visible \u2014 move the phone a little further away or rotate it slightly.",
+     "max_abs_err_mm": null
+    },
+    {
+     "sample_id": "syn-spacer-blur-s21267",
+     "split": "held_out",
+     "preset": "blur",
+     "status": "best_effort",
+     "verified": false,
+     "valid": true,
+     "pass_0_5": true,
+     "iterations": 1,
+     "wall_s": 14.33,
+     "usd": 0.0,
+     "tokens_in": 0,
+     "tokens_out": 0,
+     "strategy": "template",
+     "template": "spacer",
+     "failure": null,
+     "max_abs_err_mm": 0.3
+    }
+   ],
+   "B2": [
+    {
+     "sample_id": "syn-battery-cover-glare-s261884",
+     "split": "held_out",
+     "preset": "glare",
+     "status": "best_effort",
+     "verified": false,
+     "valid": true,
+     "pass_0_5": false,
+     "iterations": 6,
+     "wall_s": 17.32,
+     "usd": 0.0,
+     "tokens_in": 0,
+     "tokens_out": 0,
+     "strategy": "free_code",
+     "template": "battery_cover",
+     "failure": "worst thickness -3.65 mm",
+     "max_abs_err_mm": 3.65
+    },
+    {
+     "sample_id": "syn-clip-white-part-s468432",
+     "split": "held_out",
+     "preset": "white-part",
+     "status": "best_effort",
+     "verified": false,
+     "valid": true,
+     "pass_0_5": false,
+     "iterations": 6,
+     "wall_s": 20.22,
+     "usd": 0.0,
+     "tokens_in": 0,
+     "tokens_out": 0,
+     "strategy": "free_code",
+     "template": "clip",
+     "failure": "worst thickness -7.90 mm",
+     "max_abs_err_mm": 7.9
+    },
+    {
+     "sample_id": "syn-hinge-leaf-white-part-s529109",
+     "split": "held_out",
+     "preset": "white-part",
+     "status": "best_effort",
+     "verified": false,
+     "valid": true,
+     "pass_0_5": false,
+     "iterations": 6,
+     "wall_s": 22.48,
+     "usd": 0.0,
+     "tokens_in": 0,
+     "tokens_out": 0,
+     "strategy": "free_code",
+     "template": "hinge_leaf",
+     "failure": "worst length -36.34 mm; missing hole_1.diameter, hole_2.diameter",
+     "max_abs_err_mm": 36.3381
+    },
+    {
+     "sample_id": "syn-hook-glare-s235877",
+     "split": "held_out",
+     "preset": "glare",
+     "status": "best_effort",
+     "verified": false,
+     "valid": true,
+     "pass_0_5": false,
+     "iterations": 6,
+     "wall_s": 21.17,
+     "usd": 0.0,
+     "tokens_in": 0,
+     "tokens_out": 0,
+     "strategy": "free_code",
+     "template": "hook",
+     "failure": "worst thickness -26.55 mm",
+     "max_abs_err_mm": 26.55
+    },
+    {
+     "sample_id": "syn-l-bracket-moire-s114398",
+     "split": "held_out",
+     "preset": "moire",
+     "status": "failed",
+     "verified": false,
+     "valid": false,
+     "pass_0_5": false,
+     "iterations": 0,
+     "wall_s": 0.94,
+     "usd": 0,
+     "tokens_in": 0,
+     "tokens_out": 0,
+     "strategy": "template",
+     "template": null,
+     "failure": "job failed: Wavy stripes from the screen are visible \u2014 move the phone a little further away or rotate it slightly.",
+     "max_abs_err_mm": null
+    },
+    {
+     "sample_id": "syn-spacer-blur-s21267",
+     "split": "held_out",
+     "preset": "blur",
+     "status": "best_effort",
+     "verified": false,
+     "valid": true,
+     "pass_0_5": true,
+     "iterations": 6,
+     "wall_s": 17.54,
+     "usd": 0.0,
+     "tokens_in": 0,
+     "tokens_out": 0,
+     "strategy": "free_code",
+     "template": "spacer",
+     "failure": null,
+     "max_abs_err_mm": 0.1637
+    }
+   ],
+   "PS": [
+    {
+     "sample_id": "syn-battery-cover-glare-s261884",
+     "split": "held_out",
+     "preset": "glare",
+     "status": "best_effort",
+     "verified": false,
+     "valid": true,
+     "pass_0_5": false,
+     "iterations": 6,
+     "wall_s": 34.91,
+     "usd": 0.0,
+     "tokens_in": 0,
+     "tokens_out": 0,
+     "strategy": "free_code",
+     "template": "battery_cover",
+     "failure": "worst thickness -3.65 mm",
+     "max_abs_err_mm": 3.65
+    },
+    {
+     "sample_id": "syn-clip-white-part-s468432",
+     "split": "held_out",
+     "preset": "white-part",
+     "status": "best_effort",
+     "verified": false,
+     "valid": true,
+     "pass_0_5": false,
+     "iterations": 6,
+     "wall_s": 35.25,
+     "usd": 0.0,
+     "tokens_in": 0,
+     "tokens_out": 0,
+     "strategy": "template",
+     "template": "clip",
+     "failure": "worst width +0.80 mm",
+     "max_abs_err_mm": 0.8
+    },
+    {
+     "sample_id": "syn-hinge-leaf-white-part-s529109",
+     "split": "held_out",
+     "preset": "white-part",
+     "status": "best_effort",
+     "verified": false,
+     "valid": true,
+     "pass_0_5": false,
+     "iterations": 6,
+     "wall_s": 30.33,
+     "usd": 0.0,
+     "tokens_in": 0,
+     "tokens_out": 0,
+     "strategy": "free_code",
+     "template": "hinge_leaf",
+     "failure": "worst length -36.34 mm; missing hole_1.diameter, hole_2.diameter",
+     "max_abs_err_mm": 36.3381
+    },
+    {
+     "sample_id": "syn-hook-glare-s235877",
+     "split": "held_out",
+     "preset": "glare",
+     "status": "best_effort",
+     "verified": false,
+     "valid": true,
+     "pass_0_5": false,
+     "iterations": 6,
+     "wall_s": 32.51,
+     "usd": 0.0,
+     "tokens_in": 0,
+     "tokens_out": 0,
+     "strategy": "template",
+     "template": "hook",
+     "failure": "worst thickness +2.95 mm",
+     "max_abs_err_mm": 2.95
+    },
+    {
+     "sample_id": "syn-l-bracket-moire-s114398",
+     "split": "held_out",
+     "preset": "moire",
+     "status": "failed",
+     "verified": false,
+     "valid": false,
+     "pass_0_5": false,
+     "iterations": 0,
+     "wall_s": 1.86,
+     "usd": 0,
+     "tokens_in": 0,
+     "tokens_out": 0,
+     "strategy": "template",
+     "template": null,
+     "failure": "job failed: Wavy stripes from the screen are visible \u2014 move the phone a little further away or rotate it slightly.",
+     "max_abs_err_mm": null
+    },
+    {
+     "sample_id": "syn-spacer-blur-s21267",
+     "split": "held_out",
+     "preset": "blur",
+     "status": "verified",
+     "verified": true,
+     "valid": true,
+     "pass_0_5": true,
+     "iterations": 2,
+     "wall_s": 26.58,
+     "usd": 0.0,
+     "tokens_in": 0,
+     "tokens_out": 0,
+     "strategy": "template",
+     "template": "spacer",
+     "failure": null,
+     "max_abs_err_mm": 0.1
+    }
+   ],
+   "PS-noHeightCorr": [
+    {
+     "sample_id": "syn-battery-cover-glare-s261884",
+     "split": "held_out",
+     "preset": "glare",
+     "status": "best_effort",
+     "verified": false,
+     "valid": true,
+     "pass_0_5": true,
+     "iterations": 6,
+     "wall_s": 25.12,
+     "usd": 0.0,
+     "tokens_in": 0,
+     "tokens_out": 0,
+     "strategy": "template",
+     "template": "battery_cover",
+     "failure": null,
+     "max_abs_err_mm": 0.35
+    },
+    {
+     "sample_id": "syn-clip-white-part-s468432",
+     "split": "held_out",
+     "preset": "white-part",
+     "status": "best_effort",
+     "verified": false,
+     "valid": true,
+     "pass_0_5": false,
+     "iterations": 6,
+     "wall_s": 25.93,
+     "usd": 0.0,
+     "tokens_in": 0,
+     "tokens_out": 0,
+     "strategy": "template",
+     "template": "clip",
+     "failure": "worst thickness +2.30 mm",
+     "max_abs_err_mm": 2.3
+    },
+    {
+     "sample_id": "syn-hinge-leaf-white-part-s529109",
+     "split": "held_out",
+     "preset": "white-part",
+     "status": "best_effort",
+     "verified": false,
+     "valid": true,
+     "pass_0_5": false,
+     "iterations": 6,
+     "wall_s": 25.04,
+     "usd": 0.0,
+     "tokens_in": 0,
+     "tokens_out": 0,
+     "strategy": "free_code",
+     "template": "hinge_leaf",
+     "failure": "worst length -35.94 mm; missing hole_1.diameter, hole_2.diameter",
+     "max_abs_err_mm": 35.938
+    },
+    {
+     "sample_id": "syn-hook-glare-s235877",
+     "split": "held_out",
+     "preset": "glare",
+     "status": "best_effort",
+     "verified": false,
+     "valid": true,
+     "pass_0_5": false,
+     "iterations": 6,
+     "wall_s": 15.28,
+     "usd": 0.0,
+     "tokens_in": 0,
+     "tokens_out": 0,
+     "strategy": "template",
+     "template": "hook",
+     "failure": "worst thickness +2.95 mm",
+     "max_abs_err_mm": 2.95
+    },
+    {
+     "sample_id": "syn-l-bracket-moire-s114398",
+     "split": "held_out",
+     "preset": "moire",
+     "status": "failed",
+     "verified": false,
+     "valid": false,
+     "pass_0_5": false,
+     "iterations": 0,
+     "wall_s": 0.73,
+     "usd": 0,
+     "tokens_in": 0,
+     "tokens_out": 0,
+     "strategy": "template",
+     "template": null,
+     "failure": "job failed: Wavy stripes from the screen are visible \u2014 move the phone a little further away or rotate it slightly.",
+     "max_abs_err_mm": null
+    },
+    {
+     "sample_id": "syn-spacer-blur-s21267",
+     "split": "held_out",
+     "preset": "blur",
+     "status": "best_effort",
+     "verified": false,
+     "valid": true,
+     "pass_0_5": false,
+     "iterations": 6,
+     "wall_s": 21.51,
+     "usd": 0.0,
+     "tokens_in": 0,
+     "tokens_out": 0,
+     "strategy": "template",
+     "template": "spacer",
+     "failure": "worst length +1.00 mm",
+     "max_abs_err_mm": 1.0
+    }
+   ],
+   "PS-noJudge": [
+    {
+     "sample_id": "syn-battery-cover-glare-s261884",
+     "split": "held_out",
+     "preset": "glare",
+     "status": "best_effort",
+     "verified": false,
+     "valid": true,
+     "pass_0_5": false,
+     "iterations": 6,
+     "wall_s": 33.18,
+     "usd": 0.0,
+     "tokens_in": 0,
+     "tokens_out": 0,
+     "strategy": "free_code",
+     "template": "battery_cover",
+     "failure": "worst thickness -3.65 mm",
+     "max_abs_err_mm": 3.65
+    },
+    {
+     "sample_id": "syn-clip-white-part-s468432",
+     "split": "held_out",
+     "preset": "white-part",
+     "status": "best_effort",
+     "verified": false,
+     "valid": true,
+     "pass_0_5": false,
+     "iterations": 6,
+     "wall_s": 31.15,
+     "usd": 0.0,
+     "tokens_in": 0,
+     "tokens_out": 0,
+     "strategy": "template",
+     "template": "clip",
+     "failure": "worst width +0.80 mm",
+     "max_abs_err_mm": 0.8
+    },
+    {
+     "sample_id": "syn-hinge-leaf-white-part-s529109",
+     "split": "held_out",
+     "preset": "white-part",
+     "status": "best_effort",
+     "verified": false,
+     "valid": true,
+     "pass_0_5": false,
+     "iterations": 6,
+     "wall_s": 29.54,
+     "usd": 0.0,
+     "tokens_in": 0,
+     "tokens_out": 0,
+     "strategy": "free_code",
+     "template": "hinge_leaf",
+     "failure": "worst length -36.34 mm; missing hole_1.diameter, hole_2.diameter",
+     "max_abs_err_mm": 36.3381
+    },
+    {
+     "sample_id": "syn-hook-glare-s235877",
+     "split": "held_out",
+     "preset": "glare",
+     "status": "best_effort",
+     "verified": false,
+     "valid": true,
+     "pass_0_5": false,
+     "iterations": 6,
+     "wall_s": 25.9,
+     "usd": 0.0,
+     "tokens_in": 0,
+     "tokens_out": 0,
+     "strategy": "template",
+     "template": "hook",
+     "failure": "worst thickness +2.95 mm",
+     "max_abs_err_mm": 2.95
+    },
+    {
+     "sample_id": "syn-l-bracket-moire-s114398",
+     "split": "held_out",
+     "preset": "moire",
+     "status": "failed",
+     "verified": false,
+     "valid": false,
+     "pass_0_5": false,
+     "iterations": 0,
+     "wall_s": 1.27,
+     "usd": 0,
+     "tokens_in": 0,
+     "tokens_out": 0,
+     "strategy": "template",
+     "template": null,
+     "failure": "job failed: Wavy stripes from the screen are visible \u2014 move the phone a little further away or rotate it slightly.",
+     "max_abs_err_mm": null
+    },
+    {
+     "sample_id": "syn-spacer-blur-s21267",
+     "split": "held_out",
+     "preset": "blur",
+     "status": "verified",
+     "verified": true,
+     "valid": true,
+     "pass_0_5": true,
+     "iterations": 2,
+     "wall_s": 27.35,
+     "usd": 0.0,
+     "tokens_in": 0,
+     "tokens_out": 0,
+     "strategy": "template",
+     "template": "spacer",
+     "failure": null,
+     "max_abs_err_mm": 0.1
+    }
+   ],
+   "PS-noTemplate": [
+    {
+     "sample_id": "syn-battery-cover-glare-s261884",
+     "split": "held_out",
+     "preset": "glare",
+     "status": "best_effort",
+     "verified": false,
+     "valid": true,
+     "pass_0_5": false,
+     "iterations": 3,
+     "wall_s": 14.92,
+     "usd": 0.0,
+     "tokens_in": 0,
+     "tokens_out": 0,
+     "strategy": "free_code",
+     "template": null,
+     "failure": "worst thickness -3.65 mm",
+     "max_abs_err_mm": 3.65
+    },
+    {
+     "sample_id": "syn-clip-white-part-s468432",
+     "split": "held_out",
+     "preset": "white-part",
+     "status": "best_effort",
+     "verified": false,
+     "valid": true,
+     "pass_0_5": false,
+     "iterations": 3,
+     "wall_s": 16.09,
+     "usd": 0.0,
+     "tokens_in": 0,
+     "tokens_out": 0,
+     "strategy": "free_code",
+     "template": null,
+     "failure": "worst thickness -7.90 mm",
+     "max_abs_err_mm": 7.9
+    },
+    {
+     "sample_id": "syn-hinge-leaf-white-part-s529109",
+     "split": "held_out",
+     "preset": "white-part",
+     "status": "best_effort",
+     "verified": false,
+     "valid": true,
+     "pass_0_5": false,
+     "iterations": 3,
+     "wall_s": 17.41,
+     "usd": 0.0,
+     "tokens_in": 0,
+     "tokens_out": 0,
+     "strategy": "free_code",
+     "template": null,
+     "failure": "worst length -36.34 mm; missing hole_1.diameter, hole_2.diameter",
+     "max_abs_err_mm": 36.3381
+    },
+    {
+     "sample_id": "syn-hook-glare-s235877",
+     "split": "held_out",
+     "preset": "glare",
+     "status": "best_effort",
+     "verified": false,
+     "valid": true,
+     "pass_0_5": false,
+     "iterations": 3,
+     "wall_s": 12.63,
+     "usd": 0.0,
+     "tokens_in": 0,
+     "tokens_out": 0,
+     "strategy": "free_code",
+     "template": null,
+     "failure": "worst thickness -26.55 mm",
+     "max_abs_err_mm": 26.55
+    },
+    {
+     "sample_id": "syn-l-bracket-moire-s114398",
+     "split": "held_out",
+     "preset": "moire",
+     "status": "failed",
+     "verified": false,
+     "valid": false,
+     "pass_0_5": false,
+     "iterations": 0,
+     "wall_s": 0.72,
+     "usd": 0,
+     "tokens_in": 0,
+     "tokens_out": 0,
+     "strategy": "template",
+     "template": null,
+     "failure": "job failed: Wavy stripes from the screen are visible \u2014 move the phone a little further away or rotate it slightly.",
+     "max_abs_err_mm": null
+    },
+    {
+     "sample_id": "syn-spacer-blur-s21267",
+     "split": "held_out",
+     "preset": "blur",
+     "status": "best_effort",
+     "verified": false,
+     "valid": true,
+     "pass_0_5": true,
+     "iterations": 3,
+     "wall_s": 15.57,
+     "usd": 0.0,
+     "tokens_in": 0,
+     "tokens_out": 0,
+     "strategy": "free_code",
+     "template": null,
+     "failure": null,
+     "max_abs_err_mm": 0.1637
+    }
+   ]
+  }
+ },
+ "failures": [
+  {
+   "title": "ref-aa-cell-clean-s23585 \u00b7 PS (reference_objects, held_out)",
+   "reason": "worst length -0.65 mm",
+   "overlay_url": "/api/v1/blobs/e4297d8dbe802aaffc8f4040980df40f78f1c89742d0c1aede5d366157df203d.png",
+   "overlay_file": "gallery/reference_objects-ref-aa-cell-clean-s23585.png"
+  },
+  {
+   "title": "ref-id1-card-clean-s787514 \u00b7 PS (reference_objects, held_out)",
+   "reason": "worst thickness +3.74 mm",
+   "overlay_url": "/api/v1/blobs/aad26935f8986e4842d61b46aec15276163fb4c655cea1eefd7d984872745a85.png",
+   "overlay_file": "gallery/reference_objects-ref-id1-card-clean-s787514.png"
+  },
+  {
+   "title": "ref-lego-2x4-clean-s496628 \u00b7 PS (reference_objects, held_out)",
+   "reason": "worst thickness -1.70 mm",
+   "overlay_url": "/api/v1/blobs/68bac27738d8a92534f622e2d539cc064b60c98dee6e116d83a4042b5efdc9b9.png",
+   "overlay_file": "gallery/reference_objects-ref-lego-2x4-clean-s496628.png"
+  },
+  {
+   "title": "syn-battery-cover-glare-s261884 \u00b7 PS (synthetic, held_out)",
+   "reason": "worst thickness -3.65 mm",
+   "overlay_url": "/api/v1/blobs/71700e1f8d5d7d4beccddf82be5ed5c9fb73ac95e1f9cdd605ffcca535a31086.png",
+   "overlay_file": "gallery/synthetic-syn-battery-cover-glare-s261884.png"
+  },
+  {
+   "title": "syn-clip-white-part-s468432 \u00b7 PS (synthetic, held_out)",
+   "reason": "worst width +0.80 mm",
+   "overlay_url": "/api/v1/blobs/8958b4cb502594e92a83ba8cc06030e3870c7ac50f525b11ff4dd55b28e6df1f.png",
+   "overlay_file": "gallery/synthetic-syn-clip-white-part-s468432.png"
+  },
+  {
+   "title": "syn-hinge-leaf-white-part-s529109 \u00b7 PS (synthetic, held_out)",
+   "reason": "worst length -36.34 mm; missing hole_1.diameter, hole_2.diameter",
+   "overlay_url": "/api/v1/blobs/f812f78cc261130ffb3c704e65f7470f1e4c8157f910f1d3d8dfd71547d56c45.png",
+   "overlay_file": "gallery/synthetic-syn-hinge-leaf-white-part-s529109.png"
+  },
+  {
+   "title": "syn-hook-glare-s235877 \u00b7 PS (synthetic, held_out)",
+   "reason": "worst thickness +2.95 mm",
+   "overlay_url": "/api/v1/blobs/3233a10fbb9d8932f781b6ad61662edca1a9c0a31cf9e6c4320b745d41a87dab.png",
+   "overlay_file": "gallery/synthetic-syn-hook-glare-s235877.png"
+  },
+  {
+   "title": "syn-l-bracket-moire-s114398 \u00b7 PS (synthetic, held_out)",
+   "reason": "job failed: Wavy stripes from the screen are visible \u2014 move the phone a little further away or rotate it slightly.",
+   "overlay_url": "",
+   "overlay_file": null
+  }
+ ],
+ "charts": [
+  "charts/convergence_synthetic.svg",
+  "charts/errors_synthetic.svg",
+  "charts/convergence_reference_objects.svg",
+  "charts/errors_reference_objects.svg"
+ ],
+ "measure_only": {
+  "date": "2026-10-27",
+  "file": "eval/reports/2026-10-27/measure_only.json",
+  "gate": {
+   "synthetic": {
+    "mean_mm": 1.3479320175438594,
+    "n": 228,
+    "pass": false
+   },
+   "reference_objects": {
+    "source": "reference_objects_synthetic",
+    "mean_mm": 0.3462,
+    "n": 40,
+    "pass": true
+   },
+   "pass": false
+  },
+  "synthetic_manifest": {
+   "seed": 7,
+   "n": 60,
+   "n_reference": 20,
+   "dataset_sha256": "a576c6980c08ae02aba4e9cfd1fc763da6f0df1c09c51f5d23c699d2712e32f2"
+  },
+  "sections": {
+   "synthetic": {
+    "gt_source": "synthetic_exact (template mesh, exact)",
+    "n_photos": 120,
+    "n_detected": 120,
+    "capture_gate_pass": {
+     "k": 102,
+     "n": 120,
+     "rate": 0.85,
+     "ci95": [
+      0.775324706432755,
+      0.9029618770741527
+     ]
+    },
+    "accepted": {
+     "n": 228,
+     "mean_mm": 1.3479320175438594,
+     "mean_ci95_mm": [
+      0.8633820394736842,
+      1.9282499122807015
+     ],
+     "median_mm": 0.1765,
+     "p90_mm": 3.0974000000000017,
+     "max_mm": 36.253,
+     "within_0_3": 0.6096491228070176,
+     "within_0_3_ci95": [
+      0.545011750805564,
+      0.6706528686905976
+     ],
+     "within_0_5": 0.7456140350877193,
+     "within_0_5_ci95": [
+      0.68533645628369,
+      0.7977522913877119
+     ],
+     "signed_mean_mm": -0.30601798245614037
+    },
+    "all_detected": {
+     "n": 272,
+     "mean_mm": 1.321795588235294,
+     "mean_ci95_mm": [
+      0.9018972610294118,
+      1.8304531709558818
+     ],
+     "median_mm": 0.1765,
+     "p90_mm": 3.186200000000001,
+     "max_mm": 36.253,
+     "within_0_3": 0.6066176470588235,
+     "within_0_3_ci95": [
+      0.5474658649002895,
+      0.6627998444240724
+     ],
+     "within_0_5": 0.7316176470588235,
+     "within_0_5_ci95": [
+      0.6760004182151723,
+      0.7807837089377515
+     ],
+     "signed_mean_mm": -0.10973897058823531
+    },
+    "pass_at_0.3": {
+     "k": 36,
+     "n": 102,
+     "rate": 0.35294117647058826,
+     "ci95": [
+      0.26707997479873313,
+      0.4494772199502266
+     ]
+    },
+    "pass_at_0.5": {
+     "k": 51,
+     "n": 102,
+     "rate": 0.5,
+     "ci95": [
+      0.4047444724091258,
+      0.5952555275908742
+     ]
+    },
+    "by_dim": {
+     "hole \u00d8": {
+      "n": 75,
+      "mean_mm": 0.16074666666666662,
+      "mean_ci95_mm": [
+       0.13438433333333338,
+       0.18982966666666667
+      ],
+      "median_mm": 0.095,
+      "p90_mm": 0.34060000000000007,
+      "max_mm": 0.456,
+      "within_0_3": 0.8,
+      "within_0_3_ci95": [
+       0.6958871716522836,
+       0.8748785228580329
+      ],
+      "within_0_5": 1.0,
+      "within_0_5_ci95": [
+       0.9512761575171942,
+       1.0
+      ],
+      "signed_mean_mm": -0.09733333333333333
+     },
+     "side:thickness": {
+      "n": 51,
+      "mean_mm": 2.4506843137254903,
+      "mean_ci95_mm": [
+       1.3483642156862743,
+       3.8305079901960775
+      ],
+      "median_mm": 0.4735,
+      "p90_mm": 6.5504,
+      "max_mm": 25.753,
+      "within_0_3": 0.3333333333333333,
+      "within_0_3_ci95": [
+       0.21969931853588517,
+       0.47031622143029195
+      ],
+      "within_0_5": 0.5098039215686274,
+      "within_0_5_ci95": [
+       0.37680923894569696,
+       0.6414251410562926
+      ],
+      "signed_mean_mm": 0.09695490196078428
+     },
+     "top:length": {
+      "n": 51,
+      "mean_mm": 2.0060176470588233,
+      "mean_ci95_mm": [
+       0.457774705882353,
+       4.004276323529412
+      ],
+      "median_mm": 0.138,
+      "p90_mm": 1.44,
+      "max_mm": 36.253,
+      "within_0_3": 0.6666666666666666,
+      "within_0_3_ci95": [
+       0.529683778569708,
+       0.7803006814641148
+      ],
+      "within_0_5": 0.7450980392156863,
+      "within_0_5_ci95": [
+       0.6113171816155626,
+       0.844542318434177
+      ],
+      "signed_mean_mm": -1.2985000000000002
+     },
+     "top:width": {
+      "n": 51,
+      "mean_mm": 1.3329549019607843,
+      "mean_ci95_mm": [
+       0.6411125,
+       2.2783199999999995
+      ],
+      "median_mm": 0.2573,
+      "p90_mm": 3.037,
+      "max_mm": 20.1463,
+      "within_0_3": 0.5490196078431373,
+      "within_0_3_ci95": [
+       0.41384708550368815,
+       0.6773248145062598
+      ],
+      "within_0_5": 0.6078431372549019,
+      "within_0_5_ci95": [
+       0.4708515898394834,
+       0.7297265901824019
+      ],
+      "signed_mean_mm": -0.023398039215686228
+     }
+    },
+    "by_preset": {
+     "blur": {
+      "n": 29,
+      "mean_mm": 0.7875862068965517,
+      "mean_ci95_mm": [
+       0.3438168965517241,
+       1.318238103448276
+      ],
+      "median_mm": 0.185,
+      "p90_mm": 3.3726,
+      "max_mm": 5.315,
+      "within_0_3": 0.6551724137931034,
+      "within_0_3_ci95": [
+       0.47345104090476137,
+       0.80059281473325
+      ],
+      "within_0_5": 0.7586206896551724,
+      "within_0_5_ci95": [
+       0.5789239838218867,
+       0.8778157755747991
+      ],
+      "signed_mean_mm": 0.5248206896551725
+     },
+     "clean": {
+      "n": 37,
+      "mean_mm": 0.566808108108108,
+      "mean_ci95_mm": [
+       0.28632547297297295,
+       0.9120859459459455
+      ],
+      "median_mm": 0.143,
+      "p90_mm": 1.1891999999999994,
+      "max_mm": 4.4018,
+      "within_0_3": 0.6756756756756757,
+      "within_0_3_ci95": [
+       0.514636672419722,
+       0.8036673347185581
+      ],
+      "within_0_5": 0.7297297297297297,
+      "within_0_5_ci95": [
+       0.5702183167528573,
+       0.8460253848895091
+      ],
+      "signed_mean_mm": 0.4235594594594594
+     },
+     "glare": {
+      "n": 35,
+      "mean_mm": 0.4402571428571429,
+      "mean_ci95_mm": [
+       0.16182964285714282,
+       0.8061537857142853
+      ],
+      "median_mm": 0.112,
+      "p90_mm": 0.5902000000000001,
+      "max_mm": 4.953,
+      "within_0_3": 0.7428571428571429,
+      "within_0_3_ci95": [
+       0.5793069315616084,
+       0.8583697293093955
+      ],
+      "within_0_5": 0.8571428571428571,
+      "within_0_5_ci95": [
+       0.7062444591340484,
+       0.9373976892056628
+      ],
+      "signed_mean_mm": -0.009577142857142847
+     },
+     "low-light": {
+      "n": 31,
+      "mean_mm": 0.44479032258064516,
+      "mean_ci95_mm": [
+       0.154665564516129,
+       0.8454991935483868
+      ],
+      "median_mm": 0.0901,
+      "p90_mm": 1.397,
+      "max_mm": 3.989,
+      "within_0_3": 0.8064516129032258,
+      "within_0_3_ci95": [
+       0.6371974218820453,
+       0.908129916384139
+      ],
+      "within_0_5": 0.8709677419354839,
+      "within_0_5_ci95": [
+       0.7114759374369357,
+       0.9486571562537085
+      ],
+      "signed_mean_mm": 0.0918548387096774
+     },
+     "moire": {
+      "n": 4,
+      "mean_mm": 0.59625,
+      "mean_ci95_mm": [
+       0.082,
+       1.3535
+      ],
+      "median_mm": 0.2755,
+      "p90_mm": 1.3747000000000003,
+      "max_mm": 1.771,
+      "within_0_3": 0.5,
+      "within_0_3_ci95": [
+       0.15003898915214947,
+       0.8499610108478506
+      ],
+      "within_0_5": 0.75,
+      "within_0_5_ci95": [
+       0.30064184258240184,
+       0.9544127391902995
+      ],
+      "signed_mean_mm": 0.33975
+     },
+     "paper": {
+      "n": 37,
+      "mean_mm": 0.44328378378378375,
+      "mean_ci95_mm": [
+       0.2698673648648649,
+       0.694091554054054
+      ],
+      "median_mm": 0.3,
+      "p90_mm": 0.8835999999999997,
+      "max_mm": 3.3572,
+      "within_0_3": 0.5135135135135135,
+      "within_0_3_ci95": [
+       0.358948966656188,
+       0.6655359569698336
+      ],
+      "within_0_5": 0.8378378378378378,
+      "within_0_5_ci95": [
+       0.6886351629906503,
+       0.9234879276598885
+      ],
+      "signed_mean_mm": 0.06445675675675677
+     },
+     "tilt": {
+      "n": 32,
+      "mean_mm": 1.6142656250000003,
+      "mean_ci95_mm": [
+       0.6008450781249999,
+       2.9003792968749993
+      ],
+      "median_mm": 0.17825000000000002,
+      "p90_mm": 5.934500000000002,
+      "max_mm": 13.781,
+      "within_0_3": 0.59375,
+      "within_0_3_ci95": [
+       0.42260024875382873,
+       0.7448036515733456
+      ],
+      "within_0_5": 0.65625,
+      "within_0_5_ci95": [
+       0.4831108797896222,
+       0.7958956207556682
+      ],
+      "signed_mean_mm": 1.324046875
+     },
+     "white-part": {
+      "n": 23,
+      "mean_mm": 7.1250478260869565,
+      "mean_ci95_mm": [
+       3.2470926086956515,
+       12.019655652173915
+      ],
+      "median_mm": 1.1,
+      "p90_mm": 24.631660000000004,
+      "max_mm": 36.253,
+      "within_0_3": 0.17391304347826086,
+      "within_0_3_ci95": [
+       0.06978653563062565,
+       0.3713764764022614
+      ],
+      "within_0_5": 0.391304347826087,
+      "within_0_5_ci95": [
+       0.22157622792477952,
+       0.592144776086183
+      ],
+      "signed_mean_mm": -6.490839130434782
+     }
+    },
+    "by_group": {
+     "bracket": {
+      "n": 16,
+      "mean_mm": 3.7795625,
+      "mean_ci95_mm": [
+       1.097234375,
+       7.310829687499998
+      ],
+      "median_mm": 1.2894999999999999,
+      "p90_mm": 10.2795,
+      "max_mm": 25.753,
+      "within_0_3": 0.375,
+      "within_0_3_ci95": [
+       0.18481232558863633,
+       0.6135895945449727
+      ],
+      "within_0_5": 0.4375,
+      "within_0_5_ci95": [
+       0.23098652405492354,
+       0.6682144360118811
+      ],
+      "signed_mean_mm": -1.6830625
+     },
+     "cable_clip": {
+      "n": 22,
+      "mean_mm": 2.373304545454545,
+      "mean_ci95_mm": [
+       0.320505,
+       5.674658522727272
+      ],
+      "median_mm": 0.1785,
+      "p90_mm": 6.025960000000011,
+      "max_mm": 29.574,
+      "within_0_3": 0.5909090909090909,
+      "within_0_3_ci95": [
+       0.3873481847631513,
+       0.7674418380352814
+      ],
+      "within_0_5": 0.7272727272727273,
+      "within_0_5_ci95": [
+       0.5184826598759762,
+       0.8684923971201053
+      ],
+      "signed_mean_mm": -2.0214863636363636
+     },
+     "clip": {
+      "n": 19,
+      "mean_mm": 1.4590526315789474,
+      "mean_ci95_mm": [
+       0.549813157894737,
+       2.7139157894736843
+      ],
+      "median_mm": 0.321,
+      "p90_mm": 3.3726,
+      "max_mm": 10.369,
+      "within_0_3": 0.42105263157894735,
+      "within_0_3_ci95": [
+       0.23141891282454238,
+       0.6372409646574496
+      ],
+      "within_0_5": 0.5789473684210527,
+      "within_0_5_ci95": [
+       0.3627590353425504,
+       0.7685810871754576
+      ],
+      "signed_mean_mm": 0.29421052631578953
+     },
+     "cover": {
+      "n": 18,
+      "mean_mm": 1.1256666666666666,
+      "mean_ci95_mm": [
+       0.42315972222222226,
+       1.9509208333333312
+      ],
+      "median_mm": 0.097,
+      "p90_mm": 3.2261,
+      "max_mm": 6.742,
+      "within_0_3": 0.6666666666666666,
+      "within_0_3_ci95": [
+       0.43749467295945105,
+       0.837212252491663
+      ],
+      "within_0_5": 0.6666666666666666,
+      "within_0_5_ci95": [
+       0.43749467295945105,
+       0.837212252491663
+      ],
+      "signed_mean_mm": 0.3831111111111111
+     },
+     "hinge": {
+      "n": 20,
+      "mean_mm": 3.2586350000000004,
+      "mean_ci95_mm": [
+       0.25380375000000005,
+       7.789998750000001
+      ],
+      "median_mm": 0.243,
+      "p90_mm": 5.976250000000022,
+      "max_mm": 36.253,
+      "within_0_3": 0.6,
+      "within_0_3_ci95": [
+       0.3865815007622531,
+       0.781193467627183
+      ],
+      "within_0_5": 0.7,
+      "within_0_5_ci95": [
+       0.4810271816464765,
+       0.8545227551323956
+      ],
+      "signed_mean_mm": -2.500985
+     },
+     "hook": {
+      "n": 25,
+      "mean_mm": 1.1733200000000001,
+      "mean_ci95_mm": [
+       0.549117,
+       1.9024679999999998
+      ],
+      "median_mm": 0.209,
+      "p90_mm": 4.567400000000002,
+      "max_mm": 6.029,
+      "within_0_3": 0.56,
+      "within_0_3_ci95": [
+       0.3706733186979878,
+       0.7333436111893266
+      ],
+      "within_0_5": 0.64,
+      "within_0_5_ci95": [
+       0.44518497748164865,
+       0.7975211922554178
+      ],
+      "signed_mean_mm": 1.02468
+     },
+     "knob": {
+      "n": 18,
+      "mean_mm": 0.964211111111111,
+      "mean_ci95_mm": [
+       0.12254930555555554,
+       2.269723194444444
+      ],
+      "median_mm": 0.16570000000000001,
+      "p90_mm": 1.228290000000002,
+      "max_mm": 11.687,
+      "within_0_3": 0.8333333333333334,
+      "within_0_3_ci95": [
+       0.6077796189608428,
+       0.9416342319413856
+      ],
+      "within_0_5": 0.8888888888888888,
+      "within_0_5_ci95": [
+       0.672002348698212,
+       0.9689804773543876
+      ],
+      "signed_mean_mm": 0.7396777777777778
+     },
+     "latch": {
+      "n": 23,
+      "mean_mm": 0.21896956521739133,
+      "mean_ci95_mm": [
+       0.13510826086956518,
+       0.3172514130434782
+      ],
+      "median_mm": 0.127,
+      "p90_mm": 0.46612,
+      "max_mm": 0.988,
+      "within_0_3": 0.7391304347826086,
+      "within_0_3_ci95": [
+       0.5352999516257462,
+       0.8745138395501366
+      ],
+      "within_0_5": 0.9130434782608695,
+      "within_0_5_ci95": [
+       0.7320401892425634,
+       0.9758199955157796
+      ],
+      "signed_mean_mm": -0.04087391304347827
+     },
+     "spacer": {
+      "n": 16,
+      "mean_mm": 0.2807875,
+      "mean_ci95_mm": [
+       0.1370778125,
+       0.4486912499999997
+      ],
+      "median_mm": 0.1145,
+      "p90_mm": 0.796,
+      "max_mm": 1.153,
+      "within_0_3": 0.6875,
+      "within_0_3_ci95": [
+       0.44404355834740666,
+       0.8583535614521796
+      ],
+      "within_0_5": 0.8125,
+      "within_0_5_ci95": [
+       0.5699111903802586,
+       0.9340840092857187
+      ],
+      "signed_mean_mm": -0.0754625
+     },
+     "wheel": {
+      "n": 51,
+      "mean_mm": 0.4954588235294118,
+      "mean_ci95_mm": [
+       0.1919908823529412,
+       1.0557101960784308
+      ],
+      "median_mm": 0.146,
+      "p90_mm": 0.568,
+      "max_mm": 13.781,
+      "within_0_3": 0.6078431372549019,
+      "within_0_3_ci95": [
+       0.4708515898394834,
+       0.7297265901824019
+      ],
+      "within_0_5": 0.8627450980392157,
+      "within_0_5_ci95": [
+       0.7427830774241833,
+       0.9318889826494312
+      ],
+      "signed_mean_mm": 0.04665882352941173
+     }
+    },
+    "by_mat": {
+     "paper-a4": {
+      "n": 58,
+      "mean_mm": 1.415229310344828,
+      "mean_ci95_mm": [
+       0.5903946982758622,
+       2.7312280603448253
+      ],
+      "median_mm": 0.3095,
+      "p90_mm": 2.8320600000000034,
+      "max_mm": 29.574,
+      "within_0_3": 0.46551724137931033,
+      "within_0_3_ci95": [
+       0.3433202232528626,
+       0.5919982495600479
+      ],
+      "within_0_5": 0.7241379310344828,
+      "within_0_5_ci95": [
+       0.5979534481052067,
+       0.8224764786108747
+      ],
+      "signed_mean_mm": -0.5270741379310345
+     },
+     "screen-l": {
+      "n": 64,
+      "mean_mm": 1.8374562499999998,
+      "mean_ci95_mm": [
+       0.7040571875000001,
+       3.3642379687499995
+      ],
+      "median_mm": 0.11449999999999999,
+      "p90_mm": 4.543200000000004,
+      "max_mm": 36.253,
+      "within_0_3": 0.65625,
+      "within_0_3_ci95": [
+       0.5340364020991819,
+       0.7607685792155665
+      ],
+      "within_0_5": 0.765625,
+      "within_0_5_ci95": [
+       0.6486674241743136,
+       0.8525010440607586
+      ],
+      "signed_mean_mm": -0.4219124999999999
+     },
+     "screen-m": {
+      "n": 106,
+      "mean_mm": 1.0155471698113208,
+      "mean_ci95_mm": [
+       0.5051208490566038,
+       1.708175849056603
+      ],
+      "median_mm": 0.1285,
+      "p90_mm": 1.8659999999999999,
+      "max_mm": 25.753,
+      "within_0_3": 0.660377358490566,
+      "within_0_3_ci95": [
+       0.5660266583141396,
+       0.743510381388709
+      ],
+      "within_0_5": 0.7452830188679245,
+      "within_0_5_ci95": [
+       0.6547738306120157,
+       0.8186357595217526
+      ],
+      "signed_mean_mm": -0.11508867924528302
+     }
+    },
+    "by_profile": {
+     "side: flat": {
+      "n": 22,
+      "mean_mm": 1.4564590909090904,
+      "mean_ci95_mm": [
+       0.2834171590909091,
+       3.1957022727272726
+      ],
+      "median_mm": 0.33345,
+      "p90_mm": 1.105800000000001,
+      "max_mm": 13.781,
+      "within_0_3": 0.45454545454545453,
+      "within_0_3_ci95": [
+       0.2692029418081331,
+       0.6534020467926505
+      ],
+      "within_0_5": 0.6818181818181818,
+      "within_0_5_ci95": [
+       0.47318597741042745,
+       0.8363940681864375
+      ],
+      "signed_mean_mm": 0.8900863636363637
+     },
+     "side: tall features": {
+      "n": 29,
+      "mean_mm": 3.204924137931035,
+      "mean_ci95_mm": [
+       1.6984581034482755,
+       5.276662068965518
+      ],
+      "median_mm": 1.581,
+      "p90_mm": 6.5887199999999995,
+      "max_mm": 25.753,
+      "within_0_3": 0.2413793103448276,
+      "within_0_3_ci95": [
+       0.12218422442520088,
+       0.42107601617811335
+      ],
+      "within_0_5": 0.3793103448275862,
+      "within_0_5_ci95": [
+       0.2268802210080984,
+       0.5599745579401147
+      ],
+      "signed_mean_mm": -0.5047310344827587
+     },
+     "top: flat": {
+      "n": 82,
+      "mean_mm": 0.24009268292682925,
+      "mean_ci95_mm": [
+       0.17006942073170733,
+       0.3405654268292682
+      ],
+      "median_mm": 0.10600000000000001,
+      "p90_mm": 0.45650000000000035,
+      "max_mm": 3.3572,
+      "within_0_3": 0.7317073170731707,
+      "within_0_3_ci95": [
+       0.6270377451631879,
+       0.8156387950779851
+      ],
+      "within_0_5": 0.9146341463414634,
+      "within_0_5_ci95": [
+       0.8341245443721832,
+       0.9580334750067581
+      ],
+      "signed_mean_mm": -0.07368536585365854
+     },
+     "top: tall features": {
+      "n": 95,
+      "mean_mm": 1.7121684210526316,
+      "mean_ci95_mm": [
+       0.7585551578947367,
+       2.8682725789473693
+      ],
+      "median_mm": 0.157,
+      "p90_mm": 2.8650000000000038,
+      "max_mm": 36.253,
+      "within_0_3": 0.6526315789473685,
+      "within_0_3_ci95": [
+       0.5526464467822214,
+       0.7407527031899395
+      ],
+      "within_0_5": 0.7263157894736842,
+      "within_0_5_ci95": [
+       0.6291856625957802,
+       0.8058544563284583
+      ],
+      "signed_mean_mm": -0.7228905263157896
+     }
+    }
+   },
+   "reference_objects_synthetic": {
+    "gt_source": "reference_spec (published spec; synthetic render of the nominal model)",
+    "n_photos": 30,
+    "n_detected": 30,
+    "capture_gate_pass": {
+     "k": 24,
+     "n": 30,
+     "rate": 0.8,
+     "ci95": [
+      0.6269430358685175,
+      0.9049489282271013
+     ]
+    },
+    "accepted": {
+     "n": 40,
+     "mean_mm": 0.3462,
+     "mean_ci95_mm": [
+      0.146398125,
+      0.6847831249999993
+     ],
+     "median_mm": 0.095,
+     "p90_mm": 0.646,
+     "max_mm": 6.037,
+     "within_0_3": 0.8,
+     "within_0_3_ci95": [
+      0.652426936536005,
+      0.895000102745623
+     ],
+     "within_0_5": 0.85,
+     "within_0_5_ci95": [
+      0.709276756335103,
+      0.9293881228267964
+     ],
+     "signed_mean_mm": 0.09454999999999998
+    },
+    "all_detected": {
+     "n": 50,
+     "mean_mm": 0.42550000000000004,
+     "mean_ci95_mm": [
+      0.1585945,
+      0.7983804999999999
+     ],
+     "median_mm": 0.08549999999999999,
+     "p90_mm": 0.646,
+     "max_mm": 6.4,
+     "within_0_3": 0.8,
+     "within_0_3_ci95": [
+      0.6696289406777459,
+      0.887562499842239
+     ],
+     "within_0_5": 0.86,
+     "within_0_5_ci95": [
+      0.7381380628941446,
+      0.9304916657298371
+     ],
+     "signed_mean_mm": 0.19774
+    },
+    "within_spec_accepted": {
+     "k": 24,
+     "n": 40,
+     "rate": 0.6,
+     "ci95": [
+      0.44595893660346186,
+      0.7365167431570808
+     ]
+    },
+    "range_error_accepted": {
+     "n": 40,
+     "mean_mm": 0.17862499999999998,
+     "mean_ci95_mm": [
+      0.016475,
+      0.48150437500000004
+     ],
+     "median_mm": 0.0,
+     "p90_mm": 0.19000000000000003,
+     "max_mm": 5.887,
+     "within_0_3": 0.975,
+     "within_0_3_ci95": [
+      0.8711863103652591,
+      0.9955731684973186
+     ],
+     "within_0_5": 0.975,
+     "within_0_5_ci95": [
+      0.8711863103652591,
+      0.9955731684973186
+     ],
+     "signed_mean_mm": 0.17862499999999998
+    },
+    "pass_at_0.3": {
+     "k": 18,
+     "n": 24,
+     "rate": 0.75,
+     "ci95": [
+      0.55100555994846,
+      0.8800063377140499
+     ]
+    },
+    "pass_at_0.5": {
+     "k": 19,
+     "n": 24,
+     "rate": 0.7916666666666666,
+     "ci95": [
+      0.5952954674681133,
+      0.9075517464714814
+     ]
+    },
+    "by_dim": {
+     "side:thickness": {
+      "n": 8,
+      "mean_mm": 0.8810000000000001,
+      "mean_ci95_mm": [
+       0.095121875,
+       2.370003125
+      ],
+      "median_mm": 0.11900000000000001,
+      "p90_mm": 2.020399999999999,
+      "max_mm": 6.037,
+      "within_0_3": 0.875,
+      "within_0_3_ci95": [
+       0.5291118177871464,
+       0.9775825085499433
+      ],
+      "within_0_5": 0.875,
+      "within_0_5_ci95": [
+       0.5291118177871464,
+       0.9775825085499433
+      ],
+      "signed_mean_mm": 0.778
+     },
+     "top:length": {
+      "n": 16,
+      "mean_mm": 0.26725,
+      "mean_ci95_mm": [
+       0.11635625,
+       0.4467734375
+      ],
+      "median_mm": 0.07100000000000001,
+      "p90_mm": 0.71,
+      "max_mm": 1.161,
+      "within_0_3": 0.6875,
+      "within_0_3_ci95": [
+       0.44404355834740666,
+       0.8583535614521796
+      ],
+      "within_0_5": 0.75,
+      "within_0_5_ci95": [
+       0.5050168346449122,
+       0.8981793250878696
+      ],
+      "signed_mean_mm": -0.129625
+     },
+     "top:width": {
+      "n": 16,
+      "mean_mm": 0.15775,
+      "mean_ci95_mm": [
+       0.087871875,
+       0.24376249999999994
+      ],
+      "median_mm": 0.0875,
+      "p90_mm": 0.32,
+      "max_mm": 0.655,
+      "within_0_3": 0.875,
+      "within_0_3_ci95": [
+       0.639771727342413,
+       0.9650225122567595
+      ],
+      "within_0_5": 0.9375,
+      "within_0_5_ci95": [
+       0.7167126242970107,
+       0.9888806552353576
+      ],
+      "signed_mean_mm": -0.023000000000000007
+     }
+    },
+    "by_preset": {
+     "blur": {
+      "n": 8,
+      "mean_mm": 0.30974999999999997,
+      "mean_ci95_mm": [
+       0.1845,
+       0.456009375
+      ],
+      "median_mm": 0.28500000000000003,
+      "p90_mm": 0.6123,
+      "max_mm": 0.655,
+      "within_0_3": 0.625,
+      "within_0_3_ci95": [
+       0.30574239460262737,
+       0.8631557141764026
+      ],
+      "within_0_5": 0.75,
+      "within_0_5_ci95": [
+       0.40927543031016883,
+       0.9285207872478909
+      ],
+      "signed_mean_mm": -0.00250000000000003
+     },
+     "clean": {
+      "n": 10,
+      "mean_mm": 0.18530000000000002,
+      "mean_ci95_mm": [
+       0.09790000000000001,
+       0.3048249999999999
+      ],
+      "median_mm": 0.15050000000000002,
+      "p90_mm": 0.32459999999999983,
+      "max_mm": 0.645,
+      "within_0_3": 0.9,
+      "within_0_3_ci95": [
+       0.5958499732047615,
+       0.9821237869049271
+      ],
+      "within_0_5": 0.9,
+      "within_0_5_ci95": [
+       0.5958499732047615,
+       0.9821237869049271
+      ],
+      "signed_mean_mm": -0.0479
+     },
+     "glare": {
+      "n": 10,
+      "mean_mm": 0.1325,
+      "mean_ci95_mm": [
+       0.040600000000000004,
+       0.2836
+      ],
+      "median_mm": 0.053,
+      "p90_mm": 0.24849999999999978,
+      "max_mm": 0.775,
+      "within_0_3": 0.9,
+      "within_0_3_ci95": [
+       0.5958499732047615,
+       0.9821237869049271
+      ],
+      "within_0_5": 0.9,
+      "within_0_5_ci95": [
+       0.5958499732047615,
+       0.9821237869049271
+      ],
+      "signed_mean_mm": -0.0651
+     },
+     "moire": {
+      "n": 2,
+      "mean_mm": 0.066,
+      "mean_ci95_mm": [
+       0.065,
+       0.067
+      ],
+      "median_mm": 0.066,
+      "p90_mm": 0.0668,
+      "max_mm": 0.067,
+      "within_0_3": 1.0,
+      "within_0_3_ci95": [
+       0.34238022750665303,
+       1.0
+      ],
+      "within_0_5": 1.0,
+      "within_0_5_ci95": [
+       0.34238022750665303,
+       1.0
+      ],
+      "signed_mean_mm": 0.066
+     },
+     "tilt": {
+      "n": 10,
+      "mean_mm": 0.806,
+      "mean_ci95_mm": [
+       0.07798999999999999,
+       2.0572549999999987
+      ],
+      "median_mm": 0.0875,
+      "p90_mm": 1.6485999999999983,
+      "max_mm": 6.037,
+      "within_0_3": 0.7,
+      "within_0_3_ci95": [
+       0.39677814746114537,
+       0.8922087325936989
+      ],
+      "within_0_5": 0.8,
+      "within_0_5_ci95": [
+       0.49016247153664183,
+       0.9433178485456247
+      ],
+      "signed_mean_mm": 0.48
+     }
+    },
+    "by_group": {
+     "aa_cell": {
+      "n": 8,
+      "mean_mm": 0.577625,
+      "mean_ci95_mm": [
+       0.38136562500000004,
+       0.7950187499999998
+      ],
+      "median_mm": 0.6194999999999999,
+      "p90_mm": 0.8907999999999999,
+      "max_mm": 1.161,
+      "within_0_3": 0.25,
+      "within_0_3_ci95": [
+       0.071479212752109,
+       0.5907245696898311
+      ],
+      "within_0_5": 0.375,
+      "within_0_5_ci95": [
+       0.13684428582359742,
+       0.6942576053973727
+      ],
+      "signed_mean_mm": -0.577625
+     },
+     "id1_card": {
+      "n": 8,
+      "mean_mm": 0.10325,
+      "mean_ci95_mm": [
+       0.06787187499999998,
+       0.141125
+      ],
+      "median_mm": 0.10350000000000001,
+      "p90_mm": 0.1708,
+      "max_mm": 0.189,
+      "within_0_3": 1.0,
+      "within_0_3_ci95": [
+       0.6755924351161198,
+       1.0
+      ],
+      "within_0_5": 1.0,
+      "within_0_5_ci95": [
+       0.6755924351161198,
+       1.0
+      ],
+      "signed_mean_mm": 0.10325
+     },
+     "lego_2x4": {
+      "n": 12,
+      "mean_mm": 0.1405833333333333,
+      "mean_ci95_mm": [
+       0.08191666666666665,
+       0.20400624999999994
+      ],
+      "median_mm": 0.079,
+      "p90_mm": 0.298,
+      "max_mm": 0.312,
+      "within_0_3": 0.9166666666666666,
+      "within_0_3_ci95": [
+       0.646120088858883,
+       0.9851349055950829
+      ],
+      "within_0_5": 1.0,
+      "within_0_5_ci95": [
+       0.7575059933447592,
+       1.0
+      ],
+      "signed_mean_mm": 0.07191666666666667
+     },
+     "sd_card": {
+      "n": 12,
+      "mean_mm": 0.5595,
+      "mean_ci95_mm": [
+       0.04966666666666667,
+       1.5593333333333332
+      ],
+      "median_mm": 0.056,
+      "p90_mm": 0.1342,
+      "max_mm": 6.037,
+      "within_0_3": 0.9166666666666666,
+      "within_0_3_ci95": [
+       0.646120088858883,
+       0.9851349055950829
+      ],
+      "within_0_5": 0.9166666666666666,
+      "within_0_5_ci95": [
+       0.646120088858883,
+       0.9851349055950829
+      ],
+      "signed_mean_mm": 0.5595
+     }
+    },
+    "by_mat": {
+     "paper-a4": {
+      "n": 5,
+      "mean_mm": 0.2468,
+      "mean_ci95_mm": [
+       0.195,
+       0.2986
+      ],
+      "median_mm": 0.271,
+      "p90_mm": 0.3068,
+      "max_mm": 0.312,
+      "within_0_3": 0.8,
+      "within_0_3_ci95": [
+       0.37553462976252533,
+       0.9637758913675698
+      ],
+      "within_0_5": 1.0,
+      "within_0_5_ci95": [
+       0.5655175352168251,
+       1.0
+      ],
+      "signed_mean_mm": 0.2468
+     },
+     "screen-l": {
+      "n": 12,
+      "mean_mm": 0.1825,
+      "mean_ci95_mm": [
+       0.07699791666666667,
+       0.3061249999999998
+      ],
+      "median_mm": 0.0805,
+      "p90_mm": 0.5635000000000001,
+      "max_mm": 0.655,
+      "within_0_3": 0.8333333333333334,
+      "within_0_3_ci95": [
+       0.5519691377470266,
+       0.9530348578161463
+      ],
+      "within_0_5": 0.8333333333333334,
+      "within_0_5_ci95": [
+       0.5519691377470266,
+       0.9530348578161463
+      ],
+      "signed_mean_mm": -0.09050000000000001
+     },
+     "screen-m": {
+      "n": 23,
+      "mean_mm": 0.4532173913043478,
+      "mean_ci95_mm": [
+       0.11739130434782609,
+       1.0184880434782602
+      ],
+      "median_mm": 0.068,
+      "p90_mm": 0.7490000000000001,
+      "max_mm": 6.037,
+      "within_0_3": 0.782608695652174,
+      "within_0_3_ci95": [
+       0.5809651698373599,
+       0.9033602197341379
+      ],
+      "within_0_5": 0.8260869565217391,
+      "within_0_5_ci95": [
+       0.6286235235977385,
+       0.9302134643693744
+      ],
+      "signed_mean_mm": 0.15799999999999997
+     }
+    }
+   },
+   "reference_objects_real": {
+    "gt_source": "reference_spec (published spec; real photos)",
+    "n_photos": 0,
+    "n_detected": 0,
+    "capture_gate_pass": {
+     "k": 0,
+     "n": 0,
+     "rate": NaN,
+     "ci95": [
+      NaN,
+      NaN
+     ]
+    },
+    "accepted": {
+     "n": 0,
+     "mean_mm": NaN,
+     "mean_ci95_mm": [
+      NaN,
+      NaN
+     ],
+     "median_mm": NaN,
+     "p90_mm": NaN,
+     "max_mm": NaN,
+     "within_0_3": NaN,
+     "within_0_3_ci95": [
+      NaN,
+      NaN
+     ],
+     "within_0_5": NaN,
+     "within_0_5_ci95": [
+      NaN,
+      NaN
+     ],
+     "signed_mean_mm": NaN
+    },
+    "all_detected": {
+     "n": 0,
+     "mean_mm": NaN,
+     "mean_ci95_mm": [
+      NaN,
+      NaN
+     ],
+     "median_mm": NaN,
+     "p90_mm": NaN,
+     "max_mm": NaN,
+     "within_0_3": NaN,
+     "within_0_3_ci95": [
+      NaN,
+      NaN
+     ],
+     "within_0_5": NaN,
+     "within_0_5_ci95": [
+      NaN,
+      NaN
+     ],
+     "signed_mean_mm": NaN
+    },
+    "within_spec_accepted": {
+     "k": 0,
+     "n": 0,
+     "rate": NaN,
+     "ci95": [
+      NaN,
+      NaN
+     ]
+    },
+    "range_error_accepted": {
+     "n": 0,
+     "mean_mm": NaN,
+     "mean_ci95_mm": [
+      NaN,
+      NaN
+     ],
+     "median_mm": NaN,
+     "p90_mm": NaN,
+     "max_mm": NaN,
+     "within_0_3": NaN,
+     "within_0_3_ci95": [
+      NaN,
+      NaN
+     ],
+     "within_0_5": NaN,
+     "within_0_5_ci95": [
+      NaN,
+      NaN
+     ],
+     "signed_mean_mm": NaN
+    },
+    "pass_at_0.3": {
+     "k": 0,
+     "n": 0,
+     "rate": NaN,
+     "ci95": [
+      NaN,
+      NaN
+     ]
+    },
+    "pass_at_0.5": {
+     "k": 0,
+     "n": 0,
+     "rate": NaN,
+     "ci95": [
+      NaN,
+      NaN
+     ]
+    },
+    "by_dim": {},
+    "by_preset": {},
+    "by_group": {},
+    "by_mat": {}
+   },
+   "real_parts_ruler": {
+    "gt_source": "ruler (\u00b10.5 mm)",
+    "n_photos": 0,
+    "n_detected": 0,
+    "capture_gate_pass": {
+     "k": 0,
+     "n": 0,
+     "rate": NaN,
+     "ci95": [
+      NaN,
+      NaN
+     ]
+    },
+    "accepted": {
+     "n": 0,
+     "mean_mm": NaN,
+     "mean_ci95_mm": [
+      NaN,
+      NaN
+     ],
+     "median_mm": NaN,
+     "p90_mm": NaN,
+     "max_mm": NaN,
+     "within_0_3": NaN,
+     "within_0_3_ci95": [
+      NaN,
+      NaN
+     ],
+     "within_0_5": NaN,
+     "within_0_5_ci95": [
+      NaN,
+      NaN
+     ],
+     "signed_mean_mm": NaN
+    },
+    "all_detected": {
+     "n": 0,
+     "mean_mm": NaN,
+     "mean_ci95_mm": [
+      NaN,
+      NaN
+     ],
+     "median_mm": NaN,
+     "p90_mm": NaN,
+     "max_mm": NaN,
+     "within_0_3": NaN,
+     "within_0_3_ci95": [
+      NaN,
+      NaN
+     ],
+     "within_0_5": NaN,
+     "within_0_5_ci95": [
+      NaN,
+      NaN
+     ],
+     "signed_mean_mm": NaN
+    },
+    "within_spec_accepted": {
+     "k": 0,
+     "n": 0,
+     "rate": NaN,
+     "ci95": [
+      NaN,
+      NaN
+     ]
+    },
+    "range_error_accepted": {
+     "n": 0,
+     "mean_mm": NaN,
+     "mean_ci95_mm": [
+      NaN,
+      NaN
+     ],
+     "median_mm": NaN,
+     "p90_mm": NaN,
+     "max_mm": NaN,
+     "within_0_3": NaN,
+     "within_0_3_ci95": [
+      NaN,
+      NaN
+     ],
+     "within_0_5": NaN,
+     "within_0_5_ci95": [
+      NaN,
+      NaN
+     ],
+     "signed_mean_mm": NaN
+    },
+    "pass_at_0.3": {
+     "k": 0,
+     "n": 0,
+     "rate": NaN,
+     "ci95": [
+      NaN,
+      NaN
+     ]
+    },
+    "pass_at_0.5": {
+     "k": 0,
+     "n": 0,
+     "rate": NaN,
+     "ci95": [
+      NaN,
+      NaN
+     ]
+    },
+    "by_dim": {},
+    "by_preset": {},
+    "by_group": {},
+    "by_mat": {}
+   }
+  }
+ }
+}

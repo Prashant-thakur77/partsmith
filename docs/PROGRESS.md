@@ -47,3 +47,7 @@ A fresh session should read this file, `docs/ARCHITECTURE.md`, `docs/API.md` and
   SSE with replay + `from_seq`, MCP tools over `/mcp` and stdio, Steer factory, seeding with a publish gate, CPU thumbnails.
   First seed run (mock providers, 5 samples): 1 published (best effort 0.354 mm), 4 best effort at 3–17 mm → blocked on the
   metrology/verifier fixes in progress.
+- **Full-loop bench** (`eval/run.py`, `make bench`): 70 mock runs in 5 min 21 s, configs B0/B1/B2/PS/PS-noTemplate/PS-noJudge/
+  PS-noHeightCorr on synthetic (n=6) + reference-object renders (n=4); real_ruler pending. Mock pipeline check only. First pass:
+  PS synthetic verified 1/6, median 0.10 mm but mean 3.6 mm (glare/white-part failures); `--check-regression` wired for CI.
+- **Verifier camera-frame comparison** (`3237b2f`): posed 8 mm plate verifies at Hausdorff 0.07 mm; ±1 mm / Ø+0.4 mm still caught.

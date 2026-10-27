@@ -1,0 +1,81 @@
+{
+ "suite": "synthetic",
+ "config": "B1",
+ "sample_id": "syn-spacer-blur-s21267",
+ "split": "held_out",
+ "kind": "template",
+ "preset": "blur",
+ "mode": "mock",
+ "gt_source": "synthetic_exact",
+ "status": "best_effort",
+ "verified": false,
+ "iterations": 1,
+ "iterations_to_converge": 1,
+ "strategy": "template",
+ "template": "spacer",
+ "verifier_max_error_mm": 0.2550019073486336,
+ "retake_reason": null,
+ "usd": 0.0,
+ "tokens_in": 0,
+ "tokens_out": 0,
+ "model_calls": 9,
+ "model_ms": 393,
+ "provider_modes": [
+  "mock"
+ ],
+ "providers": {
+  "segment": [
+   "mock:sam-3.1"
+  ],
+  "understand": [
+   "mock:muse-spark-1.3"
+  ],
+  "plan": [
+   "mock:meta-models/muse-spark-open"
+  ],
+  "build": [
+   "mock:meta-models/muse-spark-open"
+  ]
+ },
+ "convergence": [
+  {
+   "iter": 1,
+   "hausdorff_mm": 0.25495097567963937,
+   "iou": 0.9224141000534093,
+   "max_error_mm": 0.2550019073486336
+  }
+ ],
+ "wall_s": 14.33,
+ "dims": [
+  {
+   "name": "length",
+   "gt_mm": 10.2,
+   "model_mm": 10.0,
+   "error_mm": -0.2
+  },
+  {
+   "name": "width",
+   "gt_mm": 10.19683,
+   "model_mm": 9.9969,
+   "error_mm": -0.1999
+  },
+  {
+   "name": "thickness",
+   "gt_mm": 9.1,
+   "model_mm": 9.0,
+   "error_mm": -0.1
+  },
+  {
+   "name": "hole_1.diameter",
+   "gt_mm": 4.3,
+   "model_mm": 4.0,
+   "error_mm": -0.3
+  }
+ ],
+ "missed": [],
+ "extra_holes": 0,
+ "pass_0_3": true,
+ "pass_0_5": true,
+ "valid": true,
+ "valid_reason": ""
+}

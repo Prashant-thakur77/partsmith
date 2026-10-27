@@ -1,0 +1,79 @@
+{
+ "suite": "reference_objects",
+ "config": "B0",
+ "sample_id": "ref-lego-2x4-clean-s496628",
+ "split": "held_out",
+ "kind": "reference_object",
+ "preset": "clean",
+ "mode": "mock",
+ "gt_source": "reference_spec",
+ "status": "best_effort",
+ "verified": false,
+ "iterations": 1,
+ "iterations_to_converge": null,
+ "strategy": "template",
+ "template": "battery_cover",
+ "verifier_max_error_mm": 7.771904528492357,
+ "retake_reason": null,
+ "usd": 0.0,
+ "tokens_in": 0,
+ "tokens_out": 0,
+ "model_calls": 7,
+ "model_ms": 228,
+ "provider_modes": [
+  "mock"
+ ],
+ "providers": {
+  "segment": [
+   "mock:sam-3.1"
+  ],
+  "understand": [
+   "mock:muse-spark-1.3"
+  ],
+  "plan": [
+   "mock:meta-models/muse-spark-open"
+  ],
+  "build": [
+   "mock:meta-models/muse-spark-open"
+  ]
+ },
+ "convergence": [
+  {
+   "iter": 1,
+   "hausdorff_mm": 7.771904528492357,
+   "iou": 0.25674361815180774,
+   "max_error_mm": 7.771904528492357
+  }
+ ],
+ "wall_s": 10.76,
+ "dims": [
+  {
+   "name": "length",
+   "gt_mm": 31.8,
+   "model_mm": 26.0,
+   "error_mm": -5.8,
+   "within_spec": false
+  },
+  {
+   "name": "width",
+   "gt_mm": 15.8,
+   "model_mm": 16.0,
+   "error_mm": 0.2,
+   "within_spec": false
+  },
+  {
+   "name": "thickness",
+   "gt_mm": 11.3,
+   "model_mm": 6.5,
+   "error_mm": -4.8,
+   "within_spec": false
+  }
+ ],
+ "missed": [],
+ "extra_holes": 0,
+ "pass_0_3": false,
+ "pass_0_5": false,
+ "valid": true,
+ "valid_reason": "",
+ "failure": "worst length -5.80 mm"
+}

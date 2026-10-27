@@ -13,7 +13,11 @@
     ],
     "jpeg_quality": 90,
     "dataset_sha256": "a576c6980c08ae02aba4e9cfd1fc763da6f0df1c09c51f5d23c699d2712e32f2",
-    "manifest": "data/synthetic/bench_manifest.json"
+    "manifest": "data/synthetic/bench_manifest.json",
+    "split": {
+      "held_out": "every sample of data/synthetic/bench (never used for tuning)",
+      "dev": "data/synthetic/samples (the demo set; prompt/template tuning allowed)"
+    }
   },
   "reference_objects_real": {
     "status": "pending: no real photos collected yet",
@@ -22,7 +26,8 @@
       "sd_card",
       "lego_2x4",
       "aa_cell"
-    ]
+    ],
+    "split": "held_out (never used for tuning)"
   },
   "real_parts": {
     "status": "pending: no real parts collected yet",

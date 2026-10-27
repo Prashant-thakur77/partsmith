@@ -1,0 +1,72 @@
+{
+ "suite": "reference_objects",
+ "config": "B0",
+ "sample_id": "ref-aa-cell-clean-s23585",
+ "split": "held_out",
+ "kind": "reference_object",
+ "preset": "clean",
+ "mode": "mock",
+ "gt_source": "reference_spec",
+ "status": "best_effort",
+ "verified": false,
+ "iterations": 1,
+ "iterations_to_converge": null,
+ "strategy": "template",
+ "template": "battery_cover",
+ "verifier_max_error_mm": 11.5,
+ "retake_reason": null,
+ "usd": 0.0,
+ "tokens_in": 0,
+ "tokens_out": 0,
+ "model_calls": 5,
+ "model_ms": 123,
+ "provider_modes": [
+  "mock"
+ ],
+ "providers": {
+  "segment": [
+   "mock:sam-3.1"
+  ],
+  "understand": [
+   "mock:muse-spark-1.3"
+  ],
+  "plan": [
+   "mock:meta-models/muse-spark-open"
+  ],
+  "build": [
+   "mock:meta-models/muse-spark-open"
+  ]
+ },
+ "convergence": [
+  {
+   "iter": 1,
+   "hausdorff_mm": 5.649999999999999,
+   "iou": 0.7896548801241466,
+   "max_error_mm": 11.5
+  }
+ ],
+ "wall_s": 6.81,
+ "dims": [
+  {
+   "name": "length",
+   "gt_mm": 50.5,
+   "model_mm": 43.0,
+   "error_mm": -7.5,
+   "within_spec": false
+  },
+  {
+   "name": "width",
+   "gt_mm": 14.5,
+   "model_mm": 16.0,
+   "error_mm": 1.5,
+   "within_spec": false
+  }
+ ],
+ "missed": [],
+ "extra_holes": 0,
+ "pass_0_3": false,
+ "pass_0_5": false,
+ "valid": true,
+ "valid_reason": "",
+ "failure": "worst length -7.50 mm"
+}

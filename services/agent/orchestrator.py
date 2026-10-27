@@ -157,6 +157,13 @@ class RunOptions:
     mat_id: str | None = None
     package: bool = True
     learn: bool = True
+    # Bench ablations (PLAN §10.3); each switches off exactly one thing. Defaults = the full PartSmith loop.
+    single_shot: bool = False  # B0/B1: one build; no fix loop, no strategy switch, no judge
+    mat_scale: bool = True  # B0: False = the models get no mat-calibrated numbers (sizes guessed from the photo)
+    numeric_feedback: bool = True  # B2: False = the fixer sees the overlay images only, no residual numbers
+    templates: bool = True  # PS-noTemplate: False = free code only
+    judge: bool = True  # PS-noJudge: False = no judge stage
+    height_correction: bool = True  # PS-noHeightCorr: False = measure on the mat plane, no parallax correction
 
 
 class _Finish(Exception):
@@ -371,6 +378,52 @@ def format_views(v: Verification) -> str:
     )
 
 
+VISUAL_ONLY_NOTE = "(withheld: visual-only feedback — compare the overlay images)"
+NO_SCALE_DISTANCE_MM = 300.0  # B0 guess: a phone held ~30 cm above the part with a 26 mm-equivalent lens
+NO_SCALE_FOCAL35_MM = 26.0
+
+
+def guessed_scale(mo: MeasureOutput) -> float:
+    """B0 ablation: factor that turns mat-calibrated mm into sizes guessed from the photo alone (pixels at an assumed
+    distance and focal length). 1.0 when the photo was not calibrated."""
+    det = mo.detection
+    if det is None:
+        return 1.0
+    w, h = det.image_size
+    f_px = NO_SCALE_FOCAL35_MM * math.hypot(w, h) / math.hypot(36.0, 24.0)
+    st = det.mat.stage
+    px_per_mm = det.px_per_mm_at((st.x_mm + st.w_mm / 2, st.y_mm + st.h_mm / 2))
+    return float(px_per_mm * NO_SCALE_DISTANCE_MM / f_px)
+
+
+def scale_measurements(m: Measurements, f: float) -> Measurements:
+    """Every in-plane size scaled by f (thickness stated by the user stays as stated)."""
+    if f == 1.0:
+        return m
+    d = m.model_copy(deep=True)
+
+    def sc(x: Measured) -> Measured:
+        return x.model_copy(update={"value": x.value * f, "sigma_mm": x.sigma_mm * f})
+
+    d.outline_mm = [(x * f, y * f) for x, y in m.outline_mm]
+    d.length, d.width = sc(m.length), sc(m.width)
+    d.area_mm2 = m.area_mm2 * f * f
+    d.holes = [
+        h.model_copy(update={"center_mm": (h.center_mm[0] * f, h.center_mm[1] * f), "diameter": sc(h.diameter)})
+        for h in m.holes
+    ]
+    d.slots = [
+        s.model_copy(
+            update={"center_mm": (s.center_mm[0] * f, s.center_mm[1] * f), "length": sc(s.length), "width": sc(s.width)}
+        )
+        for s in m.slots
+    ]
+    if m.thickness is not None and m.thickness.source == Source.measured:
+        d.thickness = sc(m.thickness)
+    d.notes = [*m.notes, f"ABLATION: sizes guessed without the mat scale (×{f:.3f})"]
+    return d
+
+
 def template_measure_map(code: str, template: Template | None) -> dict[str, str]:
     if template is not None:
         return dict(template.measure_map)
@@ -488,11 +541,13 @@ class FixRun:
         self.ask()
         self.plan()
         first = self.build_round(self.strategy, iter_label="first build")
-        if first.score == math.inf and self.strategy == "template":
+        if first.score == math.inf and self.strategy == "template" and not self.opts.single_shot:
             self.switch_strategy()
         self.first_values = dict(first.values)
-        self.fix_loop()
-        self.judge()
+        if not self.opts.single_shot:
+            self.fix_loop()
+            if self.opts.judge:
+                self.judge()
         final = self.final_verification()
         if self.opts.package:
             self.package(final)
@@ -614,6 +669,8 @@ class FixRun:
         return ProviderSegmenter(providers.segment, family_word=hint.value.replace("_", " ") if hint else None)
 
     def measure_view(self, view: str, thickness_mm: float | None) -> MeasureOutput:
+        if not self.opts.height_correction:
+            thickness_mm = None  # ablation: footprints stay on the mat plane
         with providers.job_context(self.job.id, self.job.emit, ctx=self.job.ctx):
             return measure_photo(
                 self.photos[view],
@@ -668,6 +725,18 @@ class FixRun:
         if pm is not None:
             self.masks[view] = pm
 
+    def model_measurements(self) -> dict[str, Measurements]:
+        """What the models are shown: the measurements, or (B0 ablation) the same shapes at a scale guessed from a
+        typical phone distance instead of the mat."""
+        if self.opts.mat_scale:
+            return self.measurements
+        out: dict[str, Measurements] = {}
+        for view, m in self.measurements.items():
+            mo = self.mo.get(view)
+            f = guessed_scale(mo) if mo is not None else 1.0
+            out[view] = scale_measurements(m, f)
+        return out
+
     def save_measurements(self) -> None:
         self.job.write_json("measurements.json", {v: m.model_dump(mode="json") for v, m in self.measurements.items()})
 
@@ -687,12 +756,17 @@ class FixRun:
     def understand(self) -> None:
         with self.stage("understand", "Understanding the part (features, family, unknowns)") as st:
             top = self.measurements["top"]
-            rect_png, s = fit_png(self.mo["top"].rectified_png or self.photos["top"])
-            images = [rect_png]
-            if "side" in self.mo and self.mo["side"].rectified_png:
-                images.append(fit_png(self.mo["side"].rectified_png or b"")[0])
+            if self.opts.mat_scale:
+                rect_png, s = fit_png(self.mo["top"].rectified_png or self.photos["top"])
+                images = [rect_png]
+                if "side" in self.mo and self.mo["side"].rectified_png:
+                    images.append(fit_png(self.mo["side"].rectified_png or b"")[0])
+            else:  # B0: the raw photo, and only sizes guessed without the mat scale
+                rect_png, s = fit_png(self.photos["top"])
+                images = [rect_png]
+            model_meas = self.model_measurements()
             p = prompt_loader.load("understand")
-            meas_json = {v: m.model_dump(mode="json", exclude={"part_to_mat"}) for v, m in self.measurements.items()}
+            meas_json = {v: m.model_dump(mode="json", exclude={"part_to_mat"}) for v, m in model_meas.items()}
             dev, user = p.render(
                 px_per_mm_inv=f"{1.0 / (self.mo['top'].px_per_mm * s):.3f}",
                 templates=", ".join(t.name for t in list_templates()),
@@ -707,7 +781,7 @@ class FixRun:
                 schema_name="PartSpec",
                 strict=False,
                 mock_context={
-                    "measurements": {v: m.model_dump(mode="json") for v, m in self.measurements.items()},
+                    "measurements": {v: m.model_dump(mode="json") for v, m in model_meas.items()},
                     "intent": self.job.input.intent,
                     "family_hint": self.job.input.family_hint.value if self.job.input.family_hint else None,
                     "user_thickness_mm": self.job.input.thickness_mm,
@@ -726,7 +800,10 @@ class FixRun:
             if spec is None:
                 spec = PartSpec.model_validate(mock_brain.understand(req))
                 self.log("PartSpec built deterministically from the measurements (no usable model reply)", "warn")
-            spec = self.enforce_measured(spec, top)
+            if self.opts.mat_scale:
+                spec = self.enforce_measured(spec, top)
+            else:
+                self.log("ablation (no mat scale): the model's own size estimates are kept", "warn")
             cls = guards.refused_class(self.job.input.intent, spec.title, spec.intent)
             reason = spec.refusal or (guards.refusal_message(cls) if cls else None)
             self.spec = spec
@@ -894,6 +971,11 @@ class FixRun:
     # ---- 4. plan ------------------------------------------------------------------------------------------------------------
     def plan(self) -> None:
         assert self.spec is not None
+        if not self.opts.templates:
+            with self.stage("plan", "Free code from the outline (template library switched off)") as st:
+                self.template = None
+                self.strategy = "free_code"
+            return
         with self.stage("plan", "Choosing a template or free code") as st:
             names = ", ".join(f"{t.name} ({t.family.value})" for t in list_templates())
             req = ModelRequest(
@@ -962,7 +1044,7 @@ class FixRun:
                     "strategy": strategy,
                     "template": tpl.name if tpl else None,
                     "partspec": self.spec.model_dump(mode="json"),
-                    "measurements": {v: m.model_dump(mode="json") for v, m in self.measurements.items()},
+                    "measurements": {v: m.model_dump(mode="json") for v, m in self.model_measurements().items()},
                     "answers": dict(self.answers),
                     "previous_error": error,
                     "attempt": attempt,
@@ -1139,11 +1221,20 @@ class FixRun:
         )
         if self.vetoes:
             hist_text += "; judge vetoes: " + "; ".join(f"{x.feature}: {x.issue} ({x.severity})" for x in self.vetoes)
+        numeric = self.opts.numeric_feedback
+        if not numeric:  # B2: visual-only feedback — the overlays, no measured numbers
+            hist_text = (
+                "; ".join(
+                    f"round {h['iter']}: " + ", ".join(f"{e['param']} {e['from']:g}→{e['to']:g}" for e in h["edits"])
+                    for h in hist
+                )
+                or "(none)"
+            )
         dev, user = p.render(
             limits=limits,
             param_names=", ".join(s.name for s in specs),
-            residuals=format_residuals(v),
-            views=format_views(v),
+            residuals=format_residuals(v) if numeric else VISUAL_ONLY_NOTE,
+            views=format_views(v) if numeric else VISUAL_ONLY_NOTE,
             values=json.dumps(rnd.values),
             history=hist_text,
         )
@@ -1162,8 +1253,10 @@ class FixRun:
                     "residuals": residual_table(v),
                     "views": [m.model_dump(mode="json") for m in v.views],
                     "tests": [t.model_dump(mode="json") for t in v.tests],
-                },
-                "history": [dict(h) for h in self.history],
+                }
+                if numeric
+                else {},
+                "history": [dict(h) for h in self.history] if numeric else [],
                 "measured_holes": photo_n,
                 "model_holes": model_n,
                 "vetoes": [x.model_dump(mode="json") for x in self.vetoes],

@@ -1,0 +1,73 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 340" width="640" height="340" font-family="system-ui, sans-serif" font-size="11" fill="currentColor">
+<text x="56" y="20" font-size="13" font-weight="600">synthetic: best verifier max error by iteration [MOCK]</text>
+<line x1="56" y1="296" x2="490" y2="296" stroke="currentColor" stroke-opacity="0.5"/>
+<line x1="56" y1="36" x2="56" y2="296" stroke="currentColor" stroke-opacity="0.5"/>
+<line x1="56" y1="296.0" x2="490" y2="296.0" stroke="currentColor" stroke-opacity="0.1"/>
+<text x="50" y="300.0" text-anchor="end">0</text>
+<line x1="56" y1="231.0" x2="490" y2="231.0" stroke="currentColor" stroke-opacity="0.1"/>
+<text x="50" y="235.0" text-anchor="end">5</text>
+<line x1="56" y1="166.0" x2="490" y2="166.0" stroke="currentColor" stroke-opacity="0.1"/>
+<text x="50" y="170.0" text-anchor="end">10</text>
+<line x1="56" y1="101.0" x2="490" y2="101.0" stroke="currentColor" stroke-opacity="0.1"/>
+<text x="50" y="105.0" text-anchor="end">15</text>
+<line x1="56" y1="36.0" x2="490" y2="36.0" stroke="currentColor" stroke-opacity="0.1"/>
+<text x="50" y="40.0" text-anchor="end">20</text>
+<text x="56.0" y="312" text-anchor="middle">1</text>
+<text x="142.8" y="312" text-anchor="middle">2</text>
+<text x="229.6" y="312" text-anchor="middle">3</text>
+<text x="316.4" y="312" text-anchor="middle">4</text>
+<text x="403.2" y="312" text-anchor="middle">5</text>
+<text x="490.0" y="312" text-anchor="middle">6</text>
+<text x="273.0" y="332" text-anchor="middle">iteration</text>
+<text x="14" y="166.0" text-anchor="middle" transform="rotate(-90 14 166.0)">median max error (mm)</text>
+<line x1="56" y1="289.5" x2="490" y2="289.5" stroke="#16a34a" stroke-dasharray="4 3"/>
+<text x="494" y="293.5" fill="#16a34a">0.5 mm</text>
+<circle cx="56.0" cy="190.1" r="2.5" fill="#2563eb"/>
+<rect x="500" y="34" width="10" height="3" fill="#2563eb"/>
+<text x="514" y="39">B0 (N=6)</text>
+<circle cx="56.0" cy="250.8" r="2.5" fill="#dc2626"/>
+<rect x="500" y="48" width="10" height="3" fill="#dc2626"/>
+<text x="514" y="53">B1 (N=6)</text>
+<polyline fill="none" stroke="#16a34a" stroke-width="2" points="56.0,250.8 142.8,250.8 229.6,250.8 316.4,287.2 403.2,287.2 490.0,287.2"/>
+<circle cx="56.0" cy="250.8" r="2.5" fill="#16a34a"/>
+<circle cx="142.8" cy="250.8" r="2.5" fill="#16a34a"/>
+<circle cx="229.6" cy="250.8" r="2.5" fill="#16a34a"/>
+<circle cx="316.4" cy="287.2" r="2.5" fill="#16a34a"/>
+<circle cx="403.2" cy="287.2" r="2.5" fill="#16a34a"/>
+<circle cx="490.0" cy="287.2" r="2.5" fill="#16a34a"/>
+<rect x="500" y="62" width="10" height="3" fill="#16a34a"/>
+<text x="514" y="67">B2 (N=6)</text>
+<polyline fill="none" stroke="#9333ea" stroke-width="2" points="56.0,250.8 142.8,250.8 229.6,250.8 316.4,250.8 403.2,287.2 490.0,288.1"/>
+<circle cx="56.0" cy="250.8" r="2.5" fill="#9333ea"/>
+<circle cx="142.8" cy="250.8" r="2.5" fill="#9333ea"/>
+<circle cx="229.6" cy="250.8" r="2.5" fill="#9333ea"/>
+<circle cx="316.4" cy="250.8" r="2.5" fill="#9333ea"/>
+<circle cx="403.2" cy="287.2" r="2.5" fill="#9333ea"/>
+<circle cx="490.0" cy="288.1" r="2.5" fill="#9333ea"/>
+<rect x="500" y="76" width="10" height="3" fill="#9333ea"/>
+<text x="514" y="81">PS (N=6)</text>
+<polyline fill="none" stroke="#ea580c" stroke-width="2" points="56.0,193.4 142.8,193.4 229.6,193.4"/>
+<circle cx="56.0" cy="193.4" r="2.5" fill="#ea580c"/>
+<circle cx="142.8" cy="193.4" r="2.5" fill="#ea580c"/>
+<circle cx="229.6" cy="193.4" r="2.5" fill="#ea580c"/>
+<rect x="500" y="90" width="10" height="3" fill="#ea580c"/>
+<text x="514" y="95">PS-noTemplate (N=6)</text>
+<polyline fill="none" stroke="#0891b2" stroke-width="2" points="56.0,250.8 142.8,250.8 229.6,250.8 316.4,250.8 403.2,287.2 490.0,288.1"/>
+<circle cx="56.0" cy="250.8" r="2.5" fill="#0891b2"/>
+<circle cx="142.8" cy="250.8" r="2.5" fill="#0891b2"/>
+<circle cx="229.6" cy="250.8" r="2.5" fill="#0891b2"/>
+<circle cx="316.4" cy="250.8" r="2.5" fill="#0891b2"/>
+<circle cx="403.2" cy="287.2" r="2.5" fill="#0891b2"/>
+<circle cx="490.0" cy="288.1" r="2.5" fill="#0891b2"/>
+<rect x="500" y="104" width="10" height="3" fill="#0891b2"/>
+<text x="514" y="109">PS-noJudge (N=6)</text>
+<polyline fill="none" stroke="#4b5563" stroke-width="2" points="56.0,165.8 142.8,173.6 229.6,182.7 316.4,194.4 403.2,204.8 490.0,204.8"/>
+<circle cx="56.0" cy="165.8" r="2.5" fill="#4b5563"/>
+<circle cx="142.8" cy="173.6" r="2.5" fill="#4b5563"/>
+<circle cx="229.6" cy="182.7" r="2.5" fill="#4b5563"/>
+<circle cx="316.4" cy="194.4" r="2.5" fill="#4b5563"/>
+<circle cx="403.2" cy="204.8" r="2.5" fill="#4b5563"/>
+<circle cx="490.0" cy="204.8" r="2.5" fill="#4b5563"/>
+<rect x="500" y="118" width="10" height="3" fill="#4b5563"/>
+<text x="514" y="123">PS-noHeightCorr (N=6)</text>
+</svg>

@@ -1,0 +1,115 @@
+{
+ "suite": "reference_objects",
+ "config": "PS-noHeightCorr",
+ "sample_id": "ref-sd-card-clean-s596360",
+ "split": "held_out",
+ "kind": "reference_object",
+ "preset": "clean",
+ "mode": "mock",
+ "gt_source": "reference_spec",
+ "status": "best_effort",
+ "verified": false,
+ "iterations": 6,
+ "iterations_to_converge": null,
+ "strategy": "template",
+ "template": "battery_cover",
+ "verifier_max_error_mm": 3.452999809265137,
+ "retake_reason": null,
+ "usd": 0.0,
+ "tokens_in": 0,
+ "tokens_out": 0,
+ "model_calls": 13,
+ "model_ms": 278,
+ "provider_modes": [
+  "mock"
+ ],
+ "providers": {
+  "segment": [
+   "mock:sam-3.1"
+  ],
+  "understand": [
+   "mock:muse-spark-1.3"
+  ],
+  "plan": [
+   "mock:meta-models/muse-spark-open"
+  ],
+  "build": [
+   "mock:meta-models/muse-spark-open"
+  ],
+  "fix": [
+   "mock:meta-models/muse-spark-open"
+  ],
+  "judge": [
+   "mock:muse-glimmer"
+  ]
+ },
+ "convergence": [
+  {
+   "iter": 1,
+   "hausdorff_mm": 3.0,
+   "iou": 0.6848130114990159,
+   "max_error_mm": 3.003
+  },
+  {
+   "iter": 2,
+   "hausdorff_mm": 3.450000000000001,
+   "iou": 0.7965533018148544,
+   "max_error_mm": 3.452999809265137
+  },
+  {
+   "iter": 3,
+   "hausdorff_mm": 3.450000000000001,
+   "iou": 0.7965533018148544,
+   "max_error_mm": 3.452999809265137
+  },
+  {
+   "iter": 4,
+   "hausdorff_mm": 3.450000000000001,
+   "iou": 0.7965533018148544,
+   "max_error_mm": 3.452999809265137
+  },
+  {
+   "iter": 5,
+   "hausdorff_mm": 2.0500000000000007,
+   "iou": 0.7658346678447181,
+   "max_error_mm": 2.0500000000000007
+  },
+  {
+   "iter": 6,
+   "hausdorff_mm": 3.5000000000000018,
+   "iou": 0.7935232963066521,
+   "max_error_mm": 3.5000000000000018
+  }
+ ],
+ "wall_s": 15.26,
+ "dims": [
+  {
+   "name": "length",
+   "gt_mm": 32.0,
+   "model_mm": 32.7,
+   "error_mm": 0.7,
+   "within_spec": false
+  },
+  {
+   "name": "width",
+   "gt_mm": 24.0,
+   "model_mm": 24.3,
+   "error_mm": 0.3,
+   "within_spec": false
+  },
+  {
+   "name": "thickness",
+   "gt_mm": 2.1,
+   "model_mm": 5.95,
+   "error_mm": 3.85,
+   "within_spec": false
+  }
+ ],
+ "missed": [],
+ "extra_holes": 0,
+ "pass_0_3": false,
+ "pass_0_5": false,
+ "valid": true,
+ "valid_reason": "",
+ "failure": "worst thickness +3.85 mm"
+}

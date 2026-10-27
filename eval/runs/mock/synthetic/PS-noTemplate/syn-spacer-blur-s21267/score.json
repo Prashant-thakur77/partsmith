@@ -1,0 +1,96 @@
+{
+ "suite": "synthetic",
+ "config": "PS-noTemplate",
+ "sample_id": "syn-spacer-blur-s21267",
+ "split": "held_out",
+ "kind": "template",
+ "preset": "blur",
+ "mode": "mock",
+ "gt_source": "synthetic_exact",
+ "status": "best_effort",
+ "verified": false,
+ "iterations": 3,
+ "iterations_to_converge": null,
+ "strategy": "free_code",
+ "template": null,
+ "verifier_max_error_mm": 0.5408326913195997,
+ "retake_reason": null,
+ "usd": 0.0,
+ "tokens_in": 0,
+ "tokens_out": 0,
+ "model_calls": 11,
+ "model_ms": 408,
+ "provider_modes": [
+  "mock"
+ ],
+ "providers": {
+  "segment": [
+   "mock:sam-3.1"
+  ],
+  "understand": [
+   "mock:muse-spark-1.3"
+  ],
+  "build": [
+   "mock:meta-models/muse-spark-open"
+  ],
+  "fix": [
+   "mock:meta-models/muse-spark-open"
+  ],
+  "judge": [
+   "mock:muse-glimmer"
+  ]
+ },
+ "convergence": [
+  {
+   "iter": 1,
+   "hausdorff_mm": 0.5408326913195997,
+   "iou": 0.9364285523254259,
+   "max_error_mm": 0.5408326913195997
+  },
+  {
+   "iter": 2,
+   "hausdorff_mm": 0.3535533905932738,
+   "iou": 0.875835270191749,
+   "max_error_mm": 0.5873583602905281
+  },
+  {
+   "iter": 3,
+   "hausdorff_mm": 0.5385164807134505,
+   "iou": 0.7885181016013654,
+   "max_error_mm": 0.9876354980468758
+  }
+ ],
+ "wall_s": 15.57,
+ "dims": [
+  {
+   "name": "length",
+   "gt_mm": 10.2,
+   "model_mm": 10.0679,
+   "error_mm": -0.1321
+  },
+  {
+   "name": "width",
+   "gt_mm": 10.19683,
+   "model_mm": 10.0331,
+   "error_mm": -0.1637
+  },
+  {
+   "name": "thickness",
+   "gt_mm": 9.1,
+   "model_mm": 9.0,
+   "error_mm": -0.1
+  },
+  {
+   "name": "hole_1.diameter",
+   "gt_mm": 4.3,
+   "model_mm": 4.21,
+   "error_mm": -0.09
+  }
+ ],
+ "missed": [],
+ "extra_holes": 0,
+ "pass_0_3": true,
+ "pass_0_5": true,
+ "valid": true,
+ "valid_reason": ""
+}

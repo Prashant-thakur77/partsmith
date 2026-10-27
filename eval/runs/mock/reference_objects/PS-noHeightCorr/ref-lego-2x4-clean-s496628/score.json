@@ -1,0 +1,115 @@
+{
+ "suite": "reference_objects",
+ "config": "PS-noHeightCorr",
+ "sample_id": "ref-lego-2x4-clean-s496628",
+ "split": "held_out",
+ "kind": "reference_object",
+ "preset": "clean",
+ "mode": "mock",
+ "gt_source": "reference_spec",
+ "status": "best_effort",
+ "verified": false,
+ "iterations": 6,
+ "iterations_to_converge": null,
+ "strategy": "free_code",
+ "template": "battery_cover",
+ "verifier_max_error_mm": 3.76,
+ "retake_reason": null,
+ "usd": 0.0,
+ "tokens_in": 0,
+ "tokens_out": 0,
+ "model_calls": 13,
+ "model_ms": 318,
+ "provider_modes": [
+  "mock"
+ ],
+ "providers": {
+  "segment": [
+   "mock:sam-3.1"
+  ],
+  "understand": [
+   "mock:muse-spark-1.3"
+  ],
+  "plan": [
+   "mock:meta-models/muse-spark-open"
+  ],
+  "build": [
+   "mock:meta-models/muse-spark-open"
+  ],
+  "fix": [
+   "mock:meta-models/muse-spark-open"
+  ],
+  "judge": [
+   "mock:muse-glimmer"
+  ]
+ },
+ "convergence": [
+  {
+   "iter": 1,
+   "hausdorff_mm": 12.020815280171309,
+   "iou": 0.21619373873784678,
+   "max_error_mm": 12.26
+  },
+  {
+   "iter": 2,
+   "hausdorff_mm": 11.998541578041891,
+   "iou": 0.21689472850409916,
+   "max_error_mm": 12.26
+  },
+  {
+   "iter": 3,
+   "hausdorff_mm": 11.998541578041891,
+   "iou": 0.21689472850409916,
+   "max_error_mm": 12.26
+  },
+  {
+   "iter": 4,
+   "hausdorff_mm": 11.998541578041891,
+   "iou": 0.21689472850409916,
+   "max_error_mm": 12.26
+  },
+  {
+   "iter": 5,
+   "hausdorff_mm": 3.0,
+   "iou": 0.6491784461475284,
+   "max_error_mm": 5.66
+  },
+  {
+   "iter": 6,
+   "hausdorff_mm": 2.9706901555025897,
+   "iou": 0.7752719042936418,
+   "max_error_mm": 3.76
+  }
+ ],
+ "wall_s": 12.22,
+ "dims": [
+  {
+   "name": "length",
+   "gt_mm": 31.8,
+   "model_mm": 34.1226,
+   "error_mm": 2.3226,
+   "within_spec": false
+  },
+  {
+   "name": "width",
+   "gt_mm": 15.8,
+   "model_mm": 16.5413,
+   "error_mm": 0.7413,
+   "within_spec": false
+  },
+  {
+   "name": "thickness",
+   "gt_mm": 11.3,
+   "model_mm": 11.5,
+   "error_mm": 0.2,
+   "within_spec": false
+  }
+ ],
+ "missed": [],
+ "extra_holes": 0,
+ "pass_0_3": false,
+ "pass_0_5": false,
+ "valid": true,
+ "valid_reason": "",
+ "failure": "worst length +2.32 mm"
+}

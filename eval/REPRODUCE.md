@@ -50,12 +50,47 @@ holes: [{diameter: 4.0}]
 
 with `top.jpg` (and optionally `side.jpg`) next to it.
 
+## Full loop — PartSmith-Bench (`eval/run.py`)
+
+```bash
+make bench                                  # = uv run python -m eval.run --from-runs   (no keys, minutes)
+make bench-live                             # = uv run python -m eval.run --live        (real providers)
+uv run python -m eval.run --configs B1,PS --limit 12 --jobs 4     # fresh mock runs of a subset
+uv run python -m eval.run --from-runs --check-regression          # CI: exit 1 when worse than the baseline
+uv run python -m eval.run --from-runs --write-baseline            # store eval/baseline_metrics.json
+```
+
+Every run goes through `services.agent.service.start_fix_job(photos, JobInput, sync=True)` like a user's job
+(jobs live in `var/bench/`, packaging and lessons are off). Answers are non-interactive: the thickness comes from
+`meta.json` `user_thickness_mm`, every other question takes its default. The scorer is the only code that reads
+`gt.yaml`: it re-runs the job's FINAL part program in the sandbox and measures it exactly like the ground truth
+(`tools.synth.geometry`: min-area-rectangle length/width, overall thickness, see-through hole diameters matched by
+nearest diameter). Per run it stores `eval/runs/<mode>/<suite>/<config>/<sample>/score.json` (+ `run.jsonl.gz`,
+`part_py.txt`, and `overlay.png` for failed PS runs); `--from-runs` rebuilds every table from those files.
+
+Configs change one thing at a time:
+
+| config | what changes |
+|---|---|
+| B0 | single shot, the models get no mat-calibrated numbers (sizes guessed from the raw photo at an assumed 30 cm / 26 mm lens) |
+| B1 | single shot with the mat measurements (no fix loop, no judge) |
+| B2 | full loop, the fixer sees the overlay images but no residual numbers |
+| PS | the full PartSmith loop |
+| PS-noTemplate / PS-noJudge / PS-noHeightCorr | PS without the template library / the judge / the parallax correction |
+| PS-open, PS-open-all | provider routing (`OPEN_WEIGHTS_ONLY=1` for -all); live only — with mocks they equal PS |
+
+Report: `eval/reports/<date>/report.{json,md}` (+ `charts/*.svg`, `gallery/*.png`) and `eval/reports/latest/report.json`,
+the payload served at `GET /api/v1/bench`. Each table carries N, the 95 % CIs (bootstrap over samples for mean
+errors, Wilson for rates), the ground-truth source and a headline (PS on the held-out split). Paired exact McNemar
+B1 vs PS on pass@0.5. In mock mode every table is titled "pipeline check — deterministic mock providers, NOT model
+performance": the baselines still run their real code paths, but every model answer is the deterministic mock's.
+`--live` refuses unless the build stage has a live provider (see `make smoke`).
+
 ## Splits
 
 `eval/splits.lock` freezes the synthetic bench definition (seed, sizes, dataset sha256) and will hold the real-part
 dev / held-out split and its hash once the real parts are collected. Held-out parts are only touched by `make bench`.
 
-## Still to come
-
-The agent-loop benches (`eval/run.py`, `make bench` / `make bench-live`) are added in a later phase; this file will
-list their commands here.
+Real parts follow the dev / held-out lists in `eval/splits.lock`; a part in neither list is "unassigned" and never
+reaches a table. The synthetic bench and the reference objects are never used for tuning, so they count as held out
+(the demo set in `data/synthetic/samples/` is the synthetic dev set).

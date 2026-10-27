@@ -1,0 +1,51 @@
+{
+ "suite": "reference_objects",
+ "config": "PS-noTemplate",
+ "sample_id": "ref-id1-card-clean-s787514",
+ "split": "held_out",
+ "kind": "reference_object",
+ "preset": "clean",
+ "mode": "mock",
+ "gt_source": "reference_spec",
+ "status": "failed",
+ "verified": false,
+ "iterations": 1,
+ "iterations_to_converge": null,
+ "strategy": "free_code",
+ "template": null,
+ "verifier_max_error_mm": null,
+ "retake_reason": null,
+ "usd": 0.0,
+ "tokens_in": 0,
+ "tokens_out": 0,
+ "model_calls": 6,
+ "model_ms": 180,
+ "provider_modes": [
+  "mock"
+ ],
+ "providers": {
+  "segment": [
+   "mock:sam-3.1"
+  ],
+  "understand": [
+   "mock:muse-spark-1.3"
+  ],
+  "build": [
+   "mock:meta-models/muse-spark-open"
+  ]
+ },
+ "convergence": [],
+ "wall_s": 6.63,
+ "valid": false,
+ "valid_reason": "no part program",
+ "dims": [],
+ "pass_0_3": false,
+ "pass_0_5": false,
+ "missed": [
+  "length",
+  "width",
+  "thickness"
+ ],
+ "extra_holes": 0,
+ "failure": "no valid final model (no part program)"
+}
