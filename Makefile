@@ -53,9 +53,11 @@ synth: ## Regenerate the synthetic bench (exact ground truth, deterministic from
 
 bench: ## Regenerate eval reports from stored runs (no keys needed)
 	$(UV) run python -m eval.run --from-runs
+	$(UV) run python -m tools.readme
 
 bench-live: ## Re-run every bench with the providers configured in .env
 	$(UV) run python -m eval.run --live
+	$(UV) run python -m tools.readme
 
 live: ## Check keys, then re-run the benches live
 	$(UV) run python -m tools.smoke && PROVIDER_MODE=live $(MAKE) bench-live
