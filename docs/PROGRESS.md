@@ -33,3 +33,7 @@ A fresh session should read this file, `docs/ARCHITECTURE.md`, `docs/API.md` and
 - **Web app** (`apps/web`, Next.js 15 / React 19 / Tailwind 4): `pnpm typecheck`, `pnpm lint` clean; `pnpm build` OK (19 routes);
   Playwright 92 passed / 24 skipped (functional flows run in desktop-light only) with axe (0 serious/critical) on desktop+mobile ×
   light+dark. Built against route-mocked fixtures only — real-backend integration is wave 3.
+- **Agent loop** (orchestrator, mock brain, guards, service facade, CLI): `uv run pytest services/agent/tests` → 32 passed (13 slow).
+  Mock mode, rendered top-only samples (latch, spacer, cover) verify in 2–3 rounds and replay to identical detail. On the synthetic
+  top+side JPEG samples most runs ended best-effort: side-view IoU gate unreachable for thin profiles and see-through holes lost in
+  thick parts → camera-frame verification + see-through hole fitting assigned (in progress).

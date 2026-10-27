@@ -50,3 +50,14 @@ and all meshing run single-threaded with an absolute chord tolerance. `mem_mb` i
 fill grows shapes by ~0.5 px). Model-to-photo alignment is a rigid 2-D search that may mirror (a part lying upside down shows
 its mirror image) but never scales — rescaling to force a fit would hide real errors. Minimum wall thickness is the 2nd
 percentile of inward ray casts from the B-rep surface.
+
+**2026-10-27 — Fix-loop guards and search policy.** Each round may move a length by at most 20 % of its value (min 0.5 mm, max
+2 mm), a topology knob by ±1 and an angle by ±10°; unknown parameters are rejected with the closest names; edits that rescale the
+whole outline are refused. Every round restarts from the best round so far (ranked: verified, then fewer failing P0 tests, then
+smaller max error). After two rounds without improvement the strategy switches: template → free code (extrude the measured
+outline) → ask the human. Measured values always overwrite what the model says about them.
+
+**2026-10-27 — Pass rule per view.** IoU is scale-dependent: a 1.5 mm-thick side profile with 0.1 mm edge error scores IoU ≈ 0.88,
+so the IoU ≥ 0.97 gate applies to the top view and to any view whose silhouette is at least 10 mm wide; thinner views are gated on
+Hausdorff ≤ 0.5 mm plus a thickness test (±0.3 mm). Views with a known camera pose are compared in the photo frame (model rendered
+with the real K, R, t), which handles parallax and see-through holes in thick parts exactly.

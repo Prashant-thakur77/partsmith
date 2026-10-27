@@ -76,7 +76,7 @@ class Job:
 
     @property
     def id(self) -> str:
-        return self.summary.id
+        return str(self.summary.id)
 
     # ---- events ------------------------------------------------------------------------------------------------------
     def emit(self, event: Event | dict[str, Any]) -> Event:
