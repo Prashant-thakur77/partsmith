@@ -673,8 +673,15 @@ def build_tables(scores: Sequence[Mapping[str, Any]], mode: str, notes: Sequence
                 else []
             )
         )
+        n_real = len({r["sample_id"] for r in held if r.get("kind") == "real"})
+        photos = (
+            "real photos"
+            if n_real == n_samples
+            else (f"{n_real} real + {n_samples - n_real} synthetic renders" if n_real else "synthetic renders")
+        )
         tables[suite] = {
             "title": title,
+            "photos": photos,
             "n": n_samples,
             "ground_truth": GROUND_TRUTH[suite],
             "ci": CI_TEXT,

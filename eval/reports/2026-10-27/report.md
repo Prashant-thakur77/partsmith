@@ -1,8 +1,8 @@
-# PartSmith-Bench — 2026-10-27T13:57:10+00:00
+# PartSmith-Bench — 2026-10-27T14:04:56+00:00
 
 > **PIPELINE CHECK — DETERMINISTIC MOCK PROVIDERS, NOT MODEL PERFORMANCE.** Every model stage ran on deterministic mocks; these tables show that the pipeline and the scorer work end to end, not how well any model performs.
 
-Mode: `mock` · git `1d815f4f2a` · CI: 95 %: bootstrap over samples (2000 resamples, seeded) for mean errors; Wilson for rates.
+Mode: `mock` · git `0910de18fa` · CI: 95 %: bootstrap over samples (2000 resamples, seeded) for mean errors; Wilson for rates.
 - tables rebuilt from 70 stored run(s) in eval/runs/mock/ (nothing re-run)
 
 ## pipeline check — deterministic mock providers, NOT model performance · synthetic (GT: exact: the template mesh the photo was rendered from)

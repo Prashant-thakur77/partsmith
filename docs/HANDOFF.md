@@ -66,7 +66,7 @@ holes: [{diameter: 4.0}]
 
 Good candidates: cupboard latches, cooler or caster wheels, bucket-handle clips, charger clips, appliance knobs, battery covers,
 cable clips, hooks, spacers. Avoid medical, vehicle-safety and weapon parts (the app refuses them).
-After adding parts, split them into dev and held-out in `eval/splits.lock`, then run `make bench`.
+After adding parts: `uv run python -m eval.splits assign` (10 dev, the rest held-out; held-out is frozen by hash), then `make bench`.
 
 **Screen fit check (the video's payoff shot):** run a job on a real part, open **Screen fit check**, lay the part on the pink 1:1
 outline and photograph it. The app shows pass or fail.

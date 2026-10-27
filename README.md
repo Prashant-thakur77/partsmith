@@ -76,13 +76,13 @@ Every number here is written by `make bench` (`tools/readme.py` reads `eval/repo
 never mixed: synthetic photos (exact), standard reference objects (published specs), real broken parts (school ruler, ±0.5 mm).
 
 <!-- BEGIN:bench -->
-Generated 2026-10-27T13:57:10+00:00 at commit `1d815f4f2af784c32734c83f50ff91c25ab02907` · mode **mock**.
+Generated 2026-10-27T14:04:56+00:00 at commit `0910de18fa13a5c843283adea08f8bb36a22f787` · mode **mock**.
 
 > **These rows come from deterministic mock providers (no API keys yet).** They check that the pipeline, verifier and scorer work end to end; they do **not** measure any model. Live numbers replace them after `make live`.
 
 **Synthetic bench (exact ground truth)**
 
-N = 6 · ground truth: `synthetic_exact` · CI: 95 %: bootstrap over samples (2000 resamples, seeded) for mean errors; Wilson for rates
+N = 6 · photos: synthetic renders · ground truth: `synthetic_exact` · CI: 95 %: bootstrap over samples (2000 resamples, seeded) for mean errors; Wilson for rates
 
 | config | n | median_abs_err_mm | mean_abs_err_mm | mean_ci95 | pass@0.5 | verified_rate | median_iters |
 |---|---|---|---|---|---|---|---|
@@ -98,7 +98,7 @@ _headline = PS on the held-out split (6 samples); MOCK providers: these numbers 
 
 **Reference objects (vs published specs)**
 
-N = 4 · ground truth: `reference_spec` · CI: 95 %: bootstrap over samples (2000 resamples, seeded) for mean errors; Wilson for rates
+N = 4 · photos: synthetic renders · ground truth: `reference_spec` · CI: 95 %: bootstrap over samples (2000 resamples, seeded) for mean errors; Wilson for rates
 
 | config | n | median_abs_err_mm | mean_abs_err_mm | mean_ci95 | pass@0.5 | verified_rate | median_iters |
 |---|---|---|---|---|---|---|---|
