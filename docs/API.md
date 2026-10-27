@@ -13,9 +13,11 @@ Anonymous read is allowed. Writes (POST/PUT/PATCH/DELETE under `/api/v1`) are ra
 named something that does not exist (slug, parameter, mat, sample, job, format, queue item). Codes in use:
 `not_found`, `validation_error`, `bad_param`, `unknown_param`, `bad_format`, `part_not_found`, `job_not_found`,
 `mat_not_found`, `sample_not_found`, `blob_not_found`, `bake_not_found`, `bake_failed`, `steer_not_found`,
-`slug_not_in_queue`, `bad_review`, `slug_taken`, `not_finished`, `no_pending_question`, `no_program`, `bad_image`,
+`slug_not_in_queue`, `bad_review`, `slug_taken`, `not_finished`, `no_pending_question`, `no_program`,
+`no_model_outline`, `no_preview_source`, `measure_failed`, `invalid_request`, `report_file_not_found`, `bad_image`,
 `too_small`, `too_large`, `empty_upload`, `unsupported_media_type`, `not_printable`, `rate_limited`,
-`agent_unavailable`, `not_implemented`, `internal_error`.
+`agent_unavailable`, `not_implemented`, `internal_error`. A job that lacks the state an action needs (no part program,
+no model outline, nothing to preview) answers `409` with the matching code, never a 500.
 
 **Uploads**: photos must be JPEG, PNG or WebP, ≤ 25 MB and ≤ 60 MP, ≥ 200 px on the short side, and must fully decode.
 GPS metadata is removed before anything is stored: JPEG pixels are kept byte-for-byte (only the EXIF GPS directory and XMP
@@ -68,15 +70,15 @@ Screen calibration (ID-1 card 85.60 × 53.98 mm) happens in the browser and is s
 | POST | `/jobs/demo` | `{"sample": str}` → `JobSummary` — runs a bundled **synthetic** sample (labelled synthetic everywhere); unknown ids → `404 sample_not_found` + closest |
 | GET | `/jobs?limit=&include_replays=&kind=` | `[JobSummary]` (newest first) |
 | GET | `/jobs/{id}` | `JobDetail = {"summary": JobSummary, "events": [Event], "partspec": PartSpec\|null, "measurements": {view: Measurements}, "verification": Verification\|null, "code": str\|null, "params": [ParamSpec], "values": {name: float}, "artifacts": {kind: url}, "question": QuestionEvent\|null}` |
-| GET | `/jobs/{id}/events` | **SSE**: one `data: <Event JSON>` per event (`id:` = seq). Replays all past events first, then live ones. Ends after `done`. `?from_seq=` (or the `Last-Event-ID` header) resumes. Events keep their original `ts` (the replay player paces on ts gaps). A `: keep-alive` comment is sent after 15 s without events; the stream starts with `retry: 3000` |
+| GET | `/jobs/{id}/events` | **SSE**: one `data: <Event JSON>` per event (`id:` = seq). Replays all past events first, then live ones. Ends after `done`. `?from_seq=` (or the `Last-Event-ID` header) resumes. Events keep their original `ts` (the replay player paces on ts gaps). A `: keep-alive` comment is sent after 15 s without events; the stream starts with `retry: 3000`. Headers: `Cache-Control: no-cache, no-transform`, `X-Accel-Buffering: no` |
 | POST | `/jobs/{id}/answer` | `{"id": str, "value": str\|float, "via": "text"\|"voice"}` → `JobSummary` (resumes a paused job; `409 no_pending_question` otherwise) |
 | POST | `/jobs/{id}/edit` | JSON `{"text": str}` or multipart `audio` (+ optional `text`) → `{"transcript": str, "edits": [{"param","from","to","reason"}], "not_understood": [str], "confidence": float, "mode": str, "bake": BakeResult}` (voice/text edit; clamped to PARAMS) |
 | POST | `/jobs/{id}/preview` | → `{"url": str, "label": "AI preview", "mode": str}` (Muse Image "see the fix") |
-| GET | `/jobs/{id}/fit-outline?mat_id=` | `{"mat_id": str, "outline_mm": [[x,y]], "holes": [{"center_mm":[x,y],"diameter_mm":float}], "dims": [{"label": str, "from_mm":[x,y], "to_mm":[x,y], "value_mm": float}], "placement": {"cx_mm","cy_mm","theta_deg"}}` in the **mat frame** (`mat_id` default `screen-m`) |
+| GET | `/jobs/{id}/fit-outline?mat_id=` | `409 no_model_outline` when the job has no model outline (Steer lanes, failed runs); otherwise `{"mat_id": str, "outline_mm": [[x,y]], "holes": [{"center_mm":[x,y],"diameter_mm":float}], "dims": [{"label": str, "from_mm":[x,y], "to_mm":[x,y], "value_mm": float}], "placement": {"cx_mm","cy_mm","theta_deg"}}` in the **mat frame** (`mat_id` default `screen-m`) |
 | POST | `/jobs/{id}/fit-check` | multipart `photo`, `mat_id` → `FitCheckResult = {"passed": bool, "iou": float, "hausdorff_mm": float, "mean_mm": float, "reasons": [str], "overlay_url": str, "capture": CaptureReport}` |
 | GET | `/jobs/{id}/bake?<param>=<value>&format=…[&download=1]` | re-bake the job's current part program before it is published → `BakeResult` (same shape as part bakes; `&download=1` returns the first format's file) |
 | POST | `/jobs/{id}/publish` | `{"slug"?: str}` → part detail (as `GET /parts/{slug}`); the job must be `done`; origin is preserved; thumbnails are rendered here |
-| POST | `/jobs/{id}/cancel` | → `JobSummary` |
+| POST | `/jobs/{id}/cancel` | → `JobSummary` after the cancel took effect (`status: "cancelled"`); if the job has not stopped within 3 s the response says `status: "cancelling"` (it stops at its next check). Finished jobs are returned unchanged |
 | GET | `/jobs/{id}/run.jsonl` | the raw run log (`application/x-ndjson`) |
 | POST | `/transcribe` | multipart `audio`, `language_hint?` → `{"text": str, "mode": "live"\|"mock"\|"replay", "language": str\|null, "model": str, "note": str}` (fix intent and spoken answers; mock transcripts say so in `note`) |
 | GET | `/replays` | `[{"id": str, "title": str, "origin": DataOrigin, "provider_mode": str, "verified": bool, "max_error_mm": float\|null, "iterations": int}]` |
@@ -144,13 +146,16 @@ plain-words change through the variant guard and rebuilds the lane; `reject` dro
 | Method | Path | Returns |
 |---|---|---|
 | GET | `/bench` | latest `eval/reports/latest/report.json` with `"status": "ok"`, or a `"status": "pending"` payload of the same shape |
+| GET | `/bench/files/{path}` | a report file under `eval/reports/` (png/jpg/svg/json/md/csv/txt; no traversal, no hidden files) |
 
+`failures[].overlay_url` is the overlay blob when it exists, else `/api/v1/bench/files/<report dir>/<overlay_file>`, else `null`.
 `{"status", "generated_at", "git_sha", "tables": {"synthetic"|"reference_objects"|"real_ruler": BenchTable}, "runs": [...], "failures": [{"title","reason","overlay_url"}]}`;
 `BenchTable = {"n": int, "ground_truth": "synthetic_exact"|"reference_spec"|"ruler", "ci": ..., "columns": [str], "rows": [...], "headline": {"median_abs_err_mm": float|null, ...}, "status": "ok"|"pending", "note": str}`.
 
 ## Agent docs and MCP
 - `/llms.txt` and `/prompt.txt` (also under `/api/v1/`): generated from the live registry and this route list (the web
-  app proxies them).
+  app proxies them). Absolute links use `X-Forwarded-Host` / `X-Forwarded-Proto` when present (validated), else
+  `PARTSMITH_PUBLIC_URL`, else the request's own origin.
 - MCP over streamable HTTP at **`/mcp`** on the same app (stateless, JSON responses; DNS-rebinding protection allows
   localhost, extend with `PARTSMITH_MCP_ALLOWED_HOSTS`). stdio: `uv run python -m services.mcp --stdio`. Tools and client
   configs: `services/mcp/README.md`.

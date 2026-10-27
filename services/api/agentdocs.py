@@ -37,12 +37,12 @@ def base_url() -> str:
     return os.environ.get("PARTSMITH_PUBLIC_URL", "http://localhost:8000").rstrip("/")
 
 
-def llms_txt(reg: Registry | None = None) -> str:
+def llms_txt(reg: Registry | None = None, *, base: str | None = None) -> str:
     reg = reg or get_registry()
     stats = reg.stats()
     fams = sorted(reg.families(), key=lambda f: -f["count"])
     parts, total = reg.search("", sort="title", limit=60)
-    b = base_url()
+    b = (base or base_url()).rstrip("/")
     lines = [
         "# PartSmith",
         "",
@@ -96,10 +96,10 @@ def llms_txt(reg: Registry | None = None) -> str:
     return "\n".join(lines) + "\n"
 
 
-def prompt_txt(reg: Registry | None = None) -> str:
+def prompt_txt(reg: Registry | None = None, *, base: str | None = None) -> str:
     reg = reg or get_registry()
     stats = reg.stats()
-    b = base_url()
+    b = (base or base_url()).rstrip("/")
     return (
         "\n".join(
             [

@@ -58,6 +58,13 @@ def context_hash(*parts: Any) -> str:
     return hashlib.sha256(blob).hexdigest()[:16]
 
 
+def _atomic_write(path: Path, text: str) -> None:
+    """Write via a temp file + rename so readers (API requests) never see a half-written file."""
+    tmp = path.with_name(f".{path.name}.{threading.get_ident()}.tmp")
+    tmp.write_text(text, encoding="utf-8")
+    tmp.replace(path)
+
+
 class Job:
     """One job: events, status and the pause/resume handshake for questions. Thread-safe."""
 
@@ -120,7 +127,7 @@ class Job:
         self.save_summary()
 
     def save_summary(self) -> None:
-        (self.dir / "summary.json").write_text(self.summary.model_dump_json(indent=2))
+        _atomic_write(self.dir / "summary.json", self.summary.model_dump_json(indent=2))
 
     def events_since(self, seq: int, timeout_s: float = 15.0) -> list[Event]:
         """Block until there are events with seq >= `seq` (or the job is finished, or the timeout passes)."""
@@ -176,14 +183,14 @@ class Job:
             if hasattr(data, "model_dump_json")
             else json.dumps(data, indent=2, default=str)
         )
-        (self.dir / name).write_text(text)
+        _atomic_write(self.dir / name, text)
 
     def read_json(self, name: str) -> Any:
         p = self.dir / name
         return json.loads(p.read_text()) if p.exists() else None
 
     def write_text(self, name: str, text: str) -> None:
-        (self.dir / name).write_text(text)
+        _atomic_write(self.dir / name, text)
 
     def read_text(self, name: str) -> str | None:
         p = self.dir / name

@@ -15,6 +15,7 @@ import json
 import logging
 import math
 import os
+import re
 import threading
 import time
 from collections import defaultdict, deque
@@ -40,6 +41,7 @@ from services.api.uploads import check_audio, clean_image
 from services.common import blobs
 from services.common.paths import REPO_ROOT
 from services.geom_worker import bake as geom_bake
+from services.geom_worker.program import ProgramError, UnknownParamError
 from services.registry import parts as P
 from services.registry import steer
 from services.registry.store import get_registry
@@ -210,6 +212,29 @@ def _job(job_id: str) -> Any:
     return job
 
 
+_HINTS = {
+    "no_model_outline": "fit-outline and fit-check need a finished fix job with a model outline "
+    "(Steer lanes and failed runs have none)",
+    "no_program": "the job has no part program yet (it is still running, failed early or was refused)",
+    "no_preview_source": "the preview needs a verified outline and a rectified photo from a fix job",
+}
+
+
+def _service_call(fn: Callable[..., Any], *args: Any, conflict: str, **kw: Any) -> Any:
+    """Call the agent service; its KeyError (missing state) → 409 `conflict`, ValueError → 422. Errors that already
+    map to the envelope (unknown part/param, bad PARAMS) pass through."""
+    try:
+        return fn(*args, **kw)
+    except (P.PartNotFound, UnknownParamError, ProgramError, ApiError):
+        raise
+    except KeyError as exc:
+        msg = str(exc.args[0]) if exc.args else conflict
+        hint = _HINTS.get(conflict)
+        raise ApiError(409, conflict, f"{msg}; {hint}" if hint else msg) from exc
+    except ValueError as exc:
+        raise ApiError(422, "invalid_request", str(exc)) from exc
+
+
 def _float(name: str, raw: str) -> float:
     try:
         v = float(raw)
@@ -244,10 +269,13 @@ def _file(path: Any, fmt: str, filename: str, *, cache: str = IMMUTABLE) -> File
 def _resolve_artifact(url: str) -> Any:
     """Local file behind an artifact URL (bake route or blob)."""
     if url.startswith(f"{API}/bakes/"):
-        key, name = url[len(f"{API}/bakes/") :].split("/", 1)
+        key, _, name = url[len(f"{API}/bakes/") :].partition("/")
         return P.bake_file(key, name)
     if url.startswith(f"{API}/blobs/"):
-        p = blobs.locate(url[len(f"{API}/blobs/") :])
+        try:
+            p = blobs.locate(url[len(f"{API}/blobs/") :])
+        except ValueError:
+            return None
         return p if p.exists() else None
     return None
 
@@ -469,7 +497,7 @@ def jobs_fix(
         family_hint=family_hint,
         screen_px_per_mm=screen_px_per_mm,
     )
-    job = _svc().start_fix_job(photos, job_input)
+    job = _service_call(_svc().start_fix_job, photos, job_input, conflict="invalid_request")
     return dict(job.summary.model_dump(mode="json"))
 
 
@@ -494,7 +522,8 @@ def jobs_demo(body: DemoRequest) -> dict[str, Any]:
             f"no sample {body.sample!r}",
             difflib.get_close_matches(body.sample, ids, n=3) or ids[:5],
         )
-    return dict(_svc().start_demo_job(body.sample).summary.model_dump(mode="json"))
+    job = _service_call(_svc().start_demo_job, body.sample, conflict="sample_not_found")
+    return dict(job.summary.model_dump(mode="json"))
 
 
 @router.get("/jobs", summary="Recent jobs", tags=["jobs"])
@@ -562,7 +591,9 @@ async def job_events(
             yield ": keep-alive\n\n"
 
     return StreamingResponse(
-        stream(), media_type="text/event-stream", headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"}
+        stream(),
+        media_type="text/event-stream",
+        headers={"Cache-Control": "no-cache, no-transform", "X-Accel-Buffering": "no"},
     )
 
 
@@ -625,14 +656,22 @@ async def job_edit(job_id: str, request: Request) -> dict[str, Any]:
         text = str(body.get("text", "")) if isinstance(body, dict) else None
     if not text and audio is None:
         raise ApiError(422, "validation_error", 'send {"text": "..."} or a multipart `audio` file')
-    out = await asyncio.to_thread(_svc().edit, job_id, text=text[:500] if text else None, audio=audio, mime=mime)
+    out = await asyncio.to_thread(
+        _service_call,
+        _svc().edit,
+        job_id,
+        text=text[:500] if text else None,
+        audio=audio,
+        mime=mime,
+        conflict="no_program",
+    )
     return dict(out)
 
 
 @router.post("/jobs/{job_id}/preview", summary="Muse Image 'see the fix' preview (labelled AI preview)", tags=["jobs"])
 def job_preview(job_id: str) -> dict[str, Any]:
     _job(job_id)
-    return dict(_svc().preview(job_id))
+    return dict(_service_call(_svc().preview, job_id, conflict="no_preview_source"))
 
 
 @router.get(
@@ -641,7 +680,7 @@ def job_preview(job_id: str) -> dict[str, Any]:
 def job_fit_outline(job_id: str, mat_id: Annotated[str, Query(examples=["screen-m"])] = "screen-m") -> dict[str, Any]:
     _job(job_id)
     _mat_or_404(mat_id)
-    return dict(_svc().fit_outline(job_id, mat_id))
+    return dict(_service_call(_svc().fit_outline, job_id, mat_id, conflict="no_model_outline"))
 
 
 @router.post(
@@ -653,7 +692,7 @@ def job_fit_check(
     _job(job_id)
     _mat_or_404(mat_id)
     data, _ = clean_image(photo.file.read(), "photo")
-    out = _svc().fit_check(job_id, data, mat_id)
+    out = _service_call(_svc().fit_check, job_id, data, mat_id, conflict="no_model_outline")
     return out.model_dump(mode="json") if hasattr(out, "model_dump") else dict(out)
 
 
@@ -678,10 +717,7 @@ def job_bake(job_id: str, request: Request, download: bool = False) -> Any:
     svc = _svc()
     if not hasattr(svc, "bake_job"):
         raise ApiError(501, "not_implemented", "this build's agent service has no bake_job")
-    try:
-        res = svc.bake_job(job_id, params, fmts)
-    except KeyError as exc:
-        raise ApiError(409, "no_program", f"job {job_id} has no part program yet") from exc
+    res = _service_call(svc.bake_job, job_id, params, fmts, conflict="no_program")
     data = res.model_dump(mode="json") if hasattr(res, "model_dump") else dict(res)
     if download:
         fmt = fmts[0]
@@ -708,16 +744,32 @@ def job_publish(job_id: str, body: Annotated[PublishRequest | None, Body()] = No
     slug = body.slug if body else None
     if slug and get_registry().get_part(slug) is not None:
         raise ApiError(409, "slug_taken", f"slug {slug!r} is taken", P.closest_slugs(slug))
-    part = _svc().publish(job_id, slug=slug)
+    part = _service_call(_svc().publish, job_id, slug=slug, conflict="no_program")
     P.after_publish(part)
     return P.part_detail(part)
 
 
+CANCEL_WAIT_S = 3.0
+
+
 @router.post("/jobs/{job_id}/cancel", summary="Cancel a running job", tags=["jobs"])
 def job_cancel(job_id: str) -> dict[str, Any]:
+    """Returns the summary after the cancel took effect (`cancelled`), or `status: "cancelling"` when the job has not
+    stopped within a few seconds (it stops at its next check). Finished jobs are returned unchanged."""
     job = _job(job_id)
-    job.cancel()
-    return dict(job.summary.model_dump(mode="json"))
+    if not job.finished:
+        svc = _svc()
+        if hasattr(svc, "cancel"):
+            _service_call(svc.cancel, job_id, conflict="job_not_found")
+        else:
+            job.cancel()
+        deadline = time.monotonic() + CANCEL_WAIT_S
+        while not job.finished and time.monotonic() < deadline:
+            time.sleep(0.05)
+    out = dict(job.summary.model_dump(mode="json"))
+    if not job.finished:
+        out["status"] = "cancelling"
+    return out
 
 
 @router.post(
@@ -752,7 +804,7 @@ def measure(
     if mat_id:
         _mat_or_404(mat_id)
     data, _ = clean_image(photo.file.read(), "photo")
-    out = _svc().measure(data, view, thickness_mm=thickness_mm, mat_id=mat_id)
+    out = _service_call(_svc().measure, data, view, thickness_mm=thickness_mm, mat_id=mat_id, conflict="measure_failed")
     return out.model_dump(mode="json") if hasattr(out, "model_dump") else dict(out)
 
 
@@ -1011,14 +1063,53 @@ def _pending_table(name: str, gt: str) -> dict[str, Any]:
     }
 
 
+BENCH_FILE_TYPES = {".png", ".jpg", ".jpeg", ".svg", ".json", ".md", ".csv", ".txt"}
+
+
+def _reports_root() -> Any:
+    return BENCH_REPORT.parent.parent.resolve()
+
+
+def _report_file(rel: str) -> Any:
+    """A file under eval/reports, or None. No traversal outside, no hidden files, only report media types."""
+    root = _reports_root()
+    if not rel or "\x00" in rel or any(part.startswith(".") for part in rel.split("/")):
+        return None
+    path = (root / rel).resolve()
+    if not path.is_relative_to(root) or not path.is_file() or path.suffix.lower() not in BENCH_FILE_TYPES:
+        return None
+    return path
+
+
+def _overlay_url(failure: dict[str, Any]) -> str | None:
+    """The failure's overlay: its blob when present, else the report file served by /bench/files, else None."""
+    url = failure.get("overlay_url")
+    if isinstance(url, str) and url and _resolve_artifact(url) is not None:
+        return url
+    name = failure.get("overlay_file")
+    if not isinstance(name, str) or not name:
+        return None
+    root = _reports_root()
+    dirs = [BENCH_REPORT.parent, *sorted((d for d in root.iterdir() if d.is_dir()), reverse=True)]
+    for d in dirs:
+        rel = f"{d.resolve().relative_to(root).as_posix()}/{name}"
+        if _report_file(rel) is not None:
+            return f"{API}/bench/files/{rel}"
+    return None
+
+
 @router.get("/bench", summary="Latest PartSmith-Bench report (or a 'pending' payload)", tags=["bench"])
 def bench() -> dict[str, Any]:
+    """`failures[].overlay_url` always resolves (a blob or `/bench/files/...`) or is null."""
     if BENCH_REPORT.exists():
         try:
             report: dict[str, Any] = json.loads(BENCH_REPORT.read_text())
         except json.JSONDecodeError as exc:
             raise ApiError(500, "bad_report", "eval/reports/latest/report.json is not valid JSON") from exc
         report.setdefault("status", "ok")
+        for f in report.get("failures") or []:
+            if isinstance(f, dict):
+                f["overlay_url"] = _overlay_url(f)
         return report
     return {
         "status": "pending",
@@ -1035,20 +1126,54 @@ def bench() -> dict[str, Any]:
 
 
 @router.get(
+    "/bench/files/{path:path}",
+    summary="A file of a bench report (overlays, charts) under eval/reports",
+    tags=["bench"],
+    response_class=FileResponse,
+)
+def bench_file(path: str) -> FileResponse:
+    found = _report_file(path)
+    if found is None:
+        raise ApiError(404, "report_file_not_found", f"no report file {path!r}")
+    return FileResponse(found, headers={"Cache-Control": "public, max-age=300"})
+
+
+_HOST_RE = re.compile(r"^[A-Za-z0-9.\-]+(:\d{1,5})?$|^\[[0-9a-fA-F:]+\](:\d{1,5})?$")
+
+
+def public_base(request: Request) -> str:
+    """Absolute base for links: X-Forwarded-Host/-Proto (the web app proxies), else PARTSMITH_PUBLIC_URL, else this
+    request's own origin. Header values are validated so they cannot inject text into the documents."""
+    host = request.headers.get("x-forwarded-host", "").split(",")[0].strip()
+    proto = request.headers.get("x-forwarded-proto", "").split(",")[0].strip().lower()
+    if host and _HOST_RE.match(host):
+        scheme = proto if proto in ("http", "https") else request.url.scheme
+        return f"{scheme}://{host}"
+    env = os.environ.get("PARTSMITH_PUBLIC_URL", "").strip()
+    if env:
+        return env.rstrip("/")
+    return str(request.base_url).rstrip("/")
+
+
+@router.get(
     "/llms.txt",
     summary="Reference for LLMs (generated from the registry)",
     tags=["agents"],
     response_class=PlainTextResponse,
 )
-def llms_txt() -> PlainTextResponse:
-    return PlainTextResponse(agentdocs.llms_txt(), headers={"Cache-Control": "public, max-age=60"})
+def llms_txt(request: Request) -> PlainTextResponse:
+    return PlainTextResponse(
+        agentdocs.llms_txt(base=public_base(request)), headers={"Cache-Control": "public, max-age=60"}
+    )
 
 
 @router.get(
     "/prompt.txt", summary="Working instructions for coding agents", tags=["agents"], response_class=PlainTextResponse
 )
-def prompt_txt() -> PlainTextResponse:
-    return PlainTextResponse(agentdocs.prompt_txt(), headers={"Cache-Control": "public, max-age=60"})
+def prompt_txt(request: Request) -> PlainTextResponse:
+    return PlainTextResponse(
+        agentdocs.prompt_txt(base=public_base(request)), headers={"Cache-Control": "public, max-age=60"}
+    )
 
 
 app.include_router(router)

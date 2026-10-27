@@ -25,7 +25,7 @@ from services.common.paths import bakes_dir
 from services.geom_worker import bake as geom_bake
 from services.geom_worker.program import clamp, closest_names, params_sha
 from services.geom_worker.sandbox import WarmPool
-from services.media.voice import map_utterance, snap_clamp
+from services.media.voice import RELATIVE_WORDS, map_utterance, snap_clamp
 from services.registry.store import Registry, get_registry
 
 API = "/api/v1"
@@ -343,19 +343,6 @@ def map_variant(
     return edits, missed, confidence
 
 
-_RELATIVE: dict[str, tuple[str, int]] = {
-    "longer": ("length", 1),
-    "shorter": ("length", -1),
-    "taller": ("height", 1),
-    "higher": ("height", 1),
-    "lower": ("height", -1),
-    "thicker": ("thickness", 1),
-    "thinner": ("thickness", -1),
-    "wider": ("width", 1),
-    "narrower": ("width", -1),
-    "deeper": ("depth", 1),
-    "shallower": ("depth", -1),
-}
 _FILLER = {
     "make",
     "it",
@@ -378,6 +365,16 @@ _FILLER = {
     "total",
     "is",
     "at",
+    "karo",
+    "kar",
+    "kardo",
+    "thoda",
+    "thodi",
+    "zara",
+    "isko",
+    "ise",
+    "ko",
+    "aur",
 }
 
 
@@ -392,8 +389,8 @@ def _exact_dim_edit(toks: list[str], specs: Sequence[ParamSpec], current: Mappin
     w = words[0]
     if w in names and numbers and not names[w].topology:
         return {"param": w, "to": numbers[0], "reason": f"{w} = {numbers[0]:g} mm"}
-    if w in _RELATIVE and _RELATIVE[w][0] in names:
-        name, sign = _RELATIVE[w]
+    if w in RELATIVE_WORDS and RELATIVE_WORDS[w][0] in names:
+        name, sign = RELATIVE_WORDS[w]
         step = numbers[0] if numbers else 0.5
         return {"param": name, "to": current[name] + sign * step, "reason": f"{step:g} mm {w}"}
     return None

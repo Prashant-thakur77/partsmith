@@ -90,7 +90,7 @@ class VoiceEditResult:
 _INCREASE = {
     "bigger", "larger", "big", "bada", "badi", "bade", "badhao", "badha", "badhaao", "increase", "more", "zyada",
     "jyada", "longer", "lamba", "lambi", "lambe", "thicker", "mota", "moti", "mote", "wider", "chauda", "chaudi",
-    "taller", "uncha", "unchi", "deeper", "gehra", "gehri", "looser", "loose", "dheela", "dheeli", "add", "plus",
+    "taller", "uncha", "unchi", "unche", "ooncha", "oonchi", "oonche", "deeper", "gehra", "gehri", "looser", "loose", "dheela", "dheeli", "add", "plus",
     "extra", "raise", "expand", "widen", "lengthen", "thicken", "enlarge", "grow",
 }  # fmt: skip
 _DECREASE = {
@@ -119,7 +119,24 @@ _DIMENSIONS: dict[str, tuple[set[str], tuple[str, ...]]] = {
         ("thickness", "thick", "wall"),
     ),
     "width": ({"wide", "wider", "width", "narrow", "narrower", "chauda", "chaudi", "chaudai"}, ("width", "wide")),
-    "height": ({"tall", "taller", "height", "high", "uncha", "unchi", "unchai"}, ("height", "tall", "high")),
+    "height": (
+        {
+            "tall",
+            "taller",
+            "height",
+            "high",
+            "higher",
+            "uncha",
+            "unchi",
+            "unche",
+            "unchai",
+            "ooncha",
+            "oonchi",
+            "oonche",
+            "oonchai",
+        },
+        ("height", "tall", "high"),
+    ),
     "depth": ({"deep", "deeper", "depth", "shallower", "gehra", "gehri", "gehrai"}, ("depth", "deep")),
     "diameter": ({"diameter", "dia", "radius"}, ("d", "dia", "diameter", "od", "id")),
     "clearance": (
@@ -172,6 +189,41 @@ _DIGITS = {"zero": "0", "one": "1", "two": "2", "three": "3", "four": "4", "five
 _DIGITS.update({"eight": "8", "nine": "9"})
 _COUNT_WORDS = {"add", "more", "remove", "count", "number", "extra", "another", "aur", "hatao", "fewer"}
 _CLAUSE_SPLIT = re.compile(r"\s*(?:,|;|\band\b|\baur\b|\bthen\b|\bphir\b|\balso\b|\bbhi\b)\s*")
+
+
+# Shared with the registry's variant mapper (services/registry/parts.py), so "2 mm taller" / "thoda ooncha" mean the
+# same thing in a voice edit and in a plain-words variant.
+RELATIVE_WORDS: dict[str, tuple[str, int]] = {
+    "taller": ("height", 1), "higher": ("height", 1), "uncha": ("height", 1), "unchi": ("height", 1),
+    "unche": ("height", 1), "ooncha": ("height", 1), "oonchi": ("height", 1), "oonche": ("height", 1),
+    "lower": ("height", -1), "neecha": ("height", -1), "nicha": ("height", -1),
+    "longer": ("length", 1), "lamba": ("length", 1), "lambi": ("length", 1), "lambe": ("length", 1),
+    "shorter": ("length", -1),
+    "wider": ("width", 1), "chauda": ("width", 1), "chaudi": ("width", 1), "chaude": ("width", 1),
+    "narrower": ("width", -1),
+    "thicker": ("thickness", 1), "mota": ("thickness", 1), "moti": ("thickness", 1), "mote": ("thickness", 1),
+    "thinner": ("thickness", -1), "patla": ("thickness", -1), "patli": ("thickness", -1), "patle": ("thickness", -1),
+    "deeper": ("depth", 1), "gehra": ("depth", 1), "gehri": ("depth", 1), "shallower": ("depth", -1),
+}  # fmt: skip
+# When no knob is named after the dimension, these knobs carry it (in order). A flat extruded part's height is its
+# thickness; a cylinder's length is its height; a round part's width is its diameter.
+DIMENSION_FALLBACKS: dict[str, tuple[str, ...]] = {
+    "height": ("height", "thickness"),
+    "length": ("length", "height"),
+    "width": ("width", "diameter", "outer_d", "leaf_width"),
+    "thickness": ("thickness", "plate_thickness", "base_thickness"),
+    "depth": ("depth", "bore_depth"),
+    "diameter": ("diameter", "outer_d"),
+}
+
+
+def dimension_param(dim: str, params: Sequence[ParamSpec]) -> ParamSpec | None:
+    """The knob that carries a plain dimension word ("height", "width", ...) on this part, or None."""
+    by_name = {p.name: p for p in params if not p.topology}
+    for name in DIMENSION_FALLBACKS.get(dim, (dim,)):
+        if name in by_name:
+            return by_name[name]
+    return None
 
 
 def _tokens(text: str) -> list[str]:
@@ -258,13 +310,17 @@ def _pick(params: Sequence[ParamSpec], it: _Intent) -> tuple[ParamSpec | None, f
     elif it.parts:
         pool = [p for p in params if toks[p.name] & it.parts]
         if len(pool) > 1 and it.parts & {"hole", "bore"}:
-            sized = [p for p in pool if toks[p.name] & {"d", "dia", "diameter"}]
+            sized = [p for p in pool if set(re.split(r"[_\W\d]+", p.name.lower())) & {"d", "dia", "diameter"}]
             pool = sized or pool
         if len(pool) > 1 and it.words & _COUNT_WORDS:
             counts = [p for p in pool if p.topology]
             pool = counts or pool
     else:
         return None, 0.0, "no part or dimension named"
+    if it.dims and not it.parts and len(it.dims) == 1 and len(pool) != 1:
+        fallback = dimension_param(next(iter(it.dims)), params)
+        if fallback is not None:
+            return fallback, 0.75, ""
     if not pool:
         return None, 0.0, "no matching parameter"
     if len(pool) > 1:

@@ -4,6 +4,7 @@ import io
 
 import numpy as np
 import pytest
+from partsmith_schemas.verification import ParamSpec
 from PIL import Image
 
 from services.agent.templates import get_template
@@ -141,3 +142,40 @@ def test_after_publish_fills_facts() -> None:
     stored = get_registry().get_part("spacer-x")
     assert stored is not None and stored.facts is not None and stored.facts.mass_g_pla > 0
     assert get_registry().thumbnail("spacer-x") is not None
+
+
+FREE_CODE = [  # the knobs of a free-code (extruded outline) program
+    ParamSpec(name="thickness", default=15.0, min=0.8, max=40.0, step=0.05, label="Plate thickness"),
+    ParamSpec(name="outline_offset", default=0.0, min=-1.0, max=1.0, step=0.02, label="Outline offset"),
+    ParamSpec(name="hole_1_d", default=12.5, min=9.5, max=15.5, step=0.05, label="hole_1 diameter"),
+]
+
+
+@pytest.mark.parametrize(
+    ("template", "text", "expected"),
+    [
+        ("knob", "make it 2 mm taller", {"height": 18.0}),
+        ("knob", "thoda ooncha karo", {"height": 16.5}),
+        ("knob", "hole bada karo", {"bore_d": 6.2}),
+        ("spacer", "2 mm lamba karo", {"height": 12.0}),  # a cylinder's length is its height
+        ("l_bracket", "mota karo", {"thickness": 3.5}),
+        ("clip", "chauda karo", {"width": 16.5}),
+        ("clip", "make it wider", {"width": 16.5}),
+        ("hook", "thoda chauda karo", {"width": 22.5}),
+        (None, "make it 2 mm taller", {"thickness": 17.0}),  # flat extruded part: height = thickness
+        (None, "thoda ooncha karo", {"thickness": 15.5}),
+        (None, "1 mm mota karo", {"thickness": 16.0}),
+        (None, "hole bada karo", {"hole_1_d": 12.7}),
+    ],
+)
+def test_voice_edit_and_variant_share_dimension_synonyms(
+    template: str | None, text: str, expected: dict[str, float]
+) -> None:
+    from services.media.voice import map_utterance
+
+    specs = list(get_template(template).params) if template else FREE_CODE
+    values = {p.name: p.default for p in specs}
+    voice_edits, missed, _ = map_utterance(text, specs, values)
+    assert {e["param"]: e["to"] for e in voice_edits} == pytest.approx(expected), missed
+    variant_edits, missed, _ = P.map_variant(text, specs, values)
+    assert {e["param"]: e["to"] for e in variant_edits} == pytest.approx(expected), missed

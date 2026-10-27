@@ -62,7 +62,9 @@ class FakeService:
                 ans = j.ask(QuestionEvent(job=j.id, id="q1", text="Say the thickness in mm"), timeout_s=10)
                 j.log(f"answer {ans.value}")
             j.emit(MetricEvent(job=j.id, iter=1, name="hausdorff_mm", value=0.31, threshold=0.5))
-            j.write_text("part.py", make_part("spacer").code)
+            if j.input.intent != "no-outline":
+                j.write_text("part.py", make_part("spacer").code)
+                j.write_json("outline.json", {"outline_mm": [[0, 0], [10, 0], [10, 5]], "holes": []})
             j.emit(DoneEvent(job=j.id, verified=True, status="verified", summary={"max_error_mm": 0.31}))
 
         return run
@@ -108,6 +110,9 @@ class FakeService:
     def edit(
         self, job_id: str, *, text: str | None = None, audio: bytes | None = None, mime: str = "audio/wav"
     ) -> dict[str, Any]:
+        job = self.mgr.get(job_id)
+        if job is None or not job.read_text("part.py"):
+            raise KeyError(f"job {job_id} has no part program yet")
         return {
             "transcript": text or "audio",
             "edits": [],
@@ -119,10 +124,17 @@ class FakeService:
             "mime": mime,
         }
 
+    def _outline(self, job_id: str) -> None:
+        job = self.mgr.get(job_id)
+        if job is None or not job.read_json("outline.json"):
+            raise KeyError(f"job {job_id} has no model outline yet")
+
     def preview(self, job_id: str) -> dict[str, Any]:
+        self._outline(job_id)
         return {"url": "/api/v1/blobs/x.png", "label": "AI preview", "mode": "mock"}
 
     def fit_outline(self, job_id: str, mat_id: str) -> dict[str, Any]:
+        self._outline(job_id)
         return {
             "mat_id": mat_id,
             "outline_mm": [[0, 0], [1, 0], [1, 1]],
@@ -132,6 +144,7 @@ class FakeService:
         }
 
     def fit_check(self, job_id: str, photo: bytes, mat_id: str) -> dict[str, Any]:
+        self._outline(job_id)
         return {
             "passed": True,
             "iou": 0.98,
@@ -143,9 +156,18 @@ class FakeService:
             "gps_free": not has_gps(photo),
         }
 
+    def cancel(self, job_id: str) -> Any:
+        job = self.mgr.get(job_id)
+        if job is None:
+            raise KeyError(job_id)
+        job.cancel()
+        return job.summary
+
     def measure(
         self, photo: bytes, view: str = "top", *, thickness_mm: float | None = None, mat_id: str | None = None
     ) -> dict[str, Any]:
+        if len(photo) < 1000:
+            raise ValueError("no mat markers found")
         return {
             "capture": {"passed": True, "checks": []},
             "view": view,
@@ -703,3 +725,91 @@ def test_unavailable_service_is_503(monkeypatch: pytest.MonkeyPatch) -> None:
 
     monkeypatch.setattr(deps, "service", boom)
     _err(TestClient(M.app).get("/api/v1/jobs"), 503, "agent_unavailable")
+
+
+def test_missing_job_state_is_409_not_500(client: TestClient, fake: FakeService) -> None:
+    photo = _jpeg(gps=False)
+    jid = client.post(
+        "/api/v1/jobs/fix", files={"top": ("t.jpg", photo, "image/jpeg")}, data={"intent": "no-outline"}
+    ).json()["id"]
+    _wait_done(fake, jid)
+    e = _err(client.get(f"/api/v1/jobs/{jid}/fit-outline?mat_id=screen-m"), 409, "no_model_outline")
+    assert "no model outline" in e["message"] and "Steer" in e["message"]
+    files = {"photo": ("p.jpg", _jpeg(), "image/jpeg")}
+    _err(
+        client.post(f"/api/v1/jobs/{jid}/fit-check", files=files, data={"mat_id": "screen-m"}), 409, "no_model_outline"
+    )
+    _err(client.post(f"/api/v1/jobs/{jid}/preview"), 409, "no_preview_source")
+    _err(client.post(f"/api/v1/jobs/{jid}/edit", json={"text": "2 mm taller"}), 409, "no_program")
+    _err(client.get(f"/api/v1/jobs/{jid}/bake?format=stl"), 409, "no_program")
+    tiny = io.BytesIO()
+    Image.new("RGB", (300, 300), (0, 0, 0)).save(tiny, "PNG")
+    e = _err(client.post("/api/v1/measure", files={"photo": ("p.png", tiny.getvalue(), "image/png")}), 422,
+             "invalid_request")  # fmt: skip
+    assert "markers" in e["message"]
+
+
+def test_cancel_returns_the_cancelled_summary(client: TestClient, fake: FakeService) -> None:
+    photo = _jpeg(gps=False)
+    jid = client.post("/api/v1/jobs/fix", files={"top": ("t.jpg", photo, "image/jpeg")}, data={"intent": "ask"}).json()[
+        "id"
+    ]
+    job = fake.mgr.get(jid)
+    t0 = time.time()
+    while job is not None and job.pending_question() is None and time.time() - t0 < 5:
+        time.sleep(0.02)
+    assert job is not None and job.summary.status == "waiting_for_answer"
+    out = client.post(f"/api/v1/jobs/{jid}/cancel").json()
+    assert out["status"] == "cancelled"
+    assert client.post(f"/api/v1/jobs/{jid}/cancel").json()["status"] == "cancelled"  # idempotent
+
+
+def test_sse_headers(client: TestClient, fake: FakeService) -> None:
+    jid = client.post("/api/v1/jobs/demo", json={"sample": "spacer-easy-01"}).json()["id"]
+    _wait_done(fake, jid)
+    with client.stream("GET", f"/api/v1/jobs/{jid}/events") as r:
+        assert r.headers["cache-control"] == "no-cache, no-transform"
+        assert r.headers["x-accel-buffering"] == "no"
+
+
+def test_bench_failure_overlays_and_report_files(
+    client: TestClient, monkeypatch: pytest.MonkeyPatch, tmp_path: Any
+) -> None:
+    root = tmp_path / "reports"
+    (root / "latest").mkdir(parents=True)
+    (root / "2026-10-27" / "gallery").mkdir(parents=True)
+    png = io.BytesIO()
+    Image.new("RGB", (20, 20)).save(png, "PNG")
+    (root / "2026-10-27" / "gallery" / "a.png").write_bytes(png.getvalue())
+    (root / "secret.env").write_text("KEY=1")
+    blob = blobs.put(png.getvalue(), ".png")
+    failures = [
+        {"title": "blob ok", "reason": "r", "overlay_url": blobs.url(blob)},
+        {"title": "file", "reason": "r", "overlay_url": "/api/v1/blobs/" + "e" * 64 + ".png",
+         "overlay_file": "gallery/a.png"},
+        {"title": "none", "reason": "r", "overlay_url": "/api/v1/blobs/" + "f" * 64 + ".png",
+         "overlay_file": "gallery/missing.png"},
+        {"title": "bare", "reason": "r"},
+    ]  # fmt: skip
+    (root / "latest" / "report.json").write_text(json.dumps({"tables": {}, "runs": [], "failures": failures}))
+    monkeypatch.setattr(M, "BENCH_REPORT", root / "latest" / "report.json")
+    got = [f["overlay_url"] for f in client.get("/api/v1/bench").json()["failures"]]
+    assert got == [blobs.url(blob), "/api/v1/bench/files/2026-10-27/gallery/a.png", None, None]
+    r = client.get(got[1])
+    assert r.status_code == 200 and r.headers["content-type"] == "image/png"
+    for bad in ("../../../etc/passwd", "%2e%2e/%2e%2e/etc/passwd", "secret.env", "2026-10-27/gallery/../../secret.env",
+                "/etc/passwd", ".hidden/a.png"):  # fmt: skip
+        assert client.get(f"/api/v1/bench/files/{bad}").status_code == 404, bad
+
+
+def test_agent_docs_use_forwarded_host(client: TestClient, monkeypatch: pytest.MonkeyPatch) -> None:
+    add_part("spacer", "m3-spacer")
+    monkeypatch.delenv("PARTSMITH_PUBLIC_URL", raising=False)
+    t = client.get("/llms.txt", headers={"X-Forwarded-Host": "parts.example.com", "X-Forwarded-Proto": "https"}).text
+    assert "https://parts.example.com/api/v1/parts/m3-spacer" in t and "testserver" not in t
+    p = client.get("/api/v1/prompt.txt", headers={"X-Forwarded-Host": "localhost:3000"}).text
+    assert "http://localhost:3000/mcp" in p
+    bad = client.get("/llms.txt", headers={"X-Forwarded-Host": "evil.com/x y"}).text
+    assert "evil" not in bad and "http://testserver/api/v1" in bad
+    monkeypatch.setenv("PARTSMITH_PUBLIC_URL", "https://partsmith.dev/")
+    assert "https://partsmith.dev/api/v1/parts/m3-spacer" in client.get("/llms.txt").text

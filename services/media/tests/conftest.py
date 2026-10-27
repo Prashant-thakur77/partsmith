@@ -9,9 +9,17 @@ from services.agent import providers
 from services.agent.providers import clients, mocks, retry
 
 KEY_VARS = (
-    "PROVIDER_MODE", "PROVIDER_RECORD", "OPEN_WEIGHTS_ONLY", "PROVIDER_FALLBACK_TO_MOCK", "MODEL_API_KEY",
-    "BASETEN_API_KEY", "FIREWORKS_API_KEY", "TOGETHER_API_KEY", "GLIMMER_BASE_URL", "SAM3_OPEN_URL",
-)  # fmt: skip
+    "PROVIDER_MODE",
+    "PROVIDER_RECORD",
+    "OPEN_WEIGHTS_ONLY",
+    "PROVIDER_FALLBACK_TO_MOCK",
+    "MODEL_API_KEY",
+    "BASETEN_API_KEY",
+    "FIREWORKS_API_KEY",
+    "TOGETHER_API_KEY",
+    "GLIMMER_BASE_URL",
+    "SAM3_OPEN_URL",
+)
 
 
 @pytest.fixture(autouse=True)
