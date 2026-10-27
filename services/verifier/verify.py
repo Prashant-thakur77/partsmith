@@ -25,10 +25,11 @@ scale-free distances (Hausdorff and mean contour distance) plus their part tests
 from __future__ import annotations
 
 import hashlib
+import itertools
 import json
 import sys
 import time
-from collections.abc import Iterable, Mapping
+from collections.abc import Iterable, Mapping, Sequence
 from dataclasses import dataclass, field
 from typing import Any, Literal
 
@@ -47,13 +48,15 @@ from partsmith_schemas.verification import (
     ViewMetrics,
 )
 from scipy.optimize import linear_sum_assignment
+from shapely import affinity
+from shapely.geometry import MultiPolygon, Point, Polygon, box
 
 from services.geom_worker.bake import part_facts
 from services.geom_worker.sandbox import ExecResult
 from services.verifier import VERIFIER_VERSION
 from services.verifier import metrics as M
 from services.verifier.align import Rigid2D, align
-from services.verifier.camera import CameraCompare, CameraView, compare_camera
+from services.verifier.camera import CameraCompare, CameraView, Mesh, compare_camera, compare_orbit
 from services.verifier.functional import FunctionalProbe, as_part_tests, run_probes
 from services.verifier.part_tests import (
     CENTER_TOL_MM,
@@ -106,6 +109,9 @@ class ViewResult:
     gate_note: str = ""
     camera: CameraCompare | None = None
     rectified_metrics: ViewMetrics | None = None
+    excluded_mask: BoolMask | None = None  # pixels left out of the comparison (broken region)
+    excluded_mm2: float = 0.0
+    short_side_mm: float | None = None
 
 
 @dataclass
@@ -118,6 +124,8 @@ class VerifyOutput:
     view_gates: dict[str, list[str]] = field(default_factory=dict)  # view -> gates applied ("hausdorff", "iou")
     # Functional probes (screws, interfaces, printability): {"passed", "total", "probes": [FunctionalProbe dicts]}.
     functional: dict[str, Any] = field(default_factory=dict)
+    # Broken parts: {"region_mm2", "excluded_mm2": {view: mm2}, "informational_tests": [...], "statement"} or {}.
+    broken: dict[str, Any] = field(default_factory=dict)
 
 
 # ----------------------------------------------------------------------------------------------- helpers
@@ -181,25 +189,72 @@ def _versions(exec_result: ExecResult) -> dict[str, str]:
     return v
 
 
+def _poly_px_mask(poly: Polygon | None, frame: Frame) -> BoolMask | None:
+    if poly is None or poly.is_empty:
+        return None
+    parts = list(poly.geoms) if isinstance(poly, MultiPolygon) else [poly]
+    out = np.zeros(frame.shape, dtype=bool)
+    for g in parts:
+        if isinstance(g, Polygon) and not g.is_empty:
+            holes = [np.asarray(r.coords) for r in g.interiors]
+            out |= rasterize_polygon(np.asarray(g.exterior.coords), holes, frame)
+    return out
+
+
+def _transform_poly(poly: Polygon, T: FloatArray) -> Polygon:
+    a, b, c, d, xoff, yoff = T[0, 0], T[0, 1], T[1, 0], T[1, 1], T[0, 2], T[1, 2]
+    out: Polygon = affinity.affine_transform(poly, [a, b, c, d, xoff, yoff])
+    return out
+
+
 def _compare_view(
-    view: str, projection: str, vertices: FloatArray, faces: Any, photo: PhotoMask
+    view: str,
+    projection: str,
+    vertices: FloatArray,
+    faces: Any,
+    photo: PhotoMask,
+    *,
+    exclude_frame: Polygon | None = None,
+    exclude_model: Polygon | None = None,
 ) -> tuple[ViewResult, M.ContourDistances]:
+    """Rectified comparison. `exclude_frame` (in the measurement frame) or `exclude_model` (in the model's projected
+    coordinates) is the broken region: it is left out of the registration and of every metric."""
     ppm = photo.frame.px_per_mm
     uv = project(vertices, projection)
     model_frame = Frame.around(uv, ppm, margin_mm=3.0)
     model_mask = silhouette(vertices, faces, projection, model_frame)
-    res = align(model_mask, model_frame, photo.mask, photo.frame)
-    T = res.transform
+    T = align(model_mask, model_frame, photo.mask, photo.frame).transform
+    ex_model = exclude_model
+    if ex_model is None and exclude_frame is not None:
+        ex_model = _transform_poly(exclude_frame, np.linalg.inv(T.matrix()))
+    if ex_model is not None and not ex_model.is_empty:
+        mx = _poly_px_mask(ex_model, model_frame)
+        px = _poly_px_mask(_transform_poly(ex_model, T.matrix()), photo.frame)
+        T = align(
+            model_mask & ~mx if mx is not None else model_mask,
+            model_frame,
+            photo.mask & ~px if px is not None else photo.mask,
+            photo.frame,
+        ).transform
     # Render the registered model on a frame that holds both silhouettes, so nothing is cropped.
     placed = Frame.around(T.apply(uv), ppm, margin_mm=3.0)
     frame = _snap_union(photo.frame, placed)
     photo_mask = _paste(photo, frame)
     mm = silhouette(vertices, faces, projection, frame, transform=T.matrix())
-    d = M.mask_contour_distances(mm, photo_mask, frame)
-    over, under = M.over_under_mm2(photo_mask, mm, frame)
+    excl = (
+        _poly_px_mask(_transform_poly(ex_model, T.matrix()).buffer(BROKEN_MARGIN_MM), frame)
+        if ex_model is not None and not ex_model.is_empty
+        else None
+    )
+    keep = ~excl if excl is not None else np.ones_like(mm)
+    d = M.contour_distances_mm(
+        M.points_outside(M.contour_points_mm(mm, frame), frame, excl),
+        M.points_outside(M.contour_points_mm(photo_mask, frame), frame, excl),
+    )
+    over, under = M.over_under_mm2(photo_mask & keep, mm & keep, frame)
     vm = ViewMetrics(
         view=view,
-        iou=M.iou(mm, photo_mask),
+        iou=M.iou(mm & keep, photo_mask & keep),
         hausdorff_mm=d.hausdorff_mm,
         hd95_mm=d.hd95_mm,
         mean_mm=d.mean_mm,
@@ -207,7 +262,164 @@ def _compare_view(
         over_area_mm2=over,
         under_area_mm2=under,
     )
-    return ViewResult(view, projection, T, vm, mm, PhotoMask(photo_mask, frame)), d
+    vr = ViewResult(view, projection, T, vm, mm, PhotoMask(photo_mask, frame))
+    vr.excluded_mask = excl
+    vr.excluded_mm2 = float(excl.sum()) / ppm**2 if excl is not None else 0.0
+    return vr, d
+
+
+BROKEN_MARGIN_MM = 1.0
+
+
+def broken_region(partspec: PartSpec | None, top: Measurements | None) -> tuple[Polygon | None, dict[str, Any]]:
+    """The broken piece in the top view's part frame, from ``PartSpec.broken_region``.
+
+    ``polygon_mm`` may be the completed outline (as the mirror completion writes it) or just the patch: when it covers
+    most of the measured outline, the broken piece is what it adds outside the photo's outline; otherwise it is the
+    polygon itself. Returns (region or None, report fields)."""
+    if partspec is None or partspec.broken_region is None:
+        return None, {}
+    br = partspec.broken_region
+    info: dict[str, Any] = {"strategy": br.strategy, "note": br.note or "", "region_mm2": 0.0}
+    if len(br.polygon_mm) < 3:
+        info["statement"] = (
+            "The part is broken but the broken region was not located, so the whole silhouette was compared; "
+            "the completed shape is inferred."
+        )
+        return None, info
+    poly = Polygon(br.polygon_mm).buffer(0)
+    outline = Polygon(top.outline_mm).buffer(0) if top is not None and len(top.outline_mm) >= 3 else None
+    region = poly
+    if outline is not None and not outline.is_empty and poly.area >= 0.8 * outline.area:
+        region = poly.difference(outline).buffer(-0.2).buffer(0.2)  # drop slivers along the shared edge
+    if region.is_empty or region.area < 0.5:
+        info["statement"] = (
+            "The completed outline adds nothing outside the photo's outline, so the whole silhouette was compared; "
+            "the completed shape is inferred."
+        )
+        return None, info
+    info["region_mm2"] = round(float(region.area), 2)
+    info["statement"] = (
+        f"Completed region ({region.area:.0f} mm², restored by {br.strategy}): inferred, not verified against the "
+        f"photo — it and a {BROKEN_MARGIN_MM:g} mm margin are left out of every silhouette comparison."
+    )
+    return region, info
+
+
+def _prism(poly_model: Polygon, vertices: FloatArray) -> Mesh | None:
+    """The broken region as a vertical prism over the model's full height (model coordinates), for camera views."""
+    import shapely
+
+    if poly_model.is_empty:
+        return None
+    z0, z1 = float(np.min(vertices[:, 2])) - 1.0, float(np.max(vertices[:, 2])) + 1.0
+    tris = [t for t in shapely.constrained_delaunay_triangles(poly_model).geoms if isinstance(t, Polygon)]
+    v: list[tuple[float, float, float]] = []
+    f: list[tuple[int, int, int]] = []
+    for t in tris:
+        c = list(t.exterior.coords)[:3]
+        for z in (z0, z1):
+            base = len(v)
+            v += [(x, y, z) for x, y in c]
+            f.append((base, base + 1, base + 2))
+    rings = [g.exterior for g in (poly_model.geoms if isinstance(poly_model, MultiPolygon) else [poly_model])]
+    for ring in rings:
+        pts = list(ring.coords)
+        for (xa, ya), (xb, yb) in itertools.pairwise(pts):
+            base = len(v)
+            v += [(xa, ya, z0), (xb, yb, z0), (xb, yb, z1), (xa, ya, z1)]
+            f += [(base, base + 1, base + 2), (base, base + 2, base + 3)]
+    if not f:
+        return None
+    return np.asarray(v, dtype=np.float64), np.asarray(f, dtype=np.int64)
+
+
+def _band(prism: Mesh | None, projection: str) -> Polygon | None:
+    """The broken prism seen in a rectified side view: a vertical band over its extent along the view's u axis."""
+    if prism is None:
+        return None
+    a = {"side_xz": 0, "side_yz": 1}.get(projection)
+    if a is None:
+        return None
+    lo, hi = float(prism[0][:, a].min()), float(prism[0][:, a].max())
+    out: Polygon = box(lo, -1e3, hi, 1e3)
+    return out
+
+
+def cam_ppm(cc: CameraCompare) -> float:
+    return cc.px_per_mm
+
+
+def _orbit_metrics(frames: Sequence[ViewResult]) -> ViewMetrics:
+    """One "orbit" view: the worst frame's Hausdorff and HD95, the median mean distance, the lowest IoU."""
+    worst = max(frames, key=lambda f: f.metrics.hausdorff_mm)
+    return ViewMetrics(
+        view="orbit",
+        iou=min(f.metrics.iou for f in frames),
+        hausdorff_mm=worst.metrics.hausdorff_mm,
+        hd95_mm=max(f.metrics.hd95_mm for f in frames),
+        mean_mm=float(np.median([f.metrics.mean_mm for f in frames])),
+        worst_point_mm=worst.metrics.worst_point_mm,
+        over_area_mm2=worst.metrics.over_area_mm2,
+        under_area_mm2=worst.metrics.under_area_mm2,
+    )
+
+
+def _orbit_reason(frames: Sequence[ViewResult], agg: ViewMetrics, skipped: int, th: Thresholds) -> str:
+    def ok(f: ViewResult) -> bool:
+        m = f.metrics
+        return bool(
+            m.hausdorff_mm <= th.hausdorff_mm and (m.iou >= th.iou if f.iou_gated else m.mean_mm <= MEAN_GATE_MM)
+        )
+
+    worst = max(frames, key=lambda f: f.metrics.hausdorff_mm)
+    med = float(np.median([f.metrics.hausdorff_mm for f in frames]))
+    per = "; ".join(
+        f"{f.view} {f.metrics.hausdorff_mm:.2f}/{f.metrics.mean_mm:.2f} mm{'' if ok(f) else ' (fails)'}" for f in frames
+    )
+    bad = sum(not ok(f) for f in frames)
+    head = (
+        f"orbit ({len(frames)} frames compared in their photo frames"
+        + (f", {skipped} more not compared" if skipped else "")
+        + f"): worst Hausdorff {agg.hausdorff_mm:.2f} mm ({worst.view}), median {med:.2f} mm"
+        + (f" - {bad} frame(s) fail" if bad else " - every frame within tolerance")
+    )
+    return f"{head}. Per frame Hausdorff/mean: {per}."
+
+
+def _broken_tests(
+    tests: list[PartTest], region: Polygon, measurements: Mapping[str, Measurements]
+) -> tuple[list[PartTest], list[str]]:
+    """Dimension tests whose span crosses the broken region become informational (P1): the photo shows the broken
+    part, the model is the intact replacement."""
+    grown = region.buffer(BROKEN_MARGIN_MM)
+    top = measurements.get("top")
+    outline = Polygon(top.outline_mm).buffer(0) if top is not None and len(top.outline_mm) >= 3 else None
+    touches_outline = outline is None or grown.intersects(outline.boundary) or not grown.disjoint(outline)
+    hole_at = {h.id: h.center_mm for h in top.holes} if top is not None else {}
+    out: list[PartTest] = []
+    informational: list[str] = []
+    for t in tests:
+        cross = False
+        if t.priority == "P0":
+            if t.id in ("bbox.x", "bbox.y") and touches_outline:
+                cross = True
+            elif t.id == "side.thickness":
+                cross = True  # the broken prism runs through the whole side profile
+            elif t.id.endswith(".diameter") and t.id.split(".")[0] in hole_at:
+                c = hole_at[t.id.split(".")[0]]
+                cross = grown.contains(Point(c[0], c[1]))
+        if cross:
+            informational.append(t.id)
+            t = t.model_copy(
+                update={
+                    "priority": "P1",
+                    "description": t.description + " — spans the broken region: informational (inferred, the photo "
+                    "shows the broken part)",
+                }
+            )
+        out.append(t)
+    return out, informational
 
 
 def _snap_union(base: Frame, other: Frame) -> Frame:
@@ -288,51 +500,94 @@ def verify(
     view_metrics: list[ViewMetrics] = []
     view_gates: dict[str, list[str]] = {}
 
-    for view, meas in sorted(measurements.items()):
+    broken_part, broken_info = broken_region(partspec, measurements.get("top"))
+    prism: Mesh | None = None  # broken region as a volume in model coordinates (set once the top view is registered)
+
+    def gate(vr: ViewResult, short_side: float) -> None:
+        vr.short_side_mm = short_side
+        vr.iou_gated = short_side >= IOU_GATE_MIN_WIDTH_MM
+        if not vr.iou_gated:
+            vr.gate_note = (
+                f"small silhouette ({short_side:.1f} mm across, under {IOU_GATE_MIN_WIDTH_MM:g} mm), so IoU is "
+                f"reported but not gated (it shrinks with size for the same edge error); gated on Hausdorff <= "
+                f"{th.hausdorff_mm} mm and mean contour distance <= {MEAN_GATE_MM} mm, plus its part tests"
+            )
+
+    for view, meas in sorted(measurements.items(), key=lambda kv: (kv[0] != "top", kv[0])):
         if view not in COMPARED_VIEWS:
             continue
         photo = (photo_masks or {}).get(view) or photo_mask_from_measurements(meas, px_per_mm)
         projections = ["top"] if view == "top" else ["side_xz", "side_yz"]
         best: tuple[ViewResult, M.ContourDistances] | None = None
         for proj in projections:
-            r = _compare_view(view, proj, mesh.vertices, mesh.faces, photo)
+            ex_frame = broken_part if view == "top" else None
+            ex_model = _band(prism, proj) if view != "top" else None
+            r = _compare_view(
+                view, proj, mesh.vertices, mesh.faces, photo, exclude_frame=ex_frame, exclude_model=ex_model
+            )
             if best is None or r[0].metrics.iou > best[0].metrics.iou:
                 best = r
         assert best is not None
         vr, dist = best
         vr.matrix = vr.transform.matrix()
         vr.rectified_metrics = vr.metrics
+        if view == "top" and broken_part is not None:
+            prism = _prism(_transform_poly(broken_part, np.linalg.inv(vr.matrix)), mesh.vertices)
         cam = (camera_views or {}).get(view)
         if cam is not None:
             cc = compare_camera(
                 view, vr.projection, mesh.vertices, mesh.faces, cam, vr.matrix, refine=refine_in_photo,
-                origin=meas.origin,
+                origin=meas.origin, exclude=prism,
             )  # fmt: skip
             vr.camera, vr.frame, vr.metrics, vr.matrix = cc, "camera", cc.metrics, cc.model_to_part
+            vr.excluded_mask, vr.excluded_mm2 = cc.excluded_mask, cc.excluded_mm2
             overlays[f"residual_{view}.png"] = cc.overlay_png
             reasons += cc.notes
         else:
             title = f"{view} view: IoU {vr.metrics.iou:.3f}, Hausdorff {vr.metrics.hausdorff_mm:.2f} mm"
             overlays[f"residual_{view}.png"] = M.residual_heatmap(
-                vr.photo.mask, vr.model_mask, vr.photo.frame, distances=dist, title=title
+                vr.photo.mask, vr.model_mask, vr.photo.frame, distances=dist, title=title, excluded=vr.excluded_mask
             )
-        min_w = float(meas.width.value)
-        vr.iou_gated = min_w >= IOU_GATE_MIN_WIDTH_MM
-        if not vr.iou_gated:
-            vr.gate_note = (
-                f"small silhouette ({min_w:.1f} mm across, under {IOU_GATE_MIN_WIDTH_MM:g} mm), so IoU is reported but "
-                f"not gated (it shrinks with size for the same edge error); gated on Hausdorff <= {th.hausdorff_mm} mm "
-                f"and mean contour distance <= {MEAN_GATE_MM} mm, plus its part tests"
-            )
+        gate(vr, float(meas.width.value))
         view_gates[view] = ["hausdorff", "iou"] if vr.iou_gated else ["hausdorff", "mean"]
         view_results[view] = vr
         view_metrics.append(vr.metrics)
+        if view == "top" and broken_part is not None and vr.matrix is not None:
+            prism = _prism(_transform_poly(broken_part, np.linalg.inv(vr.matrix)), mesh.vertices)
+
+    # Walk-around frames: calibrated views without their own Measurements, compared in their own photo frames.
+    orbit_cams = {k: c for k, c in (camera_views or {}).items() if k not in measurements}
+    if orbit_cams:
+        top_vr = view_results.get("top")
+        m2p = top_vr.matrix if top_vr is not None and top_vr.matrix is not None else np.eye(3)
+        oc = compare_orbit(orbit_cams, mesh.vertices, mesh.faces, m2p, refine=refine_in_photo, exclude=prism)
+        reasons += oc.notes
+        frames: list[ViewResult] = []
+        for name, cc in oc.frames.items():
+            fvr = ViewResult(name, "top", Rigid2D(), cc.metrics, cc.model_mask,
+                             PhotoMask(cc.photo_mask, Frame(cam_ppm(cc), 0.0, 0.0, *cc.photo_mask.shape[::-1])),
+                             frame="camera", camera=cc, excluded_mask=cc.excluded_mask,
+                             excluded_mm2=cc.excluded_mm2)  # fmt: skip
+            gate(fvr, cc.photo_short_side_mm or 0.0)
+            view_results[name] = fvr
+            frames.append(fvr)
+        agg = _orbit_metrics(frames)
+        view_metrics.append(agg)
+        all_iou = all(f.iou_gated for f in frames)
+        view_gates["orbit"] = ["hausdorff", "iou"] if all_iou else ["hausdorff", "mean"]
+        worst = max(frames, key=lambda f: f.metrics.hausdorff_mm)
+        if worst.camera is not None:
+            overlays["residual_orbit.png"] = worst.camera.overlay_png
+        reasons.append(_orbit_reason(frames, agg, oc.skipped, th))
 
     hole_names: dict[int, str] = {}
     residuals, values, hole_reasons = _model_values(
         exec_result, feats, measurements, partspec, view_results, hole_names
     )
     tests = evaluate_tests(generate_tests(partspec, measurements), values)
+    informational: list[str] = []
+    if broken_part is not None:
+        tests, informational = _broken_tests(tests, broken_part, measurements)
     probes = _functional(exec_result, feats, hole_names)
     tests += as_part_tests(probes)  # P1: reported, never part of the pass rule
     functional = {
@@ -359,6 +614,20 @@ def verify(
     )
 
     reasons += _reasons(verified, tests, p0_failed, list(view_results.values()), th, blocking, residuals)
+    broken_out: dict[str, Any] = {}
+    if broken_info:
+        broken_out = {
+            **broken_info,
+            "excluded_mm2": {k: round(vr.excluded_mm2, 2) for k, vr in view_results.items() if vr.excluded_mm2 > 0},
+            "informational_tests": informational,
+        }
+        reasons.append(broken_info["statement"])
+        if informational:
+            reasons.append(
+                "Informational only (they span the broken region the photo cannot show): "
+                + ", ".join(informational)
+                + "."
+            )
     reasons += hole_reasons
     errors = [vm.hausdorff_mm for vm in view_metrics] + [abs(r.delta_mm) for r in residuals]
     for name, data in overlays.items():
@@ -376,7 +645,7 @@ def verify(
         ms=int((time.perf_counter() - t0) * 1000),
         **base,
     )
-    return VerifyOutput(v, overlays, view_results, values, view_gates, functional)
+    return VerifyOutput(v, overlays, view_results, values, view_gates, functional, broken_out)
 
 
 def _functional(
@@ -565,6 +834,8 @@ def _reasons(
     if not views:
         out.append("No measured top or side view to compare against, so the part cannot be verified.")
     for vr in views:
+        if vr.view not in COMPARED_VIEWS:
+            continue  # walk-around frames get one summary line of their own
         vm = vr.metrics
         ok = vm.hausdorff_mm <= th.hausdorff_mm and (vm.iou >= th.iou if vr.iou_gated else vm.mean_mm <= MEAN_GATE_MM)
         where = (

@@ -23,6 +23,7 @@ Steps for one view with a pose:
 
 from __future__ import annotations
 
+from collections.abc import Mapping
 from dataclasses import dataclass, field, replace
 from typing import Any, Literal
 
@@ -94,6 +95,13 @@ class CameraCompare:
     part_to_mat: FloatArray  # this view's part frame -> mat (from the CameraView)
     model_measurements: Measurements | None = None
     notes: list[str] = field(default_factory=list)
+    excluded_mask: BoolMask | None = None  # crop pixels left out of the comparison (broken region)
+    excluded_mm2: float = 0.0
+    photo_short_side_mm: float | None = None  # short side of the photo silhouette (for the scale-aware gate)
+    px_per_mm: float = 1.0  # local image scale used for the mm distances
+
+
+Mesh = tuple[FloatArray, Any]  # (vertices, faces) in model coordinates
 
 
 # ------------------------------------------------------------------ geometry helpers
@@ -389,8 +397,13 @@ def compare_camera(
     refine: bool = True,
     origin: DataOrigin = DataOrigin.real,
     measure: bool = True,
+    exclude: Mesh | None = None,
+    exclude_margin_mm: float = 1.0,
 ) -> CameraCompare:
-    """Compare the model with one posed photo in the photo's own pixel frame (see module docstring)."""
+    """Compare the model with one posed photo in the photo's own pixel frame (see module docstring).
+
+    ``exclude`` is a volume in model coordinates (the broken region as a prism): wherever it projects in the photo,
+    grown by ``exclude_margin_mm``, both silhouettes are left out of every metric."""
     v = np.asarray(vertices, dtype=np.float64)
     P0 = (
         _arr(cam.cad_to_mat)
@@ -406,8 +419,21 @@ def compare_camera(
     photo = _fill_contours(photo_cs, crop.h, crop.w) if photo_cs else np.zeros((crop.h, crop.w), dtype=bool)
     notes: list[str] = []
     P = P0
+    ppm = float(cam.px_per_mm_local)
+
+    def excluded(Pk: FloatArray) -> BoolMask | None:
+        if exclude is None:
+            return None
+        cov_x = coverage_in_crop(cam, Pk, np.asarray(exclude[0], dtype=np.float64), exclude[1], crop, supersample=1)
+        k = max(1, round(exclude_margin_mm * ppm))
+        grown = cv2.dilate((cov_x > 0).astype(np.uint8), cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (2 * k + 1,) * 2))
+        return np.asarray(grown > 0)
+
     if refine:
+        excl0 = excluded(P0)
         p_pts, p_dt = _boundary(photo)
+        if excl0 is not None and len(p_pts):
+            p_pts = p_pts[~excl0[p_pts[:, 1].astype(int), p_pts[:, 0].astype(int)]]
         if len(p_pts) > 2000:
             p_pts = p_pts[np.linspace(0, len(p_pts) - 1, 2000).astype(int)]
         centre = (v @ P0[:3, :3].T + P0[:3, 3])[:, :2].mean(axis=0)
@@ -416,7 +442,9 @@ def compare_camera(
             Pk = _mat_rigid(float(x[0]), float(x[1]), float(x[2]), centre) @ P0
             m = render_in_crop(cam, Pk, v, faces, crop, supersample=2)
             m_pts, m_dt = _boundary(m)
-            if len(m_pts) == 0:
+            if excl0 is not None and len(m_pts):
+                m_pts = m_pts[~excl0[m_pts[:, 1].astype(int), m_pts[:, 0].astype(int)]]
+            if len(m_pts) == 0 or len(p_pts) == 0:
                 return 1e6
             return float((_sample(p_dt, m_pts).mean() + _sample(m_dt, p_pts).mean()) / 2)
 
@@ -434,11 +462,14 @@ def compare_camera(
     cov = coverage_in_crop(cam, P, v, faces, crop, supersample=4)
     model = np.asarray(cov >= 0.5)
 
-    ppm = float(cam.px_per_mm_local)
     frame = Frame(ppm, 0.0, 0.0, crop.w, crop.h)  # a pixel-scale frame: distances in mm, positions in crop pixels
+    excl = excluded(P)
+    keep = ~excl if excl is not None else np.ones_like(model)
     # Distances between the two sub-pixel edges (not pixel staircases: one pixel is ~0.3 mm here).
-    d = M.contour_distances_mm(_contour_points_mm(_subpx_contours(cov), frame), _contour_points_mm(photo_cs, frame))
-    over, under = M.over_under_mm2(photo, model, frame)
+    m_pts = M.points_outside(_contour_points_mm(_subpx_contours(cov), frame), frame, excl)
+    p_pts = M.points_outside(_contour_points_mm(photo_cs, frame), frame, excl)
+    d = M.contour_distances_mm(m_pts, p_pts)
+    over, under = M.over_under_mm2(photo & keep, model & keep, frame)
     worst_part: tuple[float, float] | None = None
     if d.worst_point_mm is not None:
         px = frame.to_px(np.array(d.worst_point_mm)) + np.array([crop.x0, crop.y0])
@@ -446,11 +477,17 @@ def compare_camera(
         part = _apply_h(np.linalg.inv(_arr(cam.part_to_mat)), mat)[0]
         worst_part = (float(part[0]), float(part[1]))
     vm = ViewMetrics(
-        view=view, iou=M.iou(model, photo), hausdorff_mm=d.hausdorff_mm, hd95_mm=d.hd95_mm, mean_mm=d.mean_mm,
+        view=view, iou=M.iou(model & keep, photo & keep), hausdorff_mm=d.hausdorff_mm, hd95_mm=d.hd95_mm,
+        mean_mm=d.mean_mm,
         worst_point_mm=worst_part, over_area_mm2=over, under_area_mm2=under,
     )  # fmt: skip
     title = f"{view} view (photo frame): IoU {vm.iou:.3f}, Hausdorff {vm.hausdorff_mm:.2f} mm"
-    png = M.residual_heatmap(photo, model, frame, distances=d, title=title, label_point_mm=worst_part)
+    png = M.residual_heatmap(photo, model, frame, distances=d, title=title, label_point_mm=worst_part, excluded=excl)
+    short = None
+    outers = [c.points_px for c in photo_cs if not c.is_hole and len(c.points_px) >= 3]
+    if outers:
+        (_, _), (rw, rh), _ = cv2.minAreaRect(np.vstack(outers).astype(np.float32))
+        short = float(min(rw, rh)) / ppm
     model_meas = None
     if measure:
         try:
@@ -473,6 +510,10 @@ def compare_camera(
         part_to_mat=_arr(cam.part_to_mat),
         model_measurements=model_meas,
         notes=notes,
+        excluded_mask=excl,
+        excluded_mm2=float(excl.sum()) / ppm**2 if excl is not None else 0.0,
+        photo_short_side_mm=short,
+        px_per_mm=ppm,
     )
 
 
@@ -492,3 +533,50 @@ def local_px_per_mm(cam: CameraView, mat_xy: tuple[float, float], height_mm: flo
     dx = np.linalg.norm(proj(p0 + ex) - proj(p0 - ex))
     dy = np.linalg.norm(proj(p0 + ey) - proj(p0 - ey))
     return float(np.sqrt(dx * dy))
+
+
+@dataclass
+class OrbitCompare:
+    frames: dict[str, CameraCompare]  # per compared frame, in clip order
+    placement: FloatArray  # one rigid placement shared by every frame of the clip
+    skipped: int = 0  # frames not compared (evenly thinned to `max_frames`)
+    notes: list[str] = field(default_factory=list)
+
+
+def compare_orbit(
+    frames: Mapping[str, CameraView],
+    vertices: FloatArray,
+    faces: Any,
+    model_to_part: npt.ArrayLike,
+    *,
+    refine: bool = True,
+    max_frames: int = 8,
+    exclude: Mesh | None = None,
+) -> OrbitCompare:
+    """Compare the model with the calibrated frames of a walk-around clip.
+
+    The part does not move during the clip, so one placement serves every frame: it starts from the top-view
+    registration (model -> part frame) mapped through the clip's own part frame, tries the 180 deg turn the part-frame
+    convention leaves open, refines rigidly on the first frame (rotation about the vertical and a shift on the mat;
+    never scale, never height), and is then reused unchanged for every other frame. Wrong heights therefore show up as
+    silhouette errors in the oblique frames."""
+    names = sorted(frames, key=lambda n: (len(n), n))
+    keep = names
+    if len(names) > max_frames:
+        idx = np.linspace(0, len(names) - 1, max_frames).round().astype(int)
+        keep = [names[i] for i in sorted(set(idx.tolist()))]
+    first = frames[keep[0]]
+    M0 = np.asarray(model_to_part, dtype=np.float64)
+    turn = np.diag([-1.0, -1.0, 1.0])
+    best: CameraCompare | None = None
+    for cand in (M0, turn @ M0):
+        cc = compare_camera(keep[0], "top", vertices, faces, first, cand, refine=refine, measure=False, exclude=exclude)
+        if best is None or cc.metrics.mean_mm < best.metrics.mean_mm:
+            best = cc
+    assert best is not None
+    out = {keep[0]: best}
+    for name in keep[1:]:
+        cam = replace(frames[name], cad_to_mat=best.placement)
+        out[name] = compare_camera(name, "top", vertices, faces, cam, M0, refine=False, measure=False, exclude=exclude)
+    notes = [n.replace(keep[0] + ":", "orbit:") for n in best.notes]
+    return OrbitCompare(out, best.placement, len(names) - len(keep), notes)

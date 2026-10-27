@@ -92,6 +92,19 @@ def mask_contour_distances(model_mask: BoolMask, photo_mask: BoolMask, frame: Fr
     return contour_distances_mm(contour_points_mm(model_mask, frame), contour_points_mm(photo_mask, frame))
 
 
+def points_outside(pts_mm: FloatArray, frame: Frame, excluded: BoolMask | None) -> FloatArray:
+    """Contour points (mm on `frame`) that do not fall on an excluded pixel."""
+    if excluded is None or len(pts_mm) == 0:
+        return pts_mm
+    px = np.round(frame.to_px(pts_mm)).astype(int)
+    h, w = excluded.shape
+    inside = (px[:, 0] >= 0) & (px[:, 0] < w) & (px[:, 1] >= 0) & (px[:, 1] < h)
+    hit = np.zeros(len(pts_mm), dtype=bool)
+    hit[inside] = excluded[px[inside, 1], px[inside, 0]]
+    out: FloatArray = pts_mm[~hit]
+    return out
+
+
 def over_under_mm2(photo_mask: BoolMask, model_mask: BoolMask, frame: Frame) -> tuple[float, float]:
     """(over, under) areas in mm^2: over = model & ~photo, under = photo & ~model."""
     px_area = 1.0 / frame.px_per_mm**2
@@ -115,6 +128,7 @@ def residual_heatmap(
     distances: ContourDistances | None = None,
     title: str = "",
     label_point_mm: tuple[float, float] | None = None,
+    excluded: BoolMask | None = None,
     max_side_px: int = 1400,
     min_side_px: int = 640,
 ) -> bytes:
@@ -129,6 +143,12 @@ def residual_heatmap(
     img[photo & model] = COLOR_MATCH
     img[model & ~photo] = COLOR_OVER
     img[photo & ~model] = COLOR_UNDER
+    if excluded is not None:  # hatched: left out of the comparison (broken region), not judged
+        ex = np.asarray(excluded, dtype=bool)
+        yy, xx = np.mgrid[0:h, 0:w]
+        stripes = ((xx + yy) // 4) % 2 == 0
+        img[ex] = (235, 235, 235)
+        img[ex & stripes] = (150, 150, 150)
     scale = 1.0
     long_side = max(h, w)
     if long_side > max_side_px:
@@ -158,6 +178,8 @@ def residual_heatmap(
     # Legend.
     rows = [(COLOR_MATCH, "model and photo agree"), (COLOR_OVER, "over: model has material the photo lacks"),
             (COLOR_UNDER, "under: photo has material the model lacks")]  # fmt: skip
+    if excluded is not None and np.any(excluded):
+        rows.append(((150, 150, 150), "hatched: broken region, not compared (inferred)"))
     y = 10
     if title:
         _put(img, title, (10, y + 14), 0.55, (0, 0, 0))
