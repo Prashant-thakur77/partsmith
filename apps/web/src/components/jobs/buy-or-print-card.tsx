@@ -74,6 +74,8 @@ function CardBody({
   const cityId = React.useId();
   const [city, setCity] = React.useState("");
   const state = lookupState(card);
+  // the MOCK badge and the "no web search ran" line already say it: drop the backend's own mock notes
+  const notes = state === "mock" ? card.notes.filter((n) => !/^MOCK\b/.test(n)) : card.notes;
   const lookup = card.lookup ?? null;
   const offers = citedOffers(lookup);
   const places = citedPlaces(lookup);
@@ -248,16 +250,16 @@ function CardBody({
           </details>
         ) : null}
 
-        {lookup?.label || card.notes.length || (lookup && lookup.mode !== "mock") ? (
+        {(lookup?.label && state !== "mock") || notes.length || (lookup && lookup.mode !== "mock") ? (
           <div className="space-y-0.5 text-[11px] text-subtle">
-            {lookup?.label ? <p>{lookup.label}</p> : null}
+            {lookup?.label && state !== "mock" ? <p>{lookup.label}</p> : null}
             {lookup && lookup.mode !== "mock" && (lookup.provider || lookup.model) ? (
               <p className="font-mono">
                 {[lookup.provider, lookup.model].filter(Boolean).join(" · ")}
                 {lookup.queries ? ` · ${lookup.queries} searches` : ""}
               </p>
             ) : null}
-            {card.notes.map((n) => (
+            {notes.map((n) => (
               <p key={n}>{n}</p>
             ))}
           </div>

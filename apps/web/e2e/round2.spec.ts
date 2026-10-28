@@ -92,6 +92,21 @@ test("fix: tap-to-point taps and the orbit slot go out with the job", async ({ p
   expect(bodies[0]).toMatch(/"kind":"slot"/);
 });
 
+test("fix: a photo plus a walk-around clip attach without a page error and the voice-note slot appears", async ({ page }) => {
+  const { errors } = await setup(page);
+  await page.goto("/fix");
+  await expect(page.getByText("Walk around it (video)")).toBeVisible();
+  await page.getByLabel("Upload Top view photo").setInputFiles(join(__dirname, "fixtures/generated/photo.png"));
+  await expect(page.getByText("Capture gate passed").first()).toBeVisible();
+  const clip = join(__dirname, "../../../data/synthetic/samples/demo-l-bracket/orbit.mp4");
+  await page.locator('input[type=file][accept^="video/"]').first().setInputFiles(clip);
+  await expect(page.locator("video").first()).toBeVisible();
+  await expect(page.getByText("Voice note about the clip")).toBeVisible();
+  await page.waitForTimeout(1500);
+  await expect(page.getByText("Something broke on this page")).toHaveCount(0);
+  expect(realErrors(errors)).toEqual([]);
+});
+
 test("Hinglish toggle translates /fix and is remembered", async ({ page }) => {
   await setup(page);
   await page.goto("/fix");

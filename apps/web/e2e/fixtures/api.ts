@@ -275,7 +275,7 @@ export const openapi = {
   paths: Object.fromEntries(
     (
       [
-        ["/jobs/fix", "post", ["top", "side", "mating", "orbit", "intent", "mat_kind", "thickness_mm", "family_hint", "screen_px_per_mm", "points"]],
+        ["/jobs/fix", "post", ["top", "side", "mating", "orbit", "narration", "city", "intent", "mat_kind", "thickness_mm", "family_hint", "screen_px_per_mm", "points"]],
         ["/presets", "get"],
         ["/parts/{slug}/presets", "get"],
         ["/parts/{slug}/bundle.zip", "get"],

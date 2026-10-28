@@ -59,7 +59,11 @@ export function VideoSlot({ title, hint, value, onChange }: { title: string; hin
             preload="metadata"
             aria-label={`${title} preview`}
             className="aspect-[4/3] w-full rounded-md border border-border bg-black object-contain"
-            onLoadedMetadata={(e) => setMeta((m) => (m ? { ...m, seconds: e.currentTarget.duration } : m))}
+            onLoadedMetadata={(e) => {
+              // read now: React clears currentTarget before a state updater runs
+              const seconds = e.currentTarget.duration;
+              setMeta((m) => (m ? { ...m, seconds } : m));
+            }}
           />
           <div className="space-y-1 text-[12.5px]">
             <p className="font-mono text-muted tnum">

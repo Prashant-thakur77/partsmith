@@ -216,7 +216,7 @@ function MeasureMarks({ points, radius, color }: { points: THREE.Vector3[]; radi
 function FocusFly({ focus, radius, color }: { focus: { at: [number, number, number]; key: string }; radius: number; color: string }) {
   const { camera, controls, invalidate } = useThree();
   const marker = React.useRef<THREE.Mesh>(null);
-  const anim = React.useRef<{ t0: number; fromT: THREE.Vector3; toT: THREE.Vector3; fromP: THREE.Vector3; toP: THREE.Vector3 } | null>(null);
+  const anim = React.useRef<{ t0: number; fromT: THREE.Vector3; toT: THREE.Vector3; fromP: THREE.Vector3; toP: THREE.Vector3; landed?: boolean } | null>(null);
   React.useEffect(() => {
     const c = controls as unknown as { target?: THREE.Vector3; update?: () => void } | null;
     if (!c?.target) return;
@@ -233,10 +233,12 @@ function FocusFly({ focus, radius, color }: { focus: { at: [number, number, numb
     const t = (performance.now() - a.t0) / 1000;
     const k = Math.min(1, t / 0.7);
     const e = 1 - Math.pow(1 - k, 3);
-    if (k <= 1) {
+    if (!a.landed) {
+      // fly once, then hand the camera back to the user (orbit and "Fit to view" must work after a focus event)
       c.target.lerpVectors(a.fromT, a.toT, e);
       camera.position.lerpVectors(a.fromP, a.toP, e);
       c.update?.();
+      if (k >= 1) a.landed = true;
     }
     if (marker.current) {
       const pulse = t < 2.5 ? 1 + 0.35 * Math.sin(t * 8) : 1;

@@ -5,9 +5,11 @@ UV ?= uv
 PNPM ?= pnpm
 API_PORT ?= 8000
 WEB_PORT ?= 3000
+MEDIA_API_PORT ?= 8765
+MEDIA_WEB_PORT ?= 3765
 
 .PHONY: help setup sync web-install schemas test test-all test-web lint typecheck check smoke dev api web worker \
-        seed synth bench bench-live live lie mat mcp e2e clean-var gitleaks deploy-check
+        seed synth bench bench-live live lie mat media mcp e2e clean-var gitleaks deploy-check
 
 help: ## Show targets
 	@grep -E '^[a-zA-Z_-]+:.*?## ' $(MAKEFILE_LIST) | awk 'BEGIN{FS=":.*?## "}{printf "  \033[36m%-12s\033[0m %s\n",$$1,$$2}'
@@ -71,6 +73,27 @@ lie: ## Terminal demo (seconds, no keys): a model claims VERIFIED on a wrong par
 
 mat: ## Write the plain-paper mat PDF + web mat layouts
 	$(UV) run python -m tools.mat.make_mat --pdf var/partsmith-mat-a4.pdf --web
+
+# media: records docs/media/ (hero.gif, grid.png, tile-*.png) from the real app with no keys. It builds the web app
+# against a private API port, starts the API (PROVIDER_MODE=replay, .env ignored, throwaway PARTSMITH_HOME; the stored
+# runs in data/replays are served as they are) and `next start`, waits for both, runs apps/web/scripts/media.mjs
+# (Playwright + ffmpeg), then always stops both servers and deletes the scratch home.
+media: ## README hero GIF + screenshot grid, recorded from the app in replay mode (docs/media/)
+	@set -euo pipefail; \
+	scratch=$$(mktemp -d "$${TMPDIR:-/tmp}/partsmith-media.XXXXXX"); pids=""; \
+	killtree() { for c in $$(pgrep -P "$$1" 2>/dev/null); do killtree "$$c"; done; kill "$$1" 2>/dev/null || true; }; \
+	cleanup() { for p in $$pids; do killtree "$$p"; done; wait 2>/dev/null || true; rm -rf "$$scratch"; }; \
+	trap cleanup EXIT INT TERM; \
+	api=http://127.0.0.1:$(MEDIA_API_PORT); web=http://127.0.0.1:$(MEDIA_WEB_PORT); \
+	echo "media: building the web app against $$api"; \
+	API_URL=$$api $(PNPM) -C apps/web exec next build >"$$scratch/build.log" 2>&1 || { tail -40 "$$scratch/build.log"; exit 1; }; \
+	PARTSMITH_HOME="$$scratch/home" PARTSMITH_ENV_FILE=/dev/null PROVIDER_MODE=replay PARTSMITH_WARM_CAD=0 PARTSMITH_GEOM_WORKERS=1 \
+	  $(UV) run uvicorn services.api.main:app --host 127.0.0.1 --port $(MEDIA_API_PORT) >"$$scratch/api.log" 2>&1 & pids="$$pids $$!"; \
+	API_URL=$$api $(PNPM) -C apps/web exec next start --hostname 127.0.0.1 --port $(MEDIA_WEB_PORT) >"$$scratch/web.log" 2>&1 & pids="$$pids $$!"; \
+	for i in $$(seq 1 120); do curl -sf "$$api/api/v1/health" >/dev/null && curl -sf -o /dev/null "$$web/" && break; sleep 1; done; \
+	curl -sf "$$api/api/v1/health" >/dev/null || { echo "media: the API did not start"; tail -30 "$$scratch/api.log"; exit 1; }; \
+	curl -sf -o /dev/null "$$web/" || { echo "media: the web app did not start"; tail -30 "$$scratch/web.log"; exit 1; }; \
+	MEDIA_WEB_URL=$$web MEDIA_TMP="$$scratch/frames" node apps/web/scripts/media.mjs
 
 api: ## FastAPI on :$(API_PORT)
 	$(UV) run uvicorn services.api.main:app --port $(API_PORT) --reload --reload-dir services --reload-dir packages

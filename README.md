@@ -6,6 +6,10 @@
 Live site _(coming)_ · Video _(coming)_ · Judges page _(coming)_ · Try a sample _(coming)_ · [Results](#results) · [Reproduce](eval/REPRODUCE.md) · [Docs](docs/README.md)
 <!-- END:links -->
 
+[![Replay of a stored PartSmith run with mock providers (synthetic L-bracket): the error chart steps down from the first build to within the limit and the run ends VERIFIED; then the job page opens the fail → fix rounds' overlays and shows the 3D model](docs/media/hero.gif)](docs/media/hero.gif)
+
+<sub>Recorded from the web app in replay mode with mock providers (`make media`); the numbers are the stored run's own.</sub>
+
 <!-- BEGIN:status -->
 > **Status: mock providers** · bench report 2026-10-28 at commit `a1cc532` · real photos measured: 0 · real parts with ruler ground truth: 0 · real repairs logged: 0
 >
@@ -48,6 +52,8 @@ MCP. No printer, caliper or special paper needed.
 | Numbers and how they were made | [Results](#results) · `/results` · [`eval/REPRODUCE.md`](eval/REPRODUCE.md) |
 | What a model wrote vs what we wrote | [Model-written vs hand-written](#model-written-vs-hand-written) · [Built during the hackathon](#built-during-the-hackathon) |
 | For agents | `/agents`, `/llms.txt`, MCP at `/mcp` |
+
+[![Four screens from the web app in replay mode with mock providers: (a) a lying model caught, the export blocked; (b) Colour by source on the job page; (c) the impact panel and buy-or-print card; (d) the walk-around clip and voice note slots on the fix page](docs/media/grid.png)](docs/media/grid.png)
 
 ## Why trust a model-made part?
 
@@ -349,20 +355,20 @@ All code in this repository was written during the hackathon (from Oct 26 2026, 
 are computed from `git log`, so they stay true as the history grows.
 
 <!-- BEGIN:built -->
-**40 commits** between 2026-10-27 05:59 ET and 2026-10-28 12:13 ET; the hackathon started 2026-10-26 12:00 ET. Commits dated before the start: **0**.
+**41 commits** between 2026-10-27 05:59 ET and 2026-10-28 13:53 ET; the hackathon started 2026-10-26 12:00 ET. Commits dated before the start: **0**.
 
 | Area | Files added | Lines added: code and docs | Lines added: data, reports, lockfiles, generated | First commit | Last commit |
 |---|---|---|---|---|---|
-| `services/` (Python backend) | 226 | 45,814 | 0 | 2026-10-27 | 2026-10-28 |
-| `apps/web/` (web app) | 222 | 21,802 | 1,100 | 2026-10-27 | 2026-10-28 |
-| `eval/` (benches and reports) | 325 | 5,192 | 65,041 | 2026-10-27 | 2026-10-28 |
-| `packages/` (typed contracts) | 11 | 1,155 | 4,055 | 2026-10-27 | 2026-10-28 |
-| `tools/` (synthetic data, mats, generators) | 31 | 4,533 | 0 | 2026-10-27 | 2026-10-28 |
+| `services/` (Python backend) | 232 | 47,152 | 0 | 2026-10-27 | 2026-10-28 |
+| `apps/web/` (web app) | 229 | 23,403 | 1,101 | 2026-10-27 | 2026-10-28 |
+| `eval/` (benches and reports) | 325 | 5,295 | 65,426 | 2026-10-27 | 2026-10-28 |
+| `packages/` (typed contracts) | 11 | 1,159 | 4,058 | 2026-10-27 | 2026-10-28 |
+| `tools/` (synthetic data, mats, generators) | 31 | 4,975 | 0 | 2026-10-27 | 2026-10-28 |
 | `infra/` (Modal, deploy) | 12 | 1,009 | 84 | 2026-10-27 | 2026-10-28 |
-| `docs/` | 8 | 1,098 | 0 | 2026-10-27 | 2026-10-28 |
-| `data/` (samples, replays) | 2,320 | 0 | 352,619 | 2026-10-27 | 2026-10-28 |
-| root files | 15 | 950 | 8,268 | 2026-10-27 | 2026-10-28 |
-| **Total** | **3,170** | **81,553** | **431,167** | | |
+| `docs/` | 10 | 1,259 | 7 | 2026-10-27 | 2026-10-28 |
+| `data/` (samples, replays) | 2,721 | 0 | 442,906 | 2026-10-27 | 2026-10-28 |
+| root files | 15 | 1,170 | 8,268 | 2026-10-27 | 2026-10-28 |
+| **Total** | **3,586** | **85,422** | **521,850** | | |
 
 <details><summary>Every commit since the start, oldest first</summary>
 
@@ -408,6 +414,7 @@ are computed from `git log`, so they stay true as the history grows.
 | 2026-10-27 18:34 ET | `b3da84b` | feat: round-2 web, gated exports everywhere, two-part rejection, fresh evidence and judge-first README |
 | 2026-10-27 20:21 ET | `1c91d0f` | feat(verifier,agent): broken parts locate the break and never copy it; fake-break attack; verified-but-off column |
 | 2026-10-28 12:13 ET | `a1cc532` | feat: round 3 — bounded top views, buy-or-print, narrated walk-around, live voice, coupon learning, lie caught, deploy files |
+| 2026-10-28 13:53 ET | `d7586ff` | feat: stated lengths, SAM negatives and confidence, value sources in 3D, fail-to-fix strip, judge-first README |
 
 </details>
 

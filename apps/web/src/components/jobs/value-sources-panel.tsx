@@ -161,6 +161,7 @@ function ValueDetail({ item, tinted, onClose }: { item: ValueItem; tinted: boole
         {checkText(item)}
       </p>
       {item.residuals.length ? (
+        <div className="relative max-w-full overflow-x-auto">
         <table className="w-full font-mono text-[11.5px] tnum">
           <caption className="sr-only">Verifier residuals for {item.label}, millimetres</caption>
           <thead>
@@ -189,6 +190,7 @@ function ValueDetail({ item, tinted, onClose }: { item: ValueItem; tinted: boole
             ))}
           </tbody>
         </table>
+        </div>
       ) : null}
       {item.citation ? (
         <a href={item.citation.url} target="_blank" rel="noreferrer noopener" className="inline-flex items-center gap-1 text-accent-text hover:underline">
