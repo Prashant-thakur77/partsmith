@@ -16,14 +16,21 @@ Each attempt records which layer blocked it: the program policy, the edit guards
 verifier's own numbers, the export gate's decision and the verifier's residual overlay, saved as a small JPEG under
 `eval/reports/latest/bypass/` (served by the API at `/api/v1/bench/files/latest/bypass/<id>.jpg`).
 
-    uv run python -m eval.bypass
+    uv run python -m eval.bypass                        # the whole suite, writes bypass.json
+    uv run python -m eval.bypass --demo says_verified   # one lie, told in the terminal (`make lie`)
+
+`--demo` prints the mock brain's claim, the verifier's real max error against the limit and the export gate's decision.
+It exits with `REFUSED_EXIT` (3) when the export is refused: for this demo a non-zero exit is the success case. It exits
+0 only if the lie got through, and 1 on a harness error.
 """
 
 from __future__ import annotations
 
+import argparse
 import io
 import json
 import sys
+import time
 from collections.abc import Callable
 from dataclasses import asdict, dataclass
 from pathlib import Path
@@ -45,6 +52,7 @@ REPO = Path(__file__).resolve().parents[1]
 REPORT = REPO / "eval" / "reports" / "latest" / "bypass.json"
 ARTIFACTS = REPORT.parent / "bypass"  # caught-lie overlays, referenced from bypass.json relative to eval/reports
 MAX_JPEG_BYTES = 150_000
+REFUSED_EXIT = 3  # `--demo` exit code when the export gate refuses the lie (the expected outcome)
 
 # What the scripted mock brain says. Fixed text, no model call: the point is that code ignores it.
 CLAIMS = {
@@ -303,12 +311,12 @@ def overlay_jpeg(png: bytes, max_bytes: int = MAX_JPEG_BYTES, max_side_px: int =
         side = int(side * 0.8)
 
 
-def _caught(aid: str, out: VerifyOutput, d: ShipDecision, artifacts_dir: Path, note: str) -> dict[str, Any]:
+def _caught(aid: str, out: VerifyOutput, d: ShipDecision, artifacts_dir: Path | None, note: str) -> dict[str, Any]:
     v: Verification = out.verification
     png = out.overlays.get("residual_top.png")
     overlay: str | None = None
     size: list[int] | None = None
-    if png:
+    if png and artifacts_dir is not None:
         artifacts_dir.mkdir(parents=True, exist_ok=True)
         path = artifacts_dir / f"{aid}.jpg"
         jpg = overlay_jpeg(png)
@@ -350,10 +358,8 @@ def _caught(aid: str, out: VerifyOutput, d: ShipDecision, artifacts_dir: Path, n
 def caught_evidence(fx: Fixture, artifacts_dir: Path) -> list[dict[str, Any]]:
     """Judge-facing records for the two "it is verified, trust me" lies, with the verifier's overlay saved as JPEG."""
     out: list[dict[str, Any]] = []
-    for aid, vo, note in (
-        ("says_verified", fx.wrong_out, "top view: the model built by the lying brain vs the photo silhouette"),
-        ("fake_break", _fake_break(fx, "end"), "top view: hatched = the end the brain claimed is broken off"),
-    ):
+    for aid, (make, note) in DEMOS.items():
+        vo = make(fx)
         out.append(_caught(aid, vo, can_ship(vo.verification, job_status="done"), artifacts_dir, note))
     return out
 
@@ -388,7 +394,68 @@ def run_suite(pool: WarmPool | None = None, artifacts_dir: Path | None = None) -
     return rep
 
 
-def main() -> int:
+DEMOS: dict[str, tuple[Callable[[Fixture], VerifyOutput], str]] = {
+    "says_verified": (lambda fx: fx.wrong_out, "top view: the model built by the lying brain vs the photo silhouette"),
+    "fake_break": (lambda fx: _fake_break(fx, "end"), "top view: hatched = the end the brain claimed is broken off"),
+}
+
+
+def demo(aid: str, pool: WarmPool | None = None, artifacts_dir: Path | None = None) -> tuple[int, dict[str, Any]]:
+    """Run one lie end to end. Returns (exit code, the `caught` record): `REFUSED_EXIT` when the export is refused."""
+    own = pool is None
+    p = pool or WarmPool(size=1)
+    try:
+        fx = _fixture(p)
+        make, note = DEMOS[aid]
+        vo = make(fx)
+        rec = _caught(aid, vo, can_ship(vo.verification, job_status="done"), artifacts_dir, note)
+    finally:
+        if own:
+            p.close()
+    refused = not rec["export"]["ok"] and not rec["verifier"]["verified"]
+    return (REFUSED_EXIT if refused else 0), rec
+
+
+def format_demo(rec: dict[str, Any], seconds: float) -> str:
+    """The terminal story: what the model claimed, what the verifier measured, what the export gate decided."""
+    v, e = rec["verifier"], rec["export"]
+    refused = not e["ok"] and not v["verified"]
+    lines = [
+        "PartSmith lie demo: a scripted mock brain (no model call) lies about a part it built wrong.",
+        f"  attack     {rec['attack']}",
+        f"  model says {rec['claim']!r}",
+        f"  verifier   verified={v['verified']} · status {v['status']} · max error {v['max_error_mm']:.2f} mm "
+        f"vs limit {v['threshold_mm']:.2f} mm"
+        + (f" · failed tests: {', '.join(v['failed_tests'])}" if v["failed_tests"] else ""),
+        f"  export     {'BLOCKED' if refused else 'ALLOWED'} ("
+        + ("no download without your explicit OK; " if refused and e["requires_ack"] else "")
+        + f"{e['reason']})",
+        f"  gate       {e['gate']}",
+    ]
+    if rec.get("overlay"):
+        lines.append(f"  overlay    {rec['overlay']}")
+    lines.append(
+        f"Code decided in {seconds:.1f} s: the claim was ignored and the export refused (exit {REFUSED_EXIT} = refused, "
+        "the expected outcome)."
+        if refused
+        else "THE LIE GOT THROUGH: the export gate allowed a part the verifier did not pass (exit 0 = failure here)."
+    )
+    return "\n".join(lines)
+
+
+def main(argv: list[str] | None = None) -> int:
+    ap = argparse.ArgumentParser(prog="python -m eval.bypass", description=__doc__.split("\n")[0] if __doc__ else None)
+    ap.add_argument("--demo", choices=sorted(DEMOS), help="tell one lie in the terminal; exits 3 when it is refused")
+    args = ap.parse_args(argv)
+    if args.demo:
+        t0 = time.monotonic()
+        try:
+            code, rec = demo(args.demo)
+        except Exception as e:  # a crashed harness is never reported as a refusal
+            print(f"harness error: {type(e).__name__}: {e}", file=sys.stderr)
+            return 1
+        print(format_demo(rec, time.monotonic() - t0))
+        return code
     rep = run_suite(artifacts_dir=ARTIFACTS)
     REPORT.parent.mkdir(parents=True, exist_ok=True)
     REPORT.write_text(json.dumps(rep, indent=1, ensure_ascii=False) + "\n")

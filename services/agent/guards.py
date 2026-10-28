@@ -7,7 +7,8 @@ The fixer and the voice editor propose parameter edits; these checks decide what
 * a single round may move a length by at most `max_delta_mm` (20 % of the current value, at least 0.5 mm, at most 2 mm),
   so one bad proposal cannot throw away a model that nearly fits;
 * edits that scale every outline dimension by the same factor are refused: rescaling the whole part to force a fit
-  hides the real error (change the knob that is actually wrong).
+  hides the real error (change the knob that is actually wrong);
+* knobs the user set (`locked`: a length the user stated because the photo cannot show it) are never moved.
 """
 
 from __future__ import annotations
@@ -132,8 +133,10 @@ def guard_edits(
     outline_params: Iterable[str] = (),
     cap_deltas: bool = True,
     residual_deltas: Mapping[str, float] | None = None,
+    locked: Mapping[str, str] | None = None,
 ) -> GuardResult:
-    """Apply the guards to raw `{"param", "to", "reason"}` proposals. `current` holds the values in force now."""
+    """Apply the guards to raw `{"param", "to", "reason"}` proposals. `current` holds the values in force now;
+    `locked` maps knobs nobody may move to the reason (e.g. "stated by the user")."""
     by_name = {s.name: s for s in specs}
     res = GuardResult()
     if is_rescale(edits, current, outline_params, residual_deltas):
@@ -152,6 +155,9 @@ def guard_edits(
             continue
         if name in seen:
             res.rejected.append(f"{name}: edited twice in one round; kept the first edit")
+            continue
+        if locked and name in locked:
+            res.rejected.append(f"{name}: {locked[name]}; not changed")
             continue
         try:
             proposed = float(e.get("to"))  # type: ignore[arg-type]

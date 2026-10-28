@@ -524,9 +524,11 @@ def measure(
     from services.metrology.measure import measure_photo
     from services.metrology.segment import ProviderSegmenter
 
+    source = "mock-threshold" if providers.stage_mode("segment") == "mock" else "sam-3.1"  # a mock mask says so
     mo = measure_photo(
-        photo, view, segmenter=ProviderSegmenter(providers.segment), thickness_mm=thickness_mm, mat_id=mat_id
-    )
+        photo, view, segmenter=ProviderSegmenter(providers.segment, source=source), thickness_mm=thickness_mm,
+        mat_id=mat_id,
+    )  # fmt: skip
     r = mo.result
     overlay = blobs.put(mo.overlay_png, ".png")
     r.overlay_sha = overlay

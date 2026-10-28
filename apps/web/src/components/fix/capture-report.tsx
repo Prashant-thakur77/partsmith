@@ -17,6 +17,7 @@ const NAMES: Record<string, string> = {
   scale: "Scale",
   contrast: "Contrast",
   single_part: "One part only",
+  mask_confidence: "Mask confidence",
 };
 
 /** The server capture gate's verdict, check by check, with its plain-words reasons. */

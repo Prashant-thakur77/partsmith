@@ -1,7 +1,7 @@
 "use client";
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { AlertTriangle, Ban, Boxes, CircleStop, ExternalLink, FileJson, ScanLine, Upload } from "lucide-react";
+import { AlertTriangle, Ban, Boxes, CircleStop, ExternalLink, FileJson, Info, ScanLine, Upload } from "lucide-react";
 import dynamic from "next/dynamic";
 import Link from "next/link";
 import * as React from "react";
@@ -10,6 +10,9 @@ import { CouponFit } from "@/components/jobs/coupon-fit";
 import { EditPanel } from "@/components/jobs/edit-panel";
 import { BoundNote, NarratedBadge, NarrationPanel, UncheckedList } from "@/components/jobs/evidence-notes";
 import { ExportMenu, PreviewDialog } from "@/components/jobs/export-menu";
+import { FixHistoryStrip } from "@/components/jobs/fix-history-strip";
+import { SourceSwatch, sourceColor } from "@/components/jobs/source-key";
+import { ValueSourcesPanel } from "@/components/jobs/value-sources-panel";
 import { JobStatusBadge } from "@/components/jobs/job-badges";
 import { FitPresets } from "@/components/jobs/fit-presets";
 import { ImpactPanel } from "@/components/jobs/impact-panel";
@@ -43,6 +46,8 @@ import { STAGE_LABELS, summarizeEvents, useJobEvents, type EventSummary, type St
 import { VOTE_ENABLED, VoteBanner } from "@/components/vote-banner";
 import { I18nRegion, LangToggle, useT } from "@/lib/i18n";
 import { cn } from "@/lib/utils";
+import { valueItems, valueText, type ValueItem } from "@/lib/value-sources";
+import type { SceneSourceMark } from "@/components/viewer/cad-scene";
 
 // Code-split out of the workspace's first load: the 3D viewer (its three.js scene is split again inside), the error
 // chart (recharts) and the Agent tab. The page body is client-rendered after the job detail loads, so `ssr: false`
@@ -121,7 +126,35 @@ function MeasuredValue({ m }: { m: Measured }) {
   );
 }
 
-function MeasurementsCard({ m }: { m: Measurements }) {
+/** "Where from" control on a measurement row: selects the value in the panel under the model. */
+function WhereFrom({ item, label, tinted, onSelect }: { item: ValueItem | undefined; label: string; tinted: boolean; onSelect: (id: string) => void }) {
+  if (!item) return null;
+  const c = sourceColor(item.kind);
+  return (
+    <button
+      type="button"
+      onClick={() => onSelect(item.id)}
+      aria-label={`Where ${label} came from`}
+      className={cn("inline-flex size-6 shrink-0 items-center justify-center rounded-md text-subtle hover:bg-surface-2 hover:text-fg", tinted && c.className)}
+      style={tinted ? c.style : undefined}
+    >
+      {tinted ? <SourceSwatch kind={item.kind} /> : <Info className="size-3.5" aria-hidden />}
+    </button>
+  );
+}
+
+function MeasurementsCard({
+  m,
+  items,
+  tinted,
+  onSelect,
+}: {
+  m: Measurements;
+  items: Map<string, ValueItem>;
+  tinted: boolean;
+  onSelect: (id: string) => void;
+}) {
+  const where = (id: string, label: string) => <WhereFrom item={items.get(id)} label={label} tinted={tinted} onSelect={onSelect} />;
   return (
     <div className="space-y-2.5">
       <div className="flex items-center justify-between">
@@ -132,19 +165,19 @@ function MeasurementsCard({ m }: { m: Measurements }) {
         </span>
       </div>
       <dl className="space-y-2 text-[13px]">
-        <Row label="Length">
+        <Row label="Length" extra={where("dim.length", "length")}>
           <MeasuredValue m={m.length} />
         </Row>
-        <Row label="Width">
+        <Row label="Width" extra={where("dim.width", "width")}>
           <MeasuredValue m={m.width} />
         </Row>
         {m.thickness ? (
-          <Row label="Thickness">
+          <Row label="Thickness" extra={where("dim.thickness", "thickness")}>
             <MeasuredValue m={m.thickness} />
           </Row>
         ) : null}
         {m.holes.map((h) => (
-          <Row key={h.id} label={`${h.id.replace("_", " ")} Ø`}>
+          <Row key={h.id} label={`${h.id.replace("_", " ")} Ø`} extra={where(`feature.${h.id}.diameter`, `${h.id.replace("_", " ")} diameter`)}>
             <MeasuredValue m={h.diameter} />
           </Row>
         ))}
@@ -197,13 +230,41 @@ function PartTests({ tests }: { tests: PartTest[] }) {
   );
 }
 
-function Row({ label, children }: { label: string; children: React.ReactNode }) {
+function Row({ label, children, extra }: { label: string; children: React.ReactNode; extra?: React.ReactNode }) {
   return (
     <div className="flex items-center justify-between gap-3 border-b border-border pb-2 last:border-0">
       <dt className="shrink-0 text-muted">{label}</dt>
-      <dd className="flex justify-end text-right">{children}</dd>
+      <dd className="flex items-center justify-end gap-1 text-right">
+        {children}
+        {extra}
+      </dd>
     </div>
   );
+}
+
+/** Viewer marks from the value list: one per dimension/region, one per feature (its values joined on one callout). */
+function sceneMarks(items: ValueItem[], selectedId: string | null): SceneSourceMark[] {
+  const out: SceneSourceMark[] = [];
+  const byFeature = new Map<string, ValueItem[]>();
+  for (const i of items) {
+    if (!i.anchor) continue;
+    if (i.featureId) {
+      const list = byFeature.get(i.featureId);
+      if (list) {
+        list.push(i);
+        continue;
+      }
+      byFeature.set(i.featureId, [i]);
+    }
+    out.push({ id: i.id, kind: i.kind, anchor: i.anchor, text: "", selected: false, unchecked: i.unchecked });
+  }
+  return out.map((m) => {
+    const it = items.find((i) => i.id === m.id)!;
+    const group = it.featureId ? byFeature.get(it.featureId)! : [it];
+    const sel = group.find((g) => g.id === selectedId);
+    const text = group.map((g) => (g.value == null ? g.label : `${g.label} ${valueText(g)}`)).join(" · ");
+    return { ...m, id: sel?.id ?? m.id, text, selected: !!sel, unchecked: group.some((g) => g.unchecked) };
+  });
 }
 
 function JobActions({ id, summary }: { id: string; summary: JobDetail["summary"] }) {
@@ -288,6 +349,8 @@ export function WorkspaceClient({ id }: { id: string }) {
   const [values, setValues] = React.useState<Record<string, number> | null>(null);
   const [editBake, setEditBake] = React.useState<BakeResult | null>(null);
   const [manualFocus, setManualFocus] = React.useState<{ at: [number, number, number]; key: string; label?: string } | null>(null);
+  const [tintBySource, setTintBySource] = React.useState(false);
+  const [selectedValue, setSelectedValue] = React.useState<string | null>(null);
   const { t } = useT();
   const artifactEvents = React.useMemo(() => events.filter((e): e is ArtifactEvent => e.t === "artifact"), [events]);
   React.useEffect(() => {
@@ -310,6 +373,18 @@ export function WorkspaceClient({ id }: { id: string }) {
     for (const [k, a] of Object.entries(s.artifacts)) out[k] = a.url;
     return out;
   }, [d?.artifacts, s.artifacts]);
+
+  const items = React.useMemo(
+    () => (d ? valueItems({ partspec: d.partspec, measurements: d.measurements, verification: d.verification, artifacts: artifactEvents }) : []),
+    [d, artifactEvents],
+  );
+  const itemsById = React.useMemo(() => new Map(items.map((i) => [i.id, i])), [items]);
+  const marks = React.useMemo(() => sceneMarks(items, selectedValue), [items, selectedValue]);
+  const selectFromCard = React.useCallback((id: string) => {
+    setSelectedValue(id);
+    const el = document.getElementById("value-sources");
+    if (el) el.scrollIntoView({ behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth", block: "nearest" });
+  }, []);
 
   const viewUrl = (changed ? knobBake.data?.artifacts.view : undefined) ?? editBake?.artifacts.view ?? artifacts.view;
   const verification = d?.verification ?? null;
@@ -460,6 +535,10 @@ export function WorkspaceClient({ id }: { id: string }) {
         </div>
       ) : null}
 
+      <div className="min-w-0 px-4 pt-4 empty:hidden sm:px-6">
+        <FixHistoryStrip events={events} />
+      </div>
+
       <div className="grid grid-cols-1 gap-4 px-4 pt-4 sm:px-6 xl:grid-cols-[minmax(0,1fr)_minmax(0,1.3fr)_380px]">
         {/* centre: viewer (first on small screens) */}
         <div className="overflow-hidden rounded-lg border border-border bg-surface xl:order-2">
@@ -470,7 +549,20 @@ export function WorkspaceClient({ id }: { id: string }) {
             label="Model"
             emptyText={done ? "No model was produced." : "The model appears after the first build."}
             focus={focusPoint}
+            sources={items.length ? { marks, on: tintBySource, onToggle: setTintBySource, onSelect: setSelectedValue } : null}
           />
+          {items.length ? (
+            <div id="value-sources" className="border-t border-border p-4">
+              <ValueSourcesPanel
+                items={items}
+                tinted={tintBySource}
+                onTint={setTintBySource}
+                selectedId={selectedValue}
+                onSelect={setSelectedValue}
+                inViewer={!!viewUrl}
+              />
+            </div>
+          ) : null}
         </div>
 
         {/* left: photo + measurements */}
@@ -636,7 +728,7 @@ export function WorkspaceClient({ id }: { id: string }) {
                 if (r.edits.length) setValues((cur) => ({ ...(cur ?? d.values), ...Object.fromEntries(r.edits.map((e) => [e.param, e.to])) }));
               }}
             />
-            {measurements ? <MeasurementsCard m={measurements} /> : null}
+            {measurements ? <MeasurementsCard m={measurements} items={itemsById} tinted={tintBySource} onSelect={selectFromCard} /> : null}
             {artifacts.narration ? <NarrationPanel url={artifacts.narration} /> : null}
             {d.partspec?.features.length ? (
               <div className="space-y-1.5">

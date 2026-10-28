@@ -289,7 +289,7 @@ class AgentSession:
         run = self.run
         res = run_program(self.base.code, values, outputs=(), features=True)
         out = verify(res, run.measurements, run.spec, photo_masks=run.masks, camera_views=run.camera_views(),
-                     known_form=self.base.strategy == "template")  # fmt: skip
+                     known_form=self.base.strategy == "template", stated=getattr(run, "stated", None))  # fmt: skip
         res.cleanup()
         cand = Round(0, self.base.strategy, self.base.code, dict(values), res, out)
         self.cache[key] = cand

@@ -405,7 +405,10 @@ def test_fix_upload_strips_gps_and_validates(client: TestClient, fake: FakeServi
 
 def test_fix_upload_accepts_orbit_clip_and_feature_points(client: TestClient, fake: FakeService) -> None:
     clip = b"\x00\x00\x00\x18ftypmp42" + b"\x00" * 256
-    taps = '{"top": [{"x": 812.5, "y": 640, "kind": "hole", "id": "hole_a"}, {"x": 900, "y": 700}]}'
+    taps = (
+        '{"top": [{"x": 812.5, "y": 640, "kind": "hole", "id": "hole_a"}, {"x": 900, "y": 700}, '
+        '{"x": 300, "y": 310, "kind": "exclude"}]}'
+    )
     r = client.post(
         "/api/v1/jobs/fix",
         files={"top": ("top.jpg", _jpeg(), "image/jpeg"), "orbit": ("orbit.mp4", clip, "video/mp4")},
@@ -415,7 +418,8 @@ def test_fix_upload_accepts_orbit_clip_and_feature_points(client: TestClient, fa
     jid = r.json()["id"]
     assert fake.photos[jid]["orbit"] == clip
     assert fake.points[jid] == {"top": [{"x": 812.5, "y": 640.0, "kind": "hole", "id": "hole_a"},
-                                        {"x": 900.0, "y": 700.0, "kind": "hole"}]}  # fmt: skip
+                                        {"x": 900.0, "y": 700.0, "kind": "hole"},
+                                        {"x": 300.0, "y": 310.0, "kind": "exclude"}]}  # a negative point  # fmt: skip
     r = client.post("/api/v1/jobs/fix", files={"top": ("top.jpg", _jpeg(), "image/jpeg")})
     assert r.status_code == 200 and fake.points[r.json()["id"]] is None
     top = {"top": ("top.jpg", _jpeg(), "image/jpeg")}

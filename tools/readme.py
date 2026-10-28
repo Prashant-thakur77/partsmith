@@ -1,5 +1,11 @@
-"""Regenerate the script-owned blocks of README.md: the Meta tooling table (file:line found in the code, never typed by hand)
-and the headline bench tables (read from eval/reports/latest/report.json).
+"""Regenerate the script-owned blocks of README.md. Nothing in these blocks is typed by hand:
+
+- `links`: the link row (live site, video, judges page, sample), read from `docs/links.json`; empty URLs render "(coming)";
+- `status` and `headline`: provider mode, report date and commit, and four headline numbers, read from
+  `eval/reports/latest/*.json`;
+- `meta-tooling`: the Meta model table, with file:line found in the code;
+- `bench` and `evidence`: the result tables, read from `eval/reports/latest/`;
+- `built`: the commits made since the hackathon start and the lines added per area, read from `git log`.
 
 Run: `uv run python -m tools.readme` (also part of `make bench`). Blocks live between `<!-- BEGIN:<name> -->` and
 `<!-- END:<name> -->` markers; everything else in README.md is left alone.
@@ -9,13 +15,38 @@ from __future__ import annotations
 
 import json
 import re
+import subprocess
+from collections.abc import Callable
 from dataclasses import dataclass
+from datetime import datetime
 from pathlib import Path
 from typing import Any
+from zoneinfo import ZoneInfo
 
 ROOT = Path(__file__).resolve().parents[1]
 README = ROOT / "README.md"
 REPORT = ROOT / "eval" / "reports" / "latest" / "report.json"
+LINKS = ROOT / "docs" / "links.json"
+
+ET = ZoneInfo("America/New_York")
+HACKATHON_START = datetime(2026, 10, 26, 12, 0, tzinfo=ET)
+# Top-level areas for the "built during the hackathon" table, matched by path prefix in this order.
+AREAS: tuple[tuple[str, str], ...] = (
+    ("services/", "services/ (Python backend)"),
+    ("apps/web/", "apps/web/ (web app)"),
+    ("eval/", "eval/ (benches and reports)"),
+    ("packages/", "packages/ (typed contracts)"),
+    ("tools/", "tools/ (synthetic data, mats, generators)"),
+    ("infra/", "infra/ (Modal, deploy)"),
+    ("docs/", "docs/"),
+    ("data/", "data/ (samples, replays)"),
+)
+OTHER_AREA = "root files"
+# Lines count as hand-made code/docs only for these file types, outside data and generated outputs.
+CODE_SUFFIXES = (".py", ".ts", ".tsx", ".js", ".mjs", ".cjs", ".css", ".md", ".sh", ".toml", ".yml", ".yaml", ".txt")
+CODE_NAMES = ("Makefile", "Dockerfile")
+NOT_CODE_PREFIXES = ("data/", "eval/reports/", "eval/runs/", "packages/schemas/json/")
+GENERATED_FILES = ("apps/web/src/lib/schemas.ts", "pnpm-lock.yaml", "uv.lock")
 
 
 @dataclass(frozen=True)
@@ -138,6 +169,17 @@ def _fmt(v: Any) -> str:
     return str(v)
 
 
+def _is_mock(row: dict[str, Any]) -> bool:
+    return str(row.get("provider_modes", "")) == "mock"
+
+
+def _cell(row: dict[str, Any], col: str) -> str:
+    if col == "usd_per_job":  # a mock row costs nothing because nothing was called: show "—", never a fake $0
+        v = row.get(col)
+        return "—" if v is None or _is_mock(row) else f"${float(v):.4f}"
+    return _fmt(row.get(col))
+
+
 def bench_tables() -> str:
     if not REPORT.exists():
         return "_Bench pending: run `make bench`._"
@@ -165,6 +207,7 @@ def bench_tables() -> str:
         "verified_rate",
         "verified_but_off",
         "median_iters",
+        "usd_per_job",
     ]
     for key, title in names.items():
         t = rep.get("tables", {}).get(key)
@@ -179,7 +222,9 @@ def bench_tables() -> str:
         out.append("| " + " | ".join(cols) + " |")
         out.append("|" + "---|" * len(cols))
         for r in t.get("rows", []):
-            out.append("| " + " | ".join(_fmt(r.get(c)) for c in cols) + " |")
+            out.append("| " + " | ".join(_cell(r, c) for c in cols) + " |")
+        if any(_is_mock(r) for r in t.get("rows", [])):
+            out.append("\n_usd_per_job is — on mock rows: mock providers make no paid calls._")
         if t.get("note"):
             out.append(f"\n_{t['note']}_")
     mo = rep.get("measure_only")
@@ -240,7 +285,242 @@ def evidence() -> str:
     return "\n".join(out)
 
 
-BLOCKS = {"meta-tooling": meta_table, "bench": bench_tables, "evidence": evidence}
+# --- first screen: link row, status line, headline numbers ---------------------------------------------------------
+
+LINK_SLOTS: tuple[tuple[str, str], ...] = (
+    ("live_site", "Live site"),
+    ("video", "Video"),
+    ("judges", "Judges page"),
+    ("sample", "Try a sample"),
+)
+DERIVED_PATHS = {"judges": "/judges", "sample": "/jobs/demo"}  # filled from live_site when left empty
+
+
+def _read_links() -> dict[str, Any]:
+    if not LINKS.exists():
+        return {}
+    data = json.loads(LINKS.read_text(encoding="utf-8"))
+    return data if isinstance(data, dict) else {}
+
+
+def links_row() -> str:
+    """Live site · Video · Judges page · Try a sample, from `docs/links.json`; a slot with no URL says "(coming)"."""
+    data = _read_links()
+    live = str(data.get("live_site") or "").strip().rstrip("/")
+    parts: list[str] = []
+    for key, label in LINK_SLOTS:
+        url = str(data.get(key) or "").strip()
+        if not url and live and key in DERIVED_PATHS:
+            url = live + DERIVED_PATHS[key]
+        if url and not url.startswith(("https://", "http://")):
+            raise ValueError(f"docs/links.json: {key} must be an http(s) URL, got {url!r}")
+        parts.append(f"**[{label}]({url})**" if url else f"{label} _(coming)_")
+    parts += ["[Results](#results)", "[Reproduce](eval/REPRODUCE.md)", "[Docs](docs/README.md)"]
+    return " · ".join(parts)
+
+
+def _photo_counts(rep: dict[str, Any]) -> tuple[int, int]:
+    """(real photos measured, real parts with ruler ground truth) as the latest reports count them."""
+    secs = (rep.get("measure_only") or {}).get("sections") or {}
+    photos = sum(int((secs.get(k) or {}).get("n_photos") or 0) for k in ("reference_objects_real", "real_parts_ruler"))
+    rr = (rep.get("tables") or {}).get("real_ruler") or {}
+    parts = int(rr.get("n") or 0) if rr.get("status") == "ok" else 0
+    return photos, parts
+
+
+def status_line() -> str:
+    """Provider mode, report date and commit, real-data counts and a plain honesty sentence, all from the reports."""
+    rep = _load("report.json")
+    if not rep:
+        return "> **Status:** no bench report yet; run `make bench`. No number on this page is final."
+    mode = str(rep.get("mode", "?"))
+    date = str(rep.get("generated_at", "?"))[:10]
+    sha = str(rep.get("git_sha", "?"))[:7]
+    photos, parts = _photo_counts(rep)
+    repairs = int((_load("impact.json") or {}).get("n_sessions") or 0)
+    head = (
+        f"> **Status: {mode} providers** · bench report {date} at commit `{sha}` · real photos measured: {photos} · "
+        f"real parts with ruler ground truth: {parts} · real repairs logged: {repairs}"
+    )
+    on = "synthetic photos" if photos == 0 else f"synthetic photos and {photos} real photos"
+    if mode == "mock":
+        body = (
+            f"All numbers below come from deterministic mock models on {on}; live runs are pending (no live model call "
+            "has been made yet). They show that the pipeline, verifier and scorer work end to end; they do not measure "
+            "any model."
+        )
+    else:
+        rows = [r for t in (rep.get("tables") or {}).values() if isinstance(t, dict) for r in t.get("rows") or []]
+        mixed = any("mock" in str(r.get("provider_modes", "")) for r in rows)
+        body = f"Numbers below come from {mode} model calls on {on}." + (
+            " Some stages ran as labelled mocks: see `provider_modes` in `eval/reports/latest/report.json`."
+            if mixed
+            else ""
+        )
+    if photos == 0 or parts == 0:
+        body += " Real-photo results are pending and say so in their tables."
+    return f"{head}\n>\n> {body}"
+
+
+def headline() -> str:
+    """Four numbers above the fold, each with the file it is read from and the provider mode behind it."""
+    rep = _load("report.json") or {}
+    tables = rep.get("tables") or {}
+    tag = "; mock providers" if rep.get("mode") == "mock" else ""
+    src = "`eval/reports/latest/report.json`"
+    rows = ["| Number | What it counts | Source |", "|---|---|---|"]
+    byp = _load("bypass.json")
+    if byp:
+        rows.append(
+            f"| **{byp['blocked']}/{byp['attempts']}** | lying-model attacks blocked by code; suite: {byp.get('suite', '?')} "
+            "| `eval/reports/latest/bypass.json` |"
+        )
+    else:
+        rows.append("| pending | lying-model attacks blocked by code | run `uv run python -m eval.bypass` |")
+    vbo = [
+        f"**{(tables[k].get('headline') or {}).get('verified_but_off')}** {label}"
+        for k, label in (("synthetic", "synthetic"), ("reference_objects", "reference objects"))
+        if (tables.get(k) or {}).get("status") == "ok" and (tables[k].get("headline") or {}).get("verified_but_off")
+    ]
+    rows.append(
+        f"| {' · '.join(vbo) or 'pending'} | verified parts that are > 0.5 mm off the ground truth (off / verified){tag} "
+        f"| {src} → `tables.*.headline.verified_but_off` |"
+    )
+    suites = [
+        f"**{h['correct']}/{h['n']}** {label}"
+        for k, label in (("control", "control"), ("redteam", "red-team"))
+        if (h := (tables.get(k) or {}).get("headline")) and "correct" in h
+    ]
+    rows.append(
+        f"| {' · '.join(suites) or 'pending'} | intact photos accepted · bad or unsuitable photos rejected or "
+        f"refused{tag} | {src} → `tables.control`, `tables.redteam` |"
+    )
+    syn = tables.get("synthetic") or {}
+    h = syn.get("headline") or {}
+    if syn.get("status") == "ok" and h.get("median_abs_err_mm") is not None:
+        rows.append(
+            f"| **{_fmt(h['median_abs_err_mm'])} mm** | median absolute error per dimension, synthetic photos, config "
+            f"{h.get('config')}, n = {h.get('n')}{tag} | {src} → `tables.synthetic.headline` |"
+        )
+    else:
+        rows.append(f"| pending | median absolute error, synthetic photos | {src} |")
+    return "\n".join(rows)
+
+
+# --- built during the hackathon (git log) -------------------------------------------------------------------------
+
+
+def _git(*args: str) -> str:
+    return subprocess.run(
+        ["git", "-c", "core.quotepath=off", *args], cwd=ROOT, capture_output=True, text=True, check=True
+    ).stdout
+
+
+@dataclass
+class Commit:
+    short: str
+    when: datetime
+    subject: str
+    lines_added: dict[str, list[int]]  # area -> [code/docs lines, data/report/generated lines]
+    files_added: dict[str, int]  # area -> new files
+
+
+def _area(path: str) -> str:
+    return next((label for prefix, label in AREAS if path.startswith(prefix)), OTHER_AREA)
+
+
+def _is_code(path: str) -> bool:
+    """Hand-made code or docs (by file type), as opposed to data, bench outputs, lockfiles and generated types."""
+    if path.startswith(NOT_CODE_PREFIXES) or path in GENERATED_FILES:
+        return False
+    name = path.rsplit("/", 1)[-1]
+    return name.endswith(CODE_SUFFIXES) or name.startswith(CODE_NAMES)
+
+
+def _commits() -> list[Commit]:
+    """Every commit, oldest first, with lines added (numstat) and files created (summary) per area."""
+    out: list[Commit] = []
+    raw = _git("log", "--reverse", "--no-renames", "--numstat", "--summary", "--format=@@%x1f%h%x1f%aI%x1f%s")
+    for line in raw.splitlines():
+        if line.startswith("@@\x1f"):
+            _, short, when, subject = line.split("\x1f", 3)
+            out.append(Commit(short, datetime.fromisoformat(when), subject, {}, {}))
+        elif not out or not line.strip():
+            continue
+        elif line.startswith(" create mode "):
+            area = _area(line.split(" ", 4)[-1])
+            out[-1].files_added[area] = out[-1].files_added.get(area, 0) + 1
+        elif "\t" in line:
+            added, _, path = line.split("\t", 2)
+            if added.isdigit():  # binary files show "-"
+                counts = out[-1].lines_added.setdefault(_area(path), [0, 0])
+                counts[0 if _is_code(path) else 1] += int(added)
+    return out
+
+
+def _et(t: datetime) -> str:
+    return t.astimezone(ET).strftime("%Y-%m-%d %H:%M ET")
+
+
+def built() -> str:
+    """Commits since the hackathon start, and files and lines added per top-level area, computed from git."""
+    try:
+        commits = _commits()
+    except (OSError, subprocess.CalledProcessError):
+        return "_git history unavailable: run `uv run python -m tools.readme` inside the repository._"
+    inside = [c for c in commits if c.when >= HACKATHON_START]
+    before = [c for c in commits if c.when < HACKATHON_START]
+    if not inside:
+        return "_No commits since the hackathon start yet._"
+    out = [
+        f"**{len(inside)} commits** between {_et(inside[0].when)} and {_et(inside[-1].when)}; the hackathon started "
+        f"{_et(HACKATHON_START)}. Commits dated before the start: **{len(before)}**."
+    ]
+    if before:
+        out.append("\nBefore the start (not hackathon work): " + ", ".join(f"`{c.short}`" for c in before) + ".")
+    out += [
+        "",
+        "| Area | Files added | Lines added: code and docs | Lines added: data, reports, lockfiles, generated "
+        "| First commit | Last commit |",
+        "|---|---|---|---|---|---|",
+    ]
+    labels = [label for _, label in AREAS] + [OTHER_AREA]
+    tot = [0, 0, 0]
+    for label in labels:
+        touched = [c for c in inside if label in c.lines_added or label in c.files_added]
+        if not touched:
+            continue
+        files = sum(c.files_added.get(label, 0) for c in inside)
+        code = sum(c.lines_added.get(label, [0, 0])[0] for c in inside)
+        data = sum(c.lines_added.get(label, [0, 0])[1] for c in inside)
+        tot = [tot[0] + files, tot[1] + code, tot[2] + data]
+        name, _, what = label.partition(" (")
+        shown = f"`{name}` ({what}" if what else (f"`{name}`" if name.endswith("/") else name)
+        out.append(
+            f"| {shown} | {files:,} | {code:,} | {data:,} | {_et(touched[0].when)[:10]} | {_et(touched[-1].when)[:10]} |"
+        )
+    out.append(f"| **Total** | **{tot[0]:,}** | **{tot[1]:,}** | **{tot[2]:,}** | | |")
+    out += ["", "<details><summary>Every commit since the start, oldest first</summary>", ""]
+    out += ["| Date | Commit | Subject |", "|---|---|---|"]
+    out += [f"| {_et(c.when)} | `{c.short}` | {c.subject.replace('|', '/')} |" for c in inside]
+    out += ["", "</details>"]
+    out.append(
+        "\n_Generated from `git log --numstat --summary` by `tools/readme.py` (author dates, Eastern Time). Lines added "
+        "are summed over commits, so a file rewritten twice counts twice. A commit made after the last regeneration "
+        "appears at the next `make bench`._"
+    )
+    return "\n".join(out)
+
+
+BLOCKS: dict[str, Callable[[], str]] = {
+    "links": links_row,
+    "status": status_line,
+    "headline": headline,
+    "meta-tooling": meta_table,
+    "bench": bench_tables,
+    "evidence": evidence,
+    "built": built,
+}
 
 
 def render(text: str) -> str:

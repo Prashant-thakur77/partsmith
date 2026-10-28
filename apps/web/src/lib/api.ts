@@ -174,7 +174,7 @@ export type FixJobInput = {
   /** Optional 6–8 s orbit clip ("walk around it", MP4/MOV/WebM); only sent when the server accepts an `orbit` field. */
   orbit?: File | null;
   /** Tap-to-point feature hints on the top photo (image pixels + kind); a tap is a segmenter prompt, never a dimension. */
-  points?: { x: number; y: number; kind: "hole" | "slot" | "tab" | "broken_edge" }[] | null;
+  points?: { x: number; y: number; kind: "hole" | "slot" | "tab" | "broken_edge" | "exclude" }[] | null;
   /** Optional voice note about the walk-around clip (the narration steers; it never sets a number). */
   narration?: File | null;
   /** Optional city for nearby print shops on the buy-or-print card. */

@@ -1,0 +1,66 @@
+{
+  "job_id": "j_261028_2fec2bd1",
+  "slug": null,
+  "title": "Custom part (not a battery compartment cover: its thickness (9.60 mm) is outside the battery_cover template's 1–3 mm range)",
+  "status": "verified",
+  "prints": [
+    {
+      "material": "PLA",
+      "volume_mm3": 5097.0,
+      "grams": 6.32,
+      "print_minutes": 14.4,
+      "filament_cost": {
+        "INR": 7.58,
+        "USD": 0.13
+      },
+      "price_per_kg": {
+        "INR": 1200.0,
+        "USD": 20.0
+      },
+      "assumptions": [
+        "grams: solid-volume mass at 100 % infill (volume x density: PLA 1.24, PETG 1.27 g/cm^3); a real print weighs less",
+        "minutes: rough estimate: (volume / 8 mm^3/s + layers x 4 s) / 60, 0.2 mm layers, 100 % infill",
+        "filament cost: grams x an assumed 1 kg spool price (INR 1200/kg, USD 20/kg); not a quote, and no shop margin or electricity"
+      ]
+    },
+    {
+      "material": "PETG",
+      "volume_mm3": 5097.0,
+      "grams": 6.47,
+      "print_minutes": 14.4,
+      "filament_cost": {
+        "INR": 9.06,
+        "USD": 0.14
+      },
+      "price_per_kg": {
+        "INR": 1400.0,
+        "USD": 22.0
+      },
+      "assumptions": [
+        "grams: solid-volume mass at 100 % infill (volume x density: PLA 1.24, PETG 1.27 g/cm^3); a real print weighs less",
+        "minutes: rough estimate: (volume / 8 mm^3/s + layers x 4 s) / 60, 0.2 mm layers, 100 % infill",
+        "filament cost: grams x an assumed 1 kg spool price (INR 1400/kg, USD 22/kg); not a quote, and no shop margin or electricity"
+      ]
+    }
+  ],
+  "lookup": {
+    "query": "Custom part (not a battery compartment cover: its thickness (9.60 mm) is outside the battery_cover template's 1–3 mm range) — user: Measure this LEGO 2×4 brick (reference object).",
+    "city": null,
+    "oem": null,
+    "offers": [],
+    "places": [],
+    "dropped": [],
+    "searched": false,
+    "queries": 0,
+    "mode": "mock",
+    "provider": "mock",
+    "model": "muse-wonder-1.0",
+    "usd": 0.0,
+    "label": "MOCK — no web search ran"
+  },
+  "mode": "mock",
+  "created_at": 1793208448.2489703,
+  "notes": [
+    "MOCK — no web search ran: no seller or price on this card came from the web"
+  ]
+}

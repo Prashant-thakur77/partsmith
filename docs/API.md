@@ -113,9 +113,25 @@ Screen calibration (ID-1 card 85.60 × 53.98 mm) happens in the browser and is s
 | GET | `/jobs/{id}/buy-or-print` | `BuyOrPrint` (below): the stored card, or the print side computed now with `lookup: null` (a GET never starts a search). `409 no_program` before the job has a part program |
 | POST | `/jobs/{id}/buy-or-print` | `{"city"?: str}` → `BuyOrPrint` after a lookup (search grounding; `buy_lookup` model_call on the job, cost counted there); stored as the job's card. `409 not_finished` / `409 no_program` |
 
-`points` = feature taps in top-photo pixels as displayed (EXIF orientation applied, i.e. the browser's frame), `{"top": [{"x": float, "y": float, "kind": "hole"|"slot"|"tab"|"broken_edge", "id"?: str}]}`
-(`kind` defaults to `hole`, at most 32 points). Each tap becomes a point prompt for the segmenter and the feature is measured by
-code; a tap never sets a dimension. Malformed input → `422 invalid_points`; a clip that is not MP4/MOV/WebM → `415`.
+`points` = feature taps in top-photo pixels as displayed (EXIF orientation applied, i.e. the browser's frame), `{"top": [{"x": float, "y": float, "kind": "hole"|"slot"|"tab"|"broken_edge"|"exclude", "id"?: str}]}`
+(`kind` defaults to `hole`, at most 32 points). Each feature tap becomes a point prompt for the segmenter and the feature is
+measured by code; a tap never sets a dimension. An `exclude` tap marks something that is not the part (a finger, glare,
+clutter): it is not a feature but a negative point sent with every point prompt whose crop holds it. A `broken_edge` tap
+also lets the length question ask only for the missing piece (see "A broken end of unknown length"). Malformed input →
+`422 invalid_points`; a clip that is not MP4/MOV/WebM → `415`.
+
+**Negative points and mask confidence (SAM 3.1).** Every point prompt carries negative points besides its positive one:
+the centres of the mat markers inside its crop (nearest first, at most 4; the crop reaches the nearest marker within
+60 mm), the user's `exclude` taps, and, when the capture gate flagged glare on that photo, a pixel in the largest
+blown-out blob on the part; a negative closer than 1.5 mm to the positive point is dropped (at most 8 per prompt). Requests
+ask for confidence (`metadata.include_confidence: "true"`). Each mask's confidence `c` widens the ±σ of every value measured
+from it, `σ_eff = σ × (1 + 2 × (1 − c))` (unchanged at c = 1, doubled at 0.5); below `c = 0.5` a pointed feature is not used
+and its log line asks for a retake in plain words (agent tool `segment_points` returns `sigma_mm`, `confidence`,
+`retake`). The part's outline mask does the same when it comes from SAM: its `Measurements` values are widened and the
+capture report gains a `mask_confidence` check (`warn` below 0.5, never `fail`); on the top photo the job then asks
+`capture.retake.mask` (`continue` | `retake`, default `continue`). Deterministic stand-ins (threshold, flood fill) have no
+confidence and change nothing; mock point masks carry a labelled edge-contrast proxy (`mask_source` `mock-flood`, evidence
+note "MOCK: edge-contrast proxy, not SAM"). σ is reported uncertainty only: the verifier's thresholds never read it.
 
 **Narrated walk-around.** When the `orbit` clip has a sound track, or a short voice note comes with it (service view
 `narration`: wav/webm/ogg/mp3/m4a), Muse Spark (`narrate` stage, video + audio understanding; the note is transcribed
@@ -157,7 +173,25 @@ side view or walk-around frames the verifier then adds P0 tests `bbox.x.height` 
 within ±0.3 mm of both the full-height reading and the reading for ends at half the height, so such a part stays best
 effort until a side photo settles it (the fix loop stops early: no model edit can). `Verification.unchecked` lists
 every program knob no test compared with a measured or user-stated value (`{"param", "label", "value", "unit",
-"source": "inferred", "note"}`): template defaults and inferred values, labelled not verified whatever the status.
+"source": "inferred", "note"}`): template defaults and inferred values, labelled not verified whatever the status. A
+length the user stated (below) is listed there too, with `"source": "user_stated"`: stated, not observed.
+
+**A broken end of unknown length.** When a located break reaches an end of the footprint (the rule that makes `bbox.x`
+informational) and the chosen template has a length knob, the photo cannot give the replacement's length. The job then
+takes it from the user, never from a model: (1) the `/fix` intent, parsed by code (unit-aware: "it was 51 mm long",
+"about 5.1 cm long", "original length: 51 mm"; mm, cm, inches; "about/around/roughly/~" → ±1 mm, an explicit "± x mm"
+wins, otherwise ±0.5 mm for a ruler); else (2) with a `broken_edge` tap, one question `length.missing` that states the
+length the photo measures from the intact end up to the tap and asks only for the missing piece (± the tap's 0.5 mm
+added in quadrature); else (3) one question `length.original` ("How long was it before it broke? (mm, a ruler is fine) —
+or measure the matching intact part, or type 'skip'"). Both questions are `expects: "text"`, default `"skip"`; answers
+are a number (mm unless a unit is given) or `skip` (also empty/"don't know"), which keeps the old behaviour (length
+inferred, labelled NOT verified). A value outside the template knob's range, or more than 1 mm + σ shorter than the
+broken piece in the photo, is refused with a log line and the length stays inferred. An accepted value is
+`Measured{source: "user_stated", sigma_mm, evidence.note: "stated by the user (...)"}` (stored as `stated.json`), sets
+the length knob, and the guards refuse any fixer or agent edit of that knob. The verifier leaves the strip that length
+adds beyond the broken end out of every comparison (like the completed region), adds the P0 consistency test
+`bbox.x.stated` (CAD length within ±0.3 mm of the stated value: it can block a part, never pass one), adds no residual
+(not in the max error) and says so in `reasons`; the rest of the part verifies on its intact region as before.
 
 ## Registry
 | Method | Path | Returns |

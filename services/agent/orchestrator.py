@@ -36,13 +36,13 @@ from partsmith_schemas import (
     Source,
     StageEvent,
 )
-from partsmith_schemas.common import HAUSDORFF_PASS_MM, IOU_PASS
+from partsmith_schemas.common import HAUSDORFF_PASS_MM, IOU_PASS, Evidence
 from partsmith_schemas.measurement import CaptureReport
 from partsmith_schemas.partspec import SlotFeature, ThroughHole, Unknown
 from partsmith_schemas.verification import Verification
 from pydantic import ValidationError
 
-from services.agent import guards, lessons, mock_brain, prompt_loader, providers
+from services.agent import guards, lessons, mock_brain, prompt_loader, providers, stated
 from services.agent.jobs import Job, JobCancelled, QuestionTimeout, Runner, context_hash
 from services.agent.providers import Completion, ModelRequest, ProviderError
 from services.agent.templates import Template, get_template, knobs_at, list_templates
@@ -57,7 +57,7 @@ from services.metrology.segment import ProviderSegmenter
 from services.verifier.camera import CameraView
 from services.verifier.part_tests import unchecked_values
 from services.verifier.render import Frame, rasterize_polygon
-from services.verifier.verify import MEAN_GATE_MM, PhotoMask, VerifyOutput, verify
+from services.verifier.verify import MEAN_GATE_MM, BreakEnds, PhotoMask, VerifyOutput, break_ends, verify
 
 Strategy = Literal["template", "free_code", "human"]
 StageName = Literal[
@@ -535,6 +535,10 @@ class FixRun:
         self.narration: providers.Narration | None = None  # Spark's reading of a narrated walk-around (steers only)
         self.orbit_footprint: Any = None  # the walk-around's own footprint on the mat (shapely Polygon) when measured
         self.completion_accepted = False
+        # Dimensions the user stated because the photo cannot show them (measured quantity -> value), and the knobs
+        # they fix (knob -> why): the guards never move those, the verifier treats them as stated, not observed.
+        self.stated: dict[str, Measured] = {}
+        self.locked: dict[str, str] = {}
 
     # ---- events ------------------------------------------------------------------------------------------------------
     def stage_event(self, stage: StageName, status: str, label: str, ms: int | None = None) -> None:
@@ -614,6 +618,7 @@ class FixRun:
         self.understand()
         self.ask()
         self.plan()
+        self.ask_stated_length()
         first = self.build_round(self.strategy, iter_label="first build")
         if first.score == math.inf and self.strategy == "template" and not self.opts.single_shot:
             self.switch_strategy()
@@ -750,7 +755,32 @@ class FixRun:
     # ---- 1. measure ------------------------------------------------------------------------------------------------------
     def segmenter(self) -> ProviderSegmenter:
         hint = self.job.input.family_hint
-        return ProviderSegmenter(providers.segment, family_word=hint.value.replace("_", " ") if hint else None)
+        # A mock mask is labelled as one: its score is not SAM's confidence, so it never widens a value's ±σ.
+        source = "mock-threshold" if providers.stage_mode("segment") == "mock" else "sam-3.1"
+        return ProviderSegmenter(
+            providers.segment, family_word=hint.value.replace("_", " ") if hint else None, source=source
+        )
+
+    def confidence_retake(self, view: str, cap: CaptureReport) -> None:
+        """The segmenter is unsure of the part's outline (`mask_confidence` warning): the values already carry a wider
+        ±σ; ask whether to retake the photo (default: continue, so unattended runs go on)."""
+        low = next((c for c in cap.checks if c.name == "mask_confidence" and c.severity != "ok"), None)
+        if low is None:
+            return
+        self.log(f"{view} photo: {low.reason} (every value from this mask carries a wider ±σ)", "warn")
+        if view != "top":
+            return
+        ans = self.question(
+            Unknown(
+                id="capture.retake.mask",
+                question=f"{low.reason} Retake the top photo, or continue with the wider ± values?",
+                expects="choice",
+                default="continue",
+                choices=["continue", "retake"],
+            )
+        )
+        if str(ans) == "retake":
+            raise _Finish("failed", {"retake_reason": low.reason, "capture": cap.model_dump(mode="json")})
 
     def measure_view(
         self,
@@ -783,6 +813,7 @@ class FixRun:
             "side", top.width.value, profile=profile, stated_thickness_mm=self.job.input.thickness_mm
         )
         self.store_view("side", ms)
+        self.confidence_retake("side", ms.result.capture)
         m = ms.result.measurements
         if m is None or m.thickness is None:
             self.log("side photo could not be measured; continuing with the top view", "warn")
@@ -884,6 +915,7 @@ class FixRun:
                     self.log(
                         f"photo check {c.name}: {c.reason} (measuring anyway; the verifier compares the result)", "warn"
                     )
+            self.confidence_retake("top", cap)
             self.accept_view("top", mo, m)
             labels = [f"top {m.length.value:.2f} × {m.width.value:.2f} mm, {len(m.holes)} hole(s)"]
             if "side" in self.photos:
@@ -1231,6 +1263,133 @@ class FixRun:
             if f.id == fid and isinstance(getattr(f, attr or "diameter", None), Measured):
                 setattr(f, attr or "diameter", Measured(value=num, source=Source.user_stated, sigma_mm=0.2))
 
+    # ---- 3b. ask: a length the photo cannot show ------------------------------------------------------------------------
+    def length_knob(self) -> str | None:
+        """The template knob that sets the part's length (MEASURE_MAP "length"), unless it is also the width (a round
+        part's diameter)."""
+        if self.template is None or self.strategy != "template":
+            return None
+        mm = self.template.measure_map
+        knob = mm.get("length")
+        return knob if knob and knob != mm.get("width") else None
+
+    def tapped_to_edge(self, ends: BreakEnds) -> float | None:
+        """Length the photo shows from the intact end up to the user's broken-edge tap (mm), or None without a usable
+        tap (none, both ends broken, or the tap is off the part's length)."""
+        from services.agent import evidence
+
+        if ends.length[0] == ends.length[1]:
+            return None
+        mo, top = self.mo.get("top"), self.measurements.get("top")
+        if mo is None or top is None or mo.detection is None or not top.part_to_mat:
+            return None
+        taps = [t for t in evidence.user_taps(self) if t.get("kind") == "broken_edge"]
+        if not taps:
+            return None
+        det = mo.detection
+        H = mo.H_top if mo.H_top is not None else det.H
+        Mi = np.linalg.inv(np.asarray(top.part_to_mat, dtype=np.float64))
+        x0, _, x1, _ = ends.bounds
+        out: list[float] = []
+        for t in taps:
+            mat = det.to_mm(np.array([[float(t["x"]), float(t["y"])]], dtype=np.float64), H)[0]
+            part = Mi @ np.array([mat[0], mat[1], 1.0])
+            a = ends.along(part[:2])
+            d = a - x0 if ends.length[1] else x1 - a  # from the intact end
+            if 0.0 < d <= (x1 - x0) + 2.0:
+                out.append(d)
+        return round(min(out), 2) if out else None
+
+    def ask_stated_length(self) -> None:
+        """A break that reaches an end of the part hides its length: no mirror restores it. Take the original length
+        from the user (intent words, or one question; with a broken-edge tap only the missing piece), never from a
+        model. The value is user-stated: it sets and locks the length knob, and the verifier treats it as stated, not
+        observed. "skip" (or no answer) keeps the length inferred, as before."""
+        knob = self.length_knob()
+        top = self.measurements.get("top")
+        if knob is None or top is None or self.spec is None or self.template is None:
+            return
+        ends = break_ends(self.spec, top)
+        if ends is None or not ends.spans_length:
+            return
+        spec_p = next((p for p in self.template.params if p.name == knob), None)
+        if spec_p is None:
+            return
+        seen = ends.bounds[2] - ends.bounds[0]
+
+        def accept(sv: stated.StatedValue) -> str | None:
+            why = stated.check_stated_length(
+                sv.value_mm, sv.sigma_mm, knob_min=spec_p.min, knob_max=spec_p.max, broken_length_mm=seen
+            )
+            if why is not None:
+                self.log(f"stated length refused: {why} ({sv.how})", "warn")
+                return why
+            m = Measured(value=sv.value_mm, source=Source.user_stated, sigma_mm=sv.sigma_mm,
+                         evidence=Evidence(view="top", note=f"stated by the user ({sv.how}); not observed: the photo "
+                                           "shows the broken part"))  # fmt: skip
+            self.stated["length"] = m
+            self.answers["length"] = sv.value_mm
+            self.locked[knob] = f"the user stated the original length ({sv.value_mm:g} mm)"
+            self.job.write_json("stated.json", {"length": m.model_dump(mode="json"), "knob": knob, "how": sv.how})
+            return None
+
+        with self.stage("ask", "The break reaches an end: asking how long the part was") as st:
+            said = stated.parse_intent_length(self.job.input.intent)
+            if said is not None and accept(said) is None:
+                st.label = f"Length {said.value_mm:g} ± {said.sigma_mm:g} mm, stated in the request (not measured)"
+                return
+            to_edge = self.tapped_to_edge(ends)
+            if to_edge is not None:
+                u = Unknown(
+                    id="length.missing",
+                    question=f"The photo measures {to_edge:.1f} mm from the intact end to the broken edge you tapped. "
+                    "How much is missing beyond that edge, in mm? (a ruler on the matching intact part is fine) — "
+                    "or type 'skip' to leave the length inferred",
+                    expects="text",
+                    default="skip",
+                )
+            else:
+                u = Unknown(
+                    id="length.original",
+                    question=f"The break reaches the end of the part, so the photo cannot show its length (it shows "
+                    f"{seen:.1f} mm of the broken piece). How long was it before it broke? (mm, a ruler is fine) — "
+                    "or measure the matching intact part, or type 'skip'",
+                    expects="text",
+                    default="skip",
+                )
+            raw = self.question(u)
+            got = stated.parse_answer_length(raw)
+            if got is None:
+                self.log(f"could not read {raw!r} as a length; the length stays inferred", "warn")
+                got = "skip"
+            if got == "skip":
+                st.status = "skip"
+                st.label = "Length skipped: it stays inferred from the photo of the broken part (not verified)"
+                return
+            sv = stated.with_tap(to_edge, got) if to_edge is not None else got
+            why = accept(sv)
+            st.label = (
+                f"Length not used: {why}"
+                if why
+                else f"Length {sv.value_mm:g} ± {sv.sigma_mm:g} mm, stated by the user (not measured)"
+            )
+
+    def apply_stated(self, code: str, values: dict[str, float]) -> dict[str, float]:
+        """The knobs a user-stated dimension fixes, set to that value (snapped to the knob's step and range)."""
+        if not self.stated:
+            return values
+        try:
+            specs = {p.name: p for p in parse_params(code)}
+        except ProgramError:
+            return values
+        mmap = template_measure_map(code, self.template if self.strategy == "template" else None)
+        out = dict(values)
+        for key, m in self.stated.items():
+            knob = mmap.get(key)
+            if knob is not None and knob in specs and knob in out:
+                out[knob] = guards.snap(m.value, specs[knob])
+        return out
+
     # ---- 4. plan ------------------------------------------------------------------------------------------------------------
     def plan(self) -> None:
         assert self.spec is not None
@@ -1362,7 +1521,7 @@ class FixRun:
             rnd = Round(self.iteration, strategy, code, {}, None, None, error="no runnable program")
             self.record_round(rnd, [], analysis or "builder failed", prev=self.current)
             return rnd
-        values = {s.name: float(s.default) for s in parse_params(code)}
+        values = self.apply_stated(code, {s.name: float(s.default) for s in parse_params(code)})
         return self.evaluate(code, values, strategy, [], analysis or iter_label, prev=self.current)
 
     def evaluate(
@@ -1390,7 +1549,7 @@ class FixRun:
         out: VerifyOutput | None = None
         with self.stage("verify", "Comparing the model with the photo") as st:
             out = verify(res, self.measurements, self.spec, photo_masks=self.masks, camera_views=self.camera_views(),
-                         known_form=strategy == "template")  # fmt: skip
+                         known_form=strategy == "template", stated=self.stated)  # fmt: skip
             v = out.verification
             st.label = (
                 f"{'Verified' if v.verified else v.status.replace('_', ' ')}: "
@@ -1618,6 +1777,7 @@ class FixRun:
             base.values,
             outline_params=outline_params,
             residual_deltas={k: sum(v) / len(v) for k, v in backing.items()},
+            locked=self.locked,
         )
 
     def fix_round(self) -> bool:
@@ -1888,7 +2048,8 @@ class FixRun:
             return v
         mmap = template_measure_map(b.code, self.template)
         views = [m.view for m in v.views]
-        return v.model_copy(update={"unchecked": unchecked_values(specs, b.values, mmap, v.tests, views)})
+        unchecked = unchecked_values(specs, b.values, mmap, v.tests, views, stated=self.stated)
+        return v.model_copy(update={"unchecked": unchecked})
 
     def final_verification(self) -> Verification | None:
         """The verdict: the best round's verification, re-run with the judge's vetoes when there are any."""
@@ -1905,6 +2066,7 @@ class FixRun:
                 vetoes=self.vetoes,
                 camera_views=self.camera_views(),
                 known_form=b.strategy == "template",
+                stated=self.stated,
             )
             v = out.verification
             b.out = out

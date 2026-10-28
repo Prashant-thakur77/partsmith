@@ -31,7 +31,7 @@ if TYPE_CHECKING:
 
 CONFLICT_MM = 0.5
 RECON_PX_PER_MM = 6.0  # rectified grid for the completion proposal (whole mat, so the gate can re-detect the markers)  # |cited - measured| beyond this is logged as a conflict
-POINT_KINDS = ("hole", "slot", "tab", "broken_edge")
+POINT_KINDS = ("hole", "slot", "tab", "broken_edge")  # feature taps; "exclude" taps are negatives, not features
 _MODEL_RE = re.compile(r"\b([A-Z][A-Za-z]{1,12}[- ]?[A-Z0-9]{0,4}\d{2,}[A-Z0-9-]*)\b")
 
 
@@ -70,15 +70,49 @@ def feature_points(run: FixRun) -> list[Any]:
             continue
         x, y = ev.pixels[0][:2]
         pts.append(FeaturePoint(f.id, "slot" if f.kind == "slot" else "hole", (float(x), float(y)), "model"))
+    for i, t in enumerate(user_taps(run), start=1):
+        kind = str(t.get("kind", "hole"))
+        if kind == "exclude":
+            continue  # a negative point for every prompt (`exclude_points`), not a feature
+        kind = kind if kind in POINT_KINDS else "hole"
+        pts.append(FeaturePoint(str(t.get("id") or f"tap_{i}"), kind, (float(t["x"]), float(t["y"])), "user"))
+    return pts
+
+
+def user_taps(run: FixRun) -> list[dict[str, Any]]:
+    """The user's taps on the top photo (`points.json` in the run dir, or RunOptions.points), photo pixels."""
     taps = dict(run.opts.points or {})
     saved = run.job.read_json("points.json")
     if isinstance(saved, Mapping):
         taps.update(saved)
-    for i, t in enumerate(taps.get("top") or [], start=1):
-        kind = str(t.get("kind", "hole"))
-        kind = kind if kind in POINT_KINDS else "hole"
-        pts.append(FeaturePoint(str(t.get("id") or f"tap_{i}"), kind, (float(t["x"]), float(t["y"])), "user"))
-    return pts
+    return [dict(t) for t in taps.get("top") or [] if isinstance(t, Mapping) and "x" in t and "y" in t]
+
+
+def point_negatives(run: FixRun, view: str = "top") -> list[tuple[float, float]]:
+    """Negative points for every feature prompt on `view` besides the mat markers (which the metrology adds itself):
+    the user's `exclude` taps (top view only) and, when the capture gate flagged glare on that photo, a pixel in the
+    largest blown-out blob on the part."""
+    out: list[tuple[float, float]] = []
+    if view == "top":
+        out += [(float(t["x"]), float(t["y"])) for t in user_taps(run) if t.get("kind") == "exclude"]
+    mo = run.mo.get(view)
+    glare_pt = _optional("services.metrology.points", "glare_point_px")
+    if mo is not None and glare_pt is not None and view in run.photos:
+        glare = next((c for c in mo.result.capture.checks if c.name == "glare"), None)
+        if glare is not None and glare.severity != "ok":
+            from services.metrology.measure import decode_image
+
+            g = glare_pt(decode_image(run.photos[view]), mo.photo_mask)
+            if g is not None:
+                out.append(g)
+                run.log(f"points: glare on the {view} photo; its brightest blob {tuple(round(v) for v in g)} px is "
+                        "sent as a negative point")  # fmt: skip
+    return out
+
+
+def point_mask_source() -> str:
+    """What the point segmenter is right now: SAM 3.1 (its score is a confidence) or the labelled mock."""
+    return "mock-flood" if providers.stage_mode("segment_points") == "mock" else "sam-3.1"
 
 
 def _quality_of(note: str | None, radius: float) -> float:
@@ -101,8 +135,10 @@ def apply_points(run: FixRun) -> None:
 
     img = decode_image(run.photos["top"])
     height = run.heights.get("top", (None, "prism"))[0]
+    negatives = point_negatives(run, "top")
     with providers.job_context(run.job.id, run.job.emit, ctx=run.job.ctx):
-        feats = measure(img, mo.detection, mo.pose, points, seg, thickness_mm=height, part_mask=mo.photo_mask)
+        feats = measure(img, mo.detection, mo.pose, points, seg, thickness_mm=height, part_mask=mo.photo_mask,
+                        mask_source=point_mask_source(), negatives_px=negatives)  # fmt: skip
     quality = [
         _quality_of(h.diameter.evidence.note if h.diameter.evidence else None, h.diameter.value / 2) for h in top.holes
     ]
@@ -112,7 +148,7 @@ def apply_points(run: FixRun) -> None:
         run.log(f"points: {n}")
     for f in feats:
         if not f.ok:
-            run.log(f"point {f.id} ({f.point_source}): {f.reason}", "warn")
+            run.log(f"point {f.id} ({f.point_source}): " + ("retake: " if f.retake else "") + f"{f.reason}", "warn")
     if holes != list(top.holes):
         top.holes = holes
         run.save_measurements()
@@ -131,12 +167,15 @@ def measure_points(run: FixRun, view: str, points_px: Sequence[Sequence[float]])
 
     pts = [FeaturePoint(f"pt_{i}", "hole", (float(p[0]), float(p[1])), "model") for i, p in enumerate(points_px, 1)]
     height = run.heights.get(view, (None, "prism"))[0]
+    negatives = point_negatives(run, view)
     with providers.job_context(run.job.id, run.job.emit, ctx=run.job.ctx):
         feats = measure(decode_image(run.photos[view]), mo.detection, mo.pose, pts, seg, thickness_mm=height,
-                        part_mask=mo.photo_mask)  # fmt: skip
+                        part_mask=mo.photo_mask, mask_source=point_mask_source(), negatives_px=negatives)  # fmt: skip
     return [
         {"id": f.id, "ok": f.ok, "kind": f.kind, "method": f.method, "center_mat_mm": f.center_mm,
-         "values_mm": {k: v.value for k, v in f.values.items()}, "reason": f.reason}
+         "values_mm": {k: v.value for k, v in f.values.items()},
+         "sigma_mm": {k: v.sigma_mm for k, v in f.values.items()}, "confidence": f.confidence,
+         "retake": f.retake, "reason": f.reason}
         for f in feats
     ]  # fmt: skip
 
@@ -251,7 +290,7 @@ def apply_narration(run: FixRun) -> str | None:
     seg = getattr(providers, "segment_points", None)
     if frames and seg is not None:
         with providers.job_context(run.job.id, run.job.emit, ctx=run.job.ctx):
-            feats = N.measure_located(frames, seg, thickness_mm=height)
+            feats = N.measure_located(frames, seg, thickness_mm=height, mask_source=point_mask_source())
     for c in checks:
         if not c.ok:
             run.log(f"narrated point {c.point.name!r} dropped: {c.reason}", "warn")

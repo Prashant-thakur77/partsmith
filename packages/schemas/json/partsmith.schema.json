@@ -780,7 +780,8 @@
             "moire",
             "scale",
             "contrast",
-            "single_part"
+            "single_part",
+            "mask_confidence"
           ],
           "title": "Name",
           "type": "string"
@@ -3631,7 +3632,7 @@
     },
     "UncheckedValue": {
       "additionalProperties": false,
-      "description": "A dimension of the final model (a PARAMS knob) that no measured or user-stated value was tested against.\n\nIt comes from the program (a template default or a value inferred from the measured ones), so it is labelled\ninferred and NOT verified, whatever the part's status. The silhouette comparison only covers it as far as it\nchanges a compared view's outline (`note` says which views were compared).",
+      "description": "A dimension of the final model (a PARAMS knob) that no measured or user-stated value was tested against.\n\nIt comes from the program (a template default or a value inferred from the measured ones), so it is labelled\ninferred and NOT verified, whatever the part's status. The silhouette comparison only covers it as far as it\nchanges a compared view's outline (`note` says which views were compared). A dimension the user stated because the\nphoto cannot show it (the original length of a broken part) is listed with source `user_stated`: stated, not\nobserved, so it is NOT verified either.",
       "properties": {
         "param": {
           "title": "Param",

@@ -80,7 +80,9 @@ class UncheckedValue(Strict):
 
     It comes from the program (a template default or a value inferred from the measured ones), so it is labelled
     inferred and NOT verified, whatever the part's status. The silhouette comparison only covers it as far as it
-    changes a compared view's outline (`note` says which views were compared)."""
+    changes a compared view's outline (`note` says which views were compared). A dimension the user stated because the
+    photo cannot show it (the original length of a broken part) is listed with source `user_stated`: stated, not
+    observed, so it is NOT verified either."""
 
     param: str
     label: str = ""

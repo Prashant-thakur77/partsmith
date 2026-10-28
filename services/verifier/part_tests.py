@@ -275,12 +275,17 @@ def unchecked_values(
     measure_map: Mapping[str, str],
     tests: Sequence[PartTest],
     views: Sequence[str],
+    stated: Mapping[str, Measured] | None = None,
 ) -> list[UncheckedValue]:
     """Every dimension knob of the program that no blocking test compared with a measured or user-stated value.
 
     A knob counts as checked when the program's MEASURE_MAP ties it to a measured quantity and that quantity's P0
     test ran (pass or fail). Counts (unit "") are not dimensions. Everything else comes from the program, a
     template default or a value inferred from the measured ones, and is labelled inferred, not verified.
+
+    ``stated`` (measured quantity -> the user's value): a dimension the photo cannot show, which the user stated (the
+    original length of a broken part). Its knob is listed with source ``user_stated`` while the model holds that
+    value: stated, not observed, so still not verified.
     """
     p0 = {t.id for t in tests if t.priority == "P0"}
     checked = set()
@@ -288,16 +293,34 @@ def unchecked_values(
         tid = _KEY_TEST.get(key, key if key.endswith(".diameter") else None)
         if tid is not None and tid in p0:
             checked.add(knob)
+    said = {measure_map[k]: m for k, m in (stated or {}).items() if k in measure_map}
     seen = ", ".join(views) if views else "no view"
     out: list[UncheckedValue] = []
     for p in params:
         if p.unit == "" or p.name in checked:
             continue
+        value = round(float(values.get(p.name, p.default)), 4)
+        m = said.get(p.name)
+        if m is not None and abs(value - m.value) <= BBOX_TOL_MM:
+            out.append(
+                UncheckedValue(
+                    param=p.name,
+                    label=p.label,
+                    value=value,
+                    unit=p.unit,
+                    source=Source.user_stated,
+                    note=(
+                        f"stated by the user ({m.value:g} +/- {m.sigma_mm:g} mm), not observed: the photo shows the "
+                        "broken part, so this value is not verified and not in the max error"
+                    ),
+                )
+            )
+            continue
         out.append(
             UncheckedValue(
                 param=p.name,
                 label=p.label,
-                value=round(float(values.get(p.name, p.default)), 4),
+                value=value,
                 unit=p.unit,
                 note=(
                     "not measured: from the program (template default or inferred from the measured values); no "

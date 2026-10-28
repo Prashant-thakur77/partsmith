@@ -1,0 +1,66 @@
+{
+  "job_id": "j_261028_8c786d43",
+  "slug": null,
+  "title": "Battery compartment cover (family hint 'cover')",
+  "status": "verified",
+  "prints": [
+    {
+      "material": "PLA",
+      "volume_mm3": 1921.4,
+      "grams": 2.38,
+      "print_minutes": 14.0,
+      "filament_cost": {
+        "INR": 2.86,
+        "USD": 0.05
+      },
+      "price_per_kg": {
+        "INR": 1200.0,
+        "USD": 20.0
+      },
+      "assumptions": [
+        "grams: solid-volume mass at 100 % infill (volume x density: PLA 1.24, PETG 1.27 g/cm^3); a real print weighs less",
+        "minutes: rough estimate: (volume / 8 mm^3/s + layers x 4 s) / 60, 0.2 mm layers, 100 % infill",
+        "filament cost: grams x an assumed 1 kg spool price (INR 1200/kg, USD 20/kg); not a quote, and no shop margin or electricity"
+      ]
+    },
+    {
+      "material": "PETG",
+      "volume_mm3": 1921.4,
+      "grams": 2.44,
+      "print_minutes": 14.0,
+      "filament_cost": {
+        "INR": 3.42,
+        "USD": 0.05
+      },
+      "price_per_kg": {
+        "INR": 1400.0,
+        "USD": 22.0
+      },
+      "assumptions": [
+        "grams: solid-volume mass at 100 % infill (volume x density: PLA 1.24, PETG 1.27 g/cm^3); a real print weighs less",
+        "minutes: rough estimate: (volume / 8 mm^3/s + layers x 4 s) / 60, 0.2 mm layers, 100 % infill",
+        "filament cost: grams x an assumed 1 kg spool price (INR 1400/kg, USD 22/kg); not a quote, and no shop margin or electricity"
+      ]
+    }
+  ],
+  "lookup": {
+    "query": "Battery compartment cover (family hint 'cover') — user: Make a replacement for this broken battery compartment cover.",
+    "city": null,
+    "oem": null,
+    "offers": [],
+    "places": [],
+    "dropped": [],
+    "searched": false,
+    "queries": 0,
+    "mode": "mock",
+    "provider": "mock",
+    "model": "muse-wonder-1.0",
+    "usd": 0.0,
+    "label": "MOCK — no web search ran"
+  },
+  "mode": "mock",
+  "created_at": 1793207611.6161423,
+  "notes": [
+    "MOCK — no web search ran: no seller or price on this card came from the web"
+  ]
+}

@@ -35,7 +35,14 @@ from typing import Any, Literal
 
 import cv2
 import numpy as np
-from partsmith_schemas.common import BBOX_TOL_MM, FEATURE_TOL_MM, HAUSDORFF_PASS_MM, IOU_PASS, DataOrigin
+from partsmith_schemas.common import (
+    BBOX_TOL_MM,
+    FEATURE_TOL_MM,
+    HAUSDORFF_PASS_MM,
+    IOU_PASS,
+    DataOrigin,
+    Measured,
+)
 from partsmith_schemas.measurement import Measurements
 from partsmith_schemas.partspec import PartSpec
 from partsmith_schemas.verification import (
@@ -50,6 +57,7 @@ from partsmith_schemas.verification import (
 from scipy.optimize import linear_sum_assignment
 from shapely import affinity
 from shapely.geometry import MultiPolygon, Point, Polygon, box
+from shapely.ops import unary_union
 
 from services.geom_worker.bake import part_facts
 from services.geom_worker.sandbox import ExecResult
@@ -436,7 +444,7 @@ def _orbit_reason(frames: Sequence[ViewResult], agg: ViewMetrics, skipped: int, 
 
 
 def _broken_tests(
-    tests: list[PartTest], region: Polygon | None, measurements: Mapping[str, Measurements]
+    tests: list[PartTest], region: Polygon | MultiPolygon | None, measurements: Mapping[str, Measurements]
 ) -> tuple[list[PartTest], list[str]]:
     """Dimension tests whose span crosses the broken region become informational (P1): the photo shows the broken
     part, the model is the intact replacement. ``region`` None: the top is missing (a height break), which only the
@@ -476,9 +484,31 @@ def _broken_tests(
     return out, informational
 
 
-def _reaches_ends(outline: Polygon, region: Any) -> tuple[bool, bool]:
-    """(along the long side, along the short side): does ``region`` come within ``BROKEN_MARGIN_MM`` of either end
-    of the outline's minimum-area rectangle (or reach past it)?"""
+@dataclass(frozen=True)
+class BreakEnds:
+    """Which ends of the outline's minimum-area rectangle a located outline break reaches. Coordinates are in that
+    rectangle's frame: the part frame turned by ``-angle_deg`` about the origin, so x runs along the long side."""
+
+    length: tuple[bool, bool]  # (low end, high end) along the long side
+    width: tuple[bool, bool]  # (low side, high side) along the short side
+    angle_deg: float
+    bounds: tuple[float, float, float, float]  # the outline's (x0, y0, x1, y1) in the rectangle's frame
+
+    @property
+    def spans_length(self) -> bool:
+        return any(self.length)
+
+    @property
+    def spans_width(self) -> bool:
+        return any(self.width)
+
+    def along(self, pt: Sequence[float]) -> float:
+        """Coordinate of a part-frame point along the long side (same frame as ``bounds``)."""
+        a = np.radians(self.angle_deg)
+        return float(np.cos(a) * pt[0] + np.sin(a) * pt[1])
+
+
+def _break_ends(outline: Polygon, region: Any) -> BreakEnds:
     xy = np.asarray(outline.minimum_rotated_rectangle.exterior.coords)[:3]
     e1, e2 = xy[1] - xy[0], xy[2] - xy[1]
     long_dir = e1 if np.hypot(*e1) >= np.hypot(*e2) else e2
@@ -486,7 +516,45 @@ def _reaches_ends(outline: Polygon, region: Any) -> tuple[bool, bool]:
     ox0, oy0, ox1, oy1 = affinity.rotate(outline, -ang, origin=(0, 0)).bounds
     rx0, ry0, rx1, ry1 = affinity.rotate(region, -ang, origin=(0, 0)).bounds
     m = BROKEN_MARGIN_MM
-    return (rx0 <= ox0 + m or rx1 >= ox1 - m), (ry0 <= oy0 + m or ry1 >= oy1 - m)
+    return BreakEnds((rx0 <= ox0 + m, rx1 >= ox1 - m), (ry0 <= oy0 + m, ry1 >= oy1 - m), ang, (ox0, oy0, ox1, oy1))
+
+
+def _reaches_ends(outline: Polygon, region: Any) -> tuple[bool, bool]:
+    """(along the long side, along the short side): does ``region`` come within ``BROKEN_MARGIN_MM`` of either end
+    of the outline's minimum-area rectangle (or reach past it)?"""
+    e = _break_ends(outline, region)
+    return e.spans_length, e.spans_width
+
+
+def break_ends(partspec: PartSpec | None, top: Measurements | None) -> BreakEnds | None:
+    """Where a located outline break sits on the top view's footprint (None: no located outline break). The same
+    rule the verifier uses to make the length/width tests informational: ``spans_length`` means the photo's length is
+    measured on the broken end, so the photo cannot give the replacement's length."""
+    region, _ = broken_region(partspec, top)
+    if region is None or top is None or len(top.outline_mm) < 3:
+        return None
+    outline = Polygon(top.outline_mm).buffer(0)
+    if outline.is_empty:
+        return None
+    return _break_ends(outline, region)
+
+
+def stated_extension(ends: BreakEnds, length_mm: float) -> Polygon | MultiPolygon | None:
+    """The strip a replacement of the user-stated length fills beyond the broken end(s) of the photo's outline (part
+    frame, with a ``BROKEN_MARGIN_MM`` margin). The photo cannot show it, so it is left out of the comparison like the
+    completed region. None when the stated length adds nothing or the break does not reach an end."""
+    ox0, oy0, ox1, oy1 = ends.bounds
+    extra = length_mm - (ox1 - ox0)
+    if extra <= 0 or not ends.spans_length:
+        return None
+    m = BROKEN_MARGIN_MM
+    strips = []
+    if ends.length[1]:
+        strips.append(box(ox1 - m, oy0 - m, ox1 + extra + m, oy1 + m))
+    if ends.length[0]:
+        strips.append(box(ox0 - extra - m, oy0 - m, ox0 + m, oy1 + m))
+    out = affinity.rotate(unary_union(strips), ends.angle_deg, origin=(0, 0))
+    return out if isinstance(out, Polygon | MultiPolygon) and not out.is_empty else None
 
 
 # Residual row (feature_id, quantity) behind each dimension test that a break can make informational.
@@ -510,6 +578,47 @@ def _split_broken_residuals(
         broken = (r.feature_id, r.quantity) in keys or r.feature_id in holes
         (info if broken else kept).append(r)
     return kept, info
+
+
+def _extend_for_stated(
+    region: Polygon | MultiPolygon, top: Measurements, length: Measured
+) -> tuple[Polygon | MultiPolygon, str]:
+    """The broken region plus the strip a replacement of the user-stated length fills beyond the broken end, and the
+    plain-words statement (empty when the break does not reach an end or the stated length adds nothing)."""
+    outline = Polygon(top.outline_mm).buffer(0) if len(top.outline_mm) >= 3 else None
+    if outline is None or outline.is_empty:
+        return region, ""
+    ends = _break_ends(outline, region)
+    strip = stated_extension(ends, length.value)
+    if strip is None:
+        return region, ""
+    grown = unary_union([region, strip])
+    if not isinstance(grown, Polygon | MultiPolygon):
+        return region, ""
+    seen = ends.bounds[2] - ends.bounds[0]
+    return grown, (
+        f"Length {length.value:.2f} +/- {length.sigma_mm:.2f} mm stated by the user, not observed: the photo shows "
+        f"the broken part {seen:.2f} mm long, so the {length.value - seen:.2f} mm beyond the broken end is left out "
+        "of every comparison like the completed region. The model is only checked to be the stated length "
+        "(bbox.x.stated); the length is NOT verified and is not in the max error."
+    )
+
+
+def _stated_length_test(length: Measured, model_mm: Value) -> PartTest:
+    """P0 consistency test: the model is the length the user stated (CAD length). It can block, never pass a part."""
+    ok = model_mm is not None and not isinstance(model_mm, bool) and abs(float(model_mm) - length.value) <= BBOX_TOL_MM
+    return PartTest(
+        id="bbox.x.stated",
+        description=(
+            f"length == {length.value:.2f} +/- {BBOX_TOL_MM} mm as stated by the user (not observed: the photo "
+            "shows the broken part; this only checks the model is the stated length)"
+        ),
+        value=None if model_mm is None or isinstance(model_mm, bool) else round(float(model_mm), 4),
+        expected=length.value,
+        tol=BBOX_TOL_MM,
+        passed=bool(ok),
+        priority="P0",
+    )
 
 
 def _snap_union(base: Frame, other: Frame) -> Frame:
@@ -549,6 +658,7 @@ def verify(
     camera_views: Mapping[str, CameraView] | None = None,
     refine_in_photo: bool = True,
     known_form: bool = False,
+    stated: Mapping[str, Measured] | None = None,
 ) -> VerifyOutput:
     """Compare the executed model with the measurements and decide ``verified`` (see module docstring).
 
@@ -557,6 +667,12 @@ def verify(
     program is a family template whose walls stand the stated height by design; an extrusion of a measured outline
     (free code) only guesses the 3D form, so a thick part's top-only length/width get height-bound tests
     (`part_tests.height_bound_tests`) unless a side view or walk-around frames show the heights.
+
+    ``stated``: dimensions the user stated because the photo cannot show them, keyed by measured quantity (only
+    ``"length"`` so far: the original length of a part whose break reaches an end). They are stated, not observed: the
+    strip the stated length adds beyond the broken end is left out of every comparison like the completed region, a P0
+    consistency test (``bbox.x.stated``) only checks that the model is the length the user said (it can block, never
+    pass a part), and no residual enters the max error.
     """
     t0 = time.perf_counter()
     th = thresholds or Thresholds(hausdorff_mm=HAUSDORFF_PASS_MM, iou=IOU_PASS)
@@ -594,7 +710,12 @@ def verify(
     view_metrics: list[ViewMetrics] = []
     view_gates: dict[str, list[str]] = {}
 
+    broken_part: Polygon | MultiPolygon | None
     broken_part, broken_info = broken_region(partspec, measurements.get("top"))
+    stated_len = (stated or {}).get("length")
+    stated_note = ""
+    if stated_len is not None and broken_part is not None:
+        broken_part, stated_note = _extend_for_stated(broken_part, measurements["top"], stated_len)
     prism: Mesh | None = None  # broken region as a volume in model coordinates (set once the top view is registered)
     region_model: Polygon | MultiPolygon | None = None  # the same region as a footprint in model coordinates
     break_h, height_info = broken_height(partspec, measurements)
@@ -696,6 +817,8 @@ def verify(
     if broken_part is not None or break_h is not None:
         tests, informational = _broken_tests(tests, broken_part, measurements)
         residuals, informational_residuals = _split_broken_residuals(residuals, informational)
+    if stated_note and stated_len is not None:
+        tests.append(_stated_length_test(stated_len, values.get("cad.length")))
     probes = _functional(exec_result, feats, hole_names)
     tests += as_part_tests(probes)  # P1: reported, never part of the pass rule
     functional = {
@@ -731,6 +854,9 @@ def verify(
             "informational_residuals": [r.model_dump(mode="json") for r in informational_residuals],
         }
         reasons.append(broken_info["statement"])
+        if stated_note:
+            reasons.append(stated_note)
+            broken_out["stated"] = {"length": stated_len.model_dump(mode="json") if stated_len else None}
         if informational:
             reasons.append(
                 "Informational only (they span the broken region the photo cannot show): "

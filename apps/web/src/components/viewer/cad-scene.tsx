@@ -12,10 +12,15 @@ import * as THREE from "three";
 import { LineMaterial } from "three/examples/jsm/lines/LineMaterial.js";
 import { LineSegments2 } from "three/examples/jsm/lines/LineSegments2.js";
 import { LineSegmentsGeometry } from "three/examples/jsm/lines/LineSegmentsGeometry.js";
+import { SOURCE_STYLES, type SourceKind, type ValueAnchor } from "@/lib/value-sources";
+import { SourceIcon } from "../jobs/source-key";
 import type { ViewData } from "./view-data";
 
 export type SectionState = { enabled: boolean; axis: "x" | "y" | "z"; t: number; flip: boolean };
-export type ViewerColors = { part: string; edge: string; cut: string; grid: string; gridStrong: string; measure: string };
+export type ViewerColors = { part: string; edge: string; cut: string; grid: string; gridStrong: string; measure: string; dark: boolean };
+
+/** A value drawn on the model by its source ("Colour by source"): a dimension line, a feature pin or a region outline. */
+export type SceneSourceMark = { id: string; kind: SourceKind; anchor: ValueAnchor; text: string; selected: boolean; unchecked: boolean };
 
 export type CadSceneProps = {
   data: ViewData;
@@ -31,6 +36,9 @@ export type CadSceneProps = {
   onContextLost?: () => void;
   /** Agent focus point (part frame, mm); the camera flies there and a marker pulses. */
   focus?: { at: [number, number, number]; key: string } | null;
+  /** Values tinted by source; clicking a callout selects it (the list beside the viewer is the keyboard route). */
+  sourceMarks?: SceneSourceMark[] | null;
+  onSelectSource?: (id: string) => void;
 };
 
 const AXIS_INDEX = { x: 0, y: 1, z: 2 } as const;
@@ -246,9 +254,133 @@ function FocusFly({ focus, radius, color }: { focus: { at: [number, number, numb
   );
 }
 
+type Bounds = { min: THREE.Vector3; max: THREE.Vector3; radius: number };
+
+/** Segments (pairs of points) and the label position for one mark, in the part frame (mm). */
+function markGeometry(anchor: ValueAnchor, b: Bounds): { segs: number[]; label: THREE.Vector3 } | null {
+  const { min, max, radius } = b;
+  const off = radius * 0.1;
+  const tick = radius * 0.035;
+  switch (anchor.type) {
+    case "dim": {
+      if (anchor.axis === "x") {
+        const y = min.y - off;
+        const z = min.z;
+        return {
+          segs: [min.x, y, z, max.x, y, z, min.x, y - tick, z, min.x, y + tick, z, max.x, y - tick, z, max.x, y + tick, z],
+          label: new THREE.Vector3((min.x + max.x) / 2, y - tick * 1.5, z),
+        };
+      }
+      if (anchor.axis === "y") {
+        const x = max.x + off;
+        const z = min.z;
+        return {
+          segs: [x, min.y, z, x, max.y, z, x - tick, min.y, z, x + tick, min.y, z, x - tick, max.y, z, x + tick, max.y, z],
+          label: new THREE.Vector3(x + tick * 1.5, (min.y + max.y) / 2, z),
+        };
+      }
+      const x = max.x + off;
+      const y = min.y - off;
+      return {
+        segs: [x, y, min.z, x, y, max.z, x - tick, y, min.z, x + tick, y, min.z, x - tick, y, max.z, x + tick, y, max.z],
+        label: new THREE.Vector3(x, y, (min.z + max.z) / 2),
+      };
+    }
+    case "point": {
+      const [x, y] = anchor.at;
+      if (!Number.isFinite(x) || !Number.isFinite(y)) return null;
+      const top = max.z + off * 0.6;
+      return { segs: [x, y, min.z, x, y, top], label: new THREE.Vector3(x, y, top) };
+    }
+    case "polygon": {
+      const pts = anchor.points;
+      if (pts.length < 3) return null;
+      const z = min.z + Math.max(0.05, (max.z - min.z) * 0.02);
+      const segs: number[] = [];
+      let cx = 0;
+      let cy = 0;
+      pts.forEach((p, i) => {
+        const q = pts[(i + 1) % pts.length]!;
+        segs.push(p[0], p[1], z, q[0], q[1], z);
+        cx += p[0];
+        cy += p[1];
+      });
+      return { segs, label: new THREE.Vector3(cx / pts.length, cy / pts.length, z) };
+    }
+  }
+}
+
+function SourceMarkLine({ segs, color, dash, selected, radius }: { segs: number[]; color: string; dash: "solid" | "dashed" | "dotted"; selected: boolean; radius: number }) {
+  const size = useThree((s) => s.size);
+  const obj = React.useMemo(() => {
+    const geo = new LineSegmentsGeometry();
+    geo.setPositions(segs);
+    const mat = new LineMaterial({ color: new THREE.Color(color).getHex(), linewidth: selected ? 3.5 : 2, worldUnits: false, depthTest: false, transparent: true });
+    if (dash !== "solid") {
+      mat.dashed = true;
+      mat.dashSize = dash === "dashed" ? radius * 0.045 : radius * 0.012;
+      mat.gapSize = dash === "dashed" ? radius * 0.03 : radius * 0.025;
+    }
+    const line = new LineSegments2(geo, mat);
+    line.computeLineDistances();
+    line.renderOrder = 11;
+    return line;
+  }, [segs, color, dash, selected, radius]);
+  React.useEffect(() => {
+    obj.material.resolution.set(size.width, size.height);
+  }, [obj, size]);
+  React.useEffect(
+    () => () => {
+      obj.geometry.dispose();
+      obj.material.dispose();
+    },
+    [obj],
+  );
+  return <primitive object={obj} />;
+}
+
+/** Callouts tinted by source: line + a label (icon, value, source) that selects the value when clicked. */
+function SourceMarks({ marks, bounds, dark, onSelect }: { marks: SceneSourceMark[]; bounds: Bounds; dark: boolean; onSelect?: (id: string) => void }) {
+  return (
+    <group>
+      {marks.map((m) => {
+        const g = markGeometry(m.anchor, bounds);
+        if (!g) return null;
+        const st = SOURCE_STYLES[m.kind];
+        const color = dark ? st.dark : st.light;
+        return (
+          <group key={m.id}>
+            <SourceMarkLine segs={g.segs} color={color} dash={st.dash} selected={m.selected} radius={bounds.radius} />
+            <Html position={g.label} center zIndexRange={[18, 0]}>
+              {/* The canvas is hidden from assistive tech; the value list beside the viewer is the keyboard route. */}
+              <button
+                type="button"
+                tabIndex={-1}
+                onClick={() => onSelect?.(m.id)}
+                className={
+                  "flex items-center gap-1 rounded-md border-2 bg-surface/95 px-1.5 py-0.5 font-mono text-[11px] whitespace-nowrap text-fg tnum shadow-sm" +
+                  (m.selected ? " outline-2 outline-offset-2 outline-[var(--ring)]" : "")
+                }
+                style={{ borderColor: color, borderStyle: st.dash === "solid" ? "solid" : st.dash }}
+              >
+                <span style={{ color }} className="inline-flex">
+                  <SourceIcon kind={m.kind} className="size-3" />
+                </span>
+                {m.text}
+                <span className="font-sans text-[10px] text-muted">· {st.label.toLowerCase()}</span>
+                {m.unchecked ? <span className="font-sans text-[10px] text-warn">· not checked</span> : null}
+              </button>
+            </Html>
+          </group>
+        );
+      })}
+    </group>
+  );
+}
+
 function SceneContent(props: CadSceneProps) {
   const { data, ortho, showEdges, showGrid, section, measuring, points, onPick, fitNonce, colors } = props;
-  const { center, radius, min } = useBounds(data);
+  const { center, radius, min, max } = useBounds(data);
   const plane = React.useMemo(() => sectionPlane(data, section), [data, section]);
   const gridCell = radius > 60 ? 10 : radius > 12 ? 5 : 1;
   return (
@@ -281,6 +413,9 @@ function SceneContent(props: CadSceneProps) {
         />
       ) : null}
       <MeasureMarks points={points} radius={radius} color={colors.measure} />
+      {props.sourceMarks?.length ? (
+        <SourceMarks marks={props.sourceMarks} bounds={{ min, max, radius }} dark={colors.dark} onSelect={props.onSelectSource} />
+      ) : null}
       {props.focus ? <FocusFly focus={props.focus} radius={radius} color={colors.measure} /> : null}
       <Fitter data={data} ortho={ortho} nonce={fitNonce} />
       <GizmoHelper alignment="bottom-left" margin={[52, 52]}>

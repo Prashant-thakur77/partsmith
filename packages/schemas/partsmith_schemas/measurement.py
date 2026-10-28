@@ -36,6 +36,7 @@ class CaptureCheck(Strict):
         "scale",
         "contrast",
         "single_part",
+        "mask_confidence",  # the segmenter's own confidence in the part's outline (model masks only)
     ]
     passed: bool
     severity: Literal["ok", "warn", "fail"]

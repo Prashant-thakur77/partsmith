@@ -1,0 +1,104 @@
+// Unit tests for the fail → fix history reducer (node --test; no browser, no network). Reads committed replays.
+import assert from "node:assert/strict";
+import { readFileSync } from "node:fs";
+import test from "node:test";
+import { EventSchema } from "../src/lib/api-types.ts";
+import { editsText, headline, parseViews, roundsFromEvents, verdictFromLabel } from "../src/lib/fix-rounds.ts";
+
+const REPLAYS = new URL("../../../data/replays/", import.meta.url);
+// replays are found by their demo sample (data/replays/seed_index.json), so a re-seed with new job ids keeps working
+const SEED_INDEX = JSON.parse(readFileSync(new URL("seed_index.json", REPLAYS), "utf8"));
+const replayOf = (sample) => SEED_INDEX[sample];
+
+function replayEvents(id) {
+  return readFileSync(new URL(`${id}/run.jsonl`, REPLAYS), "utf8")
+    .split("\n")
+    .filter(Boolean)
+    .map((l) => EventSchema.parse(JSON.parse(l)));
+}
+
+const ev = (t, seq, extra) => EventSchema.parse({ job: "j", seq, ts: seq, t, ...extra });
+
+test("the L-bracket replay shows four failing rounds and a verified fifth, all from its own events", () => {
+  const s = roundsFromEvents(replayEvents(replayOf("demo-l-bracket")));
+  assert.equal(s.rounds.length, 5);
+  assert.deepEqual(
+    s.rounds.map((r) => r.verdict),
+    ["best_effort", "best_effort", "best_effort", "best_effort", "verified"],
+  );
+  assert.equal(s.final?.verified, true);
+  assert.equal(s.limitMm, 0.5);
+  assert.equal(s.headline, "Verified after 5 rounds (4 fixes)");
+  const [r1, r2, , , r5] = s.rounds;
+  assert.equal(r1.firstBuild, true);
+  assert.equal(editsText(r1), "first build");
+  assert.deepEqual(r2.edits, [{ param: "corner_radius", from: 2, to: 1.5 }]);
+  assert.equal(editsText(r2), "corner_radius 2.00→1.50 mm");
+  // the round's error is the verifier's max_error_mm metric, not a number made here
+  assert.ok(Math.abs(r2.maxErrorMm - 7.135) < 1e-9);
+  assert.ok(Math.abs(r5.maxErrorMm - 0.163) < 1e-9);
+  // per-view numbers come from the server's own text: both views once the agent inspected them
+  assert.deepEqual(r1.views.map((v) => v.view), ["top", "side"]);
+  assert.equal(r1.views[0].withinLimit, false);
+  assert.equal(r5.views.every((v) => v.withinLimit === true), true);
+  // each round links its residual overlays (top + side)
+  assert.deepEqual(r1.overlays.map((o) => o.view), ["top", "side"]);
+  assert.match(r5.overlays[0].url, /^\/api\/v1\/blobs\//);
+});
+
+test("a job verified on its first build says so and runs no agent", () => {
+  const s = roundsFromEvents(replayEvents(replayOf("demo-spacer")));
+  assert.equal(s.rounds.length, 1);
+  assert.equal(s.rounds[0].verdict, "verified");
+  assert.equal(s.headline, "Passed on the first build");
+  assert.equal(s.rounds[0].views.length, 1);
+});
+
+test("a best-effort job keeps its final status honest", () => {
+  const s = roundsFromEvents(replayEvents(replayOf("demo-hook")));
+  assert.equal(s.rounds.length, 6);
+  assert.equal(s.final?.status, "best_effort");
+  assert.equal(s.headline, "Best effort after 6 rounds");
+  assert.ok(s.rounds.every((r) => r.verdict !== "verified"));
+});
+
+test("verdicts come only from the verify stage label prefix; anything else is unknown", () => {
+  assert.equal(verdictFromLabel("Verified: top: IoU 0.99", "ok"), "verified");
+  assert.equal(verdictFromLabel("best effort: top: IoU 0.6", "ok"), "best_effort");
+  assert.equal(verdictFromLabel("failed: no solid", "ok"), "failed");
+  assert.equal(verdictFromLabel("Verified", "fail"), "failed");
+  assert.equal(verdictFromLabel("looks great", "ok"), "unknown");
+});
+
+test("per-view parsing reads the server's format and ignores junk", () => {
+  assert.deepEqual(parseViews("top: IoU 0.640, Hausdorff 10.57 mm at (1, 2); side: IoU 0.917, Hausdorff 1.34 mm"), [
+    { view: "top", iou: 0.64, hausdorffMm: 10.57 },
+    { view: "side", iou: 0.917, hausdorffMm: 1.34 },
+  ]);
+  assert.deepEqual(parseViews("nothing here"), []);
+});
+
+test("a running job reports rounds so far; a round without a verify label stays unknown", () => {
+  const events = [
+    ev("artifact", 1, { kind: "residual_heatmap", sha: "a", url: "/x.png", iter: 1, label: "round 1: residual_top" }),
+    ev("iteration", 2, { iter: 1, strategy: "template", edits: [], analysis: "first build", hausdorff_mm: 2.5, iou: 0.9, passed_tests: 3, total_tests: 5 }),
+  ];
+  const s = roundsFromEvents(events);
+  assert.equal(s.headline, "1 round so far");
+  assert.equal(s.rounds[0].verdict, "unknown");
+  assert.equal(s.rounds[0].maxErrorMm, 2.5);
+  assert.equal(s.rounds[0].overlays.length, 1);
+  assert.equal(s.limitMm, null);
+  assert.equal(headline([], null), "No build yet.");
+});
+
+test("free-code rounds that rewrite the program are named, and set_params fills missing edits", () => {
+  const events = [
+    ev("iteration", 1, { iter: 2, strategy: "free_code", edits: [], diff: "--- a\n+++ b\n" }),
+    ev("iteration", 2, { iter: 3, strategy: "template", edits: [] }),
+    ev("tool_call", 3, { stage: "fix", name: "set_params", args: { edits: [{ param: "width", from: 30, to: 24.6 }] }, result: "committed round 3: width", ok: true }),
+  ];
+  const s = roundsFromEvents(events);
+  assert.equal(editsText(s.rounds[0]), "program rewritten (free code)");
+  assert.equal(editsText(s.rounds[1]), "width 30.00→24.60 mm");
+});

@@ -21,7 +21,7 @@ import cv2
 import numpy as np
 from numpy.typing import ArrayLike, NDArray
 from partsmith_schemas.common import DataOrigin, Measured, Source
-from partsmith_schemas.measurement import Measurements, MeasureResult, ViewKind
+from partsmith_schemas.measurement import CaptureCheck, CaptureReport, Measurements, MeasureResult, ViewKind
 from scipy.ndimage import gaussian_filter1d
 from shapely.geometry import Polygon
 from shapely.ops import unary_union
@@ -42,6 +42,7 @@ from .calibrate import (
     rectify,
 )
 from .capture_gate import run_gate
+from .confidence import MODEL_MASK_SOURCES, RETAKE_BELOW, retake_reason, widen_measurements
 from .features import (
     FootprintFeatures,
     SeeThroughFit,
@@ -653,6 +654,9 @@ def measure_photo(
 
     if view == ViewKind.top and footprint is not ground and thickness_mm is not None:
         _height_bounds(meas, ground, thickness_mm)
+    if seg.source in MODEL_MASK_SOURCES:
+        meas = widen_measurements(meas, seg.score, seg.source)
+        capture = with_confidence_check(capture, seg.score, f"the part's outline in the {view.value} photo")
 
     rmask = _rasterize(footprint, rect.origin_mm, px_per_mm, rect.image.shape[:2])
     return MeasureOutput(
@@ -675,6 +679,21 @@ def measure_photo(
         hole_fits=hole_fits,
         top_px_per_mm=_top_px_per_mm(det, footprint, H_display),
     )
+
+
+def with_confidence_check(capture: CaptureReport, confidence: float, what: str) -> CaptureReport:
+    """The capture report plus a `mask_confidence` check: a warning (not a failure) below `RETAKE_BELOW`, so the
+    job asks whether to retake rather than stopping; the values are already widened for it."""
+    why = retake_reason(what, confidence)
+    check = CaptureCheck(
+        name="mask_confidence",
+        passed=True,
+        severity="warn" if why else "ok",
+        value=round(float(confidence), 4),
+        threshold=RETAKE_BELOW,
+        reason=why or f"The segmenter is {confidence:.0%} sure of {what}.",
+    )
+    return capture.model_copy(update={"checks": [*capture.checks, check]})
 
 
 def _height_bounds(meas: Measurements, ground: Polygon, thickness_mm: float) -> None:

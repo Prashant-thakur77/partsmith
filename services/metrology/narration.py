@@ -191,14 +191,19 @@ def _locate_frame(idx: int, img: U8, seg: Segmenter) -> LocatedFrame | None:
 
 
 def measure_located(
-    frames: dict[int, LocatedFrame], call: SegPointsCall, *, thickness_mm: float | None
+    frames: dict[int, LocatedFrame],
+    call: SegPointsCall,
+    *,
+    thickness_mm: float | None,
+    mask_source: str = "sam-3.1",
 ) -> list[FeatureMeasurement]:
-    """Measure every kept point on its own frame; values carry the narration provenance in their evidence note."""
+    """Measure every kept point on its own frame; values carry the narration provenance in their evidence note.
+    `mask_source` labels the point segmenter (`mock-flood` for the mock), as in `measure_features_from_points`."""
     out: list[FeatureMeasurement] = []
     for fr in frames.values():
         pts = [FeaturePoint(c.point.name, c.point.kind, (c.point.x_px, c.point.y_px), "narration") for c in fr.checks]
         feats = measure_features_from_points(fr.img, fr.det, fr.pose, pts, call, thickness_mm=thickness_mm,
-                                             part_mask=fr.part_mask)  # fmt: skip
+                                             part_mask=fr.part_mask, mask_source=mask_source)  # fmt: skip
         for fm in feats:
             for k, v in list(fm.values.items()):
                 ev = v.evidence

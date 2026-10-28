@@ -1,7 +1,7 @@
 "use client";
 
 import { useQuery, keepPreviousData } from "@tanstack/react-query";
-import { Axis3D, Box, Crosshair, Grid3x3, Maximize, Rotate3D, Scissors, Spline } from "lucide-react";
+import { Axis3D, Box, Crosshair, Grid3x3, Maximize, Palette, Rotate3D, Scissors, Spline } from "lucide-react";
 import dynamic from "next/dynamic";
 import * as React from "react";
 import type * as THREE from "three";
@@ -15,7 +15,9 @@ import { Slider } from "../ui/slider";
 import { Spinner } from "../ui/spinner";
 import { Toggle } from "../ui/toggle";
 import { Tooltip } from "../ui/tooltip";
-import type { SectionState, ViewerColors } from "./cad-scene";
+import { SOURCE_KINDS, SOURCE_STYLES } from "@/lib/value-sources";
+import { SourceIcon, SourceSwatch, sourceColor } from "../jobs/source-key";
+import type { SceneSourceMark, SectionState, ViewerColors } from "./cad-scene";
 import { fetchViewData, type ViewData } from "./view-data";
 import { radioGroupKeys } from "@/lib/a11y";
 
@@ -32,6 +34,7 @@ function readColors(): ViewerColors {
     grid: dark ? "#2a2a2a" : "#dcdcdc",
     gridStrong: dark ? "#3a3a3a" : "#bdbdbd",
     measure: dark ? "#ff9a52" : "#e2550f",
+    dark,
   };
 }
 
@@ -85,6 +88,7 @@ export function CadViewer({
   poster,
   poster2x,
   focus,
+  sources,
 }: {
   viewUrl: string | null | undefined;
   className?: string;
@@ -99,6 +103,8 @@ export function CadViewer({
   poster2x?: string | null;
   /** Agent focus: the camera flies to `at` (part frame, mm) and a marker pulses; `label` is shown as a caption. */
   focus?: { at: [number, number, number]; key: string; label?: string } | null;
+  /** "Colour by source": values drawn on the model, tinted by where they came from. Omit to hide the toggle. */
+  sources?: { marks: SceneSourceMark[]; on: boolean; onToggle: (on: boolean) => void; onSelect: (id: string) => void } | null;
 }) {
   const boxRef = React.useRef<HTMLDivElement>(null);
   const [armed, setArmed] = React.useState(false);
@@ -198,6 +204,8 @@ export function CadViewer({
               colors={colors}
               onContextLost={() => setLost(true)}
               focus={focus ? { at: focus.at, key: focus.key } : null}
+              sourceMarks={sources?.on ? sources.marks : null}
+              onSelectSource={sources?.onSelect}
             />
           </div>
         </SceneBoundary>
@@ -255,8 +263,10 @@ export function CadViewer({
         </div>
       ) : null}
 
+      {sources?.on && data ? <MiniSourceKey marks={sources.marks} /> : null}
+
       {focus?.label && data ? (
-        <div className="pointer-events-none absolute top-14 left-3 z-10 max-w-[70%] rounded-md bg-inverse px-2.5 py-1 text-[12px] text-inverse-fg shadow-md" role="status">
+        <div className={cn("pointer-events-none absolute left-3 z-10", sources?.on ? "top-24" : "top-14", "max-w-[70%] rounded-md bg-inverse px-2.5 py-1 text-[12px] text-inverse-fg shadow-md")} role="status">
           Agent is looking at: {focus.label}
         </div>
       ) : null}
@@ -322,6 +332,13 @@ export function CadViewer({
                 <Crosshair aria-hidden />
               </Toggle>
             </Tooltip>
+            {sources ? (
+              <Tooltip content={sources.on ? "Colour by source: on (key below the model)" : "Colour by source: where each value came from"}>
+                <Toggle pressed={sources.on} onPressedChange={sources.onToggle} aria-label="Colour by source" className="size-8 px-0">
+                  <Palette aria-hidden />
+                </Toggle>
+              </Tooltip>
+            ) : null}
           </div>
           {section.enabled ? (
             <div className="w-56 space-y-2.5 rounded-lg border border-border bg-surface/95 p-3 shadow-sm backdrop-blur">
@@ -377,6 +394,29 @@ export function CadViewer({
           ) : null}
         </div>
       ) : null}
+    </div>
+  );
+}
+
+/** Compact key inside the viewer for the kinds on screen; the full, described key sits in the list below the model. */
+function MiniSourceKey({ marks }: { marks: SceneSourceMark[] }) {
+  const kinds = SOURCE_KINDS.filter((k) => marks.some((m) => m.kind === k));
+  return (
+    <div aria-hidden className="pointer-events-none absolute top-3 left-3 z-10 flex max-w-[60%] flex-wrap gap-x-2.5 gap-y-1 rounded-md border border-border bg-surface/95 px-2 py-1 shadow-sm backdrop-blur">
+      {kinds.length ? (
+        kinds.map((k) => {
+          const c = sourceColor(k);
+          return (
+            <span key={k} className={cn("inline-flex items-center gap-1 text-[11px] font-medium", c.className)} style={c.style}>
+              <SourceSwatch kind={k} />
+              <SourceIcon kind={k} className="size-3" />
+              {SOURCE_STYLES[k].label}
+            </span>
+          );
+        })
+      ) : (
+        <span className="text-[11px] text-muted">No value can be placed on this model; see the list below.</span>
+      )}
     </div>
   );
 }

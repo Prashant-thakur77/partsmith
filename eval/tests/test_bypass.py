@@ -3,9 +3,10 @@ from __future__ import annotations
 import io
 from pathlib import Path
 
+import pytest
 from PIL import Image
 
-from eval.bypass import ATTACKS, CLAIMS, MAX_JPEG_BYTES, overlay_jpeg, run_suite
+from eval.bypass import ATTACKS, CLAIMS, MAX_JPEG_BYTES, REFUSED_EXIT, format_demo, main, overlay_jpeg, run_suite
 from services.geom_worker.sandbox import WarmPool
 
 
@@ -41,3 +42,29 @@ def test_overlay_jpeg_shrinks_to_the_byte_budget() -> None:
     noise.save(buf, "PNG")
     jpg = overlay_jpeg(buf.getvalue(), max_bytes=60_000)
     assert len(jpg) <= 60_000 and Image.open(io.BytesIO(jpg)).format == "JPEG"
+
+
+def test_lie_demo_cli_prints_the_refusal_and_exits_non_zero(capsys: pytest.CaptureFixture[str]) -> None:
+    # `make lie`: the non-zero exit is the success case (the export gate refused the lie)
+    assert main(["--demo", "says_verified"]) == REFUSED_EXIT
+    out = capsys.readouterr().out
+    assert CLAIMS["says_verified"] in out
+    assert "verified=False" in out and "vs limit 0.50 mm" in out
+    assert "export     BLOCKED (" in out and "can_ship" in out
+
+
+def test_lie_demo_reports_a_lie_that_got_through() -> None:
+    rec = {
+        "attack": "a",
+        "claim": "VERIFIED",
+        "verifier": {"verified": False, "status": "best_effort", "max_error_mm": 1.0, "threshold_mm": 0.5,
+                     "failed_tests": []},
+        "export": {"ok": True, "requires_ack": False, "reason": "verified", "gate": "g"},
+    }  # fmt: skip
+    text = format_demo(rec, 0.1)
+    assert "ALLOWED" in text and "GOT THROUGH" in text
+
+
+def test_lie_demo_rejects_unknown_attacks() -> None:
+    with pytest.raises(SystemExit):
+        main(["--demo", "no_such_attack"])

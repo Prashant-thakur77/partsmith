@@ -7,7 +7,7 @@ API_PORT ?= 8000
 WEB_PORT ?= 3000
 
 .PHONY: help setup sync web-install schemas test test-all test-web lint typecheck check smoke dev api web worker \
-        seed synth bench bench-live live mat mcp e2e clean-var gitleaks deploy-check
+        seed synth bench bench-live live lie mat mcp e2e clean-var gitleaks deploy-check
 
 help: ## Show targets
 	@grep -E '^[a-zA-Z_-]+:.*?## ' $(MAKEFILE_LIST) | awk 'BEGIN{FS=":.*?## "}{printf "  \033[36m%-12s\033[0m %s\n",$$1,$$2}'
@@ -61,6 +61,13 @@ bench-live: ## Re-run every bench with the providers configured in .env
 
 live: ## Check keys, then re-run the benches live
 	$(UV) run python -m tools.smoke && PROVIDER_MODE=live $(MAKE) bench-live
+
+# eval.bypass --demo exits 3 when the export gate refuses the lie: here that refusal is the success case, so the target
+# reports it and exits 0. Any other exit (0 = the lie got through, 1 = harness error) fails the target.
+lie: ## Terminal demo (seconds, no keys): a model claims VERIFIED on a wrong part; code refuses the export
+	@$(UV) run python -m eval.bypass --demo says_verified; code=$$?; \
+	if [ $$code -eq 3 ]; then echo "make lie: OK. eval.bypass exited 3 = export refused, which is the expected outcome."; \
+	else echo "make lie: FAILED. eval.bypass exited $$code (0 = the lie got through, 1 = harness error)."; exit 1; fi
 
 mat: ## Write the plain-paper mat PDF + web mat layouts
 	$(UV) run python -m tools.mat.make_mat --pdf var/partsmith-mat-a4.pdf --web

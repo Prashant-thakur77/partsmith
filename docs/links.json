@@ -1,0 +1,7 @@
+{
+ "_about": "Link row at the top of README.md (tools/readme.py). Leave a URL empty and the README shows (coming). judges and sample default to <live_site>/judges and <live_site>/jobs/demo.",
+ "live_site": "",
+ "video": "",
+ "judges": "",
+ "sample": ""
+}

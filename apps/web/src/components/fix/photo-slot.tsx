@@ -199,11 +199,17 @@ export function PhotoSlot({
   );
 }
 
-export const TAP_KINDS = ["hole", "slot", "tab", "broken_edge"] as const;
+export const TAP_KINDS = ["hole", "slot", "tab", "broken_edge", "exclude"] as const;
 export type TapKind = (typeof TAP_KINDS)[number];
 export type TapPoint = { x: number; y: number; kind: TapKind };
-const TAP_LABEL: Record<TapKind, string> = { hole: "Hole", slot: "Slot", tab: "Tab", broken_edge: "Broken edge" };
-const TAP_MARK: Record<TapKind, string> = { hole: "H", slot: "S", tab: "T", broken_edge: "B" };
+const TAP_LABEL: Record<TapKind, string> = {
+  hole: "Hole",
+  slot: "Slot",
+  tab: "Tab",
+  broken_edge: "Broken edge",
+  exclude: "Not the part (finger, glare)",
+};
+const TAP_MARK: Record<TapKind, string> = { hole: "H", slot: "S", tab: "T", broken_edge: "B", exclude: "×" };
 const MAX_TAPS = 32;
 
 function TapKindPicker({ value, onChange }: { value: TapKind; onChange: (k: TapKind) => void }) {

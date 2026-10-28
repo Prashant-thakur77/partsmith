@@ -169,7 +169,7 @@ def check_audio(data: bytes, mime: str | None, field: str = "audio") -> str:
 
 MAX_VIDEO_BYTES = 60 * 1024 * 1024
 MAX_POINTS = 32
-POINT_KINDS = ("hole", "slot", "tab", "broken_edge")
+POINT_KINDS = ("hole", "slot", "tab", "broken_edge", "exclude")  # exclude: a negative point (finger, glare, clutter)
 
 
 def check_video(data: bytes, field: str = "orbit") -> str:
@@ -186,8 +186,9 @@ def check_video(data: bytes, field: str = "orbit") -> str:
 
 
 def parse_points(raw: str | None) -> dict[str, list[dict[str, Any]]] | None:
-    """User taps on features: JSON {"top": [{"x": px, "y": px, "kind"?: hole|slot|tab|broken_edge, "id"?: str}]}
-    in top-photo pixels. Returns None when absent; malformed input is a 422 with the reason."""
+    """User taps on features: JSON {"top": [{"x": px, "y": px, "kind"?: hole|slot|tab|broken_edge|exclude,
+    "id"?: str}]} in top-photo pixels (`exclude` marks something that is not the part: a negative point for every
+    point prompt). Returns None when absent; malformed input is a 422 with the reason."""
     if raw is None or not raw.strip():
         return None
     try:

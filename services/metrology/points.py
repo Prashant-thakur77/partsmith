@@ -1,8 +1,12 @@
 """Feature measurement from points: a model (or the user) points at a feature, a point-prompted segmenter cuts it out,
 code measures it.
 
-Each `FeaturePoint` becomes one point-prompted segmentation of a crop around it (with a negative point on the nearest
-mat marker so the segmenter does not return the board). The feature's edge is traced sub-pixel on the mask and then
+Each `FeaturePoint` becomes one point-prompted segmentation of a crop around it, with negative points so the
+segmenter does not return the wrong thing: the centres of the mat markers in the crop (the crop reaches the nearest
+one), the user's `exclude` taps, and, when the capture gate flagged glare, the largest blown-out blob on the part
+(`glare_point_px`). Negatives closer than `NEG_MIN_MM` to the positive point are dropped (they would contradict it).
+The mask's confidence widens every value's ±σ and, below `confidence.RETAKE_BELOW`, the feature is not used and its
+`retake` says why (see `confidence.py`). The feature's edge is traced sub-pixel on the mask and then
 made sub-pixel against the photo (colour unmixing across the edge); the result is fitted in millimetres:
 
 - hole, mat visible through it, thickness known → vertical-cylinder fit to the see-through lens (`fit_see_through_hole`);
@@ -33,6 +37,7 @@ from shapely.geometry import Polygon
 from services.common.images import decode_bgr
 
 from .calibrate import MatDetection, PoseEstimate, apply_h, plane_homography
+from .confidence import MODEL_MASK_SOURCES, retake_reason, widen
 from .features import fit_circle, fit_see_through_hole, fit_see_through_slot, fit_slot, min_area_rect
 from .measure import MeasureOutput
 from .segment import mask_contour_subpx
@@ -47,6 +52,12 @@ SegPointsCall = Callable[[bytes, list[PointPx], list[PointPx], Box | None], list
 
 CROP_HALF_MM = 18.0  # crop around the point (holes and slots are well inside this)
 MARKER_REACH_MM = 60.0  # include the nearest marker in the crop (for the negative point) if it is this close
+MAX_MARKER_NEGATIVES = 4  # marker centres sent as negatives (nearest first)
+MAX_NEGATIVES = 8  # all negatives per prompt
+NEG_MIN_MM = 1.5  # a negative this close to the positive point would contradict it: dropped
+GLARE_LEVEL = 250  # 8-bit grey at or above this, with almost no texture, is blown out (same rule as the capture gate)
+GLARE_MIN_PX = 12
+MOCK_MASK_SOURCE = "mock-flood"  # mock point masks: their score is a labelled edge-contrast proxy, not SAM's
 SEE_THROUGH_FRACTION = 0.8  # share of mask pixels with the stage's colour for "the mat shows through"
 STAGE_COLOUR_TOL = 25.0
 POINT_NOTE = "SAM point prompt"
@@ -76,6 +87,9 @@ class FeatureMeasurement:
     mask_source: str = ""
     point_source: str = "model"
     reason: str | None = None
+    confidence: float | None = None  # the segmenter's mask confidence (None: the score is not a confidence)
+    negatives_px: list[PointPx] = field(default_factory=list)  # negative points sent with the prompt (full frame)
+    retake: str | None = None  # set when the confidence is too low to use the feature
 
 
 def _png(img: U8) -> bytes:
@@ -104,19 +118,74 @@ def _nearest_marker_px(det: MatDetection, pt: PointPx) -> PointPx | None:
     return float(c[i, 0]), float(c[i, 1])
 
 
-def _crop_for(det: MatDetection, pt: PointPx, shape: tuple[int, int]) -> tuple[int, int, int, int, PointPx | None]:
+def _crop_for(
+    det: MatDetection, pt: PointPx, shape: tuple[int, int], extra_negatives: Sequence[PointPx] = ()
+) -> tuple[int, int, int, int, list[PointPx]]:
+    """Crop box around the point (reaching the nearest marker when it is close) and the negatives inside it: marker
+    centres (nearest first) then `extra_negatives`, none within `NEG_MIN_MM` of the point."""
     h, w = shape
     mm = det.to_mm(np.array([pt], dtype=np.float64))[0]
     ppm = det.px_per_mm_at((float(mm[0]), float(mm[1])))
     half = CROP_HALF_MM * ppm
     x0, y0, x1, y1 = pt[0] - half, pt[1] - half, pt[0] + half, pt[1] + half
-    neg = _nearest_marker_px(det, pt)
-    if neg is not None and math.hypot(neg[0] - pt[0], neg[1] - pt[1]) <= MARKER_REACH_MM * ppm:
-        x0, y0 = min(x0, neg[0] - 5), min(y0, neg[1] - 5)
-        x1, y1 = max(x1, neg[0] + 5), max(y1, neg[1] + 5)
-    else:
-        neg = None
-    return max(int(x0), 0), max(int(y0), 0), min(math.ceil(x1), w), min(math.ceil(y1), h), neg
+    near = _nearest_marker_px(det, pt)
+    if near is not None and math.hypot(near[0] - pt[0], near[1] - pt[1]) <= MARKER_REACH_MM * ppm:
+        x0, y0 = min(x0, near[0] - 5), min(y0, near[1] - 5)
+        x1, y1 = max(x1, near[0] + 5), max(y1, near[1] + 5)
+    cx0, cy0, cx1, cy1 = max(int(x0), 0), max(int(y0), 0), min(math.ceil(x1), w), min(math.ceil(y1), h)
+
+    def inside(q: PointPx) -> bool:
+        return (
+            cx0 + 1 <= q[0] < cx1 - 1
+            and cy0 + 1 <= q[1] < cy1 - 1
+            and math.hypot(q[0] - pt[0], q[1] - pt[1]) >= NEG_MIN_MM * ppm
+        )
+
+    markers: list[PointPx] = []
+    if det.n_markers:
+        c = det.corners_px.mean(axis=1)
+        order = np.argsort(np.hypot(c[:, 0] - pt[0], c[:, 1] - pt[1]))
+        markers = [(float(c[i, 0]), float(c[i, 1])) for i in order]
+    negs = [q for q in markers if inside(q)][:MAX_MARKER_NEGATIVES]
+    negs += [(float(q[0]), float(q[1])) for q in extra_negatives if inside((float(q[0]), float(q[1])))]
+    return cx0, cy0, cx1, cy1, negs[:MAX_NEGATIVES]
+
+
+def glare_point_px(img: U8, part_mask: BoolMask | None) -> PointPx | None:
+    """A pixel in the largest blown-out, texture-free blob inside the part's bounding box (a negative point for the
+    segmenter when the capture gate flagged glare), or None. The blob's pixel nearest its centroid is returned, so the
+    point lies on the glare even when the blob is curved."""
+    if part_mask is None or not part_mask.any():
+        return None
+    ys, xs = np.nonzero(part_mask)
+    pad = 4
+    x0, y0 = max(int(xs.min()) - pad, 0), max(int(ys.min()) - pad, 0)
+    x1, y1 = min(int(xs.max()) + pad + 1, part_mask.shape[1]), min(int(ys.max()) + pad + 1, part_mask.shape[0])
+    sub = img[y0:y1, x0:x1]
+    gray = sub if sub.ndim == 2 else cv2.cvtColor(sub, cv2.COLOR_BGR2GRAY)
+    g = gray.astype(np.float32)
+    mean = cv2.blur(g, (7, 7))
+    std = np.sqrt(np.maximum(cv2.blur(g * g, (7, 7)) - mean * mean, 0))
+    sat = ((gray >= GLARE_LEVEL) & (std < 4.0)).astype(np.uint8)
+    n, lab, stats, cents = cv2.connectedComponentsWithStats(sat)
+    if n <= 1:
+        return None
+    i = 1 + int(np.argmax(stats[1:, cv2.CC_STAT_AREA]))
+    if stats[i, cv2.CC_STAT_AREA] < GLARE_MIN_PX:
+        return None
+    by, bx = np.nonzero(lab == i)
+    k = int(np.argmin(np.hypot(bx - cents[i][0], by - cents[i][1])))
+    return float(bx[k] + x0), float(by[k] + y0)
+
+
+def _confidence_of(mask_source: str, score: float) -> tuple[float | None, str]:
+    """(confidence, label) of a returned mask: SAM's own confidence, a labelled mock proxy, or None for a
+    deterministic stand-in whose score is not a probability."""
+    if mask_source in MODEL_MASK_SOURCES:
+        return float(score), ""
+    if mask_source == MOCK_MASK_SOURCE:
+        return float(score), "MOCK: edge-contrast proxy, not SAM"
+    return None, ""
 
 
 def _pick_mask(masks: list[tuple[NDArray[np.bool_], float]], pt: PointPx) -> tuple[BoolMask, float] | None:
@@ -141,11 +210,15 @@ def measure_features_from_points(
     thickness_mm: float | None = None,
     mask_source: str = "sam-3.1",
     part_mask: BoolMask | None = None,
+    negatives_px: Sequence[PointPx] = (),
 ) -> list[FeatureMeasurement]:
     """Measure each pointed-at feature. Never raises for one bad point: that point comes back with `ok=False`.
 
     `part_mask` (the outline pass's full-frame mask) gives the top face's colour around each feature; without it the
-    colour is sampled from a ring around the returned mask."""
+    colour is sampled from a ring around the returned mask. `negatives_px` (full-frame pixels: the user's exclude
+    taps, a glare blob) go with every prompt whose crop holds them, after the mat markers. `mask_source` says what the
+    segmenter is (`sam-3.1`/`sam3-open`: its score is a confidence; `mock-flood`: a labelled proxy; anything else:
+    no confidence)."""
     img3 = img if img.ndim == 3 else np.asarray(cv2.cvtColor(img, cv2.COLOR_GRAY2BGR), dtype=np.uint8)
     stage_bgr = stage_colour(img3, det)
     thick = thickness_mm is not None and thickness_mm > 0 and pose is not None and pose.camera_height_mm > thickness_mm
@@ -158,13 +231,14 @@ def measure_features_from_points(
     for fp in points:
         fm = FeatureMeasurement(fp.id, fp.kind, fp.px, ok=False, mask_source=mask_source, point_source=fp.source)
         out.append(fm)
-        x0, y0, x1, y1, neg = _crop_for(det, fp.px, img3.shape[:2])
+        x0, y0, x1, y1, negs_full = _crop_for(det, fp.px, img3.shape[:2], negatives_px)
         if x1 - x0 < 8 or y1 - y0 < 8:
             fm.reason = "the point is outside the photo"
             continue
         crop = np.ascontiguousarray(img3[y0:y1, x0:x1])
         pos_c = (fp.px[0] - x0, fp.px[1] - y0)
-        negs = [] if neg is None else [(neg[0] - x0, neg[1] - y0)]
+        fm.negatives_px = negs_full
+        negs = [(q[0] - x0, q[1] - y0) for q in negs_full]
         try:
             masks = segment_points_call(_png(crop), [pos_c], negs, None)
         except Exception as e:  # a failed call is one failed feature, not a failed job
@@ -179,6 +253,15 @@ def measure_features_from_points(
         full = np.zeros(img3.shape[:2], dtype=bool)
         full[y0:y1, x0:x1] = m[: y1 - y0, : x1 - x0]
         _measure_one(fm, full, img3, stage_bgr, det, pose, H_top, thickness_mm, part_mask)
+        conf, label = _confidence_of(mask_source, score)
+        fm.confidence = None if conf is None else round(conf, 4)
+        if fm.ok and conf is not None:
+            fm.values = {k: widen(v, conf, label) for k, v in fm.values.items()}
+            what = f"the {fm.kind.replace('_', ' ')} at pixel ({fp.px[0]:.0f}, {fp.px[1]:.0f})"
+            fm.retake = retake_reason(what, conf)
+            if fm.retake is not None:
+                fm.ok = False
+                fm.reason = fm.retake + (f" [{label}]" if label else "")
     return out
 
 

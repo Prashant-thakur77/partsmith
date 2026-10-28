@@ -22,6 +22,12 @@ pnpm -C apps/web mats        # regenerate public/mats/*.json from the metrology 
   `pnpm -C apps/web e2e:live` checks every read endpoint against the Zod contract, runs demo → workspace → verdict →
   knob re-bake → export, a photo fix with answered questions, edit, preview and fit outline, a steer approval, and takes
   real-data screenshots into `e2e/screenshots/live-*`.
+- Job page provenance: "Colour by source" (viewer toolbar, or the switch under the model) tints the values drawn on the
+  model by where they came from (measured, pointed in narration, you stated, cited, inferred, completed region), each
+  with a label, icon and swatch pattern; the list under the model is the keyboard route and opens value ± σ, evidence,
+  overlay links and whether any test compared it with a photo. Built by `src/lib/value-sources.ts` from the job detail.
+  The "Fail → fix history" strip is `src/lib/fix-rounds.ts` over the job's own events (iteration, metric, verify stage,
+  tool_call, residual overlays). `pnpm -C apps/web test` covers both against committed replays.
 - SSE: `src/app/api/v1/jobs/[id]/events/route.ts` streams job events unbuffered; everything else under `/api/v1` and
   `/mcp` is a fallback rewrite to `API_URL`.
 

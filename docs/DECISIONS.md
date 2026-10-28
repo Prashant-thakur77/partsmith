@@ -198,3 +198,29 @@ kept only with a URL the search returned and a quote that shows the price; every
 minutes, cost) is computed by code from the mesh with stated spool prices. Spark's narrated (time, pixel) points are kept
 only when they fall on the part in their own decoded frame and on its measured footprint; each becomes a SAM point prompt.
 The narration's words steer the understand stage and never set a number.
+
+**2026-10-28 — A broken end of unknown length is stated by the user, never guessed.** When a located break reaches an end
+of the footprint, no mirror can restore the length and the photo shows only the broken piece. If the template has a length
+knob, the job takes the original length from the user's own words: the intent ("it was 51 mm long", parsed by code,
+unit-aware), one question ("How long was it before it broke?"), or, with a tapped broken edge, only the missing piece beyond
+the tap. "skip" keeps the length inferred; values outside the knob's range or clearly shorter than the broken piece are
+refused. A stated value is `user_stated` with the user's uncertainty (±0.5 mm ruler, ±1 mm for "about"), sets and locks the
+knob, and is listed in `unchecked` as stated, not observed. The verifier leaves the strip it adds beyond the broken end out
+of every comparison and out of the max error; a P0 test checks only that the model is the stated length, so it can block a
+part, never pass one. Thresholds are unchanged. Latch demo (mock): a stated 51.3 mm takes the max error from 1.40 to
+0.75 mm; it stays best effort because the corner break also hides the width.
+
+**2026-10-28 — SAM point prompts carry negatives; mask confidence widens ±σ and asks for a retake.** Every point prompt
+sends the mat-marker centres in its crop, the user's `exclude` taps and, when the gate flagged glare, the brightest blown-out
+blob on the part as negative points. A mask's confidence c widens every value measured from it, σ × (1 + 2(1 − c)); below
+c = 0.5 a feature is not used and the job asks for a retake in plain words, and an unsure outline asks whether to retake
+the top photo (default continue). Both constants are stated choices, not fitted to ground truth. Mock masks carry a labelled
+edge-contrast proxy and are tagged `mock-flood` / `mock-threshold`, never `sam-3.1`. σ is reported uncertainty only; the
+verifier never reads it.
+
+**2026-10-28 — "Where each value came from" and the fail → fix strip read only the job's own record.** The viewer can tint
+every size, feature value and rebuilt region by its source (measured, pointed by Spark, stated by the user, cited, inferred,
+AI-completed), each with a text label, icon and pattern so colour is never the only cue; selecting one shows value ± σ,
+the evidence note, the residuals that compared the model with it and the overlay it came from. The strip above the job
+shows each fix round's max error, the knobs changed and the verdict, parsed from the run's events. Per-view verdicts per
+round are not emitted as structured data yet, so the strip shows per-view Hausdorff against the limit and says so.

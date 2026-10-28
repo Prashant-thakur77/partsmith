@@ -3,6 +3,73 @@
 PartSmith turns phone photos of a broken plastic part on a calibration mat into a measured, verified, parametric CadQuery
 program. The model proposes; deterministic code decides. Units are millimetres everywhere.
 
+## Pipeline
+
+One job, as `services/agent/orchestrator.py` runs it (stages: capture → measure → understand → ask → plan → build → execute →
+verify → fix → judge → package → learn). Solid arrows are the main path; dotted arrows are side paths whose output code
+accepts only after a check. Boxes that name a model are model calls through `services/agent/providers`; boxes marked
+"(code)" are deterministic checks.
+
+```mermaid
+flowchart TD
+    photo["Photo or walk-around clip<br/>on the screen mat"] --> gate{"Capture gate (code)<br/>markers · blur · tilt · glare · one part"}
+    gate -->|"fails"| retake["Retake, with a plain-words reason"]
+    gate -->|"passes"| metro["Metrology (code): ArUco pose + SAM 3.1 masks<br/>→ millimetres, each with ±σ and a source"]
+    metro --> understand["Understand: Muse Spark<br/>→ PartSpec JSON: family, features, break, unknowns"]
+    understand -->|"unknowns"| ask["Ask the human"]
+    ask --> plan
+    understand --> plan["Plan: family template or free code"]
+    plan --> build["Build: Muse Spark Open<br/>writes a CadQuery program"]
+    build --> sandbox["Sandbox (code)<br/>AST allowlist · rlimits · no network"]
+    sandbox --> verifier{"Verifier (code)<br/>render from the photo's camera,<br/>Hausdorff mm, IoU, part tests"}
+    verifier -->|"misfit"| fix["Fix agent: Muse Spark Open<br/>operates PartSmith's tools, bounded rounds"]
+    fix -->|"guarded knob and code edits"| sandbox
+    verifier -->|"passes"| judge["Muse Glimmer judge<br/>veto only"]
+    verifier -->|"rounds used up"| exportgate
+    judge --> exportgate{"Export gate (code)"}
+    exportgate -->|"verified"| out["STL · 3MF · STEP · part.py<br/>screen fit check · install card"]
+    exportgate -->|"best effort"| ack["Download only after an explicit OK"]
+    exportgate -->|"failed"| noexport["No export"]
+    ack --> out
+    out --> registry[("Registry<br/>REST + MCP")]
+
+    clip["Narrated walk-around clip"] -.->|"Muse Spark points at features · SAM 3.1 tracks heights"| metro
+    image["Muse Image completes the broken region"] -.->|"completion gate: markers and intact part unchanged"| understand
+    wonder["Muse Wonder: cited spec values"] -.->|"only URLs the search returned · never overrides a measurement"| understand
+    buy["Muse Wonder: price of the original part"] -.->|"buy-or-print card · grams and cost from the mesh"| out
+    voice["Muse Voice Transcribe: Hindi/English edits"] -.->|"clamped knob edits → re-bake in the sandbox"| sandbox
+```
+
+| Side path | Model | The check that decides | Code |
+|---|---|---|---|
+| Narrated walk-around clip | Muse Spark points at the features it hears about; SAM 3.1 tracks the part across frames | a point is kept only if it lands on the part in its own frame and on the measured footprint; heights come from the tracked frames | `services/metrology/narration.py`, `services/metrology/points.py`, `services/agent/evidence.py` |
+| Broken-region completion | Muse Image | every mat marker re-detects in place and the intact part is unchanged; accepted completions enter as inferred | `services/metrology/recon_gate.py`, `services/agent/evidence.py` |
+| Cited specs | Muse Wonder (web search) | a value is accepted only if a search ran and its URL came back from it; it fills unknowns and never overrides a measurement | `services/agent/providers/spec.py` |
+| Buy or print | Muse Wonder (search grounding) | a price is kept only with its source link and a quote showing it; grams, print time and cost come from the mesh | `services/agent/providers/buy.py`, `services/agent/buy_or_print.py` |
+| Judge | Muse Glimmer 30B | veto only: it can block a pass, never grant one | `services/agent/orchestrator.py` |
+| Voice edits | Muse Voice Transcribe | knob names and ranges clamp every edit; the edited part is re-baked in the sandbox and labelled "not re-verified" | `services/media/voice.py`, `services/agent/service.py` |
+
+## Runtime
+
+```mermaid
+flowchart LR
+    web["apps/web (Next.js)"] -->|"REST + SSE"| api["services/api (FastAPI)"]
+    agents["Coding agents"] -->|"MCP: stdio or streamable HTTP"| mcp["services/mcp"]
+    mcp --> svc["services/agent/service.py<br/>job facade"]
+    api --> svc
+    svc --> orch["orchestrator + fix agent"]
+    orch --> metro["services/metrology"]
+    orch --> geom["services/geom_worker<br/>sandboxed child process"]
+    orch --> ver["services/verifier"]
+    orch --> prov["services/agent/providers"]
+    prov -->|"HTTPS"| meta["Meta Model API<br/>Muse Spark, Wonder, Image, Voice, SAM 3.1"]
+    prov -->|"HTTPS"| open["Open weights<br/>Muse Spark Open (hosted), Glimmer and SAM 3 on Modal"]
+    prov -.->|"no key"| mock["Deterministic mocks<br/>labelled on every page"]
+    svc --> store[("SQLite or Postgres<br/>blob dir or R2<br/>runs/job-id/run.jsonl")]
+```
+
+## Modules
+
 ```
  apps/web (Next.js) ── REST + SSE ──▶ services/api (FastAPI) ◀── services/mcp (MCP, stdio + streamable HTTP)
                                          │

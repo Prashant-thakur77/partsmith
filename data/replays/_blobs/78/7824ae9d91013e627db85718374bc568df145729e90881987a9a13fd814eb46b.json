@@ -1,0 +1,66 @@
+{
+  "job_id": "j_261028_ce1688ca",
+  "slug": null,
+  "title": "Snap retaining clip (family hint 'clip')",
+  "status": "best_effort",
+  "prints": [
+    {
+      "material": "PLA",
+      "volume_mm3": 2404.3,
+      "grams": 2.98,
+      "print_minutes": 10.4,
+      "filament_cost": {
+        "INR": 3.58,
+        "USD": 0.06
+      },
+      "price_per_kg": {
+        "INR": 1200.0,
+        "USD": 20.0
+      },
+      "assumptions": [
+        "grams: solid-volume mass at 100 % infill (volume x density: PLA 1.24, PETG 1.27 g/cm^3); a real print weighs less",
+        "minutes: rough estimate: (volume / 8 mm^3/s + layers x 4 s) / 60, 0.2 mm layers, 100 % infill",
+        "filament cost: grams x an assumed 1 kg spool price (INR 1200/kg, USD 20/kg); not a quote, and no shop margin or electricity"
+      ]
+    },
+    {
+      "material": "PETG",
+      "volume_mm3": 2404.3,
+      "grams": 3.05,
+      "print_minutes": 10.4,
+      "filament_cost": {
+        "INR": 4.27,
+        "USD": 0.07
+      },
+      "price_per_kg": {
+        "INR": 1400.0,
+        "USD": 22.0
+      },
+      "assumptions": [
+        "grams: solid-volume mass at 100 % infill (volume x density: PLA 1.24, PETG 1.27 g/cm^3); a real print weighs less",
+        "minutes: rough estimate: (volume / 8 mm^3/s + layers x 4 s) / 60, 0.2 mm layers, 100 % infill",
+        "filament cost: grams x an assumed 1 kg spool price (INR 1400/kg, USD 22/kg); not a quote, and no shop margin or electricity"
+      ]
+    }
+  ],
+  "lookup": {
+    "query": "Snap retaining clip (family hint 'clip') — user: Make a replacement for this broken snap retaining clip.",
+    "city": null,
+    "oem": null,
+    "offers": [],
+    "places": [],
+    "dropped": [],
+    "searched": false,
+    "queries": 0,
+    "mode": "mock",
+    "provider": "mock",
+    "model": "muse-wonder-1.0",
+    "usd": 0.0,
+    "label": "MOCK — no web search ran"
+  },
+  "mode": "mock",
+  "created_at": 1793208065.287969,
+  "notes": [
+    "MOCK — no web search ran: no seller or price on this card came from the web"
+  ]
+}

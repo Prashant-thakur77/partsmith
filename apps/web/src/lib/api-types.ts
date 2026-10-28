@@ -129,7 +129,7 @@ export type MatLayout = z.output<typeof MatLayoutSchema>;
 
 // ── capture / measurement ─────────────────────────────────────────────────────
 export const CaptureCheckSchema = z.object({
-  name: z.enum(["markers", "reprojection", "blur", "coverage", "tilt", "exposure", "glare", "moire", "scale", "contrast", "single_part"]),
+  name: z.enum(["markers", "reprojection", "blur", "coverage", "tilt", "exposure", "glare", "moire", "scale", "contrast", "single_part", "mask_confidence"]),
   passed: z.boolean(),
   severity: z.enum(["ok", "warn", "fail"]),
   value: z.nullish(num),

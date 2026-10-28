@@ -35,13 +35,51 @@ def test_object_prompt_tokens() -> None:
 def test_mock_points_flood_fill_hole_body_and_box() -> None:
     png = _part_png()
     ((hole, score),) = providers.segment_points(png, [(40, 30)])
-    assert score == 0.5 and hole.sum() == 100 and hole[25:35, 35:45].all()
+    # the mock's score is a deterministic edge-contrast proxy for SAM's confidence: a crisp hole edge is near-certain
+    assert score == 0.99 and hole.sum() == 100 and hole[25:35, 35:45].all()
     ((body, _),) = providers.segment_points(png, [(15, 15)], points_neg=[(40, 30)])
     assert body.sum() == 40 * 60 - 100 and not body[30, 40]
     ((clipped, _),) = providers.segment_points(png, [(15, 15)], box=(10, 10, 29, 49))
     assert clipped.sum() == 20 * 40
     with pytest.raises(ValueError, match="positive point or a box"):
         providers.segment_points(png, [])
+
+
+def test_mock_confidence_follows_edge_contrast() -> None:
+    from services.agent.providers.mocks import mock_confidence
+
+    img = np.full((60, 80), 120, np.uint8)
+    mask = np.zeros((60, 80), bool)
+    mask[20:40, 30:50] = True
+    confs = []
+    for step in (4, 10, 20, 40, 80):
+        g = img.copy()
+        g[mask] = 120 + step
+        confs.append(mock_confidence(g, mask))
+    assert confs == sorted(confs) and confs[0] < 0.5 <= confs[2] and confs[-1] == 0.99
+    assert mock_confidence(img, mask) == 0.0  # no edge at all
+
+
+def test_points_live_request_sends_negatives_and_asks_for_confidence(
+    monkeypatch: pytest.MonkeyPatch, hub: FakeHub, events: list[Any]
+) -> None:
+    monkeypatch.setenv("MODEL_API_KEY", "k-meta-000000")
+    payload = _encode_raster([1] * 12, 4, 3)
+    text = f"<0f>1<|box;x1=35;y1=25;x2=44;y2=34;w=80;h=60;c=0.42|><|mask;x=0;y=0;data=3,4,{payload}|>"
+    hub.handlers[("responses", "meta")] = [
+        [{"type": "response.content_part.done", "part": {"type": "output_text", "text": text}}]
+    ]
+    negs = [(2.0, 3.0), (77.0, 3.0), (60.0, 40.0)]  # two mat markers and a glare blob
+    with providers.job_context("j", events.append):
+        ((_, score),) = providers.segment_points(_part_png(), [(40, 30)], negs)
+    kw = hub.calls_for("responses")[0]
+    assert kw["metadata"] == {"mask_encoding": "one_bit", "include_confidence": "true"}
+    prompt = kw["input"][0]["content"][0]["text"]
+    assert prompt == (
+        "<0f>1<|point;x=40;y=30;w=80;h=60|>-<|point;x=2;y=3;w=80;h=60|>-<|point;x=77;y=3;w=80;h=60|>"
+        "-<|point;x=60;y=40;w=80;h=60|>"
+    )
+    assert score == pytest.approx(0.42)
 
 
 def test_points_live_request(monkeypatch: pytest.MonkeyPatch, hub: FakeHub, events: list[Any]) -> None:

@@ -1,0 +1,66 @@
+{
+  "job_id": "j_261028_7466169a",
+  "slug": null,
+  "title": "Custom part (not a battery compartment cover: its width (14.35 mm) is outside the battery_cover template's 16–60 mm range)",
+  "status": "best_effort",
+  "prints": [
+    {
+      "material": "PLA",
+      "volume_mm3": 10118.8,
+      "grams": 12.55,
+      "print_minutes": 25.9,
+      "filament_cost": {
+        "INR": 15.06,
+        "USD": 0.25
+      },
+      "price_per_kg": {
+        "INR": 1200.0,
+        "USD": 20.0
+      },
+      "assumptions": [
+        "grams: solid-volume mass at 100 % infill (volume x density: PLA 1.24, PETG 1.27 g/cm^3); a real print weighs less",
+        "minutes: rough estimate: (volume / 8 mm^3/s + layers x 4 s) / 60, 0.2 mm layers, 100 % infill",
+        "filament cost: grams x an assumed 1 kg spool price (INR 1200/kg, USD 20/kg); not a quote, and no shop margin or electricity"
+      ]
+    },
+    {
+      "material": "PETG",
+      "volume_mm3": 10118.8,
+      "grams": 12.85,
+      "print_minutes": 25.9,
+      "filament_cost": {
+        "INR": 17.99,
+        "USD": 0.28
+      },
+      "price_per_kg": {
+        "INR": 1400.0,
+        "USD": 22.0
+      },
+      "assumptions": [
+        "grams: solid-volume mass at 100 % infill (volume x density: PLA 1.24, PETG 1.27 g/cm^3); a real print weighs less",
+        "minutes: rough estimate: (volume / 8 mm^3/s + layers x 4 s) / 60, 0.2 mm layers, 100 % infill",
+        "filament cost: grams x an assumed 1 kg spool price (INR 1400/kg, USD 22/kg); not a quote, and no shop margin or electricity"
+      ]
+    }
+  ],
+  "lookup": {
+    "query": "Custom part (not a battery compartment cover: its width (14.35 mm) is outside the battery_cover template's 16–60 mm range) — user: Measure this AA cell (lying on its side) (reference object).",
+    "city": null,
+    "oem": null,
+    "offers": [],
+    "places": [],
+    "dropped": [],
+    "searched": false,
+    "queries": 0,
+    "mode": "mock",
+    "provider": "mock",
+    "model": "muse-wonder-1.0",
+    "usd": 0.0,
+    "label": "MOCK — no web search ran"
+  },
+  "mode": "mock",
+  "created_at": 1793208428.293202,
+  "notes": [
+    "MOCK — no web search ran: no seller or price on this card came from the web"
+  ]
+}

@@ -127,7 +127,8 @@ def flood_segment(
     tolerance: int = 14,
 ) -> list[tuple[media.BoolMask, float]]:
     """Point-prompt stand-in: flood fill from each positive point (similar grey levels), minus the regions grown from
-    negative points, clipped to the box. Holes in a part flood to the hole; the part body floods to the body."""
+    negative points, clipped to the box. Holes in a part flood to the hole; the part body floods to the body. The
+    score is `mock_confidence` (edge contrast), a labelled proxy for SAM's confidence."""
     import cv2
 
     gray = cv2.cvtColor(np.ascontiguousarray(rgb, dtype=np.uint8), cv2.COLOR_RGB2GRAY)
@@ -150,7 +151,36 @@ def flood_segment(
         clip = np.zeros_like(mask)
         clip[max(0, y1) : max(0, y2) + 1, max(0, x1) : max(0, x2) + 1] = True
         mask &= clip
-    return [(mask, 0.5)] if mask.any() else []
+    return [(mask, mock_confidence(gray, mask))] if mask.any() else []
+
+
+MOCK_CONTRAST_FULL = 40.0  # grey-level difference across the mask edge that the mock calls fully confident
+
+
+def mock_confidence(gray: Any, mask: media.BoolMask) -> float:
+    """Deterministic stand-in for SAM's mask confidence (labelled MOCK wherever it is shown): how clearly the mask
+    stands apart from its surroundings, as |median grey inside - median grey in a band 2-5 px outside| / 40, capped at
+    0.99. The band skips the blurred edge itself; pixels on the image border are left out (a crop cut through the
+    part is not a weak edge)."""
+    import cv2
+
+    m = mask.astype(np.uint8)
+    if not m.any():
+        return 0.0
+    k = np.ones((3, 3), np.uint8)
+    inner = cv2.erode(m, k, iterations=2, borderType=cv2.BORDER_REPLICATE) > 0
+    if not inner.any():
+        inner = m > 0
+    near = cv2.dilate(m, k, iterations=2, borderType=cv2.BORDER_REPLICATE) > 0
+    outer = (cv2.dilate(m, k, iterations=5, borderType=cv2.BORDER_REPLICATE) > 0) & ~near
+    keep = np.ones(m.shape, bool)
+    keep[0, :] = keep[-1, :] = keep[:, 0] = keep[:, -1] = False
+    inner, outer = inner & keep, outer & keep
+    if not inner.any() or not outer.any():
+        return 0.99  # the mask fills the image: nothing to compare, no evidence against it
+    g = np.asarray(gray, dtype=np.float64)
+    step = abs(float(np.median(g[inner])) - float(np.median(g[outer])))
+    return round(min(step / MOCK_CONTRAST_FULL, 0.99), 3)
 
 
 def _font(size: int) -> Any:
