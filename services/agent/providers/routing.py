@@ -6,6 +6,8 @@
 | plan, build, fix | Planner/Builder/Fixer | Muse Spark Open: Baseten → Fireworks → Together → muse-spark-1.3      | Spark Open: Baseten → FW → Together |
 | fix_agent        | Fixer agent (tools) | Muse Spark Open: Baseten → Fireworks → Together → muse-spark-1.3    | Spark Open: Baseten → FW → Together |
 | spec_lookup      | Spec finder      | muse-wonder-1.0 with web_search (citations)                                | none → deterministic mock          |
+| buy_lookup       | Buy-or-print finder | muse-wonder-1.0 → muse-spark-1.3, web_search (+ user city), citations    | none → deterministic mock          |
+| narrate          | Walk-around narrator | muse-spark-1.3 video + audio understanding (points, never numbers)      | none → deterministic mock          |
 | judge            | Judge            | Muse Glimmer 30B: llama.cpp on Modal → Together                            | same                               |
 | capture_triage   | Capture triage   | Muse Glimmer 30B: llama.cpp on Modal → Together                            | same                               |
 | voice_map        | Voice editor     | muse-spark-1.3                                                             | Spark Open                         |
@@ -127,6 +129,8 @@ STAGES: dict[str, StageSpec] = {
         StageSpec("fix", "Fixer", "complete", (*SPARK_OPEN_CHAIN, SPARK_13), SPARK_OPEN_CHAIN, "medium"),
         StageSpec("fix_agent", "Fixer agent", "agent", (*SPARK_OPEN_CHAIN, SPARK_13), SPARK_OPEN_CHAIN, "medium"),
         StageSpec("spec_lookup", "Spec finder", "search", (WONDER,), (), "medium"),
+        StageSpec("buy_lookup", "Buy-or-print finder", "search", (WONDER, SPARK_13), (), "low"),
+        StageSpec("narrate", "Walk-around narrator", "video", (SPARK_13,), (), "low"),
         StageSpec("judge", "Judge", "complete", GLIMMER_CHAIN, GLIMMER_CHAIN, "medium"),
         StageSpec("capture_triage", "Capture triage", "complete", GLIMMER_CHAIN, GLIMMER_CHAIN, "low"),
         StageSpec("voice_map", "Voice editor", "complete", (SPARK_13,), SPARK_OPEN_CHAIN, "low"),

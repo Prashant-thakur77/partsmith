@@ -8,7 +8,8 @@ partials), `speechEnd`, `speechComplete{transcript}` (the final text of one turn
 
 If the socket cannot be opened (or drops before any text), the audio already received is sent to the file
 endpoint instead (`providers.transcribe`) and one `final` event is yielded — the file endpoint stays the fallback.
-The mock turns a provided text (or the registered `transcribe_stream` mock) into the same event sequence.
+The mock turns a provided text (or the registered `transcribe_stream` mock) into the same event sequence, paced by
+the audio it receives (so a browser sees partials while still talking).
 """
 
 from __future__ import annotations
@@ -33,6 +34,7 @@ from .telemetry import record_call
 STREAM_PATH = "/asr/realtime"
 SAMPLE_RATE = 16_000
 BYTES_PER_SECOND = SAMPLE_RATE * 2  # s16le mono
+MOCK_EVENT_AUDIO_S = 0.25  # the mock releases one event per this much received audio
 sleep: Callable[[float], None] = time.sleep  # tests replace this
 
 VoiceKind = Literal["speech_start", "speech_end", "partial", "final"]
@@ -114,6 +116,36 @@ def _mock_events(text: str) -> Iterator[VoiceEvent]:
         yield VoiceEvent("speech_end", turn_id=turn, mode="mock")
 
 
+def _mock_stream(chunks: Iterable[bytes], text: str | None) -> Iterator[VoiceEvent]:
+    """The mock "hears" `text` and releases one event per `MOCK_EVENT_AUDIO_S` of audio received, so partials show
+    up while the user is still talking; what is left is flushed when the upload ends. No audio at all → no events.
+    A registered `transcribe_stream` mock gets the whole clip's size first, so it consumes the upload before replying."""
+    handler = mocks.handler_for("transcribe_stream")
+    if text is None and handler is not None:
+        pcm = b"".join(_strip_wav_header(c) for c in chunks)
+        if pcm:
+            yield from _mock_events(str(handler(ModelRequest(messages=[], mock_context={"audio_bytes": len(pcm)}))))
+        return
+    script = _mock_events(text if text is not None else mocks.MOCK_TRANSCRIPT)
+    per_event = BYTES_PER_SECOND * MOCK_EVENT_AUDIO_S
+    received = released = 0
+    for chunk in chunks:
+        received += len(_strip_wav_header(chunk))
+        while released < int(received // per_event):
+            event = next(script, None)
+            if event is None:
+                break
+            released += 1
+            yield event
+    if received:
+        yield from script
+
+
+def mode() -> Literal["live", "mock"]:
+    """What a realtime session would run as right now (replay has no per-chunk recordings, so it runs as the mock)."""
+    return "live" if resolve("transcribe_stream").mode == "live" else "mock"
+
+
 def transcribe_stream(
     chunks: Iterable[bytes],
     *,
@@ -130,16 +162,11 @@ def transcribe_stream(
     res = resolve("transcribe_stream")
     t0 = time.monotonic()
     if res.mode != "live":  # replay has no per-chunk recordings: realtime runs as the labelled mock
-        pcm = b"".join(_strip_wav_header(c) for c in chunks)
-        handler = mocks.handler_for("transcribe_stream")
-        text = mock_text
-        if text is None and handler is not None:
-            text = str(handler(ModelRequest(messages=[], mock_context={"audio_bytes": len(pcm)})))
         record_call(
             stage="transcribe_stream", provider="mock", model="muse-voice-transcribe-1.0", mode="mock", usage=Usage(),
             ms=round((time.monotonic() - t0) * 1000), usd=0.0,
         )  # fmt: skip
-        yield from _mock_events(text if text is not None else mocks.MOCK_TRANSCRIPT)
+        yield from _mock_stream(chunks, mock_text)
         return
     route = res.routes[0]
     key, base = route.endpoint.key() or "", route.endpoint.base_url() or ""
@@ -154,6 +181,7 @@ def transcribe_stream(
         yield from _fallback(sent, source, list(language_bias or []))
         return
     errors: queue.Queue[BaseException] = queue.Queue()
+    outcome: str | None = None  # "ok" | "fallback" | "closed" (the caller stopped reading); None = failed after text
     try:
         ws.send(json.dumps(handshake(key, route.model, keywords, language_bias)))
         ack = json.loads(ws.recv(timeout=15))
@@ -204,20 +232,27 @@ def transcribe_stream(
         sender.join(timeout=5)
         if not errors.empty():
             raise errors.get()
+        outcome = "ok"
+    except GeneratorExit:
+        outcome = "closed"
+        raise
     except ProviderError as exc:
         if got_text:
             raise
+        outcome = "fallback"
         log.warning("realtime voice failed before any text (%s); using the file endpoint", exc)
         yield from _fallback(sent, source, list(language_bias or []))
         return
     finally:
         with contextlib.suppress(Exception):
             ws.close()
-    seconds_ms = round(sum(len(c) for c in sent) * 1000 / BYTES_PER_SECOND)
-    record_call(
-        stage="transcribe_stream", provider=route.provider, model=route.model, mode="live", usage=Usage(),
-        ms=round((time.monotonic() - t0) * 1000), usd=pricing.voice_cost_usd(route.provider, seconds_ms),
-    )  # fmt: skip
+        if outcome != "fallback":  # the streamed audio is billed however the stream ended
+            seconds_ms = round(sum(len(c) for c in sent) * 1000 / BYTES_PER_SECOND)
+            record_call(
+                stage="transcribe_stream", provider=route.provider, model=route.model, mode="live", usage=Usage(),
+                ms=round((time.monotonic() - t0) * 1000), usd=pricing.voice_cost_usd(route.provider, seconds_ms),
+                ok=outcome is not None, error=None if outcome is not None else "stream failed after transcripts",
+            )  # fmt: skip
 
 
 def _fallback(sent: list[bytes], rest: Iterator[bytes], bias: list[str]) -> Iterator[VoiceEvent]:

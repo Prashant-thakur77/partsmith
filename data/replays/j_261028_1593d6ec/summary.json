@@ -1,0 +1,16 @@
+{
+  "id": "j_261028_1593d6ec",
+  "kind": "fix",
+  "status": "done",
+  "created_at": 1793202540.1887248,
+  "updated_at": 1793202555.1333346,
+  "title": "Knob with D-shaft bore (synthetic, clean) (synthetic sample)",
+  "origin": "synthetic",
+  "provider_mode": "mock",
+  "verified": true,
+  "max_error_mm": 0.40613832184313653,
+  "iterations": 2,
+  "cost_usd": 0.0,
+  "part_slug": null,
+  "is_replay": false
+}

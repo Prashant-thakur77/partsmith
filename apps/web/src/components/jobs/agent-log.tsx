@@ -103,16 +103,4 @@ export function AgentLog({ events, modelCalls, onFocus }: { events: AgentEvent[]
   );
 }
 
-export function ProgressLines({ lines, className }: { lines: { iter: number; text: string }[]; className?: string }) {
-  if (!lines.length) return null;
-  return (
-    <ol className={cn("space-y-1 font-mono text-[11.5px] leading-5 text-muted tnum", className)} aria-label="Progress per iteration">
-      {lines.map((l) => (
-        <li key={l.iter} className="flex gap-2">
-          <span className="shrink-0 text-subtle">#{l.iter}</span>
-          <span className="min-w-0">{l.text}</span>
-        </li>
-      ))}
-    </ol>
-  );
-}
+export { ProgressLines } from "./progress-lines";

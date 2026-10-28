@@ -11,6 +11,7 @@ from __future__ import annotations
 
 import importlib
 import io
+import json
 import math
 import re
 import zipfile
@@ -168,6 +169,7 @@ def apply_orbit(run: FixRun) -> None:
         run.log(f"orbit clip not usable ({type(exc).__name__}: {exc})", "warn")
         return
     frames = list(_get(out, "frames", default=[]) or [])
+    run.orbit_footprint = _get(out, "footprint_mat")
     p2m = _get(out, "part_to_mat")
     if p2m is not None:
         from services.verifier.camera import CameraView
@@ -192,6 +194,112 @@ def apply_orbit(run: FixRun) -> None:
         + (f" (dropped: {', '.join(f'{k} ×{v}' for k, v in rejected.items())})" if rejected else "")
         + (f"; visual-hull height {run.orbit_height.value:.2f} mm (measured)" if run.orbit_height else "; no height")
     )
+
+
+# ------------------------------------------------------------------------------------------------- narration
+
+AUDIO_MIMES = {".wav": "audio/wav", ".ogg": "audio/ogg", ".mp3": "audio/mpeg", ".m4a": "audio/mp4",
+               ".webm": "audio/webm", ".flac": "audio/flac", ".aac": "audio/aac"}  # fmt: skip
+
+
+def apply_narration(run: FixRun) -> str | None:
+    """Narrated walk-around: Muse Spark watches/hears the clip (and reads a voice note) and points at features; code
+    checks every point on its decoded frame and measures the kept ones with SAM point prompts. The narration's words
+    steer the understand stage; it never sets a number. Returns a short label for the measure stage (or None)."""
+    clip = run.photos.get("orbit")
+    if clip is None:
+        return None
+    from services.agent.providers import vision
+    from services.metrology import narration as N
+
+    voice = run.photos.get("narration")
+    if voice is None and not N.has_audio_track(clip):
+        run.log("walk-around: no sound and no voice note, so there is no narration to follow")
+        return None
+    clip_key = run.photo_shas["orbit"]
+    mime = blobs.content_type(clip_key)
+    suffix = "." + clip_key.rsplit(".", 1)[-1] if "." in clip_key else ".mp4"
+    try:
+        w, h, fps, n = vision.probe_video(clip, suffix)
+    except ValueError as exc:
+        run.log(f"narration skipped: the clip could not be decoded ({exc})", "warn")
+        return None
+    voice_note = None
+    if voice is not None:
+        vkey = run.photo_shas["narration"]
+        voice_note = (voice, AUDIO_MIMES.get("." + vkey.rsplit(".", 1)[-1], "audio/wav"))
+    try:
+        with providers.job_context(run.job.id, run.job.emit, ctx=run.job.ctx):
+            nar = providers.narrate_video(clip, mime, width=w, height=h, duration_s=n / fps if fps > 0 else 0.0,
+                                          intent=run.job.input.intent, voice_note=voice_note)  # fmt: skip
+    except Exception as exc:  # narration is optional evidence: never fail the job over it
+        run.log(f"narration skipped: {type(exc).__name__}: {exc}", "warn")
+        return None
+    run.narration = nar
+    pts = [N.NarratedPoint(str(f["name"]), f["kind"], float(f["t_s"]), float(f["x_px"]), float(f["y_px"]),
+                           str(f.get("said", ""))) for f in nar.features]  # fmt: skip
+    mo, top = run.mo.get("top"), run.measurements.get("top")
+    height = run.heights.get("top", (None, "prism"))[0]
+    top_fp = mo.footprint_mat if mo is not None else None
+    clip_fp = getattr(run, "orbit_footprint", None)
+    # The part may have been moved between the photo and the clip: points are checked against the clip's own
+    # footprint when the walk-around measured one, and merged into the top view only when both footprints coincide.
+    same_place = clip_fp is None or (top_fp is not None and N.same_placement(top_fp, clip_fp))
+    checks, frames = N.locate_points(clip, pts, footprint_mat=clip_fp if clip_fp is not None else top_fp,
+                                     thickness_mm=height, suffix=suffix)  # fmt: skip
+    feats: list[Any] = []
+    seg = getattr(providers, "segment_points", None)
+    if frames and seg is not None:
+        with providers.job_context(run.job.id, run.job.emit, ctx=run.job.ctx):
+            feats = N.measure_located(frames, seg, thickness_mm=height)
+    for c in checks:
+        if not c.ok:
+            run.log(f"narrated point {c.point.name!r} dropped: {c.reason}", "warn")
+    merged: list[str] = []
+    merge = _optional("services.metrology.points", "merge_holes")
+    holes_found = any(f.ok and f.kind == "hole" for f in feats)
+    if holes_found and not same_place:
+        run.log("narration: the part was moved between the top photo and the clip, so narrated holes are measured on "
+                "the clip and reported, not merged into the top view")  # fmt: skip
+    if top is not None and merge is not None and holes_found and same_place:
+        quality = [_quality_of(hh.diameter.evidence.note if hh.diameter.evidence else None, hh.diameter.value / 2)
+                   for hh in top.holes]  # fmt: skip
+        holes, notes = merge(top, quality, feats)
+        merged = [f"{x} ({N.NARRATION_NOTE})" for x in notes]
+        if holes != list(top.holes):
+            top.holes = holes
+            run.save_measurements()
+    for x in merged:
+        run.log(f"narration: {x}")
+    for f in feats:
+        vals = ", ".join(f"{k} {v.value:.2f} mm" for k, v in f.values.items())
+        run.log(f"narrated {f.kind} {f.id!r}: " + (f"measured {vals} ({N.NARRATION_NOTE})" if f.ok else
+                                                   f"not measured: {f.reason}"))  # fmt: skip
+    record = {
+        "narration": nar.to_dict(),
+        "points": [c.to_dict() for c in checks],
+        "measured": [
+            {
+                "id": f.id,
+                "kind": f.kind,
+                "ok": f.ok,
+                "method": f.method,
+                "center_mat_mm": f.center_mm,
+                "values_mm": {k: v.value for k, v in f.values.items()},
+                "reason": f.reason,
+                "provenance": N.NARRATION_NOTE,
+            }
+            for f in feats
+        ],
+        "merged": merged,
+        "same_placement": same_place,
+    }
+    run.job.write_json("narration.json", record)
+    label = f"walk-around narration ({nar.label})"
+    emit_artifact(run, "narration", json.dumps(record, indent=1).encode(), ".json", label)
+    ok = sum(c.ok for c in checks)
+    measured = sum(f.ok for f in feats)
+    return f"narration: {ok}/{len(checks)} pointed feature(s) kept, {measured} measured ({nar.mode})"
 
 
 # ------------------------------------------------------------------------------------------------- cited specs
@@ -552,6 +660,7 @@ def emit_artifact(run: FixRun, kind: str, data: bytes, ext: str, label: str) -> 
 __all__ = [
     "accept_cited",
     "appliance_in",
+    "apply_narration",
     "apply_orbit",
     "apply_points",
     "feature_points",

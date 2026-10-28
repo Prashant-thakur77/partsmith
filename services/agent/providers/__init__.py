@@ -7,6 +7,8 @@ Public API (the orchestrator, API, metrology and media code call only these):
     segment_points(image_png, points_pos, points_neg=(), box=None) -> list[(mask, score)]    # SAM 3.1 points/box
     segment_video(video_bytes, mime, prompt, *, fps=5) -> list[FrameMask]                    # SAM 3.1 video
     lookup_spec(query, want, *, fixture=None) -> SpecLookup                                  # Wonder + web search
+    buy_lookup(query, *, city=None, fixture=None) -> BuyResult                               # buy-or-print, cited only
+    narrate_video(video, mime, *, width, height, duration_s, intent, voice_note) -> Narration  # Spark video+audio
     generate_image(prompt, reference_images, *, editable=False) -> ImageResult               # Muse Image
     reconstruct(rectified_png, keep_mask_png, instruction="") -> ImageResult
     edit_image(previous_id, instruction) -> ImageResult
@@ -35,6 +37,7 @@ from .base import (
     Transcript,
     Usage,
 )
+from .buy import BuyResult, buy_lookup
 from .config import Mode, reset_warnings
 from .core import (
     complete,
@@ -49,6 +52,7 @@ from .core import (
 )
 from .image_ops import edit_image, install_card, reconstruct
 from .mocks import clear_mocks, register_mock, unregister_mock
+from .narrate import Narration, narrate_video
 from .realtime import VoiceEvent, transcribe_stream
 from .routing import STAGES
 from .spec import SpecLookup, lookup_spec
@@ -70,6 +74,7 @@ def reset_state() -> None:
 __all__ = [
     "STAGES",
     "AgentResult",
+    "BuyResult",
     "Completion",
     "FrameMask",
     "ImageResult",
@@ -77,6 +82,7 @@ __all__ = [
     "MockHandler",
     "Mode",
     "ModelRequest",
+    "Narration",
     "ProviderError",
     "SchemaValidationError",
     "SpecLookup",
@@ -85,6 +91,7 @@ __all__ = [
     "Transcript",
     "Usage",
     "VoiceEvent",
+    "buy_lookup",
     "clear_mocks",
     "complete",
     "edit_image",
@@ -92,6 +99,7 @@ __all__ = [
     "install_card",
     "job_context",
     "lookup_spec",
+    "narrate_video",
     "open_weights_summary",
     "overall_mode",
     "reconstruct",

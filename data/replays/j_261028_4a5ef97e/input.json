@@ -1,0 +1,17 @@
+{
+  "kind": "fix",
+  "intent": "Make a replacement for this broken battery compartment cover.",
+  "photo_shas": {
+    "top": "3193fb1647192f5f5193551971a67bbd62188d5e4cb7e208c3d137ab41f8bb11.jpg",
+    "side": "120247ecf4867cd3e47f1676346827894ad3ba47c0514e8d1ebfc2f69a0c8264.jpg"
+  },
+  "mat_kind": "screen",
+  "screen_px_per_mm": null,
+  "thickness_mm": 1.5,
+  "family_hint": "cover",
+  "origin": "synthetic",
+  "max_iters": 6,
+  "budget_usd": 0.5,
+  "provider_mode": null,
+  "city": null
+}

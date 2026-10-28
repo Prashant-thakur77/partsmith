@@ -59,6 +59,9 @@ class Measured(Strict):
     source: Source = Source.measured
     sigma_mm: float = Field(0.0, ge=0)
     evidence: Evidence | None = None
+    # [low, high] the photo allows when the value rests on an assumption the photo cannot check (a thick part's
+    # top-view length if its ends stood lower than the stated height). None: the value holds up to sigma_mm.
+    bound_mm: tuple[float, float] | None = None
 
 
 Point2 = tuple[float, float]

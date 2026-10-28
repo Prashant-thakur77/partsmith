@@ -6,8 +6,9 @@ import "server-only";
 import { QueryClient, dehydrate, type DehydratedState } from "@tanstack/react-query";
 import type { z } from "zod/mini";
 import { HealthSchema, StatusSchema } from "./api-types";
+import { apiOrigin } from "./api-origin";
 
-const base = () => `${(process.env.API_URL ?? "http://localhost:8000").replace(/\/$/, "")}/api/v1`;
+const base = () => `${apiOrigin()}/api/v1`;
 
 async function get<S extends z.ZodMiniType>(path: string, schema: S): Promise<z.output<S> | undefined> {
   try {

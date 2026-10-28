@@ -22,7 +22,7 @@
  "tokens_in": 0,
  "tokens_out": 0,
  "model_calls": 2,
- "model_ms": 107,
+ "model_ms": 109,
  "provider_modes": [
   "mock"
  ],
@@ -32,7 +32,7 @@
   ]
  },
  "convergence": [],
- "wall_s": 3.77,
+ "wall_s": 4.12,
  "valid": false,
  "dims": [],
  "missed": [],

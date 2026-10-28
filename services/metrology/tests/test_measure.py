@@ -329,3 +329,22 @@ def test_round_profile(length: float, d: float) -> None:
     err_p = max(abs(mp.length.value - big), abs(mp.width.value - small))
     assert err_r < TOL_MM and err_p > 0.3
     assert any("round profile" in n for n in mr.notes)
+
+
+@pytest.mark.parametrize("thickness", [12.0, 1.0])
+def test_top_view_of_a_thick_part_records_what_the_photo_allows(thickness: float) -> None:
+    """A top photo reads every edge at the stated height; an end that sat lower would read short. The reading is
+    the low end of `bound_mm` and the mat-plane reading the high end; the spread grows with the part's height."""
+    cx, cy = _centre("screen-m", 10, 0)
+    part = T.PrismPart(T.rect_poly(cx, cy, 50.0, 14.0, 20.0), [], thickness_mm=thickness)
+    cam = T.camera_above(_centre("screen-m"), height_mm=330, tilt_deg=4, azimuth_deg=30)
+    sc = T.render_part_scene("screen-m", cam, part)
+    out = measure_photo(sc.image, "top", segmenter=ThresholdSegmenter(), thickness_mm=thickness, K=cam.K)
+    m = out.result.measurements
+    assert m is not None and m.length.bound_mm is not None
+    lo, hi = m.length.bound_mm
+    assert lo == m.length.value and abs(lo - 50.0) < TOL_MM
+    if thickness > 5:
+        assert hi - lo > 1.0 and any("a side photo settles it" in n for n in m.notes)
+    else:
+        assert hi - lo < 0.3

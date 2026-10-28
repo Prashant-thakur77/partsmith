@@ -11,6 +11,7 @@ from __future__ import annotations
 
 import asyncio
 import contextlib
+import difflib
 import json
 import logging
 import os
@@ -21,7 +22,7 @@ from collections.abc import AsyncIterator, Awaitable, Callable, Iterator
 from typing import Annotated, Any, Literal
 from urllib.parse import urlencode
 
-from fastapi import APIRouter, Body, Depends, FastAPI, File, Form, Query, Request, UploadFile
+from fastapi import APIRouter, Body, Depends, FastAPI, File, Form, Query, Request, UploadFile, WebSocket
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, JSONResponse, PlainTextResponse, Response, StreamingResponse
 from partsmith_schemas import ArtifactEvent, JobInput, Measurements, MetricEvent, Need, PartRecord
@@ -29,17 +30,19 @@ from partsmith_schemas.partspec import Family
 from partsmith_schemas.registry import BakeResult, VariantResult
 from partsmith_schemas.verification import ParamSpec, Verification
 from pydantic import BaseModel, Field
-from starlette.routing import Route
+from starlette.routing import Route, WebSocketRoute
 from starlette.types import Receive, Scope, Send
 
 from services.agent import providers
-from services.api import agentdocs, auth, usage
+from services.api import agentdocs, auth, round3, usage, voice_live
 from services.api.auth import require_admin
 from services.api.common import (
     API,
     EXTENSIONS,
     IMMUTABLE,
+    RESERVED_QUERY,
     _file,
+    _float,
     _formats,
     _job,
     _mat_or_404,
@@ -50,13 +53,13 @@ from services.api.common import (
     public_base,
 )
 from services.api.errors import ApiError, install
-from services.api.round2 import apply_job_preset, apply_preset, embed_router
+from services.api.round2 import apply_job_preset, apply_preset, embed_router, job_knobs
 from services.api.round2 import router as round2_router
 from services.api.uploads import check_audio, check_video, clean_image, parse_points
 from services.common import blobs
 from services.common.paths import REPO_ROOT
 from services.geom_worker import bake as geom_bake
-from services.registry import gate, steer
+from services.registry import fit_learning, gate, impact, presets, steer
 from services.registry import parts as P
 from services.registry.publish import dedupe_published, publish_part
 from services.registry.store import get_registry
@@ -174,11 +177,7 @@ app = FastAPI(
 install(app)
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[
-        o.strip()
-        for o in os.environ.get("PARTSMITH_CORS_ORIGINS", "http://localhost:3000,http://127.0.0.1:3000").split(",")
-        if o.strip()
-    ],
+    allow_origins=voice_live.cors_origins(),
     allow_methods=["*"],
     allow_headers=["*"],
     expose_headers=["Content-Disposition", "Retry-After"],
@@ -357,32 +356,142 @@ def mat_pdf(mat_id: str) -> Response:
     )
 
 
+# Printable files leave only through the export gate, whatever URL they are fetched by. A blob or bake maps back to the
+# job or registry part that handed it out (claims recorded when bakes are served, else the job run logs, else the
+# registry part whose program built the bake); with several owners the most permissive decision applies, since the
+# same bytes are downloadable through that owner's own gated route anyway.
+TEST_PIECE_KINDS = frozenset({"coupon"})  # the fit-test coupon is the recommended first print for best effort
+PRINTABLE_BAKE_NAMES = frozenset({geom_bake.FILE_NAMES[f] for f in ("stl", "step", "3mf")})
+_GATE_RANK = {"verified": 2, "best_effort": 1, "blocked": 0}
+NO_OWNER = "No verification record ties this file to a job or a part, so it cannot be exported."
+
+
+def _job_roots() -> list[Any]:
+    from services.agent import jobs as agent_jobs
+
+    root = getattr(_svc().manager(), "root", None)
+    return [r for r in (root, agent_jobs.REPLAYS_DIR) if r is not None]
+
+
+def _runs_referencing(sha: str) -> list[str]:
+    """Job ids whose run log mentions the blob `sha` (artifact events carry it)."""
+    out: list[str] = []
+    for root in _job_roots():
+        if not root.is_dir():
+            continue
+        for d in sorted(root.iterdir()):
+            log_path = d / "run.jsonl"
+            try:
+                if log_path.is_file() and sha in log_path.read_text(encoding="utf-8", errors="ignore"):
+                    out.append(d.name)
+            except OSError:
+                continue
+    return out
+
+
+def _parts_for_bake(manifest_path: Any) -> list[str]:
+    """Registry parts whose program (and version) built this bake, from the bake's manifest."""
+    from services.geom_worker.program import code_sha
+
+    try:
+        m = json.loads(manifest_path.read_text())
+    except (OSError, json.JSONDecodeError):
+        return []
+    reg = get_registry()
+    out: list[str] = []
+    for slug in reg.slugs():
+        part = reg.get_part(slug)
+        if part is not None and code_sha(part.code) == m.get("code_sha") and part.version == m.get("version"):
+            out.append(slug)
+    return out
+
+
+def _owner_decisions(owners: list[str], sha: str | None) -> tuple[list[gate.ShipDecision], bool]:
+    """(decisions, test_piece): one gate decision per owner that still exists; `test_piece` when a job publishes
+    this blob only as a fit-test coupon."""
+    decisions: list[gate.ShipDecision] = []
+    for owner in owners:
+        kind, _, ident = owner.partition(":")
+        if kind == "part":
+            part = get_registry().get_part(ident)
+            if part is not None:
+                decisions.append(gate.decide_part(part))
+        elif kind == "job":
+            job = _svc().manager().get(ident)
+            if job is None:
+                continue
+            if sha is not None:
+                kinds = {
+                    getattr(e, "kind", None)
+                    for e in job.events
+                    if getattr(e, "t", None) == "artifact" and str(getattr(e, "sha", "") or "").split(".")[0] == sha
+                }
+                if kinds and kinds <= TEST_PIECE_KINDS:
+                    return [], True
+            decisions.append(_job_decision(job))
+    return decisions, False
+
+
+def _gate_printable(owners: list[str], sha: str | None, ack: bool) -> None:
+    """Apply the export gate to a printable file: verified ships, best effort needs `ack` (409 needs_ack), blocked or
+    unowned is refused (409 not_shippable, like the bake and bundle routes)."""
+    decisions, test_piece = _owner_decisions(owners, sha)
+    if test_piece:
+        return
+    if not decisions:
+        raise ApiError(409, "not_shippable", NO_OWNER)
+    best = max(decisions, key=lambda d: _GATE_RANK[d.status])
+    if best.status == "blocked":
+        raise ApiError(409, "not_shippable", best.reason)
+    gate.require(best, ack)
+
+
+def blob_owners(key: str) -> list[str]:
+    """Who handed out this blob: recorded claims, else the job run logs that mention it (then claimed)."""
+    found = blobs.owners(key)
+    if not found:
+        sha = key.split(".")[0]
+        found = [f"job:{jid}" for jid in _runs_referencing(sha)]
+        for owner in found:
+            blobs.claim(key, owner)
+    return found
+
+
+GATED_CACHE = "private, no-cache"  # a later re-verification must take effect, so no shared caching
+
+
 @router.get(
     "/blobs/{key}",
-    summary="Content-addressed blob (images, overlays, code)",
+    summary="Content-addressed blob (images, overlays, code); printable files go through the export gate",
     tags=["files"],
     response_class=FileResponse,
 )
-def blob(key: str, request: Request) -> Response:
+def blob(key: str, request: Request, ack: bool = False) -> Response:
+    """Previews (images, GLB, JSON, code) are open. Printable files (STL, 3MF, STEP, zips) answer like the part's own
+    download: verified ships, best effort needs `ack=1` (409 `needs_ack`), failed or unowned is refused (409 `not_shippable`)."""
     try:
         path = blobs.locate(key)
     except ValueError as exc:
         raise ApiError(400, "bad_key", "blob keys are sha256 hex plus an optional extension") from exc
     if not path.exists():
         raise ApiError(404, "blob_not_found", f"no blob {key!r}")
+    cache = IMMUTABLE
+    if blobs.is_printable(key):
+        _gate_printable(blob_owners(key), key.split(".")[0], ack)
+        cache = GATED_CACHE
     etag = f'"{key.split(".")[0]}"'
     if request.headers.get("if-none-match") == etag:
-        return Response(status_code=304, headers={"ETag": etag, "Cache-Control": IMMUTABLE})
-    return FileResponse(path, media_type=blobs.content_type(key), headers={"Cache-Control": IMMUTABLE, "ETag": etag})
+        return Response(status_code=304, headers={"ETag": etag, "Cache-Control": cache})
+    return FileResponse(path, media_type=blobs.content_type(key), headers={"Cache-Control": cache, "ETag": etag})
 
 
 @router.get(
     "/bakes/{cache_key}/{name}",
-    summary="A baked file (content-addressed by the bake cache key)",
+    summary="A baked file (content-addressed by the bake cache key); printable files go through the export gate",
     tags=["files"],
     response_class=FileResponse,
 )
-def baked_file(cache_key: str, name: str) -> FileResponse:
+def baked_file(cache_key: str, name: str, ack: bool = False) -> FileResponse:
     path = P.bake_file(cache_key, name)
     if path is None:
         raise ApiError(
@@ -392,6 +501,10 @@ def baked_file(cache_key: str, name: str) -> FileResponse:
             sorted(geom_bake.FILE_NAMES.values()),
         )
     fmt = next((f for f, n in geom_bake.FILE_NAMES.items() if n == name), "")
+    if name in PRINTABLE_BAKE_NAMES:
+        owners = blobs.owners(cache_key) or [f"part:{s}" for s in _parts_for_bake(path.parent / "manifest.json")]
+        _gate_printable(owners, None, ack)
+        return _file(path, fmt, name, cache=GATED_CACHE)
     return _file(path, fmt, name)
 
 
@@ -415,6 +528,13 @@ def jobs_fix(
         str | None,
         Form(description='Feature taps in top-photo pixels: {"top": [{"x", "y", "kind"?, "id"?}]}', max_length=8000),
     ] = None,
+    narration: Annotated[
+        UploadFile | None,
+        File(description="Optional voice note describing the part while filming the walk-around clip (audio, ≤ 15 MB)"),
+    ] = None,
+    city: Annotated[
+        str | None, Form(max_length=80, description="Optional city for nearby print shops on the buy-or-print card")
+    ] = None,
 ) -> dict[str, Any]:
     """Photos are validated (decode, size, type) and GPS metadata is removed before anything is stored."""
     photos: dict[str, bytes] = {}
@@ -425,6 +545,10 @@ def jobs_fix(
         clip = orbit.file.read()
         check_video(clip, "orbit")
         photos["orbit"] = clip
+    if narration is not None:
+        note = narration.file.read()
+        check_audio(note, narration.content_type, "narration")
+        photos["narration"] = note
     taps = parse_points(points)
     job_input = JobInput(
         intent=intent,
@@ -432,6 +556,7 @@ def jobs_fix(
         thickness_mm=thickness_mm,
         family_hint=family_hint,
         screen_px_per_mm=screen_px_per_mm,
+        city=(city or "").strip() or None,
     )
     extra = {"points": taps} if taps else {}
     job = _service_call(_svc().start_fix_job, photos, job_input, conflict="invalid_request", **extra)
@@ -451,8 +576,6 @@ def demo_samples() -> list[dict[str, Any]]:
 def jobs_demo(body: DemoRequest) -> dict[str, Any]:
     ids = [s["id"] for s in _svc().list_demo_samples()]
     if body.sample not in ids:
-        import difflib
-
         raise ApiError(
             404,
             "sample_not_found",
@@ -680,22 +803,93 @@ def job_runlog(job_id: str) -> FileResponse:
     )
 
 
+@router.get(
+    "/jobs/{job_id}/impact",
+    summary="Minutes from upload to a print file, filament grams and cost (labelled estimates)",
+    tags=["jobs"],
+)
+def job_impact(job_id: str) -> dict[str, Any]:
+    """Computed from the job's own events and baked mesh; fields without data are null, never a placeholder."""
+    job = _job(job_id)
+    ver = job.read_json("verification.json") or {}
+    vol = (ver.get("validity") or {}).get("volume_mm3") if isinstance(ver, dict) else None
+    return impact.job_impact(
+        job_id=job.id,
+        created_at=float(job.summary.created_at or 0.0),
+        events=list(job.events),
+        facts=job.read_json("facts.json"),
+        volume_mm3=float(vol) if isinstance(vol, (int, float)) else None,
+        replay=bool(job.summary.is_replay) or job.summary.origin == "replay",
+    )
+
+
+FitSession = Annotated[
+    str | None,
+    Query(
+        pattern=fit_learning.SESSION_PATTERN, description="Device id: use the clearance learned from its coupon reports"
+    ),
+]
+
+
+def _knob_params(request: Request) -> dict[str, float]:
+    """Knob values from the query string (reserved words and `fit_session` are not knobs)."""
+    return {
+        k: _float(k, v) for k, v in request.query_params.multi_items() if k not in RESERVED_QUERY and k != "fit_session"
+    }
+
+
+def _learned_preset(
+    specs: list[ParamSpec],
+    base: dict[str, float],
+    raw: dict[str, float],
+    values: dict[str, float],
+    info: dict[str, Any],
+    preset: str,
+    fit_session: str | None,
+) -> tuple[dict[str, float], dict[str, Any]]:
+    """Label a preset bake with where its clearance came from; with a device whose coupon reports exist, re-apply the
+    preset with the learned clearance (only the clearance knob changes — never a measured dimension)."""
+    lc = fit_learning.learned(get_registry(), preset, fit_session)
+    info = {
+        **info,
+        "source": lc.source,
+        "label": lc.label,
+        "reports": lc.reports,
+        "preset_delta_mm": lc.preset_clearance_mm,
+    }
+    if lc.source == "learned":
+        values, changes = presets.apply(preset, specs, {**base, **raw}, delta_mm=lc.clearance_mm)
+        info.update(delta_mm=lc.clearance_mm, changes=changes)
+    return values, info
+
+
 @router.get("/jobs/{job_id}/bake", summary="Re-bake the job's current part program (before publishing)", tags=["jobs"])
 def job_bake(
-    job_id: str, request: Request, download: bool = False, ack: bool = False, preset: str | None = None
+    job_id: str,
+    request: Request,
+    download: bool = False,
+    ack: bool = False,
+    preset: str | None = None,
+    fit_session: FitSession = None,
 ) -> Any:
     """Query: `<param>=<value>` knobs plus `format=` (repeat or comma-separate). Same BakeResult as part bakes.
     `preset=` applies a fit preset (GET /jobs/{id}/presets) on top of the job's current values and the knobs, by the
-    same rule as part bakes. `download=1` goes through the export gate: verified ships, best effort needs `ack=1`,
-    failed is refused."""
+    same rule as part bakes; with `fit_session=` the clearance learned from that device's coupon reports replaces the
+    preset's. `download=1` goes through the export gate: verified ships, best effort needs `ack=1`, failed is
+    refused."""
     job = _job(job_id)
-    params, fmts = _query_params(request), _formats(request)
+    params, fmts = _knob_params(request), _formats(request)
     svc = _svc()
     if not hasattr(svc, "bake_job"):
         raise ApiError(501, "not_implemented", "this build's agent service has no bake_job")
+    raw = dict(params)
     params, preset_info = apply_job_preset(job_id, params, preset)
+    if preset_info is not None and preset:
+        specs, base = job_knobs(job_id)
+        params, preset_info = _learned_preset(specs, base, raw, params, preset_info, preset, fit_session)
     res = _service_call(svc.bake_job, job_id, params, fmts, conflict="no_program")
     data = res.model_dump(mode="json") if hasattr(res, "model_dump") else dict(res)
+    _claim_job_bake(job_id, data)
     if preset_info is not None:
         data["preset"] = preset_info
     if download:
@@ -707,6 +901,18 @@ def job_bake(
             raise ApiError(404, "artifact_not_found", f"no {fmt} file for this bake", sorted(data["artifacts"]))
         return _file(path, fmt, f"{job_id}{EXTENSIONS[fmt]}")
     return data
+
+
+def _claim_job_bake(job_id: str, data: dict[str, Any]) -> None:
+    """Tie a job bake's files to the job, so its printable blob links go through the job's export gate."""
+    owner = f"job:{job_id}"
+    key = data.get("cache_key")
+    if isinstance(key, str) and len(key) == 64:
+        blobs.claim(key, owner)
+    for url in (data.get("artifacts") or {}).values():
+        if isinstance(url, str) and url.startswith(f"{API}/blobs/"):
+            with contextlib.suppress(ValueError):
+                blobs.claim(url.rsplit("/", 1)[-1], owner)
 
 
 class PublishRequest(BaseModel):
@@ -786,6 +992,19 @@ def transcribe(
     mime = check_audio(data, audio.content_type)
     t = providers.transcribe(data, mime, language_hint)
     return {"text": t.text, "mode": t.mode, "language": t.language_hint, "model": t.model, "note": t.note}
+
+
+@router.websocket("/jobs/{job_id}/voice/live")
+async def job_voice_live(websocket: WebSocket, job_id: str) -> None:
+    """Hands-free / hold-to-talk voice edits: binary PCM s16le mono 16 kHz frames up, JSON transcripts and applied
+    edits down (protocol in `services/api/voice_live.py`, docs/API.md "Live voice"). The voice key stays on the
+    server; without one the session is the labelled mock."""
+    try:  # WebSockets skip the HTTP middleware: count the session here
+        client = websocket.client.host if websocket.client else ""
+        usage.record(f"{API}/jobs/{{job_id}}/voice/live", client, websocket.headers.get("user-agent", ""))
+    except Exception:
+        log.warning("usage counter failed")
+    await voice_live.run(websocket, job_id, knobs=job_knobs)
 
 
 @router.get("/replays", summary="Bundled, labelled replays of earlier runs", tags=["jobs"])
@@ -894,19 +1113,31 @@ PREVIEW_FORMATS = ("view", "glb")  # viewer formats; printable files go through 
     tags=["registry"],
     responses={200: {"model": BakeResult}},
 )
-def part_bake(slug: str, request: Request, download: bool = False, preset: str | None = None, ack: bool = False) -> Any:
+def part_bake(
+    slug: str,
+    request: Request,
+    download: bool = False,
+    preset: str | None = None,
+    ack: bool = False,
+    fit_session: FitSession = None,
+) -> Any:
     """Query: `<param>=<value>` for any knob plus `format=stl|3mf|step|glb|view|py` (repeat or comma-separate;
     default stl,step,view). Out-of-range values are clamped and listed in `clamped`; unknown knobs are a 422 with
-    `closest_matches`. `preset=` applies a fit preset (GET /parts/{slug}/presets) after the knob values. Identical
+    `closest_matches`. `preset=` applies a fit preset (GET /parts/{slug}/presets) after the knob values; with
+    `fit_session=` the clearance learned from that device's coupon reports replaces the preset's. Identical
     requests are content-addressed cache hits. `download=1` goes through the export gate like bundle.zip: verified
     ships, best effort needs `ack=1` (409 `needs_ack`), failed is refused (409 `not_shippable`); `format=view` and
     `format=glb` are previews and stay open (the embed and AR viewers use them)."""
     part = P.require_part(slug)
-    params, fmts = _query_params(request), _formats(request)
+    params, fmts = _knob_params(request), _formats(request)
     if download and fmts[0] not in PREVIEW_FORMATS:
         gate.require(gate.decide_part(part), ack)  # before baking: a refused export costs nothing
+    raw = dict(params)
     params, preset_info = apply_preset(part, params, preset)
+    if preset_info is not None and preset:
+        params, preset_info = _learned_preset(part.params, part.defaults, raw, params, preset_info, preset, fit_session)
     out = P.bake_output(part, params, fmts)
+    blobs.claim(out.cache_key, f"part:{slug}")  # its /bakes/... file links go through this part's gate
     if download:
         fmt = fmts[0]
         path = out.files.get(fmt)
@@ -980,6 +1211,47 @@ def part_feedback(slug: str, body: FeedbackRequest) -> dict[str, Any]:
     P.require_part(slug)
     fid = get_registry().add_fit_report(slug, body.kind, body.result, {"note": body.note})
     return {"id": fid, "slug": slug, "result": body.result, "kind": body.kind}
+
+
+def _preset_or_422(preset_id: str) -> None:
+    if preset_id not in presets.BY_ID:
+        ids = list(presets.BY_ID)
+        raise ApiError(
+            422, "unknown_preset", f"no fit preset {preset_id!r}", difflib.get_close_matches(preset_id, ids) or ids
+        )
+
+
+Session = Annotated[str | None, Query(pattern=fit_learning.SESSION_PATTERN, description="Device id (no account)")]
+
+
+@router.post(
+    "/fit-reports/coupon",
+    summary="How did the fit-test coupon fit? (tunes this device's clearance for a printer + material)",
+    tags=["registry"],
+)
+def coupon_report(body: fit_learning.CouponReportRequest) -> dict[str, Any]:
+    """Per mating feature: tight / ok / loose (optionally barely / very). Returns the clearance this device's next
+    preset bake uses. Only the preset's clearance changes, within its documented range; measured dimensions never do."""
+    _preset_or_422(body.preset)
+    if body.slug:
+        P.require_part(body.slug)
+    if body.job_id:
+        _job(body.job_id)
+    rid, lc = fit_learning.record(get_registry(), body)
+    return {"id": rid, "accepted": len(body.features), "learned": lc.model_dump(mode="json")}
+
+
+@router.get("/fit-reports/coupon", summary="Learned clearance for every fit preset on a device", tags=["registry"])
+def coupon_learned_all(session: Session = None) -> list[fit_learning.LearnedClearance]:
+    return fit_learning.learned_all(get_registry(), session)
+
+
+@router.get(
+    "/fit-reports/coupon/{preset_id}", summary="Learned clearance for one fit preset on a device", tags=["registry"]
+)
+def coupon_learned(preset_id: str, session: Session = None) -> fit_learning.LearnedClearance:
+    _preset_or_422(preset_id)
+    return fit_learning.learned(get_registry(), preset_id, session)
 
 
 @router.get("/families", summary="Families with counts", tags=["registry"])
@@ -1278,6 +1550,7 @@ def prompt_txt(request: Request) -> PlainTextResponse:
 
 app.include_router(router)
 app.include_router(round2_router)
+app.include_router(round3.router)
 app.include_router(embed_router)
 app.add_api_route("/llms.txt", llms_txt, methods=["GET"], include_in_schema=False)
 app.add_api_route("/prompt.txt", prompt_txt, methods=["GET"], include_in_schema=False)
@@ -1285,7 +1558,8 @@ app.router.routes.append(Route("/mcp", endpoint=mcp_mount, methods=["GET", "POST
 
 
 def iter_routes() -> Iterator[tuple[str, str]]:
-    """(method, path) of every route: the OpenAPI paths plus the plain routes (openapi.json, llms.txt, /mcp)."""
+    """(method, path) of every route: the OpenAPI paths plus the plain routes (openapi.json, llms.txt, /mcp) and the
+    WebSocket routes (method "WS")."""
     for path, ops in app.openapi()["paths"].items():
         for method in ops:
             yield method.upper(), path
@@ -1293,6 +1567,9 @@ def iter_routes() -> Iterator[tuple[str, str]]:
         methods = getattr(r, "methods", None) or set()
         for m in sorted(methods - {"HEAD", "OPTIONS"}):
             yield m, getattr(r, "path", "")
+    for r in router.routes:  # included routers keep their own route list; paths already carry the prefix
+        if isinstance(r, WebSocketRoute):
+            yield "WS", r.path
 
 
 # keep these names referenced for OpenAPI response models

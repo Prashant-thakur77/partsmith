@@ -27,6 +27,7 @@ class JobInput(Strict):
     max_iters: int = 6
     budget_usd: float = 0.5
     provider_mode: ProviderMode | None = None
+    city: str | None = None  # optional: lets the buy-or-print card look for nearby print shops and repair cafés
 
 
 class JobSummary(Strict):

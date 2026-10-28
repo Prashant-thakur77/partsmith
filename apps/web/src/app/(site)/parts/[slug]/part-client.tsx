@@ -6,6 +6,7 @@ import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import * as React from "react";
 import { Container, Fact, Section } from "@/components/layout/page";
+import { OpenInSlicer } from "@/components/open-in-slicer";
 import { ArView } from "@/components/registry/ar-view";
 import { KnobPanel } from "@/components/registry/knob-panel";
 import { useLivePart } from "@/components/registry/live-part";
@@ -17,7 +18,10 @@ import { shipState } from "@/lib/ship";
 // Below the first screen on phones and only useful after interaction: loaded after hydration.
 const ExportGateNotice = dynamic(() => import("@/components/export-gate").then((m) => m.ExportGateNotice), { ssr: false });
 const FitPresets = dynamic(() => import("@/components/jobs/fit-presets").then((m) => m.FitPresets), { ssr: false });
+const CouponFit = dynamic(() => import("@/components/jobs/coupon-fit").then((m) => m.CouponFit), { ssr: false });
 import { ShareButtons } from "@/components/registry/share-buttons";
+import { PartBuyOrPrintCard } from "@/components/jobs/buy-or-print-card";
+import { UncheckedList } from "@/components/jobs/evidence-notes";
 import { PartStatusBadge } from "@/components/registry/part-status";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -35,6 +39,7 @@ import { VerifiedBadge } from "@/components/ui/verified-badge";
 import { CadViewer } from "@/components/viewer/cad-viewer";
 import { api, artifactUrl } from "@/lib/api";
 import type { PartFacts, PartRecord } from "@/lib/api-types";
+import { couponFeatures, noteCouponDownload } from "@/lib/coupon-fit";
 import { fmtDate, fmtNum, fmtPct, shortSha, titleCase } from "@/lib/format";
 import { useDebounced } from "@/lib/hooks";
 import { agentPrompt, curlSnippet, mcpCallSnippet, pythonSnippet } from "@/lib/snippets";
@@ -174,6 +179,7 @@ function VerificationCard({ part }: { part: PartRecord }) {
                 ))}
               </ul>
             ) : null}
+            {v.unchecked.length ? <UncheckedList items={v.unchecked} as="h4" className="px-3 py-2.5" /> : null}
             {verUrl ? (
               <a href={verUrl} className="inline-flex items-center gap-1 text-[12px] font-medium text-accent-text hover:underline">
                 <FileJson className="size-3.5" aria-hidden /> verification.json
@@ -428,13 +434,31 @@ export function PartClient({ slug, withDetails = true }: { slug: string; withDet
                 <Download className="size-3.5 text-subtle" aria-hidden />
               </a>
               </fieldset>
+              {part.artifacts.coupon && !gate.locked ? (
+                <a
+                  href={artifactUrl(part.artifacts.coupon)}
+                  download
+                  onClick={noteCouponDownload}
+                  className="flex items-center gap-3 rounded-md border border-border px-3 py-2 text-[13px] transition-colors hover:border-border-strong hover:bg-surface-2"
+                >
+                  <Box className="size-4 text-muted" aria-hidden />
+                  <span className="flex-1">
+                    <span className="font-medium">Fit-test coupon</span> <span className="text-subtle">· small test print for the fit</span>
+                  </span>
+                  <Download className="size-3.5 text-subtle" aria-hidden />
+                </a>
+              ) : null}
+              <OpenInSlicer fileUrl={dl("3mf")} ship={ship} ack={gateAck} className="border-t border-border pt-3" />
               <p className="pt-1 text-[11px] text-subtle">Downloads use the knob values above.</p>
               <div className="border-t border-border pt-3">
                 <FitFeedback slug={slug} reports={part.fit_reports.length} />
               </div>
+              {ship !== "blocked" ? <CouponFit features={couponFeatures(null, part.params)} slug={slug} className="border-t border-border pt-3" /> : null}
             </CardContent>
           </Card>
         </div>
+
+        <PartBuyOrPrintCard slug={slug} className="max-w-2xl" />
 
         <Section id="use" title="Use it" description="Same part, same knobs — from Python, a shell, an MCP client or your coding agent.">
           <Tabs defaultValue="python">

@@ -30,7 +30,7 @@
  "provider_modes": [],
  "providers": {},
  "convergence": [],
- "wall_s": 0.03,
+ "wall_s": 0.04,
  "valid": false,
  "dims": [],
  "missed": [],

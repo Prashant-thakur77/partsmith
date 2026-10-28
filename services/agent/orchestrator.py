@@ -55,6 +55,7 @@ from services.metrology.capture_gate import run_gate
 from services.metrology.measure import MeasureOutput, decode_image, measure_photo
 from services.metrology.segment import ProviderSegmenter
 from services.verifier.camera import CameraView
+from services.verifier.part_tests import unchecked_values
 from services.verifier.render import Frame, rasterize_polygon
 from services.verifier.verify import MEAN_GATE_MM, PhotoMask, VerifyOutput, verify
 
@@ -64,6 +65,7 @@ StageName = Literal[
 ]
 
 DEFAULT_MAX_ITERS = 6
+PHOTO_LIMITED_SUFFIX = ".height"  # verifier tests that another photo settles, never a model edit
 # Part-mask checks that make the measurement itself unreliable: the job stops with the retake reason.
 FATAL_PART_CHECKS = ("contrast", "coverage", "markers", "scale", "reprojection", "single_part")
 ROUND_FAMILIES = ("wheel", "knob", "spacer")
@@ -230,8 +232,8 @@ class Round:
             return (2, math.inf)
         excess = 0.0
         for t in v.tests:
-            if t.priority != "P0" or t.passed:
-                continue
+            if t.priority != "P0" or t.passed or t.id.endswith(PHOTO_LIMITED_SUFFIX):
+                continue  # a height-bound test asks for another photo, not a different model
             if t.value is None or t.expected is None or not t.tol:
                 excess += MISSING_TEST_PENALTY
             else:
@@ -530,6 +532,8 @@ class FixRun:
         self.hidden_holes: dict[str, tuple[float, float]] = {}  # question id -> part-frame centre
         self.orbit_views: list[Any] = []  # calibrated orbit frames (CameraView) for the verifier
         self.orbit_height: Measured | None = None  # visual-hull height from the orbit clip (measured)
+        self.narration: providers.Narration | None = None  # Spark's reading of a narrated walk-around (steers only)
+        self.orbit_footprint: Any = None  # the walk-around's own footprint on the mat (shapely Polygon) when measured
         self.completion_accepted = False
 
     # ---- events ------------------------------------------------------------------------------------------------------
@@ -624,6 +628,7 @@ class FixRun:
         final = self.final_verification()
         if self.opts.package:
             self.package(final)
+            self.buy_or_print(final)
         if self.opts.learn:
             self.learn(final)
         self.finish(final.status if final is not None else "failed", {})
@@ -672,7 +677,10 @@ class FixRun:
         with self.stage("capture", "Checking the photos (markers, blur, tilt, light)") as st:
             for view, key in self.photo_shas.items():
                 self.photos[view] = blobs.get(key)
-                kind, what = ("video", "orbit clip") if view == "orbit" else ("photo", f"{view} photo")
+                kind, what = {
+                    "orbit": ("video", "orbit clip"),
+                    "narration": ("narration", "voice note about the clip"),
+                }.get(view, ("photo", f"{view} photo"))
                 self.job.emit(ArtifactEvent(job=self.job.id, kind=kind, sha=key, url=blobs.url(key), label=what))
             if "top" not in self.photos:
                 st.status = "fail"
@@ -891,6 +899,9 @@ class FixRun:
                 evidence.apply_orbit(self)
                 if self.orbit_height is not None:
                     labels.append(f"orbit: height {self.orbit_height.value:.2f} mm")
+                said = evidence.apply_narration(self)
+                if said:
+                    labels.append(said)
             cal = mo.result.calibration
             if cal is not None:
                 self.calibration = {"mat_id": cal.mat_id, "H": cal.homography}
@@ -934,6 +945,25 @@ class FixRun:
             for t in list_templates()
         ]
 
+    def intent_for_models(self) -> str:
+        """The user's words, plus what Spark understood from a narrated walk-around (words only: it never carries a
+        size, and the measured values stay the only numbers)."""
+        intent = str(self.job.input.intent)
+        n = self.narration
+        if n is None:
+            return intent
+        said = [f"function: {n.function}"] if n.function else []
+        if n.mating_feature:
+            said.append(f"mating feature: {n.mating_feature}")
+        if n.break_description:
+            said.append(f"break: {n.break_description}")
+        if not said:
+            return intent
+        return (
+            f"{intent}\n[Narrated walk-around, as understood by {n.label}; steering only, never a "
+            f"measurement] " + "; ".join(said)
+        )
+
     def understand(self) -> None:
         with self.stage("understand", "Understanding the part (features, family, unknowns)") as st:
             top = self.measurements["top"]
@@ -952,7 +982,7 @@ class FixRun:
                 px_per_mm_inv=f"{1.0 / (self.mo['top'].px_per_mm * s):.3f}",
                 templates=", ".join(t.name for t in list_templates()),
                 measurements=json.dumps(meas_json),
-                intent=self.job.input.intent,
+                intent=self.intent_for_models(),
                 side_note=" and side view" if len(images) > 1 else "",
             )
             req = ModelRequest(
@@ -1359,7 +1389,8 @@ class FixRun:
                 )
         out: VerifyOutput | None = None
         with self.stage("verify", "Comparing the model with the photo") as st:
-            out = verify(res, self.measurements, self.spec, photo_masks=self.masks, camera_views=self.camera_views())
+            out = verify(res, self.measurements, self.spec, photo_masks=self.masks, camera_views=self.camera_views(),
+                         known_form=strategy == "template")  # fmt: skip
             v = out.verification
             st.label = (
                 f"{'Verified' if v.verified else v.status.replace('_', ' ')}: "
@@ -1652,6 +1683,37 @@ class FixRun:
         )
         return rnd.rank[0] < base.rank[0] or rnd.rank[1] < base.rank[1] - PROGRESS_EPS
 
+    def photo_limited(self) -> list[str]:
+        """Ids of the failing P0 tests when every one of them needs another photo rather than a model change
+        (a thick part's length seen only from the top), else []. Fix rounds cannot settle those, so the loop stops."""
+        b = self.best
+        v = b.verification if b is not None else None
+        if v is None or v.verified or v.status == "failed" or b is None or b.out is None:
+            return []
+        failing = [t.id for t in v.tests if t.priority == "P0" and not t.passed]
+        if not failing or not all(t.endswith(PHOTO_LIMITED_SUFFIX) for t in failing):
+            return []
+        th = v.thresholds
+        gates = b.out.view_gates
+        for m in v.views:
+            if m.hausdorff_mm > th.hausdorff_mm:
+                return []
+            if "iou" in gates.get(m.view, ["iou"]) and m.iou < th.iou:
+                return []
+            if "mean" in gates.get(m.view, []) and m.mean_mm > MEAN_GATE_MM:
+                return []
+        return failing
+
+    def stop_if_photo_limited(self) -> bool:
+        ids = self.photo_limited()
+        if ids:
+            self.log(
+                f"stopping the fix rounds: the model matches the photo, but {', '.join(ids)} need a side photo (a top "
+                "photo cannot show whether the ends stand the full stated height)",
+                "warn",
+            )
+        return bool(ids)
+
     def agent_fix(self) -> None:
         """Agentic fixer sessions on the best round. A session that commits nothing better hands over to the next
         strategy (template -> free code), like the pipeline does; the round cap is the same."""
@@ -1663,6 +1725,8 @@ class FixRun:
             stop = self.over_budget()
             if stop:
                 self.log(f"stopping the agent: {stop}", "warn")
+                break
+            if self.stop_if_photo_limited():
                 break
             self.check_alive()
             sessions += 1
@@ -1686,6 +1750,8 @@ class FixRun:
             stop = self.over_budget()
             if stop:
                 self.log(f"stopping the loop: {stop}", "warn")
+                break
+            if self.stop_if_photo_limited():
                 break
             self.check_alive()
             improved = self.fix_round()
@@ -1814,6 +1880,16 @@ class FixRun:
                     else "Judge vetoes: " + "; ".join(f"{x.feature}: {x.issue} ({x.severity})" for x in self.vetoes)
                 )
 
+    def label_unchecked(self, v: Verification, b: Round) -> Verification:
+        """The verdict plus every knob no test checked (template defaults, inferred values): labelled inferred."""
+        try:
+            specs = parse_params(b.code)
+        except ProgramError:
+            return v
+        mmap = template_measure_map(b.code, self.template)
+        views = [m.view for m in v.views]
+        return v.model_copy(update={"unchecked": unchecked_values(specs, b.values, mmap, v.tests, views)})
+
     def final_verification(self) -> Verification | None:
         """The verdict: the best round's verification, re-run with the judge's vetoes when there are any."""
         b = self.best
@@ -1828,9 +1904,12 @@ class FixRun:
                 photo_masks=self.masks,
                 vetoes=self.vetoes,
                 camera_views=self.camera_views(),
+                known_form=b.strategy == "template",
             )
             v = out.verification
             b.out = out
+        v = self.label_unchecked(v, b)
+        b.out.verification = v
         self.job.write_json("verification.json", v)
         self.job.write_text("part.py", set_defaults(b.code, b.values))
         self.job.write_json("values.json", b.values)
@@ -1893,6 +1972,28 @@ class FixRun:
             ship = evidence.ship_decision(self, v)
             self.job.write_json("ship.json", ship)
             st.label = "Exported: " + ", ".join(made) + f" · ship gate: {'open' if ship['ok'] else 'closed'}"
+
+    def buy_or_print(self, v: Verification | None) -> None:
+        """The buy-or-print card: code's print estimate from the exported mesh plus cited offers for the original
+        (search-grounded lookup, `buy_lookup` model_call). Optional: it never changes the verdict or fails the job."""
+        from services.agent import buy_or_print as bop
+
+        if v is None or v.status == "failed" or self.best is None:
+            return
+        with self.stage("package", "Buy or print: print cost from the mesh, cited offers for the original") as st:
+            try:
+                stop = self.over_budget()
+                if stop:
+                    self.log(f"buy-or-print lookup skipped: {stop}", "warn")
+                card = bop.job_card(self.job, lookup=stop is None)
+                self.artifact("buy_or_print", card.model_dump_json(indent=2).encode(), ".json", "buy-or-print card")
+                lk = card.lookup
+                found = f"{len(lk.offers)} cited offer(s), {len(lk.places)} place(s)" if lk else "no lookup"
+                grams = f"{card.prints[0].grams:.1f} g PLA" if card.prints else "no print estimate"
+                st.label = f"Buy or print: {grams}; {found} ({card.mode})"
+            except Exception as exc:  # an optional card never fails the job
+                self.log(f"buy-or-print card skipped: {type(exc).__name__}: {exc}", "warn")
+                st.status = "skip"
 
     def template_pdf(self, outline: dict[str, Any] | None, v: Verification) -> bool:
         from tools.mat.template_pdf import template_pdf

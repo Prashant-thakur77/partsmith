@@ -7,7 +7,7 @@ API_PORT ?= 8000
 WEB_PORT ?= 3000
 
 .PHONY: help setup sync web-install schemas test test-all test-web lint typecheck check smoke dev api web worker \
-        seed synth bench bench-live live mat mcp e2e clean-var gitleaks
+        seed synth bench bench-live live mat mcp e2e clean-var gitleaks deploy-check
 
 help: ## Show targets
 	@grep -E '^[a-zA-Z_-]+:.*?## ' $(MAKEFILE_LIST) | awk 'BEGIN{FS=":.*?## "}{printf "  \033[36m%-12s\033[0m %s\n",$$1,$$2}'
@@ -31,7 +31,7 @@ test-all: ## All Python tests including slow geometry tests
 	$(UV) run pytest -m "not live"
 
 test-web: ## Web typecheck, lint, build, e2e
-	$(PNPM) -C apps/web typecheck && $(PNPM) -C apps/web lint && $(PNPM) -C apps/web build && $(PNPM) -C apps/web e2e
+	$(PNPM) -C apps/web typecheck && $(PNPM) -C apps/web lint && $(PNPM) -C apps/web test && $(PNPM) -C apps/web build && $(PNPM) -C apps/web e2e
 
 lint: ## Ruff
 	$(UV) run ruff check services eval tools packages/schemas
@@ -80,6 +80,9 @@ dev: ## API + web together (Ctrl-C stops both)
 
 e2e: ## Playwright e2e for the web app
 	$(PNPM) -C apps/web e2e
+
+deploy-check: ## Static checks of infra/deploy (no image build, no deploy; see infra/deploy/README.md)
+	$(UV) run python infra/deploy/check.py
 
 gitleaks: ## Secret scan of the git history + working tree
 	gitleaks git --no-banner --redact . && gitleaks dir --no-banner --redact .

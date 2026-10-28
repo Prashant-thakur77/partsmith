@@ -7,6 +7,7 @@ import { api } from "@/lib/api";
 import type { EditResult } from "@/lib/api-types";
 import { fmtNum, fmtPct, paramLabel } from "@/lib/format";
 import { VoiceRecordButton } from "../voice-button";
+import { LiveVoice } from "./live-voice";
 import { Badge } from "../ui/badge";
 import { Button } from "../ui/button";
 import { ErrorState } from "../ui/error-state";
@@ -14,17 +15,24 @@ import { Input } from "../ui/input";
 import { ModeBadge } from "../ui/provenance";
 import { Spinner } from "../ui/spinner";
 
-/** Voice or text edits ("hole 0.2 mm bigger"). The server maps words to knobs, clamps them to PARAMS and re-bakes. */
+/**
+ * Voice or text edits ("hole 0.2 mm bigger"). The server maps words to knobs, clamps them to PARAMS and re-bakes.
+ * Three ways in, one mapping: live voice (streamed, hands-free or hold-to-talk), a recorded clip, or typed text.
+ */
 export function EditPanel({ jobId, onResult, disabled }: { jobId: string; onResult: (r: EditResult) => void; disabled?: boolean }) {
   const [text, setText] = React.useState("");
+  const [r, setR] = React.useState<EditResult | null>(null);
+  const apply = (res: EditResult) => {
+    setR(res);
+    onResult(res);
+  };
   const edit = useMutation({
     mutationFn: (input: { text: string } | { audio: Blob }) => ("text" in input ? api.editText(jobId, input.text) : api.editAudio(jobId, input.audio)),
-    onSuccess: (r) => {
-      onResult(r);
+    onSuccess: (res) => {
+      apply(res);
       setText("");
     },
   });
-  const r = edit.data;
   return (
     <div className="space-y-3">
       <div className="flex items-center justify-between gap-2">
@@ -33,6 +41,7 @@ export function EditPanel({ jobId, onResult, disabled }: { jobId: string; onResu
         </h2>
         <VoiceRecordButton onAudio={(audio) => edit.mutate({ audio })} disabled={disabled || edit.isPending} label="Speak an edit" />
       </div>
+      <LiveVoice jobId={jobId} disabled={disabled} onEdit={apply} />
       <form
         className="flex gap-2"
         onSubmit={(e) => {

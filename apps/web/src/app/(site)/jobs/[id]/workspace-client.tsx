@@ -2,15 +2,18 @@
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { AlertTriangle, Ban, Boxes, CircleStop, ExternalLink, FileJson, ScanLine, Upload } from "lucide-react";
+import dynamic from "next/dynamic";
 import Link from "next/link";
 import * as React from "react";
 import { CodeDiff } from "@/components/jobs/code-diff";
-import { ConvergenceChart } from "@/components/jobs/convergence-chart";
+import { CouponFit } from "@/components/jobs/coupon-fit";
 import { EditPanel } from "@/components/jobs/edit-panel";
+import { BoundNote, NarratedBadge, NarrationPanel, UncheckedList } from "@/components/jobs/evidence-notes";
 import { ExportMenu, PreviewDialog } from "@/components/jobs/export-menu";
 import { JobStatusBadge } from "@/components/jobs/job-badges";
-import { AgentLog, ProgressLines } from "@/components/jobs/agent-log";
 import { FitPresets } from "@/components/jobs/fit-presets";
+import { ImpactPanel } from "@/components/jobs/impact-panel";
+import { ProgressLines } from "@/components/jobs/progress-lines";
 import { JobExtras } from "@/components/jobs/job-extras";
 import { PhotoPanel, imagesByView } from "@/components/jobs/photo-panel";
 import { QuestionPanel } from "@/components/jobs/question-panel";
@@ -30,15 +33,44 @@ import { StatusDot } from "@/components/ui/status-dot";
 import { toast } from "@/components/ui/toast";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { VerifiedBadge } from "@/components/ui/verified-badge";
-import { CadViewer } from "@/components/viewer/cad-viewer";
 import { ApiError, api, artifactUrl } from "@/lib/api";
-import type { ArtifactEvent, BakeResult, JobDetail, JobEvent, Measurements, PartTest } from "@/lib/api-types";
+import { couponFeatures } from "@/lib/coupon-fit";
+import type { ArtifactEvent, BakeResult, JobDetail, JobEvent, Measured, Measurements, PartTest } from "@/lib/api-types";
+import { isNarrated } from "@/lib/evidence-notes";
 import { fmtNum, fmtUsd, paramLabel, splitTitle } from "@/lib/format";
 import { useBake, useCountTo, useJobBake } from "@/lib/hooks";
 import { STAGE_LABELS, summarizeEvents, useJobEvents, type EventSummary, type StreamState } from "@/lib/job-events";
 import { VOTE_ENABLED, VoteBanner } from "@/components/vote-banner";
 import { I18nRegion, LangToggle, useT } from "@/lib/i18n";
 import { cn } from "@/lib/utils";
+
+// Code-split out of the workspace's first load: the 3D viewer (its three.js scene is split again inside), the error
+// chart (recharts) and the Agent tab. The page body is client-rendered after the job detail loads, so `ssr: false`
+// changes no server HTML; each placeholder keeps the final size so nothing shifts, and announces itself.
+const AgentLog = dynamic(() => import("@/components/jobs/agent-log").then((m) => m.AgentLog), {
+  ssr: false,
+  loading: () => (
+    <p className="flex items-center justify-center gap-2 py-6 text-[13px] text-muted">
+      <Spinner label="Loading the agent log" /> Loading the agent log…
+    </p>
+  ),
+});
+const CadViewer = dynamic(() => import("@/components/viewer/cad-viewer").then((m) => m.CadViewer), {
+  ssr: false,
+  loading: () => (
+    <div role="status" aria-label="Loading the 3D viewer" className="relative h-[360px] sm:h-[460px] xl:h-[520px]">
+      <Skeleton className="absolute inset-0 rounded-none" />
+    </div>
+  ),
+});
+const ConvergenceChart = dynamic(() => import("@/components/jobs/convergence-chart").then((m) => m.ConvergenceChart), {
+  ssr: false,
+  loading: () => (
+    <div role="status" aria-label="Loading the error chart" className="h-[160px]">
+      <Skeleton className="h-full" />
+    </div>
+  ),
+});
 
 function mergeEvents(a: JobEvent[], b: JobEvent[]): JobEvent[] {
   const m = new Map<number, JobEvent>();
@@ -78,6 +110,17 @@ function StreamIndicator({ state, done }: { state: StreamState; done: boolean })
   );
 }
 
+/** One measured value: the number with its provenance, the range the photo allows (if any) and the narration badge. */
+function MeasuredValue({ m }: { m: Measured }) {
+  return (
+    <span className="flex flex-col items-end gap-0.5">
+      <Mm value={m.value} sigma={m.sigma_mm} source={m.source} citation={m.evidence?.citation} />
+      {isNarrated(m.evidence?.note) ? <NarratedBadge /> : null}
+      <BoundNote bound={m.bound_mm} />
+    </span>
+  );
+}
+
 function MeasurementsCard({ m }: { m: Measurements }) {
   return (
     <div className="space-y-2.5">
@@ -90,19 +133,19 @@ function MeasurementsCard({ m }: { m: Measurements }) {
       </div>
       <dl className="space-y-2 text-[13px]">
         <Row label="Length">
-          <Mm value={m.length.value} sigma={m.length.sigma_mm} source={m.length.source} citation={m.length.evidence?.citation} />
+          <MeasuredValue m={m.length} />
         </Row>
         <Row label="Width">
-          <Mm value={m.width.value} sigma={m.width.sigma_mm} source={m.width.source} citation={m.width.evidence?.citation} />
+          <MeasuredValue m={m.width} />
         </Row>
         {m.thickness ? (
           <Row label="Thickness">
-            <Mm value={m.thickness.value} sigma={m.thickness.sigma_mm} source={m.thickness.source} citation={m.thickness.evidence?.citation} />
+            <MeasuredValue m={m.thickness} />
           </Row>
         ) : null}
         {m.holes.map((h) => (
           <Row key={h.id} label={`${h.id.replace("_", " ")} Ø`}>
-            <Mm value={h.diameter.value} sigma={h.diameter.sigma_mm} source={h.diameter.source} citation={h.diameter.evidence?.citation} />
+            <MeasuredValue m={h.diameter} />
           </Row>
         ))}
       </dl>
@@ -411,6 +454,12 @@ export function WorkspaceClient({ id }: { id: string }) {
         </div>
       ) : null}
 
+      {verification?.unchecked.length ? (
+        <div className="px-4 pt-4 sm:px-6">
+          <UncheckedList items={verification.unchecked} />
+        </div>
+      ) : null}
+
       <div className="grid grid-cols-1 gap-4 px-4 pt-4 sm:px-6 xl:grid-cols-[minmax(0,1fr)_minmax(0,1.3fr)_380px]">
         {/* centre: viewer (first on small screens) */}
         <div className="overflow-hidden rounded-lg border border-border bg-surface xl:order-2">
@@ -441,6 +490,7 @@ export function WorkspaceClient({ id }: { id: string }) {
             <ConvergenceChart data={s.convergence} threshold={threshold} />
             <ProgressLines lines={s.progress} className="mt-3 border-t border-border pt-3" />
           </div>
+          <ImpactPanel jobId={id} finished={!!done} />
           <div className="rounded-lg border border-border bg-surface">
             <Tabs defaultValue={s.agent.length ? "agent" : "trace"}>
               <TabsList className="px-3" aria-label="Job details">
@@ -565,6 +615,9 @@ export function WorkspaceClient({ id }: { id: string }) {
                   columns={2}
                 />
                 <FitPresets values={values ?? d.values} onApply={(p) => setValues((cur) => ({ ...(cur ?? d.values), ...p }))} params={d.params} />
+                {artifacts.coupon ? (
+                  <CouponFit features={couponFeatures(d.partspec?.features, d.params)} jobId={replay ? undefined : id} className="mt-4 border-t border-border pt-4" />
+                ) : null}
                 <p className="mt-3 text-[12px] text-subtle">{slug ? t("ws.knobNotePart") : t("ws.knobNoteJob")}</p>
               </>
             ) : (
@@ -584,6 +637,7 @@ export function WorkspaceClient({ id }: { id: string }) {
               }}
             />
             {measurements ? <MeasurementsCard m={measurements} /> : null}
+            {artifacts.narration ? <NarrationPanel url={artifacts.narration} /> : null}
             {d.partspec?.features.length ? (
               <div className="space-y-1.5">
                 <Eyebrow>Features found</Eyebrow>

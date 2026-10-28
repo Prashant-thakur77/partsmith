@@ -73,6 +73,8 @@ class ArtifactEvent(_Ev):
         "install_card",
         "zip",
         "share_card",
+        "buy_or_print",
+        "narration",
     ]
     sha: str
     url: str

@@ -12,14 +12,14 @@ from typing import Any
 
 from pydantic import BaseModel, TypeAdapter
 
-from . import events, measurement, partspec, registry, verification
+from . import commerce, events, measurement, partspec, registry, verification
 from .events import Event
 
 ROOT = Path(__file__).resolve().parents[3]
 JSON_DIR = ROOT / "packages" / "schemas" / "json"
 TS_OUT = ROOT / "apps" / "web" / "src" / "lib" / "schemas.ts"
 
-MODULES = [measurement, partspec, verification, events, registry]
+MODULES = [measurement, partspec, verification, events, registry, commerce]
 
 
 def _models() -> dict[str, type[BaseModel]]:

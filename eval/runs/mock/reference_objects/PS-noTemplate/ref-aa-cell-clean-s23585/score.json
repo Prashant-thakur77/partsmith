@@ -7,8 +7,8 @@
  "preset": "clean",
  "mode": "mock",
  "gt_source": "reference_spec",
- "status": "verified",
- "verified": true,
+ "status": "best_effort",
+ "verified": false,
  "iterations": 1,
  "iterations_to_converge": 1,
  "strategy": "free_code",
@@ -46,7 +46,7 @@
    "max_error_mm": 0.47187455859913513
   }
  ],
- "wall_s": 5.79,
+ "wall_s": 6.14,
  "dims": [
   {
    "name": "length",

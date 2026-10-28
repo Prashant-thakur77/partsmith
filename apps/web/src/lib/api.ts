@@ -9,6 +9,11 @@ import {
   ApiErrorBodySchema,
   BakeResultSchema,
   BenchReportSchema,
+  BuyOrPrintSchema,
+  CouponReportResultSchema,
+  JobImpactSchema,
+  LearnedClearanceSchema,
+  NarrationRecordSchema,
   EditResultSchema,
   FamilySchema,
   FitCheckResultSchema,
@@ -37,6 +42,7 @@ import {
   VerificationSchema,
   type Measurements,
 } from "./api-types";
+import { apiOrigin } from "./api-origin";
 
 export const API_PREFIX = "/api/v1";
 
@@ -75,7 +81,7 @@ export function isOffline(err: unknown): boolean {
 
 function base(): string {
   if (typeof window !== "undefined") return API_PREFIX;
-  return `${(process.env.API_URL ?? "http://localhost:8000").replace(/\/$/, "")}${API_PREFIX}`;
+  return `${apiOrigin()}${API_PREFIX}`;
 }
 
 /** Absolute-or-relative URL for an API path; artifact URLs returned by the API are passed through unchanged. */
@@ -169,6 +175,10 @@ export type FixJobInput = {
   orbit?: File | null;
   /** Tap-to-point feature hints on the top photo (image pixels + kind); a tap is a segmenter prompt, never a dimension. */
   points?: { x: number; y: number; kind: "hole" | "slot" | "tab" | "broken_edge" }[] | null;
+  /** Optional voice note about the walk-around clip (the narration steers; it never sets a number). */
+  narration?: File | null;
+  /** Optional city for nearby print shops on the buy-or-print card. */
+  city?: string | null;
 };
 
 export type BakeFormat = "stl" | "3mf" | "step" | "glb" | "view" | "py";
@@ -203,6 +213,8 @@ export const api = {
     if (input.screenPxPerMm != null) fd.set("screen_px_per_mm", String(input.screenPxPerMm));
     if (input.orbit) fd.set("orbit", input.orbit);
     if (input.points?.length) fd.set("points", JSON.stringify({ top: input.points }));
+    if (input.narration) fd.set("narration", input.narration);
+    if (input.city) fd.set("city", input.city);
     return request(JobSummarySchema, "/jobs/fix", { method: "POST", body: fd });
   },
   demoSamples: () => request(z.array(DemoSampleSchema), "/jobs/demo/samples"),
@@ -310,6 +322,23 @@ export const api = {
 
   // bench
   bench: () => request(BenchReportSchema, "/bench"),
+
+  // round 3: coupon fit learning, impact, buy-or-print
+  couponLearned: (session: string | null) =>
+    request(z.array(LearnedClearanceSchema), "/fit-reports/coupon", { query: { session } }),
+  couponReport: (body: { preset: string; session: string; features: { feature: string; fit: string; amount: string | null }[]; job_id?: string; slug?: string }) =>
+    request(CouponReportResultSchema, "/fit-reports/coupon", json(body)),
+  jobImpact: (id: string) => request(JobImpactSchema, `/jobs/${encodeURIComponent(id)}/impact`),
+  jobBuyOrPrint: (id: string) => request(BuyOrPrintSchema, `/jobs/${encodeURIComponent(id)}/buy-or-print`),
+  /** Runs the cited lookup (search grounding) and stores the card; never touches the verification. */
+  jobBuyOrPrintLookup: (id: string, city: string | null) =>
+    request(BuyOrPrintSchema, `/jobs/${encodeURIComponent(id)}/buy-or-print`, json(city ? { city } : {})),
+  partBuyOrPrint: (slug: string) => request(BuyOrPrintSchema, `/parts/${encodeURIComponent(slug)}/buy-or-print`),
+  /** The job's `narration` artifact (an `/api/v1/blobs/...json` URL from the job detail). */
+  narration: (artifact: string) => {
+    if (!artifact.startsWith(`${API_PREFIX}/`)) return Promise.reject(new Error("narration artifact is not an API URL"));
+    return request(NarrationRecordSchema, artifact.slice(API_PREFIX.length));
+  },
 };
 
 export type Api = typeof api;

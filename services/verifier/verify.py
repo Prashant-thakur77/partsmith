@@ -67,6 +67,7 @@ from services.verifier.part_tests import (
     expected_holes,
     expected_thickness,
     generate_tests,
+    height_bound_tests,
 )
 from services.verifier.render import (
     BoolMask,
@@ -455,7 +456,7 @@ def _broken_tests(
     for t in tests:
         cross = False
         if t.priority == "P0":
-            if t.id in ("bbox.x", "bbox.y") and spans[t.id]:
+            if t.id.removesuffix(".height") in ("bbox.x", "bbox.y") and spans[t.id.removesuffix(".height")]:
                 cross = True
             elif t.id == "side.thickness":
                 cross = True  # the broken prism (or the missing top) runs through the side profile
@@ -547,11 +548,15 @@ def verify(
     thresholds: Thresholds | None = None,
     camera_views: Mapping[str, CameraView] | None = None,
     refine_in_photo: bool = True,
+    known_form: bool = False,
 ) -> VerifyOutput:
     """Compare the executed model with the measurements and decide ``verified`` (see module docstring).
 
     ``photo_masks`` are rectified masks in each view's part frame (used for the rectified comparison and as the start
-    of the camera comparison); ``camera_views`` switch a view to the photo-frame comparison.
+    of the camera comparison); ``camera_views`` switch a view to the photo-frame comparison. ``known_form``: the
+    program is a family template whose walls stand the stated height by design; an extrusion of a measured outline
+    (free code) only guesses the 3D form, so a thick part's top-only length/width get height-bound tests
+    (`part_tests.height_bound_tests`) unless a side view or walk-around frames show the heights.
     """
     t0 = time.perf_counter()
     th = thresholds or Thresholds(hausdorff_mm=HAUSDORFF_PASS_MM, iou=IOU_PASS)
@@ -684,6 +689,8 @@ def verify(
         exec_result, feats, measurements, partspec, view_results, hole_names
     )
     tests = evaluate_tests(generate_tests(partspec, measurements), values)
+    seen = "side" in measurements or bool(orbit_cams)
+    tests += height_bound_tests(measurements, values, heights_seen=seen or known_form)
     informational: list[str] = []
     informational_residuals: list[FeatureResidual] = []
     if broken_part is not None or break_h is not None:

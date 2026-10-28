@@ -1,0 +1,16 @@
+{
+  "id": "j_261028_4a5ef97e",
+  "kind": "fix",
+  "status": "done",
+  "created_at": 1793202314.3337162,
+  "updated_at": 1793202339.2583396,
+  "title": "Battery compartment cover (synthetic, white-part) (synthetic sample)",
+  "origin": "synthetic",
+  "provider_mode": "mock",
+  "verified": false,
+  "max_error_mm": 1.066209425244025,
+  "iterations": 6,
+  "cost_usd": 0.0,
+  "part_slug": null,
+  "is_replay": false
+}

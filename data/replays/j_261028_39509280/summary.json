@@ -1,0 +1,16 @@
+{
+  "id": "j_261028_39509280",
+  "kind": "fix",
+  "status": "done",
+  "created_at": 1793202600.4764926,
+  "updated_at": 1793202604.4513178,
+  "title": "ID-1 card (bank / ID card) (synthetic, clean) (synthetic sample)",
+  "origin": "synthetic",
+  "provider_mode": "mock",
+  "verified": false,
+  "max_error_mm": 0.15077561664934924,
+  "iterations": 1,
+  "cost_usd": 0.0,
+  "part_slug": null,
+  "is_replay": false
+}

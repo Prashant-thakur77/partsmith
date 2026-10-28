@@ -4,6 +4,7 @@ import { Lock, Ruler } from "lucide-react";
 import * as React from "react";
 import type { Verification } from "@/lib/api-types";
 import { fmtNum } from "@/lib/format";
+import { noteCouponDownload } from "@/lib/coupon-fit";
 import { useT } from "@/lib/i18n";
 import { shipState } from "@/lib/ship";
 
@@ -56,7 +57,7 @@ export function ExportGateNotice({
         </div>
       </div>
       {couponUrl ? (
-        <a href={couponUrl} download className="flex items-center gap-2 rounded-md border border-border bg-surface px-2.5 py-1.5 text-[12.5px] hover:border-border-strong">
+        <a href={couponUrl} download onClick={noteCouponDownload} className="flex items-center gap-2 rounded-md border border-border bg-surface px-2.5 py-1.5 text-[12.5px] hover:border-border-strong">
           <Ruler className="size-3.5 text-muted" aria-hidden />
           <span>
             <span className="font-medium">{t("gate.coupon")}</span> <span className="text-muted">{t("gate.couponWhy")}</span>

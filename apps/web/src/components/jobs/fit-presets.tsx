@@ -5,6 +5,8 @@
  * is added to the internal-fit knobs (holes, bores, pins, cable channels, gaps, slots). On a part page the list of fit
  * knobs comes from `GET /parts/{slug}/presets`; in the workspace (no published part yet) the same rule picks them from
  * the knob specs. Values are snapped to each knob's range; the bake clamps again server-side.
+ * When this device has reported how a printed fit-test coupon fit (`GET /fit-reports/coupon`), the learned clearance
+ * for that printer + material replaces the preset's and is labelled with how many reports it came from.
  * Shown only when the API offers `/presets`.
  */
 import { useQuery } from "@tanstack/react-query";
@@ -17,6 +19,7 @@ import { fmtMm } from "@/lib/format";
 import { useT } from "@/lib/i18n";
 import { Button } from "../ui/button";
 import { Label, Select } from "../ui/input";
+import { useLearnedClearances, useRememberedPreset } from "./coupon-fit";
 
 const PresetSchema = z.object({
   id: z.string(),
@@ -109,13 +112,29 @@ export function FitPresets({
   const [printer, setPrinter] = React.useState("");
   const [applied, setApplied] = React.useState<string | null>(null);
   const id = React.useId();
+  const learned = useLearnedClearances();
+  const [remembered, remember] = useRememberedPreset();
+  // Start from the printer + material this device used last (also the coupon control's choice).
+  const restored = React.useRef(false);
+  React.useEffect(() => {
+    const p = q.data?.find((x) => x.id === remembered);
+    if (p && !restored.current) {
+      restored.current = true;
+      setMaterial(p.material);
+      setPrinter(p.id);
+    }
+  }, [q.data, remembered]);
 
   if (q.isError) return <p className="mt-3 text-[12px] text-bad">{q.error instanceof Error ? q.error.message : "presets failed"}</p>;
   if (!q.data?.length) return null;
   const list = q.data;
   const materials = [...new Set(list.map((p) => p.material))];
   const printers = list.filter((p) => p.material === material);
-  const preset = printers.find((p) => p.id === printer) ?? (printers.length === 1 ? printers[0] : undefined);
+  const base = printers.find((p) => p.id === printer) ?? (printers.length === 1 ? printers[0] : undefined);
+  const learnedRow = base ? learned.byId.get(base.id) : undefined;
+  const fromCoupon = learnedRow?.source === "learned" ? learnedRow : null;
+  // The learned clearance only replaces the preset's delta; it never touches a measured knob.
+  const preset = base && fromCoupon ? { ...base, delta_mm: fromCoupon.clearance_mm } : base;
   const changes = preset ? presetChanges(preset, params, values, part.data?.fit_knobs) : [];
   const label = (n: string) => params.find((p) => p.name === n)?.label || n;
 
@@ -153,6 +172,7 @@ export function FitPresets({
             onChange={(e) => {
               setPrinter(e.target.value);
               setApplied(null);
+              if (e.target.value) remember(e.target.value);
             }}
           >
             <option value="">{t("presets.pick")}</option>
@@ -167,7 +187,13 @@ export function FitPresets({
       {preset ? (
         <div className="space-y-2 rounded-md bg-surface-2 p-3 text-[12px] leading-5">
           <p>
-            <span className="font-medium">{preset.title}</span>: +{fmtMm(preset.delta_mm, 2)} {t("presets.clearance")}
+            <span className="font-medium">{preset.title}</span>: +{fmtMm(preset.delta_mm, fromCoupon ? 3 : 2)} {t("presets.clearance")}
+            {fromCoupon ? (
+              <span className="text-muted">
+                {" "}
+                · {fromCoupon.reports === 1 ? t("presets.learnedOne") : t("presets.learned", { n: fromCoupon.reports })} (preset +{fmtMm(fromCoupon.preset_clearance_mm, 2)})
+              </span>
+            ) : null}
           </p>
           {changes.length ? (
             <ul className="space-y-0.5 font-mono tabular-nums">
@@ -181,7 +207,7 @@ export function FitPresets({
             <p className="text-muted">{t("presets.none")}</p>
           )}
           {preset.note ? <p className="text-muted">{preset.note}</p> : null}
-          <p className="text-muted">{t("presets.honest")}</p>
+          {fromCoupon ? null : <p className="text-muted">{t("presets.honest")}</p>}
           <div className="flex items-center gap-3">
             <Button
               size="sm"

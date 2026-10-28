@@ -1,8 +1,8 @@
-# PartSmith-Bench — 2026-10-28T00:20:09+00:00
+# PartSmith-Bench — 2026-10-28T16:03:49+00:00
 
 > **PIPELINE CHECK — DETERMINISTIC MOCK PROVIDERS, NOT MODEL PERFORMANCE.** Every model stage ran on deterministic mocks; these tables show that the pipeline and the scorer work end to end, not how well any model performs.
 
-Mode: `mock` · git `b3da84b32a` · CI: 95 %: bootstrap over samples (2000 resamples, seeded) for mean errors; Wilson for rates.
+Mode: `mock` · git `1c91d0f00c` · CI: 95 %: bootstrap over samples (2000 resamples, seeded) for mean errors; Wilson for rates.
 - PS-open / PS-open-all are provider-routing variants: identical to PS with mock providers, so they run only with --live
 - synthetic: seeded subset of 6/60 bench samples (seed 7)
 - reference_objects: 4 synthetic renders; real photos pending (data/real/reference_objects/)
@@ -16,13 +16,13 @@ Ground truth: `synthetic_exact` · N = 6 samples · synthetic: seeded subset of 
 
 | config | n | median_abs_err_mm | mean_abs_err_mm | mean_ci95 | pass@0.5 | pass@0.5_ci95 | verified_rate | verified_but_off | valid_rate | median_iters | median_wall_s | usd_per_job | tokens_per_job |
 |---|---|---|---|---|---|---|---|---|---|---|---|---|---|
-| B0 | 6 | 1.05 | 2.43 | [1.132, 3.602] | 0.167 | [0.03, 0.56] | 0.0 | 0/0 | 0.833 | 1.0 | 10.2 | 0.0 | 0.0 |
+| B0 | 6 | 1.05 | 2.43 | [1.132, 3.602] | 0.167 | [0.03, 0.56] | 0.0 | 0/0 | 0.833 | 1.0 | 10.1 | 0.0 | 0.0 |
 | B1 | 6 | 0.3 | 0.49 | [0.247, 0.739] | 0.333 | [0.10, 0.70] | 0.167 | 0/1 | 0.833 | 1.0 | 10.2 | 0.0 | 0.0 |
-| B2 | 6 | 0.3 | 0.515 | [0.150, 0.986] | 0.333 | [0.10, 0.70] | 0.333 | 0/2 | 0.833 | 2.0 | 27.2 | 0.0 | 0.0 |
-| PS | 6 | 0.3 | 0.515 | [0.150, 0.986] | 0.333 | [0.10, 0.70] | 0.333 | 0/2 | 0.833 | 2.0 | 26.0 | 0.0 | 0.0 |
-| PS-noTemplate | 6 | 0.14 | 2.319 | [0.685, 4.351] | 0.167 | [0.03, 0.56] | 0.167 | 0/1 | 0.833 | 1.0 | 12.8 | 0.0 | 0.0 |
+| B2 | 6 | 0.3 | 0.515 | [0.150, 0.986] | 0.333 | [0.10, 0.70] | 0.333 | 0/2 | 0.833 | 2.0 | 27.7 | 0.0 | 0.0 |
+| PS | 6 | 0.3 | 0.515 | [0.150, 0.986] | 0.333 | [0.10, 0.70] | 0.333 | 0/2 | 0.833 | 2.0 | 26.8 | 0.0 | 0.0 |
+| PS-noTemplate | 6 | 0.14 | 2.319 | [0.685, 4.351] | 0.167 | [0.03, 0.56] | 0.167 | 0/1 | 0.833 | 1.0 | 12.7 | 0.0 | 0.0 |
 | PS-noJudge | 6 | 0.3 | 0.515 | [0.150, 0.986] | 0.333 | [0.10, 0.70] | 0.333 | 0/2 | 0.833 | 2.0 | 27.2 | 0.0 | 0.0 |
-| PS-noHeightCorr | 6 | 0.4 | 0.605 | [0.333, 0.941] | 0.167 | [0.03, 0.56] | 0.0 | 0/0 | 0.833 | 4.0 | 37.0 | 0.0 | 0.0 |
+| PS-noHeightCorr | 6 | 0.4 | 0.605 | [0.333, 0.941] | 0.167 | [0.03, 0.56] | 0.0 | 0/0 | 0.833 | 4.0 | 37.2 | 0.0 | 0.0 |
 
 Paired exact McNemar, B1 vs PS on pass@0.5 (6 pairs): B1-only passes 0, PS-only passes 0, p = 1.
 
@@ -36,13 +36,13 @@ Ground truth: `reference_spec` · N = 4 samples · reference_objects: 4 syntheti
 
 | config | n | median_abs_err_mm | mean_abs_err_mm | mean_ci95 | pass@0.5 | pass@0.5_ci95 | verified_rate | verified_but_off | valid_rate | median_iters | median_wall_s | usd_per_job | tokens_per_job |
 |---|---|---|---|---|---|---|---|---|---|---|---|---|---|
-| B0 | 4 | 0.268 | 1.116 | [0.216, 2.498] | 0.25 | [0.05, 0.70] | 0.25 | 1/1 | 1.0 | 1.0 | 7.8 | 0.0 | 0.0 |
-| B1 | 4 | 0.131 | 0.453 | [0.125, 0.890] | 0.5 | [0.15, 0.85] | 0.25 | 1/1 | 1.0 | 1.0 | 8.1 | 0.0 | 0.0 |
-| B2 | 4 | 0.05 | 0.121 | [0.039, 0.290] | 0.75 | [0.30, 0.95] | 0.5 | 1/2 | 1.0 | 1.5 | 10.1 | 0.0 | 0.0 |
-| PS | 4 | 0.05 | 0.121 | [0.039, 0.290] | 0.75 | [0.30, 0.95] | 0.5 | 1/2 | 1.0 | 1.5 | 10.3 | 0.0 | 0.0 |
-| PS-noTemplate | 4 | 0.131 | 0.175 | [0.066, 0.307] | 0.75 | [0.30, 0.95] | 0.5 | 1/2 | 1.0 | 1.5 | 10.1 | 0.0 | 0.0 |
-| PS-noJudge | 4 | 0.05 | 0.121 | [0.039, 0.290] | 0.75 | [0.30, 0.95] | 0.5 | 1/2 | 1.0 | 1.5 | 10.2 | 0.0 | 0.0 |
-| PS-noHeightCorr | 4 | 0.259 | 0.527 | [0.241, 0.890] | 0.25 | [0.05, 0.70] | 0.0 | 0/0 | 1.0 | 3.5 | 14.6 | 0.0 | 0.0 |
+| B0 | 4 | 0.268 | 1.116 | [0.216, 2.498] | 0.25 | [0.05, 0.70] | 0.0 | 0/0 | 1.0 | 1.0 | 7.8 | 0.0 | 0.0 |
+| B1 | 4 | 0.131 | 0.453 | [0.125, 0.890] | 0.5 | [0.15, 0.85] | 0.0 | 0/0 | 1.0 | 1.0 | 8.2 | 0.0 | 0.0 |
+| B2 | 4 | 0.05 | 0.121 | [0.039, 0.290] | 0.75 | [0.30, 0.95] | 0.25 | 0/1 | 1.0 | 1.5 | 10.5 | 0.0 | 0.0 |
+| PS | 4 | 0.05 | 0.121 | [0.039, 0.290] | 0.75 | [0.30, 0.95] | 0.25 | 0/1 | 1.0 | 1.5 | 10.6 | 0.0 | 0.0 |
+| PS-noTemplate | 4 | 0.131 | 0.175 | [0.066, 0.307] | 0.75 | [0.30, 0.95] | 0.25 | 0/1 | 1.0 | 1.5 | 10.3 | 0.0 | 0.0 |
+| PS-noJudge | 4 | 0.05 | 0.121 | [0.039, 0.290] | 0.75 | [0.30, 0.95] | 0.25 | 0/1 | 1.0 | 1.5 | 10.4 | 0.0 | 0.0 |
+| PS-noHeightCorr | 4 | 0.259 | 0.527 | [0.241, 0.890] | 0.25 | [0.05, 0.70] | 0.0 | 0/0 | 1.0 | 3.5 | 15.1 | 0.0 | 0.0 |
 
 Paired exact McNemar, B1 vs PS on pass@0.5 (4 pairs): B1-only passes 0, PS-only passes 1, p = 1.
 

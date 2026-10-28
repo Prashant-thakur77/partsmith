@@ -129,4 +129,14 @@ Seven workstreams in flight: providers, verifier, synth/eval, API/registry, metr
   clipped-contour and per-piece side-band fixes in the verifier. Fresh mock seed: cover tab 2.28 → 1.195, latch corner
   3.87 → 1.402, hook tip 13.56 → 0.681 mm (all best effort, 6 of 19 verified as before). Lying-brain suite gains a fake
   break (17/17). Bench tables gain `verified_but_off` (reference objects 1/2 verified but > 0.5 mm off).
-- **Next:** keys → live runs; a stated/tapped length for broken ends; the verified-but-off reference object.
+- **Round 3 (Oct 28, research → plan → build):** research on recent winners, demo guidance, photo-to-CAD tools and the newest
+  Meta capabilities set the plan: real evidence first, one memorable proof moment, new load-bearing Meta features. Built (mock
+  mode, live once credits are confirmed): a thick part seen only from the top is bounded instead of verified (the AA cell
+  that verified 0.56 mm short is now best effort; `verified_but_off` 0/2 synthetic, 0/1 reference objects), unchecked knobs
+  labelled; buy-or-print card (cited offers only, code-computed print side); narrated walk-around (Spark video + audio points
+  → SAM point prompts, checked by code); realtime Hindi/English voice relayed by the API; fit-test coupon that learns the
+  printer's clearance; impact panel; "a lying model, caught" on /judges; printable files gated at every URL; deploy files
+  (replay mode by default, `make deploy-check`); open-in-slicer links; video storyboard and X script in HANDOFF. Keys in
+  `.env`: Meta, Baseten (smoke ✅), Hugging Face (SAM 3 gated access approved).
+- **Next:** live runs once the Meta credits show → Modal deploys → real photos and a print from Prashant → reseed, bench,
+  re-score.

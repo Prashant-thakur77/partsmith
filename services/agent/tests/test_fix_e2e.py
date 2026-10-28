@@ -129,7 +129,13 @@ def test_question_pauses_and_resumes(sample_root: Path) -> None:
         time.sleep(0.05)
     assert job.finished and job.events[-1].status == "verified"
     spec = job.read_json("partspec.json")
-    assert spec["thickness"] == {"value": 12.0, "source": "user_stated", "sigma_mm": 0.3, "evidence": None}
+    assert spec["thickness"] == {
+        "value": 12.0,
+        "source": "user_stated",
+        "sigma_mm": 0.3,
+        "evidence": None,
+        "bound_mm": None,
+    }
     assert any(e.t == "answer" and e.value == 12.0 for e in job.events)
 
 

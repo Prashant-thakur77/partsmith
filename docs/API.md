@@ -12,7 +12,8 @@ is in development mode: those routes are open and `/status` reports `"admin": "o
 raw IPs and user agents are never stored (`/stats`).
 Writes (POST/PUT/PATCH/DELETE under `/api/v1`) are rate limited per IP
 (`PARTSMITH_RATE_LIMIT` per minute, default 120 → `429 rate_limited` with `Retry-After`). CORS allows
-`PARTSMITH_CORS_ORIGINS` (default `http://localhost:3000,http://127.0.0.1:3000`).
+`PARTSMITH_CORS_ORIGINS` (default `http://localhost:3000,http://127.0.0.1:3000`); WebSocket routes check `Origin`
+against the same list.
 
 **Errors** always use one envelope with a 4xx/5xx status:
 `{"error": {"code": str, "message": str, "closest_matches"?: [str]}}`. `closest_matches` is present when the request
@@ -23,11 +24,13 @@ named something that does not exist (slug, parameter, mat, sample, job, format, 
 `no_model_outline`, `no_preview_source`, `measure_failed`, `invalid_request`, `report_file_not_found`, `bad_image`,
 `too_small`, `too_large`, `empty_upload`, `unsupported_media_type`, `not_printable`, `rate_limited`,
 `agent_unavailable`, `not_implemented`, `internal_error`, `admin_required`, `needs_ack`, `not_shippable`,
-`unknown_preset`, `need_not_found`, `lesson_not_found`, `batch_not_found`, `no_measurements`.
+`unknown_preset`, `need_not_found`, `lesson_not_found`, `batch_not_found`, `no_measurements`, `busy`, `bad_frame`,
+`provider_error`.
 
 **Export gate** (`services/registry/gate.py` over `services.verifier.ship.can_ship`): job publish, job-part downloads
 (`/jobs/{id}/bake?download=1`), published-part downloads (`/parts/{slug}/bake?download=1`), both for any format but
-`view` (a preview), `/parts/{slug}/bundle.zip` and the MCP `bake` tool. Verified
+`view` (a preview), `/parts/{slug}/bundle.zip`, the MCP `bake` tool and the content-addressed links (`/blobs/<key>`, `/bakes/<key>/<file>`)
+for printable files. Verified
 ships; best effort answers `409 needs_ack` with the plain-words reason until the request repeats with `ack=1`; failed,
 unfinished, malformed or self-contradicting records answer `409 not_shippable`. Responses that pass carry
 `"ship": {"status": "verified"|"best_effort"|"blocked", "reason", "needs_ack", "source"}`; part detail always
@@ -78,13 +81,13 @@ Screen calibration (ID-1 card 85.60 × 53.98 mm) happens in the browser and is s
 ## Files
 | Method | Path | Returns |
 |---|---|---|
-| GET | `/blobs/{key}` | content-addressed blob (`key` = sha256 hex + extension); content type from the extension, `Cache-Control: public, max-age=31536000, immutable`, `ETag` (304 on `If-None-Match`) |
-| GET | `/bakes/{cache_key}/{name}` | a baked file (`part.stl`, `part.step`, `part.3mf`, `part.glb`, `view.json`, `part.py`), immutable cache headers |
+| GET | `/blobs/{key}?ack=` | content-addressed blob (`key` = sha256 hex + extension); content type from the extension. Previews (images, GLB, JSON, code) are open with `Cache-Control: public, max-age=31536000, immutable` and an `ETag` (304 on `If-None-Match`). Printable files (`.stl`/`.3mf`/`.step`/`.zip`) go through the export gate of the job or part that produced them: verified ships, best effort answers `409 needs_ack` until `ack=1`, failed or unowned answers `409 not_shippable`; gated files are served `private, no-cache` (the gate runs before the 304 check). The job's fit-test coupon is open |
+| GET | `/bakes/{cache_key}/{name}?ack=` | a baked file; `part.stl`, `part.step`, `part.3mf` are gated like `/blobs` (owner = the part or job that requested the bake, else the registry part whose program built it); `part.glb`, `view.json`, `part.py` are open with immutable cache headers |
 
 ## Jobs
 | Method | Path | Body / Returns |
 |---|---|---|
-| POST | `/jobs/fix` | multipart: `top` (file, required), `side`, `mating` (files, optional), `orbit` (optional 5–10 s walk-around clip, MP4/MOV/WebM ≤ 60 MB), `intent`, `mat_kind` (`screen`\|`paper`), `thickness_mm`, `family_hint`, `screen_px_per_mm`, `points` (optional JSON, see below) → `JobSummary` |
+| POST | `/jobs/fix` | multipart: `top` (file, required), `side`, `mating` (files, optional), `orbit` (optional 5–10 s walk-around clip, MP4/MOV/WebM ≤ 60 MB), `narration` (optional voice note about the clip, audio ≤ 15 MB, sent with `orbit`), `city` (optional, for nearby print shops on the buy-or-print card), `intent`, `mat_kind` (`screen`\|`paper`), `thickness_mm`, `family_hint`, `screen_px_per_mm`, `points` (optional JSON, see below) → `JobSummary` |
 | GET | `/jobs/demo/samples` | `[{"id": str, "title": str, "family_hint": str\|null, "kind": "template"\|"reference_object"}]` — bundled **synthetic** samples |
 | POST | `/jobs/demo` | `{"sample": str}` → `JobSummary` — runs a bundled **synthetic** sample (labelled synthetic everywhere); unknown ids → `404 sample_not_found` + closest |
 | GET | `/jobs?limit=&include_replays=&kind=` | `[JobSummary]` (newest first) |
@@ -95,17 +98,51 @@ Screen calibration (ID-1 card 85.60 × 53.98 mm) happens in the browser and is s
 | POST | `/jobs/{id}/preview` | → `{"url": str, "label": "AI preview", "mode": str}` (Muse Image "see the fix") |
 | GET | `/jobs/{id}/fit-outline?mat_id=` | `409 no_model_outline` when the job has no model outline (Steer lanes, failed runs); otherwise `{"mat_id": str, "outline_mm": [[x,y]], "holes": [{"center_mm":[x,y],"diameter_mm":float}], "dims": [{"label": str, "from_mm":[x,y], "to_mm":[x,y], "value_mm": float}], "placement": {"cx_mm","cy_mm","theta_deg"}}` in the **mat frame** (`mat_id` default `screen-m`) |
 | POST | `/jobs/{id}/fit-check` | multipart `photo`, `mat_id` → `FitCheckResult = {"passed": bool, "iou": float, "hausdorff_mm": float\|null, "mean_mm": float\|null, "reasons": [str], "overlay_url": str, "capture": CaptureReport}`; `hausdorff_mm` / `mean_mm` are `null` when nothing could be compared (no mat markers or no part found on the outline; then `passed: false`, `iou: 0` and `reasons` says what to retake), and `fit_check_hausdorff_mm` is not emitted. **Live update:** the job also gets metric events `fit_check_passed` (1/0), `fit_check_iou`, `fit_check_hausdorff_mm` and a `measure_overlay` artifact labelled `fit check on <mat>: PASS\|FAIL`, so a page following `/events?follow=1` (the laptop showing the outline) turns green when a phone uploads |
-| GET | `/jobs/{id}/bake?<param>=<value>&format=…[&preset=][&download=1]` | re-bake the job's current part program before it is published → `BakeResult` (same shape as part bakes; `&download=1` returns the first format's file through the export gate, `&ack=1` for best effort). `preset=<id>` applies a fit preset on top of the job's current values and the knobs by the same server rule as part bakes (`"preset": {"id","title","delta_mm","changes"}` in the result; unknown id → `422 unknown_preset` + closest) |
+| GET | `/jobs/{id}/bake?<param>=<value>&format=…[&preset=][&download=1]` | re-bake the job's current part program before it is published → `BakeResult` (same shape as part bakes; `&download=1` returns the first format's file through the export gate, `&ack=1` for best effort). `preset=<id>` applies a fit preset on top of the job's current values and the knobs by the same server rule as part bakes (`"preset": {"id","title","delta_mm","changes","source","label","reports","preset_delta_mm"}` in the result; unknown id → `422 unknown_preset` + closest). `fit_session=<device id>` uses that device's learned coupon clearance instead of the preset's |
 | GET | `/jobs/{id}/presets` | same shape as `/parts/{slug}/presets` with `"job_id"` instead of `"slug"`; `changes` are computed on the job's current values. `409 no_program` until the job has a part program |
 | POST | `/jobs/{id}/publish` | **admin**. `{"slug"?: str, "ack"?: bool}` (or `?ack=1`) → export gate, then part detail (+ `"ship"`) (as `GET /parts/{slug}`) + `"publish": {"slug","action": "created"\|"updated"\|"unchanged"\|"renamed","requested_slug","duplicate_of","version"}`; the job must be `done`; origin is preserved; thumbnails are rendered here. Publishing dedupes (see Registry) |
 | POST | `/jobs/{id}/cancel` | → `JobSummary` after the cancel took effect (`status: "cancelled"`); if the job has not stopped within 3 s the response says `status: "cancelling"` (it stops at its next check). Finished jobs are returned unchanged |
+| GET | `/jobs/{id}/impact` | `{"job_id","label":"estimate","minutes_to_file": {"minutes","started_at","file_at","kind","waited_for_answer"}\|null, "filament": {"material":"PLA","grams","volume_mm3","density_g_cm3","source"}\|null, "cost": [{"currency","amount","price_per_kg"}], "print_minutes_est": float\|null, "assumptions": [str], "notes": [str], "replay": bool}`. From event timestamps and the baked mesh (facts.json `mass_g_pla`, else verified volume × PLA density); spool price assumed (`PARTSMITH_PLA_INR_PER_KG`, `PARTSMITH_PLA_USD_PER_KG`) |
+| WS | `/jobs/{id}/voice/live` | Live voice edits. Client → server: binary frames of raw PCM s16le, mono, 16 kHz (about 100 ms each, ≤ 64 KB, even byte count); text `{"type":"stop"}` or `{"type":"ping"}`. Server → client (JSON, `type`): `ready{mode, model, keywords, language_bias, sample_rate, encoding, channels, max_seconds, max_bytes, mock_script?, note?}`, `speech_start`/`speech_end{turn_id, mode}`, `partial`/`final{text, turn_id, mode}`, `edit{turn_id, result: <POST /edit shape> + transcript_mode}`, `edit_error{turn_id, code, message}`, `capped{reason: "time"\|"size", limit}`, `warning{code, message}`, `error{code, message}`, `pong`, `closed{reason, seconds, bytes, finals, edits}`. Each final runs the same mapping and guards as `POST /jobs/{id}/edit`. Limits: 60 s and about 2.1 MB per session, 8 concurrent sessions (`busy`, close 1013). Errors: `job_not_found`, `no_program` (close 1008), `bad_frame` (1003), `provider_error` (1011). Without a voice key the session is the labelled mock (a scripted Hinglish utterance that fits the job's knobs) |
+| POST | `/fit-reports/coupon` | `{"preset","session" (8–64 of [A-Za-z0-9_-], a random device id),"features":[{"feature","fit":"tight"\|"ok"\|"loose","amount":"barely"\|"very"\|null}] (1–8),"job_id"?,"slug"?}` → `{"id","accepted","learned": LearnedClearance}`; `422 unknown_preset` + closest; unknown slug/job → 404 |
+| GET | `/fit-reports/coupon?session=` | `[LearnedClearance]` for every preset |
+| GET | `/fit-reports/coupon/{preset_id}?session=` | `LearnedClearance = {"preset","title","material","process","preset_clearance_mm","clearance_mm","range_mm":[lo,hi],"source":"learned"\|"preset","reports","feature_reports","label","rule","recent":[{"feature","fit","amount","base_mm","proposal_mm","created_at"}]}` |
 | GET | `/jobs/{id}/run.jsonl` | the raw run log (`application/x-ndjson`) |
 | POST | `/transcribe` | multipart `audio`, `language_hint?` → `{"text": str, "mode": "live"\|"mock"\|"replay", "language": str\|null, "model": str, "note": str}` (fix intent and spoken answers; mock transcripts say so in `note`) |
 | GET | `/replays` | `[{"id": str, "title": str, "origin": DataOrigin, "provider_mode": str, "verified": bool, "max_error_mm": float\|null, "iterations": int}]` |
+| GET | `/jobs/{id}/buy-or-print` | `BuyOrPrint` (below): the stored card, or the print side computed now with `lookup: null` (a GET never starts a search). `409 no_program` before the job has a part program |
+| POST | `/jobs/{id}/buy-or-print` | `{"city"?: str}` → `BuyOrPrint` after a lookup (search grounding; `buy_lookup` model_call on the job, cost counted there); stored as the job's card. `409 not_finished` / `409 no_program` |
 
 `points` = feature taps in top-photo pixels as displayed (EXIF orientation applied, i.e. the browser's frame), `{"top": [{"x": float, "y": float, "kind": "hole"|"slot"|"tab"|"broken_edge", "id"?: str}]}`
 (`kind` defaults to `hole`, at most 32 points). Each tap becomes a point prompt for the segmenter and the feature is measured by
 code; a tap never sets a dimension. Malformed input → `422 invalid_points`; a clip that is not MP4/MOV/WebM → `415`.
+
+**Narrated walk-around.** When the `orbit` clip has a sound track, or a short voice note comes with it (service view
+`narration`: wav/webm/ogg/mp3/m4a), Muse Spark (`narrate` stage, video + audio understanding; the note is transcribed
+first) returns the part's function, the mating feature, the break and, per feature it hears about, a time in the clip
+and a pixel in that frame. Code decodes that frame, finds the mat in it, and keeps a point only when it is inside the
+frame, on the part there (holes filled) and on the part's footprint on the mat (the walk-around's own footprint, else
+the top photo's); each kept point becomes a SAM 3.1 point prompt on that frame and is measured like a tap (evidence note
+`pointed by Spark (narration)`). Narrated holes merge into the top view by the tap rules only when the part sits where
+the top photo saw it (footprint IoU ≥ 0.8); a part moved between photo and clip keeps them in the report only. The words go to the understand stage as steering, labelled as such; the narration
+never sets a number. The job stores `narration.json` (`{"narration", "points": [{..., "ok", "reason", "frame_index"}],
+"measured", "merged", "same_placement"}`) and an artifact `narration`; dropped points are logged with the reason. Mock: labelled
+(`MOCK — no model watched the clip`), built from the typed intent and the clip's size/length only.
+
+**Buy or print.** `BuyOrPrint = {"job_id", "slug", "title", "status" (copied from the verification, never changed),
+"prints": [PrintEstimate], "lookup": BuyLookup|null, "mode": "live"|"mock"|"replay", "created_at", "notes": [str]}`.
+`PrintEstimate = {"material": "PLA"|"PETG", "volume_mm3", "grams", "print_minutes", "filament_cost": {currency: float},
+"price_per_kg": {currency: float}, "assumptions": [str]}` — code only: grams = solid volume × density (PLA 1.24,
+PETG 1.27 g/cm³; 100 % infill, an upper bound), minutes = the part-facts estimate, cost = grams × an assumed spool
+price (INR 1200 / USD 20 per kg PLA, INR 1400 / USD 22 PETG; assumptions, not quotes). `BuyLookup = {"query", "city",
+"oem": {"name","number","url","quote"}|null, "offers": [{"seller","price","currency","url","quote","title",
+"availability"}], "places": [{"name","kind": "print_shop"|"repair_cafe"|"maker_space"|"other","url","quote","city"}],
+"dropped": [str], "searched", "queries", "mode", "provider", "model", "usd", "label"}`. The lookup is Muse Wonder
+(fallback Spark 1.3) with web search and the job's city as the search location. Code drops every offer, place and OEM
+name without an http(s) URL the search returned and a quote from that page, every price that does not appear in its
+quote or has no ISO currency, and places when no city was given; each drop is listed in `dropped`. A price is never
+shown without its link. Mock: no seller and no price (`label` "MOCK — no web search ran"). A fix job builds its card
+after packaging (stage `package`, label "Buy or print: …"); it never blocks or changes verification.
 
 ## Measure / verify (stateless)
 | Method | Path | Body / Returns |
@@ -113,16 +150,26 @@ code; a tap never sets a dimension. Malformed input → `422 invalid_points`; a 
 | POST | `/measure` | multipart `photo`, `view` (`top`\|`side`), `mat_kind`, `thickness_mm?`, `mat_id?` → `MeasureResult` + `overlay_url` |
 | POST | `/verify` | `{"part": slug, "params": {}, "measurements": Measurements \| {view: Measurements}}` or `{"part", "params", "job_id"}` (verify against that job's measured photos) → `Verification` + `"functional"` (probe summary: screws that pass each hole, interface fits, printability; never part of the pass rule) (the part program runs in the sandbox; code decides `verified`) |
 
+**Observed vs inferred.** A measured value can carry `bound_mm: [low, high]` when the photo cannot pin it down: a thick
+part seen only from the top reads its length/width with every edge at the stated height, and an end that sits lower
+(a battery's terminal, a rounded end) reads short, so the photo allows anything up to the mat-plane reading. Without a
+side view or walk-around frames the verifier then adds P0 tests `bbox.x.height` / `bbox.y.height`: the model must be
+within ±0.3 mm of both the full-height reading and the reading for ends at half the height, so such a part stays best
+effort until a side photo settles it (the fix loop stops early: no model edit can). `Verification.unchecked` lists
+every program knob no test compared with a measured or user-stated value (`{"param", "label", "value", "unit",
+"source": "inferred", "note"}`): template defaults and inferred values, labelled not verified whatever the status.
+
 ## Registry
 | Method | Path | Returns |
 |---|---|---|
 | GET | `/parts?q=&family=&verified=&origin=&sort=&cursor=&limit=&role=` | `{"items": [PartCard], "next_cursor": str\|null, "total": int}`; `role` = `part` (default: functional parts) \| `reference` (bench reference objects, tag `role:reference`) \| `all`; `sort` = `relevance` (default) \| `newest` \| `error` (smallest max error first) \| `title`; `limit` ≤ 100; `cursor` is opaque |
 | GET | `/parts/{slug}` | part detail (below) |
 | GET | `/parts/{slug}/params` | `[ParamSpec]` |
-| GET | `/parts/{slug}/bake?<param>=<value>&format=stl\|3mf\|step\|glb\|view\|py` | `BakeResult` + `facts_notes` (or the file with `&download=1`). `format` may repeat or be comma-separated (default `stl,step,view`; `formats=` also accepted). Out-of-range values are clamped and listed in `clamped`; unknown knobs → `422 unknown_param` + closest. Identical requests are cache hits (`cache_hit: true`). `preset=<id>` applies a fit preset after the knob values (`"preset": {"id","title","delta_mm","changes"}` in the result). `&download=1` goes through the export gate like `bundle.zip`: verified downloads, best effort answers `409 needs_ack` until `&ack=1`, failed answers `409 not_shippable`; `format=view` and `format=glb` stay open (the embed and AR viewers' previews) |
+| GET | `/parts/{slug}/bake?<param>=<value>&format=stl\|3mf\|step\|glb\|view\|py` | `BakeResult` + `facts_notes` (or the file with `&download=1`). `format` may repeat or be comma-separated (default `stl,step,view`; `formats=` also accepted). Out-of-range values are clamped and listed in `clamped`; unknown knobs → `422 unknown_param` + closest. Identical requests are cache hits (`cache_hit: true`). `preset=<id>` applies a fit preset after the knob values (`"preset": {"id","title","delta_mm","changes","source","label","reports","preset_delta_mm"}` in the result); `fit_session=<device id>` uses that device's learned coupon clearance. `&download=1` goes through the export gate like `bundle.zip`: verified downloads, best effort answers `409 needs_ack` until `&ack=1`, failed answers `409 not_shippable`; `format=view` and `format=glb` stay open (the embed and AR viewers' previews) |
 | GET | `/parts/{slug}/presets` | `{"slug", "fit_knobs": [str], "presets": [{"id","title","material","process","nozzle_mm","delta_mm","note","changes": [{"param","from","to","delta_mm"}]}], "note"}` |
 | GET | `/presets` | the 7 fit presets: `pla-fdm-0.4` (+0.20 mm), `petg-fdm-0.4` (+0.25), `abs-fdm-0.4` (+0.30), `pla-fdm-0.6` (+0.30), `petg-fdm-0.6` (+0.35), `abs-fdm-0.6` (+0.40), `resin-sla` (+0.10). A preset adds its clearance only to `affects_fit` mm knobs that are internal fits (hole, bore, pivot, pin, cable, gap, clearance, slot); outer dimensions never change. Documented starting points, not measurements |
 | GET | `/parts/{slug}/bundle.zip?<params>&preset=&ack=` | zip `<slug>/`: `part.py` (defaults baked to the values), `part.step`, `part.stl`, `part.3mf`, `verification.json` (record + sha256 of every file + ship decision), `README.md` (how to print, measured vs not measured, licence), `LICENSE`, `index.html` (offline viewer, mesh inline, three.js from a CDN). Export gate applies |
+| GET | `/parts/{slug}/buy-or-print` | `BuyOrPrint` for a published part: the print side from its facts plus the lookup stored on the job it came from (if any); never starts a search |
 | GET | `/parts/{slug}/card.png` | 1200×630 share card (og:image): thumbnail, title, "Verified · 0.31 mm" / "Best effort · …" / "Not verified", origin badge, size and grams |
 | GET | `/embed/{slug}?<params>` (root, not under `/api/v1`) | minimal HTML viewer for iframes (`Content-Security-Policy: frame-ancestors *`) |
 | GET | `/parts/{slug}/variant?want=<plain words>` | `VariantResult` + `bake_url` |
@@ -206,6 +253,8 @@ by slug and with `role=reference`.
 |---|---|---|
 | GET | `/bench` | latest `eval/reports/latest/report.json` with `"status": "ok"`, or a `"status": "pending"` payload of the same shape. Both carry `"evidence": {"bypass", "program_vs_mesh", "impact", "open_weights"}` — the side reports in `eval/reports/latest/` (null until their script runs) |
 | GET | `/bench/files/{path}` | a report file under `eval/reports/` (png/jpg/svg/json/md/csv/txt; no traversal, no hidden files) |
+
+`evidence.bypass.caught[]` = `{id, attack, claim, claim_source, verifier: {verified, status, max_error_mm, threshold_mm, top_hausdorff_mm, top_iou, failed_tests, reasons}, export: {ok, requires_ack, status, reason, gate}, overlay (path under eval/reports, served by /bench/files), overlay_px, overlay_note}` — the lying-model moments shown on /judges.
 
 `failures[].overlay_url` is the overlay blob when it exists, else `/api/v1/bench/files/<report dir>/<overlay_file>`, else `null`.
 `{"status", "generated_at", "git_sha", "tables": {"synthetic"|"reference_objects"|"real_ruler"|"control"|"redteam": BenchTable}, "runs": [...], "failures": [{"title","reason","overlay_url"}]}`;

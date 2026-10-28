@@ -5,20 +5,26 @@ P0 (blocking): every measured hole diameter within +/-0.15 mm, footprint length/
 +/-0.3 mm, and validity: valid solid, single solid, watertight mesh,
 volume > 0, min wall >= 0.8 mm (FDM). P1 (reported, not blocking): hole centres within 0.3 mm, blind-hole depths.
 
+Height-bound tests (P0, `height_bound_tests`): a thick part seen only from the top has a length/width the photo cannot
+pin down (an end that sits lower than the stated height reads short, see `Measured.bound_mm`). When nothing shows the
+heights (no side view, no walk-around) and the model's 3D form is a guess (an extruded outline, not a family template),
+the model must be within +/-0.3 mm both of the full-height reading and of the reading for ends at half the height, so
+a single top photo of such a part whose ends might sit lower cannot verify it.
+
 Values that were only *inferred* by a model never become a test: the verifier only checks numbers that came from a
 measurement or from the user.
 """
 
 from __future__ import annotations
 
-from collections.abc import Mapping
+from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
 from typing import Literal
 
 from partsmith_schemas.common import BBOX_TOL_MM, FEATURE_TOL_MM, MIN_WALL_MM, Measured, Source
 from partsmith_schemas.measurement import Measurements
 from partsmith_schemas.partspec import BlindHole, PartSpec, ThroughHole
-from partsmith_schemas.verification import PartTest
+from partsmith_schemas.verification import ParamSpec, PartTest, UncheckedValue
 
 THICKNESS_TOL_MM = 0.3
 CENTER_TOL_MM = 0.3
@@ -212,6 +218,92 @@ def evaluate_tests(tests: list[TestDef], values: Mapping[str, Value]) -> list[Pa
                 tol=t.tol,
                 passed=_passes(t, v),
                 priority=t.priority,
+            )
+        )
+    return out
+
+
+HEIGHT_TESTS = (("length", "bbox.x", "bbox.x.height"), ("width", "bbox.y", "bbox.y.height"))
+
+
+def height_bound_tests(
+    measurements: Mapping[str, Measurements], values: Mapping[str, Value], *, heights_seen: bool
+) -> list[PartTest]:
+    """P0 tests for top-view dimensions that only hold if the part's ends stand the full stated height.
+
+    ``Measured.bound_mm`` = (full-height reading, on-the-mat reading). The plausible alternative checked here is an
+    end at half the stated height (the midpoint): the model must be within ``BBOX_TOL_MM`` of both readings.
+    ``heights_seen``: a side view or walk-around frames compare the heights themselves, or the program is a family
+    template whose walls stand the stated height by design; no test is added then.
+    """
+    top = measurements.get("top")
+    if top is None or heights_seen:
+        return []
+    out: list[PartTest] = []
+    for name, key, tid in HEIGHT_TESTS:
+        m: Measured = getattr(top, name)
+        model = values.get(key)
+        if m.bound_mm is None or not _trusted(m) or model is None or isinstance(model, bool):
+            continue
+        lo, hi = m.bound_mm
+        mid = (lo + hi) / 2.0
+        worst = max(abs(float(model) - lo), abs(float(model) - mid))
+        out.append(
+            PartTest(
+                id=tid,
+                description=(
+                    f"{name} without a side view: the top photo reads {lo:.2f} mm if the ends stand the full stated "
+                    f"height and {mid:.2f} mm if they sit at half of it; the model must be within +/-{BBOX_TOL_MM} mm "
+                    "of both (a side photo settles it)"
+                ),
+                value=round(worst, 4),
+                expected=0.0,
+                tol=BBOX_TOL_MM,
+                passed=worst <= BBOX_TOL_MM + 1e-9,
+            )
+        )
+    return out
+
+
+# MEASURE_MAP key (a measured quantity) -> the id of the test that compares the model with it
+_KEY_TEST = {"length": "bbox.x", "width": "bbox.y", "thickness": "thickness", "side.thickness": "side.thickness"}
+
+
+def unchecked_values(
+    params: Sequence[ParamSpec],
+    values: Mapping[str, float],
+    measure_map: Mapping[str, str],
+    tests: Sequence[PartTest],
+    views: Sequence[str],
+) -> list[UncheckedValue]:
+    """Every dimension knob of the program that no blocking test compared with a measured or user-stated value.
+
+    A knob counts as checked when the program's MEASURE_MAP ties it to a measured quantity and that quantity's P0
+    test ran (pass or fail). Counts (unit "") are not dimensions. Everything else comes from the program, a
+    template default or a value inferred from the measured ones, and is labelled inferred, not verified.
+    """
+    p0 = {t.id for t in tests if t.priority == "P0"}
+    checked = set()
+    for key, knob in measure_map.items():
+        tid = _KEY_TEST.get(key, key if key.endswith(".diameter") else None)
+        if tid is not None and tid in p0:
+            checked.add(knob)
+    seen = ", ".join(views) if views else "no view"
+    out: list[UncheckedValue] = []
+    for p in params:
+        if p.unit == "" or p.name in checked:
+            continue
+        out.append(
+            UncheckedValue(
+                param=p.name,
+                label=p.label,
+                value=round(float(values.get(p.name, p.default)), 4),
+                unit=p.unit,
+                note=(
+                    "not measured: from the program (template default or inferred from the measured values); no "
+                    f"test compares it with the photo, which covers it only as far as it changes the compared "
+                    f"silhouettes ({seen})"
+                ),
             )
         )
     return out

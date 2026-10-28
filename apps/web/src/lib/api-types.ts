@@ -8,6 +8,22 @@ import { z } from "zod/mini";
 const num = z.number();
 const point2 = z.tuple([num, num]);
 
+/**
+ * An array whose malformed items are dropped instead of failing the whole response (a missing or non-array value
+ * reads as `[]`). Used for round-3 payloads, so one odd sub-object from a newer backend never blanks a page.
+ */
+export function tolerantArray<S extends z.ZodMiniType>(item: S) {
+  return z.pipe(
+    z.catch(z.array(z.unknown()), []),
+    z.transform((xs: unknown[]) =>
+      xs.flatMap((x) => {
+        const r = item.safeParse(x);
+        return r.success ? [r.data as z.output<S>] : [];
+      }),
+    ),
+  );
+}
+
 // ── common ────────────────────────────────────────────────────────────────────
 export const SourceSchema = z.enum(["measured", "user_stated", "inferred", "cited"]);
 export type Source = z.output<typeof SourceSchema>;
@@ -29,6 +45,8 @@ export const MeasuredSchema = z.object({
   source: z._default(SourceSchema, "measured"),
   sigma_mm: z._default(num, 0),
   evidence: z.nullish(z.object({ view: z.nullish(z.string()), note: z.nullish(z.string()), citation: z.nullish(CitationSchema) })),
+  /** [low, high] mm the photo allows when the value rests on an assumption the photo cannot check (malformed → null). */
+  bound_mm: z.catch(z.nullish(z.tuple([num, num])), null),
 });
 export type Measured = z.output<typeof MeasuredSchema>;
 
@@ -246,6 +264,17 @@ export const ValiditySchema = z.object({
   issues: z._default(z.array(z.string()), []),
 });
 
+/** A program knob no test compared with a measured or user-stated value: inferred, never verified. */
+export const UncheckedValueSchema = z.object({
+  param: z.string(),
+  label: z._default(z.string(), ""),
+  value: num,
+  unit: z._default(z.enum(["mm", "deg", ""]), "mm"),
+  source: z._default(SourceSchema, "inferred"),
+  note: z._default(z.string(), ""),
+});
+export type UncheckedValue = z.output<typeof UncheckedValueSchema>;
+
 export const VerificationSchema = z.object({
   verified: z.boolean(),
   status: z.enum(["verified", "best_effort", "failed"]),
@@ -257,6 +286,7 @@ export const VerificationSchema = z.object({
   validity: z.nullish(ValiditySchema),
   vetoes: z._default(z.array(z.object({ feature: z.string(), issue: z.string(), severity: z.enum(["blocking", "minor"]) })), []),
   max_error_mm: z.nullish(num),
+  unchecked: tolerantArray(UncheckedValueSchema),
   origin: z._default(DataOriginSchema, "real"),
   versions: z._default(z.record(z.string(), z.string()), {}),
   hashes: z._default(z.record(z.string(), z.string()), {}),
@@ -761,6 +791,45 @@ export const BenchTableSchema = z.object({
 });
 export type BenchTable = z.output<typeof BenchTableSchema>;
 
+/** One "it is verified, trust me" lie from `eval/bypass.py` (scripted mock brain), with what code decided instead. */
+export const CaughtLieSchema = z.object({
+  id: z.string(),
+  attack: z.string(),
+  claim: z.string(),
+  claim_source: z.string(),
+  verifier: z.object({
+    verified: z.boolean(),
+    status: z.string(),
+    max_error_mm: z.nullish(num),
+    threshold_mm: num,
+    top_hausdorff_mm: z.nullish(num),
+    top_iou: z.nullish(num),
+    failed_tests: z._default(z.array(z.string()), []),
+    reasons: z._default(z.array(z.string()), []),
+  }),
+  export: z.object({
+    ok: z.boolean(),
+    requires_ack: z.boolean(),
+    status: z.enum(["verified", "best_effort", "blocked"]),
+    reason: z.string(),
+    gate: z.optional(z.string()),
+  }),
+  /** Path under eval/reports, served at /api/v1/bench/files/<overlay>. */
+  overlay: z.nullish(z.string()),
+  overlay_px: z.nullish(z.tuple([z.int(), z.int()])),
+  overlay_note: z._default(z.string(), ""),
+});
+export type CaughtLie = z.output<typeof CaughtLieSchema>;
+
+export const BypassReportSchema = z.object({
+  suite: z.string(),
+  attempts: z.int(),
+  blocked: z.int(),
+  rows: z._default(z.array(z.looseObject({ id: z.string(), attack: z.string(), blocked: z.boolean(), blocked_by: z.string(), detail: z.string() })), []),
+  caught: z._default(z.array(CaughtLieSchema), []),
+});
+export type BypassReport = z.output<typeof BypassReportSchema>;
+
 export const BenchReportSchema = z.object({
   status: z.enum(["ok", "pending"]),
   generated_at: z.nullish(z.union([z.string(), num])),
@@ -772,6 +841,8 @@ export const BenchReportSchema = z.object({
   tables: z.record(z.string(), BenchTableSchema),
   runs: z.optional(z.unknown()),
   failures: z._default(z.array(z.looseObject({ title: z.string(), reason: z.string(), overlay_url: z.nullish(z.string()) })), []),
+  /** Side reports next to report.json; a malformed one is dropped (null) rather than failing the whole bench. */
+  evidence: z.optional(z.looseObject({ bypass: z.catch(z.nullish(BypassReportSchema), null) })),
 });
 export type BenchReport = z.output<typeof BenchReportSchema>;
 
@@ -794,3 +865,165 @@ export const TranscribeResultSchema = z.object({
 export type TranscribeResult = z.output<typeof TranscribeResultSchema>;
 
 export const FeedbackResultSchema = z.object({ id: z.string(), slug: z.string(), result: z.string(), kind: z.string() });
+
+// ── round 3: coupon fit learning, job impact, buy-or-print slot ──────────────
+/** GET /fit-reports/coupon[/{preset}] — the clearance a fit preset applies on this device (learned or documented). */
+export const LearnedClearanceSchema = z.object({
+  preset: z.string(),
+  title: z.string(),
+  material: z.string(),
+  process: z.string(),
+  preset_clearance_mm: num,
+  clearance_mm: num,
+  range_mm: z.tuple([num, num]),
+  source: z.enum(["learned", "preset"]),
+  reports: z.int(),
+  feature_reports: z.int(),
+  label: z.string(),
+  rule: z._default(z.string(), ""),
+  recent: z._default(
+    z.array(z.object({ feature: z.string(), fit: z.enum(["tight", "ok", "loose"]), amount: z.string(), base_mm: num, proposal_mm: num, created_at: num })),
+    [],
+  ),
+});
+export type LearnedClearance = z.output<typeof LearnedClearanceSchema>;
+
+export const CouponReportResultSchema = z.object({ id: z.string(), accepted: z.int(), learned: LearnedClearanceSchema });
+export type CouponReportResult = z.output<typeof CouponReportResultSchema>;
+
+/** GET /jobs/{id}/impact — computed from the job's events and baked mesh; every number is a labelled estimate. */
+export const JobImpactSchema = z.object({
+  job_id: z.string(),
+  label: z.string(),
+  minutes_to_file: z.nullable(
+    z.object({ minutes: num, started_at: num, file_at: num, kind: z.string(), waited_for_answer: z._default(z.boolean(), false) }),
+  ),
+  filament: z.nullable(
+    z.object({ material: z.string(), grams: num, volume_mm3: z.nullish(num), density_g_cm3: num, source: z.string() }),
+  ),
+  cost: z._default(z.array(z.object({ currency: z.string(), amount: num, price_per_kg: num })), []),
+  print_minutes_est: z.nullish(num),
+  assumptions: z._default(z.array(z.string()), []),
+  notes: z._default(z.array(z.string()), []),
+  replay: z._default(z.boolean(), false),
+});
+export type JobImpact = z.output<typeof JobImpactSchema>;
+
+/**
+ * Buy or print (backend schema BuyOrPrint, docs/API.md "Buy or print"): the print side is computed by code from the mesh,
+ * the buy side comes from a search-grounded lookup that code kept only with a cited page and quote. Every list is
+ * tolerant: a malformed offer, place or estimate is dropped, never shown half-parsed. The UI additionally refuses to
+ * show a price whose link is not http(s) (src/lib/buy-or-print.ts).
+ */
+export const PrintEstimateSchema = z.looseObject({
+  material: z.string(),
+  volume_mm3: z.nullish(num),
+  grams: num,
+  print_minutes: z.nullish(num),
+  filament_cost: z.catch(z.record(z.string(), num), {}),
+  price_per_kg: z.catch(z.record(z.string(), num), {}),
+  assumptions: tolerantArray(z.string()),
+});
+export type PrintEstimate = z.output<typeof PrintEstimateSchema>;
+
+export const CitedOfferSchema = z.looseObject({
+  seller: z.string(),
+  price: num,
+  currency: z.string(),
+  url: z.string(),
+  quote: z.string(),
+  title: z.catch(z._default(z.string(), ""), ""),
+  availability: z.catch(z._default(z.string(), ""), ""),
+});
+export type CitedOffer = z.output<typeof CitedOfferSchema>;
+
+export const CitedPlaceSchema = z.looseObject({
+  name: z.string(),
+  kind: z.catch(z._default(z.enum(["print_shop", "repair_cafe", "maker_space", "other"]), "other"), "other"),
+  url: z.string(),
+  quote: z.string(),
+  city: z.catch(z._default(z.string(), ""), ""),
+});
+export type CitedPlace = z.output<typeof CitedPlaceSchema>;
+
+export const OemPartSchema = z.looseObject({ name: z.string(), number: z.catch(z._default(z.string(), ""), ""), url: z.string(), quote: z.string() });
+export type OemPart = z.output<typeof OemPartSchema>;
+
+export const BuyLookupSchema = z.looseObject({
+  query: z.catch(z._default(z.string(), ""), ""),
+  city: z.catch(z.nullish(z.string()), null),
+  oem: z.catch(z.nullish(OemPartSchema), null),
+  offers: tolerantArray(CitedOfferSchema),
+  places: tolerantArray(CitedPlaceSchema),
+  dropped: tolerantArray(z.string()),
+  searched: z.catch(z._default(z.boolean(), false), false),
+  queries: z.catch(z._default(num, 0), 0),
+  mode: z.catch(z._default(z.string(), "mock"), "mock"),
+  provider: z.catch(z._default(z.string(), ""), ""),
+  model: z.catch(z._default(z.string(), ""), ""),
+  usd: z.catch(z._default(num, 0), 0),
+  label: z.catch(z._default(z.string(), ""), ""),
+});
+export type BuyLookup = z.output<typeof BuyLookupSchema>;
+
+export const BuyOrPrintSchema = z.looseObject({
+  job_id: z.catch(z.nullish(z.string()), null),
+  slug: z.catch(z.nullish(z.string()), null),
+  title: z.catch(z._default(z.string(), ""), ""),
+  status: z.catch(z._default(z.string(), "unknown"), "unknown"),
+  mode: z.catch(z._default(z.string(), "mock"), "mock"),
+  prints: tolerantArray(PrintEstimateSchema),
+  lookup: z.catch(z.nullish(BuyLookupSchema), null),
+  created_at: z.catch(z._default(num, 0), 0),
+  notes: tolerantArray(z.string()),
+});
+export type BuyOrPrint = z.output<typeof BuyOrPrintSchema>;
+
+/**
+ * The job's `narration` artifact (`narration.json`, services/agent/evidence.py): what Muse Spark heard and pointed at
+ * in the walk-around clip, and what code kept. The words steer only; points are checked and measured by code.
+ */
+export const NarrationPointSchema = z.looseObject({
+  name: z.string(),
+  kind: z.catch(z._default(z.string(), "hole"), "hole"),
+  t_s: z.catch(z.nullish(num), null),
+  x_px: z.catch(z.nullish(num), null),
+  y_px: z.catch(z.nullish(num), null),
+  said: z.catch(z._default(z.string(), ""), ""),
+  ok: z.boolean(),
+  reason: z.catch(z._default(z.string(), ""), ""),
+  frame_index: z.catch(z.nullish(num), null),
+  mat_mm: z.catch(z.nullish(point2), null),
+});
+export type NarrationPoint = z.output<typeof NarrationPointSchema>;
+
+export const NarrationMeasuredSchema = z.looseObject({
+  id: z.string(),
+  kind: z.catch(z._default(z.string(), ""), ""),
+  ok: z.boolean(),
+  method: z.catch(z._default(z.string(), ""), ""),
+  values_mm: z.catch(z._default(z.record(z.string(), num), {}), {}),
+  reason: z.catch(z._default(z.string(), ""), ""),
+  provenance: z.catch(z._default(z.string(), ""), ""),
+});
+export type NarrationMeasured = z.output<typeof NarrationMeasuredSchema>;
+
+export const NarrationRecordSchema = z.looseObject({
+  narration: z.catch(
+    z.looseObject({
+      function: z.catch(z._default(z.string(), ""), ""),
+      mating_feature: z.catch(z._default(z.string(), ""), ""),
+      break_description: z.catch(z._default(z.string(), ""), ""),
+      notes: tolerantArray(z.string()),
+      transcript: z.catch(z.nullish(z.string()), null),
+      mode: z.catch(z._default(z.string(), "mock"), "mock"),
+      label: z.catch(z._default(z.string(), ""), ""),
+    }),
+    { function: "", mating_feature: "", break_description: "", notes: [], transcript: null, mode: "mock", label: "" },
+  ),
+  points: tolerantArray(NarrationPointSchema),
+  measured: tolerantArray(NarrationMeasuredSchema),
+  merged: tolerantArray(z.string()),
+  same_placement: z.catch(z._default(z.boolean(), true), true),
+});
+export type NarrationRecord = z.output<typeof NarrationRecordSchema>;

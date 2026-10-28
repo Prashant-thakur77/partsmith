@@ -1,0 +1,16 @@
+{
+  "id": "j_261028_e09e5dce",
+  "kind": "fix",
+  "status": "done",
+  "created_at": 1793201951.5366778,
+  "updated_at": 1793201978.844793,
+  "title": "Cable clip (synthetic, paper) (synthetic sample)",
+  "origin": "synthetic",
+  "provider_mode": "mock",
+  "verified": false,
+  "max_error_mm": 1.259017203378967,
+  "iterations": 6,
+  "cost_usd": 0.0,
+  "part_slug": null,
+  "is_replay": false
+}

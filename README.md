@@ -21,6 +21,7 @@ Entry for the Meta Global AI Developer Hackathon (Indie Developer track, problem
 | | |
 |---|---|
 | Watch a stored run, step by step | `/judges` in the web app (replays are labelled "replay") |
+| Watch a lying model get caught | `/judges` → *A lying model, caught*: a scripted model says "VERIFIED", the verifier's overlay shows its real error and the export is blocked |
 | Run it yourself with no keys | `make setup && make dev` → <http://localhost:3000> → **Fix a part → Try a sample** |
 | Which model ran where, live or mock | `/models` (per stage, with open-weights badges) |
 | Numbers and how they were made | [Results](#results) · `/results` · [`eval/REPRODUCE.md`](eval/REPRODUCE.md) |
@@ -40,7 +41,10 @@ never trusts what a model says about itself:
 | Muse Wonder quotes a spec | Accepted only if a web search ran and the URL came back from it; cited values never override a measurement | `services/agent/providers/spec.py` |
 | Muse Image completes the broken region | Accepted only if every mat marker re-detects in place and the intact part is unchanged | `services/metrology/recon_gate.py` |
 | Muse Glimmer judges the result | Veto only: it can block a pass, never grant one | `services/agent/orchestrator.py` |
-| Anyone asks to download | Download routes give a best-effort part only after an explicit "I understand" and refuse a failed one | `services/verifier/ship.py` |
+| Muse Spark points at features while you narrate a clip | A point is kept only if it lands on the part in its own frame and on the measured footprint; the words steer, never set a number | `services/metrology/narration.py` |
+| A search finds the original part's price | Kept only with the source link the search returned and a quote that shows the price; grams, print time and cost come from the mesh | `services/agent/providers/buy.py`, `services/agent/buy_or_print.py` |
+| A tall part is seen only from above | The photo bounds its length and width instead of fixing them; without a side view or clip, code refuses to verify an extruded guess, and every knob nothing checked is listed as inferred | `services/verifier/verify.py` |
+| Anyone asks to download | Every download URL gives a best-effort part only after an explicit "I understand" and refuses a failed one | `services/verifier/ship.py`, `services/registry/gate.py` |
 
 The table below shows these checks being attacked (all numbers are written by scripts):
 
@@ -50,7 +54,7 @@ The table below shows these checks being attacked (all numbers are written by sc
 | Intact parts, normal photos → accepted (mock providers) | 6/6 handled as expected, 95 % CI [0.61, 1.00] | `eval/reports/latest/report.json` → `tables.control` |
 | Photos that must be rejected or refused (mock providers) | 10/10 handled as expected, 95 % CI [0.72, 1.00] | `eval/reports/latest/report.json` → `tables.redteam` |
 | Verified synthetic parts (mock providers) that are > 0.5 mm off the ground truth | 0/2 (config PS) | `eval/reports/latest/report.json` → `tables.synthetic` |
-| Verified reference objects (mock providers) that are > 0.5 mm off the ground truth | 1/2 (config PS) | `eval/reports/latest/report.json` → `tables.reference_objects` |
+| Verified reference objects (mock providers) that are > 0.5 mm off the ground truth | 0/1 (config PS) | `eval/reports/latest/report.json` → `tables.reference_objects` |
 | Edit a hole: scale the mesh vs change the program's knob (17 parts, 88 edits) | hole spacing moved 2.771 mm (median) with mesh scaling, 0.0 mm with the knob | `eval/reports/latest/program_vs_mesh.md` |
 | A model that lies or cheats (says verified, edits the record, loosens limits, rescales to fit, fakes a break, smuggles imports, exports without consent) | 17/17 attempts blocked by code | `eval/reports/latest/bypass.json` |
 | Real repairs logged | pending: no sessions logged yet (data/impact/sessions.yaml) | `data/impact/sessions.yaml` |
@@ -65,13 +69,13 @@ workspace shows them live. This table's file:line links are generated from the c
 <!-- BEGIN:meta-tooling -->
 | Meta model | How we run it | Role | Where |
 |---|---|---|---|
-| **SAM 3.1** | Meta Model API | The measuring instrument: text-prompted part masks, point-prompted feature cuts (holes, slots, tapped points) and video tracking of a walk-around clip. Code turns every mask into millimetres | [`services/agent/providers/routing.py:102`](services/agent/providers/routing.py#L102) · [`services/metrology/segment.py:664`](services/metrology/segment.py#L664) · [`services/agent/evidence.py:90`](services/agent/evidence.py#L90) · [`services/agent/evidence.py:157`](services/agent/evidence.py#L157) |
-| **Muse Spark 1.3** | Meta Model API | Understand stage: family, features, broken region, unknowns (strict PartSpec JSON), and the pixel it saw each hole or slot at, which SAM 3.1 then cuts and code measures | [`services/agent/orchestrator.py:974`](services/agent/orchestrator.py#L974) · [`services/agent/evidence.py:56`](services/agent/evidence.py#L56) |
-| **Muse Spark Open** | open weights (Baseten / Fireworks / Together) | CadQuery builder, and the fix agent that operates PartSmith's own tools (inspect residuals, measure, segment, render, run tests, set knobs) until the verifier agrees | [`services/agent/orchestrator.py:1287`](services/agent/orchestrator.py#L1287) · [`services/agent/agent_loop.py:457`](services/agent/agent_loop.py#L457) |
-| **Muse Glimmer 30B** | open weights (llama.cpp on a Modal GPU) | Independent veto-only judge, shown side-by-side photo and model crops zoomed on the verifier's worst spots | [`services/agent/orchestrator.py:1766`](services/agent/orchestrator.py#L1766) · [`infra/modal/glimmer.py:51`](infra/modal/glimmer.py#L51) |
-| **Muse Wonder** | Meta Model API | Finds a published spec for the named appliance with web search. Code accepts a value only if a search really ran and its URL is one the search returned; cited values fill unknowns and never override a measurement. Also plans part families for the factory | [`services/agent/evidence.py:209`](services/agent/evidence.py#L209) · [`services/agent/providers/spec.py:140`](services/agent/providers/spec.py#L140) · [`services/registry/steer.py:545`](services/registry/steer.py#L545) |
-| **Muse Image** | Meta Model API | Completes the broken region of the photo (accepted only if markers and the intact part are unchanged), an in-place repair preview and an install card (both labelled AI images) | [`services/agent/evidence.py:341`](services/agent/evidence.py#L341) · [`services/metrology/recon_gate.py:205`](services/metrology/recon_gate.py#L205) · [`services/media/preview.py:78`](services/media/preview.py#L78) |
-| **Muse Voice Transcribe** | Meta Model API | Hindi/English voice edits ("make the hole a bit bigger") mapped to knob changes, and spoken answers | [`services/media/voice.py:452`](services/media/voice.py#L452) |
+| **SAM 3.1** | Meta Model API | The measuring instrument: text-prompted part masks, point-prompted feature cuts (holes, slots, tapped points) and video tracking of a walk-around clip. Code turns every mask into millimetres | [`services/agent/providers/routing.py:104`](services/agent/providers/routing.py#L104) · [`services/metrology/segment.py:664`](services/metrology/segment.py#L664) · [`services/agent/evidence.py:91`](services/agent/evidence.py#L91) · [`services/agent/evidence.py:158`](services/agent/evidence.py#L158) |
+| **Muse Spark 1.3** | Meta Model API | Understand stage: family, features, broken region, unknowns (strict PartSpec JSON), and the pixel it saw each hole or slot at, which SAM 3.1 then cuts and code measures. Watches and listens to a narrated walk-around clip and points at the features it hears about (frame and pixel), kept only if they land on the part | [`services/agent/orchestrator.py:1004`](services/agent/orchestrator.py#L1004) · [`services/agent/evidence.py:57`](services/agent/evidence.py#L57) · [`services/agent/evidence.py:233`](services/agent/evidence.py#L233) |
+| **Muse Spark Open** | open weights (Baseten / Fireworks / Together) | CadQuery builder, and the fix agent that operates PartSmith's own tools (inspect residuals, measure, segment, render, run tests, set knobs) until the verifier agrees | [`services/agent/orchestrator.py:1317`](services/agent/orchestrator.py#L1317) · [`services/agent/agent_loop.py:458`](services/agent/agent_loop.py#L458) |
+| **Muse Glimmer 30B** | open weights (llama.cpp on a Modal GPU) | Independent veto-only judge, shown side-by-side photo and model crops zoomed on the verifier's worst spots | [`services/agent/orchestrator.py:1832`](services/agent/orchestrator.py#L1832) · [`infra/modal/glimmer.py:51`](infra/modal/glimmer.py#L51) |
+| **Muse Wonder** | Meta Model API | Finds a published spec for the named appliance with web search. Code accepts a value only if a search really ran and its URL is one the search returned; cited values fill unknowns and never override a measurement. Also finds the original part's price with search grounding for the buy-or-print card (a price is kept only with its source link and a quote showing it) and plans part families for the factory | [`services/agent/evidence.py:317`](services/agent/evidence.py#L317) · [`services/agent/providers/buy.py:294`](services/agent/providers/buy.py#L294) · [`services/agent/providers/spec.py:140`](services/agent/providers/spec.py#L140) · [`services/registry/steer.py:545`](services/registry/steer.py#L545) |
+| **Muse Image** | Meta Model API | Completes the broken region of the photo (accepted only if markers and the intact part are unchanged), an in-place repair preview and an install card (both labelled AI images) | [`services/agent/evidence.py:449`](services/agent/evidence.py#L449) · [`services/metrology/recon_gate.py:205`](services/metrology/recon_gate.py#L205) · [`services/media/preview.py:78`](services/media/preview.py#L78) |
+| **Muse Voice Transcribe** | Meta Model API | Hindi/English voice edits ("make the hole a bit bigger") mapped to knob changes, live while you talk (realtime stream relayed by the API, knob names as keywords) or from a recorded clip, and spoken answers | [`services/media/voice.py:452`](services/media/voice.py#L452) · [`services/api/voice_live.py:139`](services/api/voice_live.py#L139) |
 | **SAM 3 (open weights)** | open weights (Modal GPU) | All-open-weights segmentation path and bench | [`infra/modal/sam3.py:47`](infra/modal/sam3.py#L47) |
 <!-- END:meta-tooling -->
 
@@ -79,8 +83,8 @@ With `OPEN_WEIGHTS_ONLY=1` every stage runs on open weights (Muse Spark Open, Mu
 with no open-weights model (Muse Image, Muse Wonder spec search, Voice) fall back to a labelled deterministic mock, and the run
 says so.
 
-**Written but not claimed:** realtime streaming transcription (`services/agent/providers/realtime.py`) and iterative Muse Image
-edits (`edit_image`) exist in the provider layer but are not wired into the product yet, so they are not counted above.
+**Written but not claimed:** iterative Muse Image edits (`edit_image`) exist in the provider layer but are not wired into
+the product yet, so they are not counted above.
 
 ## How it works
 
@@ -124,7 +128,7 @@ Every number here is written by `make bench` (`tools/readme.py` reads `eval/repo
 mixed: synthetic photos (exact), standard reference objects (published specs), real broken parts (school ruler, ±0.5 mm).
 
 <!-- BEGIN:bench -->
-Generated 2026-10-28T00:20:09+00:00 at commit `b3da84b32abe93633ada9f60314dcf929b6ad68b` · mode **mock**.
+Generated 2026-10-28T16:03:49+00:00 at commit `1c91d0f00cd68f47d8c5c4fd3e268a3598866335` · mode **mock**.
 
 > **These rows come from deterministic mock providers (no API keys yet).** They check that the pipeline, verifier and scorer work end to end; they do **not** measure any model. Live numbers replace them after `make live`.
 
@@ -150,12 +154,12 @@ N = 4 · photos: synthetic renders · ground truth: `reference_spec` · CI: 95 %
 
 | config | n | median_abs_err_mm | mean_abs_err_mm | mean_ci95 | pass@0.5 | verified_rate | verified_but_off | median_iters |
 |---|---|---|---|---|---|---|---|---|
-| B0 | 4 | 0.268 | 1.116 | [0.216, 2.498] | 0.25 | 0.25 | 1/1 | 1 |
-| B1 | 4 | 0.131 | 0.453 | [0.125, 0.890] | 0.5 | 0.25 | 1/1 | 1 |
-| B2 | 4 | 0.05 | 0.121 | [0.039, 0.290] | 0.75 | 0.5 | 1/2 | 1.5 |
-| PS | 4 | 0.05 | 0.121 | [0.039, 0.290] | 0.75 | 0.5 | 1/2 | 1.5 |
-| PS-noTemplate | 4 | 0.131 | 0.175 | [0.066, 0.307] | 0.75 | 0.5 | 1/2 | 1.5 |
-| PS-noJudge | 4 | 0.05 | 0.121 | [0.039, 0.290] | 0.75 | 0.5 | 1/2 | 1.5 |
+| B0 | 4 | 0.268 | 1.116 | [0.216, 2.498] | 0.25 | 0 | 0/0 | 1 |
+| B1 | 4 | 0.131 | 0.453 | [0.125, 0.890] | 0.5 | 0 | 0/0 | 1 |
+| B2 | 4 | 0.05 | 0.121 | [0.039, 0.290] | 0.75 | 0.25 | 0/1 | 1.5 |
+| PS | 4 | 0.05 | 0.121 | [0.039, 0.290] | 0.75 | 0.25 | 0/1 | 1.5 |
+| PS-noTemplate | 4 | 0.131 | 0.175 | [0.066, 0.307] | 0.75 | 0.25 | 0/1 | 1.5 |
+| PS-noJudge | 4 | 0.05 | 0.121 | [0.039, 0.290] | 0.75 | 0.25 | 0/1 | 1.5 |
 | PS-noHeightCorr | 4 | 0.259 | 0.527 | [0.241, 0.890] | 0.25 | 0 | 0/0 | 3.5 |
 
 _reference_objects: 4 synthetic renders; real photos pending (data/real/reference_objects/); headline = PS on the held-out split (4 samples); MOCK providers: these numbers check the pipeline, they do not measure any model_
@@ -196,15 +200,15 @@ With no keys every model stage runs as a deterministic mock, and the app says so
 
 | Page | What it is for |
 |---|---|
-| `/fix` | Upload photos or a clip (or scan the QR on your phone), tap holes or the broken edge, describe the part in English or Hinglish |
-| `/jobs/{id}` | Live workspace: photos, 3D model, error per view, the agent's thoughts and tool calls, knobs, voice edits, exports |
+| `/fix` | Upload photos or a clip (or scan the QR on your phone), narrate the clip, tap holes or the broken edge, describe the part in English or Hinglish |
+| `/jobs/{id}` | Live workspace: photos, 3D model, error per view, the agent's thoughts and tool calls, knobs, live Hindi/English voice edits, a buy-or-print card, exports with "open in slicer", and a fit-test coupon that learns your printer's clearance |
 | `/jobs/{id}/fit` | 1:1 screen fit check |
 | `/parts` | The registry: verified parametric parts with knobs, fit presets per printer and material, share cards |
 | `/requests` | Parts people need that nobody has made yet; vote on them |
 | `/factory` | Muse Wonder plans part families; a human approves before anything is published |
 | `/lessons` | What the agent learned from failures, promoted only with evidence |
 | `/shop` | Batch jobs for a print shop, with a job-sheet PDF |
-| `/results`, `/models`, `/judges` | Benchmarks, per-stage model routing, stored replays |
+| `/results`, `/models`, `/judges` | Benchmarks, per-stage model routing, stored replays and a lying model being caught |
 
 ## For agents and developers
 

@@ -29,6 +29,10 @@ export type SchemaCompat = [
   Assert<Assignable<Z.ThoughtEvent, G.ThoughtEvent>>,
   Assert<Assignable<Z.ToolCallEvent, G.ToolCallEvent>>,
   Assert<Assignable<Z.FocusEvent, G.FocusEvent>>,
+  Assert<Assignable<Z.UncheckedValue, G.UncheckedValue>>,
+  Assert<Assignable<Z.CitedOffer, G.CitedOffer>>,
+  Assert<Assignable<Z.CitedPlace, G.CitedPlace>>,
+  Assert<Assignable<Z.OemPart, G.OemPart>>,
   // `overlay_url` is optional in the web schema (nullish) and a defaulted string in Pydantic; everything else must match.
   Assert<Assignable<Omit<Z.FitCheckResult, "overlay_url">, Omit<G.FitCheckResult, "overlay_url">>>,
 ];

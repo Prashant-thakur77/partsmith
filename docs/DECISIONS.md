@@ -146,3 +146,55 @@ to the last. The mock also counts hinge tongues on the outline's ends. Threshold
 that declares a break (one end, half the part, a box around all of it) to excuse a part 6 mm too long: it stays best
 effort (`eval.bypass`, 17/17). The bench tables gain `verified_but_off`: runs the verifier passed that are more than
 0.5 mm off the ground truth, shown next to the verified rate so a high verified rate cannot hide wrong parts.
+
+**2026-10-28 — Printable files are gated at every URL.** Content-addressed links (`/blobs/<key>`, `/bakes/<key>/<file>`)
+for STL, 3MF, STEP and zip go through the same export gate as the bake and bundle routes (verified ships, best effort needs
+`ack=1`, failed or unowned answers 409 `not_shippable`). A key maps back to its job or part through a small append-only
+claim list written when a job or part bakes, with run-log and bake-manifest lookups as fallbacks; when several owners share
+the same bytes the most permissive decision wins (those bytes are already downloadable through that owner's gated route).
+Previews (GLB, images, JSON, code) and the fit-test coupon stay open.
+
+**2026-10-28 — Public deploy: one API container in replay mode.** The API ships as one container (in-process jobs, one
+uvicorn worker) that defaults to `PROVIDER_MODE=replay`, bakes in the stored replays and samples, and refuses to start
+without `PARTSMITH_ADMIN_TOKEN`. The web origin proxies `/api/v1`, `/mcp` and SSE, so the public site is one URL and the
+API needs no CORS. `make deploy-check` validates the deploy files statically; images are built only on the deploy host.
+
+**2026-10-28 — "Open in slicer".** Deep links only where the slicer documents a URL scheme that accepts a file URL (Bambu
+Studio, OrcaSlicer); PrusaSlicer gets the download plus a one-line instruction. The export gate applies unchanged.
+
+**2026-10-28 — The fit-test coupon learns only the clearance.** Per printer + material preset and per device (a hash of a
+random browser id; no accounts), each coupon report moves the clearance in effect by ±0.05 mm (×0.5 "barely", ×2 "very",
+"ok" = 0), clamped to the preset's delta ± 0.25 mm and never below 0; the learned value is the median of the newest 15
+proposals. The median resists one wrong report, the window follows a new spool, and the clamp keeps a bad run from producing
+an absurd hole. The server computes the starting clearance, never the client, and measured dimensions are never touched.
+
+**2026-10-28 — Impact numbers are computed estimates or nothing.** Minutes come from job event timestamps, grams from the
+baked mesh volume (100 % infill upper bound), cost from a stated, env-configurable spool price; all are labelled "estimate"
+and missing data shows nothing. When the buy-or-print card exists its code-computed numbers take precedence, so the page
+shows one set of figures. The workspace viewer, error chart and Agent tab load on demand behind sized placeholders.
+
+**2026-10-28 — Realtime voice is relayed by the API, never called from the browser.** The browser streams 16 kHz PCM
+(AudioWorklet plus our own box-filter resampler) to `WS /api/v1/jobs/{id}/voice/live`; the API relays it to Muse Voice
+Transcribe realtime (ENDPOINTING, keywords = the job's knob labels, language bias English + Hindi), so the key never reaches
+the browser and every session still emits a `model_call`. Each final utterance goes through the same mapping and guards as
+the typed and recorded-clip edits: the model proposes, the knob ranges clamp, the user sees the from→to diff. Sessions are
+capped at 60 s and about 2.1 MB, with an Origin allow-list because WebSockets bypass CORS. Without a key the session replays
+a scripted Hinglish utterance that moves exactly one knob of the current job, always labelled MOCK; the recorded-clip path
+stays as the fallback.
+
+**2026-10-28 — A thick part seen only from the top is bounded, not observed; unchecked knobs are labelled.** The AA cell
+was verified while 0.56 mm short: a 14.5 mm extrusion of the full-height reading and the real cylinder (whose terminal sits
+at mid-height) cast the same top silhouette, so model and photo agreed end to end to 0.005 mm. The metrology now records
+`Measured.bound_mm` (full-height reading, mat-plane reading) for thick top views. When neither a side view nor walk-around
+frames show the heights and the model is an extruded outline (not a family template), the verifier adds P0 tests
+`bbox.x.height` / `bbox.y.height`: the model must be within ±0.3 mm of both the full-height and the half-height reading. The
+fix loop then stops early and asks for a side photo, since no model edit can settle it. `Verification.unchecked` lists
+every knob no test compared with an observed value, labelled inferred. Thresholds are unchanged. A 16 mm control knob that
+fell back to free code moves to best effort (true error 0.48 mm): we accept that false reject rather than verify a shape
+the photo cannot show.
+
+**2026-10-28 — Buy-or-print and the narrated walk-around are cited or checked by code.** Offers, shops and OEM names are
+kept only with a URL the search returned and a quote that shows the price; every drop is listed. The print side (grams,
+minutes, cost) is computed by code from the mesh with stated spool prices. Spark's narrated (time, pixel) points are kept
+only when they fall on the part in their own decoded frame and on its measured footprint; each becomes a SAM point prompt.
+The narration's words steer the understand stage and never set a number.

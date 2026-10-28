@@ -7,8 +7,8 @@
  "preset": "clean",
  "mode": "mock",
  "gt_source": "reference_spec",
- "status": "verified",
- "verified": true,
+ "status": "best_effort",
+ "verified": false,
  "iterations": 1,
  "iterations_to_converge": 1,
  "strategy": "free_code",
@@ -20,7 +20,7 @@
  "tokens_in": 0,
  "tokens_out": 0,
  "model_calls": 6,
- "model_ms": 104,
+ "model_ms": 101,
  "provider_modes": [
   "mock"
  ],
@@ -49,7 +49,7 @@
    "max_error_mm": 0.47187455859913513
   }
  ],
- "wall_s": 6.01,
+ "wall_s": 6.4,
  "dims": [
   {
    "name": "length",

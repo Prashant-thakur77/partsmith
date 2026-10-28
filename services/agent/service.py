@@ -93,7 +93,15 @@ def _ext_for(data: bytes) -> str:
         return ".jpg"
     if data[:4] == b"RIFF" and data[8:12] == b"WEBP":
         return ".webp"
+    if data[:4] == b"RIFF" and data[8:12] == b"WAVE":
+        return ".wav"
+    if data[:4] == b"OggS":
+        return ".ogg"
+    if data[:3] == b"ID3" or data[:2] in (b"\xff\xfb", b"\xff\xf3", b"\xff\xf2"):
+        return ".mp3"
     if data[4:8] == b"ftyp":
+        if data[8:11] == b"M4A":
+            return ".m4a"
         return ".mov" if data[8:10] == b"qt" else ".mp4"
     if data[:4] == b"\x1aE\xdf\xa3":
         return ".webm"
@@ -110,13 +118,17 @@ def start_fix_job(
     on_created: Callable[[Job], None] | None = None,
     points: Mapping[str, Sequence[Mapping[str, Any]]] | None = None,
 ) -> Job:
-    """Store the photos (views: top required, side, mating) and run a fix job. `sync` runs it in this thread and never
+    """Store the photos (views: top required, side, mating; `orbit` a walk-around clip and `narration` a voice note
+    about it) and run a fix job. `sync` runs it in this thread and never
     waits for answers (question defaults are used unless `options.answers` has them)."""
     if "top" not in photos:
         raise ValueError("a top-view photo is required")
-    bad = [v for v in photos if v not in ("top", "side", "mating", "orbit")]
+    bad = [v for v in photos if v not in ("top", "side", "mating", "orbit", "narration")]
     if bad:
-        raise ValueError(f"unknown photo view(s) {bad}; use top, side, mating, orbit (a short video)")
+        raise ValueError(
+            f"unknown photo view(s) {bad}; use top, side, mating, orbit (a short video), narration (a voice note "
+            "about the walk-around)"
+        )
     shas = {view: blobs.put(data, _ext_for(data)) for view, data in photos.items()}
     ji = job_input.model_copy(update={"kind": "fix", "photo_shas": shas})
     opts = options or RunOptions()

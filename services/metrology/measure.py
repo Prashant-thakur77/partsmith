@@ -21,7 +21,7 @@ import cv2
 import numpy as np
 from numpy.typing import ArrayLike, NDArray
 from partsmith_schemas.common import DataOrigin, Measured, Source
-from partsmith_schemas.measurement import MeasureResult, ViewKind
+from partsmith_schemas.measurement import Measurements, MeasureResult, ViewKind
 from scipy.ndimage import gaussian_filter1d
 from shapely.geometry import Polygon
 from shapely.ops import unary_union
@@ -651,6 +651,9 @@ def measure_photo(
                 "measured at the stated thickness)"
             )
 
+    if view == ViewKind.top and footprint is not ground and thickness_mm is not None:
+        _height_bounds(meas, ground, thickness_mm)
+
     rmask = _rasterize(footprint, rect.origin_mm, px_per_mm, rect.image.shape[:2])
     return MeasureOutput(
         result=MeasureResult(capture=capture, calibration=calib, measurements=meas),
@@ -672,6 +675,29 @@ def measure_photo(
         hole_fits=hole_fits,
         top_px_per_mm=_top_px_per_mm(det, footprint, H_display),
     )
+
+
+def _height_bounds(meas: Measurements, ground: Polygon, thickness_mm: float) -> None:
+    """Record what a single top photo allows for a thick part's length and width (``Measured.bound_mm``).
+
+    The height correction reads every outline edge at the stated top height. A silhouette cannot tell an end that
+    stands the full height from a longer one that sits lower (a battery's terminal at mid-height, a rounded or
+    chamfered end): the lower it sits, the longer the part. The photo allows anything from the corrected reading (full
+    height) to the mat-plane reading (on the mat). A side photo or a walk-around shows the heights and settles it.
+    """
+    _, up_l, up_w, _ = min_area_rect(np.asarray(ground.exterior.coords))
+    up_l, up_w = max(up_l, up_w), min(up_l, up_w)
+    changed = []
+    for name, up in (("length", up_l), ("width", up_w)):
+        m: Measured = getattr(meas, name)
+        if up > m.value + 0.01:
+            setattr(meas, name, m.model_copy(update={"bound_mm": (m.value, round(float(up), 3))}))
+            changed.append(f"{name} {m.value:.2f}–{up:.2f} mm")
+    if changed:
+        meas.notes.append(
+            f"top view at {thickness_mm:.1f} mm: read with every edge at the stated height; an end or side that sits "
+            f"lower reads short, so this photo alone allows {', '.join(changed)} (a side photo settles it)"
+        )
 
 
 def _overlay(

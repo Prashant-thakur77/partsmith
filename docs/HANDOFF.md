@@ -88,29 +88,100 @@ outline and photograph it. The app shows pass or fail.
 
 - Real 3D prints: order the demo parts' STLs online only if you want to (Robu.in, Makenica, Zbotic, iamrapid, NIT lab). Never
   claim a print that wasn't made.
-- Deploy: Vercel for `apps/web`, the API on Modal or any VM; Neon (`DATABASE_URL`) and R2 (`R2_*`) are optional, since SQLite and
-  local disk work.
+- **Deploy (only when you decide to go public: it makes the project public).** Everything is prepared in
+  `infra/deploy/` (full guide: `infra/deploy/README.md`); nothing has been deployed. The public site needs no model keys:
+  the API runs in replay mode (labelled mocks for anything not recorded) with the committed replays, demo samples and
+  bench reports baked in.
+  1. `make deploy-check` (static checks; builds nothing) and `openssl rand -hex 24` for `PARTSMITH_ADMIN_TOKEN`.
+  2. API, either on **Modal**: `modal secret create partsmith-api PARTSMITH_ADMIN_TOKEN=<token>
+     PARTSMITH_CORS_ORIGINS=https://<web host> PARTSMITH_WEB_URL=https://<web host> PARTSMITH_PUBLIC_URL=https://<web host>
+     PARTSMITH_MCP_ALLOWED_HOSTS=<web host>`, then `modal run infra/deploy/modal_app.py::seed` once and
+     `modal deploy infra/deploy/modal_app.py` (prints the API URL); or on **any VM with Docker**: copy
+     `infra/deploy/api.env.example` outside the repo, fill in the REQUIRED lines, then
+     `docker build -f infra/deploy/Dockerfile -t partsmith-api .` and
+     `docker run -d --restart unless-stopped --env-file <that file> -v partsmith-data:/data -p 8000:8000 partsmith-api`,
+     with HTTPS in front (e.g. Caddy).
+  3. Web on **Vercel**: import the repo, Root Directory `apps/web`, set `NEXT_PUBLIC_API_URL` (the API origin, no
+     `/api/v1`) and `NEXT_PUBLIC_SITE_URL` (the Vercel URL), deploy. Redeploy the web whenever the API URL changes.
+     Live voice uses a WebSocket, which Vercel rewrites do not carry: also set `NEXT_PUBLIC_VOICE_WS_ORIGIN` to the API
+     origin (e.g. `https://<api host>`) and keep the web host in the API's `PARTSMITH_CORS_ORIGINS` (the socket refuses
+     other origins). Without it the workspace still has the recorded-clip voice edit. Self-hosted `next start` proxies the
+     socket by itself.
+  4. Incognito check: `/` → "Try a sample" runs a labelled synthetic sample; `/judges` plays a replay and shows "A lying
+     model, caught"; `/models` shows replay/mock for every stage.
+  Neon (`DATABASE_URL`) and R2 (`R2_*`) stay optional: SQLite and local disk on the volume work.
+- Fit-test coupon learning (only if a print happens): download the coupon from a job's Export menu, print it, then on the
+  job or part page answer "How did the coupon fit?" (tight / just right / loose per feature, for your printer + material).
+  The next fit-preset bake on that browser uses the learned clearance and says "learned from N coupon reports". Nothing is
+  pre-filled: with no reports the presets stay the documented starting points.
+- Impact panel prices: filament cost on the job page uses an assumed PLA spool price (₹1200 / $20 per kg, shown under
+  "How these are computed"). Set `PARTSMITH_PLA_INR_PER_KG` / `PARTSMITH_PLA_USD_PER_KG` on the API to your local price.
 - Hackathon Discord: post the questions in `docs/FAQ_ANSWERS.md` and log the answers there.
 - `LICENSE`: the README says MIT, but there is no LICENSE file yet (agents don't write licence text in this repo). Add one
   if you keep that line.
 - Muse Code: it's installed (`muse`). Using it for some of the remaining work and saving session excerpts in
   `docs/BUILT_WITH_MUSE_CODE.md` makes the "Muse Code" row of the Meta tooling table real. Today that row isn't claimed.
 
-## 4. Video (≤ 3:00)
+## 4. Video (≤ 3:00) and the X post
 
-| Time | Shot | Proof on screen |
+**Rules for every frame.** Every number on screen or in a caption comes from the app (job page, `verification.json`) or from
+`eval/reports/latest/*.json`; the table below names the source next to each one. Replays, synthetic samples, mocks and AI
+images keep their on-screen labels (REPLAY / SYNTHETIC / MOCK / AI preview); never crop a label out. A beat that needs
+something that does not exist yet (a print, a live key) is skipped, not faked. No other products are named.
+
+**Before recording:** live keys in `.env` and `make smoke` green (the realtime voice, walk-around and buy-or-print beats
+must show live calls: no MOCK badge in those shots); one real broken part with its ruler `gt.yaml`; laptop at 100 % zoom
+with the screen mat calibrated (`/calibrate`); phone screen recording on; OBS or similar on the laptop with a visible clock.
+
+### Storyboard (3:00)
+
+| Time | Beat | On screen (the proof) | Needs a real-world shot? | Burned-in caption |
+|---|---|---|---|---|
+| 0:00–0:03 | **Payoff first:** the replacement part fitted where the broken one was (drawer, latch, clip), hand closes the drawer | The part itself | **Yes**, only once a print exists. Without a print, open on the screen fit check turning green with the real part on the 1:1 outline (step 2:10 of an earlier run) and say "fit check", not "printed" | "This part was a photo <N> minutes ago", N = the impact panel's photo→file minutes for that job (`GET /jobs/{id}/impact`); without it, "Fitted replacement, from a photo" |
+| 0:03–0:10 | **One-line pitch** over the broken part next to the fixed one | Both parts side by side | Yes (same shoot) | "Photo of a broken part → a measured, verified, printable replacement. No caliper: your laptop screen is the ruler." |
+| 0:10–1:10 | **One unbroken real run** (screen recording, no cuts; speed-ups allowed only with a visible "4×" tag): phone photo of the part on the laptop's screen mat → capture gate ticks → mask + mm dimension lines → the agent's loop (Agent tab: thoughts, tool calls) → error chart steps down → **VERIFIED** → export menu | Job page clock and job id visible; max error and threshold from `verification.json` (threshold: `eval/reports/latest/provenance.json` → `thresholds.HAUSDORFF_PASS_MM`) | Yes: the phone shot of the part on the screen (hands, real room) for the first 10 s, then the laptop recording | "Screen shows a known grid → millimetres" · "Agent writes CAD code" · "Verifier compares model to photo" · "Export unlocks only when it passes" |
+| 1:10–1:25 | **A lying model, caught** (`/judges` → "A lying model, caught"): the model claims "verified", the verifier's red overlay disagrees, the export button stays locked | Overlay + blocked export; the attempts/blocked counts from `eval/reports/latest/bypass.json` (`attempts`, `blocked`), read off the page | No | "The model said 'verified'. The code said no." · "<blocked>/<attempts> fake passes blocked" (fill from `bypass.json`) |
+| 1:25–1:45 | **Narrated walk-around:** a short phone clip around the part while talking ("this clip holds the drawer rail, the left tab snapped"); the app marks the function, the mating feature and the break on the frames | Walk-around frames with the pointed features; measured heights labelled "measured", the narration labelled as steering only | **Yes** (the clip and the voice) | "Talk while you film: the model listens, the code measures" |
+| 1:45–2:00 | **Buy or print:** the card with the cited part price/availability next to filament grams, cost and print time computed from the verified mesh | Citation footnotes (source URLs) on every price; grams/cost/time from the card | No (but needs live search) | "Cited price vs. print cost" (no numbers in the caption unless they are on the card in the same frame) |
+| 2:00–2:15 | **Coupon learning:** the printed fit-test coupon on the mating part, answer "tight" → the preset says "learned from N coupon reports" | The learned-clearance line on the job page (`GET /fit-reports/coupon`) | **Yes**, only if a coupon was printed; otherwise drop the beat and give its seconds to 0:10–1:10 | "Your printer's fit, learned from one test print" |
+| 2:15–2:30 | **Realtime Hinglish voice:** hands-free mode on the workspace, say "hook ko 1 mm mota karo"; partial words appear while speaking, then the knob moves and the from→to diff shows | Partial transcript line, the LIVE badge (not MOCK), the "Listening 0:0x / 1:00" clock, the applied-edit row (param, from → to) | Yes: face or hands + laptop in one shot so it's clearly spoken live | Hindi subtitle line: "hook ko 1 mm mota karo" → "(make the hook 1 mm thicker)" |
+| 2:30–2:45 | **Bench table** (`/results`): synthetic exact · reference objects vs spec · real parts vs ruler, with N, CI and ground-truth source columns | Numbers exactly as `/results` shows them (`eval/reports/latest/report.json` → `tables`) | No | "Scored against ground truth, not vibes" · name the GT source of the row shown |
+| 2:45–3:00 | **Registry + MCP:** an agent asks the MCP server for a part by words → gets a variant → STL; end card with the site URL, QR and "Reply with your broken part" | The MCP tool call and the downloaded STL (export gate respected) | No | "Every verified part becomes an open, parametric program" · end card: URL + "Reply with your broken part → /requests" |
+
+**Burned-in captions.** Burn them into the video (many people watch muted; judges may too) and also upload an `.srt`.
+Sentence case, at most 2 lines of about 40 characters, white text on a 70 % black box, bottom third, at least 1.5 s on
+screen (longer for numbers). Keep captions inside the centre 4:5 area so the vertical cut can reuse them. Every number in a
+caption must be on screen in the same frame and come from the source named in the table. Hindi/Hinglish speech gets an
+English subtitle in brackets. Labels the app shows (REPLAY, SYNTHETIC, MOCK, AI preview, "best effort") are never covered.
+
+### X post
+
+**Vertical cut (9:16, 20–40 s, captions burned in, sound optional):**
+
+| Time | Shot | Caption |
 |---|---|---|
-| 0:00–0:12 | The broken part where it belongs (hostel cupboard latch, cooler wheel…); "₹2 part, nobody stocks it" | Real object, real place |
-| 0:12–0:30 | Bank card on the laptop screen (calibration), part on the screen mat, phone above; capture gate ticks | Capture-gate reasons |
-| 0:30–0:50 | Mask draws in, mm dimension lines; Spark points at a hole, SAM 3.1 cuts it, the mm value appears; the broken region is marked | measured / cited / inferred labels |
-| 0:50–1:35 | The loop: the Agent tab shows Spark's thoughts and tool calls; the 3D view flies to where it is looking; error chart steps down | Numbers from verification.json |
-| 1:35–1:55 | Hindi-English voice edit ("hook ko 1 mm mota karo") → knobs move; a cited spec footnote from Muse Wonder | Transcript + diff + source URL |
-| 1:55–2:10 | Muse Image completes the broken corner, the code gate says "accepted" (labelled AI image) | Gate badge |
-| 2:10–2:30 | **Screen fit check:** the 1:1 outline appears, the real part is laid on it, the overlay turns green, in one take | Verifier overlay numbers |
-| 2:30–2:48 | Bench tables (synthetic exact · reference objects vs spec · real parts vs ruler) | N, CI, GT source |
-| 2:48–3:00 | Registry + MCP: an agent asks for "cooler wheel 32 mm" → STL | Live site |
+| 0–2 s | Payoff: the fitted part (or the green screen fit check, labelled as such) | "From a photo to a part that fits" |
+| 2–6 s | Phone over the laptop screen mat | "No caliper. Your laptop screen is the ruler." |
+| 6–18 s | The unbroken run at "4×" (tag visible): mask → mm → agent loop → VERIFIED | "Measured in mm · CAD written by an agent · checked by code" |
+| 18–25 s | Lying model, caught (red overlay, locked export) | "The model can't fake a pass" |
+| 25–32 s | Hinglish realtime voice edit, knob moves | "hook ko 1 mm mota karo → (make the hook 1 mm thicker)" |
+| 32–38 s | End card: URL + QR | "Reply with your broken part" |
 
-Label replays as replays. Every number shown must come from the app or `eval/reports/latest`.
+**Thread (4 posts):**
+
+1. "Photo of a broken plastic part → a measured, verified, printable replacement. No caliper: your laptop screen is the
+   ruler. Built for the Meta Global AI Developer Hackathon. [vertical cut]"
+2. "How: the screen shows a grid of known size, so the photo gives millimetres. Meta's SAM 3.1 outlines the part, Muse Spark
+   writes parametric CAD, and a verifier compares the model with the photo. Export unlocks only within
+   <HAUSDORFF_PASS_MM> mm." (fill from `eval/reports/latest/provenance.json` → `thresholds.HAUSDORFF_PASS_MM`)
+3. "We attacked our own verifier with a model that lies about passing: <blocked>/<attempts> fake passes blocked (from
+   `eval/reports/latest/bypass.json`). Bench, with ground-truth sources: <site>/results. Code: <repo URL>."
+4. "Got a broken clip, latch, knob or wheel? Reply with a photo (part next to a card or ruler). We add each reply to
+   <site>/requests; the most-voted get modelled first and land in the open registry."
+
+**Replies → /requests:** this is manual. For each reply with a usable photo, add it on `/requests` ("Add a request", the
+words the person used) or `POST /api/v1/needs`, then reply with the request link. Never say a part is "done" until its
+job page shows VERIFIED.
 
 ## 5. Submission (Cerebral Valley platform, before Wed Nov 4 2026, 9:00 PM ET)
 

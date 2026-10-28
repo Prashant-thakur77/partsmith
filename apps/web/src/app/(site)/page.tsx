@@ -1,4 +1,4 @@
-import { ArrowRight, Calculator, Eye, ShieldCheck } from "lucide-react";
+import { ArrowRight, Calculator, Eye, FlaskConical, ShieldCheck } from "lucide-react";
 import Link from "next/link";
 import { AgentsStrip } from "@/components/landing/agents-strip";
 import { BenchStrip } from "@/components/landing/bench-strip";
@@ -44,6 +44,11 @@ export default async function HomePage() {
                 </Link>
               </Button>
               <Button asChild variant="outline" size="lg">
+                <Link href="/jobs/demo">
+                  <FlaskConical aria-hidden /> Try a sample
+                </Link>
+              </Button>
+              <Button asChild variant="ghost" size="lg">
                 <Link href="/parts">Browse verified parts</Link>
               </Button>
             </div>

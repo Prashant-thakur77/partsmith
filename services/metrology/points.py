@@ -57,7 +57,7 @@ class FeaturePoint:
     id: str
     kind: FeatureKind
     px: PointPx  # full-frame image pixel
-    source: Literal["model", "user"] = "model"
+    source: Literal["model", "user", "narration"] = "model"
 
 
 @dataclass

@@ -1,0 +1,66 @@
+{
+  "job_id": "j_261028_24fd5e3b",
+  "slug": null,
+  "title": "L-bracket (family hint 'bracket')",
+  "status": "verified",
+  "prints": [
+    {
+      "material": "PLA",
+      "volume_mm3": 4880.3,
+      "grams": 6.05,
+      "print_minutes": 20.8,
+      "filament_cost": {
+        "INR": 7.26,
+        "USD": 0.12
+      },
+      "price_per_kg": {
+        "INR": 1200.0,
+        "USD": 20.0
+      },
+      "assumptions": [
+        "grams: solid-volume mass at 100 % infill (volume x density: PLA 1.24, PETG 1.27 g/cm^3); a real print weighs less",
+        "minutes: rough estimate: (volume / 8 mm^3/s + layers x 4 s) / 60, 0.2 mm layers, 100 % infill",
+        "filament cost: grams x an assumed 1 kg spool price (INR 1200/kg, USD 20/kg); not a quote, and no shop margin or electricity"
+      ]
+    },
+    {
+      "material": "PETG",
+      "volume_mm3": 4880.3,
+      "grams": 6.2,
+      "print_minutes": 20.8,
+      "filament_cost": {
+        "INR": 8.68,
+        "USD": 0.14
+      },
+      "price_per_kg": {
+        "INR": 1400.0,
+        "USD": 22.0
+      },
+      "assumptions": [
+        "grams: solid-volume mass at 100 % infill (volume x density: PLA 1.24, PETG 1.27 g/cm^3); a real print weighs less",
+        "minutes: rough estimate: (volume / 8 mm^3/s + layers x 4 s) / 60, 0.2 mm layers, 100 % infill",
+        "filament cost: grams x an assumed 1 kg spool price (INR 1400/kg, USD 22/kg); not a quote, and no shop margin or electricity"
+      ]
+    }
+  ],
+  "lookup": {
+    "query": "L-bracket (family hint 'bracket') — user: Make a replacement for this broken l-bracket.",
+    "city": null,
+    "oem": null,
+    "offers": [],
+    "places": [],
+    "dropped": [],
+    "searched": false,
+    "queries": 0,
+    "mode": "mock",
+    "provider": "mock",
+    "model": "muse-wonder-1.0",
+    "usd": 0.0,
+    "label": "MOCK — no web search ran"
+  },
+  "mode": "mock",
+  "created_at": 1793202592.81344,
+  "notes": [
+    "MOCK — no web search ran: no seller or price on this card came from the web"
+  ]
+}

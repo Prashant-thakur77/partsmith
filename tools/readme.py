@@ -43,10 +43,12 @@ USES: tuple[Use, ...] = (
         "Muse Spark 1.3",
         "Meta Model API",
         "Understand stage: family, features, broken region, unknowns (strict PartSpec JSON), and the pixel it saw each "
-        "hole or slot at, which SAM 3.1 then cuts and code measures",
+        "hole or slot at, which SAM 3.1 then cuts and code measures. Watches and listens to a narrated walk-around clip "
+        "and points at the features it hears about (frame and pixel), kept only if they land on the part",
         (
             ("services/agent/orchestrator.py", r'self\.call\("understand"'),
             ("services/agent/evidence.py", r"def feature_points"),
+            ("services/agent/evidence.py", r"providers\.narrate_video\("),
         ),
     ),
     Use(
@@ -73,9 +75,11 @@ USES: tuple[Use, ...] = (
         "Meta Model API",
         "Finds a published spec for the named appliance with web search. Code accepts a value only if a search really "
         "ran and its URL is one the search returned; cited values fill unknowns and never override a measurement. "
-        "Also plans part families for the factory",
+        "Also finds the original part's price with search grounding for the buy-or-print card (a price is kept only "
+        "with its source link and a quote showing it) and plans part families for the factory",
         (
             ("services/agent/evidence.py", r'getattr\(providers, "lookup_spec"'),
+            ("services/agent/providers/buy.py", r"def buy_lookup"),
             ("services/agent/providers/spec.py", r"def accept_values"),
             ("services/registry/steer.py", r'providers\.complete\("steer_plan"'),
         ),
@@ -94,8 +98,12 @@ USES: tuple[Use, ...] = (
     Use(
         "Muse Voice Transcribe",
         "Meta Model API",
-        'Hindi/English voice edits ("make the hole a bit bigger") mapped to knob changes, and spoken answers',
-        (("services/media/voice.py", r"providers\.transcribe\("),),
+        'Hindi/English voice edits ("make the hole a bit bigger") mapped to knob changes, live while you talk (realtime '
+        "stream relayed by the API, knob names as keywords) or from a recorded clip, and spoken answers",
+        (
+            ("services/media/voice.py", r"providers\.transcribe\("),
+            ("services/api/voice_live.py", r"providers\.transcribe_stream\("),
+        ),
     ),
     Use(
         "SAM 3 (open weights)",

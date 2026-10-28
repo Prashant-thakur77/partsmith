@@ -1,0 +1,17 @@
+{
+  "kind": "fix",
+  "intent": "Make a replacement for this broken spacer / standoff.",
+  "photo_shas": {
+    "top": "12befbe71366f4a1a066bdb93ed2c0192c5ef3bcfce087284715afcfa15273ca.jpg",
+    "side": "a297180c78dab59a32600bc5098099c20895a707b08d9c78a5fe560e9f4c5ad5.jpg"
+  },
+  "mat_kind": "screen",
+  "screen_px_per_mm": null,
+  "thickness_mm": 8.5,
+  "family_hint": "spacer",
+  "origin": "synthetic",
+  "max_iters": 6,
+  "budget_usd": 0.5,
+  "provider_mode": null,
+  "city": null
+}

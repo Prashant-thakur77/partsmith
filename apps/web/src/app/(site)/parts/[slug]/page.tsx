@@ -6,10 +6,11 @@ import { Container } from "@/components/layout/page";
 import { api } from "@/lib/api";
 import { PartClient } from "./part-client";
 import { PartDetails } from "./part-details";
+import { apiOrigin } from "@/lib/api-origin";
 
 async function fetchPart(slug: string) {
   try {
-    const base = (process.env.API_URL ?? "http://localhost:8000").replace(/\/$/, "");
+    const base = apiOrigin();
     const res = await fetch(`${base}/api/v1/parts/${encodeURIComponent(slug)}`, { cache: "no-store", signal: AbortSignal.timeout(2500) });
     if (!res.ok) return null;
     const parsed = PartRecordSchema.safeParse(await res.json());
@@ -21,7 +22,7 @@ async function fetchPart(slug: string) {
 
 async function apiHasRoute(path: string): Promise<boolean> {
   try {
-    const base = (process.env.API_URL ?? "http://localhost:8000").replace(/\/$/, "");
+    const base = apiOrigin();
     const r = await fetch(`${base}/api/v1/openapi.json`, { next: { revalidate: 3600 }, signal: AbortSignal.timeout(1500) });
     if (!r.ok) return false;
     const doc = (await r.json()) as { paths?: Record<string, unknown> };

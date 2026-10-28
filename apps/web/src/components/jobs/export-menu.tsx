@@ -1,12 +1,16 @@
 "use client";
 
 import { useMutation } from "@tanstack/react-query";
-import { Archive, Box, Download, FileCode2, FileText, Image as ImageIcon, Layers, Lock, ScanLine, Sparkles, Wrench } from "lucide-react";
+import { Archive, Box, Download, FileCode2, FileText, Image as ImageIcon, Layers, Lock, Printer, ScanLine, Sparkles, Wrench } from "lucide-react";
 import Link from "next/link";
 import * as React from "react";
 import { api, artifactUrl } from "@/lib/api";
 import type { Verification } from "@/lib/api-types";
+import { noteCouponDownload } from "@/lib/coupon-fit";
 import { useT } from "@/lib/i18n";
+import { PRINTABLE_KINDS, withAck } from "@/lib/ship";
+import { slicerHandoff } from "@/lib/slicers";
+import { useOrigin } from "@/lib/use-origin";
 import { ExportGateNotice, gateReason, useExportGate } from "../export-gate";
 import { Button } from "../ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogTitle, DialogTrigger } from "../ui/dialog";
@@ -36,7 +40,10 @@ export function ExportMenu({ artifacts, disabled, verification }: { artifacts: R
   const any = ITEMS.some((i) => artifacts[i.kind]);
   const gate = useExportGate(verification);
   const { t } = useT();
+  const origin = useOrigin();
   const [gateOpen, setGateOpen] = React.useState(false);
+  const acked = gate.state === "best_effort" && gate.ack;
+  const slicer = slicerHandoff(withAck(artifactUrl(artifacts.threemf), acked), origin, gate.state, gate.ack);
   if (gate.locked && !gate.ack)
     return (
       <Dialog open={gateOpen} onOpenChange={setGateOpen}>
@@ -62,11 +69,12 @@ export function ExportMenu({ artifacts, disabled, verification }: { artifacts: R
       <DropdownMenuContent align="end" className="w-64">
         <DropdownMenuLabel>Download</DropdownMenuLabel>
         {ITEMS.map((i) => {
-          const url = artifactUrl(artifacts[i.kind]);
+          const raw = artifactUrl(artifacts[i.kind]);
+          const url = PRINTABLE_KINDS.has(i.kind) ? withAck(raw, acked) : raw;
           return (
             <DropdownMenuItem key={i.kind} disabled={!url} asChild={!!url}>
               {url ? (
-                <a href={url} download={i.file}>
+                <a href={url} download={i.file} onClick={i.kind === "coupon" ? noteCouponDownload : undefined}>
                   <i.icon aria-hidden />
                   <span className="flex-1">
                     <span className="block">{i.label}</span>
@@ -85,6 +93,23 @@ export function ExportMenu({ artifacts, disabled, verification }: { artifacts: R
             </DropdownMenuItem>
           );
         })}
+        {slicer.state === "ready" ? (
+          <>
+            <DropdownMenuSeparator />
+            <DropdownMenuLabel>Open the 3MF in a slicer</DropdownMenuLabel>
+            {slicer.links.map(({ slicer: s, href }) => (
+              <DropdownMenuItem key={s.id} asChild>
+                <a href={href ?? slicer.fileUrl} {...(href ? {} : { download: "part.3mf" })}>
+                  {href ? <Printer aria-hidden /> : <Download aria-hidden />}
+                  <span className="flex-1">
+                    <span className="block">{s.name}</span>
+                    <span className="block text-[11px] text-subtle">{href ? "opens the app, which downloads the file" : s.howTo}</span>
+                  </span>
+                </a>
+              </DropdownMenuItem>
+            ))}
+          </>
+        ) : null}
         <DropdownMenuSeparator />
         <DropdownMenuItem asChild>
           <Link href="/calibrate">

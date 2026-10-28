@@ -3,7 +3,8 @@
 A preset changes only `affects_fit` knobs that are internal fits — screw holes, bores, pin holes, cable channels and
 explicit gap/clearance knobs — by adding the preset's clearance (internal features print undersize on FDM). Outer
 dimensions never change. The deltas are documented starting points, not measurements: print the fit-test coupon and
-send feedback ("tight"/"loose") to tune them.
+report how it fit (`services/registry/fit_learning.py`); the learned clearance replaces the delta for that printer +
+material on that device, always inside `clearance_range`.
 """
 
 from __future__ import annotations
@@ -17,6 +18,7 @@ from partsmith_schemas.verification import ParamSpec
 from services.media.voice import snap_clamp
 
 FIT_KEYS = ("hole", "bore", "pivot", "pin", "cable", "gap", "clearance", "slot")
+LEARN_SPAN_MM = 0.25  # coupon learning may move a preset's clearance at most this far either way (never below 0)
 
 
 @dataclass(frozen=True)
@@ -47,6 +49,11 @@ PRESETS: tuple[Preset, ...] = (
 BY_ID = {p.id: p for p in PRESETS}
 
 
+def clearance_range(preset: Preset) -> tuple[float, float]:
+    """The documented range a learned clearance stays in: the preset's delta ± LEARN_SPAN_MM, never below 0 mm."""
+    return round(max(0.0, preset.delta_mm - LEARN_SPAN_MM), 4), round(preset.delta_mm + LEARN_SPAN_MM, 4)
+
+
 def fit_knobs(specs: Sequence[ParamSpec]) -> list[ParamSpec]:
     """Knobs a preset may change: affects_fit, mm, not topology, and an internal fit by name."""
     return [
@@ -56,16 +63,19 @@ def fit_knobs(specs: Sequence[ParamSpec]) -> list[ParamSpec]:
 
 
 def apply(
-    preset_id: str, specs: Sequence[ParamSpec], values: Mapping[str, float]
+    preset_id: str, specs: Sequence[ParamSpec], values: Mapping[str, float], *, delta_mm: float | None = None
 ) -> tuple[dict[str, float], list[dict[str, Any]]]:
     """(new values, [{"param","from","to","delta_mm"}]). Values are clamped and snapped like any other edit.
+    `delta_mm` replaces the preset's clearance (a learned one); it is clamped to `clearance_range`.
     KeyError for an unknown preset id."""
     preset = BY_ID[preset_id]
+    lo, hi = clearance_range(preset)
+    delta = preset.delta_mm if delta_mm is None else min(hi, max(lo, float(delta_mm)))
     out = {p.name: float(values.get(p.name, p.default)) for p in specs}
     changes: list[dict[str, Any]] = []
     for p in fit_knobs(specs):
         before = out[p.name]
-        after, _ = snap_clamp(before + preset.delta_mm, p)
+        after, _ = snap_clamp(before + delta, p)
         if abs(after - before) > 1e-9:
             out[p.name] = after
             changes.append({"param": p.name, "from": before, "to": after, "delta_mm": round(after - before, 4)})

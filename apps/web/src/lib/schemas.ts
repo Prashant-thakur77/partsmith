@@ -17,7 +17,7 @@ export interface ArtifactEvent {
   ts?: number;
   ctx?: string;
   t?: "artifact";
-  kind: "photo" | "rectified" | "mask_overlay" | "measure_overlay" | "render_overlay" | "residual_heatmap" | "stl" | "step" | "threemf" | "code" | "view" | "verification" | "template_pdf" | "preview" | "repair_card" | "coupon" | "partspec" | "video" | "feature_mask" | "reconstruction" | "install_card" | "zip" | "share_card";
+  kind: "photo" | "rectified" | "mask_overlay" | "measure_overlay" | "render_overlay" | "residual_heatmap" | "stl" | "step" | "threemf" | "code" | "view" | "verification" | "template_pdf" | "preview" | "repair_card" | "coupon" | "partspec" | "video" | "feature_mask" | "reconstruction" | "install_card" | "zip" | "share_card" | "buy_or_print" | "narration";
   sha: string;
   url: string;
   iter?: number | null;
@@ -67,6 +67,34 @@ export interface BrokenRegion {
   note?: string | null;
 }
 
+export interface BuyLookup {
+  query: string;
+  city?: string | null;
+  oem?: OemPart | null;
+  offers?: Array<CitedOffer>;
+  places?: Array<CitedPlace>;
+  dropped?: Array<string>;
+  searched?: boolean;
+  queries?: number;
+  mode?: "live" | "mock" | "replay";
+  provider?: string;
+  model?: string;
+  usd?: number;
+  label?: string;
+}
+
+export interface BuyOrPrint {
+  job_id?: string | null;
+  slug?: string | null;
+  title?: string;
+  status?: "verified" | "best_effort" | "failed" | "unknown";
+  prints?: Array<PrintEstimate>;
+  lookup?: BuyLookup | null;
+  mode?: "live" | "mock" | "replay";
+  created_at?: number;
+  notes?: Array<string>;
+}
+
 export interface Calibration {
   mat_id: string;
   mat_kind: MatKind;
@@ -109,6 +137,24 @@ export interface Citation {
   url: string;
   title?: string;
   quote?: string;
+}
+
+export interface CitedOffer {
+  seller: string;
+  price: number;
+  currency: string;
+  url: string;
+  quote: string;
+  title?: string;
+  availability?: string;
+}
+
+export interface CitedPlace {
+  name: string;
+  kind?: "print_shop" | "repair_cafe" | "maker_space" | "other";
+  url: string;
+  quote: string;
+  city?: string;
 }
 
 export interface DShaftBore {
@@ -224,6 +270,7 @@ export interface JobInput {
   max_iters?: number;
   budget_usd?: number;
   provider_mode?: "live" | "mock" | "replay" | null;
+  city?: string | null;
 }
 
 export interface JobSummary {
@@ -275,6 +322,7 @@ export interface Measured {
   source?: Source;
   sigma_mm?: number;
   evidence?: Evidence | null;
+  bound_mm?: [number, number] | null;
 }
 
 export interface Measurements {
@@ -333,6 +381,13 @@ export interface Need {
   votes?: number;
   status?: "open" | "in_progress" | "fulfilled";
   created_at?: number;
+}
+
+export interface OemPart {
+  name: string;
+  number?: string;
+  url: string;
+  quote: string;
 }
 
 export interface ParamSpec {
@@ -401,6 +456,16 @@ export interface PartTest {
   tol: number | null;
   passed: boolean;
   priority?: "P0" | "P1";
+}
+
+export interface PrintEstimate {
+  material: "PLA" | "PETG";
+  volume_mm3: number;
+  grams: number;
+  print_minutes: number;
+  filament_cost: Record<string, number>;
+  price_per_kg: Record<string, number>;
+  assumptions?: Array<string>;
 }
 
 export interface Provenance {
@@ -520,6 +585,15 @@ export interface ToolCallEvent {
   mode?: "live" | "mock" | "replay" | null;
 }
 
+export interface UncheckedValue {
+  param: string;
+  label?: string;
+  value: number;
+  unit?: "mm" | "deg" | "";
+  source?: Source;
+  note?: string;
+}
+
 export interface Unknown {
   id: string;
   question: string;
@@ -557,6 +631,7 @@ export interface Verification {
   validity?: Validity | null;
   vetoes?: Array<JudgeVeto>;
   max_error_mm?: number | null;
+  unchecked?: Array<UncheckedValue>;
   origin?: DataOrigin;
   versions?: Record<string, string>;
   hashes?: Record<string, string>;

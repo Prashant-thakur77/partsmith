@@ -1,4 +1,4 @@
-"""Registry storage: parts, needs, lessons and fit reports. SQLite under $PARTSMITH_HOME by default, Postgres via DATABASE_URL.
+"""Registry storage: parts, needs, lessons, fit reports and coupon fit reports. SQLite under $PARTSMITH_HOME by default, Postgres via DATABASE_URL.
 
 Parts are stored as their full `PartRecord` JSON plus a few indexed columns for search and sorting.
 """
@@ -70,6 +70,25 @@ class FitReportRow(Base):
     result: Mapped[str] = mapped_column(String(16))  # fits | tight | loose | pass | fail
     data: Mapped[str] = mapped_column(Text, default="{}")
     created_at: Mapped[float] = mapped_column(Float)
+
+
+class CouponReportRow(Base):
+    """One mating feature's tight / ok / loose on a printed fit-test coupon (services/registry/fit_learning.py).
+    `device` is a sha256 prefix of the browser's random device id: no accounts, no raw ids stored."""
+
+    __tablename__ = "coupon_reports"
+    id: Mapped[str] = mapped_column(String(32), primary_key=True)
+    report_id: Mapped[str] = mapped_column(String(32), index=True)  # one coupon submission (several features)
+    preset: Mapped[str] = mapped_column(String(32), index=True)
+    device: Mapped[str] = mapped_column(String(32), index=True)
+    feature: Mapped[str] = mapped_column(String(64))
+    fit: Mapped[str] = mapped_column(String(8))  # tight | ok | loose
+    amount: Mapped[str] = mapped_column(String(8), default="")  # barely | very | ""
+    base_mm: Mapped[float] = mapped_column(Float)  # clearance in effect when reported
+    proposal_mm: Mapped[float] = mapped_column(Float)  # what this report asks for (clamped)
+    job_id: Mapped[str | None] = mapped_column(String(64), nullable=True)
+    slug: Mapped[str | None] = mapped_column(String(120), nullable=True)
+    created_at: Mapped[float] = mapped_column(Float, index=True)
 
 
 class ThumbRow(Base):
@@ -425,6 +444,39 @@ class Registry:
             )
             return [
                 {"id": r.id, "kind": r.kind, "result": r.result, "data": json.loads(r.data), "created_at": r.created_at}
+                for r in rows
+            ]
+
+    # ---- coupon fit reports ------------------------------------------------------------------------------------------
+    def add_coupon_reports(self, rows: list[dict[str, Any]]) -> None:
+        """Insert one coupon submission's feature rows (keys = CouponReportRow columns except id/created_at)."""
+        now = time.time()
+        with self._lock, self.session() as s:
+            for i, r in enumerate(rows):
+                s.add(CouponReportRow(id="c_" + secrets.token_hex(6), created_at=now + i * 1e-6, **r))
+
+    def coupon_reports(self, preset: str, device: str, limit: int = 200) -> list[dict[str, Any]]:
+        """Newest first."""
+        with self.session() as s:
+            rows = s.scalars(
+                select(CouponReportRow)
+                .where(CouponReportRow.preset == preset, CouponReportRow.device == device)
+                .order_by(CouponReportRow.created_at.desc())
+                .limit(limit)
+            )
+            return [
+                {
+                    "id": r.id,
+                    "report_id": r.report_id,
+                    "feature": r.feature,
+                    "fit": r.fit,
+                    "amount": r.amount,
+                    "base_mm": r.base_mm,
+                    "proposal_mm": r.proposal_mm,
+                    "job_id": r.job_id,
+                    "slug": r.slug,
+                    "created_at": r.created_at,
+                }
                 for r in rows
             ]
 

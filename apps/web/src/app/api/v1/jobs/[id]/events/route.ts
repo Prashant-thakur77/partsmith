@@ -2,12 +2,16 @@
  * SSE pass-through for `/api/v1/jobs/{id}/events`. The generic rewrite proxy lets `next start` gzip the response, which
  * buffers the stream until the job ends; this handler streams it unbuffered (`no-transform`) so the workspace is live.
  */
+import { apiOrigin } from "@/lib/api-origin";
+
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
+// Serverless hosts cut long responses; the client resumes with Last-Event-ID / from_seq, so nothing is lost.
+export const maxDuration = 300;
 
 export async function GET(req: Request, { params }: { params: Promise<{ id: string }> }): Promise<Response> {
   const { id } = await params;
-  const base = (process.env.API_URL ?? "http://localhost:8000").replace(/\/$/, "");
+  const base = apiOrigin();
   const url = new URL(req.url);
   const target = `${base}/api/v1/jobs/${encodeURIComponent(id)}/events${url.search}`;
   const headers: Record<string, string> = { Accept: "text/event-stream" };

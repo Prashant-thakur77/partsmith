@@ -1,4 +1,9 @@
-"""Content-addressed blob store (local disk by default). Keys are sha256 hex of the bytes."""
+"""Content-addressed blob store (local disk by default). Keys are sha256 hex of the bytes.
+
+Printable files (STL, 3MF, STEP, and zips that contain them) are gated by the export gate when served: a small owner
+index (`claim` / `owners`) records which job or registry part handed a key out, so the API can find the verification
+record that decides whether the file may leave. Previews (GLB, images, JSON, code) are not gated.
+"""
 
 from __future__ import annotations
 
@@ -9,6 +14,8 @@ from pathlib import Path
 from .paths import REPO_ROOT, blobs_dir
 
 REPLAY_BLOBS = REPO_ROOT / "data" / "replays" / "_blobs"
+PRINTABLE_EXTS = frozenset({".stl", ".3mf", ".step", ".stp", ".zip"})
+OWNERS_DIR = "_owners"
 
 
 def sha256_bytes(data: bytes) -> str:
@@ -59,6 +66,43 @@ def copy_to_replays(key: str) -> None:
     if src.exists() and not dest.exists():
         dest.parent.mkdir(parents=True, exist_ok=True)
         dest.write_bytes(src.read_bytes())
+
+
+def is_printable(key: str) -> bool:
+    """True for keys whose extension is a printable model file (or a zip that may contain one)."""
+    _, ext = _split(key)
+    return ext.lower() in PRINTABLE_EXTS
+
+
+def _owners_path(key: str) -> Path:
+    sha, _ = _split(key)
+    _path(sha, "")  # validates the key
+    return blobs_dir() / OWNERS_DIR / sha[:2] / f"{sha}.txt"
+
+
+def claim(key: str, owner: str) -> None:
+    """Record that `owner` (`"job:<id>"` or `"part:<slug>"`) handed out `key` (a blob key, or a bake cache key —
+    any sha256 hex). Idempotent; an append-only text file per key, so concurrent claims cannot lose each other."""
+    if not owner or "\n" in owner:
+        raise ValueError(f"bad owner {owner!r}")
+    if owner in owners(key):
+        return
+    path = _owners_path(key)
+    path.parent.mkdir(parents=True, exist_ok=True)
+    with path.open("a", encoding="utf-8") as fh:
+        fh.write(owner + "\n")
+
+
+def owners(key: str) -> list[str]:
+    """Owners claimed for `key`, oldest first, without duplicates (empty when nobody claimed it)."""
+    path = _owners_path(key)
+    if not path.exists():
+        return []
+    seen: dict[str, None] = {}
+    for line in path.read_text(encoding="utf-8").splitlines():
+        if line.strip():
+            seen.setdefault(line.strip(), None)
+    return list(seen)
 
 
 def url(key: str) -> str:

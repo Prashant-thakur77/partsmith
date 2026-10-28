@@ -1,0 +1,5 @@
+{
+  "ok": false,
+  "reason": "best effort: test failed: length without a side view: the top photo reads 49.93 mm if the ends stand the full stated height and 51.00 mm if they sit at half of it; the model must be within +/-0.3 mm of both (a side photo settles it). Print the fit-test coupon first: it checks the critical holes and edges in a few minutes of printing.",
+  "requires_ack": true
+}

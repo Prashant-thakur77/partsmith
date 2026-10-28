@@ -1,0 +1,18 @@
+# Allow-list for `docker build -f infra/deploy/Dockerfile .` (BuildKit reads <Dockerfile>.dockerignore).
+# Secrets (.env), runtime data (var/), private notes and the web app never enter the image.
+*
+!pyproject.toml
+!uv.lock
+!README.md
+!services/
+!packages/schemas/
+!tools/
+!eval/reports/
+!data/replays/
+!data/synthetic/samples/
+!infra/deploy/entrypoint.sh
+**/__pycache__
+**/*.pyc
+**/tests/
+**/.env
+**/.env.*

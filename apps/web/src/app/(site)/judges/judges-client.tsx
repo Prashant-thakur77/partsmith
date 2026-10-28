@@ -1,11 +1,12 @@
 "use client";
 
 import { useQuery } from "@tanstack/react-query";
-import { ArrowRight, Gauge, History, Pause, Play, RotateCcw, Server, Terminal } from "lucide-react";
+import { ArrowRight, FlaskConical, Gauge, History, Pause, Play, RotateCcw, Server, Terminal } from "lucide-react";
 import Link from "next/link";
+import dynamic from "next/dynamic";
 import * as React from "react";
-import { ConvergenceChart } from "@/components/jobs/convergence-chart";
 import { TraceTimeline } from "@/components/jobs/trace-timeline";
+import { LieCaught } from "@/components/judges/lie-caught";
 import { Container, PageHeader, Section } from "@/components/layout/page";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -21,6 +22,16 @@ import { fmtNum, splitTitle } from "@/lib/format";
 import { STAGE_LABELS, summarizeEvents } from "@/lib/job-events";
 import { cn } from "@/lib/utils";
 import { radioGroupKeys } from "@/lib/a11y";
+
+// recharts loads on demand, behind a placeholder of the chart's own height
+const ConvergenceChart = dynamic(() => import("@/components/jobs/convergence-chart").then((m) => m.ConvergenceChart), {
+  ssr: false,
+  loading: () => (
+    <div role="status" aria-label="Loading the error chart" className="h-[170px]">
+      <Skeleton className="h-full" />
+    </div>
+  ),
+});
 
 const REPO_URL = process.env.NEXT_PUBLIC_REPO_URL ?? "";
 
@@ -143,6 +154,7 @@ function ReplayPlayer({ id }: { id: string }) {
 export function JudgesClient() {
   const replays = useQuery({ queryKey: ["replays"], queryFn: api.replays });
   const status = useQuery({ queryKey: ["status"], queryFn: api.status });
+  const bench = useQuery({ queryKey: ["bench"], queryFn: api.bench, retry: false });
   const [picked, setPicked] = React.useState<string | null>(null);
   const active = picked ?? replays.data?.[0]?.id ?? null;
 
@@ -160,13 +172,20 @@ export function JudgesClient() {
         title="The 30-second path"
         description="No login. Every number on these pages is computed by code and comes from the API; replays, mocks and synthetic inputs are labelled wherever they appear."
         actions={
-          REPO_URL ? (
-            <Button asChild variant="outline">
-              <a href={REPO_URL} target="_blank" rel="noreferrer">
-                Source code <ArrowRight aria-hidden />
-              </a>
+          <>
+            <Button asChild variant="primary">
+              <Link href="/jobs/demo">
+                <FlaskConical aria-hidden /> Try a sample
+              </Link>
             </Button>
-          ) : null
+            {REPO_URL ? (
+              <Button asChild variant="outline">
+                <a href={REPO_URL} target="_blank" rel="noreferrer">
+                  Source code <ArrowRight aria-hidden />
+                </a>
+              </Button>
+            ) : null}
+          </>
         }
       />
       <Container className="space-y-14 py-10">
@@ -217,6 +236,20 @@ export function JudgesClient() {
               ) : null}
               <ReplayPlayer id={active} />
             </div>
+          )}
+        </Section>
+
+        <Section
+          id="lie-caught"
+          title="A lying model, caught"
+          description="A scripted brain claims the part is verified. Code ignores the claim: the verifier measures the model against the photo and the export gate decides. Read from eval/reports/latest/bypass.json."
+        >
+          {bench.isPending ? (
+            <Skeleton className="h-96" />
+          ) : bench.isError ? (
+            <ErrorState error={bench.error} compact what="the lying-model report" onRetry={() => void bench.refetch()} />
+          ) : (
+            <LieCaught report={bench.data.evidence?.bypass} />
           )}
         </Section>
 

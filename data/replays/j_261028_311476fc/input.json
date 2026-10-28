@@ -1,0 +1,17 @@
+{
+  "kind": "fix",
+  "intent": "Measure this Full-size SD card (reference object).",
+  "photo_shas": {
+    "top": "6c9855d7acc127af75c013ef2adb753d56e1a67628dfd786410d31e89a5bd6f2.jpg",
+    "side": "44615b2858952f212491f92e946cf80e59d21ae3c52efd8989e26afb618126e4.jpg"
+  },
+  "mat_kind": "screen",
+  "screen_px_per_mm": null,
+  "thickness_mm": 2.1,
+  "family_hint": null,
+  "origin": "synthetic",
+  "max_iters": 6,
+  "budget_usd": 0.5,
+  "provider_mode": null,
+  "city": null
+}

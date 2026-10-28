@@ -8,6 +8,7 @@
     "build": "next build",
     "start": "next start --port 3000",
     "typecheck": "tsc --noEmit",
+    "test": "node --test \"test/**/*.test.mjs\"",
     "lint": "eslint . --max-warnings=0",
     "e2e": "API_URL=http://127.0.0.1:9 next build && playwright test",
     "e2e:only": "playwright test",

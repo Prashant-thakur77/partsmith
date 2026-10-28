@@ -6,7 +6,7 @@ from typing import Literal
 
 from pydantic import Field
 
-from .common import HAUSDORFF_PASS_MM, IOU_PASS, DataOrigin, Strict
+from .common import HAUSDORFF_PASS_MM, IOU_PASS, DataOrigin, Source, Strict
 
 
 class ParamSpec(Strict):
@@ -75,6 +75,21 @@ class Thresholds(Strict):
     iou: float = IOU_PASS
 
 
+class UncheckedValue(Strict):
+    """A dimension of the final model (a PARAMS knob) that no measured or user-stated value was tested against.
+
+    It comes from the program (a template default or a value inferred from the measured ones), so it is labelled
+    inferred and NOT verified, whatever the part's status. The silhouette comparison only covers it as far as it
+    changes a compared view's outline (`note` says which views were compared)."""
+
+    param: str
+    label: str = ""
+    value: float
+    unit: Literal["mm", "deg", ""] = "mm"
+    source: Source = Source.inferred
+    note: str = ""
+
+
 class Verification(Strict):
     verified: bool
     status: Literal["verified", "best_effort", "failed"]
@@ -86,6 +101,8 @@ class Verification(Strict):
     validity: Validity | None = None
     vetoes: list[JudgeVeto] = Field(default_factory=list)
     max_error_mm: float | None = None
+    # Knobs no test checked: inferred, never verified (filled when the job's final verdict is written).
+    unchecked: list[UncheckedValue] = Field(default_factory=list)
     origin: DataOrigin = DataOrigin.real
     versions: dict[str, str] = Field(default_factory=dict)
     hashes: dict[str, str] = Field(default_factory=dict)

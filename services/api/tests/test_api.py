@@ -427,6 +427,24 @@ def test_fix_upload_accepts_orbit_clip_and_feature_points(client: TestClient, fa
     _err(client.post("/api/v1/jobs/fix", files=bad), 415, "unsupported_media_type")
 
 
+def test_fix_upload_accepts_a_narration_note_and_a_city(client: TestClient, fake: FakeService) -> None:
+    clip = b"\x00\x00\x00\x18ftypmp42" + b"\x00" * 256
+    note = b"RIFF\x24\x00\x00\x00WAVEfmt " + b"\x00" * 64
+    files = {
+        "top": ("top.jpg", _jpeg(), "image/jpeg"),
+        "orbit": ("orbit.mp4", clip, "video/mp4"),
+        "narration": ("note.wav", note, "audio/wav"),
+    }
+    r = client.post("/api/v1/jobs/fix", files=files, data={"city": "  Pune "})
+    assert r.status_code == 200, r.text
+    jid = r.json()["id"]
+    assert fake.photos[jid]["narration"] == note and fake.inputs[jid].city == "Pune"
+    r = client.post("/api/v1/jobs/fix", files={"top": ("top.jpg", _jpeg(), "image/jpeg")}, data={"city": " "})
+    assert r.status_code == 200 and fake.inputs[r.json()["id"]].city is None
+    bad = {**files, "narration": ("n.txt", b"hello", "text/plain")}
+    _err(client.post("/api/v1/jobs/fix", files=bad), 415, "unsupported_media_type")
+
+
 def test_demo_list_detail_runlog(client: TestClient, fake: FakeService) -> None:
     samples = client.get("/api/v1/jobs/demo/samples").json()
     assert samples[0]["id"] == "spacer-easy-01"

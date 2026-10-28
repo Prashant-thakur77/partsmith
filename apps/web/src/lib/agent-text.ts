@@ -3,9 +3,10 @@ import { FamilySchema, PartListSchema } from "./api-types";
 import { AGENT_RULES, MCP_TOOLS, REST_GROUPS } from "./agent-docs";
 import { mcpUrl } from "./snippets";
 import { z } from "zod/mini";
+import { apiOrigin } from "./api-origin";
 
 function apiBase(): string {
-  return `${(process.env.API_URL ?? "http://localhost:8000").replace(/\/$/, "")}/api/v1`;
+  return `${apiOrigin()}/api/v1`;
 }
 
 async function getJson(path: string): Promise<unknown> {

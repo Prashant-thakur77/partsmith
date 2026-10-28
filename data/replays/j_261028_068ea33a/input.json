@@ -1,0 +1,17 @@
+{
+  "kind": "fix",
+  "intent": "Make a replacement for this broken wall hook: the top of the part snapped off.",
+  "photo_shas": {
+    "top": "e2a0118d8b8e013c80082ea66860df65e394b63e454e31f13f03d82df4472f64.jpg",
+    "side": "a33b8054b0a34cfae63ed192afb39e73b1f1609b85557d72c7f71e84135c928c.jpg"
+  },
+  "mat_kind": "screen",
+  "screen_px_per_mm": null,
+  "thickness_mm": 3.0,
+  "family_hint": "hook",
+  "origin": "synthetic",
+  "max_iters": 6,
+  "budget_usd": 0.5,
+  "provider_mode": null,
+  "city": null
+}

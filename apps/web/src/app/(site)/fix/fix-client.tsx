@@ -7,6 +7,7 @@ import { useRouter } from "next/navigation";
 import * as React from "react";
 import { PhotoSlot, type SlotValue, type TapPoint } from "@/components/fix/photo-slot";
 import { VideoSlot } from "@/components/fix/video-slot";
+import { VoiceNoteSlot } from "@/components/fix/voice-note-slot";
 import { useCapabilities } from "@/lib/capabilities";
 import { Container } from "@/components/layout/page";
 import { TranscribeButton } from "@/components/voice-button";
@@ -15,7 +16,9 @@ import { Button } from "@/components/ui/button";
 import { ErrorState } from "@/components/ui/error-state";
 import { Input, Label, Select, Textarea } from "@/components/ui/input";
 import { Spinner } from "@/components/ui/spinner";
-import { api } from "@/lib/api";
+import { ApiError, api } from "@/lib/api";
+import { cityParam } from "@/lib/buy-or-print";
+import { uploadRefusal, voiceNoteProblem } from "@/lib/evidence-notes";
 import { calibrationDrift, useCalibration } from "@/lib/calibration";
 import { FAMILIES } from "@/lib/families";
 import { fmtNum, titleCase } from "@/lib/format";
@@ -73,10 +76,17 @@ export function FixClient() {
   const [family, setFamily] = React.useState("");
   const [orbit, setOrbit] = React.useState<File | null>(null);
   const [points, setPoints] = React.useState<TapPoint[]>([]);
+  const [voiceNote, setVoiceNote] = React.useState<File | null>(null);
+  const [city, setCity] = React.useState("");
   const caps = useCapabilities();
   const fixFields = caps.fields("post", "/jobs/fix");
   const canOrbit = fixFields.has("orbit");
   const canPoints = fixFields.has("points");
+  const canNarrate = canOrbit && fixFields.has("narration");
+  const canCity = fixFields.has("city");
+  // The voice note travels with the walk-around clip; without a clip the server has nothing to narrate.
+  const sendNote = canNarrate && !!orbit && !!voiceNote;
+  const noteProblem = sendNote ? voiceNoteProblem(voiceNote!.type, voiceNote!.size) : null;
 
   const start = useMutation({
     mutationFn: () =>
@@ -91,13 +101,16 @@ export function FixClient() {
         screenPxPerMm: mat === "screen" ? (calibration?.px_per_mm ?? null) : null,
         orbit: canOrbit ? orbit : null,
         points: canPoints ? points : null,
+        narration: sendNote ? voiceNote : null,
+        city: canCity ? cityParam(city) : null,
       }),
     onSuccess: (job) => router.push(`/jobs/${encodeURIComponent(job.id)}`),
   });
 
   const thicknessBad = thickness.trim() !== "" && !(Number(thickness) > 0 && Number(thickness) < 200);
   const topBlocked = top?.info.checks.some((c) => c.level === "fail") ?? false;
-  const canStart = !!top && !topBlocked && !thicknessBad && !start.isPending;
+  const canStart = !!top && !topBlocked && !thicknessBad && !noteProblem && !start.isPending;
+  const refusal = start.error instanceof ApiError ? uploadRefusal(start.error.status, start.error.message) : null;
 
   return (
     <Container className="pb-8 sm:pb-10">
@@ -220,6 +233,7 @@ export function FixClient() {
                 compact
               />
               {canOrbit ? <VideoSlot title={t("fix.orbit")} hint={t("fix.orbitHint")} value={orbit} onChange={setOrbit} /> : null}
+              {canNarrate ? <VoiceNoteSlot value={voiceNote} onChange={setVoiceNote} hasClip={!!orbit} /> : null}
             </div>
           </Step>
 
@@ -281,6 +295,24 @@ export function FixClient() {
                 </Select>
                 <p className="text-[12px] text-subtle">Only a hint — the model can disagree.</p>
               </div>
+              {canCity ? (
+                <div className="space-y-1.5 sm:col-span-2">
+                  <Label htmlFor="city">{t("fix.city")}</Label>
+                  <Input
+                    id="city"
+                    value={city}
+                    maxLength={80}
+                    autoComplete="address-level2"
+                    onChange={(e) => setCity(e.target.value)}
+                    placeholder="optional"
+                    aria-describedby="city-help"
+                    className="sm:max-w-sm"
+                  />
+                  <p id="city-help" className="text-[12px] text-subtle">
+                    {t("fix.cityHint")}
+                  </p>
+                </div>
+              ) : null}
             </div>
           </Step>
         </div>
@@ -295,7 +327,14 @@ export function FixClient() {
               <Check2 ok={!!side} label={t("fix.checkSide")} optional />
               <Check2 ok={intent.trim().length > 0} label={t("fix.checkIntent")} optional />
             </ul>
-            {start.isError ? <ErrorState error={start.error} compact what="the job" /> : null}
+            {refusal ? (
+              <p role="alert" className="rounded-md border border-bad-border bg-bad-soft/40 px-3 py-2 text-[12.5px] leading-5 text-fg">
+                <span className="mr-1 font-mono text-[11.5px] text-bad">{(start.error as ApiError).status}</span>
+                {refusal}
+              </p>
+            ) : null}
+            {start.isError && !refusal ? <ErrorState error={start.error} compact what="the job" /> : null}
+            {noteProblem ? <p className="text-[12px] text-bad">{noteProblem}</p> : null}
             <Button variant="primary" size="lg" className="w-full" disabled={!canStart} onClick={() => start.mutate()}>
               {start.isPending ? <Spinner className="text-accent-fg" label="Starting" /> : null}
               {start.isPending ? t("fix.starting") : t("fix.start")}
