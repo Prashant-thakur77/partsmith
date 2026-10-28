@@ -668,6 +668,8 @@ def config_row(cfg: str, runs: Sequence[Mapping[str, Any]], seed: int = 0) -> di
     )
     n = len(runs)
     ver = rate(sum(bool(r.get("verified")) for r in runs), n)
+    # the verifier passed the part but it is more than 0.5 mm off the ground truth: the number that matters most
+    off = sum(bool(r.get("verified")) and not r.get("pass_0_5") for r in runs)
     p5 = rate(sum(bool(r.get("pass_0_5")) for r in runs), n)
     p3 = rate(sum(bool(r.get("pass_0_3")) for r in runs), n)
     val = rate(sum(bool(r.get("valid")) for r in runs), n)
@@ -690,6 +692,7 @@ def config_row(cfg: str, runs: Sequence[Mapping[str, Any]], seed: int = 0) -> di
         "pass@0.5_ci95": _ci(p5.ci95, 2),
         "verified_rate": _f(ver.rate),
         "verified_ci95": _ci(ver.ci95, 2),
+        "verified_but_off": f"{off}/{sum(bool(r.get('verified')) for r in runs)}",
         "valid_rate": _f(val.rate),
         "median_iters": _f(float(np.median(its)) if its else math.nan, 1),
         "median_wall_s": _f(float(np.median(wall)) if wall else math.nan, 1),
@@ -710,6 +713,7 @@ COLUMNS = [
     "pass@0.5_ci95",
     "verified_rate",
     "verified_ci95",
+    "verified_but_off",
     "valid_rate",
     "median_iters",
     "median_wall_s",
@@ -777,6 +781,7 @@ def build_tables(scores: Sequence[Mapping[str, Any]], mode: str, notes: Sequence
                 "mean_abs_err_mm": head["mean_abs_err_mm"],
                 "pass_at_0_5": head["pass@0.5"],
                 "verified_rate": head["verified_rate"],
+                "verified_but_off": head["verified_but_off"],
                 "n": head["n"],
             },
             "median_abs_err_mm": head["median_abs_err_mm"],
@@ -1042,6 +1047,7 @@ def to_markdown(rep: Mapping[str, Any]) -> str:
         "pass@0.5",
         "pass@0.5_ci95",
         "verified_rate",
+        "verified_but_off",
         "valid_rate",
         "median_iters",
         "median_wall_s",

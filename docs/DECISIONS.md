@@ -126,3 +126,23 @@ parts already need the dark stage.
 come from the sample's own metadata ("Full-size SD card"), not from the job's PartSpec title, which a model (or the mock)
 wrote ("battery compartment cover"). Committed replays re-encode `install_card` and `reconstruction` images as JPEG like the
 other display-only images (the 19 replays: 112 MB → 58 MB).
+
+**2026-10-28 — Broken parts: the break is located by evidence, never copied, and never counted in the error.** Four rules
+for the broken-region path. (1) `BrokenRegion.kind = "height"` covers a part whose top is missing: the model only says so,
+code takes the break height from the side photo and leaves everything above it out of the side and walk-around views (the
+top view is compared in full); before, such a break was not located at all and the fix loop shrank the replacement to the
+stump. (2) Mirror completion snaps an axis within 2° of the part frame, and also mirrors end to end when the outline is
+still ≥ 0.8 IoU symmetric that way: a piece missing from the middle of an end is its own mirror image about the long axis.
+(3) A broken part never switches to free code from the measured outline (that extrudes the break into the replacement);
+the template keeps probing. (4) A length/width test is informational when the break reaches that end or side of the
+footprint's rectangle, and the residual behind every informational test is reported apart ("NOT verified") and left out
+of the max error and the fixer's input. Distances next to the excluded region are measured from the kept contour points to
+the other boundary as a whole (a point beside the region was matched to the far end of the clipped curve, a phantom error
+of several mm on the cover tab), and the rectified side view gets one band per region piece, not one band from the first
+to the last. The mock also counts hinge tongues on the outline's ends. Thresholds are unchanged.
+
+**2026-10-28 — A claimed break is an attack surface, and "verified but off" is reported.** The model writes
+`broken_region`, and the verifier leaves that region out of the comparison, so the lying-brain suite now includes a model
+that declares a break (one end, half the part, a box around all of it) to excuse a part 6 mm too long: it stays best
+effort (`eval.bypass`, 17/17). The bench tables gain `verified_but_off`: runs the verifier passed that are more than
+0.5 mm off the ground truth, shown next to the verified rate so a high verified rate cannot hide wrong parts.

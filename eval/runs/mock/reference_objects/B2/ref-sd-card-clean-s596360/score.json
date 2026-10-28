@@ -20,7 +20,7 @@
  "tokens_in": 0,
  "tokens_out": 0,
  "model_calls": 33,
- "model_ms": 231,
+ "model_ms": 235,
  "provider_modes": [
   "mock"
  ],
@@ -82,7 +82,7 @@
    "max_error_mm": 0.7348366639341085
   }
  ],
- "wall_s": 29.59,
+ "wall_s": 29.61,
  "dims": [
   {
    "name": "length",

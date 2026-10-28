@@ -26,6 +26,7 @@ from collections.abc import Collection, Mapping, Sequence
 from typing import Any
 
 from partsmith_schemas.verification import ParamSpec
+from shapely.geometry import Polygon
 
 from services.agent import providers
 from services.agent.guards import max_delta, residual_param
@@ -35,6 +36,11 @@ from services.geom_worker.program import clamp, set_defaults
 
 MOCK_TAG = "deterministic mock"
 BROKEN_SYMMETRY = 0.97  # below this, an outline the user calls damaged is treated as having a broken region
+# "the top of the part snapped off", "the tip broke": the part is missing height, which only the side photo shows
+TOP_DAMAGE = re.compile(
+    r"\b(?:top|tip|upper)\b[^.]{0,40}?\b(snapped|broke|broken|cracked|missing|came off)\b"
+    r"|\b(snapped|broke|broken|cracked)(?: off)? (?:at|near) the (?:top|tip)\b"
+)
 DAMPING = 0.9  # a careful model under-corrects slightly rather than overshooting
 HD_IMPROVED_MM = 0.01
 LENGTH_ROUND_MM = 1.0
@@ -129,6 +135,43 @@ def edge_runs(outline: Sequence[Sequence[float]], min_rise_mm: float = 1.0) -> d
         if len(runs) >= 1 and (not best or top - low > best["rise"]):
             ends = (runs[0][0] - x0 < 1.5, x1 - runs[-1][1] < 1.5)
             best = {"count": len(runs), "at_ends": ends, "rise": top - low}
+    return best
+
+
+def end_tabs(outline: Sequence[Sequence[float]], min_rise_mm: float = 1.0) -> int:
+    """Tabs sticking out of either end of a top outline (part frame, long axis X): hinge tongues. Counted against
+    the end's edge next to the corners (tabs sit between them), so rounded corners and a notch (a broken end) are not
+    tabs; 0 when neither end has any."""
+    import numpy as np
+    from shapely.geometry import LineString, Polygon
+
+    poly = Polygon(outline).buffer(0)
+    if poly.is_empty or len(outline) < 8:
+        return 0
+    x0, y0, x1, y1 = poly.bounds
+    ys = np.arange(y0 + 0.2, y1 - 0.2, 0.2)
+    lo, hi = [], []
+    for y in ys:
+        b = poly.intersection(LineString([(x0 - 1, y), (x1 + 1, y)])).bounds
+        lo.append(b[0] if b else np.nan)
+        hi.append(b[2] if b else np.nan)
+    best = 0
+    for prof in (np.asarray(hi), -np.asarray(lo)):
+        if len(prof) == 0 or np.isnan(prof).any():
+            continue
+        k = max(1, len(prof) // 10)
+        up = prof > float(np.median(np.r_[prof[:k], prof[-k:]])) + min_rise_mm
+        runs, i = 0, 0
+        while i < len(ys):
+            if up[i]:
+                j = i
+                while j + 1 < len(ys) and up[j + 1]:
+                    j += 1
+                runs += int(ys[j] - ys[i] >= 1.0)
+                i = j + 1
+            else:
+                i += 1
+        best = max(best, runs)
     return best
 
 
@@ -352,7 +395,16 @@ def understand(req: ModelRequest) -> dict[str, Any]:
     damage = re.search(
         r"\b(missing|cracked|chipped|snapped off|broken off|broke off|piece|corner|tip)\b", intent.lower()
     )
-    if isinstance(sym, (int, float)) and sym < BROKEN_SYMMETRY and damage:
+    top_damage = TOP_DAMAGE.search(intent.lower())
+    if top_damage and side is not None:
+        spec["broken_region"] = {
+            "polygon_mm": [],
+            "strategy": "template",
+            "kind": "height",
+            "note": f"the user says the top {top_damage.group(1) or top_damage.group(2)!r}: the side photo shows the "
+            f"broken height, so the part above it keeps the template's shape and size ({MOCK_TAG})",
+        }
+    elif isinstance(sym, (int, float)) and sym < BROKEN_SYMMETRY and damage:
         spec["broken_region"] = {
             "polygon_mm": [],
             "strategy": "mirror",
@@ -432,12 +484,19 @@ def template_values(
                 vals[knuckle[0].name] = float(runs["count"])
                 if phase:
                     vals[phase[0].name] = 0.0 if any(runs["at_ends"]) else 1.0
+        tongues = [p for p in t.params if p.topology and "tongue" in p.label.lower()]
+        if tongues:  # count the tongues sticking out of the hinge end
+            n_tabs = end_tabs(top.get("outline_mm") or [])
+            if n_tabs:
+                vals[tongues[0].name] = float(n_tabs)
         lobes = int(cues["lobes"])
         if cues["round"] and lobes >= 3:  # count the grip flutes seen around the rim
             for p in t.params:
                 if p.topology and any(w in p.label.lower() for w in ("flute", "notch", "lobe")):
                     vals[p.name] = float(lobes)
     side_h = ((side or {}).get("thickness") or {}).get("value")
+    if ((spec.get("broken_region") or {}).get("kind")) == "height":
+        side_h = None  # the side photo shows the broken height: the missing top keeps the template's values
     th = spec.get("thickness") or {}
     if mm.get("height") and side_h:  # the side photo shows the part's full height
         vals[mm["height"]] = _round(float(side_h), LENGTH_ROUND_MM)
@@ -541,6 +600,13 @@ def outline_program(
     pts = [(round(float(x), 3), round(float(y), 3)) for x, y in (spec.get("base_profile") or {}).get("points_mm", [])]
     if len(pts) < 3 and top is not None:
         pts = [(round(float(x), 3), round(float(y), 3)) for x, y in top["outline_mm"]]
+    br = spec.get("broken_region") or {}
+    patch = br.get("polygon_mm") or []
+    if br.get("kind", "outline") == "outline" and len(patch) >= 3 and len(pts) >= 3:
+        # a broken part: extrude the completed outline (inferred), never a copy of the break
+        done = Polygon(pts).buffer(0).union(Polygon(patch).buffer(0))
+        if done.geom_type == "Polygon":
+            pts = [(round(float(x), 3), round(float(y), 3)) for x, y in list(done.exterior.coords)[:-1]]
     th = float((spec.get("thickness") or {}).get("value") or 3.0)
     holes = [f for f in spec.get("features", []) if f.get("kind") == "through_hole"]
     slots = [f for f in spec.get("features", []) if f.get("kind") == "slot"]

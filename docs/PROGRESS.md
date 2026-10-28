@@ -124,4 +124,9 @@ Seven workstreams in flight: providers, verifier, synth/eval, API/registry, metr
   (proposes→decides table, generated evidence block, every Meta use with file:line, written-but-not-claimed).
 - **Weak spots seen in the fresh seed (mock):** broken-part demos stay far off (cover tab 2.28 mm, latch corner 3.87 mm, hook
   tip 13.56 mm) and are not published; white parts 2.9–3.4 mm; the glare clip correctly fails capture.
-- **Next:** QUALITY re-score → iterate on the broken-part loop (largest error) → keys → live runs.
+- **Broken-part loop (Oct 28):** `BrokenRegion.kind = "height"` (break height from the side photo), end-to-end mirror and
+  frame-snapped axis, no free-code switch for broken parts, informational length/width residuals kept out of the max error,
+  clipped-contour and per-piece side-band fixes in the verifier. Fresh mock seed: cover tab 2.28 → 1.195, latch corner
+  3.87 → 1.402, hook tip 13.56 → 0.681 mm (all best effort, 6 of 19 verified as before). Lying-brain suite gains a fake
+  break (17/17). Bench tables gain `verified_but_off` (reference objects 1/2 verified but > 0.5 mm off).
+- **Next:** keys → live runs; a stated/tapped length for broken ends; the verified-but-off reference object.

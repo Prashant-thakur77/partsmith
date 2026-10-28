@@ -1,5 +1,0 @@
-{
-  "ok": false,
-  "reason": "best effort: side thickness is 2.9 mm too thin. Print the fit-test coupon first: it checks the critical holes and edges in a few minutes of printing.",
-  "requires_ack": true
-}

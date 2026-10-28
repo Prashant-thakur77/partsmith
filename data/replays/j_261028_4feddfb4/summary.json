@@ -1,0 +1,16 @@
+{
+  "id": "j_261028_4feddfb4",
+  "kind": "fix",
+  "status": "done",
+  "created_at": 1793146006.518782,
+  "updated_at": 1793146025.291713,
+  "title": "Full-size SD card (synthetic, clean) (synthetic sample)",
+  "origin": "synthetic",
+  "provider_mode": "mock",
+  "verified": false,
+  "max_error_mm": 1.0130568799659052,
+  "iterations": 6,
+  "cost_usd": 0.0,
+  "part_slug": null,
+  "is_replay": false
+}

@@ -105,8 +105,14 @@ Feature = Annotated[
 
 
 class BrokenRegion(Strict):
+    """Where the part is broken. ``kind="outline"``: a piece of the top-view outline is missing (``polygon_mm`` is the
+    completed outline or the missing patch, part frame). ``kind="height"``: the top of the part is missing, so the side
+    photo shows it shorter than it was; code takes the break height from the side measurement and leaves everything
+    above it out of the side and walk-around comparisons (``polygon_mm`` stays empty)."""
+
     polygon_mm: list[Point2]
     strategy: Literal["mirror", "mating_part", "template", "user"]
+    kind: Literal["outline", "height"] = "outline"
     note: str | None = None
 
 

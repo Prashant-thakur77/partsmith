@@ -115,3 +115,20 @@ def test_residual_heatmap_is_png() -> None:
     assert img is not None and img.shape[2] == 3
     # Both over (vermillion) and under (blue) colours are present.
     assert np.any(np.all(img == M.COLOR_OVER, axis=2)) and np.any(np.all(img == M.COLOR_UNDER, axis=2))
+
+
+def test_kept_contour_points_are_measured_to_the_whole_other_boundary() -> None:
+    """Near an excluded (broken) region the two boundaries are clipped at slightly different places; a kept point
+    must be matched to the other boundary where it continues into the region, not to the far end of its clipped
+    piece (that turned a perfect fit into a multi-mm 'error' next to the region)."""
+    x = np.linspace(0.0, 10.0, 201)
+    line = np.c_[x, np.zeros_like(x)]
+    model_kept, photo_kept = line[x <= 6.0], line[x <= 3.0]
+    clipped = M.contour_distances_mm(model_kept, photo_kept)
+    assert clipped.hausdorff_mm == pytest.approx(3.0, abs=0.06)
+    whole = M.contour_distances_mm(model_kept, photo_kept, line, line)
+    assert whole.hausdorff_mm < 1e-9
+    # a real error on a kept point is still seen
+    bent = model_kept.copy()
+    bent[-1, 1] = 0.8
+    assert M.contour_distances_mm(bent, photo_kept, line, line).hausdorff_mm == pytest.approx(0.8, abs=1e-6)

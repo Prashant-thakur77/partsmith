@@ -1712,6 +1712,12 @@ class FixRun:
     def switch_strategy(self) -> bool:
         """template → free code → ask the human. Returns False when the loop should stop."""
         cur = self.strategy
+        if cur == "template" and self.spec is not None and self.spec.broken_region is not None:
+            self.log(
+                "no switch to free code: the part is broken, and an extrusion of the measured outline would copy the "
+                "break into the replacement; the template (the intact shape) keeps probing"
+            )
+            return True
         if cur == "template" and self.side_taller_than_plate():
             self.log(
                 "no switch to free code: the side photo shows features above the plate, which an extruded outline "

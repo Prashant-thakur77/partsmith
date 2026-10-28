@@ -155,6 +155,7 @@ def bench_tables() -> str:
         "mean_ci95",
         "pass@0.5",
         "verified_rate",
+        "verified_but_off",
         "median_iters",
     ]
     for key, title in names.items():
@@ -200,6 +201,14 @@ def evidence() -> str:
                 f"| {what}{mock} | {h['correct']}/{h['n']} handled as expected, 95 % CI {h['ci95']} | "
                 f"`eval/reports/latest/report.json` → `tables.{key}` |"
             )
+    for key, what in (("synthetic", "synthetic parts"), ("reference_objects", "reference objects")):
+        t = rep.get("tables", {}).get(key) or {}
+        h = t.get("headline") or {}
+        if t.get("status") == "ok" and h.get("verified_but_off"):
+            out.append(
+                f"| Verified {what}{mock} that are > 0.5 mm off the ground truth | {h['verified_but_off']} "
+                f"(config {h['config']}) | `eval/reports/latest/report.json` → `tables.{key}` |"
+            )
     pvm = (_load("program_vs_mesh.json") or {}).get("summary")
     if pvm:
         out.append(
@@ -210,7 +219,7 @@ def evidence() -> str:
     byp = _load("bypass.json")
     if byp:
         out.append(
-            f"| A model that lies or cheats (says verified, edits the record, loosens limits, rescales to fit, smuggles imports, exports without consent) | "
+            f"| A model that lies or cheats (says verified, edits the record, loosens limits, rescales to fit, fakes a break, smuggles imports, exports without consent) | "
             f"{byp['blocked']}/{byp['attempts']} attempts blocked by code | `eval/reports/latest/bypass.json` |"
         )
     imp = _load("impact.json") or {}

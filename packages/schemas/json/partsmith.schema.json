@@ -368,6 +368,7 @@
     },
     "BrokenRegion": {
       "additionalProperties": false,
+      "description": "Where the part is broken. ``kind=\"outline\"``: a piece of the top-view outline is missing (``polygon_mm`` is the\ncompleted outline or the missing patch, part frame). ``kind=\"height\"``: the top of the part is missing, so the side\nphoto shows it shorter than it was; code takes the break height from the side measurement and leaves everything\nabove it out of the side and walk-around comparisons (``polygon_mm`` stays empty).",
       "properties": {
         "polygon_mm": {
           "items": {
@@ -394,6 +395,15 @@
             "user"
           ],
           "title": "Strategy",
+          "type": "string"
+        },
+        "kind": {
+          "default": "outline",
+          "enum": [
+            "outline",
+            "height"
+          ],
+          "title": "Kind",
           "type": "string"
         },
         "note": {

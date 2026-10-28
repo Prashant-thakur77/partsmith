@@ -1,0 +1,187 @@
+{
+  "verified": false,
+  "status": "best_effort",
+  "reasons": [
+    "top: refined in the photo frame by -0.00 deg, (-0.03, +0.03) mm on the mat",
+    "top view (photo frame): IoU 0.998 (needs >= 0.97), Hausdorff 0.15 mm (needs <= 0.5 mm)",
+    "Test failed: thinnest wall >= 0.8 mm (FDM) (model: 0.76).",
+    "top view: length, width and holes compared like for like (model rendered with the photo's camera and measured with the same metrology code)."
+  ],
+  "thresholds": {
+    "hausdorff_mm": 0.5,
+    "iou": 0.97
+  },
+  "views": [
+    {
+      "view": "top",
+      "iou": 0.9980338735499817,
+      "hausdorff_mm": 0.15077561664934924,
+      "hd95_mm": 0.08651279260996352,
+      "mean_mm": 0.038091744486488735,
+      "worst_point_mm": [
+        42.792053482354405,
+        24.483448077026978
+      ],
+      "over_area_mm2": 5.656653895260868,
+      "under_area_mm2": 3.446007545388804
+    }
+  ],
+  "residuals": [
+    {
+      "feature_id": "outline",
+      "quantity": "length",
+      "measured_mm": 85.695,
+      "model_mm": 85.78,
+      "delta_mm": 0.08500000000000796,
+      "tol_mm": 0.3,
+      "passed": true
+    },
+    {
+      "feature_id": "outline",
+      "quantity": "width",
+      "measured_mm": 54.081,
+      "model_mm": 54.154,
+      "delta_mm": 0.0730000000000004,
+      "tol_mm": 0.3,
+      "passed": true
+    },
+    {
+      "feature_id": "plate",
+      "quantity": "thickness",
+      "measured_mm": 0.76,
+      "model_mm": 0.76,
+      "delta_mm": 0.0,
+      "tol_mm": 0.3,
+      "passed": true
+    }
+  ],
+  "tests": [
+    {
+      "id": "bbox.x",
+      "description": "length (long side of the footprint) == 85.69 +/- 0.3 mm",
+      "value": 85.78,
+      "expected": 85.695,
+      "tol": 0.3,
+      "passed": true,
+      "priority": "P0"
+    },
+    {
+      "id": "bbox.y",
+      "description": "width (short side of the footprint) == 54.08 +/- 0.3 mm",
+      "value": 54.154,
+      "expected": 54.081,
+      "tol": 0.3,
+      "passed": true,
+      "priority": "P0"
+    },
+    {
+      "id": "thickness",
+      "description": "plate thickness == 0.76 +/- 0.3 mm",
+      "value": 0.76,
+      "expected": 0.76,
+      "tol": 0.3,
+      "passed": true,
+      "priority": "P0"
+    },
+    {
+      "id": "valid",
+      "description": "the solid passes the OCCT validity check",
+      "value": 1.0,
+      "expected": null,
+      "tol": null,
+      "passed": true,
+      "priority": "P0"
+    },
+    {
+      "id": "single_solid",
+      "description": "exactly one solid body",
+      "value": 1.0,
+      "expected": null,
+      "tol": null,
+      "passed": true,
+      "priority": "P0"
+    },
+    {
+      "id": "watertight",
+      "description": "the mesh is watertight (printable)",
+      "value": 1.0,
+      "expected": null,
+      "tol": null,
+      "passed": true,
+      "priority": "P0"
+    },
+    {
+      "id": "volume",
+      "description": "volume > 0",
+      "value": 3507.6073933599996,
+      "expected": 0.0,
+      "tol": 0.0,
+      "passed": true,
+      "priority": "P0"
+    },
+    {
+      "id": "min_wall",
+      "description": "thinnest wall >= 0.8 mm (FDM)",
+      "value": 0.76,
+      "expected": 0.8,
+      "tol": 0.0,
+      "passed": false,
+      "priority": "P0"
+    },
+    {
+      "id": "probe.min_feature",
+      "description": "thinnest feature 0.76 mm < 0.8 mm: too thin for a 0.4 mm nozzle",
+      "value": 0.76,
+      "expected": 0.8,
+      "tol": null,
+      "passed": false,
+      "priority": "P1"
+    },
+    {
+      "id": "probe.overhang",
+      "description": "0 % of the surface overhangs more than 45° in the best orientation (mounting face (Z=0) on the bed, as modelled); prints without supports",
+      "value": null,
+      "expected": null,
+      "tol": null,
+      "passed": true,
+      "priority": "P1"
+    }
+  ],
+  "validity": {
+    "is_valid": true,
+    "single_solid": true,
+    "watertight": true,
+    "volume_mm3": 3507.6073933599996,
+    "bbox_mm": [
+      85.66900000000001,
+      54.055,
+      0.76
+    ],
+    "min_wall_mm": 0.76,
+    "issues": [
+      "thinnest wall about 0.76 mm (< 0.8 mm)"
+    ]
+  },
+  "vetoes": [],
+  "max_error_mm": 0.15077561664934924,
+  "origin": "synthetic",
+  "versions": {
+    "verifier": "0.1.0",
+    "opencv": "5.0.0",
+    "numpy": "2.5.4",
+    "scipy": "1.18.1",
+    "trimesh": "5.2.0",
+    "python": "3.12.13",
+    "cadquery": "2.8.0",
+    "ocp": "7.9.3.1"
+  },
+  "hashes": {
+    "code_sha256": "d1e8dcf483154b54a95d67ca9bb55d476c3010b4857eb7f11a921cb6a5196ec0",
+    "params_sha256": "2a56666eacbd9bb3caf07a0265434bc886cfb0f01f26c57ace2ced78e99bb4a3",
+    "measurements_sha256": "6abb21f07584ba01180c16d6dc0b404a103918168b7035680b8b011d0709979d",
+    "partspec_sha256": "048ed4d66627ee0f91168bbf87f3b642424b7154160111c7e35dcf0df5e85c45",
+    "mesh_sha256": "4bb75485a0504e621a0a9d2f391f6a01f3ea5f3087505734160ca80b2269163f",
+    "overlay:residual_top.png": "f2588b05835fdc06b69affaec1f91c37579041e866b46f25047ca27bd71dd734"
+  },
+  "ms": 330
+}

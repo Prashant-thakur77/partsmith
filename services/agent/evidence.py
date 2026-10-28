@@ -288,16 +288,36 @@ def _measured_value(run: FixRun, uid: str) -> float | None:
 # ------------------------------------------------------------------------------------------------- broken parts
 
 
-def mirror_completion(outline: Sequence[Sequence[float]], axis_deg: float | None) -> list[tuple[float, float]] | None:
-    """Union of the outline and its mirror image about the symmetry axis through the origin (part frame)."""
+MIRROR_CROSS_MIN_IOU = 0.8  # the outline must still be this symmetric about the cross axis to be mirrored about it too
+MIRROR_SNAP_DEG = 2.0  # a symmetry axis this close to a part-frame axis is that axis (the break tilts the estimate)
+
+
+def _mirror(poly: Any, axis_deg: float) -> Any:
     from shapely.affinity import rotate, scale
+
+    return rotate(scale(rotate(poly, -axis_deg, origin=(0, 0)), 1.0, -1.0, origin=(0, 0)), axis_deg, origin=(0, 0))
+
+
+def mirror_completion(outline: Sequence[Sequence[float]], axis_deg: float | None) -> list[tuple[float, float]] | None:
+    """Union of the outline and its mirror images (part frame, axes through the origin).
+
+    Always mirrored about the measured symmetry axis (snapped to the part frame's axis when within
+    ``MIRROR_SNAP_DEG``: a tilted mirror adds slivers along every edge). Also about the axis across it when the outline is still nearly
+    symmetric about that one (mirror IoU >= ``MIRROR_CROSS_MIN_IOU``): a piece missing from the middle of an end is
+    its own mirror image about the long axis, so only the end-to-end mirror can restore it."""
     from shapely.geometry import Polygon
 
     if axis_deg is None or len(outline) < 3:
         return None
     poly = Polygon(outline).buffer(0)
-    m = rotate(scale(rotate(poly, -axis_deg, origin=(0, 0)), 1.0, -1.0, origin=(0, 0)), axis_deg, origin=(0, 0))
-    u = poly.union(m)
+    snap = round(axis_deg / 90.0) * 90.0
+    if abs(axis_deg - snap) <= MIRROR_SNAP_DEG:
+        axis_deg = snap
+    u = poly.union(_mirror(poly, axis_deg))
+    cross = _mirror(poly, axis_deg + 90.0)
+    inter = poly.intersection(cross).area
+    if inter / max(poly.area * 2 - inter, 1e-9) >= MIRROR_CROSS_MIN_IOU:
+        u = u.union(cross)
     if u.geom_type != "Polygon":
         return None
     return [(round(x, 3), round(y, 3)) for x, y in list(u.exterior.coords)[:-1]]
@@ -310,6 +330,8 @@ def propose_completion(run: FixRun) -> None:
     if spec is None or top is None or spec.broken_region is None:
         return
     br = spec.broken_region
+    if br.kind != "outline":  # a missing top: the verifier takes the break height from the side photo
+        return
     completed = mirror_completion(top.outline_mm, top.symmetry_axis_deg)
     if completed is not None:
         br.polygon_mm = [(float(p[0]), float(p[1])) for p in completed]

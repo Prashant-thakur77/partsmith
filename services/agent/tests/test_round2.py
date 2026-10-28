@@ -253,6 +253,42 @@ def test_mirror_completion_restores_a_symmetric_outline() -> None:
     assert Polygon(out).area == pytest.approx(200.0, abs=0.5)
 
 
+def test_mirror_completion_restores_a_notch_in_the_middle_of_an_end() -> None:
+    """A piece missing from the middle of an end is its own mirror image about the long axis: only the end-to-end
+    mirror restores it (the cover-tab demo's break)."""
+    from shapely.geometry import Polygon
+
+    notched = [(-20.0, -10.0), (20.0, -10.0), (20.0, -4.0), (14.0, -4.0), (14.0, 4.0), (20.0, 4.0), (20.0, 10.0),
+               (-20.0, 10.0)]  # fmt: skip
+    out = evidence.mirror_completion(notched, 0.0)
+    assert out is not None and Polygon(out).area == pytest.approx(800.0, abs=1.0)
+    # An outline far from symmetric end to end (a hook-like L) is not mirrored across: that would invent material.
+    ell = [(-20.0, -10.0), (20.0, -10.0), (20.0, 10.0), (12.0, 10.0), (12.0, -4.0), (-20.0, -4.0)]
+    out_l = evidence.mirror_completion(ell, 0.0)
+    assert out_l is not None
+    assert Polygon(out_l).area == pytest.approx(Polygon(ell).union(Polygon([(x, -y) for x, y in ell])).area, abs=1.0)
+
+
+def test_a_broken_part_never_switches_to_a_copy_of_its_outline(tmp_path: Path) -> None:
+    """Free code extrudes the measured outline: on a broken part that copies the break into the replacement."""
+    run = _bare_run(tmp_path)
+    assert run.spec is not None
+    run.strategy = "template"
+    run.spec.broken_region = BrokenRegion(polygon_mm=[], strategy="mirror")
+    assert run.switch_strategy() is True
+    assert run.strategy == "template" and not run.switches
+    assert any("copy the break" in str(e.msg) for e in run.job.events if e.t == "log")
+
+
+def test_a_missing_top_gets_no_outline_completion(tmp_path: Path) -> None:
+    run = _bare_run(tmp_path)
+    assert run.spec is not None
+    run.spec.broken_region = BrokenRegion(polygon_mm=[], strategy="template", kind="height")
+    evidence.propose_completion(run)
+    assert run.spec.broken_region.polygon_mm == []
+    assert not [e for e in run.job.events if e.t == "artifact"]
+
+
 def test_user_taps_become_feature_points(tmp_path: Path) -> None:
     run = _bare_run(tmp_path)
     run.job.write_json(

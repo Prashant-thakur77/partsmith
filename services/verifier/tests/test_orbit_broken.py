@@ -15,7 +15,7 @@ from services.geom_worker.sandbox import ExecResult, WarmPool, run_program
 from services.verifier.align import Rigid2D
 from services.verifier.camera import CameraView
 from services.verifier.synthetic import mat_placement, synthetic_camera_view, synthetic_top_measurement
-from services.verifier.verify import broken_region, verify
+from services.verifier.verify import PhotoMask, broken_region, verify
 
 W, H = 1600, 1200
 K = np.array([[1500.0, 0, W / 2], [0, 1500.0, H / 2], [0, 0, 1.0]])
@@ -223,3 +223,100 @@ def test_broken_sample_verifies_outside_the_break(vpool: WarmPool) -> None:
     assert v.views[0].hausdorff_mm < 0.5 and v.views[0].mean_mm < 0.15
     assert {"bbox.x", "bbox.y"} <= set(out.broken["informational_tests"])
     assert all(t.priority == "P1" for t in v.tests if t.id in ("bbox.x", "bbox.y"))
+    # their residuals compare the intact model with the broken photo: reported apart, never in the max error
+    assert not any(r.feature_id == "outline" for r in v.residuals)
+    assert {r["quantity"] for r in out.broken["informational_residuals"]} == {"length", "width"}
+
+
+POST_PLATE = """
+import cadquery as cq
+
+PARAMS = {
+    "post_h": (17.0, 1.0, 40.0, 0.1, "mm", True, "Post height above the plate"),
+    "post_x": (12.0, -15.0, 15.0, 0.1, "mm", True, "Post position"),
+}
+
+
+def build(p):
+    plate = cq.Workplane("XY").rect(40, 20).extrude(3)
+    post = cq.Workplane("XY").workplane(offset=3).center(p["post_x"], 0).rect(8, 8).extrude(p["post_h"])
+    return plate.union(post)
+
+
+result = build({k: v[0] for k, v in PARAMS.items()})
+"""
+
+
+def _side_measurement(r: ExecResult, ppm: float = 20.0) -> tuple[Measurements, PhotoMask]:
+    """Rectified side "photo" of a model (side_xz silhouette, exact): the short side is its height."""
+    from services.verifier.render import Frame, project, silhouette
+
+    assert r.mesh is not None
+    v, f = r.mesh.vertices, r.mesh.faces
+    pose = Rigid2D(5.0, 2.0, -1.0, False)
+    frame = Frame.around(pose.apply(project(v, "side_xz")), ppm, margin_mm=4.0)
+    mask = silhouette(v, f, "side_xz", frame, transform=pose.matrix())
+    lo, hi = v.min(axis=0), v.max(axis=0)
+    length, height = float(hi[0] - lo[0]), float(hi[2] - lo[2])
+    meas = Measurements(
+        view="side", origin="synthetic", outline_mm=[(-length / 2, -height / 2), (length / 2, -height / 2),
+                                                     (length / 2, height / 2), (-length / 2, height / 2)],
+        length=Measured(value=length), width=Measured(value=height), area_mm2=float(mask.sum()) / ppm**2,
+    )  # fmt: skip
+    return meas, PhotoMask(mask, frame)
+
+
+def test_a_missing_top_is_left_out_of_the_side_view_only(vpool: WarmPool) -> None:
+    """The top of the post snapped off: the side photo shows a 15 mm stump of a 20 mm part. The intact model is
+    compared below the break; the side height becomes informational and leaves the max error; an intact model with
+    the post in the wrong place still fails."""
+
+    def build(post_h: float, post_x: float = 12.0) -> ExecResult:
+        r = run_program(POST_PLATE, {"post_h": post_h, "post_x": post_x}, pool=vpool, outputs=())
+        r.cleanup()
+        return r
+
+    broken, intact, wrong = build(12.0), build(17.0), build(17.0, 4.0)
+    top_m, top_p = synthetic_top_measurement(broken, pose=replace_pose())
+    side_m, side_p = _side_measurement(broken)
+    meas, masks = {"top": top_m, "side": side_m}, {"top": top_p, "side": side_p}
+    spec = PartSpec(
+        family=Family.hook, base_profile=BaseProfile(kind="polyline", points_mm=top_m.outline_mm),
+        thickness=Measured(value=3.0, source=Source.user_stated),
+        broken_region=BrokenRegion(polygon_mm=[], strategy="template", kind="height"),
+    )  # fmt: skip
+
+    plain = verify(intact, meas, None, photo_masks=masks).verification
+    side_plain = next(m for m in plain.views if m.view == "side")
+    assert side_plain.hausdorff_mm > 4.0 and not plain.verified  # the photo shows the stump
+
+    out = verify(intact, meas, spec, photo_masks=masks)
+    v = out.verification
+    assert v.verified, v.reasons
+    assert out.broken["kind"] == "height" and out.broken["break_height_mm"] == pytest.approx(15.0, abs=0.1)
+    assert "side.thickness" in out.broken["informational_tests"] and "top" not in out.broken["excluded_mm2"]
+    assert not any(r.feature_id == "side" for r in v.residuals)  # 20 mm model vs 15 mm stump: not a residual
+    (row,) = out.broken["informational_residuals"]
+    assert row["model_mm"] == pytest.approx(20.0, abs=0.2) and row["measured_mm"] == pytest.approx(15.0, abs=0.1)
+    assert v.max_error_mm is not None and v.max_error_mm < 0.5
+    assert any("top of the part is broken off" in s for s in v.reasons)
+
+    bad = verify(wrong, meas, spec, photo_masks=masks).verification
+    assert not bad.verified  # below the break and from above, the misplaced post is still seen
+
+
+def test_a_notch_in_an_end_makes_only_the_length_informational() -> None:
+    """A piece missing from the middle of an end: the length is measured on the broken end, the width is not."""
+    from shapely.geometry import box
+
+    from services.verifier.part_tests import evaluate_tests, generate_tests
+    from services.verifier.verify import _broken_tests
+
+    outline = [(-20.0, -10.0), (20.0, -10.0), (20.0, -4.0), (14.0, -4.0), (14.0, 4.0), (20.0, 4.0), (20.0, 10.0),
+               (-20.0, 10.0)]  # fmt: skip
+    top = Measurements(view="top", origin="synthetic", outline_mm=outline, length=Measured(value=40.0),
+                       width=Measured(value=20.0), area_mm2=752.0)  # fmt: skip
+    tests = evaluate_tests(generate_tests(None, {"top": top}), {"bbox.x": 40.0, "bbox.y": 20.0})
+    out, informational = _broken_tests(tests, box(14.0, -4.0, 20.0, 4.0), {"top": top})
+    assert informational == ["bbox.x"]
+    assert next(t for t in out if t.id == "bbox.y").priority == "P0"

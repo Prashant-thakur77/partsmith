@@ -1,5 +1,0 @@
-{
-  "ok": false,
-  "reason": "best effort: hole_1 is 0.4 mm off its measured position. Print the fit-test coupon first: it checks the critical holes and edges in a few minutes of printing.",
-  "requires_ack": true
-}

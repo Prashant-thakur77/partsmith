@@ -466,9 +466,9 @@ def compare_camera(
     excl = excluded(P)
     keep = ~excl if excl is not None else np.ones_like(model)
     # Distances between the two sub-pixel edges (not pixel staircases: one pixel is ~0.3 mm here).
-    m_pts = M.points_outside(_contour_points_mm(_subpx_contours(cov), frame), frame, excl)
-    p_pts = M.points_outside(_contour_points_mm(photo_cs, frame), frame, excl)
-    d = M.contour_distances_mm(m_pts, p_pts)
+    m_all, p_all = _contour_points_mm(_subpx_contours(cov), frame), _contour_points_mm(photo_cs, frame)
+    m_pts, p_pts = M.points_outside(m_all, frame, excl), M.points_outside(p_all, frame, excl)
+    d = M.contour_distances_mm(m_pts, p_pts, m_all, p_all)
     over, under = M.over_under_mm2(photo & keep, model & keep, frame)
     worst_part: tuple[float, float] | None = None
     if d.worst_point_mm is not None:

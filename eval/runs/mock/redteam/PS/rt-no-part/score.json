@@ -22,7 +22,7 @@
  "tokens_in": 0,
  "tokens_out": 0,
  "model_calls": 2,
- "model_ms": 97,
+ "model_ms": 98,
  "provider_modes": [
   "mock"
  ],

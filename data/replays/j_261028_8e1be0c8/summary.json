@@ -1,0 +1,16 @@
+{
+  "id": "j_261028_8e1be0c8",
+  "kind": "fix",
+  "status": "done",
+  "created_at": 1793146027.114195,
+  "updated_at": 1793146032.6453454,
+  "title": "Spacer / standoff (synthetic, clean) (synthetic sample)",
+  "origin": "synthetic",
+  "provider_mode": "mock",
+  "verified": true,
+  "max_error_mm": 0.10099999999999998,
+  "iterations": 1,
+  "cost_usd": 0.0,
+  "part_slug": null,
+  "is_replay": false
+}

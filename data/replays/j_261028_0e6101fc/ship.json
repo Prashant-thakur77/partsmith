@@ -1,5 +1,0 @@
-{
-  "ok": false,
-  "reason": "best effort: the side outline differs from the photo by up to 3.4 mm near (-27, 5) mm. Print the fit-test coupon first: it checks the critical holes and edges in a few minutes of printing.",
-  "requires_ack": true
-}

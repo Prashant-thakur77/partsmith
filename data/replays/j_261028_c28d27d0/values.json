@@ -1,0 +1,13 @@
+{
+  "length": 53.0,
+  "width": 30.0,
+  "thickness": 2.0,
+  "tongue_length": 3.0,
+  "tongue_width": 6.0,
+  "tongue_count": 1.0,
+  "latch_width": 10.0,
+  "latch_height": 3.5,
+  "latch_overhang": 0.8,
+  "groove_count": 5.0,
+  "corner_radius": 3.0
+}

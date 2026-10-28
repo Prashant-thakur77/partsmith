@@ -271,7 +271,9 @@ export const PartSpecSchema = z.looseObject({
     title: z._default(z.string(), ""),
     thickness: MeasuredSchema,
     features: z._default(z.array(z.looseObject({ kind: z.string(), id: z.string() })), []),
-    broken_region: z.nullish(z.object({ polygon_mm: z.array(point2), strategy: z.string(), note: z.nullish(z.string()) })),
+    broken_region: z.nullish(
+      z.object({ polygon_mm: z.array(point2), strategy: z.string(), kind: z.nullish(z.string()), note: z.nullish(z.string()) }),
+    ),
     unknowns: z._default(z.array(z.object({ id: z.string(), question: z.string() })), []),
     intent: z._default(z.string(), ""),
     refusal: z.nullish(z.string()),

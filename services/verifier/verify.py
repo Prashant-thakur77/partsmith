@@ -247,10 +247,8 @@ def _compare_view(
         else None
     )
     keep = ~excl if excl is not None else np.ones_like(mm)
-    d = M.contour_distances_mm(
-        M.points_outside(M.contour_points_mm(mm, frame), frame, excl),
-        M.points_outside(M.contour_points_mm(photo_mask, frame), frame, excl),
-    )
+    m_all, p_all = M.contour_points_mm(mm, frame), M.contour_points_mm(photo_mask, frame)
+    d = M.contour_distances_mm(M.points_outside(m_all, frame, excl), M.points_outside(p_all, frame, excl), m_all, p_all)
     over, under = M.over_under_mm2(photo_mask & keep, mm & keep, frame)
     vm = ViewMetrics(
         view=view,
@@ -277,7 +275,7 @@ def broken_region(partspec: PartSpec | None, top: Measurements | None) -> tuple[
     ``polygon_mm`` may be the completed outline (as the mirror completion writes it) or just the patch: when it covers
     most of the measured outline, the broken piece is what it adds outside the photo's outline; otherwise it is the
     polygon itself. Returns (region or None, report fields)."""
-    if partspec is None or partspec.broken_region is None:
+    if partspec is None or partspec.broken_region is None or partspec.broken_region.kind != "outline":
         return None, {}
     br = partspec.broken_region
     info: dict[str, Any] = {"strategy": br.strategy, "note": br.note or "", "region_mm2": 0.0}
@@ -306,13 +304,50 @@ def broken_region(partspec: PartSpec | None, top: Measurements | None) -> tuple[
     return region, info
 
 
-def _prism(poly_model: Polygon, vertices: FloatArray) -> Mesh | None:
+def broken_height(
+    partspec: PartSpec | None, measurements: Mapping[str, Measurements]
+) -> tuple[float | None, dict[str, Any]]:
+    """Break height (mm above the bed) of a part whose top is missing (``BrokenRegion.kind == "height"``).
+
+    The model only says the top is missing; code takes the height from the side photo (the short side of its
+    silhouette, the same quantity as the ``side.thickness`` test). Returns (height or None, report fields)."""
+    if partspec is None or partspec.broken_region is None or partspec.broken_region.kind != "height":
+        return None, {}
+    br = partspec.broken_region
+    info: dict[str, Any] = {"strategy": br.strategy, "note": br.note or "", "kind": "height", "region_mm2": 0.0}
+    side = measurements.get("side")
+    if side is None:
+        info["statement"] = (
+            "The top of the part is broken off but no side photo shows where, so the whole silhouette was compared; "
+            "the missing height is inferred."
+        )
+        return None, info
+    h = float(side.width.value)
+    info["break_height_mm"] = round(h, 2)
+    info["statement"] = (
+        f"The top of the part is broken off: the side photo shows it {h:.1f} mm tall. Everything above "
+        f"{max(h - BROKEN_MARGIN_MM, 0.0):.1f} mm is inferred (restored by {br.strategy}), not verified against the "
+        "photos; it is left out of the side and walk-around comparisons. The top view is compared in full."
+    )
+    return h, info
+
+
+def _slab(vertices: FloatArray, height_mm: float) -> Mesh | None:
+    """The missing top of a part as a box volume (model coordinates): everything ``height_mm`` above the model's base."""
+    lo, hi = np.min(vertices, axis=0), np.max(vertices, axis=0)
+    z0, z1 = float(lo[2]) + height_mm, float(hi[2]) + 1.0
+    if z0 >= z1:
+        return None
+    return _prism(box(float(lo[0]) - 1.0, float(lo[1]) - 1.0, float(hi[0]) + 1.0, float(hi[1]) + 1.0), vertices, z0)
+
+
+def _prism(poly_model: Polygon, vertices: FloatArray, z_from: float | None = None) -> Mesh | None:
     """The broken region as a vertical prism over the model's full height (model coordinates), for camera views."""
     import shapely
 
     if poly_model.is_empty:
         return None
-    z0, z1 = float(np.min(vertices[:, 2])) - 1.0, float(np.max(vertices[:, 2])) + 1.0
+    z0, z1 = float(np.min(vertices[:, 2])) - 1.0 if z_from is None else z_from, float(np.max(vertices[:, 2])) + 1.0
     tris = [t for t in shapely.constrained_delaunay_triangles(poly_model).geoms if isinstance(t, Polygon)]
     v: list[tuple[float, float, float]] = []
     f: list[tuple[int, int, int]] = []
@@ -334,16 +369,28 @@ def _prism(poly_model: Polygon, vertices: FloatArray) -> Mesh | None:
     return np.asarray(v, dtype=np.float64), np.asarray(f, dtype=np.int64)
 
 
-def _band(prism: Mesh | None, projection: str) -> Polygon | None:
-    """The broken prism seen in a rectified side view: a vertical band over its extent along the view's u axis."""
-    if prism is None:
-        return None
+def _band(
+    region_model: Polygon | MultiPolygon | None, projection: str, *, above_mm: float | None = None
+) -> Polygon | MultiPolygon | None:
+    """The broken region seen in a rectified side view (model coordinates): one vertical band over each piece's
+    extent along the view's u axis (one band per piece, so two small pieces at the two ends do not blank out the
+    whole length between them), or (``above_mm``: the missing top) a horizontal band above that height."""
     a = {"side_xz": 0, "side_yz": 1}.get(projection)
     if a is None:
         return None
-    lo, hi = float(prism[0][:, a].min()), float(prism[0][:, a].max())
-    out: Polygon = box(lo, -1e3, hi, 1e3)
-    return out
+    if above_mm is not None:
+        out: Polygon = box(-1e3, above_mm, 1e3, 1e3)
+        return out
+    if region_model is None or region_model.is_empty:
+        return None
+    pieces = list(region_model.geoms) if isinstance(region_model, MultiPolygon) else [region_model]
+    bands = [box(g.bounds[a], -1e3, g.bounds[a + 2], 1e3) for g in pieces if not g.is_empty]
+    if not bands:
+        return None
+    merged = bands[0]
+    for b in bands[1:]:
+        merged = merged.union(b)
+    return merged if isinstance(merged, Polygon | MultiPolygon) else None
 
 
 def cam_ppm(cc: CameraCompare) -> float:
@@ -388,25 +435,31 @@ def _orbit_reason(frames: Sequence[ViewResult], agg: ViewMetrics, skipped: int, 
 
 
 def _broken_tests(
-    tests: list[PartTest], region: Polygon, measurements: Mapping[str, Measurements]
+    tests: list[PartTest], region: Polygon | None, measurements: Mapping[str, Measurements]
 ) -> tuple[list[PartTest], list[str]]:
     """Dimension tests whose span crosses the broken region become informational (P1): the photo shows the broken
-    part, the model is the intact replacement."""
-    grown = region.buffer(BROKEN_MARGIN_MM)
+    part, the model is the intact replacement. ``region`` None: the top is missing (a height break), which only the
+    side-view thickness spans."""
+    grown = region.buffer(BROKEN_MARGIN_MM) if region is not None else None
     top = measurements.get("top")
     outline = Polygon(top.outline_mm).buffer(0) if top is not None and len(top.outline_mm) >= 3 else None
-    touches_outline = outline is None or grown.intersects(outline.boundary) or not grown.disjoint(outline)
+    # The length (width) spans the break when the broken region reaches an end (a side) of the footprint's
+    # minimum-area rectangle: the photo's length is then measured on the broken end. A notch in a long edge leaves the
+    # length as measured, and one in an end leaves the width.
+    spans = {"bbox.x": region is not None, "bbox.y": region is not None}
+    if region is not None and outline is not None and not outline.is_empty:
+        spans["bbox.x"], spans["bbox.y"] = _reaches_ends(outline, region)
     hole_at = {h.id: h.center_mm for h in top.holes} if top is not None else {}
     out: list[PartTest] = []
     informational: list[str] = []
     for t in tests:
         cross = False
         if t.priority == "P0":
-            if t.id in ("bbox.x", "bbox.y") and touches_outline:
+            if t.id in ("bbox.x", "bbox.y") and spans[t.id]:
                 cross = True
             elif t.id == "side.thickness":
-                cross = True  # the broken prism runs through the whole side profile
-            elif t.id.endswith(".diameter") and t.id.split(".")[0] in hole_at:
+                cross = True  # the broken prism (or the missing top) runs through the side profile
+            elif grown is not None and t.id.endswith(".diameter") and t.id.split(".")[0] in hole_at:
                 c = hole_at[t.id.split(".")[0]]
                 cross = grown.contains(Point(c[0], c[1]))
         if cross:
@@ -420,6 +473,42 @@ def _broken_tests(
             )
         out.append(t)
     return out, informational
+
+
+def _reaches_ends(outline: Polygon, region: Any) -> tuple[bool, bool]:
+    """(along the long side, along the short side): does ``region`` come within ``BROKEN_MARGIN_MM`` of either end
+    of the outline's minimum-area rectangle (or reach past it)?"""
+    xy = np.asarray(outline.minimum_rotated_rectangle.exterior.coords)[:3]
+    e1, e2 = xy[1] - xy[0], xy[2] - xy[1]
+    long_dir = e1 if np.hypot(*e1) >= np.hypot(*e2) else e2
+    ang = float(np.degrees(np.arctan2(long_dir[1], long_dir[0])))
+    ox0, oy0, ox1, oy1 = affinity.rotate(outline, -ang, origin=(0, 0)).bounds
+    rx0, ry0, rx1, ry1 = affinity.rotate(region, -ang, origin=(0, 0)).bounds
+    m = BROKEN_MARGIN_MM
+    return (rx0 <= ox0 + m or rx1 >= ox1 - m), (ry0 <= oy0 + m or ry1 >= oy1 - m)
+
+
+# Residual row (feature_id, quantity) behind each dimension test that a break can make informational.
+_TEST_RESIDUAL = {
+    "bbox.x": ("outline", "length"),
+    "bbox.y": ("outline", "width"),
+    "side.thickness": ("side", "thickness"),
+}
+
+
+def _split_broken_residuals(
+    residuals: list[FeatureResidual], informational: Sequence[str]
+) -> tuple[list[FeatureResidual], list[FeatureResidual]]:
+    """(kept, informational) residual rows: a row behind an informational test compares the intact model with the
+    broken photo, so it is reported apart and never counts towards the pass rule, the max error or the fixer."""
+    keys = {_TEST_RESIDUAL[t] for t in informational if t in _TEST_RESIDUAL}
+    holes = {t.split(".")[0] for t in informational if t.endswith(".diameter")}
+    kept: list[FeatureResidual] = []
+    info: list[FeatureResidual] = []
+    for r in residuals:
+        broken = (r.feature_id, r.quantity) in keys or r.feature_id in holes
+        (info if broken else kept).append(r)
+    return kept, info
 
 
 def _snap_union(base: Frame, other: Frame) -> Frame:
@@ -502,6 +591,14 @@ def verify(
 
     broken_part, broken_info = broken_region(partspec, measurements.get("top"))
     prism: Mesh | None = None  # broken region as a volume in model coordinates (set once the top view is registered)
+    region_model: Polygon | MultiPolygon | None = None  # the same region as a footprint in model coordinates
+    break_h, height_info = broken_height(partspec, measurements)
+    height_break = height_info != {}
+    if height_break:
+        broken_info = height_info
+        # the missing top as a volume above the break: left out of the side and walk-around views, never the top view
+        prism = _slab(mesh.vertices, break_h) if break_h is not None else None
+    slab_z = float(np.min(mesh.vertices[:, 2])) + break_h if break_h is not None else None
 
     def gate(vr: ViewResult, short_side: float) -> None:
         vr.short_side_mm = short_side
@@ -521,7 +618,7 @@ def verify(
         best: tuple[ViewResult, M.ContourDistances] | None = None
         for proj in projections:
             ex_frame = broken_part if view == "top" else None
-            ex_model = _band(prism, proj) if view != "top" else None
+            ex_model = _band(region_model, proj, above_mm=slab_z) if view != "top" else None
             r = _compare_view(
                 view, proj, mesh.vertices, mesh.faces, photo, exclude_frame=ex_frame, exclude_model=ex_model
             )
@@ -532,12 +629,13 @@ def verify(
         vr.matrix = vr.transform.matrix()
         vr.rectified_metrics = vr.metrics
         if view == "top" and broken_part is not None:
-            prism = _prism(_transform_poly(broken_part, np.linalg.inv(vr.matrix)), mesh.vertices)
+            region_model = _transform_poly(broken_part, np.linalg.inv(vr.matrix))
+            prism = _prism(region_model, mesh.vertices)
         cam = (camera_views or {}).get(view)
         if cam is not None:
             cc = compare_camera(
                 view, vr.projection, mesh.vertices, mesh.faces, cam, vr.matrix, refine=refine_in_photo,
-                origin=meas.origin, exclude=prism,
+                origin=meas.origin, exclude=None if height_break and view == "top" else prism,
             )  # fmt: skip
             vr.camera, vr.frame, vr.metrics, vr.matrix = cc, "camera", cc.metrics, cc.model_to_part
             vr.excluded_mask, vr.excluded_mm2 = cc.excluded_mask, cc.excluded_mm2
@@ -553,7 +651,8 @@ def verify(
         view_results[view] = vr
         view_metrics.append(vr.metrics)
         if view == "top" and broken_part is not None and vr.matrix is not None:
-            prism = _prism(_transform_poly(broken_part, np.linalg.inv(vr.matrix)), mesh.vertices)
+            region_model = _transform_poly(broken_part, np.linalg.inv(vr.matrix))
+            prism = _prism(region_model, mesh.vertices)
 
     # Walk-around frames: calibrated views without their own Measurements, compared in their own photo frames.
     orbit_cams = {k: c for k, c in (camera_views or {}).items() if k not in measurements}
@@ -586,8 +685,10 @@ def verify(
     )
     tests = evaluate_tests(generate_tests(partspec, measurements), values)
     informational: list[str] = []
-    if broken_part is not None:
+    informational_residuals: list[FeatureResidual] = []
+    if broken_part is not None or break_h is not None:
         tests, informational = _broken_tests(tests, broken_part, measurements)
+        residuals, informational_residuals = _split_broken_residuals(residuals, informational)
     probes = _functional(exec_result, feats, hole_names)
     tests += as_part_tests(probes)  # P1: reported, never part of the pass rule
     functional = {
@@ -620,6 +721,7 @@ def verify(
             **broken_info,
             "excluded_mm2": {k: round(vr.excluded_mm2, 2) for k, vr in view_results.items() if vr.excluded_mm2 > 0},
             "informational_tests": informational,
+            "informational_residuals": [r.model_dump(mode="json") for r in informational_residuals],
         }
         reasons.append(broken_info["statement"])
         if informational:
@@ -627,6 +729,12 @@ def verify(
                 "Informational only (they span the broken region the photo cannot show): "
                 + ", ".join(informational)
                 + "."
+            )
+        for ir in informational_residuals:
+            reasons.append(
+                f"{ir.feature_id} {ir.quantity}: model {ir.model_mm:.2f} mm vs {ir.measured_mm:.2f} mm on the broken "
+                f"part ({ir.delta_mm:+.2f} mm) - NOT verified: the photo shows the broken part, so the replacement's "
+                "value here is inferred and cannot be checked against it (informational, not in the max error)."
             )
     reasons += hole_reasons
     errors = [vm.hausdorff_mm for vm in view_metrics] + [abs(r.delta_mm) for r in residuals]

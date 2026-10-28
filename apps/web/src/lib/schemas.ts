@@ -63,6 +63,7 @@ export interface Boss {
 export interface BrokenRegion {
   polygon_mm: Array<[number, number]>;
   strategy: "mirror" | "mating_part" | "template" | "user";
+  kind?: "outline" | "height";
   note?: string | null;
 }
 

@@ -49,8 +49,10 @@ The table below shows these checks being attacked (all numbers are written by sc
 |---|---|---|
 | Intact parts, normal photos → accepted (mock providers) | 6/6 handled as expected, 95 % CI [0.61, 1.00] | `eval/reports/latest/report.json` → `tables.control` |
 | Photos that must be rejected or refused (mock providers) | 10/10 handled as expected, 95 % CI [0.72, 1.00] | `eval/reports/latest/report.json` → `tables.redteam` |
+| Verified synthetic parts (mock providers) that are > 0.5 mm off the ground truth | 0/2 (config PS) | `eval/reports/latest/report.json` → `tables.synthetic` |
+| Verified reference objects (mock providers) that are > 0.5 mm off the ground truth | 1/2 (config PS) | `eval/reports/latest/report.json` → `tables.reference_objects` |
 | Edit a hole: scale the mesh vs change the program's knob (17 parts, 88 edits) | hole spacing moved 2.771 mm (median) with mesh scaling, 0.0 mm with the knob | `eval/reports/latest/program_vs_mesh.md` |
-| A model that lies or cheats (says verified, edits the record, loosens limits, rescales to fit, smuggles imports, exports without consent) | 16/16 attempts blocked by code | `eval/reports/latest/bypass.json` |
+| A model that lies or cheats (says verified, edits the record, loosens limits, rescales to fit, fakes a break, smuggles imports, exports without consent) | 17/17 attempts blocked by code | `eval/reports/latest/bypass.json` |
 | Real repairs logged | pending: no sessions logged yet (data/impact/sessions.yaml) | `data/impact/sessions.yaml` |
 <!-- END:evidence -->
 
@@ -66,9 +68,9 @@ workspace shows them live. This table's file:line links are generated from the c
 | **SAM 3.1** | Meta Model API | The measuring instrument: text-prompted part masks, point-prompted feature cuts (holes, slots, tapped points) and video tracking of a walk-around clip. Code turns every mask into millimetres | [`services/agent/providers/routing.py:102`](services/agent/providers/routing.py#L102) · [`services/metrology/segment.py:664`](services/metrology/segment.py#L664) · [`services/agent/evidence.py:90`](services/agent/evidence.py#L90) · [`services/agent/evidence.py:157`](services/agent/evidence.py#L157) |
 | **Muse Spark 1.3** | Meta Model API | Understand stage: family, features, broken region, unknowns (strict PartSpec JSON), and the pixel it saw each hole or slot at, which SAM 3.1 then cuts and code measures | [`services/agent/orchestrator.py:974`](services/agent/orchestrator.py#L974) · [`services/agent/evidence.py:56`](services/agent/evidence.py#L56) |
 | **Muse Spark Open** | open weights (Baseten / Fireworks / Together) | CadQuery builder, and the fix agent that operates PartSmith's own tools (inspect residuals, measure, segment, render, run tests, set knobs) until the verifier agrees | [`services/agent/orchestrator.py:1287`](services/agent/orchestrator.py#L1287) · [`services/agent/agent_loop.py:457`](services/agent/agent_loop.py#L457) |
-| **Muse Glimmer 30B** | open weights (llama.cpp on a Modal GPU) | Independent veto-only judge, shown side-by-side photo and model crops zoomed on the verifier's worst spots | [`services/agent/orchestrator.py:1760`](services/agent/orchestrator.py#L1760) · [`infra/modal/glimmer.py:51`](infra/modal/glimmer.py#L51) |
+| **Muse Glimmer 30B** | open weights (llama.cpp on a Modal GPU) | Independent veto-only judge, shown side-by-side photo and model crops zoomed on the verifier's worst spots | [`services/agent/orchestrator.py:1766`](services/agent/orchestrator.py#L1766) · [`infra/modal/glimmer.py:51`](infra/modal/glimmer.py#L51) |
 | **Muse Wonder** | Meta Model API | Finds a published spec for the named appliance with web search. Code accepts a value only if a search really ran and its URL is one the search returned; cited values fill unknowns and never override a measurement. Also plans part families for the factory | [`services/agent/evidence.py:209`](services/agent/evidence.py#L209) · [`services/agent/providers/spec.py:140`](services/agent/providers/spec.py#L140) · [`services/registry/steer.py:545`](services/registry/steer.py#L545) |
-| **Muse Image** | Meta Model API | Completes the broken region of the photo (accepted only if markers and the intact part are unchanged), an in-place repair preview and an install card (both labelled AI images) | [`services/agent/evidence.py:319`](services/agent/evidence.py#L319) · [`services/metrology/recon_gate.py:205`](services/metrology/recon_gate.py#L205) · [`services/media/preview.py:78`](services/media/preview.py#L78) |
+| **Muse Image** | Meta Model API | Completes the broken region of the photo (accepted only if markers and the intact part are unchanged), an in-place repair preview and an install card (both labelled AI images) | [`services/agent/evidence.py:341`](services/agent/evidence.py#L341) · [`services/metrology/recon_gate.py:205`](services/metrology/recon_gate.py#L205) · [`services/media/preview.py:78`](services/media/preview.py#L78) |
 | **Muse Voice Transcribe** | Meta Model API | Hindi/English voice edits ("make the hole a bit bigger") mapped to knob changes, and spoken answers | [`services/media/voice.py:452`](services/media/voice.py#L452) |
 | **SAM 3 (open weights)** | open weights (Modal GPU) | All-open-weights segmentation path and bench | [`infra/modal/sam3.py:47`](infra/modal/sam3.py#L47) |
 <!-- END:meta-tooling -->
@@ -122,7 +124,7 @@ Every number here is written by `make bench` (`tools/readme.py` reads `eval/repo
 mixed: synthetic photos (exact), standard reference objects (published specs), real broken parts (school ruler, ±0.5 mm).
 
 <!-- BEGIN:bench -->
-Generated 2026-10-27T22:16:43+00:00 at commit `dccb06efecd0811d430833f0b1c63cbe019c9f06` · mode **mock**.
+Generated 2026-10-28T00:20:09+00:00 at commit `b3da84b32abe93633ada9f60314dcf929b6ad68b` · mode **mock**.
 
 > **These rows come from deterministic mock providers (no API keys yet).** They check that the pipeline, verifier and scorer work end to end; they do **not** measure any model. Live numbers replace them after `make live`.
 
@@ -130,37 +132,37 @@ Generated 2026-10-27T22:16:43+00:00 at commit `dccb06efecd0811d430833f0b1c63cbe0
 
 N = 6 · photos: synthetic renders · ground truth: `synthetic_exact` · CI: 95 %: bootstrap over samples (2000 resamples, seeded) for mean errors; Wilson for rates
 
-| config | n | median_abs_err_mm | mean_abs_err_mm | mean_ci95 | pass@0.5 | verified_rate | median_iters |
-|---|---|---|---|---|---|---|---|
-| B0 | 6 | 1.05 | 2.43 | [1.132, 3.602] | 0.167 | 0 | 1 |
-| B1 | 6 | 0.3 | 0.49 | [0.247, 0.739] | 0.333 | 0.167 | 1 |
-| B2 | 6 | 0.3 | 0.515 | [0.150, 0.986] | 0.333 | 0.333 | 2 |
-| PS | 6 | 0.3 | 0.515 | [0.150, 0.986] | 0.333 | 0.333 | 2 |
-| PS-noTemplate | 6 | 0.14 | 2.319 | [0.685, 4.351] | 0.167 | 0.167 | 1 |
-| PS-noJudge | 6 | 0.3 | 0.515 | [0.150, 0.986] | 0.333 | 0.333 | 2 |
-| PS-noHeightCorr | 6 | 0.4 | 0.605 | [0.333, 0.941] | 0.167 | 0 | 4 |
+| config | n | median_abs_err_mm | mean_abs_err_mm | mean_ci95 | pass@0.5 | verified_rate | verified_but_off | median_iters |
+|---|---|---|---|---|---|---|---|---|
+| B0 | 6 | 1.05 | 2.43 | [1.132, 3.602] | 0.167 | 0 | 0/0 | 1 |
+| B1 | 6 | 0.3 | 0.49 | [0.247, 0.739] | 0.333 | 0.167 | 0/1 | 1 |
+| B2 | 6 | 0.3 | 0.515 | [0.150, 0.986] | 0.333 | 0.333 | 0/2 | 2 |
+| PS | 6 | 0.3 | 0.515 | [0.150, 0.986] | 0.333 | 0.333 | 0/2 | 2 |
+| PS-noTemplate | 6 | 0.14 | 2.319 | [0.685, 4.351] | 0.167 | 0.167 | 0/1 | 1 |
+| PS-noJudge | 6 | 0.3 | 0.515 | [0.150, 0.986] | 0.333 | 0.333 | 0/2 | 2 |
+| PS-noHeightCorr | 6 | 0.4 | 0.605 | [0.333, 0.941] | 0.167 | 0 | 0/0 | 4 |
 
-_headline = PS on the held-out split (6 samples); MOCK providers: these numbers check the pipeline, they do not measure any model_
+_synthetic: seeded subset of 6/60 bench samples (seed 7); headline = PS on the held-out split (6 samples); MOCK providers: these numbers check the pipeline, they do not measure any model_
 
 **Reference objects (vs published specs)**
 
 N = 4 · photos: synthetic renders · ground truth: `reference_spec` · CI: 95 %: bootstrap over samples (2000 resamples, seeded) for mean errors; Wilson for rates
 
-| config | n | median_abs_err_mm | mean_abs_err_mm | mean_ci95 | pass@0.5 | verified_rate | median_iters |
-|---|---|---|---|---|---|---|---|
-| B0 | 4 | 0.268 | 1.116 | [0.216, 2.498] | 0.25 | 0.25 | 1 |
-| B1 | 4 | 0.131 | 0.453 | [0.125, 0.890] | 0.5 | 0.25 | 1 |
-| B2 | 4 | 0.05 | 0.121 | [0.039, 0.290] | 0.75 | 0.5 | 1.5 |
-| PS | 4 | 0.05 | 0.121 | [0.039, 0.290] | 0.75 | 0.5 | 1.5 |
-| PS-noTemplate | 4 | 0.131 | 0.175 | [0.066, 0.307] | 0.75 | 0.5 | 1.5 |
-| PS-noJudge | 4 | 0.05 | 0.121 | [0.039, 0.290] | 0.75 | 0.5 | 1.5 |
-| PS-noHeightCorr | 4 | 0.259 | 0.527 | [0.241, 0.890] | 0.25 | 0 | 3.5 |
+| config | n | median_abs_err_mm | mean_abs_err_mm | mean_ci95 | pass@0.5 | verified_rate | verified_but_off | median_iters |
+|---|---|---|---|---|---|---|---|---|
+| B0 | 4 | 0.268 | 1.116 | [0.216, 2.498] | 0.25 | 0.25 | 1/1 | 1 |
+| B1 | 4 | 0.131 | 0.453 | [0.125, 0.890] | 0.5 | 0.25 | 1/1 | 1 |
+| B2 | 4 | 0.05 | 0.121 | [0.039, 0.290] | 0.75 | 0.5 | 1/2 | 1.5 |
+| PS | 4 | 0.05 | 0.121 | [0.039, 0.290] | 0.75 | 0.5 | 1/2 | 1.5 |
+| PS-noTemplate | 4 | 0.131 | 0.175 | [0.066, 0.307] | 0.75 | 0.5 | 1/2 | 1.5 |
+| PS-noJudge | 4 | 0.05 | 0.121 | [0.039, 0.290] | 0.75 | 0.5 | 1/2 | 1.5 |
+| PS-noHeightCorr | 4 | 0.259 | 0.527 | [0.241, 0.890] | 0.25 | 0 | 0/0 | 3.5 |
 
-_headline = PS on the held-out split (4 samples); MOCK providers: these numbers check the pipeline, they do not measure any model_
+_reference_objects: 4 synthetic renders; real photos pending (data/real/reference_objects/); headline = PS on the held-out split (4 samples); MOCK providers: these numbers check the pipeline, they do not measure any model_
 
 **Real broken parts (vs school ruler, ±0.5 mm)**
 
-_Pending — no real parts with ruler ground truth yet (data/real/<part>/gt.yaml, see eval/REPRODUCE.md)._
+_Pending — real_ruler: no real parts with ruler ground truth yet (data/real/<part>/gt.yaml)._
 
 **Measurement only (photo → mm, no CAD loop)**
 

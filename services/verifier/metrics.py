@@ -69,12 +69,23 @@ def contour_points_mm(mask: BoolMask, frame: Frame, spacing_mm: float = RESAMPLE
     return np.vstack(pts)
 
 
-def contour_distances_mm(model_pts: FloatArray, photo_pts: FloatArray) -> ContourDistances:
-    """Symmetric boundary distances (mm) between two point sets that sample closed curves densely."""
+def contour_distances_mm(
+    model_pts: FloatArray,
+    photo_pts: FloatArray,
+    model_targets: FloatArray | None = None,
+    photo_targets: FloatArray | None = None,
+) -> ContourDistances:
+    """Symmetric boundary distances (mm) between two point sets that sample closed curves densely.
+
+    ``*_targets`` (default: the points themselves) are what each point's distance is measured to. With an excluded
+    region, only the kept points are measured, but always to the other WHOLE boundary: a kept point next to the
+    region is matched to the boundary that continues into it, not to the far end of a clipped curve."""
     if len(model_pts) == 0 or len(photo_pts) == 0:
         return ContourDistances(float("inf"), float("inf"), float("inf"), None, "model")
-    d_mp, _ = cKDTree(photo_pts).query(model_pts)
-    d_pm, _ = cKDTree(model_pts).query(photo_pts)
+    mt = model_pts if model_targets is None or len(model_targets) == 0 else model_targets
+    pt = photo_pts if photo_targets is None or len(photo_targets) == 0 else photo_targets
+    d_mp, _ = cKDTree(pt).query(model_pts)
+    d_pm, _ = cKDTree(mt).query(photo_pts)
     if d_mp.max() >= d_pm.max():
         worst, on = model_pts[int(np.argmax(d_mp))], "model"
     else:

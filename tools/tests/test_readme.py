@@ -21,6 +21,16 @@ def test_evidence_block_names_its_sources() -> None:
     assert "Real repairs logged" in block
 
 
+def test_evidence_shows_verified_parts_that_miss_the_ground_truth(monkeypatch: pytest.MonkeyPatch) -> None:
+    rep = {
+        "mode": "mock",
+        "tables": {"synthetic": {"status": "ok", "headline": {"config": "PS", "verified_but_off": "1/2"}}},
+    }
+    monkeypatch.setattr(readme, "_load", lambda name: rep if name == "report.json" else None)
+    row = next(r for r in readme.evidence().splitlines() if "ground truth" in r)
+    assert "Verified synthetic parts (mock providers)" in row and "| 1/2 (config PS) |" in row
+
+
 def test_render_only_touches_marked_blocks() -> None:
     text = "intro\n" + "".join(f"<!-- BEGIN:{n} -->\nold\n<!-- END:{n} -->\nkeep {n}\n" for n in readme.BLOCKS)
     out = readme.render(text)

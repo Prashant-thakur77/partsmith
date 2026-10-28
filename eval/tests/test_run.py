@@ -120,6 +120,17 @@ def test_tables_headline_mock_label_and_mcnemar() -> None:
     assert R.MOCK_TITLE not in live["synthetic"]["title"]
 
 
+def test_verified_but_off_counts_verified_runs_that_miss_the_ground_truth() -> None:
+    runs = [
+        _score("PS", "a", errs=[0.1], passed=True, verified=True),
+        _score("PS", "b", errs=[0.6], passed=False, verified=True),  # the verifier passed it, the ruler does not
+        _score("PS", "c", errs=[2.0], passed=False),
+    ]
+    assert R.config_row("PS", runs)["verified_but_off"] == "1/2"
+    syn = R.build_tables(runs, "mock", [])["synthetic"]
+    assert "verified_but_off" in syn["columns"] and syn["headline"]["verified_but_off"] == "1/2"
+
+
 def test_every_table_ground_truth_is_a_schema_value() -> None:
     """`/bench` tables carry `ground_truth`; each value must be a GroundTruthSource the web schema knows."""
     from partsmith_schemas import GroundTruthSource

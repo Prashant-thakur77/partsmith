@@ -179,3 +179,40 @@ def test_thin_ring_makes_the_mock_ask_whether_it_is_flexible():
         ModelRequest(messages=[], mock_context={"measurements": {"top": spacer}, "intent": ""})
     )
     assert not [u for u in spec["unknowns"] if u["id"] == "material.flexible"]
+
+
+def test_a_missing_top_is_a_height_break_and_keeps_the_template_height():
+    """'The top snapped off': the side photo shows the broken height, so it must not size the part's height."""
+    top = _top(66.0, 19.0, [((14.0, 0.0), 4.1)])
+    side = {"thickness": {"value": 18.0, "source": "measured", "sigma_mm": 0.1}}
+    ctx = {
+        "measurements": {"top": top, "side": side},
+        "intent": "Make a replacement for this broken wall hook: the top of the part snapped off.",
+        "family_hint": "hook",
+        "user_thickness_mm": 3.0,
+    }
+    spec = mock_brain.understand(ModelRequest(messages=[], mock_context=ctx))
+    br = spec["broken_region"]
+    assert br["kind"] == "height" and br["polygon_mm"] == [] and br["strategy"] == "template"
+    t = get_template("l_bracket")  # its height is read from the side photo
+    tall = {"thickness": {"value": 26.0, "source": "measured", "sigma_mm": 0.1}}
+    intact = mock_brain.template_values(t, {"thickness": {"value": 3.0}}, top, {}, tall)
+    assert intact["height"] == 26.0
+    broken = mock_brain.template_values(t, {"thickness": {"value": 3.0}, "broken_region": br}, top, {}, tall)
+    assert broken["height"] == t.defaults["height"]  # the photo shows the stump: the template keeps its height
+    # no side photo: nothing shows where the break is, so no height break is claimed
+    no_side = mock_brain.understand(ModelRequest(messages=[], mock_context={**ctx, "measurements": {"top": top}}))
+    assert (no_side.get("broken_region") or {}).get("kind") != "height"
+
+
+def test_end_tabs_count_tongues_but_not_a_notch():
+    """One hinge tongue at one end and a broken notch at the other (the cover-tab demo): one tab, not two."""
+    tongue_and_notch = [(-26, -15), (16, -15), (16, -4), (10, -4), (10, 4), (16, 4), (16, 15), (-26, 15), (-26, 3),
+                        (-29, 3), (-29, -3), (-26, -3)]  # fmt: skip
+    assert mock_brain.end_tabs(tongue_and_notch) == 1
+    three = [(-26.0, -15.0), (26.0, -15.0), (26.0, 15.0), (-26.0, 15.0)]
+    for y in (9.0, 0.0, -9.0):  # three tongues on the left end, walking down
+        three += [(-26.0, y + 2.5), (-28.5, y + 2.5), (-28.5, y - 2.5), (-26.0, y - 2.5)]
+    assert mock_brain.end_tabs(three) == 3
+    plain = [(-20, -10), (20, -10), (20, 10), (-20, 10), (-20, 5), (-20, 0), (-20, -5), (-20, -9)]
+    assert mock_brain.end_tabs(plain) == 0
