@@ -18,7 +18,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Slider } from "@/components/ui/slider";
 import { VerifiedBadge } from "@/components/ui/verified-badge";
 import { api } from "@/lib/api";
-import { fmtNum, splitTitle } from "@/lib/format";
+import { distinctTitles, fmtNum, splitTitle } from "@/lib/format";
 import { STAGE_LABELS, summarizeEvents } from "@/lib/job-events";
 import { cn } from "@/lib/utils";
 import { radioGroupKeys } from "@/lib/a11y";
@@ -157,6 +157,7 @@ export function JudgesClient() {
   const bench = useQuery({ queryKey: ["bench"], queryFn: api.bench, retry: false });
   const [picked, setPicked] = React.useState<string | null>(null);
   const active = picked ?? replays.data?.[0]?.id ?? null;
+  const chipLabels = React.useMemo(() => distinctTitles((replays.data ?? []).map((r) => r.title)), [replays.data]);
 
   const steps = [
     { n: "1", title: "Watch a stored run", body: "Below: photo → mm → CAD → verify, played back from its run log.", href: "#replay", icon: History },
@@ -217,7 +218,7 @@ export function JudgesClient() {
             <div className="space-y-3">
               {replays.data.length > 1 ? (
                 <div className="flex flex-wrap gap-1.5" role="radiogroup" onKeyDown={radioGroupKeys} aria-label="Stored runs">
-                  {replays.data.map((r) => (
+                  {replays.data.map((r, i) => (
                     <button
                       key={r.id}
                       type="button"
@@ -229,7 +230,7 @@ export function JudgesClient() {
                         active === r.id ? "border-fg bg-fg text-bg" : "border-border bg-surface text-muted hover:text-fg",
                       )}
                     >
-                      {splitTitle(r.title).title}
+                      {chipLabels[i]}
                     </button>
                   ))}
                 </div>

@@ -164,5 +164,8 @@ Seven workstreams in flight: providers, verifier, synth/eval, API/registry, metr
   within 0.5 mm; PS verifies 4/8, B1 2/8, none of them off. Control 6/6 (no false rejects), red-team 10/10. Judge and
   capture triage still ran as labelled mocks (Glimmer not deployed). Also: through-holes a model mask closed come back
   from the colour threshold (replay of the latch corner: the outline gains the pivot hole, 8.58 → 2.48 mm there).
-- **Next:** live rerun of the latch corner with the threshold openings; real photos, Modal login and deploy go-ahead
-  from Prashant; README hero media from a live replay.
+- **Latch corner live rerun with the threshold openings ($0.55):** the outline now has the pivot hole; 8.57 → 4.32 mm,
+  the rest is at the broken corner (best effort, not published). README hero GIF and screenshot grid re-recorded from the
+  stored live battery-cover run (fails its first build, verifies after two fixes); the corner label and grid header now
+  come from the replay's own provider mode. /judges replay chips that share a name show their capture preset.
+- **Next:** real photos, Modal login and deploy go-ahead from Prashant; demo video draft from the app.

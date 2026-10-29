@@ -6,9 +6,9 @@
 Live site _(coming)_ · Video _(coming)_ · Judges page _(coming)_ · Try a sample _(coming)_ · [Results](#results) · [Reproduce](eval/REPRODUCE.md) · [Docs](docs/README.md)
 <!-- END:links -->
 
-[![Replay of a stored PartSmith run with mock providers (synthetic L-bracket): the error chart steps down from the first build to within the limit and the run ends VERIFIED; then the job page opens the fail → fix rounds' overlays and shows the 3D model](docs/media/hero.gif)](docs/media/hero.gif)
+[![Replay of a stored live PartSmith run (synthetic battery cover, live Meta models): the error chart steps down from the first build to within the limit and the run ends VERIFIED; then the job page opens the fail → fix rounds' overlays and shows the 3D model](docs/media/hero.gif)](docs/media/hero.gif)
 
-<sub>Recorded from the web app in replay mode with mock providers (`make media`); the numbers are the stored run's own.</sub>
+<sub>Recorded from the web app replaying a stored live run (`make media`); the numbers are the stored run's own.</sub>
 
 <!-- BEGIN:status -->
 > **Status: live providers** · bench report 2026-10-29 at commit `304f933` plus uncommitted changes · real photos measured: 0 · real parts with ruler ground truth: 0 · real repairs logged: 0
@@ -53,7 +53,7 @@ MCP. No printer, caliper or special paper needed.
 | What a model wrote vs what we wrote | [Model-written vs hand-written](#model-written-vs-hand-written) · [Built during the hackathon](#built-during-the-hackathon) |
 | For agents | `/agents`, `/llms.txt`, MCP at `/mcp` |
 
-[![Four screens from the web app in replay mode with mock providers: (a) a lying model caught, the export blocked; (b) Colour by source on the job page; (c) the impact panel and buy-or-print card; (d) the walk-around clip and voice note slots on the fix page](docs/media/grid.png)](docs/media/grid.png)
+[![Four screens from the web app in replay mode: (a) a lying model caught, the export blocked (a scripted model, no live calls); (b) Colour by source and (c) the impact panel and buy-or-print card, both on the stored live battery-cover run; (d) the walk-around clip and voice note slots on the fix page](docs/media/grid.png)](docs/media/grid.png)
 
 ## Why trust a model-made part?
 

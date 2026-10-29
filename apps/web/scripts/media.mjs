@@ -5,7 +5,7 @@
  * Run it through `make media`, which starts the API in replay mode (no keys, scratch PARTSMITH_HOME) and `next start`,
  * then calls this script and stops both. Every number in the media is whatever the app shows for the committed replays
  * (`data/replays`); this script never edits page content. ffmpeg builds the GIF (palettegen/paletteuse) and burns a
- * "REPLAY · mock providers" corner label when a DejaVu font is installed.
+ * "REPLAY · live models" (or "mock providers", from the replay's own summary) corner label when a DejaVu font is installed.
  *
  * Env: MEDIA_WEB_URL (default http://127.0.0.1:3765), MEDIA_OUT (default <repo>/docs/media), MEDIA_TMP (frame scratch
  * dir; default a fresh temp dir, deleted at the end).
@@ -24,7 +24,8 @@ const OWN_TMP = !process.env.MEDIA_TMP;
 const TMP = process.env.MEDIA_TMP ? resolve(process.env.MEDIA_TMP) : mkdtempSync(join(tmpdir(), "partsmith-media-"));
 const FONT = ["/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf", "/usr/share/fonts/TTF/DejaVuSans-Bold.ttf"].find((f) => existsSync(f));
 
-const HERO_SAMPLE = "demo-l-bracket";
+const HERO_SAMPLE = "demo-battery-cover"; // a live run that fails its first build and verifies after two fixes
+const CLIP_SAMPLE = "demo-l-bracket"; // the committed sample with a walk-around clip (fix-upload tile)
 const VIEW = { width: 1280, height: 960 }; // hero frames, scaled to 960 px wide in the GIF
 const GIF_WIDTH = 960;
 const GIF_FPS = 12;
@@ -40,6 +41,13 @@ function replayId(sample) {
   const id = index[sample];
   if (!id) throw new Error(`${sample} is not in data/replays/seed_index.json`);
   return id;
+}
+
+/** What the stored run says about itself: its provider mode ("live" / "mock") and title. */
+function replaySummary(id) {
+  const s = JSON.parse(readFileSync(join(REPO, "data/replays", id, "summary.json"), "utf8"));
+  const mode = s.provider_mode === "live" ? "live models" : s.provider_mode === "mock" ? "mock providers" : `${s.provider_mode} providers`;
+  return { mode, title: String(s.title ?? "").replace(/ \(synthetic sample\)$/, "") };
 }
 
 /** Wait until the page has no loading placeholders (skeletons announce themselves as role=status "Loading …"). */
@@ -69,7 +77,7 @@ function failOnErrors(errors, where) {
 // ------------------------------------------------------------------------------------------------------------ hero
 
 /**
- * Hero frames: the /judges replay player stepped through the stored L-bracket run (error chart falls from the first
+ * Hero frames: the /judges replay player stepped through the stored hero run (error chart falls from the first
  * build to the verified round), then the job workspace: verified badge, the fail → fix strip with three rounds' overlays
  * opened (first build, a middle round, the verified one), and the 3D model with the error chart.
  * Returns [{file, seconds}] in order.
@@ -101,8 +109,14 @@ async function heroFrames(browser, id) {
 
   await page.goto(`${BASE}/judges`);
   await settled(page);
+  // the chip label: the name, plus the capture preset when another stored run has the same name (distinctTitles)
   const title = detail.summary.title.replace(/\s*\(.*$/, "");
-  await page.getByRole("radio", { name: title, exact: true }).click();
+  const preset = (/\(([^()]*)\)(?:\s*\([^()]*\))?\s*$/.exec(detail.summary.title)?.[1] ?? "")
+    .split(",")
+    .map((w) => w.trim())
+    .filter((w) => w && !/^(synthetic|synthetic sample|replay|real|real photo)$/i.test(w));
+  const chips = page.getByRole("radio", { name: preset.length ? `${title} · ${preset.join(", ")}` : title, exact: true });
+  await ((await chips.count()) ? chips : page.getByRole("radio", { name: title, exact: true })).click();
   await settled(page, 600);
   await page.evaluate(() => {
     const el = document.getElementById("replay");
@@ -165,7 +179,7 @@ async function heroFrames(browser, id) {
   return frames;
 }
 
-function buildGif(frames, out) {
+function buildGif(frames, out, mode) {
   const list = join(TMP, "hero-frames.txt");
   const seconds = frames.reduce((t, f) => t + f.seconds, 0);
   const lines = [];
@@ -173,7 +187,7 @@ function buildGif(frames, out) {
   lines.push(`file '${frames.at(-1).file}'`); // concat demuxer: the last duration needs a following entry
   writeFileSync(list, lines.join("\n") + "\n");
   const label = join(TMP, "label.txt");
-  writeFileSync(label, "REPLAY · mock providers");
+  writeFileSync(label, `REPLAY · ${mode}`);
   const draw = FONT
     ? `,drawtext=fontfile=${FONT}:textfile=${label}:fontsize=15:fontcolor=white:box=1:boxcolor=0x111111@0.82:boxborderw=7:x=w-tw-14:y=h-th-14`
     : "";
@@ -260,7 +274,7 @@ async function gridTiles(browser, id) {
   errors.length = 0;
   await page.goto(`${BASE}/fix`);
   await settled(page);
-  const sample = join(REPO, "data/synthetic/samples", HERO_SAMPLE);
+  const sample = join(REPO, "data/synthetic/samples", CLIP_SAMPLE);
   // The clip slot appears once the API's capabilities say the fix endpoint takes a clip; attach files after that.
   await page.getByRole("heading", { name: /^Walk around it/ }).waitFor({ timeout: 30_000 });
   const video = page.locator("video").first();
@@ -310,7 +324,7 @@ async function gridTiles(browser, id) {
     img{display:block;width:100%;height:auto;border-bottom:1px solid #e4e4e7}
     figcaption{padding:9px 12px;background:#18181b;color:#fafafa;min-height:44px}
     figcaption b{display:inline-block;margin-right:8px;color:#fb923c}
-  </style><main><header>PartSmith web app, replay mode with mock providers, synthetic L-bracket sample (stored run ${id})</header>${rows}</main>`;
+  </style><main><header>PartSmith web app, replay mode: ${replaySummary(id).mode}, ${replaySummary(id).title} (stored run ${id})</header>${rows}</main>`;
   const htmlFile = join(TMP, "grid.html");
   writeFileSync(htmlFile, html);
   const gp = await browser.newPage({ viewport: { width: GRID_WIDTH, height: 1200 }, deviceScaleFactor: 1 });
@@ -336,7 +350,7 @@ async function main() {
     if (!only || only === "hero") {
       const frames = await heroFrames(browser, id);
       frames.unshift({ ...frames.at(-1), seconds: 1.5 }); // payoff first: open on the verified end state, then show the run
-      const labelled = buildGif(frames, join(OUT, "hero.gif"));
+      const labelled = buildGif(frames, join(OUT, "hero.gif"), replaySummary(id).mode);
       log(`hero.gif: ${frames.length} frames, ${frames.reduce((s, f) => s + f.seconds, 0).toFixed(1)} s, corner label ${labelled ? "burned in" : "skipped (no DejaVu font); the page's own replay badge is visible"}`);
     }
     if (!only || only === "grid") await gridTiles(browser, id);

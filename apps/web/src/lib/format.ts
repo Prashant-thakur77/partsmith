@@ -94,3 +94,24 @@ export function splitTitle(raw: string): { title: string; presets: string[] } {
   }
   return { title: t || raw, presets };
 }
+
+/**
+ * Short labels for a list of server titles: the name alone, plus its capture preset(s) when another title in the list
+ * has the same name ("Battery compartment cover · white-on-light"), and a running number when even that repeats.
+ */
+export function distinctTitles(raws: readonly string[]): string[] {
+  const parts = raws.map(splitTitle);
+  const count = (key: (p: { title: string; presets: string[] }) => string, k: string) =>
+    parts.filter((p) => key(p) === k).length;
+  const withPresets = (p: { title: string; presets: string[] }) =>
+    p.presets.length ? `${p.title} · ${p.presets.join(", ")}` : p.title;
+  const seen = new Map<string, number>();
+  return parts.map((p) => {
+    if (count((q) => q.title, p.title) < 2) return p.title;
+    const label = withPresets(p);
+    if (count(withPresets, label) < 2) return label;
+    const n = (seen.get(label) ?? 0) + 1;
+    seen.set(label, n);
+    return `${label} (${n})`;
+  });
+}
