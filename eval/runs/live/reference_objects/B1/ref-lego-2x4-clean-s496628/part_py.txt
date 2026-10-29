@@ -1,0 +1,48 @@
+import cadquery as cq
+import math
+
+PARAMS = {
+    "brick_length": (31.8, 30.0, 33.0, 0.1, "mm", False, "Brick Length X"),
+    "brick_width": (15.8, 14.0, 17.0, 0.1, "mm", False, "Brick Width Y"),
+    "brick_height": (9.6, 8.5, 11.0, 0.1, "mm", False, "Body Height"),
+    "stud_diameter": (4.8, 4.2, 5.2, 0.1, "mm", True, "Stud Diameter"),
+    "stud_height": (1.8, 1.2, 2.4, 0.1, "mm", False, "Stud Height"),
+    "stud_pitch": (8.0, 7.5, 8.5, 0.1, "mm", True, "Stud Pitch"),
+    "studs_x": (4, 1, 6, 1, "", False, "Studs Along X"),
+    "studs_y": (2, 1, 4, 1, "", False, "Studs Along Y"),
+}
+
+def build(p: dict) -> cq.Workplane:
+    length = p["brick_length"]
+    width = p["brick_width"]
+    height = p["brick_height"]
+    sd = p["stud_diameter"]
+    sh = p["stud_height"]
+    pitch = p["stud_pitch"]
+    nx = int(p["studs_x"])
+    ny = int(p["studs_y"])
+
+    # Solid body, mounting face on Z=0, centered at origin, long axis +X
+    body = cq.Workplane("XY").rect(length, width).extrude(height)
+
+    # Compute centered grid offsets for studs (standard 8mm pitch)
+    if nx > 1:
+        x_start = - (nx - 1) * pitch / 2.0
+    else:
+        x_start = 0.0
+    if ny > 1:
+        y_start = - (ny - 1) * pitch / 2.0
+    else:
+        y_start = 0.0
+
+    result = body
+    for i in range(nx):
+        xi = x_start + i * pitch
+        for j in range(ny):
+            yj = y_start + j * pitch
+            stud = cq.Workplane("XY").workplane(offset=height).moveTo(xi, yj).circle(sd / 2.0).extrude(sh)
+            result = result.union(stud)
+
+    return result
+
+result = build({k: v[0] for k, v in PARAMS.items()})

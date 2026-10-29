@@ -1,0 +1,48 @@
+{
+ "suite": "redteam",
+ "config": "PS",
+ "sample_id": "rt-two-parts",
+ "split": "held_out",
+ "kind": "redteam",
+ "preset": "redteam",
+ "mode": "live",
+ "gt_source": "expected_outcome",
+ "status": "failed",
+ "verified": false,
+ "iterations": 0,
+ "iterations_to_converge": null,
+ "strategy": "template",
+ "template": null,
+ "verifier_max_error_mm": null,
+ "retake_reason": "Two separate objects are on the mat \u2014 photograph one part at a time.",
+ "failed_checks": [
+  "single_part"
+ ],
+ "usd": 0.005,
+ "tokens_in": 0,
+ "tokens_out": 0,
+ "model_calls": 2,
+ "model_ms": 11146,
+ "provider_modes": [
+  "live"
+ ],
+ "providers": {
+  "segment": [
+   "meta:sam-3.1"
+  ]
+ },
+ "convergence": [],
+ "wall_s": 15.06,
+ "valid": false,
+ "dims": [],
+ "missed": [],
+ "extra_holes": 0,
+ "pass_0_3": false,
+ "pass_0_5": false,
+ "expected_outcome": "reject",
+ "expected_checks": [],
+ "expected_why": "one part per photo, otherwise the measurement mixes them",
+ "outcome": "reject",
+ "outcome_correct": true,
+ "failure_category": null
+}

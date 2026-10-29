@@ -1,0 +1,81 @@
+import cadquery as cq
+import math
+
+PARAMS = {
+    "thickness_mm": (1.5, 0.8, 3.0, 0.1, "mm", True, "Cover thickness"),
+    "clearance_mm": (0.2, 0.0, 0.6, 0.05, "mm", True, "In-plane clearance (uniform XY shrink)"),
+    "length_scale": (1.0, 0.92, 1.08, 0.01, "", True, "Length scale X"),
+    "width_scale": (1.0, 0.92, 1.08, 0.01, "", True, "Width scale Y"),
+    "rib_count": (1, 0, 3, 1, "", False, "Stiffening ribs on top (0=none, keep solid)"),
+    "rib_height_mm": (0.7, 0.4, 1.2, 0.1, "mm", False, "Rib height if ribs enabled"),
+    "rib_width_mm": (0.8, 0.6, 1.8, 0.2, "mm", False, "Rib width if ribs enabled"),
+}
+
+BASE_POINTS = [
+    (29.393,-7.756),
+    (29.388,-3.151),
+    (27.051,-2.863),
+    (26.997,1.522),
+    (27.126,2.96),
+    (29.376,3.124),
+    (29.408,7.735),
+    (27.054,8.027),
+    (26.979,11.065),
+    (26.735,11.577),
+    (26.259,11.857),
+    (-26.782,11.918),
+    (-28.317,11.427),
+    (-29.311,10.068),
+    (-29.403,-9.618),
+    (-28.87,-10.895),
+    (-27.435,-11.841),
+    (26.058,-11.926),
+    (26.561,-11.747),
+    (26.959,-11.165),
+    (27.104,-7.971),
+]
+
+def build(p: dict) -> cq.Workplane:
+    t = float(p.get("thickness_mm", 1.5))
+    clearance = float(p.get("clearance_mm", 0.2))
+    sx = float(p.get("length_scale", 1.0))
+    sy = float(p.get("width_scale", 1.0))
+    rib_count = int(p.get("rib_count", 0))
+    rib_h = float(p.get("rib_height_mm", 0.6))
+    rib_w = float(p.get("rib_width_mm", 1.0))
+
+    pts = []
+    for x, y in BASE_POINTS:
+        x2 = x * sx
+        y2 = y * sy
+        pts.append((x2, y2))
+
+    if clearance > 1e-6:
+        avg_half_x = 29.0 * sx
+        avg_half_y = 12.0 * sy
+        fx = 1.0 - (clearance * 0.5) / avg_half_x if avg_half_x > 0 else 1.0
+        fy = 1.0 - (clearance * 0.5) / avg_half_y if avg_half_y > 0 else 1.0
+        pts = [(x * fx, y * fy) for x, y in pts]
+
+    wp = cq.Workplane("XY")
+    wp = wp.moveTo(pts[0][0], pts[0][1])
+    for x, y in pts[1:]:
+        wp = wp.lineTo(x, y)
+    wp = wp.close().extrude(t, combine=True)
+
+    if rib_count > 0 and rib_h > 0 and rib_w > 0:
+        y_min = min(y for _, y in pts) + 2.0
+        y_max = max(y for _, y in pts) - 2.0
+        if rib_count == 1:
+            ys = [0.0]
+        else:
+            ys = [y_min + (y_max - y_min) * i / (rib_count - 1) for i in range(rib_count)]
+        x_min = min(x for x, _ in pts) + 1.5
+        x_max = max(x for x, _ in pts) - 1.5
+        for yc in ys:
+            rib = cq.Workplane("XY").workplane(offset=t).moveTo(x_min, yc - rib_w/2).lineTo(x_max, yc - rib_w/2).lineTo(x_max, yc + rib_w/2).lineTo(x_min, yc + rib_w/2).close().extrude(rib_h)
+            wp = wp.union(rib)
+
+    return wp
+
+result = build({k: v[0] for k, v in PARAMS.items()})

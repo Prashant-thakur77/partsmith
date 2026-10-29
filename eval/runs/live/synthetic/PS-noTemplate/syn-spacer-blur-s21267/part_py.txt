@@ -1,0 +1,66 @@
+import cadquery as cq
+import math
+
+PARAMS = {
+    "thickness": (9.0, 5.0, 15.0, 0.1, "mm", False, "Thickness"),
+    "hole_dia": (4.211, 3.0, 6.0, 0.01, "mm", True, "Hole Diameter"),
+    "hole_x": (-0.01, -2.0, 2.0, 0.01, "mm", True, "Hole X"),
+    "hole_y": (0.006, -2.0, 2.0, 0.01, "mm", True, "Hole Y"),
+    "outer_scale": (1.0, 0.8, 1.2, 0.01, "mm", False, "Outer Scale"),
+    "hole_count": (1, 1, 1, 1, "", False, "Hole Count"),
+}
+
+# measured base profile polyline (closed)
+BASE_POINTS = [
+    [5.114, -0.403],
+    [4.922, 1.524],
+    [4.049, 3.161],
+    [2.463, 4.5],
+    [0.408, 5.1],
+    [-1.602, 4.857],
+    [-3.282, 3.925],
+    [-4.558, 2.327],
+    [-5.112, 0.429],
+    [-4.908, -1.512],
+    [-3.756, -3.53],
+    [-2.35, -4.584],
+    [-0.557, -5.097],
+    [1.405, -4.905],
+    [3.294, -3.905],
+    [4.544, -2.324],
+]
+
+def build(p: dict) -> cq.Workplane:
+    thickness = float(p["thickness"])
+    hole_dia = float(p["hole_dia"])
+    hole_x = float(p["hole_x"])
+    hole_y = float(p["hole_y"])
+    outer_scale = float(p["outer_scale"])
+    hole_count = int(p["hole_count"])
+
+    # scale points about origin
+    pts = [(x * outer_scale, y * outer_scale) for x, y in BASE_POINTS]
+
+    # create base solid with mounting face on Z=0, +Z up, centred at origin
+    wp = cq.Workplane("XY")
+    wp = wp.moveTo(pts[0][0], pts[0][1])
+    for x, y in pts[1:]:
+        wp = wp.lineTo(x, y)
+    wp = wp.close().extrude(thickness, combine=True)
+
+    # through hole / holes - vertical cylinder
+    if hole_count >= 1 and hole_dia > 0:
+        # use top face workplane to cut through all
+        # hole is centred per spec; if hole_count >1 distribute along X (keeps single hole for default)
+        if hole_count == 1:
+            points = [(hole_x, hole_y)]
+        else:
+            # distribute additional holes along X within footprint (topological param)
+            step = 2.0
+            start = - (hole_count - 1) * step / 2.0
+            points = [(hole_x + start + i * step, hole_y) for i in range(hole_count)]
+        wp = wp.faces(">Z").workplane().pushPoints(points).circle(hole_dia / 2.0).cutThruAll()
+
+    return wp
+
+result = build({k: v[0] for k, v in PARAMS.items()})

@@ -1,0 +1,95 @@
+import cadquery as cq
+import math
+
+PARAMS = {
+    "plate_thickness": (3.0, 1.5, 5.0, 0.1, "mm", False, "Plate thickness"),
+    "hole_dia": (3.314, 2.0, 5.0, 0.05, "mm", True, "Through hole diameter"),
+    "hole_x": (16.325, 14.0, 18.0, 0.1, "mm", False, "Hole X"),
+    "hole_y": (-0.208, -2.0, 2.0, 0.1, "mm", False, "Hole Y"),
+    "snap_overhang": (7.1, 4.0, 12.0, 0.1, "mm", True, "Snap leg length below plate"),
+    "snap_thickness": (2.0, 1.0, 3.5, 0.1, "mm", True, "Snap leg thickness X"),
+    "slit_width": (2.6, 1.0, 4.0, 0.1, "mm", True, "Central slit width Y"),
+    "slit_length": (7.0, 3.0, 12.0, 0.1, "mm", False, "Slit length from end X"),
+    "leg_width_ratio": (0.42, 0.3, 0.5, 0.01, "", False, "Leg Y width ratio of half plate"),
+    "barb_protrusion": (0.7, 0.5, 2.5, 0.1, "mm", True, "Barb outward protrusion X"),
+    "barb_height": (1.6, 0.8, 3.0, 0.1, "mm", False, "Barb height Z"),
+    "n_legs": (2, 1, 2, 1, "", False, "Number of snap legs"),
+}
+
+# base outline from PartSpec measured polyline, closed
+BASE_POINTS = [
+    (-20.319,-7.456),(18.845,-7.394),(19.879,-6.684),(20.38,-5.298),
+    (20.25,5.553),(19.493,6.65),(18.28,7.111),(-13.518,7.054),
+    (-13.729,7.482),(-16.286,7.493),(-16.486,7.029),(-20.229,6.977),
+    (-20.386,6.461)
+]
+
+def build(p: dict) -> cq.Workplane:
+    t = p["plate_thickness"]
+    hd = p["hole_dia"]
+    hx = p["hole_x"]
+    hy = p["hole_y"]
+    over = p["snap_overhang"]
+    st = p["snap_thickness"]
+    slit_w = p["slit_width"]
+    slit_len = p["slit_length"]
+    barb_p = p["barb_protrusion"]
+    barb_h = p["barb_height"]
+    n_legs = int(p["n_legs"])
+
+    # plate solid on Z=0 to Z=t
+    plate = cq.Workplane("XY").polyline(BASE_POINTS).close().extrude(t)
+
+    # through hole
+    plate = plate.faces(">Z").workplane().pushPoints([(hx, hy)]).circle(hd/2).cutThruAll()
+
+    # central slit: rectangular cut from left end inward, through plate
+    # slit starts at leftmost X ~ -20.386 and goes inward +X by slit_len
+    # centered in Y
+    left_x = -20.386
+    slit_x0 = left_x
+    slit_x1 = left_x + slit_len
+    slit_cx = (slit_x0 + slit_x1)/2
+    slit_lx = abs(slit_x1 - slit_x0)
+    # make cutter slightly longer in Z
+    slit_cutter = cq.Workplane("XY").workplane(offset=0).center(slit_cx, 0).box(slit_lx, slit_w, t+1, centered=True)
+    plate = plate.cut(slit_cutter)
+
+    # snap legs below plate at plate_end opposite hole (-X end)
+    # legs occupy top and bottom halves leaving slit gap
+    # estimate plate half height ~7.3mm, leg Y width = (total - slit_w)/2 approx
+    # use leg_width_ratio to derive
+    # total plate Y approx 14.6, half ~7.3
+    total_y = 14.6
+    leg_w = (total_y - slit_w) * p["leg_width_ratio"]
+    # alternative ensure positive
+    if leg_w < 1.0:
+        leg_w = 1.0
+    # y centers for two legs
+    gap_half = slit_w/2 + leg_w/2
+    y_centers = [gap_half, -gap_half] if n_legs == 2 else [0]
+    # if single leg, width spans full
+    if n_legs == 1:
+        y_centers = [0]
+        leg_w = total_y - 1.0
+
+    # leg X position: plate end
+    # leg block sits flush with left edge, thickness st inward
+    leg_cx = left_x + st/2  # centered
+    # build legs as solids and fuse
+    result = plate
+    for yc in y_centers:
+        # vertical leg from Z=0 down to Z=-over
+        leg = cq.Workplane("XY").workplane(offset=-over/2).center(leg_cx, yc).box(st, leg_w, over, centered=True)
+        result = result.union(leg)
+        # barb at bottom tip protruding in -X direction
+        # barb box: extends beyond leg in -X by barb_p
+        barb_cx = left_x - barb_p/2
+        barb_cz = -over + barb_h/2
+        barb = cq.Workplane("XY").workplane(offset=barb_cz).center(barb_cx, yc).box(barb_p, leg_w, barb_h, centered=True)
+        # add small chamfer on barb outer edge to simulate hook: cut wedge
+        result = result.union(barb)
+
+    return result
+
+result = build({k: v[0] for k, v in PARAMS.items()})

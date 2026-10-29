@@ -1,0 +1,65 @@
+import cadquery as cq
+import math
+
+PARAMS = {
+    "length": (31.96, 30.0, 34.0, 0.05, "mm", True, "Overall length X"),
+    "width": (23.93, 22.0, 26.0, 0.05, "mm", True, "Overall width Y"),
+    "thickness": (2.1, 1.4, 3.0, 0.05, "mm", True, "Thickness Z"),
+    "chamfer_dx": (3.93, 2.5, 5.5, 0.05, "mm", True, "Chamfer X extent"),
+    "chamfer_dy": (4.04, 2.5, 5.5, 0.05, "mm", True, "Chamfer Y extent"),
+    "fillet_r": (0.5, 0.0, 1.2, 0.1, "mm", False, "Corner fillet radius"),
+    "detail_level": (1, 0, 2, 1, "", False, "Detail level"),
+}
+
+def build(p: dict) -> cq.Workplane:
+    length = float(p["length"])
+    width = float(p["width"])
+    thickness = float(p["thickness"])
+    chamfer_dx = float(p["chamfer_dx"])
+    chamfer_dy = float(p["chamfer_dy"])
+    fillet_r = float(p.get("fillet_r", 0.0))
+    detail_level = int(p.get("detail_level", 1))
+
+    hx = length / 2.0
+    hy = width / 2.0
+
+    max_cdx = length - 0.5
+    max_cdy = width - 0.5
+    if chamfer_dx > max_cdx:
+        chamfer_dx = max_cdx
+    if chamfer_dy > max_cdy:
+        chamfer_dy = max_cdy
+    if chamfer_dx < 0.1:
+        chamfer_dx = 0.1
+    if chamfer_dy < 0.1:
+        chamfer_dy = 0.1
+
+    pts = [
+        (-hx, hy),
+        (-hx, -hy + chamfer_dy),
+        (-hx + chamfer_dx, -hy),
+        (hx, -hy),
+        (hx, hy),
+    ]
+
+    base = cq.Workplane("XY").polyline(pts).close().extrude(thickness, combine=True)
+
+    if detail_level >= 1 and fillet_r > 1e-6:
+        lim = min(hx, hy, chamfer_dx, chamfer_dy, thickness) * 0.45
+        if fillet_r > lim:
+            fillet_r = lim
+        if fillet_r > 1e-6:
+            try:
+                base = base.edges("|Z").fillet(fillet_r)
+            except Exception:
+                pass
+
+    if detail_level >= 2 and fillet_r > 1e-6:
+        try:
+            base = base.edges(">Z").fillet(fillet_r * 0.5)
+        except Exception:
+            pass
+
+    return base
+
+result = build({k: v[0] for k, v in PARAMS.items()})

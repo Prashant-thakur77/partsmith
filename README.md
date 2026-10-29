@@ -11,18 +11,18 @@ Live site _(coming)_ · Video _(coming)_ · Judges page _(coming)_ · Try a samp
 <sub>Recorded from the web app in replay mode with mock providers (`make media`); the numbers are the stored run's own.</sub>
 
 <!-- BEGIN:status -->
-> **Status: mock providers** · bench report 2026-10-28 at commit `a1cc532` · real photos measured: 0 · real parts with ruler ground truth: 0 · real repairs logged: 0
+> **Status: live providers** · bench report 2026-10-29 at commit `304f933` plus uncommitted changes · real photos measured: 0 · real parts with ruler ground truth: 0 · real repairs logged: 0
 >
-> The bench numbers below come from deterministic mock models on synthetic photos; a live bench run is pending. They show that the pipeline, verifier and scorer work end to end; they do not measure any model. 19 of the 19 stored demo replays are live model runs (each replay is labelled live or mock). Real-photo results are pending and say so in their tables.
+> Numbers below come from live model calls on synthetic photos. Some stages ran as labelled mocks: see `provider_modes` in `eval/reports/latest/report.json`. Real-photo results are pending and say so in their tables.
 <!-- END:status -->
 
 <!-- BEGIN:headline -->
 | Number | What it counts | Source |
 |---|---|---|
 | **17/17** | lying-model attacks blocked by code; suite: lying-brain (scripted mock attacks; no model calls) | `eval/reports/latest/bypass.json` |
-| **0/2** synthetic · **0/1** reference objects | verified parts that are > 0.5 mm off the ground truth (off / verified); mock providers | `eval/reports/latest/report.json` → `tables.*.headline.verified_but_off` |
-| **6/6** control · **10/10** red-team | intact photos accepted · bad or unsuitable photos rejected or refused; mock providers | `eval/reports/latest/report.json` → `tables.control`, `tables.redteam` |
-| **0.3 mm** | median absolute error per dimension, synthetic photos, config PS, n = 6; mock providers | `eval/reports/latest/report.json` → `tables.synthetic.headline` |
+| **0/2** synthetic · **0/4** reference objects | verified parts that are > 0.5 mm off the ground truth (off / verified) | `eval/reports/latest/report.json` → `tables.*.headline.verified_but_off` |
+| **6/6** control · **10/10** red-team | intact photos accepted · bad or unsuitable photos rejected or refused | `eval/reports/latest/report.json` → `tables.control`, `tables.redteam` |
+| **0.1 mm** | median absolute error per dimension, synthetic photos, config PS, n = 12 | `eval/reports/latest/report.json` → `tables.synthetic.headline` |
 <!-- END:headline -->
 
 **The model proposes; code decides.** Entry for the Meta Global AI Developer Hackathon (Indie Developer track, problem
@@ -79,10 +79,10 @@ The table below shows these checks being attacked (all numbers are written by sc
 <!-- BEGIN:evidence -->
 | Check | Result | Source |
 |---|---|---|
-| Intact parts, normal photos → accepted (mock providers) | 6/6 handled as expected, 95 % CI [0.61, 1.00] | `eval/reports/latest/report.json` → `tables.control` |
-| Photos that must be rejected or refused (mock providers) | 10/10 handled as expected, 95 % CI [0.72, 1.00] | `eval/reports/latest/report.json` → `tables.redteam` |
-| Verified synthetic parts (mock providers) that are > 0.5 mm off the ground truth | 0/2 (config PS) | `eval/reports/latest/report.json` → `tables.synthetic` |
-| Verified reference objects (mock providers) that are > 0.5 mm off the ground truth | 0/1 (config PS) | `eval/reports/latest/report.json` → `tables.reference_objects` |
+| Intact parts, normal photos → accepted | 6/6 handled as expected, 95 % CI [0.61, 1.00] | `eval/reports/latest/report.json` → `tables.control` |
+| Photos that must be rejected or refused | 10/10 handled as expected, 95 % CI [0.72, 1.00] | `eval/reports/latest/report.json` → `tables.redteam` |
+| Verified synthetic parts that are > 0.5 mm off the ground truth | 0/2 (config PS) | `eval/reports/latest/report.json` → `tables.synthetic` |
+| Verified reference objects that are > 0.5 mm off the ground truth | 0/4 (config PS) | `eval/reports/latest/report.json` → `tables.reference_objects` |
 | Edit a hole: scale the mesh vs change the program's knob (17 parts, 88 edits) | hole spacing moved 2.771 mm (median) with mesh scaling, 0.0 mm with the knob | `eval/reports/latest/program_vs_mesh.md` |
 | A model that lies or cheats (says verified, edits the record, loosens limits, rescales to fit, fakes a break, smuggles imports, exports without consent) | 17/17 attempts blocked by code | `eval/reports/latest/bypass.json` |
 | Real repairs logged | pending: no sessions logged yet (data/impact/sessions.yaml) | `data/impact/sessions.yaml` |
@@ -227,49 +227,35 @@ Every number here is written by `make bench` (`tools/readme.py` reads `eval/repo
 mixed: synthetic photos (exact), standard reference objects (published specs), real broken parts (school ruler, ±0.5 mm).
 
 <!-- BEGIN:bench -->
-Generated 2026-10-28T17:42:07+00:00 at commit `a1cc53261280969617163abde80865837dd61588` · mode **mock**.
-
-> **These rows come from deterministic mock providers (no API keys yet).** They check that the pipeline, verifier and scorer work end to end; they do **not** measure any model. Live numbers replace them after `make live`.
+Generated 2026-10-29T20:43:37+00:00 at commit `304f9333bc2a5f23791c8529d43a990ad18c1c5f` · mode **live**.
 
 **Synthetic bench (exact ground truth)**
 
-N = 6 · photos: synthetic renders · ground truth: `synthetic_exact` · CI: 95 %: bootstrap over samples (2000 resamples, seeded) for mean errors; Wilson for rates
+N = 12 · photos: synthetic renders · ground truth: `synthetic_exact` · CI: 95 %: bootstrap over samples (2000 resamples, seeded) for mean errors; Wilson for rates
 
 | config | n | median_abs_err_mm | mean_abs_err_mm | mean_ci95 | pass@0.5 | verified_rate | verified_but_off | median_iters | usd_per_job |
 |---|---|---|---|---|---|---|---|---|---|
-| B0 | 6 | 1.05 | 2.43 | [1.132, 3.602] | 0.167 | 0 | 0/0 | 1 | — |
-| B1 | 6 | 0.3 | 0.49 | [0.247, 0.739] | 0.333 | 0.167 | 0/1 | 1 | — |
-| B2 | 6 | 0.3 | 0.515 | [0.150, 0.986] | 0.333 | 0.333 | 0/2 | 2 | — |
-| PS | 6 | 0.3 | 0.515 | [0.150, 0.986] | 0.333 | 0.333 | 0/2 | 2 | — |
-| PS-noTemplate | 6 | 0.14 | 2.319 | [0.685, 4.351] | 0.167 | 0.167 | 0/1 | 1 | — |
-| PS-noJudge | 6 | 0.3 | 0.515 | [0.150, 0.986] | 0.333 | 0.333 | 0/2 | 2 | — |
-| PS-noHeightCorr | 6 | 0.4 | 0.605 | [0.333, 0.941] | 0.167 | 0 | 0/0 | 4 | — |
+| B1 | 12 | 0.18 | 0.856 | [0.313, 1.674] | 0.083 | 0.083 | 0/1 | 1 | $0.0681 |
+| PS | 12 | 0.1 | 0.604 | [0.221, 1.196] | 0.25 | 0.167 | 0/2 | 6 | $0.2091 |
+| PS-noTemplate | 12 | 0.23 | 0.914 | [0.481, 1.574] | 0.083 | 0.167 | 1/2 | 4.5 | $0.2130 |
 
-_usd_per_job is — on mock rows: mock providers make no paid calls._
-
-_synthetic: seeded subset of 6/60 bench samples (seed 7); headline = PS on the held-out split (6 samples); MOCK providers: these numbers check the pipeline, they do not measure any model_
+_headline = PS on the held-out split (12 samples)_
 
 **Reference objects (vs published specs)**
 
-N = 4 · photos: synthetic renders · ground truth: `reference_spec` · CI: 95 %: bootstrap over samples (2000 resamples, seeded) for mean errors; Wilson for rates
+N = 8 · photos: synthetic renders · ground truth: `reference_spec` · CI: 95 %: bootstrap over samples (2000 resamples, seeded) for mean errors; Wilson for rates
 
 | config | n | median_abs_err_mm | mean_abs_err_mm | mean_ci95 | pass@0.5 | verified_rate | verified_but_off | median_iters | usd_per_job |
 |---|---|---|---|---|---|---|---|---|---|
-| B0 | 4 | 0.268 | 1.116 | [0.216, 2.498] | 0.25 | 0 | 0/0 | 1 | — |
-| B1 | 4 | 0.131 | 0.453 | [0.125, 0.890] | 0.5 | 0 | 0/0 | 1 | — |
-| B2 | 4 | 0.05 | 0.121 | [0.039, 0.290] | 0.75 | 0.25 | 0/1 | 1.5 | — |
-| PS | 4 | 0.05 | 0.121 | [0.039, 0.290] | 0.75 | 0.25 | 0/1 | 1.5 | — |
-| PS-noTemplate | 4 | 0.131 | 0.175 | [0.066, 0.307] | 0.75 | 0.25 | 0/1 | 1.5 | — |
-| PS-noJudge | 4 | 0.05 | 0.121 | [0.039, 0.290] | 0.75 | 0.25 | 0/1 | 1.5 | — |
-| PS-noHeightCorr | 4 | 0.259 | 0.527 | [0.241, 0.890] | 0.25 | 0 | 0/0 | 3.5 | — |
+| B1 | 8 | 0.04 | 0.142 | [0.027, 0.330] | 0.75 | 0.25 | 0/2 | 1 | $0.0492 |
+| PS | 8 | 0.05 | 0.155 | [0.052, 0.303] | 0.75 | 0.5 | 0/4 | 2.5 | $0.1631 |
+| PS-noTemplate | 8 | 0.066 | 0.159 | [0.049, 0.336] | 0.75 | 0.5 | 0/4 | 2.5 | $0.2073 |
 
-_usd_per_job is — on mock rows: mock providers make no paid calls._
-
-_reference_objects: 4 synthetic renders; real photos pending (data/real/reference_objects/); headline = PS on the held-out split (4 samples); MOCK providers: these numbers check the pipeline, they do not measure any model_
+_headline = PS on the held-out split (8 samples)_
 
 **Real broken parts (vs school ruler, ±0.5 mm)**
 
-_Pending — real_ruler: no real parts with ruler ground truth yet (data/real/<part>/gt.yaml)._
+_Pending — no real parts with ruler ground truth yet (data/real/<part>/gt.yaml, see eval/REPRODUCE.md)._
 
 **Measurement only (photo → mm, no CAD loop)**
 
@@ -355,20 +341,20 @@ All code in this repository was written during the hackathon (from Oct 26 2026, 
 are computed from `git log`, so they stay true as the history grows.
 
 <!-- BEGIN:built -->
-**43 commits** between 2026-10-27 05:59 ET and 2026-10-29 07:23 ET; the hackathon started 2026-10-26 12:00 ET. Commits dated before the start: **0**.
+**44 commits** between 2026-10-27 05:59 ET and 2026-10-29 14:08 ET; the hackathon started 2026-10-26 12:00 ET. Commits dated before the start: **0**.
 
 | Area | Files added | Lines added: code and docs | Lines added: data, reports, lockfiles, generated | First commit | Last commit |
 |---|---|---|---|---|---|
-| `services/` (Python backend) | 247 | 50,317 | 0 | 2026-10-27 | 2026-10-29 |
-| `apps/web/` (web app) | 243 | 24,964 | 2,309 | 2026-10-27 | 2026-10-29 |
-| `eval/` (benches and reports) | 325 | 5,298 | 65,426 | 2026-10-27 | 2026-10-29 |
-| `packages/` (typed contracts) | 11 | 1,356 | 5,495 | 2026-10-27 | 2026-10-29 |
+| `services/` (Python backend) | 250 | 51,245 | 0 | 2026-10-27 | 2026-10-29 |
+| `apps/web/` (web app) | 244 | 24,967 | 2,384 | 2026-10-27 | 2026-10-29 |
+| `eval/` (benches and reports) | 325 | 5,299 | 65,426 | 2026-10-27 | 2026-10-29 |
+| `packages/` (typed contracts) | 11 | 1,360 | 5,504 | 2026-10-27 | 2026-10-29 |
 | `tools/` (synthetic data, mats, generators) | 32 | 5,156 | 0 | 2026-10-27 | 2026-10-29 |
 | `infra/` (Modal, deploy) | 12 | 1,014 | 86 | 2026-10-27 | 2026-10-29 |
-| `docs/` | 16 | 1,374 | 7 | 2026-10-27 | 2026-10-29 |
-| `data/` (samples, replays) | 3,374 | 0 | 542,554 | 2026-10-27 | 2026-10-29 |
-| root files | 15 | 1,226 | 8,271 | 2026-10-27 | 2026-10-29 |
-| **Total** | **4,275** | **90,705** | **624,148** | | |
+| `docs/` | 16 | 1,439 | 7 | 2026-10-27 | 2026-10-29 |
+| `data/` (samples, replays) | 4,134 | 0 | 633,853 | 2026-10-27 | 2026-10-29 |
+| root files | 15 | 1,245 | 8,271 | 2026-10-27 | 2026-10-29 |
+| **Total** | **5,039** | **91,725** | **715,531** | | |
 
 <details><summary>Every commit since the start, oldest first</summary>
 
@@ -417,6 +403,7 @@ are computed from `git log`, so they stay true as the history grows.
 | 2026-10-28 13:53 ET | `d7586ff` | feat: stated lengths, SAM negatives and confidence, value sources in 3D, fail-to-fix strip, judge-first README |
 | 2026-10-28 14:36 ET | `7055646` | feat(web): README hero media from the real app; fix /fix clip crash and a stuck 3D camera |
 | 2026-10-29 07:23 ET | `95790e6` | feat: first live runs, fits-where-it-goes, repair passport, live fixes |
+| 2026-10-29 14:08 ET | `304f933` | feat: live lessons round 2, slow-route fallback, second live seed |
 
 </details>
 

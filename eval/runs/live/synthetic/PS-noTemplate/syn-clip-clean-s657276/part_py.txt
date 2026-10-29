@@ -1,0 +1,85 @@
+import cadquery as cq
+import math
+
+PARAMS = {
+    "thickness": (3.0, 1.5, 5.0, 0.1, "mm", True, "Plate thickness"),
+    "hole_dia": (4.5, 3.0, 6.0, 0.1, "mm", True, "Mounting hole diameter"),
+    "hole_x": (17.145, 15.0, 19.0, 0.01, "mm", True, "Hole center X"),
+    "hole_y": (-0.34, -2.0, 2.0, 0.01, "mm", True, "Hole center Y"),
+    "hook_height": (9.0, 5.0, 15.0, 0.1, "mm", True, "Hook stem height above plate"),
+    "hook_overhang": (2.0, 0.5, 4.0, 0.1, "mm", True, "Hook lip overhang +X"),
+    "hook_stem_t": (2.6, 1.5, 5.0, 0.1, "mm", True, "Hook stem thickness X"),
+    "hook_lip_t": (2.1, 1.0, 3.0, 0.1, "mm", False, "Hook lip thickness Z"),
+    "hook_width": (13.0, 10.0, 16.0, 0.1, "mm", False, "Hook transverse width Y"),
+    "hole_count": (1.0, 1, 3, 1, "mm", False, "Number of mounting holes"),
+}
+
+def build(p: dict) -> cq.Workplane:
+    pts = [
+        (-22.567, 6.836),
+        (-22.603, -7.355),
+        (-22.367, -7.68),
+        (19.909, -7.702),
+        (21.479, -7.406),
+        (22.467, -6.228),
+        (22.578, 4.864),
+        (22.058, 6.249),
+        (20.955, 6.935),
+        (-14.34, 7.05),
+        (-14.818, 7.633),
+        (-17.554, 7.677),
+        (-19.036, 6.997),
+    ]
+
+    # Base plate solid to thickness, mounting face on Z=0
+    base = cq.Workplane("XY").polyline(pts).close().extrude(p["thickness"])
+
+    # Through hole - vertical cylinder through thickness
+    if p["hole_count"] >= 1:
+        base = (
+            base.faces(">Z")
+            .workplane()
+            .pushPoints([(p["hole_x"], p["hole_y"])])
+            .circle(p["hole_dia"] / 2.0)
+            .cutThruAll()
+        )
+
+    # Snap hook at -X end
+    xmin = min(c[0] for c in pts)
+    stem_x0 = xmin
+    stem_x1 = xmin + p["hook_stem_t"]
+    hy0 = -p["hook_width"] / 2.0
+    hy1 = p["hook_width"] / 2.0
+
+    # Stem - raised bar transverse to X, sitting on top of plate
+    stem = (
+        cq.Workplane("XY")
+        .workplane(offset=p["thickness"])
+        .moveTo(stem_x0, hy0)
+        .lineTo(stem_x1, hy0)
+        .lineTo(stem_x1, hy1)
+        .lineTo(stem_x0, hy1)
+        .close()
+        .extrude(p["hook_height"])
+    )
+
+    # Lip - overhang in +X direction at top of stem, 90 deg
+    lip_z0 = p["thickness"] + p["hook_height"] - p["hook_lip_t"]
+    lip_x0 = stem_x0
+    lip_x1 = stem_x1 + p["hook_overhang"]
+
+    lip = (
+        cq.Workplane("XY")
+        .workplane(offset=lip_z0)
+        .moveTo(lip_x0, hy0)
+        .lineTo(lip_x1, hy0)
+        .lineTo(lip_x1, hy1)
+        .lineTo(lip_x0, hy1)
+        .close()
+        .extrude(p["hook_lip_t"])
+    )
+
+    result = base.union(stem).union(lip)
+    return result
+
+result = build({k: v[0] for k, v in PARAMS.items()})

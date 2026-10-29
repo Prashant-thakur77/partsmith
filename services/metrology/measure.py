@@ -52,7 +52,17 @@ from .features import (
     largest_polygon,
     min_area_rect,
 )
-from .segment import Contour, SegContext, Segmenter, SegResult, mask_contour_subpx, refine_mask
+from .segment import (
+    Contour,
+    SegContext,
+    Segmenter,
+    SegResult,
+    ThresholdSegmenter,
+    fill_holes,
+    mask_contour_subpx,
+    mask_iou,
+    refine_mask,
+)
 
 F64 = NDArray[np.float64]
 U8 = NDArray[np.uint8]
@@ -244,6 +254,48 @@ def _restore_see_through(
             continue
         out[lab == i] = False
     return out
+
+
+THRESHOLD_AGREE_IOU = 0.9  # the colour threshold must agree with the model mask on the part before its openings count
+THRESHOLD_OPENING_MAX_SHARE = 0.15  # an opening larger than this share of the part is not a bore the model closed
+
+
+def threshold_openings(img: U8, model: BoolMask, prompt: str, ctx: SegContext, ppm: float) -> tuple[BoolMask, int]:
+    """`model` with the see-through openings that the colour threshold finds inside it removed, and how many.
+
+    A text-prompted model mask can close a through-hole whose bore is narrow or countersunk; the threshold, which only
+    asks "is this the mat colour", still sees the mat through it. Used only for thick parts (the see-through cylinder
+    fit then decides what each opening is) and only when both masks agree on the part (filled IoU ≥
+    `THRESHOLD_AGREE_IOU`). An opening counts when it is enclosed by the model mask, at least `SEE_THROUGH_MIN_MM2`,
+    at most `THRESHOLD_OPENING_MAX_SHARE` of the part, and compact like a lens (`SEE_THROUGH_MIN_FILL`).
+
+    Live, 2026-10-29: SAM 3.1 closed the countersunk pivot of the broken latch while the threshold mask on the same
+    photo fitted it at Ø5.0 mm; the verifier then held the model's real pivot hole against a solid photo (8.6 mm)."""
+    try:
+        thr = ThresholdSegmenter().segment(img, prompt, context=ctx).mask
+    except Exception:  # the threshold is a second opinion; without it the model mask stands
+        return model, 0
+    if not thr.any() or mask_iou(fill_holes(model), fill_holes(thr)) < THRESHOLD_AGREE_IOU:
+        return model, 0
+    inv = (model & ~thr).astype(np.uint8)
+    n, lab, stats, _ = cv2.connectedComponentsWithStats(inv, connectivity=4)
+    part_px = float(np.count_nonzero(model))
+    min_px = max(SEE_THROUGH_MIN_PX, SEE_THROUGH_MIN_MM2 * ppm**2)
+    out, k = model.copy(), 0
+    for i in range(1, n):
+        area = float(stats[i, cv2.CC_STAT_AREA])
+        if area < min_px or area > THRESHOLD_OPENING_MAX_SHARE * part_px:
+            continue
+        span = float(max(stats[i, cv2.CC_STAT_WIDTH], stats[i, cv2.CC_STAT_HEIGHT]))
+        if area / (math.pi * (span / 2) ** 2) < SEE_THROUGH_MIN_FILL:
+            continue
+        comp = lab == i
+        ring = (cv2.dilate(comp.astype(np.uint8), np.ones((3, 3), np.uint8)) > 0) & ~comp
+        if not model[ring].all():
+            continue  # reaches the outline: a notch or shadow, not an enclosed bore
+        out[comp] = False
+        k += 1
+    return out, k
 
 
 def thick_footprint(
@@ -508,7 +560,15 @@ def measure_photo(
         thickness_mm is not None and thickness_mm > 0 and pose is not None and pose.camera_height_mm > thickness_mm
     )
     if thick and mask.any():
-        mask = _restore_see_through(mask, seg.mask, det, pose, float(thickness_mm or 0.0), ppm_img)
+        raw = seg.mask
+        if seg.source in MODEL_MASK_SOURCES:
+            raw, n_open = threshold_openings(img, raw, prompt, ctx, ppm_img)
+            if n_open:
+                notes.append(
+                    f"{n_open} see-through opening(s) the {seg.source} mask closed were taken from the colour threshold "
+                    "(the masks agree on the part; the hole fit decides what each opening is)"
+                )
+        mask = _restore_see_through(mask, raw, det, pose, float(thickness_mm or 0.0), ppm_img)
     field_: BoolMask | NDArray[np.float32] = mask
     if seg.prob is not None and mask.any():
         # The soft map decides the edge across a band of ±4 px around the mask boundary (the mask itself may include

@@ -1,0 +1,86 @@
+import cadquery as cq
+import math
+
+REFPOINTS = [
+    [24.513, 6.203],
+    [24.201, 6.898],
+    [23.507, 7.059],
+    [-22.809, 7.051],
+    [-23.335, 6.641],
+    [-23.761, 5.848],
+    [-24.432, 2.684],
+    [-24.58, -0.624],
+    [-24.182, -4.633],
+    [-23.469, -6.503],
+    [-22.439, -7.049],
+    [23.74, -7.053],
+    [23.53, -4.229],
+    [23.601, 3.514],
+    [23.82, 5.372],
+    [24.139, 5.663],
+    [24.536, 5.097],
+]
+
+REFMINX = -24.58
+REFMAXX = 24.536
+REFMINY = -7.053
+REFMAXY = 7.059
+REFLEN = REFMAXX - REFMINX
+REFWID = REFMAXY - REFMINY
+REFCX = (REFMINX + REFMAXX) * 0.5
+REFCY = (REFMINY + REFMAXY) * 0.5
+
+PARAMS = {
+    "overall_length": (49.3, 45.0, 55.0, 0.1, "mm", True, "Overall length X"),
+    "overall_width": (14.4, 12.0, 16.0, 0.1, "mm", True, "Overall width Y"),
+    "thickness": (14.5, 10.0, 18.0, 0.1, "mm", True, "Body thickness Z"),
+    "edge_fillet": (0.8, 0.0, 2.0, 0.1, "mm", False, "Top edge fillet radius"),
+    "clearance": (0.2, 0.0, 0.6, 0.05, "mm", True, "Fit clearance"),
+    "extra_divisions": (0, 0, 4, 1, "", False, "Topology extra edge subdivisions"),
+}
+
+def build(p: dict) -> cq.Workplane:
+    length = float(p["overall_length"])
+    width = float(p["overall_width"])
+    thickness = float(p["thickness"])
+    edgeFillet = float(p["edge_fillet"])
+    extra = int(p["extra_divisions"])
+
+    sx = length / REFLEN if REFLEN != 0 else 1.0
+    sy = width / REFWID if REFWID != 0 else 1.0
+
+    tpts = []
+    for pt in REFPOINTS:
+        nx = (pt[0] - REFCX) * sx
+        ny = (pt[1] - REFCY) * sy
+        tpts.append((nx, ny))
+
+    if extra > 0:
+        subdiv = []
+        npts = len(tpts)
+        for i in range(npts):
+            x1 = tpts[i][0]
+            y1 = tpts[i][1]
+            x2 = tpts[(i + 1) % npts][0]
+            y2 = tpts[(i + 1) % npts][1]
+            subdiv.append((x1, y1))
+            for k in range(1, extra + 1):
+                tval = k / (extra + 1.0)
+                subdiv.append((x1 + (x2 - x1) * tval, y1 + (y2 - y1) * tval))
+        tpts = subdiv
+
+    wp = cq.Workplane("XY")
+    wp = wp.moveTo(tpts[0][0], tpts[0][1])
+    for pt in tpts[1:]:
+        wp = wp.lineTo(pt[0], pt[1])
+    wp = wp.close().extrude(thickness, combine=True)
+
+    if edgeFillet > 1e-6:
+        try:
+            wp = wp.edges(cq.selectors.BoxSelector((-length, -width, thickness - 0.01), (length, width, thickness + 0.01))).fillet(edgeFillet)
+        except Exception:
+            pass
+
+    return wp
+
+result = build({k: v[0] for k, v in PARAMS.items()})

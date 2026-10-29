@@ -1,0 +1,104 @@
+import cadquery as cq
+import math
+
+PARAMS = {
+    "thickness": (3.8, 1.0, 6.0, 0.1, "mm", True, "Plate thickness"),
+    "hole_dia": (5.5, 3.0, 8.0, 0.1, "mm", True, "Through hole diameter"),
+    "clearance": (0.2, 0.0, 0.6, 0.05, "mm", True, "Fit clearance"),
+    "hole_x": (2.744, -10.0, 10.0, 0.1, "mm", False, "Hole center X"),
+    "hole_y": (0.134, -5.0, 5.0, 0.1, "mm", False, "Hole center Y"),
+    "foot_height": (15.0, 5.0, 30.0, 0.5, "mm", False, "Foot height above leg"),
+    "foot_width": (24.0, 15.0, 35.0, 0.5, "mm", False, "Foot width Y"),
+    "hole_count": (1, 1, 3, 1, "", False, "Number of holes"),
+}
+
+# measured base profile polyline (XY footprint)
+PROFILE_POINTS = [
+    [-17.758, 11.839],
+    [-17.732, -11.626],
+    [-16.803, -12.488],
+    [-12.879, -12.506],
+    [-12.728, -12.064],
+    [-3.215, -11.573],
+    [15.648, -11.582],
+    [16.634, -11.282],
+    [17.383, -10.618],
+    [17.737, -9.875],
+    [17.825, 9.713],
+    [17.382, 10.889],
+    [16.627, 11.565],
+    [15.564, 11.861],
+    [-3.292, 11.843],
+    [-12.663, 12.162],
+    [-12.943, 12.52],
+    [-16.691, 12.538],
+]
+
+def build(p: dict) -> cq.Workplane:
+    t = float(p["thickness"])
+    hd = float(p["hole_dia"])
+    clr = float(p["clearance"])
+    hx = float(p["hole_x"])
+    hy = float(p["hole_y"])
+    fh = float(p["foot_height"])
+    fw = float(p["foot_width"])
+    hc = int(p["hole_count"])
+
+    eff_dia = hd + clr
+
+    # extent in X for foot placement (min X of profile)
+    min_x = min(pt[0] for pt in PROFILE_POINTS)
+
+    # base plate extruded from Z=0 up by thickness, centred in XY by measured points
+    base = (
+        cq.Workplane("XY")
+        .polyline(PROFILE_POINTS)
+        .close()
+        .extrude(t)
+    )
+
+    # through hole(s) - single hole per spec, topology param allows replication along X if >1
+    if hc == 1:
+        base = (
+            base.faces(">Z")
+            .workplane()
+            .center(hx, hy)
+            .circle(eff_dia / 2.0)
+            .cutThruAll()
+        )
+    else:
+        # distribute holes along X around hole_x when topology count >1
+        spacing = 8.0
+        start_x = hx - (hc - 1) * spacing / 2.0
+        for i in range(hc):
+            cx = start_x + i * spacing
+            base = (
+                base.faces(">Z")
+                .workplane()
+                .center(cx, hy)
+                .circle(eff_dia / 2.0)
+                .cutThruAll()
+            )
+
+    # L-bracket upright foot at the -X end, thickness = t along X, width = fw along Y
+    # foot stands on Z=0 and rises to foot_height, long axis remains +X
+    # foot polygon in XY then extruded in Z
+    x0 = min_x
+    x1 = min_x + t
+    y0 = -fw / 2.0
+    y1 = fw / 2.0
+    foot_poly = [(x0, y0), (x1, y0), (x1, y1), (x0, y1)]
+
+    foot = (
+        cq.Workplane("XY")
+        .polyline(foot_poly)
+        .close()
+        .extrude(fh)
+    )
+
+    result = base.union(foot)
+
+    # ensure mounting face is on Z=0 (already) and model stays solid
+    return result
+
+result = build({k: v[0] for k, v in PARAMS.items()})

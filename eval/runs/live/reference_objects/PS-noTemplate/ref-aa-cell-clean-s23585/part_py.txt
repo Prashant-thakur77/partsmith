@@ -1,0 +1,64 @@
+import cadquery as cq
+import math
+
+PARAMS = {
+    "thickness": (14.5, 12.0, 17.0, 0.1, "mm", True, "Thickness"),
+    "clearance": (0.0, 0.0, 0.6, 0.05, "mm", True, "Clearance"),
+    "marker_count": (0, 0, 4, 1, "", False, "Reference Markers"),
+}
+
+# base profile from PartSpec polyline (AA cell lying on side, long axis +X)
+BASE_POINTS = [
+    (-24.715, 6.434), (-24.971, 3.64), (-24.716, 2.721), (-24.599, -0.439),
+    (-24.869, -5.329), (-24.598, -6.676), (-23.954, -7.112), (23.183, -7.106),
+    (23.83, -6.593), (24.198, -2.866), (24.802, -2.271), (24.92, -0.512),
+    (24.454, -0.948), (24.336, -0.035), (24.489, 0.827), (24.762, 0.419),
+    (24.968, 0.459), (24.843, 2.151), (24.67, 2.578), (24.211, 2.872),
+    (23.953, 6.176), (23.739, 6.8), (23.319, 7.097), (-23.797, 7.12), (-24.407, 6.949),
+]
+
+def build(p: dict) -> cq.Workplane:
+    thickness = float(p["thickness"])
+    clearance = float(p["clearance"])
+    marker_count = int(p["marker_count"])
+
+    # apply clearance as uniform XY offset scale (small) to keep fit intent
+    # scale factor derived from clearance vs nominal width ~14.5mm
+    # keep centered at origin
+    sx = 1.0 + clearance * 0.02
+    sy = 1.0 + clearance * 0.02
+    pts = [(x * sx, y * sy) for x, y in BASE_POINTS]
+
+    wp = cq.Workplane("XY")
+    # build closed polyline on Z=0
+    wp = wp.moveTo(pts[0][0], pts[0][1])
+    for x, y in pts[1:]:
+        wp = wp.lineTo(x, y)
+    wp = wp.close()
+
+    # solid body: extrude thickness upward, mounting face on Z=0
+    # centered in XY (points already centered), long axis +X
+    body = wp.extrude(thickness, both=False)
+
+    # optional topology feature: small embossed reference markers on top face
+    # default 0 -> no geometry change, keeps body solid to thickness over footprint
+    if marker_count > 0:
+        # distribute markers along +X axis on top surface
+        # markers are shallow cylinders 0.6mm tall, 2mm dia, do not affect fit much
+        mark_dia = 2.0
+        mark_h = 0.6
+        # usable length inside outline ~40mm
+        total_span = 30.0
+        if marker_count == 1:
+            xs = [0.0]
+        else:
+            step = total_span / (marker_count - 1) if marker_count > 1 else 0
+            xs = [-total_span / 2 + i * step for i in range(marker_count)]
+        for x in xs:
+            # place on top face
+            marker = cq.Workplane("XY").workplane(offset=thickness).moveTo(x, 0).circle(mark_dia / 2).extrude(mark_h)
+            body = body.union(marker)
+
+    return body
+
+result = build({k: v[0] for k, v in PARAMS.items()})

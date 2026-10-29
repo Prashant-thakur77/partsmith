@@ -1,44 +1,63 @@
 {
- "generated_at": "2026-10-28T17:42:07+00:00",
- "git_sha": "a1cc53261280969617163abde80865837dd61588",
- "mode": "mock",
+ "generated_at": "2026-10-29T20:43:37+00:00",
+ "git_sha": "304f9333bc2a5f23791c8529d43a990ad18c1c5f",
+ "mode": "live",
  "modes": [
+  "live",
   "mock"
  ],
- "mock_calls": 1498,
+ "mock_calls": 63,
  "providers_summary": {
   "build": {
-   "model": "",
-   "provider": "",
-   "open_weights": false,
-   "calls": 0,
-   "tokens": 0,
+   "model": "meta-models/muse-spark-open-1026",
+   "provider": "baseten",
+   "open_weights": true,
+   "calls": 86,
+   "tokens": 399588,
    "modes": {
-    "mock": 81
+    "live": 86
    },
-   "routes": []
+   "routes": [
+    {
+     "provider": "baseten",
+     "model": "meta-models/muse-spark-open-1026",
+     "mode": "live",
+     "open_weights": true,
+     "calls": 86,
+     "tokens": 399588
+    }
+   ]
   },
-  "fix": {
+  "capture_triage": {
    "model": "",
    "provider": "",
    "open_weights": false,
    "calls": 0,
    "tokens": 0,
    "modes": {
-    "mock": 2
+    "mock": 21
    },
    "routes": []
   },
   "fix_agent": {
-   "model": "",
-   "provider": "",
-   "open_weights": false,
-   "calls": 0,
-   "tokens": 0,
+   "model": "meta-models/muse-spark-open-1026",
+   "provider": "baseten",
+   "open_weights": true,
+   "calls": 788,
+   "tokens": 8253830,
    "modes": {
-    "mock": 876
+    "live": 788
    },
-   "routes": []
+   "routes": [
+    {
+     "provider": "baseten",
+     "model": "meta-models/muse-spark-open-1026",
+     "mode": "live",
+     "open_weights": true,
+     "calls": 788,
+     "tokens": 8253830
+    }
+   ]
   },
   "judge": {
    "model": "",
@@ -47,158 +66,204 @@
    "calls": 0,
    "tokens": 0,
    "modes": {
-    "mock": 44
+    "mock": 42
    },
    "routes": []
   },
   "plan": {
-   "model": "",
-   "provider": "",
-   "open_weights": false,
-   "calls": 0,
-   "tokens": 0,
+   "model": "meta-models/muse-spark-open-1026",
+   "provider": "baseten",
+   "open_weights": true,
+   "calls": 42,
+   "tokens": 77813,
    "modes": {
-    "mock": 60
+    "live": 42
    },
-   "routes": []
+   "routes": [
+    {
+     "provider": "baseten",
+     "model": "meta-models/muse-spark-open-1026",
+     "mode": "live",
+     "open_weights": true,
+     "calls": 42,
+     "tokens": 77813
+    }
+   ]
   },
   "segment": {
-   "model": "",
-   "provider": "",
+   "model": "sam-3.1",
+   "provider": "meta",
    "open_weights": false,
-   "calls": 0,
+   "calls": 302,
    "tokens": 0,
    "modes": {
-    "mock": 328
+    "live": 302
    },
-   "routes": []
+   "routes": [
+    {
+     "provider": "meta",
+     "model": "sam-3.1",
+     "mode": "live",
+     "open_weights": false,
+     "calls": 302,
+     "tokens": 0
+    }
+   ]
   },
   "segment_points": {
-   "model": "",
-   "provider": "",
+   "model": "sam-3.1",
+   "provider": "meta",
    "open_weights": false,
-   "calls": 0,
+   "calls": 53,
    "tokens": 0,
    "modes": {
-    "mock": 35
+    "live": 53
    },
-   "routes": []
+   "routes": [
+    {
+     "provider": "meta",
+     "model": "sam-3.1",
+     "mode": "live",
+     "open_weights": false,
+     "calls": 53,
+     "tokens": 0
+    }
+   ]
   },
   "understand": {
-   "model": "",
-   "provider": "",
+   "model": "muse-spark-1.3",
+   "provider": "meta",
    "open_weights": false,
-   "calls": 0,
-   "tokens": 0,
+   "calls": 63,
+   "tokens": 1074642,
    "modes": {
-    "mock": 72
+    "live": 63
    },
-   "routes": []
+   "routes": [
+    {
+     "provider": "meta",
+     "model": "muse-spark-1.3",
+     "mode": "live",
+     "open_weights": false,
+     "calls": 63,
+     "tokens": 1074642
+    }
+   ]
   }
  },
- "label": "MOCK calls only: shows the routing, not real usage",
+ "label": "live model calls",
  "stages": {
   "segment": {
    "models": [
     {
-     "provider": "mock",
+     "provider": "meta",
      "model": "sam-3.1",
      "open_weights": false,
      "modes": [
-      "mock"
+      "live"
      ],
-     "calls": 328,
+     "calls": 302,
      "tokens": 0
     }
    ],
-   "calls": 328,
+   "calls": 302,
    "tokens": 0,
    "open_tokens": 0
   },
   "understand": {
    "models": [
     {
-     "provider": "mock",
+     "provider": "meta",
      "model": "muse-spark-1.3",
      "open_weights": false,
      "modes": [
-      "mock"
+      "live"
      ],
-     "calls": 72,
-     "tokens": 0
+     "calls": 63,
+     "tokens": 1074642
     }
    ],
-   "calls": 72,
-   "tokens": 0,
+   "calls": 63,
+   "tokens": 1074642,
    "open_tokens": 0
   },
   "segment_points": {
    "models": [
     {
-     "provider": "mock",
+     "provider": "meta",
      "model": "sam-3.1",
      "open_weights": false,
      "modes": [
-      "mock"
+      "live"
      ],
-     "calls": 35,
+     "calls": 53,
      "tokens": 0
     }
    ],
-   "calls": 35,
+   "calls": 53,
    "tokens": 0,
    "open_tokens": 0
   },
   "plan": {
    "models": [
     {
-     "provider": "mock",
-     "model": "meta-models/muse-spark-open",
+     "provider": "baseten",
+     "model": "meta-models/muse-spark-open-1026",
      "open_weights": true,
      "modes": [
-      "mock"
+      "live"
      ],
-     "calls": 60,
-     "tokens": 0
+     "calls": 42,
+     "tokens": 77813
     }
    ],
-   "calls": 60,
-   "tokens": 0,
-   "open_tokens": 0
+   "calls": 42,
+   "tokens": 77813,
+   "open_tokens": 77813
   },
   "build": {
    "models": [
     {
-     "provider": "mock",
-     "model": "meta-models/muse-spark-open",
+     "provider": "baseten",
+     "model": "meta-models/muse-spark-open-1026",
      "open_weights": true,
      "modes": [
-      "mock"
+      "live"
      ],
-     "calls": 81,
-     "tokens": 0
+     "calls": 86,
+     "tokens": 399588
     }
    ],
-   "calls": 81,
-   "tokens": 0,
-   "open_tokens": 0
+   "calls": 86,
+   "tokens": 399588,
+   "open_tokens": 399588
   },
   "fix_agent": {
    "models": [
     {
-     "provider": "mock",
-     "model": "mock fix agent",
-     "open_weights": null,
+     "provider": "baseten",
+     "model": "meta-models/muse-spark-open-1026",
+     "open_weights": true,
      "modes": [
-      "mock"
+      "live"
      ],
-     "calls": 876,
+     "calls": 790,
+     "tokens": 8253830
+    },
+    {
+     "provider": "meta",
+     "model": "muse-spark-1.3",
+     "open_weights": false,
+     "modes": [
+      "live"
+     ],
+     "calls": 1,
      "tokens": 0
     }
    ],
-   "calls": 876,
-   "tokens": 0,
-   "open_tokens": 0
+   "calls": 791,
+   "tokens": 8253830,
+   "open_tokens": 8253830
   },
   "judge": {
    "models": [
@@ -209,28 +274,28 @@
      "modes": [
       "mock"
      ],
-     "calls": 44,
+     "calls": 42,
      "tokens": 0
     }
    ],
-   "calls": 44,
+   "calls": 42,
    "tokens": 0,
    "open_tokens": 0
   },
-  "fix": {
+  "capture_triage": {
    "models": [
     {
      "provider": "mock",
-     "model": "meta-models/muse-spark-open",
+     "model": "muse-glimmer",
      "open_weights": true,
      "modes": [
       "mock"
      ],
-     "calls": 2,
+     "calls": 21,
      "tokens": 0
     }
    ],
-   "calls": 2,
+   "calls": 21,
    "tokens": 0,
    "open_tokens": 0
   }
@@ -242,12 +307,12 @@
    "fix_agent",
    "plan"
   ],
-  "calls": 0,
-  "calls_on_open_weights": 0,
-  "tokens": 0,
-  "tokens_on_open_weights": 0,
-  "share_tokens_open_weights": null,
-  "share_calls_open_weights": null,
+  "calls": 919,
+  "calls_on_open_weights": 918,
+  "tokens": 8731231,
+  "tokens_on_open_weights": 8731231,
+  "share_tokens_open_weights": 1.0,
+  "share_calls_open_weights": 0.998911860718172,
   "note": "live and replay calls only; mock calls are excluded"
  },
  "open_configs": "pending live run"

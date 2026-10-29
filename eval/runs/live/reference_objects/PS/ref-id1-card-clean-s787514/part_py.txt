@@ -1,0 +1,96 @@
+import cadquery as cq
+import math
+
+PARAMS = {
+    "length": (86.0, 80.0, 90.0, 0.1, "mm", True, "Length X"),
+    "width": (54.1, 50.0, 58.0, 0.1, "mm", True, "Width Y"),
+    "thickness": (0.9, 0.4, 1.2, 0.05, "mm", True, "Thickness"),
+    "corner_radius": (2.9, 2.0, 5.0, 0.1, "mm", False, "Corner radius"),
+    "clearance": (0.2, 0.0, 0.6, 0.05, "mm", True, "Clearance"),
+    "emboss_count": (0, 0, 4, 1, "", False, "Emboss lines count"),
+}
+
+def build(p: dict) -> cq.Workplane:
+    # Measured ID-1 polyline from PartSpec - points_mm
+    base_pts = [
+        (-42.411, 25.432),
+        (-42.867, 23.588),
+        (-42.88, -22.888),
+        (-42.592, -25.048),
+        (-42.066, -25.914),
+        (-41.257, -26.588),
+        (-39.731, -27.04),
+        (39.363, -27.048),
+        (41.185, -26.638),
+        (42.376, -25.52),
+        (42.815, -24.292),
+        (42.866, 23.707),
+        (42.43, 25.418),
+        (41.419, 26.5),
+        (40.364, 26.944),
+        (38.455, 27.063),
+        (-39.26, 27.033),
+        (-41.027, 26.7),
+    ]
+
+    # bounding box of measured points
+    xs = [q[0] for q in base_pts]
+    ys = [q[1] for q in base_pts]
+    min_x = min(xs)
+    max_x = max(xs)
+    min_y = min(ys)
+    max_y = max(ys)
+    base_len = max_x - min_x
+    base_wid = max_y - min_y
+    cx0 = (max_x + min_x) * 0.5
+    cy0 = (max_y + min_y) * 0.5
+
+    target_len = p["length"]
+    target_wid = p["width"]
+    # scale measured outline to requested length/width, centered at origin
+    sx = target_len / base_len if base_len != 0 else 1.0
+    sy = target_wid / base_wid if base_wid != 0 else 1.0
+
+    scaled = []
+    for x, y in base_pts:
+        nx = (x - cx0) * sx
+        ny = (y - cy0) * sy
+        scaled.append((nx, ny))
+
+    # apply clearance as inset if needed - for reference object keep outline exact,
+    # clearance parameter is exposed for fit testing but not applied to reference by default
+    # we do not inset unless user wants undersize, keep solid footprint
+    th = p["thickness"]
+
+    # build solid card with mounting face on Z=0, +Z up, centered at origin, long axis +X
+    wp = cq.Workplane("XY")
+    # move to first point then polyline through rest
+    wp = wp.moveTo(scaled[0][0], scaled[0][1])
+    wp = wp.polyline(scaled[1:])
+    wp = wp.close()
+    # extrude solid body - solid to thickness over most of footprint
+    body = wp.extrude(th, combine=True)
+
+    # optional topology parameter - does not affect default solid (0 = no change)
+    # allows topology variation when natural to test; default 0 keeps PartSpec intent
+    cnt = int(p.get("emboss_count", 0))
+    if cnt > 0:
+        # add very shallow emboss lines on top face for visualization, does not create hollow underside
+        # lines run along X, centered in Y
+        line_w = 0.8
+        line_h = 0.08
+        gap = 4.0
+        start_y = - (cnt - 1) * gap * 0.5
+        for i in range(cnt):
+            y = start_y + i * gap
+            # keep within card extents
+            w = target_len * 0.7
+            h = line_w
+            emb = cq.Workplane("XY").workplane(offset=th - 1e-6).moveTo(-w/2, y - h/2).rect(w, h).extrude(line_h)
+            body = body.union(emb)
+
+    # ensure mounting face is at Z=0 (extrude already does this) and body centered
+    # no hollow underside, no hidden cavity
+    return body
+
+result = build({k: v[0] for k, v in PARAMS.items()})

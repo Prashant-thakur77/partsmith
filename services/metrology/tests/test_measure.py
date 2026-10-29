@@ -348,3 +348,31 @@ def test_top_view_of_a_thick_part_records_what_the_photo_allows(thickness: float
         assert hi - lo > 1.0 and any("a side photo settles it" in n for n in m.notes)
     else:
         assert hi - lo < 0.3
+
+
+def test_see_through_holes_a_model_mask_closed_come_back_from_the_threshold() -> None:
+    """Live, 2026-10-29: SAM 3.1 closed a countersunk pivot the threshold mask still saw through. A model mask without
+    the openings gets them back from the colour threshold and measures exactly like the same mask with them open (a
+    model mask has no soft edge map, so both read about 0.2 mm small here; that is the binary edge, not this rule)."""
+    from services.metrology.segment import SegContext, SegResult, fill_holes
+
+    class Model:
+        def __init__(self, closed: bool) -> None:
+            self.closed = closed
+
+        def segment(self, img: np.ndarray, prompt: str, *, context: SegContext | None = None) -> SegResult:
+            thr = ThresholdSegmenter().segment(img, prompt, context=context).mask
+            return SegResult(fill_holes(thr) if self.closed else thr, 0.95, "sam-3.1", prompt=prompt)
+
+    part, _ = _caster_plate(20, 5.0, 10.0)
+    cam = T.camera_above(_centre("screen-l"), height_mm=330, tilt_deg=18, azimuth_deg=160)
+    sc = T.render_part_scene("screen-l", cam, part)
+    closed = measure_photo(sc.image, "top", segmenter=Model(True), thickness_mm=10.0, K=cam.K).result.measurements
+    opened = measure_photo(sc.image, "top", segmenter=Model(False), thickness_mm=10.0, K=cam.K).result.measurements
+    assert closed is not None and opened is not None and len(closed.holes) == 4
+    assert any("taken from the colour threshold" in n for n in closed.notes)
+    assert [h.diameter.value for h in closed.holes] == [h.diameter.value for h in opened.holes]
+    assert all(abs(h.diameter.value - 5.0) < 0.3 for h in closed.holes)
+    # a thin part keeps the model mask as it is: there is no cylinder fit to decide what an opening would be
+    thin = measure_photo(sc.image, "top", segmenter=Model(True), thickness_mm=None, K=cam.K).result.measurements
+    assert thin is not None and not thin.holes

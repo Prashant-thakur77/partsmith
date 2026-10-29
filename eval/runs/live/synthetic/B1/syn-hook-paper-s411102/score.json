@@ -1,0 +1,99 @@
+{
+ "suite": "synthetic",
+ "config": "B1",
+ "sample_id": "syn-hook-paper-s411102",
+ "split": "held_out",
+ "kind": "template",
+ "preset": "paper",
+ "mode": "live",
+ "gt_source": "synthetic_exact",
+ "status": "best_effort",
+ "verified": false,
+ "iterations": 1,
+ "iterations_to_converge": null,
+ "strategy": "template",
+ "template": "hook",
+ "verifier_max_error_mm": 5.808258131181668,
+ "retake_reason": null,
+ "failed_checks": [],
+ "usd": 0.104125,
+ "tokens_in": 19078,
+ "tokens_out": 16158,
+ "model_calls": 14,
+ "model_ms": 218613,
+ "provider_modes": [
+  "live"
+ ],
+ "providers": {
+  "segment": [
+   "meta:sam-3.1"
+  ],
+  "understand": [
+   "meta:muse-spark-1.3"
+  ],
+  "segment_points": [
+   "meta:sam-3.1"
+  ],
+  "plan": [
+   "baseten:meta-models/muse-spark-open-1026"
+  ],
+  "build": [
+   "baseten:meta-models/muse-spark-open-1026"
+  ]
+ },
+ "convergence": [
+  {
+   "iter": 1,
+   "hausdorff_mm": 5.808258131181668,
+   "iou": 0.6535697955451042,
+   "max_error_mm": 5.808258131181668
+  }
+ ],
+ "wall_s": 233.25,
+ "dims": [
+  {
+   "name": "length",
+   "gt_mm": 67.5,
+   "model_mm": 67.4,
+   "error_mm": -0.1
+  },
+  {
+   "name": "width",
+   "gt_mm": 18.3,
+   "model_mm": 18.1,
+   "error_mm": -0.2
+  },
+  {
+   "name": "thickness",
+   "gt_mm": 26.95,
+   "model_mm": 31.55,
+   "error_mm": 4.6
+  },
+  {
+   "name": "hole_1.diameter",
+   "gt_mm": 4.95,
+   "model_mm": 4.65,
+   "error_mm": -0.3
+  },
+  {
+   "name": "hole_2.diameter",
+   "gt_mm": 4.95,
+   "model_mm": 4.65,
+   "error_mm": -0.3
+  },
+  {
+   "name": "hole_3.diameter",
+   "gt_mm": 4.95,
+   "model_mm": 4.65,
+   "error_mm": -0.3
+  }
+ ],
+ "missed": [],
+ "extra_holes": 0,
+ "pass_0_3": false,
+ "pass_0_5": false,
+ "valid": true,
+ "valid_reason": "",
+ "failure_category": "dim_off",
+ "failure": "worst thickness +4.60 mm"
+}

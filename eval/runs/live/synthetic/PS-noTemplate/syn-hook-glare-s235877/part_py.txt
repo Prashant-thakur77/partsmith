@@ -1,0 +1,67 @@
+import cadquery as cq
+import math
+
+BASE_POINTS = [
+    (24.989,-11.355),(25.305,-10.035),(25.282,-3.839),(26.539,-2.086),(26.572,7.718),
+    (26.402,8.2),(25.328,8.927),(25.226,10.633),(24.795,11.8),(23.95,12.795),
+    (23.103,13.351),(21.828,13.661),(-22.639,13.696),(-23.891,13.508),(-24.842,13.052),
+    (-26.155,11.567),(-26.564,9.822),(-26.572,-9.958),(-26.091,-11.757),(-25.498,-12.549),
+    (-24.358,-13.359),(-22.491,-13.711),(21.583,-13.693),(22.596,-13.546),(23.675,-13.031)
+]
+
+MAX_X = max(p[0] for p in BASE_POINTS)
+
+PARAMS = {
+    "plate_thickness": (3.0, 1.5, 5.0, 0.1, "mm", False, "Plate thickness"),
+    "hole1_d": (4.87, 3.5, 6.5, 0.01, "mm", True, "Hole 1 diameter"),
+    "hole2_d": (4.84, 3.5, 6.5, 0.01, "mm", True, "Hole 2 diameter"),
+    "hole1_x": (-19.92, -25.0, -10.0, 0.1, "mm", False, "Hole 1 X"),
+    "hole2_x": (-6.768, -15.0, 5.0, 0.1, "mm", False, "Hole 2 X"),
+    "hole_y": (-0.425, -5.0, 5.0, 0.1, "mm", False, "Hole Y (both)"),
+    "csk_d": (9.0, 6.0, 12.0, 0.2, "mm", True, "Countersink diameter"),
+    "csk_angle": (90.0, 60.0, 120.0, 2.0, "deg", False, "Countersink angle"),
+    "hook_height": (24.0, 6.0, 30.0, 0.5, "mm", False, "Hook stem height"),
+    "hook_overhang": (16.5, 8.0, 25.0, 0.5, "mm", True, "Hook overhang (-X)"),
+    "hook_thickness": (3.0, 2.0, 5.0, 0.1, "mm", True, "Hook thickness"),
+    "hook_width": (18.0, 8.0, 26.0, 0.5, "mm", True, "Hook width across Y"),
+    "hook_count": (1, 1, 2, 1, "", False, "Number of hooks"),
+}
+
+def build(p: dict) -> cq.Workplane:
+    wp = cq.Workplane("XY")
+    wp = wp.moveTo(BASE_POINTS[0][0], BASE_POINTS[0][1])
+    for x, y in BASE_POINTS[1:]:
+        wp = wp.lineTo(x, y)
+    wp = wp.close()
+    plate = wp.extrude(p["plate_thickness"])
+
+    plate = plate.faces(">Z").workplane().pushPoints([(p["hole1_x"], p["hole_y"])]).cskHole(p["hole1_d"], p["csk_d"], p["csk_angle"])
+    plate = plate.faces(">Z").workplane().pushPoints([(p["hole2_x"], p["hole_y"])]).cskHole(p["hole2_d"], p["csk_d"], p["csk_angle"])
+
+    t = p["hook_thickness"]
+    w = p["hook_width"]
+    h = p["hook_height"]
+    L = p["hook_overhang"]
+    th = p["plate_thickness"]
+
+    stem_cx = MAX_X - t/2.0
+    stem_cy = 0
+    stem_cz = th + h/2.0
+
+    arm_cx = MAX_X - L/2.0
+    arm_cy = 0
+    arm_cz = th + h - t/2.0
+
+    hook = cq.Workplane("XY").box(t, w, h, centered=True).translate((stem_cx, stem_cy, stem_cz))
+    arm = cq.Workplane("XY").box(L, w, t, centered=True).translate((arm_cx, arm_cy, arm_cz))
+    hook = hook.union(arm)
+
+    if int(p["hook_count"]) == 2:
+        hook2 = cq.Workplane("XY").box(t, w/2.0, h, centered=True).translate((stem_cx, w/2.0, stem_cz))
+        arm2 = cq.Workplane("XY").box(L, w/2.0, t, centered=True).translate((arm_cx, w/2.0, arm_cz))
+        hook = hook.union(hook2).union(arm2)
+
+    result = plate.union(hook)
+    return result
+
+result = build({k: v[0] for k, v in PARAMS.items()})

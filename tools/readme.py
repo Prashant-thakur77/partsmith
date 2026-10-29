@@ -348,10 +348,11 @@ def status_line() -> str:
     mode = str(rep.get("mode", "?"))
     date = str(rep.get("generated_at", "?"))[:10]
     sha = str(rep.get("git_sha", "?"))[:7]
+    dirty = " plus uncommitted changes" if (_load("provenance.json") or {}).get("git_dirty") else ""
     photos, parts = _photo_counts(rep)
     repairs = int((_load("impact.json") or {}).get("n_sessions") or 0)
     head = (
-        f"> **Status: {mode} providers** · bench report {date} at commit `{sha}` · real photos measured: {photos} · "
+        f"> **Status: {mode} providers** · bench report {date} at commit `{sha}`{dirty} · real photos measured: {photos} · "
         f"real parts with ruler ground truth: {parts} · real repairs logged: {repairs}"
     )
     on = "synthetic photos" if photos == 0 else f"synthetic photos and {photos} real photos"

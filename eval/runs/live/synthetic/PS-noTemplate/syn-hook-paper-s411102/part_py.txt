@@ -1,0 +1,77 @@
+import cadquery as cq
+import math
+
+PARAMS = {
+    "plate_thickness": (4.5, 2.0, 7.0, 0.1, "mm", False, "Plate thickness"),
+    "hole_dia": (4.5, 3.0, 6.0, 0.05, "mm", True, "Screw hole diameter"),
+    "csk_outer_dia": (8.2, 6.0, 10.0, 0.1, "mm", False, "Countersink outer diameter"),
+    "csk_depth": (1.6, 0.5, 3.0, 0.1, "mm", False, "Countersink depth"),
+    "hook_height": (21.5, 12.0, 32.0, 0.5, "mm", False, "Hook stem height above plate top"),
+    "hook_overhang": (18.5, 12.0, 26.0, 0.1, "mm", False, "Hook overhang inner face to tip"),
+    "hook_thk": (3.8, 2.0, 5.0, 0.1, "mm", True, "Hook material thickness"),
+    "hook_width_y": (14.5, 8.0, 18.0, 0.5, "mm", False, "Hook width across Y"),
+    "hook_fillet": (1.6, 0.0, 4.0, 0.2, "mm", False, "Fillet at hook base"),
+    "hole_count": (3, 1, 3, 1, "", True, "Number of mounting holes"),
+}
+
+# measured polyline for wall plate footprint (long axis X, centered at origin)
+BASE_PTS = [[-33.555,5.361],[-33.7,-3.58],[-33.433,-5.719],[-32.924,-6.906],[-31.803,-8.016],[-30.505,-8.72],[-29.502,-8.963],[29.0,-9.023],[30.97,-8.605],[31.815,-8.106],[32.78,-7.066],[33.552,-5.469],[33.696,1.62],[33.445,5.667],[32.996,6.778],[32.196,7.724],[31.067,8.522],[29.701,8.983],[-28.525,9.048],[-30.881,8.597],[-32.005,7.919],[-33.173,6.368]]
+
+# measured hole centers (top view)
+HOLE_CENTERS = [[0.078,-0.189],[13.236,-0.184],[26.393,-0.182]]
+
+def build(p: dict) -> cq.Workplane:
+    t = float(p["plate_thickness"])
+    hd = float(p["hole_dia"])
+    csk_d = float(p["csk_outer_dia"])
+    csk_dep = float(p["csk_depth"])
+    h_h = float(p["hook_height"])
+    h_over = float(p["hook_overhang"])
+    h_thk = float(p["hook_thk"])
+    h_w = float(p["hook_width_y"])
+    n_holes = int(p["hole_count"])
+
+    # base plate from polyline, extruded from Z=0 to Z=t (mounting face on Z=0)
+    wp = cq.Workplane("XY")
+    wp = wp.moveTo(BASE_PTS[0][0], BASE_PTS[0][1])
+    for x, y in BASE_PTS[1:]:
+        wp = wp.lineTo(x, y)
+    wp = wp.close()
+    plate = wp.extrude(t, combine=False)
+
+    # anchor X for hook is minimum X of base profile (-X end)
+    min_x = min(pt[0] for pt in BASE_PTS)
+
+    # hook geometry: L-shaped 90 deg hook at -X_end, protruding +Z, tip toward +X
+    # stem vertical
+    stem = cq.Workplane("XY").box(h_thk, h_w, h_h, centered=False)
+    stem = stem.translate((min_x, -h_w/2, t))
+
+    # horizontal arm at top of stem, extending +X
+    arm_len = h_thk + h_over  # from outer wall to tip = overhang + thickness
+    arm = cq.Workplane("XY").box(arm_len, h_w, h_thk, centered=False)
+    arm = arm.translate((min_x, -h_w/2, t + h_h - h_thk))
+
+    # small tip lip down for retention (2mm)
+    tip_lip_h = min(3.0, h_h * 0.18)
+    tip_lip = cq.Workplane("XY").box(h_thk, h_w, tip_lip_h, centered=False)
+    tip_x = min_x + arm_len - h_thk
+    tip_lip = tip_lip.translate((tip_x, -h_w/2, t + h_h - h_thk - tip_lip_h))
+
+    # fuse plate + hook
+    result = plate.union(stem).union(arm).union(tip_lip)
+
+    # mounting holes through thickness with countersink at top (+Z face)
+    centers = HOLE_CENTERS[:n_holes]
+    for cx, cy in centers:
+        # through hole
+        hole = cq.Workplane("XY").circle(hd/2).extrude(t, combine=False).translate((cx, cy, 0))
+        result = result.cut(hole)
+        # countersink approximated as cylindrical recess at top
+        if csk_dep > 0.01 and csk_d > hd:
+            csk = cq.Workplane("XY").circle(csk_d/2).extrude(csk_dep, combine=False).translate((cx, cy, t - csk_dep))
+            result = result.cut(csk)
+
+    return result
+
+result = build({k: v[0] for k, v in PARAMS.items()})

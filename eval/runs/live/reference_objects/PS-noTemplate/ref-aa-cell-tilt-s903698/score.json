@@ -1,0 +1,111 @@
+{
+ "suite": "reference_objects",
+ "config": "PS-noTemplate",
+ "sample_id": "ref-aa-cell-tilt-s903698",
+ "split": "held_out",
+ "kind": "reference_object",
+ "preset": "tilt",
+ "mode": "live",
+ "gt_source": "reference_spec",
+ "status": "best_effort",
+ "verified": false,
+ "iterations": 6,
+ "iterations_to_converge": null,
+ "strategy": "free_code",
+ "template": null,
+ "verifier_max_error_mm": 0.7114099392304374,
+ "retake_reason": null,
+ "failed_checks": [],
+ "usd": 0.313206,
+ "tokens_in": 346095,
+ "tokens_out": 42017,
+ "model_calls": 39,
+ "model_ms": 377041,
+ "provider_modes": [
+  "live",
+  "mock"
+ ],
+ "providers": {
+  "capture_triage": [
+   "mock:muse-glimmer"
+  ],
+  "segment": [
+   "meta:sam-3.1"
+  ],
+  "understand": [
+   "meta:muse-spark-1.3"
+  ],
+  "build": [
+   "baseten:meta-models/muse-spark-open-1026"
+  ],
+  "fix_agent": [
+   "baseten:meta-models/muse-spark-open-1026"
+  ],
+  "judge": [
+   "mock:muse-glimmer"
+  ]
+ },
+ "convergence": [
+  {
+   "iter": 1,
+   "hausdorff_mm": 0.7982073865576816,
+   "iou": 0.9947414956489367,
+   "max_error_mm": 0.7982073865576816
+  },
+  {
+   "iter": 2,
+   "hausdorff_mm": 0.7982073865576816,
+   "iou": 0.9947414956489367,
+   "max_error_mm": 0.7982073865576816
+  },
+  {
+   "iter": 3,
+   "hausdorff_mm": 0.7114099392304374,
+   "iou": 0.9872424850624034,
+   "max_error_mm": 0.7114099392304374
+  },
+  {
+   "iter": 4,
+   "hausdorff_mm": 0.7355267628438009,
+   "iou": 0.9863187230808209,
+   "max_error_mm": 0.7355267628438009
+  },
+  {
+   "iter": 5,
+   "hausdorff_mm": 0.6971633864331063,
+   "iou": 0.9769606277658652,
+   "max_error_mm": 0.6971633864331063
+  },
+  {
+   "iter": 6,
+   "hausdorff_mm": 0.6971633864331063,
+   "iou": 0.9769606277658652,
+   "max_error_mm": 0.6971633864331063
+  }
+ ],
+ "wall_s": 411.61,
+ "dims": [
+  {
+   "name": "length",
+   "gt_mm": 50.5,
+   "model_mm": 49.1155,
+   "error_mm": -1.3845,
+   "within_spec": false
+  },
+  {
+   "name": "width",
+   "gt_mm": 14.5,
+   "model_mm": 14.2531,
+   "error_mm": -0.2469,
+   "within_spec": true
+  }
+ ],
+ "missed": [],
+ "extra_holes": 0,
+ "pass_0_3": false,
+ "pass_0_5": false,
+ "valid": true,
+ "valid_reason": "",
+ "failure_category": "dim_off",
+ "failure": "worst length -1.38 mm"
+}

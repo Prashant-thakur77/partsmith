@@ -1,0 +1,63 @@
+import cadquery as cq
+import math
+
+PARAMS = {
+    "card_length": (31.95, 30.0, 34.0, 0.01, "mm", True, "Length X"),
+    "card_width": (23.96, 22.0, 26.0, 0.01, "mm", True, "Width Y"),
+    "chamfer": (3.91, 2.0, 6.0, 0.05, "mm", True, "Chamfer cut"),
+    "thickness": (2.1, 1.2, 3.2, 0.05, "mm", True, "Thickness Z"),
+    "detail": (1, 1, 3, 1, "", False, "Detail level"),
+}
+
+def build(p: dict) -> cq.Workplane:
+    L = float(p["card_length"])
+    W = float(p["card_width"])
+    c = float(p["chamfer"])
+    t = float(p["thickness"])
+
+    hx = L / 2.0
+    hy = W / 2.0
+
+    # Clamp chamfer to stay inside footprint
+    c = min(c, hx - 1.0, hy - 1.0)
+    if c < 0.1:
+        c = 0.1
+
+    # Polyline from PartSpec measured points:
+    # (15.938,-11.979) -> (15.921,11.953) -> (-15.968,11.92) -> (-16.005,-7.903) -> (-12.16,-11.879)
+    # Interpreted as rectangle L x W with one chamfered corner at -X,-Y
+    # P1: +X,-Y
+    # P2: +X,+Y
+    # P3: -X,+Y
+    # P4: -X,+Y chamfer start on left edge
+    # P5: -X chamfer end on bottom edge
+
+    p1 = (hx, -hy)
+    p2 = (hx, hy)
+    p3 = (-hx, hy)
+    p4 = (-hx, -hy + c)
+    p5 = (-hx + c, -hy)
+
+    # Detail topology parameter currently keeps solid reference shape.
+    # Reserved for future emboss/texture variants without breaking fit.
+    detail = int(p.get("detail", 1))
+
+    wp = cq.Workplane("XY")
+    wp = wp.moveTo(p1[0], p1[1])
+    wp = wp.lineTo(p2[0], p2[1])
+    wp = wp.lineTo(p3[0], p3[1])
+    wp = wp.lineTo(p4[0], p4[1])
+    wp = wp.lineTo(p5[0], p5[1])
+    wp = wp.close()
+
+    # Mounting face on Z=0, extrude +Z
+    solid = wp.extrude(t, both=False)
+
+    # Optional detail subdivision does not change outer envelope for detail==1
+    if detail > 1:
+        # keep same solid, detail only affects tessellation hint if needed
+        pass
+
+    return solid
+
+result = build({k: v[0] for k, v in PARAMS.items()})

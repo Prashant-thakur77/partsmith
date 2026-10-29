@@ -1,0 +1,115 @@
+import cadquery as cq
+import math
+
+PARAMS = {
+    "thickness": (2.0, 1.0, 4.0, 0.1, "mm", True, "Plate thickness"),
+    "cable_dia": (5.0, 2.0, 8.0, 0.1, "mm", True, "Cable diameter (grip)"),
+    "slot_gap": (1.4, 0.6, 3.0, 0.1, "mm", True, "Entry slot gap"),
+    "hole_dia": (3.6, 2.5, 5.0, 0.1, "mm", True, "Mounting hole diameter"),
+    "clearance": (0.2, 0.0, 0.5, 0.05, "mm", True, "Fit clearance"),
+    "n_slots": (1, 1, 3, 1, "", False, "Number of cable slots"),
+}
+
+# measured outer polyline from PartSpec base_profile
+OUTLINE = [
+    [20.87, 4.682],
+    [20.333, 5.563],
+    [19.397, 5.881],
+    [5.219, 5.884],
+    [3.086, 5.985],
+    [2.952, 5.388],
+    [1.758, 5.205],
+    [1.606, 5.695],
+    [1.19, 5.864],
+    [-2.283, 6.05],
+    [-2.87, 5.365],
+    [-4.011, 5.169],
+    [-4.277, 5.258],
+    [-4.377, 5.789],
+    [-19.704, 5.868],
+    [-20.536, 5.393],
+    [-20.894, 4.543],
+    [-20.864, -4.834],
+    [-20.307, -5.695],
+    [-19.362, -6.008],
+    [-4.384, -5.903],
+    [-4.002, -5.257],
+    [-2.693, -5.317],
+    [-2.547, -5.846],
+    [-2.23, -6.047],
+    [1.189, -5.982],
+    [1.58, -5.831],
+    [1.693, -5.36],
+    [2.93, -5.388],
+    [3.342, -6.056],
+    [19.775, -5.97],
+    [20.521, -5.507],
+    [20.89, -4.677],
+]
+
+HOLE_CENTERS = [(-16.303, -0.04), (16.278, -0.068)]
+
+def build(p: dict) -> cq.Workplane:
+    thickness = float(p["thickness"])
+    cable_dia = float(p["cable_dia"])
+    slot_gap = float(p["slot_gap"])
+    hole_dia = float(p["hole_dia"])
+    n_slots = int(p["n_slots"])
+    # clamp
+    if n_slots < 1:
+        n_slots = 1
+    if n_slots > 3:
+        n_slots = 3
+
+    # base plate extruded from measured outline, centred at origin, mounting face Z=0, +Z up
+    wp = cq.Workplane("XY").moveTo(OUTLINE[0][0], OUTLINE[0][1])
+    for x, y in OUTLINE[1:]:
+        wp = wp.lineTo(x, y)
+    wp = wp.close()
+    solid = wp.extrude(thickness)
+
+    # mounting through holes (vertical cylinders Z through)
+    for cx, cy in HOLE_CENTERS:
+        solid = solid.faces(">Z").workplane().pushPoints([(cx, cy)]).circle(hole_dia / 2.0).cutThruAll()
+
+    # central cable grip: circular through hole(s) with snap entry slot to +Y edge
+    # distribute slots along X if n_slots>1, staying clear of mounting holes
+    # available span between holes approx +/-12mm for multi-slot
+    if n_slots == 1:
+        xs = [0.0]
+    elif n_slots == 2:
+        xs = [-6.0, 6.0]
+    else:
+        xs = [-7.0, 0.0, 7.0]
+
+    cable_r = cable_dia / 2.0
+    for x0 in xs:
+        # circular passage - vertical through
+        solid = solid.faces(">Z").workplane().pushPoints([(x0, 0.0)]).circle(cable_r).cutThruAll()
+        # entry slot to top edge: rectangle from center to beyond outline
+        # slot extends in +Y direction, width = slot_gap
+        # to keep in-plane flexible snap, cut rectangle that connects circle to outside
+        # define rectangle as polygon
+        y1 = -slot_gap / 2.0
+        y2 = slot_gap / 2.0
+        # from y = -slot_gap/2..slot_gap/2, x = x0 +/- slot_gap/2, extruded upward
+        # use Y-directed slot: actually slot runs in +Y, so width along X is slot_gap
+        xw1 = x0 - slot_gap / 2.0
+        xw2 = x0 + slot_gap / 2.0
+        y_start = -cable_r * 0.25  # slight overlap into circle to ensure connection
+        y_end = 10.0  # beyond top edge (~6mm)
+        # cut slot rectangle through thickness
+        slot_wp = (
+            cq.Workplane("XY")
+            .moveTo(xw1, y_start)
+            .lineTo(xw2, y_start)
+            .lineTo(xw2, y_end)
+            .lineTo(xw1, y_end)
+            .close()
+            .extrude(thickness)
+        )
+        solid = solid.cut(slot_wp)
+
+    return solid
+
+result = build({k: v[0] for k, v in PARAMS.items()})

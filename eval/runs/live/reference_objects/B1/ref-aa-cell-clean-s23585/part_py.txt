@@ -1,0 +1,86 @@
+import cadquery as cq
+import math
+
+PARAMS = {
+    "length": (49.94, 40.0, 60.0, 0.1, "mm", True, "Overall length X"),
+    "width": (14.23, 10.0, 20.0, 0.1, "mm", True, "Overall width Y"),
+    "thickness": (14.5, 8.0, 20.0, 0.1, "mm", True, "Thickness Z"),
+}
+
+# measured base profile polyline (XY footprint)
+RAW_POINTS = [
+    (-24.715, 6.434),
+    (-24.971, 3.64),
+    (-24.716, 2.721),
+    (-24.599, -0.439),
+    (-24.869, -5.329),
+    (-24.598, -6.676),
+    (-23.954, -7.112),
+    (23.183, -7.106),
+    (23.83, -6.593),
+    (24.198, -2.866),
+    (24.802, -2.271),
+    (24.92, -0.512),
+    (24.454, -0.948),
+    (24.336, -0.035),
+    (24.489, 0.827),
+    (24.762, 0.419),
+    (24.968, 0.459),
+    (24.843, 2.151),
+    (24.67, 2.578),
+    (24.211, 2.872),
+    (23.953, 6.176),
+    (23.739, 6.8),
+    (23.319, 7.097),
+    (-23.797, 7.12),
+    (-24.407, 6.949),
+]
+
+def build(p: dict) -> cq.Workplane:
+    # compute bounds of raw profile
+    xs = [pt[0] for pt in RAW_POINTS]
+    ys = [pt[1] for pt in RAW_POINTS]
+    min_x = min(xs)
+    max_x = max(xs)
+    min_y = min(ys)
+    max_y = max(ys)
+    base_len = max_x - min_x
+    base_wid = max_y - min_y
+    cx = (min_x + max_x) * 0.5
+    cy = (min_y + max_y) * 0.5
+
+    # avoid division by zero
+    if base_len < 1e-9:
+        base_len = 1.0
+    if base_wid < 1e-9:
+        base_wid = 1.0
+
+    sx = p["length"] / base_len
+    sy = p["width"] / base_wid
+
+    # scale about centre to preserve centering at origin
+    scaled = []
+    for x, y in RAW_POINTS:
+        nx = (x - cx) * sx + cx
+        ny = (y - cy) * sy + cy
+        scaled.append((nx, ny))
+
+    # shift to ensure final centre is exactly at origin (in case cx,cy != 0)
+    # after scaling centre is still cx,cy, so translate to 0,0
+    # raw centre is ~0, but do it explicitly
+    tx = -cx
+    ty = -cy
+    # cx is ~0, so this is tiny; apply
+    shifted = [(x + tx, y + ty) for x, y in scaled]
+
+    # build solid by extruding footprint from Z=0 to thickness
+    # long axis is +X, mounting face on Z=0, centred at origin
+    wp = cq.Workplane("XY").moveTo(shifted[0][0], shifted[0][1])
+    # polyline through remaining points, close back to start
+    if len(shifted) > 1:
+        wp = wp.polyline(shifted[1:])
+    wp = wp.close().extrude(p["thickness"], combine=True)
+
+    return wp
+
+result = build({k: v[0] for k, v in PARAMS.items()})

@@ -1,0 +1,57 @@
+import cadquery as cq
+import math
+
+PARAMS = {
+    "thickness": (2.5, 1.2, 4.0, 0.1, "mm", True, "Body thickness Z"),
+    "hole_dia": (2.572, 1.8, 3.5, 0.05, "mm", True, "Mounting hole diameter"),
+    "hole_x": (-12.428, -15.0, -9.0, 0.1, "mm", False, "Hole X position"),
+    "hole_y": (-0.622, -2.5, 2.5, 0.1, "mm", False, "Hole Y position"),
+    "hole_count": (1, 0, 1, 1, "", False, "Number of mounting holes"),
+    "edge_round": (0.4, 0.0, 1.2, 0.1, "mm", False, "Top edge round radius"),
+}
+
+# base profile as measured (mm) - polyline footprint in XY, long axis +X
+PROFILE_PTS = [
+    (-17.432, -7.305), (-16.962, -8.163), (-16.439, -8.465), (-13.683, -8.84),
+    (-8.94, -8.525), (-8.196, -8.809), (-1.112, -8.501), (-0.368, -8.784),
+    (6.207, -8.511), (6.863, -8.79), (9.208, -8.813), (11.482, -8.491),
+    (13.101, -8.561), (13.762, -8.841), (16.9, -8.601), (17.455, -7.811),
+    (17.279, -5.083), (17.389, -3.262), (17.628, -2.829), (17.363, 1.157),
+    (17.386, 5.673), (17.102, 7.133), (15.413, 7.819), (14.091, 7.977),
+    (12.498, 8.841), (11.354, 8.721), (10.245, 7.547), (8.882, 7.155),
+    (7.545, 7.467), (1.541, 7.245), (0.882, 7.525), (-5.165, 7.287),
+    (-5.907, 7.57), (-14.148, 7.181), (-14.976, 7.462), (-16.515, 6.974),
+    (-17.341, 6.216), (-17.493, 5.17), (-17.294, 2.275), (-17.57, 1.528),
+    (-17.355, -3.963), (-17.628, -4.626),
+]
+
+def build(p: dict) -> cq.Workplane:
+    thickness = float(p["thickness"])
+    hole_dia = float(p["hole_dia"])
+    hole_x = float(p["hole_x"])
+    hole_y = float(p["hole_y"])
+    hole_count = int(p["hole_count"])
+    edge_round = float(p["edge_round"])
+
+    # solid body extruded from Z=0 upward (mounting face on Z=0, +Z up)
+    wp = cq.Workplane("XY")
+    wp = wp.moveTo(PROFILE_PTS[0][0], PROFILE_PTS[0][1])
+    for x, y in PROFILE_PTS[1:]:
+        wp = wp.lineTo(x, y)
+    wp = wp.close().extrude(thickness, combine=True)
+
+    # through hole vertical (Z) - countersink false
+    if hole_count > 0 and hole_dia > 0.1:
+        wp = wp.faces(">Z").workplane().moveTo(hole_x, hole_y).circle(hole_dia * 0.5).cutThruAll()
+
+    # light edge break on vertical perimeter if requested - keep solid
+    if edge_round > 0.05:
+        try:
+            # only try to fillet vertical edges, ignore failure for small geometry
+            wp = wp.edges("|Z").fillet(min(edge_round, 0.6))
+        except Exception:
+            pass
+
+    return wp
+
+result = build({k: v[0] for k, v in PARAMS.items()})

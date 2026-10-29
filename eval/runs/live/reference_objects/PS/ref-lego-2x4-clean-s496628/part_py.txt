@@ -1,0 +1,43 @@
+import cadquery as cq
+import math
+
+PARAMS = {
+    "brick_length": (31.8, 30.0, 33.0, 0.1, "mm", True, "Brick length X"),
+    "brick_width": (15.8, 14.0, 17.0, 0.1, "mm", True, "Brick width Y"),
+    "brick_height": (9.9, 8.5, 10.5, 0.1, "mm", False, "Body thickness Z"),
+    "stud_diameter": (4.8, 4.2, 5.2, 0.1, "mm", True, "Stud outer diameter"),
+    "stud_height": (1.3, 1.2, 2.4, 0.1, "mm", False, "Stud boss height"),
+    "stud_pitch_x": (8.0, 7.0, 9.0, 0.1, "mm", True, "Stud pitch along X"),
+    "stud_pitch_y": (8.0, 7.0, 9.0, 0.1, "mm", True, "Stud pitch along Y"),
+    "n_x": (4, 2, 6, 1, "", False, "Studs along X count"),
+    "n_y": (2, 1, 4, 1, "", False, "Studs along Y count"),
+}
+
+def build(p: dict) -> cq.Workplane:
+    L = float(p["brick_length"])
+    W = float(p["brick_width"])
+    H = float(p["brick_height"])
+    d = float(p["stud_diameter"])
+    h = float(p["stud_height"])
+    px = float(p["stud_pitch_x"])
+    py = float(p["stud_pitch_y"])
+    nx = int(p["n_x"])
+    ny = int(p["n_y"])
+
+    # Body solid from Z=0 to Z=H, centered at origin in XY, long axis +X
+    body = cq.Workplane("XY").rect(L, W).extrude(H)
+
+    # Generate stud centers for nx * ny array centered at origin
+    # For 2x4: X = -12,-4,4,12  Y = -4,4  with pitch 8
+    xs = [((i - (nx - 1) / 2.0) * px) for i in range(nx)]
+    ys = [((j - (ny - 1) / 2.0) * py) for j in range(ny)]
+
+    result = body
+    for x in xs:
+        for y in ys:
+            stud = cq.Workplane("XY").workplane(offset=H).center(x, y).circle(d / 2.0).extrude(h)
+            result = result.union(stud)
+
+    return result
+
+result = build({k: v[0] for k, v in PARAMS.items()})

@@ -1,0 +1,103 @@
+"""Screw-on cable clip: a base strip with snap-in C channels for one or more cables."""
+
+import math
+
+import cadquery as cq
+
+FAMILY = "cable_clip"
+TITLE = "Cable clip"
+SUMMARY = (
+    "Base strip with screw holes at the ends and C-shaped snap channels standing on it; each cable presses in "
+    "through a slightly narrower opening at the top."
+)
+TAGS = ["cable clip", "cable holder", "wire", "organiser", "desk", "snap-fit"]
+# Where each knob moves the outline (normalised model frame; see services/agent/templates/__init__.py).
+REGIONS = {
+    "channel_count": [("xz", -0.8, 0.8, 0.3, 1.0, 0)],
+    "channel_gap": [("xz", -0.8, 0.8, 0.3, 1.0, 0)],
+    "cable_d": [("xz", -0.8, 0.8, 0.3, 1.0, 1)],
+    "wall": [("xz", -0.8, 0.8, 0.3, 1.0, 1)],
+    "opening": [("xz", -0.8, 0.8, 0.7, 1.0, -1)],
+}
+MEASURE_MAP = {
+    "length": "length",
+    "width": "width",
+    "thickness": "base_thickness",
+    "hole_1.diameter": "hole_d",
+    "cable.diameter": "cable_d",
+    "side.thickness": "cable_d",  # short side of the side photo's silhouette
+}
+
+PARAMS = {  # name: (default, min, max, step, unit, affects_fit, label)
+    "length": (41.8, 24.0, 100.0, 0.1, "mm", True, "Base length"),
+    "width": (11.6, 6.0, 30.0, 0.1, "mm", True, "Clip width"),
+    "base_thickness": (2.0, 1.2, 5.0, 0.1, "mm", True, "Base thickness"),
+    "cable_d": (5.7, 2.0, 16.0, 0.05, "mm", True, "Cable diameter"),
+    "wall": (1.5, 1.0, 4.0, 0.05, "mm", True, "Channel wall"),
+    "opening": (0.75, 0.5, 0.95, 0.01, "", True, "Snap opening (fraction of the cable diameter)"),
+    "channel_count": (1, 1, 5, 1, "", False, "Cable channels"),
+    "channel_gap": (1.0, 0.6, 15.0, 0.1, "mm", False, "Gap between neighbouring channels"),
+    "hole_d": (3.6, 2.0, 6.0, 0.05, "mm", True, "Screw hole diameter"),
+    "hole_count": (2, 0, 2, 1, "", False, "Screw holes"),
+}
+
+
+SCREW_TAB_MM = 9.0  # screw tab length: fixed, so the holes stay put when their size changes
+
+
+def build(p: dict[str, float]) -> cq.Workplane:
+    length, width, t = p["length"], p["width"], p["base_thickness"]
+    wall = p["wall"]
+    holes = int(p["hole_count"])
+    hole_d = min(p["hole_d"], width - 2.4)
+    tab = SCREW_TAB_MM if holes > 0 else 1.0
+    n = int(p["channel_count"])
+    region = length - 2 * tab
+    gap_c = p["channel_gap"]
+    cable = max(min(p["cable_d"], region / n - 2 * wall - gap_c), 1.0)
+    pitch = cable + 2 * wall + gap_c
+    ri, ro = cable / 2, cable / 2 + wall
+    zc = t + ri - 0.3  # the seat dips into the base, so the ring and the base overlap (no tangent faces)
+
+    base = cq.Workplane("XY").rect(length, width).extrude(t)
+    r = min(1.5, width / 2 - 0.2)
+    base = base.edges("|Z").fillet(r)
+    if holes > 0:
+        xs = [length / 2 - tab / 2, -length / 2 + tab / 2][:holes]
+        base = base.faces(">Z").workplane().pushPoints([(x, 0) for x in xs]).hole(hole_d)
+
+    xc = [(i - (n - 1) / 2) * pitch for i in range(n)]
+    rings = cq.Workplane("XZ").pushPoints([(x, zc) for x in xc]).circle(ro).circle(ri).extrude(width / 2, both=True)
+    part = base.union(rings)
+    # Snap opening: a radial wedge, so the jaw tips keep the full wall thickness (a vertical cut leaves knife edges).
+    gap = min(p["opening"] * cable, cable - 0.2)
+    sa = gap / 2 / ri
+    ca = math.sqrt(1 - sa * sa)
+    reach = ro + 2.0
+    for x in xc:
+        wedge = [(x, zc), (x + reach * sa / ca, zc + reach), (x - reach * sa / ca, zc + reach)]
+        part = part.cut(cq.Workplane("XZ").polyline(wedge).close().extrude(width / 2 + 1, both=True))
+    return part
+
+
+def interfaces(p: dict[str, float]) -> list[dict[str, str | float | list[float]]]:
+    """Mating interfaces for the functional probes: the channel bore holds the cable."""
+    length, t = p["length"], p["base_thickness"]
+    wall = p["wall"]
+    holes = int(p["hole_count"])
+    tab = SCREW_TAB_MM if holes > 0 else 1.0
+    n = int(p["channel_count"])
+    gap_c = p["channel_gap"]
+    cable = max(min(p["cable_d"], (length - 2 * tab) / n - 2 * wall - gap_c), 1.0)
+    pitch = cable + 2 * wall + gap_c
+    x0 = -(n - 1) / 2 * pitch
+    return [
+        {
+            "id": "cable_channel", "label": "cable channel", "mate_label": "cable",
+            "at": [x0, 0.0, t + cable / 2 - 0.3], "axis": [1.0, 0.0, 0.0],
+            "mates": [2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 10.0, 12.0, 14.0, 16.0],
+        }
+    ]  # fmt: skip
+
+
+result = build({k: v[0] for k, v in PARAMS.items()})

@@ -1,0 +1,90 @@
+{
+ "suite": "reference_objects",
+ "config": "PS-noTemplate",
+ "sample_id": "ref-aa-cell-clean-s23585",
+ "split": "held_out",
+ "kind": "reference_object",
+ "preset": "clean",
+ "mode": "live",
+ "gt_source": "reference_spec",
+ "status": "best_effort",
+ "verified": false,
+ "iterations": 3,
+ "iterations_to_converge": 2,
+ "strategy": "free_code",
+ "template": null,
+ "verifier_max_error_mm": 0.47187455859913513,
+ "retake_reason": null,
+ "failed_checks": [],
+ "usd": 0.245572,
+ "tokens_in": 218947,
+ "tokens_out": 31099,
+ "model_calls": 24,
+ "model_ms": 252972,
+ "provider_modes": [
+  "live",
+  "mock"
+ ],
+ "providers": {
+  "segment": [
+   "meta:sam-3.1"
+  ],
+  "understand": [
+   "meta:muse-spark-1.3"
+  ],
+  "build": [
+   "baseten:meta-models/muse-spark-open-1026"
+  ],
+  "fix_agent": [
+   "baseten:meta-models/muse-spark-open-1026"
+  ],
+  "judge": [
+   "mock:muse-glimmer"
+  ]
+ },
+ "convergence": [
+  {
+   "iter": 1,
+   "hausdorff_mm": 0.564348586054505,
+   "iou": 0.9936449052817222,
+   "max_error_mm": 0.564348586054505
+  },
+  {
+   "iter": 2,
+   "hausdorff_mm": 0.47187455859913513,
+   "iou": 0.996423549550651,
+   "max_error_mm": 0.47187455859913513
+  },
+  {
+   "iter": 3,
+   "hausdorff_mm": 0.49974513068966436,
+   "iou": 0.9888838406784795,
+   "max_error_mm": 0.49974513068966436
+  }
+ ],
+ "wall_s": 274.31,
+ "dims": [
+  {
+   "name": "length",
+   "gt_mm": 50.5,
+   "model_mm": 49.9386,
+   "error_mm": -0.5614,
+   "within_spec": true
+  },
+  {
+   "name": "width",
+   "gt_mm": 14.5,
+   "model_mm": 14.232,
+   "error_mm": -0.268,
+   "within_spec": true
+  }
+ ],
+ "missed": [],
+ "extra_holes": 0,
+ "pass_0_3": false,
+ "pass_0_5": false,
+ "valid": true,
+ "valid_reason": "",
+ "failure_category": "dim_off",
+ "failure": "worst length -0.56 mm"
+}

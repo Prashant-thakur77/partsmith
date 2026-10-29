@@ -1,0 +1,84 @@
+{
+ "suite": "reference_objects",
+ "config": "B1",
+ "sample_id": "ref-id1-card-tilt-s330647",
+ "split": "held_out",
+ "kind": "reference_object",
+ "preset": "tilt",
+ "mode": "live",
+ "gt_source": "reference_spec",
+ "status": "best_effort",
+ "verified": false,
+ "iterations": 1,
+ "iterations_to_converge": 1,
+ "strategy": "free_code",
+ "template": null,
+ "verifier_max_error_mm": 0.16075120152123085,
+ "retake_reason": null,
+ "failed_checks": [],
+ "usd": 0.037768,
+ "tokens_in": 10633,
+ "tokens_out": 6401,
+ "model_calls": 6,
+ "model_ms": 52128,
+ "provider_modes": [
+  "live",
+  "mock"
+ ],
+ "providers": {
+  "capture_triage": [
+   "mock:muse-glimmer"
+  ],
+  "segment": [
+   "meta:sam-3.1"
+  ],
+  "understand": [
+   "meta:muse-spark-1.3"
+  ],
+  "plan": [
+   "baseten:meta-models/muse-spark-open-1026"
+  ],
+  "build": [
+   "baseten:meta-models/muse-spark-open-1026"
+  ]
+ },
+ "convergence": [
+  {
+   "iter": 1,
+   "hausdorff_mm": 0.16075120152123085,
+   "iou": 0.9989273881058011,
+   "max_error_mm": 0.16075120152123085
+  }
+ ],
+ "wall_s": 57.81,
+ "dims": [
+  {
+   "name": "length",
+   "gt_mm": 85.6,
+   "model_mm": 85.666,
+   "error_mm": 0.066,
+   "within_spec": true
+  },
+  {
+   "name": "width",
+   "gt_mm": 53.98,
+   "model_mm": 54.037,
+   "error_mm": 0.057,
+   "within_spec": false
+  },
+  {
+   "name": "thickness",
+   "gt_mm": 0.76,
+   "model_mm": 0.76,
+   "error_mm": 0.0,
+   "within_spec": true
+  }
+ ],
+ "missed": [],
+ "extra_holes": 0,
+ "pass_0_3": true,
+ "pass_0_5": true,
+ "valid": true,
+ "valid_reason": "",
+ "failure_category": null
+}

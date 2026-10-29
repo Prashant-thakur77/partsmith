@@ -1,0 +1,80 @@
+import cadquery as cq
+import math
+
+PARAMS = {
+    "thickness": (4.5, 2.0, 8.0, 0.1, "mm", True, "Plate thickness"),
+    "hook_height_mm": (24.0, 15.0, 40.0, 0.1, "mm", False, "J-hook stand-off from plate face"),
+    "hook_arm_width_mm": (8.0, 8.0, 22.0, 0.5, "mm", False, "Hook arm width across Y (short side)"),
+    "hook_thickness_mm": (4.0, 3.0, 8.0, 0.5, "mm", False, "Hook material thickness in profile"),
+    "hook_overhang_mm": (13.0, 8.0, 20.0, 0.5, "mm", False, "Hook overhang center to center"),
+    "hook_tip_drop_mm": (10.0, 4.0, 16.0, 0.5, "mm", False, "Hook tip drop length"),
+    "hook_pos_x_mm": (6.0, -10.0, 12.0, 0.5, "mm", False, "Hook X position on plate"),
+    "hole_dia_mm": (4.416, 3.5, 5.5, 0.05, "mm", True, "Mounting hole diameter"),
+    "hook_count": (1, 1, 2, 1, "", False, "Number of hooks"),
+}
+
+def build(p: dict) -> cq.Workplane:
+    thickness = float(p["thickness"])
+    H = float(p["hook_height_mm"])
+    W = float(p["hook_arm_width_mm"])
+    t = float(p["hook_thickness_mm"])
+    overhang = float(p["hook_overhang_mm"])
+    drop = float(p["hook_tip_drop_mm"])
+    pos_x = float(p["hook_pos_x_mm"])
+    hole_dia = float(p["hole_dia_mm"])
+    hook_count = int(p["hook_count"])
+
+    base_pts = [
+        (32.723,-10.577),(32.815,7.522),(32.463,8.63),(31.545,9.857),(26.972,11.773),(23.324,12.574),(19.363,12.977),(4.379,13.027),(2.7,12.585),(2.522,10.8),(2.257,10.585),(-29.809,10.574),(-31.641,9.832),(-32.369,9.004),(-32.735,8.098),(-32.827,-10.005),(-32.179,-11.631),(-31.493,-12.381),(-30.617,-12.826),(-24.743,-13.057),(30.171,-12.959),(31.403,-12.436),(32.277,-11.519)
+    ]
+
+    # base plate solid to thickness, mounting face on Z=0
+    plate = cq.Workplane("XY").polyline(base_pts).close().extrude(thickness)
+
+    # through hole(s) - straight cylinder through thickness
+    # hole_1 at [-14.348, -1.448]
+    hole_centers = [(-14.348, -1.448)]
+    # if hook_count 2 topology variation, add second hole mirrored for 2-hook version
+    if hook_count == 2:
+        hole_centers.append((14.348, -1.448))
+
+    for cx, cy in hole_centers:
+        plate = plate.faces(">Z").workplane().pushPoints([(cx, cy)]).hole(hole_dia)
+
+    # hook profile in XZ plane, extruded along Y
+    # profile defined at z=0 at plate top, will be shifted by thickness and pos_x
+    # outer J shape points (x_local, z_local)
+    pts_local = [
+        (-t/2, 0),
+        (-t/2, H),
+        (overhang + t/2, H),
+        (overhang + t/2, H - t - drop),
+        (overhang - t/2, H - t - drop),
+        (overhang - t/2, H - t),
+        (t/2, H - t),
+        (t/2, 0),
+    ]
+    # shift to world
+    pts_world = [(x + pos_x, z + thickness) for x, z in pts_local]
+
+    # create hook solid(s)
+    # center extrude on Y=0 using both=True
+    hook = cq.Workplane("XZ").polyline(pts_world).close().extrude(W, both=True)
+
+    # round the tip bottom slightly with 45 deg chamfer via edges filter (optional, keep simple)
+    # union
+    result = plate.union(hook)
+
+    # second hook instance if topology count 2 (spaced in Y? keep X same, duplicate)
+    # For this plate long axis is X, so second hook would be offset in Y is not meaningful.
+    # Instead offset in X if requested
+    if hook_count == 2:
+        # second hook offset in X negative side
+        pos_x2 = pos_x - 18.0
+        pts_world2 = [(x + pos_x2, z + thickness) for x, z in pts_local]
+        hook2 = cq.Workplane("XZ").polyline(pts_world2).close().extrude(W, both=True)
+        result = result.union(hook2)
+
+    return result
+
+result = build({k: v[0] for k, v in PARAMS.items()})

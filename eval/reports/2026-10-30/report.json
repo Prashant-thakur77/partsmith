@@ -1,0 +1,3584 @@
+{
+ "status": "ok",
+ "generated_at": "2026-10-29T20:43:37+00:00",
+ "git_sha": "304f9333bc2a5f23791c8529d43a990ad18c1c5f",
+ "mode": "live",
+ "label": "live providers",
+ "notes": [
+  "tables rebuilt from 76 stored run(s) in eval/runs/live/ (nothing re-run)"
+ ],
+ "configs": {
+  "B0": {
+   "description": "single shot from the raw photo, no mat scale",
+   "options": {
+    "single_shot": true,
+    "mat_scale": false
+   },
+   "env": {}
+  },
+  "B1": {
+   "description": "single shot with the mat measurements (no loop)",
+   "options": {
+    "single_shot": true
+   },
+   "env": {}
+  },
+  "B2": {
+   "description": "full loop, visual-only feedback (overlays, no residual numbers)",
+   "options": {
+    "numeric_feedback": false
+   },
+   "env": {}
+  },
+  "PS": {
+   "description": "full PartSmith loop with numeric residuals",
+   "options": {},
+   "env": {}
+  },
+  "PS-noTemplate": {
+   "description": "PS without the template library (free code only)",
+   "options": {
+    "templates": false
+   },
+   "env": {}
+  },
+  "PS-noJudge": {
+   "description": "PS without the judge",
+   "options": {
+    "judge": false
+   },
+   "env": {}
+  },
+  "PS-noHeightCorr": {
+   "description": "PS without the parallax (height) correction",
+   "options": {
+    "height_correction": false
+   },
+   "env": {}
+  },
+  "PS-open": {
+   "description": "PS; builder/fixer must be served by open weights (default chain)",
+   "options": {},
+   "env": {}
+  },
+  "PS-open-all": {
+   "description": "PS with every stage on open weights",
+   "options": {},
+   "env": {
+    "OPEN_WEIGHTS_ONLY": "1"
+   }
+  }
+ },
+ "tables": {
+  "synthetic": {
+   "title": "synthetic (GT: exact: the template mesh the photo was rendered from)",
+   "photos": "synthetic renders",
+   "n": 12,
+   "ground_truth": "synthetic_exact",
+   "ci": "95 %: bootstrap over samples (2000 resamples, seeded) for mean errors; Wilson for rates",
+   "columns": [
+    "config",
+    "n",
+    "median_abs_err_mm",
+    "mean_abs_err_mm",
+    "mean_ci95",
+    "p90_mm",
+    "pass@0.5",
+    "pass@0.5_ci95",
+    "verified_rate",
+    "verified_ci95",
+    "verified_but_off",
+    "valid_rate",
+    "median_iters",
+    "median_wall_s",
+    "usd_per_job",
+    "tokens_per_job",
+    "provider_modes"
+   ],
+   "rows": [
+    {
+     "config": "B1",
+     "description": "single shot with the mat measurements (no loop)",
+     "n": 12,
+     "dims": 43,
+     "median_abs_err_mm": 0.18,
+     "mean_abs_err_mm": 0.856,
+     "mean_ci95": "[0.313, 1.674]",
+     "p90_mm": 1.615,
+     "pass@0.3": 0.083,
+     "pass@0.5": 0.083,
+     "pass@0.5_ci95": "[0.01, 0.35]",
+     "verified_rate": 0.083,
+     "verified_ci95": "[0.01, 0.35]",
+     "verified_but_off": "0/1",
+     "valid_rate": 0.833,
+     "median_iters": 1.0,
+     "median_wall_s": 142.1,
+     "usd_per_job": 0.0681,
+     "tokens_per_job": 24150.0,
+     "provider_modes": "live,mock"
+    },
+    {
+     "config": "PS",
+     "description": "full PartSmith loop with numeric residuals",
+     "n": 12,
+     "dims": 49,
+     "median_abs_err_mm": 0.1,
+     "mean_abs_err_mm": 0.604,
+     "mean_ci95": "[0.221, 1.196]",
+     "p90_mm": 1.085,
+     "pass@0.3": 0.25,
+     "pass@0.5": 0.25,
+     "pass@0.5_ci95": "[0.09, 0.53]",
+     "verified_rate": 0.167,
+     "verified_ci95": "[0.05, 0.45]",
+     "verified_but_off": "0/2",
+     "valid_rate": 0.833,
+     "median_iters": 6.0,
+     "median_wall_s": 363.3,
+     "usd_per_job": 0.2091,
+     "tokens_per_job": 216600.0,
+     "provider_modes": "live,mock"
+    },
+    {
+     "config": "PS-noTemplate",
+     "description": "PS without the template library (free code only)",
+     "n": 12,
+     "dims": 43,
+     "median_abs_err_mm": 0.23,
+     "mean_abs_err_mm": 0.914,
+     "mean_ci95": "[0.481, 1.574]",
+     "p90_mm": 2.351,
+     "pass@0.3": 0.083,
+     "pass@0.5": 0.083,
+     "pass@0.5_ci95": "[0.01, 0.35]",
+     "verified_rate": 0.167,
+     "verified_ci95": "[0.05, 0.45]",
+     "verified_but_off": "1/2",
+     "valid_rate": 0.833,
+     "median_iters": 4.5,
+     "median_wall_s": 355.4,
+     "usd_per_job": 0.213,
+     "tokens_per_job": 238577.0,
+     "provider_modes": "live,mock"
+    }
+   ],
+   "headline": {
+    "config": "PS",
+    "median_abs_err_mm": 0.1,
+    "mean_abs_err_mm": 0.604,
+    "pass_at_0_5": 0.25,
+    "verified_rate": 0.167,
+    "verified_but_off": "0/2",
+    "n": 12
+   },
+   "median_abs_err_mm": 0.1,
+   "status": "ok",
+   "mode": "live",
+   "note": "headline = PS on the held-out split (12 samples)",
+   "mcnemar_B1_vs_PS": {
+    "n_pairs": 12,
+    "b1_only": 0,
+    "ps_only": 2,
+    "p_value": 0.5,
+    "metric": "pass@0.5"
+   }
+  },
+  "reference_objects": {
+   "title": "reference objects (GT: published spec (AA cell: loose spec))",
+   "photos": "synthetic renders",
+   "n": 8,
+   "ground_truth": "reference_spec",
+   "ci": "95 %: bootstrap over samples (2000 resamples, seeded) for mean errors; Wilson for rates",
+   "columns": [
+    "config",
+    "n",
+    "median_abs_err_mm",
+    "mean_abs_err_mm",
+    "mean_ci95",
+    "p90_mm",
+    "pass@0.5",
+    "pass@0.5_ci95",
+    "verified_rate",
+    "verified_ci95",
+    "verified_but_off",
+    "valid_rate",
+    "median_iters",
+    "median_wall_s",
+    "usd_per_job",
+    "tokens_per_job",
+    "provider_modes"
+   ],
+   "rows": [
+    {
+     "config": "B1",
+     "description": "single shot with the mat measurements (no loop)",
+     "n": 8,
+     "dims": 22,
+     "median_abs_err_mm": 0.04,
+     "mean_abs_err_mm": 0.142,
+     "mean_ci95": "[0.027, 0.330]",
+     "p90_mm": 0.378,
+     "pass@0.3": 0.75,
+     "pass@0.5": 0.75,
+     "pass@0.5_ci95": "[0.41, 0.93]",
+     "verified_rate": 0.25,
+     "verified_ci95": "[0.07, 0.59]",
+     "verified_but_off": "0/2",
+     "valid_rate": 1.0,
+     "median_iters": 1.0,
+     "median_wall_s": 73.1,
+     "usd_per_job": 0.0492,
+     "tokens_per_job": 21706.0,
+     "provider_modes": "live,mock"
+    },
+    {
+     "config": "PS",
+     "description": "full PartSmith loop with numeric residuals",
+     "n": 8,
+     "dims": 22,
+     "median_abs_err_mm": 0.05,
+     "mean_abs_err_mm": 0.155,
+     "mean_ci95": "[0.052, 0.303]",
+     "p90_mm": 0.383,
+     "pass@0.3": 0.625,
+     "pass@0.5": 0.75,
+     "pass@0.5_ci95": "[0.41, 0.93]",
+     "verified_rate": 0.5,
+     "verified_ci95": "[0.22, 0.78]",
+     "verified_but_off": "0/4",
+     "valid_rate": 1.0,
+     "median_iters": 2.5,
+     "median_wall_s": 123.2,
+     "usd_per_job": 0.1631,
+     "tokens_per_job": 157113.0,
+     "provider_modes": "live,mock"
+    },
+    {
+     "config": "PS-noTemplate",
+     "description": "PS without the template library (free code only)",
+     "n": 8,
+     "dims": 22,
+     "median_abs_err_mm": 0.066,
+     "mean_abs_err_mm": 0.159,
+     "mean_ci95": "[0.049, 0.336]",
+     "p90_mm": 0.266,
+     "pass@0.3": 0.75,
+     "pass@0.5": 0.75,
+     "pass@0.5_ci95": "[0.41, 0.93]",
+     "verified_rate": 0.5,
+     "verified_ci95": "[0.22, 0.78]",
+     "verified_but_off": "0/4",
+     "valid_rate": 1.0,
+     "median_iters": 2.5,
+     "median_wall_s": 181.8,
+     "usd_per_job": 0.2073,
+     "tokens_per_job": 219762.0,
+     "provider_modes": "live,mock"
+    }
+   ],
+   "headline": {
+    "config": "PS",
+    "median_abs_err_mm": 0.05,
+    "mean_abs_err_mm": 0.155,
+    "pass_at_0_5": 0.75,
+    "verified_rate": 0.5,
+    "verified_but_off": "0/4",
+    "n": 8
+   },
+   "median_abs_err_mm": 0.05,
+   "status": "ok",
+   "mode": "live",
+   "note": "headline = PS on the held-out split (8 samples)",
+   "mcnemar_B1_vs_PS": {
+    "n_pairs": 8,
+    "b1_only": 0,
+    "ps_only": 0,
+    "p_value": 1.0,
+    "metric": "pass@0.5"
+   }
+  },
+  "real_ruler": {
+   "title": "real ruler (GT: school ruler, \u00b10.5 mm (never caliper accuracy))",
+   "n": 0,
+   "ground_truth": "ruler",
+   "ci": "95 %: bootstrap over samples (2000 resamples, seeded) for mean errors; Wilson for rates",
+   "columns": [],
+   "rows": [],
+   "headline": {
+    "median_abs_err_mm": null
+   },
+   "median_abs_err_mm": null,
+   "status": "pending",
+   "mode": "live",
+   "note": "no real parts with ruler ground truth yet (data/real/<part>/gt.yaml, see eval/REPRODUCE.md)"
+  },
+  "control": {
+   "title": "control (intact parts, normal photos \u2192 accept)",
+   "n": 6,
+   "ground_truth": "expected_outcome",
+   "ci": "95 % Wilson",
+   "columns": [
+    "case",
+    "expected",
+    "expected_checks",
+    "outcome",
+    "failed_checks",
+    "correct"
+   ],
+   "rows": [
+    {
+     "case": "ctl-cable-clip-s447475",
+     "expected": "accept",
+     "expected_checks": "any",
+     "outcome": "accept",
+     "failed_checks": "\u2013",
+     "correct": true
+    },
+    {
+     "case": "ctl-clip-s55909",
+     "expected": "accept",
+     "expected_checks": "any",
+     "outcome": "accept",
+     "failed_checks": "\u2013",
+     "correct": true
+    },
+    {
+     "case": "ctl-cupboard-latch-s844149",
+     "expected": "accept",
+     "expected_checks": "any",
+     "outcome": "accept",
+     "failed_checks": "\u2013",
+     "correct": true
+    },
+    {
+     "case": "ctl-hook-s21548",
+     "expected": "accept",
+     "expected_checks": "any",
+     "outcome": "accept",
+     "failed_checks": "\u2013",
+     "correct": true
+    },
+    {
+     "case": "ctl-knob-s936521",
+     "expected": "accept",
+     "expected_checks": "any",
+     "outcome": "accept",
+     "failed_checks": "\u2013",
+     "correct": true
+    },
+    {
+     "case": "ctl-spacer-s435219",
+     "expected": "accept",
+     "expected_checks": "any",
+     "outcome": "accept",
+     "failed_checks": "\u2013",
+     "correct": true
+    }
+   ],
+   "headline": {
+    "correct": 6,
+    "n": 6,
+    "correct_rate": 1.0,
+    "ci95": "[0.61, 1.00]",
+    "false_reject_rate": 0.0,
+    "false_reject_ci95": "[0.00, 0.39]",
+    "pass_at_0_5": 0.167
+   },
+   "status": "ok",
+   "mode": "live",
+   "note": "6/6 handled as expected ([0.61, 1.00]); config PS"
+  },
+  "redteam": {
+   "title": "redteam (photos that must be rejected or refused)",
+   "n": 10,
+   "ground_truth": "expected_outcome",
+   "ci": "95 % Wilson",
+   "columns": [
+    "case",
+    "expected",
+    "expected_checks",
+    "outcome",
+    "failed_checks",
+    "correct"
+   ],
+   "rows": [
+    {
+     "case": "rt-flexible-object",
+     "expected": "refuse",
+     "expected_checks": "any",
+     "outcome": "refuse",
+     "failed_checks": "\u2013",
+     "correct": true
+    },
+    {
+     "case": "rt-hand-in-frame",
+     "expected": "reject",
+     "expected_checks": "coverage,contrast",
+     "outcome": "reject",
+     "failed_checks": "coverage,contrast",
+     "correct": true
+    },
+    {
+     "case": "rt-no-part",
+     "expected": "reject",
+     "expected_checks": "coverage",
+     "outcome": "reject",
+     "failed_checks": "coverage",
+     "correct": true
+    },
+    {
+     "case": "rt-organic-object",
+     "expected": "refuse",
+     "expected_checks": "any",
+     "outcome": "refuse",
+     "failed_checks": "\u2013",
+     "correct": true
+    },
+    {
+     "case": "rt-part-off-stage",
+     "expected": "reject",
+     "expected_checks": "coverage",
+     "outcome": "reject",
+     "failed_checks": "coverage",
+     "correct": true
+    },
+    {
+     "case": "rt-partial-mat",
+     "expected": "reject",
+     "expected_checks": "markers,coverage,reprojection",
+     "outcome": "reject",
+     "failed_checks": "coverage",
+     "correct": true
+    },
+    {
+     "case": "rt-photo-of-screen",
+     "expected": "reject",
+     "expected_checks": "moire,blur,contrast",
+     "outcome": "reject",
+     "failed_checks": "moire",
+     "correct": true
+    },
+    {
+     "case": "rt-safety-part",
+     "expected": "refuse",
+     "expected_checks": "any",
+     "outcome": "refuse",
+     "failed_checks": "\u2013",
+     "correct": true
+    },
+    {
+     "case": "rt-two-parts",
+     "expected": "reject",
+     "expected_checks": "any",
+     "outcome": "reject",
+     "failed_checks": "single_part",
+     "correct": true
+    },
+    {
+     "case": "rt-wrong-mat",
+     "expected": "reject",
+     "expected_checks": "markers",
+     "outcome": "reject",
+     "failed_checks": "markers,reprojection,blur,tilt,scale",
+     "correct": true
+    }
+   ],
+   "headline": {
+    "correct": 10,
+    "n": 10,
+    "correct_rate": 1.0,
+    "ci95": "[0.72, 1.00]",
+    "reject_expected": 7,
+    "refuse_expected": 3,
+    "reject_correct": 7,
+    "refuse_correct": 3
+   },
+   "status": "ok",
+   "mode": "live",
+   "note": "10/10 handled as expected ([0.72, 1.00]); config PS"
+  }
+ },
+ "runs": {
+  "control": {
+   "PS": [
+    {
+     "sample_id": "ctl-cable-clip-s447475",
+     "split": "held_out",
+     "preset": "control",
+     "status": "verified",
+     "verified": true,
+     "valid": true,
+     "pass_0_5": false,
+     "iterations": 2,
+     "wall_s": 113.68,
+     "usd": 0.081209,
+     "tokens_in": 36573,
+     "tokens_out": 11270,
+     "strategy": "template",
+     "template": "cable_clip",
+     "failure": "worst length -0.60 mm",
+     "max_abs_err_mm": 0.6
+    },
+    {
+     "sample_id": "ctl-clip-s55909",
+     "split": "held_out",
+     "preset": "control",
+     "status": "verified",
+     "verified": true,
+     "valid": true,
+     "pass_0_5": false,
+     "iterations": 3,
+     "wall_s": 221.8,
+     "usd": 0.164063,
+     "tokens_in": 105592,
+     "tokens_out": 21597,
+     "strategy": "free_code",
+     "template": "clip",
+     "failure": "worst thickness -7.90 mm",
+     "max_abs_err_mm": 7.9
+    },
+    {
+     "sample_id": "ctl-cupboard-latch-s844149",
+     "split": "held_out",
+     "preset": "control",
+     "status": "verified",
+     "verified": true,
+     "valid": true,
+     "pass_0_5": false,
+     "iterations": 2,
+     "wall_s": 140.55,
+     "usd": 0.088,
+     "tokens_in": 40758,
+     "tokens_out": 12921,
+     "strategy": "template",
+     "template": "cupboard_latch",
+     "failure": "worst thickness -0.80 mm",
+     "max_abs_err_mm": 0.8
+    },
+    {
+     "sample_id": "ctl-hook-s21548",
+     "split": "held_out",
+     "preset": "control",
+     "status": "best_effort",
+     "verified": false,
+     "valid": true,
+     "pass_0_5": false,
+     "iterations": 6,
+     "wall_s": 372.93,
+     "usd": 0.243794,
+     "tokens_in": 229626,
+     "tokens_out": 30637,
+     "strategy": "free_code",
+     "template": "hook",
+     "failure": "worst thickness -32.70 mm; missing hole_1.diameter",
+     "max_abs_err_mm": 32.7
+    },
+    {
+     "sample_id": "ctl-knob-s936521",
+     "split": "held_out",
+     "preset": "control",
+     "status": "best_effort",
+     "verified": false,
+     "valid": true,
+     "pass_0_5": true,
+     "iterations": 3,
+     "wall_s": 563.64,
+     "usd": 0.30784,
+     "tokens_in": 257993,
+     "tokens_out": 37024,
+     "strategy": "free_code",
+     "template": "knob",
+     "failure": null,
+     "max_abs_err_mm": 0.4839
+    },
+    {
+     "sample_id": "ctl-spacer-s435219",
+     "split": "held_out",
+     "preset": "control",
+     "status": "verified",
+     "verified": true,
+     "valid": true,
+     "pass_0_5": false,
+     "iterations": 2,
+     "wall_s": 95.95,
+     "usd": 0.076016,
+     "tokens_in": 31962,
+     "tokens_out": 9773,
+     "strategy": "template",
+     "template": "spacer",
+     "failure": "worst thickness -0.65 mm",
+     "max_abs_err_mm": 0.6514
+    }
+   ]
+  },
+  "redteam": {
+   "PS": [
+    {
+     "sample_id": "rt-flexible-object",
+     "split": "held_out",
+     "preset": "redteam",
+     "status": "refused",
+     "verified": false,
+     "valid": false,
+     "pass_0_5": false,
+     "iterations": 0,
+     "wall_s": 44.43,
+     "usd": 0.022818,
+     "tokens_in": 9727,
+     "tokens_out": 3183,
+     "strategy": "template",
+     "template": null,
+     "failure": null,
+     "max_abs_err_mm": null
+    },
+    {
+     "sample_id": "rt-hand-in-frame",
+     "split": "held_out",
+     "preset": "redteam",
+     "status": "failed",
+     "verified": false,
+     "valid": false,
+     "pass_0_5": false,
+     "iterations": 0,
+     "wall_s": 27.33,
+     "usd": 0.005,
+     "tokens_in": 0,
+     "tokens_out": 0,
+     "strategy": "template",
+     "template": null,
+     "failure": null,
+     "max_abs_err_mm": null
+    },
+    {
+     "sample_id": "rt-no-part",
+     "split": "held_out",
+     "preset": "redteam",
+     "status": "failed",
+     "verified": false,
+     "valid": false,
+     "pass_0_5": false,
+     "iterations": 0,
+     "wall_s": 27.43,
+     "usd": 0.005,
+     "tokens_in": 0,
+     "tokens_out": 0,
+     "strategy": "template",
+     "template": null,
+     "failure": null,
+     "max_abs_err_mm": null
+    },
+    {
+     "sample_id": "rt-organic-object",
+     "split": "held_out",
+     "preset": "redteam",
+     "status": "refused",
+     "verified": false,
+     "valid": false,
+     "pass_0_5": false,
+     "iterations": 0,
+     "wall_s": 37.16,
+     "usd": 0.022337,
+     "tokens_in": 9621,
+     "tokens_out": 3101,
+     "strategy": "template",
+     "template": null,
+     "failure": null,
+     "max_abs_err_mm": null
+    },
+    {
+     "sample_id": "rt-part-off-stage",
+     "split": "held_out",
+     "preset": "redteam",
+     "status": "failed",
+     "verified": false,
+     "valid": false,
+     "pass_0_5": false,
+     "iterations": 0,
+     "wall_s": 18.29,
+     "usd": 0.005,
+     "tokens_in": 0,
+     "tokens_out": 0,
+     "strategy": "template",
+     "template": null,
+     "failure": null,
+     "max_abs_err_mm": null
+    },
+    {
+     "sample_id": "rt-partial-mat",
+     "split": "held_out",
+     "preset": "redteam",
+     "status": "failed",
+     "verified": false,
+     "valid": false,
+     "pass_0_5": false,
+     "iterations": 0,
+     "wall_s": 204.59,
+     "usd": 0.005,
+     "tokens_in": 0,
+     "tokens_out": 0,
+     "strategy": "template",
+     "template": null,
+     "failure": null,
+     "max_abs_err_mm": null
+    },
+    {
+     "sample_id": "rt-photo-of-screen",
+     "split": "held_out",
+     "preset": "redteam",
+     "status": "failed",
+     "verified": false,
+     "valid": false,
+     "pass_0_5": false,
+     "iterations": 0,
+     "wall_s": 0.22,
+     "usd": 0,
+     "tokens_in": 0,
+     "tokens_out": 0,
+     "strategy": "template",
+     "template": null,
+     "failure": null,
+     "max_abs_err_mm": null
+    },
+    {
+     "sample_id": "rt-safety-part",
+     "split": "held_out",
+     "preset": "redteam",
+     "status": "refused",
+     "verified": false,
+     "valid": false,
+     "pass_0_5": false,
+     "iterations": 0,
+     "wall_s": 43.83,
+     "usd": 0.02746,
+     "tokens_in": 9639,
+     "tokens_out": 4301,
+     "strategy": "template",
+     "template": null,
+     "failure": null,
+     "max_abs_err_mm": null
+    },
+    {
+     "sample_id": "rt-two-parts",
+     "split": "held_out",
+     "preset": "redteam",
+     "status": "failed",
+     "verified": false,
+     "valid": false,
+     "pass_0_5": false,
+     "iterations": 0,
+     "wall_s": 15.06,
+     "usd": 0.005,
+     "tokens_in": 0,
+     "tokens_out": 0,
+     "strategy": "template",
+     "template": null,
+     "failure": null,
+     "max_abs_err_mm": null
+    },
+    {
+     "sample_id": "rt-wrong-mat",
+     "split": "held_out",
+     "preset": "redteam",
+     "status": "failed",
+     "verified": false,
+     "valid": false,
+     "pass_0_5": false,
+     "iterations": 0,
+     "wall_s": 0.04,
+     "usd": 0,
+     "tokens_in": 0,
+     "tokens_out": 0,
+     "strategy": "template",
+     "template": null,
+     "failure": null,
+     "max_abs_err_mm": null
+    }
+   ]
+  },
+  "reference_objects": {
+   "B1": [
+    {
+     "sample_id": "ref-aa-cell-clean-s23585",
+     "split": "held_out",
+     "preset": "clean",
+     "status": "best_effort",
+     "verified": false,
+     "valid": true,
+     "pass_0_5": false,
+     "iterations": 1,
+     "wall_s": 57.26,
+     "usd": 0.034609,
+     "tokens_in": 11064,
+     "tokens_out": 6326,
+     "strategy": "free_code",
+     "template": null,
+     "failure": "worst length -0.56 mm",
+     "max_abs_err_mm": 0.5604
+    },
+    {
+     "sample_id": "ref-aa-cell-tilt-s903698",
+     "split": "held_out",
+     "preset": "tilt",
+     "status": "best_effort",
+     "verified": false,
+     "valid": true,
+     "pass_0_5": false,
+     "iterations": 1,
+     "wall_s": 62.17,
+     "usd": 0.040416,
+     "tokens_in": 12604,
+     "tokens_out": 7372,
+     "strategy": "free_code",
+     "template": null,
+     "failure": "worst length -1.38 mm",
+     "max_abs_err_mm": 1.3805
+    },
+    {
+     "sample_id": "ref-id1-card-clean-s787514",
+     "split": "held_out",
+     "preset": "clean",
+     "status": "best_effort",
+     "verified": false,
+     "valid": true,
+     "pass_0_5": true,
+     "iterations": 1,
+     "wall_s": 68.85,
+     "usd": 0.037683,
+     "tokens_in": 11525,
+     "tokens_out": 6185,
+     "strategy": "free_code",
+     "template": null,
+     "failure": null,
+     "max_abs_err_mm": 0.0
+    },
+    {
+     "sample_id": "ref-id1-card-tilt-s330647",
+     "split": "held_out",
+     "preset": "tilt",
+     "status": "best_effort",
+     "verified": false,
+     "valid": true,
+     "pass_0_5": true,
+     "iterations": 1,
+     "wall_s": 57.81,
+     "usd": 0.037768,
+     "tokens_in": 10633,
+     "tokens_out": 6401,
+     "strategy": "free_code",
+     "template": null,
+     "failure": null,
+     "max_abs_err_mm": 0.066
+    },
+    {
+     "sample_id": "ref-lego-2x4-clean-s496628",
+     "split": "held_out",
+     "preset": "clean",
+     "status": "best_effort",
+     "verified": false,
+     "valid": true,
+     "pass_0_5": true,
+     "iterations": 1,
+     "wall_s": 109.6,
+     "usd": 0.070151,
+     "tokens_in": 15742,
+     "tokens_out": 10952,
+     "strategy": "free_code",
+     "template": null,
+     "failure": null,
+     "max_abs_err_mm": 0.1
+    },
+    {
+     "sample_id": "ref-lego-2x4-tilt-s785064",
+     "split": "held_out",
+     "preset": "tilt",
+     "status": "best_effort",
+     "verified": false,
+     "valid": true,
+     "pass_0_5": true,
+     "iterations": 1,
+     "wall_s": 124.89,
+     "usd": 0.076212,
+     "tokens_in": 18529,
+     "tokens_out": 12751,
+     "strategy": "free_code",
+     "template": null,
+     "failure": null,
+     "max_abs_err_mm": 0.1
+    },
+    {
+     "sample_id": "ref-sd-card-clean-s596360",
+     "split": "held_out",
+     "preset": "clean",
+     "status": "verified",
+     "verified": true,
+     "valid": true,
+     "pass_0_5": true,
+     "iterations": 1,
+     "wall_s": 103.6,
+     "usd": 0.05797,
+     "tokens_in": 14296,
+     "tokens_out": 10292,
+     "strategy": "free_code",
+     "template": null,
+     "failure": null,
+     "max_abs_err_mm": 0.07
+    },
+    {
+     "sample_id": "ref-sd-card-tilt-s997355",
+     "split": "held_out",
+     "preset": "tilt",
+     "status": "verified",
+     "verified": true,
+     "valid": true,
+     "pass_0_5": true,
+     "iterations": 1,
+     "wall_s": 77.38,
+     "usd": 0.038675,
+     "tokens_in": 12874,
+     "tokens_out": 6104,
+     "strategy": "free_code",
+     "template": null,
+     "failure": null,
+     "max_abs_err_mm": 0.04
+    }
+   ],
+   "PS": [
+    {
+     "sample_id": "ref-aa-cell-clean-s23585",
+     "split": "held_out",
+     "preset": "clean",
+     "status": "best_effort",
+     "verified": false,
+     "valid": true,
+     "pass_0_5": false,
+     "iterations": 1,
+     "wall_s": 61.45,
+     "usd": 0.048738,
+     "tokens_in": 12693,
+     "tokens_out": 8542,
+     "strategy": "free_code",
+     "template": null,
+     "failure": "worst length -0.56 mm",
+     "max_abs_err_mm": 0.5614
+    },
+    {
+     "sample_id": "ref-aa-cell-tilt-s903698",
+     "split": "held_out",
+     "preset": "tilt",
+     "status": "best_effort",
+     "verified": false,
+     "valid": true,
+     "pass_0_5": false,
+     "iterations": 6,
+     "wall_s": 375.62,
+     "usd": 0.332329,
+     "tokens_in": 346860,
+     "tokens_out": 43078,
+     "strategy": "free_code",
+     "template": null,
+     "failure": "worst length -1.20 mm",
+     "max_abs_err_mm": 1.2005
+    },
+    {
+     "sample_id": "ref-id1-card-clean-s787514",
+     "split": "held_out",
+     "preset": "clean",
+     "status": "verified",
+     "verified": true,
+     "valid": true,
+     "pass_0_5": true,
+     "iterations": 3,
+     "wall_s": 155.19,
+     "usd": 0.110191,
+     "tokens_in": 90289,
+     "tokens_out": 12669,
+     "strategy": "free_code",
+     "template": null,
+     "failure": null,
+     "max_abs_err_mm": 0.3953
+    },
+    {
+     "sample_id": "ref-id1-card-tilt-s330647",
+     "split": "held_out",
+     "preset": "tilt",
+     "status": "verified",
+     "verified": true,
+     "valid": true,
+     "pass_0_5": true,
+     "iterations": 2,
+     "wall_s": 91.2,
+     "usd": 0.059736,
+     "tokens_in": 31655,
+     "tokens_out": 7673,
+     "strategy": "free_code",
+     "template": null,
+     "failure": null,
+     "max_abs_err_mm": 0.04
+    },
+    {
+     "sample_id": "ref-lego-2x4-clean-s496628",
+     "split": "held_out",
+     "preset": "clean",
+     "status": "best_effort",
+     "verified": false,
+     "valid": true,
+     "pass_0_5": true,
+     "iterations": 5,
+     "wall_s": 473.23,
+     "usd": 0.310212,
+     "tokens_in": 247984,
+     "tokens_out": 41503,
+     "strategy": "free_code",
+     "template": null,
+     "failure": null,
+     "max_abs_err_mm": 0.1
+    },
+    {
+     "sample_id": "ref-lego-2x4-tilt-s785064",
+     "split": "held_out",
+     "preset": "tilt",
+     "status": "best_effort",
+     "verified": false,
+     "valid": true,
+     "pass_0_5": true,
+     "iterations": 6,
+     "wall_s": 513.72,
+     "usd": 0.353584,
+     "tokens_in": 334586,
+     "tokens_out": 41079,
+     "strategy": "free_code",
+     "template": null,
+     "failure": null,
+     "max_abs_err_mm": 0.25
+    },
+    {
+     "sample_id": "ref-sd-card-clean-s596360",
+     "split": "held_out",
+     "preset": "clean",
+     "status": "verified",
+     "verified": true,
+     "valid": true,
+     "pass_0_5": true,
+     "iterations": 1,
+     "wall_s": 80.34,
+     "usd": 0.045326,
+     "tokens_in": 12814,
+     "tokens_out": 6262,
+     "strategy": "free_code",
+     "template": null,
+     "failure": null,
+     "max_abs_err_mm": 0.0
+    },
+    {
+     "sample_id": "ref-sd-card-tilt-s997355",
+     "split": "held_out",
+     "preset": "tilt",
+     "status": "verified",
+     "verified": true,
+     "valid": true,
+     "pass_0_5": true,
+     "iterations": 1,
+     "wall_s": 86.24,
+     "usd": 0.044802,
+     "tokens_in": 12864,
+     "tokens_out": 6356,
+     "strategy": "free_code",
+     "template": null,
+     "failure": null,
+     "max_abs_err_mm": 0.05
+    }
+   ],
+   "PS-noTemplate": [
+    {
+     "sample_id": "ref-aa-cell-clean-s23585",
+     "split": "held_out",
+     "preset": "clean",
+     "status": "best_effort",
+     "verified": false,
+     "valid": true,
+     "pass_0_5": false,
+     "iterations": 3,
+     "wall_s": 274.31,
+     "usd": 0.245572,
+     "tokens_in": 218947,
+     "tokens_out": 31099,
+     "strategy": "free_code",
+     "template": null,
+     "failure": "worst length -0.56 mm",
+     "max_abs_err_mm": 0.5614
+    },
+    {
+     "sample_id": "ref-aa-cell-tilt-s903698",
+     "split": "held_out",
+     "preset": "tilt",
+     "status": "best_effort",
+     "verified": false,
+     "valid": true,
+     "pass_0_5": false,
+     "iterations": 6,
+     "wall_s": 411.61,
+     "usd": 0.313206,
+     "tokens_in": 346095,
+     "tokens_out": 42017,
+     "strategy": "free_code",
+     "template": null,
+     "failure": "worst length -1.38 mm",
+     "max_abs_err_mm": 1.3845
+    },
+    {
+     "sample_id": "ref-id1-card-clean-s787514",
+     "split": "held_out",
+     "preset": "clean",
+     "status": "verified",
+     "verified": true,
+     "valid": true,
+     "pass_0_5": true,
+     "iterations": 2,
+     "wall_s": 89.28,
+     "usd": 0.066323,
+     "tokens_in": 30645,
+     "tokens_out": 9288,
+     "strategy": "free_code",
+     "template": null,
+     "failure": null,
+     "max_abs_err_mm": 0.1953
+    },
+    {
+     "sample_id": "ref-id1-card-tilt-s330647",
+     "split": "held_out",
+     "preset": "tilt",
+     "status": "verified",
+     "verified": true,
+     "valid": true,
+     "pass_0_5": true,
+     "iterations": 2,
+     "wall_s": 86.14,
+     "usd": 0.053669,
+     "tokens_in": 27040,
+     "tokens_out": 7901,
+     "strategy": "free_code",
+     "template": null,
+     "failure": null,
+     "max_abs_err_mm": 0.069
+    },
+    {
+     "sample_id": "ref-lego-2x4-clean-s496628",
+     "split": "held_out",
+     "preset": "clean",
+     "status": "best_effort",
+     "verified": false,
+     "valid": true,
+     "pass_0_5": true,
+     "iterations": 5,
+     "wall_s": 524.98,
+     "usd": 0.354169,
+     "tokens_in": 371900,
+     "tokens_out": 43361,
+     "strategy": "free_code",
+     "template": null,
+     "failure": null,
+     "max_abs_err_mm": 0.1
+    },
+    {
+     "sample_id": "ref-lego-2x4-tilt-s785064",
+     "split": "held_out",
+     "preset": "tilt",
+     "status": "best_effort",
+     "verified": false,
+     "valid": true,
+     "pass_0_5": true,
+     "iterations": 5,
+     "wall_s": 783.84,
+     "usd": 0.544961,
+     "tokens_in": 529002,
+     "tokens_out": 65138,
+     "strategy": "free_code",
+     "template": null,
+     "failure": null,
+     "max_abs_err_mm": 0.1
+    },
+    {
+     "sample_id": "ref-sd-card-clean-s596360",
+     "split": "held_out",
+     "preset": "clean",
+     "status": "verified",
+     "verified": true,
+     "valid": true,
+     "pass_0_5": true,
+     "iterations": 1,
+     "wall_s": 68.09,
+     "usd": 0.039658,
+     "tokens_in": 12397,
+     "tokens_out": 5283,
+     "strategy": "free_code",
+     "template": null,
+     "failure": null,
+     "max_abs_err_mm": 0.0
+    },
+    {
+     "sample_id": "ref-sd-card-tilt-s997355",
+     "split": "held_out",
+     "preset": "tilt",
+     "status": "verified",
+     "verified": true,
+     "valid": true,
+     "pass_0_5": true,
+     "iterations": 1,
+     "wall_s": 69.68,
+     "usd": 0.040761,
+     "tokens_in": 12453,
+     "tokens_out": 5526,
+     "strategy": "free_code",
+     "template": null,
+     "failure": null,
+     "max_abs_err_mm": 0.05
+    }
+   ]
+  },
+  "synthetic": {
+   "B1": [
+    {
+     "sample_id": "syn-battery-cover-low-light-s790551",
+     "split": "held_out",
+     "preset": "low-light",
+     "status": "best_effort",
+     "verified": false,
+     "valid": true,
+     "pass_0_5": false,
+     "iterations": 1,
+     "wall_s": 150.3,
+     "usd": 0.083111,
+     "tokens_in": 18374,
+     "tokens_out": 12374,
+     "strategy": "template",
+     "template": "battery_cover",
+     "failure": "worst thickness -0.75 mm",
+     "max_abs_err_mm": 0.75
+    },
+    {
+     "sample_id": "syn-cable-clip-white-part-s236478",
+     "split": "held_out",
+     "preset": "white-part",
+     "status": "best_effort",
+     "verified": false,
+     "valid": true,
+     "pass_0_5": false,
+     "iterations": 1,
+     "wall_s": 145.58,
+     "usd": 0.07688,
+     "tokens_in": 16394,
+     "tokens_out": 11904,
+     "strategy": "template",
+     "template": "cable_clip",
+     "failure": "worst thickness -0.52 mm",
+     "max_abs_err_mm": 0.52
+    },
+    {
+     "sample_id": "syn-caster-wheel-tilt-s108404",
+     "split": "held_out",
+     "preset": "tilt",
+     "status": "best_effort",
+     "verified": false,
+     "valid": true,
+     "pass_0_5": false,
+     "iterations": 1,
+     "wall_s": 129.47,
+     "usd": 0.070514,
+     "tokens_in": 16778,
+     "tokens_out": 9490,
+     "strategy": "template",
+     "template": "caster_wheel",
+     "failure": "worst width -0.60 mm; missing hole_1.diameter, hole_2.diameter, hole_3.diameter, hole_5.diameter",
+     "max_abs_err_mm": 0.6028
+    },
+    {
+     "sample_id": "syn-clip-clean-s657276",
+     "split": "held_out",
+     "preset": "clean",
+     "status": "best_effort",
+     "verified": false,
+     "valid": true,
+     "pass_0_5": false,
+     "iterations": 1,
+     "wall_s": 138.6,
+     "usd": 0.075182,
+     "tokens_in": 15775,
+     "tokens_out": 10817,
+     "strategy": "template",
+     "template": "clip",
+     "failure": "worst width +0.70 mm",
+     "max_abs_err_mm": 0.7
+    },
+    {
+     "sample_id": "syn-clip-white-part-s468432",
+     "split": "held_out",
+     "preset": "white-part",
+     "status": "best_effort",
+     "verified": false,
+     "valid": true,
+     "pass_0_5": false,
+     "iterations": 1,
+     "wall_s": 201.91,
+     "usd": 0.095301,
+     "tokens_in": 15813,
+     "tokens_out": 16898,
+     "strategy": "template",
+     "template": "clip",
+     "failure": "worst thickness -0.80 mm",
+     "max_abs_err_mm": 0.8
+    },
+    {
+     "sample_id": "syn-hook-glare-s235877",
+     "split": "held_out",
+     "preset": "glare",
+     "status": "best_effort",
+     "verified": false,
+     "valid": true,
+     "pass_0_5": false,
+     "iterations": 1,
+     "wall_s": 148.5,
+     "usd": 0.076395,
+     "tokens_in": 16153,
+     "tokens_out": 11662,
+     "strategy": "template",
+     "template": "hook",
+     "failure": "worst thickness +2.05 mm",
+     "max_abs_err_mm": 2.05
+    },
+    {
+     "sample_id": "syn-hook-paper-s411102",
+     "split": "held_out",
+     "preset": "paper",
+     "status": "best_effort",
+     "verified": false,
+     "valid": true,
+     "pass_0_5": false,
+     "iterations": 1,
+     "wall_s": 233.25,
+     "usd": 0.104125,
+     "tokens_in": 19078,
+     "tokens_out": 16158,
+     "strategy": "template",
+     "template": "hook",
+     "failure": "worst thickness +4.60 mm",
+     "max_abs_err_mm": 4.6
+    },
+    {
+     "sample_id": "syn-hook-tilt-s656341",
+     "split": "held_out",
+     "preset": "tilt",
+     "status": "best_effort",
+     "verified": false,
+     "valid": true,
+     "pass_0_5": false,
+     "iterations": 1,
+     "wall_s": 146.0,
+     "usd": 0.083756,
+     "tokens_in": 17927,
+     "tokens_out": 11547,
+     "strategy": "template",
+     "template": "hook",
+     "failure": "worst width +2.60 mm",
+     "max_abs_err_mm": 2.6
+    },
+    {
+     "sample_id": "syn-knob-glare-s198000",
+     "split": "held_out",
+     "preset": "glare",
+     "status": "failed",
+     "verified": false,
+     "valid": false,
+     "pass_0_5": false,
+     "iterations": 0,
+     "wall_s": 33.29,
+     "usd": 0.0075,
+     "tokens_in": 0,
+     "tokens_out": 0,
+     "strategy": "template",
+     "template": null,
+     "failure": "job failed: The part blends into the background \u2014 switch the screen mat to the dark stage (or use a darker surface).",
+     "max_abs_err_mm": null
+    },
+    {
+     "sample_id": "syn-l-bracket-moire-s114398",
+     "split": "held_out",
+     "preset": "moire",
+     "status": "failed",
+     "verified": false,
+     "valid": false,
+     "pass_0_5": false,
+     "iterations": 0,
+     "wall_s": 0.59,
+     "usd": 0,
+     "tokens_in": 0,
+     "tokens_out": 0,
+     "strategy": "template",
+     "template": null,
+     "failure": "job failed: Wavy stripes from the screen are visible \u2014 move the phone a little further away or rotate it slightly.",
+     "max_abs_err_mm": null
+    },
+    {
+     "sample_id": "syn-l-bracket-moire-s928384",
+     "split": "held_out",
+     "preset": "moire",
+     "status": "best_effort",
+     "verified": false,
+     "valid": true,
+     "pass_0_5": false,
+     "iterations": 1,
+     "wall_s": 129.97,
+     "usd": 0.078698,
+     "tokens_in": 16476,
+     "tokens_out": 13236,
+     "strategy": "template",
+     "template": "l_bracket",
+     "failure": "worst thickness -15.70 mm",
+     "max_abs_err_mm": 15.7
+    },
+    {
+     "sample_id": "syn-spacer-blur-s21267",
+     "split": "held_out",
+     "preset": "blur",
+     "status": "verified",
+     "verified": true,
+     "valid": true,
+     "pass_0_5": true,
+     "iterations": 1,
+     "wall_s": 131.33,
+     "usd": 0.065168,
+     "tokens_in": 14130,
+     "tokens_out": 8812,
+     "strategy": "template",
+     "template": "spacer",
+     "failure": null,
+     "max_abs_err_mm": 0.1
+    }
+   ],
+   "PS": [
+    {
+     "sample_id": "syn-battery-cover-low-light-s790551",
+     "split": "held_out",
+     "preset": "low-light",
+     "status": "best_effort",
+     "verified": false,
+     "valid": true,
+     "pass_0_5": false,
+     "iterations": 6,
+     "wall_s": 431.74,
+     "usd": 0.298609,
+     "tokens_in": 251353,
+     "tokens_out": 34746,
+     "strategy": "template",
+     "template": "battery_cover",
+     "failure": "worst thickness -0.95 mm",
+     "max_abs_err_mm": 0.95
+    },
+    {
+     "sample_id": "syn-cable-clip-white-part-s236478",
+     "split": "held_out",
+     "preset": "white-part",
+     "status": "best_effort",
+     "verified": false,
+     "valid": true,
+     "pass_0_5": false,
+     "iterations": 6,
+     "wall_s": 326.23,
+     "usd": 0.24799,
+     "tokens_in": 258821,
+     "tokens_out": 23600,
+     "strategy": "template",
+     "template": "cable_clip",
+     "failure": "worst thickness -0.50 mm",
+     "max_abs_err_mm": 0.5031
+    },
+    {
+     "sample_id": "syn-caster-wheel-tilt-s108404",
+     "split": "held_out",
+     "preset": "tilt",
+     "status": "verified",
+     "verified": true,
+     "valid": true,
+     "pass_0_5": true,
+     "iterations": 2,
+     "wall_s": 200.93,
+     "usd": 0.132657,
+     "tokens_in": 42714,
+     "tokens_out": 16764,
+     "strategy": "template",
+     "template": "caster_wheel",
+     "failure": null,
+     "max_abs_err_mm": 0.179
+    },
+    {
+     "sample_id": "syn-clip-clean-s657276",
+     "split": "held_out",
+     "preset": "clean",
+     "status": "best_effort",
+     "verified": false,
+     "valid": true,
+     "pass_0_5": true,
+     "iterations": 6,
+     "wall_s": 368.28,
+     "usd": 0.250581,
+     "tokens_in": 248306,
+     "tokens_out": 26234,
+     "strategy": "template",
+     "template": "clip",
+     "failure": null,
+     "max_abs_err_mm": 0.3
+    },
+    {
+     "sample_id": "syn-clip-white-part-s468432",
+     "split": "held_out",
+     "preset": "white-part",
+     "status": "best_effort",
+     "verified": false,
+     "valid": true,
+     "pass_0_5": false,
+     "iterations": 6,
+     "wall_s": 358.36,
+     "usd": 0.291452,
+     "tokens_in": 262783,
+     "tokens_out": 30114,
+     "strategy": "template",
+     "template": "clip",
+     "failure": "worst thickness -0.80 mm",
+     "max_abs_err_mm": 0.8
+    },
+    {
+     "sample_id": "syn-hook-glare-s235877",
+     "split": "held_out",
+     "preset": "glare",
+     "status": "best_effort",
+     "verified": false,
+     "valid": true,
+     "pass_0_5": false,
+     "iterations": 6,
+     "wall_s": 374.77,
+     "usd": 0.276214,
+     "tokens_in": 286615,
+     "tokens_out": 27404,
+     "strategy": "template",
+     "template": "hook",
+     "failure": "worst length -2.50 mm",
+     "max_abs_err_mm": 2.5
+    },
+    {
+     "sample_id": "syn-hook-paper-s411102",
+     "split": "held_out",
+     "preset": "paper",
+     "status": "best_effort",
+     "verified": false,
+     "valid": true,
+     "pass_0_5": false,
+     "iterations": 6,
+     "wall_s": 555.21,
+     "usd": 0.376486,
+     "tokens_in": 391857,
+     "tokens_out": 39942,
+     "strategy": "template",
+     "template": "hook",
+     "failure": "worst hole_1.diameter -0.55 mm",
+     "max_abs_err_mm": 0.55
+    },
+    {
+     "sample_id": "syn-hook-tilt-s656341",
+     "split": "held_out",
+     "preset": "tilt",
+     "status": "best_effort",
+     "verified": false,
+     "valid": true,
+     "pass_0_5": false,
+     "iterations": 6,
+     "wall_s": 438.58,
+     "usd": 0.287539,
+     "tokens_in": 336245,
+     "tokens_out": 30641,
+     "strategy": "template",
+     "template": "hook",
+     "failure": "worst length -4.30 mm",
+     "max_abs_err_mm": 4.3
+    },
+    {
+     "sample_id": "syn-knob-glare-s198000",
+     "split": "held_out",
+     "preset": "glare",
+     "status": "failed",
+     "verified": false,
+     "valid": false,
+     "pass_0_5": false,
+     "iterations": 0,
+     "wall_s": 34.44,
+     "usd": 0.0075,
+     "tokens_in": 0,
+     "tokens_out": 0,
+     "strategy": "template",
+     "template": null,
+     "failure": "job failed: The part blends into the background \u2014 switch the screen mat to the dark stage (or use a darker surface).",
+     "max_abs_err_mm": null
+    },
+    {
+     "sample_id": "syn-l-bracket-moire-s114398",
+     "split": "held_out",
+     "preset": "moire",
+     "status": "failed",
+     "verified": false,
+     "valid": false,
+     "pass_0_5": false,
+     "iterations": 0,
+     "wall_s": 0.51,
+     "usd": 0,
+     "tokens_in": 0,
+     "tokens_out": 0,
+     "strategy": "template",
+     "template": null,
+     "failure": "job failed: Wavy stripes from the screen are visible \u2014 move the phone a little further away or rotate it slightly.",
+     "max_abs_err_mm": null
+    },
+    {
+     "sample_id": "syn-l-bracket-moire-s928384",
+     "split": "held_out",
+     "preset": "moire",
+     "status": "best_effort",
+     "verified": false,
+     "valid": true,
+     "pass_0_5": false,
+     "iterations": 6,
+     "wall_s": 395.02,
+     "usd": 0.284686,
+     "tokens_in": 231652,
+     "tokens_out": 38934,
+     "strategy": "free_code",
+     "template": "l_bracket",
+     "failure": "worst thickness -9.70 mm",
+     "max_abs_err_mm": 9.7
+    },
+    {
+     "sample_id": "syn-spacer-blur-s21267",
+     "split": "held_out",
+     "preset": "blur",
+     "status": "verified",
+     "verified": true,
+     "valid": true,
+     "pass_0_5": true,
+     "iterations": 1,
+     "wall_s": 100.69,
+     "usd": 0.055219,
+     "tokens_in": 13954,
+     "tokens_out": 6523,
+     "strategy": "template",
+     "template": "spacer",
+     "failure": null,
+     "max_abs_err_mm": 0.1
+    }
+   ],
+   "PS-noTemplate": [
+    {
+     "sample_id": "syn-battery-cover-low-light-s790551",
+     "split": "held_out",
+     "preset": "low-light",
+     "status": "best_effort",
+     "verified": false,
+     "valid": true,
+     "pass_0_5": false,
+     "iterations": 5,
+     "wall_s": 534.25,
+     "usd": 0.338381,
+     "tokens_in": 328089,
+     "tokens_out": 41284,
+     "strategy": "free_code",
+     "template": null,
+     "failure": "worst thickness -3.05 mm",
+     "max_abs_err_mm": 3.05
+    },
+    {
+     "sample_id": "syn-cable-clip-white-part-s236478",
+     "split": "held_out",
+     "preset": "white-part",
+     "status": "best_effort",
+     "verified": false,
+     "valid": true,
+     "pass_0_5": false,
+     "iterations": 4,
+     "wall_s": 351.61,
+     "usd": 0.287048,
+     "tokens_in": 224521,
+     "tokens_out": 35925,
+     "strategy": "free_code",
+     "template": null,
+     "failure": "worst thickness -5.93 mm",
+     "max_abs_err_mm": 5.9304
+    },
+    {
+     "sample_id": "syn-caster-wheel-tilt-s108404",
+     "split": "held_out",
+     "preset": "tilt",
+     "status": "best_effort",
+     "verified": false,
+     "valid": true,
+     "pass_0_5": false,
+     "iterations": 6,
+     "wall_s": 453.8,
+     "usd": 0.364254,
+     "tokens_in": 559273,
+     "tokens_out": 40964,
+     "strategy": "free_code",
+     "template": null,
+     "failure": "worst width -0.70 mm; missing hole_1.diameter, hole_2.diameter, hole_3.diameter, hole_5.diameter",
+     "max_abs_err_mm": 0.6993
+    },
+    {
+     "sample_id": "syn-clip-clean-s657276",
+     "split": "held_out",
+     "preset": "clean",
+     "status": "best_effort",
+     "verified": false,
+     "valid": true,
+     "pass_0_5": false,
+     "iterations": 3,
+     "wall_s": 411.0,
+     "usd": 0.300001,
+     "tokens_in": 278585,
+     "tokens_out": 30547,
+     "strategy": "free_code",
+     "template": null,
+     "failure": "worst width +0.66 mm",
+     "max_abs_err_mm": 0.6595
+    },
+    {
+     "sample_id": "syn-clip-white-part-s468432",
+     "split": "held_out",
+     "preset": "white-part",
+     "status": "best_effort",
+     "verified": false,
+     "valid": true,
+     "pass_0_5": false,
+     "iterations": 6,
+     "wall_s": 328.4,
+     "usd": 0.229659,
+     "tokens_in": 209743,
+     "tokens_out": 25932,
+     "strategy": "free_code",
+     "template": null,
+     "failure": "worst thickness -0.80 mm",
+     "max_abs_err_mm": 0.8
+    },
+    {
+     "sample_id": "syn-hook-glare-s235877",
+     "split": "held_out",
+     "preset": "glare",
+     "status": "best_effort",
+     "verified": false,
+     "valid": true,
+     "pass_0_5": false,
+     "iterations": 6,
+     "wall_s": 364.4,
+     "usd": 0.248272,
+     "tokens_in": 200845,
+     "tokens_out": 32539,
+     "strategy": "free_code",
+     "template": null,
+     "failure": "worst thickness -2.55 mm",
+     "max_abs_err_mm": 2.55
+    },
+    {
+     "sample_id": "syn-hook-paper-s411102",
+     "split": "held_out",
+     "preset": "paper",
+     "status": "best_effort",
+     "verified": false,
+     "valid": true,
+     "pass_0_5": false,
+     "iterations": 6,
+     "wall_s": 359.28,
+     "usd": 0.259618,
+     "tokens_in": 258040,
+     "tokens_out": 28644,
+     "strategy": "free_code",
+     "template": null,
+     "failure": "worst thickness -0.95 mm",
+     "max_abs_err_mm": 0.95
+    },
+    {
+     "sample_id": "syn-hook-tilt-s656341",
+     "split": "held_out",
+     "preset": "tilt",
+     "status": "best_effort",
+     "verified": false,
+     "valid": true,
+     "pass_0_5": false,
+     "iterations": 6,
+     "wall_s": 582.22,
+     "usd": 0.31949,
+     "tokens_in": 371139,
+     "tokens_out": 40684,
+     "strategy": "free_code",
+     "template": null,
+     "failure": "worst width +2.53 mm",
+     "max_abs_err_mm": 2.532
+    },
+    {
+     "sample_id": "syn-knob-glare-s198000",
+     "split": "held_out",
+     "preset": "glare",
+     "status": "failed",
+     "verified": false,
+     "valid": false,
+     "pass_0_5": false,
+     "iterations": 0,
+     "wall_s": 28.11,
+     "usd": 0.0075,
+     "tokens_in": 0,
+     "tokens_out": 0,
+     "strategy": "template",
+     "template": null,
+     "failure": "job failed: The part blends into the background \u2014 switch the screen mat to the dark stage (or use a darker surface).",
+     "max_abs_err_mm": null
+    },
+    {
+     "sample_id": "syn-l-bracket-moire-s114398",
+     "split": "held_out",
+     "preset": "moire",
+     "status": "failed",
+     "verified": false,
+     "valid": false,
+     "pass_0_5": false,
+     "iterations": 0,
+     "wall_s": 0.51,
+     "usd": 0,
+     "tokens_in": 0,
+     "tokens_out": 0,
+     "strategy": "template",
+     "template": null,
+     "failure": "job failed: Wavy stripes from the screen are visible \u2014 move the phone a little further away or rotate it slightly.",
+     "max_abs_err_mm": null
+    },
+    {
+     "sample_id": "syn-l-bracket-moire-s928384",
+     "split": "held_out",
+     "preset": "moire",
+     "status": "verified",
+     "verified": true,
+     "valid": true,
+     "pass_0_5": false,
+     "iterations": 2,
+     "wall_s": 229.52,
+     "usd": 0.150561,
+     "tokens_in": 116250,
+     "tokens_out": 21141,
+     "strategy": "free_code",
+     "template": null,
+     "failure": "worst thickness -12.70 mm",
+     "max_abs_err_mm": 12.7
+    },
+    {
+     "sample_id": "syn-spacer-blur-s21267",
+     "split": "held_out",
+     "preset": "blur",
+     "status": "verified",
+     "verified": true,
+     "valid": true,
+     "pass_0_5": true,
+     "iterations": 1,
+     "wall_s": 98.57,
+     "usd": 0.051498,
+     "tokens_in": 12560,
+     "tokens_out": 6223,
+     "strategy": "free_code",
+     "template": null,
+     "failure": null,
+     "max_abs_err_mm": 0.1473
+    }
+   ]
+  }
+ },
+ "failures": [
+  {
+   "title": "ref-aa-cell-clean-s23585 \u00b7 PS (reference_objects, held_out)",
+   "reason": "worst length -0.56 mm",
+   "overlay_url": "/api/v1/blobs/1a123b689dff41f1f355d1c03bbe2694b7e8c5cc189b2da9f60a810091f8fa14.png",
+   "overlay_file": "gallery/reference_objects-ref-aa-cell-clean-s23585.png"
+  },
+  {
+   "title": "ref-aa-cell-tilt-s903698 \u00b7 PS (reference_objects, held_out)",
+   "reason": "worst length -1.20 mm",
+   "overlay_url": "/api/v1/blobs/9cf209bb0b039496bfe71f00d442aa712ce43e91743f513e4af79890a168ece4.png",
+   "overlay_file": "gallery/reference_objects-ref-aa-cell-tilt-s903698.png"
+  },
+  {
+   "title": "syn-battery-cover-low-light-s790551 \u00b7 PS (synthetic, held_out)",
+   "reason": "worst thickness -0.95 mm",
+   "overlay_url": "/api/v1/blobs/a8da3f152f8467b1ca590a9557d3b62d2f59eae2179025a20952f0b6c10cff8d.png",
+   "overlay_file": "gallery/synthetic-syn-battery-cover-low-light-s790551.png"
+  },
+  {
+   "title": "syn-cable-clip-white-part-s236478 \u00b7 PS (synthetic, held_out)",
+   "reason": "worst thickness -0.50 mm",
+   "overlay_url": "/api/v1/blobs/aa4c003c2647a9f1b4b1d0aeff9163e0307475263e7db6f587af706be80114f7.png",
+   "overlay_file": "gallery/synthetic-syn-cable-clip-white-part-s236478.png"
+  },
+  {
+   "title": "syn-clip-white-part-s468432 \u00b7 PS (synthetic, held_out)",
+   "reason": "worst thickness -0.80 mm",
+   "overlay_url": "/api/v1/blobs/613101b5506603b7789f6e594acc29a5bb969c36eaff827c6a35244da01fb74b.png",
+   "overlay_file": "gallery/synthetic-syn-clip-white-part-s468432.png"
+  },
+  {
+   "title": "syn-hook-glare-s235877 \u00b7 PS (synthetic, held_out)",
+   "reason": "worst length -2.50 mm",
+   "overlay_url": "/api/v1/blobs/8d7717a764c7c9b95ef374288521ff0101a3d2bba925de9a836a38b8eb8f8577.png",
+   "overlay_file": "gallery/synthetic-syn-hook-glare-s235877.png"
+  },
+  {
+   "title": "syn-hook-paper-s411102 \u00b7 PS (synthetic, held_out)",
+   "reason": "worst hole_1.diameter -0.55 mm",
+   "overlay_url": "/api/v1/blobs/464b28d6e58869062bf4d29c5fa8945cbdacd1bcbd1403044b59f716a02ee184.png",
+   "overlay_file": "gallery/synthetic-syn-hook-paper-s411102.png"
+  },
+  {
+   "title": "syn-hook-tilt-s656341 \u00b7 PS (synthetic, held_out)",
+   "reason": "worst length -4.30 mm",
+   "overlay_url": "/api/v1/blobs/a7ed468d20cfdd284d40c5abbd7803dfbeefb0f2be3ec114647015c9e4af2924.png",
+   "overlay_file": "gallery/synthetic-syn-hook-tilt-s656341.png"
+  },
+  {
+   "title": "syn-knob-glare-s198000 \u00b7 PS (synthetic, held_out)",
+   "reason": "job failed: The part blends into the background \u2014 switch the screen mat to the dark stage (or use a darker surface).",
+   "overlay_url": "/api/v1/blobs/39cca6202e6470b025f39e77e9012cadba340fb384e8324b67557ff9f6b93c1f.png",
+   "overlay_file": "gallery/synthetic-syn-knob-glare-s198000.png"
+  },
+  {
+   "title": "syn-l-bracket-moire-s114398 \u00b7 PS (synthetic, held_out)",
+   "reason": "job failed: Wavy stripes from the screen are visible \u2014 move the phone a little further away or rotate it slightly.",
+   "overlay_url": "",
+   "overlay_file": null
+  },
+  {
+   "title": "syn-l-bracket-moire-s928384 \u00b7 PS (synthetic, held_out)",
+   "reason": "worst thickness -9.70 mm",
+   "overlay_url": "/api/v1/blobs/790d5d8865367a9851630f9281c3018f874934a1c239d009d0e42687d5ccaa40.png",
+   "overlay_file": "gallery/synthetic-syn-l-bracket-moire-s928384.png"
+  }
+ ],
+ "charts": [
+  "charts/convergence_synthetic.svg",
+  "charts/errors_synthetic.svg",
+  "charts/convergence_reference_objects.svg",
+  "charts/errors_reference_objects.svg"
+ ],
+ "measure_only": {
+  "date": "2026-10-28",
+  "file": "eval/reports/2026-10-28/measure_only.json",
+  "summary": "synthetic                        photos 120 accepted  97  dims N=228  mean 0.468 [0.370, 0.580]  median 0.200  P90 1.039  max 5.316  \u22640.5 77 %\n  top view, flat parts                   dims N= 82  mean 0.226 [0.181, 0.273]  median 0.165  P90 0.544\n  top view, parts with tall features     dims N= 98  mean 0.494 [0.324, 0.690]  median 0.129  P90 1.378\n  expected rejections (white part on light stage): 5/6 correctly rejected\nreference_objects_synthetic      photos  30 accepted  21  dims N= 35  mean 0.178 [0.114, 0.264]  median 0.087  P90 0.307  max 1.312  \u22640.5 91 %\nreference_objects_real           pending (no photos)\nreal_parts_ruler                 pending (no photos)\nEXIT GATE (mean \u2264 0.4 mm): synthetic 0.468 FAIL \u00b7 reference objects [reference_objects_synthetic] 0.178 PASS \u2192 FAIL",
+  "gate": {
+   "synthetic": {
+    "mean_mm": 0.4682372807017543,
+    "n": 228,
+    "pass": false
+   },
+   "reference_objects": {
+    "source": "reference_objects_synthetic",
+    "mean_mm": 0.17765714285714285,
+    "n": 35,
+    "pass": true
+   },
+   "pass": false
+  },
+  "synthetic_manifest": {
+   "seed": 7,
+   "n": 60,
+   "n_reference": 20,
+   "n_reject": 6,
+   "dataset_sha256": "f0125ffd9022d77a59d53cc260adbe17caf81c327f6befc7787c878c8d046983"
+  },
+  "sections": {
+   "synthetic": {
+    "gt_source": "synthetic_exact (template mesh, exact)",
+    "expected_rejections": {
+     "k": 5,
+     "n": 6,
+     "rate": 0.8333333333333334,
+     "ci95": [
+      0.43649717781352987,
+      0.9699466302516935
+     ],
+     "missed": [
+      "syn-spacer-white-on-light-s706141"
+     ],
+     "note": "white part on the light stage: the capture gate should send the user to the dark stage; a correct rejection is not an error and its photo is not scored"
+    },
+    "n_photos": 120,
+    "n_detected": 120,
+    "capture_gate_pass": {
+     "k": 97,
+     "n": 120,
+     "rate": 0.8083333333333333,
+     "ci95": [
+      0.7287884399579756,
+      0.8687497407504907
+     ]
+    },
+    "accepted": {
+     "n": 228,
+     "mean_mm": 0.4682372807017543,
+     "mean_ci95_mm": [
+      0.36995062500000003,
+      0.5800650877192982
+     ],
+     "median_mm": 0.1995,
+     "p90_mm": 1.0390000000000006,
+     "max_mm": 5.316,
+     "within_0_3": 0.6798245614035088,
+     "within_0_3_ci95": [
+      0.6167166988934372,
+      0.7369732770802677
+     ],
+     "within_0_5": 0.7675438596491229,
+     "within_0_5_ci95": [
+      0.7085585016417292,
+      0.8176631699289051
+     ],
+     "signed_mean_mm": -0.04370307017543859
+    },
+    "all_detected": {
+     "n": 279,
+     "mean_mm": 0.5491784946236559,
+     "mean_ci95_mm": [
+      0.41761435483870973,
+      0.7090165860215054
+     ],
+     "median_mm": 0.1974,
+     "p90_mm": 1.097400000000001,
+     "max_mm": 14.799,
+     "within_0_3": 0.6630824372759857,
+     "within_0_3_ci95": [
+      0.6057394138521732,
+      0.7159955976253662
+     ],
+     "within_0_5": 0.7562724014336918,
+     "within_0_5_ci95": [
+      0.7026365536099926,
+      0.8029470358547122
+     ],
+     "signed_mean_mm": 0.07582078853046596
+    },
+    "pass_at_0.3": {
+     "k": 37,
+     "n": 97,
+     "rate": 0.38144329896907214,
+     "ci95": [
+      0.2910466453343049,
+      0.4808725606254558
+     ]
+    },
+    "pass_at_0.5": {
+     "k": 51,
+     "n": 97,
+     "rate": 0.5257731958762887,
+     "ci95": [
+      0.4273277034969924,
+      0.6222550778161032
+     ]
+    },
+    "by_dim": {
+     "hole \u00d8": {
+      "n": 82,
+      "mean_mm": 0.16481707317073171,
+      "mean_ci95_mm": [
+       0.13295335365853653,
+       0.1988451219512195
+      ],
+      "median_mm": 0.0935,
+      "p90_mm": 0.2869,
+      "max_mm": 0.802,
+      "within_0_3": 0.9024390243902439,
+      "within_0_3_ci95": [
+       0.819127942385788,
+       0.9497313117173021
+      ],
+      "within_0_5": 0.975609756097561,
+      "within_0_5_ci95": [
+       0.9153662160893606,
+       0.9932856296688367
+      ],
+      "signed_mean_mm": -0.055109756097560976
+     },
+     "side:thickness": {
+      "n": 48,
+      "mean_mm": 0.8284604166666666,
+      "mean_ci95_mm": [
+       0.5594055729166667,
+       1.1331441145833332
+      ],
+      "median_mm": 0.49034999999999995,
+      "p90_mm": 2.678000000000002,
+      "max_mm": 3.622,
+      "within_0_3": 0.375,
+      "within_0_3_ci95": [
+       0.25215266760868205,
+       0.5163723648078473
+      ],
+      "within_0_5": 0.5208333333333334,
+      "within_0_5_ci95": [
+       0.3832923230334281,
+       0.6552868382304838
+      ],
+      "signed_mean_mm": -0.7886729166666667
+     },
+     "top:length": {
+      "n": 49,
+      "mean_mm": 0.47444285714285717,
+      "mean_ci95_mm": [
+       0.2610127551020408,
+       0.7600658163265296
+      ],
+      "median_mm": 0.1355,
+      "p90_mm": 1.0238400000000012,
+      "max_mm": 5.316,
+      "within_0_3": 0.7142857142857143,
+      "within_0_3_ci95": [
+       0.575911164922199,
+       0.8215040554118739
+      ],
+      "within_0_5": 0.7551020408163265,
+      "within_0_5_ci95": [
+       0.6191368101239605,
+       0.8539765474166023
+      ],
+      "signed_mean_mm": 0.24796938775510202
+     },
+     "top:width": {
+      "n": 49,
+      "mean_mm": 0.6169244897959184,
+      "mean_ci95_mm": [
+       0.38230780612244897,
+       0.8936810714285714
+      ],
+      "median_mm": 0.2311,
+      "p90_mm": 1.7452000000000003,
+      "max_mm": 3.928,
+      "within_0_3": 0.5714285714285714,
+      "within_0_3_ci95": [
+       0.4327049309001736,
+       0.699766809211184
+      ],
+      "within_0_5": 0.673469387755102,
+      "within_0_5_ci95": [
+       0.5337920531457014,
+       0.7879250299818812
+      ],
+      "signed_mean_mm": 0.4134795918367346
+     }
+    },
+    "by_preset": {
+     "blur": {
+      "n": 29,
+      "mean_mm": 0.7029241379310346,
+      "mean_ci95_mm": [
+       0.27991060344827584,
+       1.2220331034482756
+      ],
+      "median_mm": 0.21,
+      "p90_mm": 1.8335999999999983,
+      "max_mm": 5.316,
+      "within_0_3": 0.6551724137931034,
+      "within_0_3_ci95": [
+       0.47345104090476137,
+       0.80059281473325
+      ],
+      "within_0_5": 0.7586206896551724,
+      "within_0_5_ci95": [
+       0.5789239838218867,
+       0.8778157755747991
+      ],
+      "signed_mean_mm": 0.3872689655172414
+     },
+     "clean": {
+      "n": 37,
+      "mean_mm": 0.3789540540540541,
+      "mean_ci95_mm": [
+       0.22527682432432433,
+       0.5778031756756755
+      ],
+      "median_mm": 0.132,
+      "p90_mm": 0.9607999999999999,
+      "max_mm": 3.036,
+      "within_0_3": 0.7027027027027027,
+      "within_0_3_ci95": [
+       0.5421686408886435,
+       0.8251052135016799
+      ],
+      "within_0_5": 0.7837837837837838,
+      "within_0_5_ci95": [
+       0.6280485160803084,
+       0.8861348800661442
+      ],
+      "signed_mean_mm": 0.21255945945945945
+     },
+     "glare": {
+      "n": 27,
+      "mean_mm": 0.34452592592592596,
+      "mean_ci95_mm": [
+       0.14199166666666665,
+       0.6553723148148145
+      ],
+      "median_mm": 0.106,
+      "p90_mm": 0.5838,
+      "max_mm": 3.622,
+      "within_0_3": 0.7777777777777778,
+      "within_0_3_ci95": [
+       0.5924307113336742,
+       0.8939276054763996
+      ],
+      "within_0_5": 0.8518518518518519,
+      "within_0_5_ci95": [
+       0.6752131457218702,
+       0.9408407222375568
+      ],
+      "signed_mean_mm": -0.1903851851851852
+     },
+     "low-light": {
+      "n": 31,
+      "mean_mm": 0.32282258064516123,
+      "mean_ci95_mm": [
+       0.13808927419354838,
+       0.5794487096774192
+      ],
+      "median_mm": 0.0974,
+      "p90_mm": 1.081,
+      "max_mm": 3.056,
+      "within_0_3": 0.7741935483870968,
+      "within_0_3_ci95": [
+       0.6018758161665794,
+       0.886048644387375
+      ],
+      "within_0_5": 0.8709677419354839,
+      "within_0_5_ci95": [
+       0.7114759374369357,
+       0.9486571562537085
+      ],
+      "signed_mean_mm": -0.1816612903225806
+     },
+     "moire": {
+      "n": 4,
+      "mean_mm": 0.49125,
+      "mean_ci95_mm": [
+       0.06675,
+       1.3205
+      ],
+      "median_mm": 0.0865,
+      "p90_mm": 1.2433000000000005,
+      "max_mm": 1.735,
+      "within_0_3": 0.75,
+      "within_0_3_ci95": [
+       0.30064184258240184,
+       0.9544127391902995
+      ],
+      "within_0_5": 0.75,
+      "within_0_5_ci95": [
+       0.30064184258240184,
+       0.9544127391902995
+      ],
+      "signed_mean_mm": 0.46275000000000005
+     },
+     "paper": {
+      "n": 38,
+      "mean_mm": 0.36414473684210524,
+      "mean_ci95_mm": [
+       0.2256949342105263,
+       0.5534905263157894
+      ],
+      "median_mm": 0.2645,
+      "p90_mm": 0.4793700000000002,
+      "max_mm": 2.516,
+      "within_0_3": 0.7631578947368421,
+      "within_0_3_ci95": [
+       0.607931876367602,
+       0.8700629298294591
+      ],
+      "within_0_5": 0.8947368421052632,
+      "within_0_5_ci95": [
+       0.7586947827711269,
+       0.9582974265244647
+      ],
+      "signed_mean_mm": -0.27455526315789475
+     },
+     "tilt": {
+      "n": 32,
+      "mean_mm": 0.526578125,
+      "mean_ci95_mm": [
+       0.27156476562500004,
+       0.8441008593749995
+      ],
+      "median_mm": 0.19445,
+      "p90_mm": 0.9655000000000002,
+      "max_mm": 3.237,
+      "within_0_3": 0.625,
+      "within_0_3_ci95": [
+       0.4525440735307745,
+       0.7706611269054578
+      ],
+      "within_0_5": 0.6875,
+      "within_0_5_ci95": [
+       0.5143332169904459,
+       0.8204745836639026
+      ],
+      "signed_mean_mm": -0.278765625
+     },
+     "white-part": {
+      "n": 30,
+      "mean_mm": 0.6796433333333332,
+      "mean_ci95_mm": [
+       0.41577158333333336,
+       1.0208413333333326
+      ],
+      "median_mm": 0.49550000000000005,
+      "p90_mm": 1.156000000000001,
+      "max_mm": 3.611,
+      "within_0_3": 0.43333333333333335,
+      "within_0_3_ci95": [
+       0.2737748557646652,
+       0.6080269299918639
+      ],
+      "within_0_5": 0.5,
+      "within_0_5_ci95": [
+       0.33154125640533766,
+       0.6684587435946623
+      ],
+      "signed_mean_mm": -0.02617666666666665
+     }
+    },
+    "by_group": {
+     "bracket": {
+      "n": 19,
+      "mean_mm": 1.2267368421052631,
+      "mean_ci95_mm": [
+       0.5984013157894736,
+       1.964326315789474
+      ],
+      "median_mm": 0.408,
+      "p90_mm": 3.6744,
+      "max_mm": 5.316,
+      "within_0_3": 0.47368421052631576,
+      "within_0_3_ci95": [
+       0.2732980516117956,
+       0.6829219075488682
+      ],
+      "within_0_5": 0.5263157894736842,
+      "within_0_5_ci95": [
+       0.3170780924511316,
+       0.7267019483882042
+      ],
+      "signed_mean_mm": 0.8688421052631581
+     },
+     "cable_clip": {
+      "n": 24,
+      "mean_mm": 0.2666041666666667,
+      "mean_ci95_mm": [
+       0.1501846875,
+       0.40090645833333294
+      ],
+      "median_mm": 0.1725,
+      "p90_mm": 0.6340999999999998,
+      "max_mm": 1.311,
+      "within_0_3": 0.75,
+      "within_0_3_ci95": [
+       0.55100555994846,
+       0.8800063377140499
+      ],
+      "within_0_5": 0.875,
+      "within_0_5_ci95": [
+       0.6899611872949993,
+       0.9565566591987655
+      ],
+      "signed_mean_mm": 0.09080416666666664
+     },
+     "clip": {
+      "n": 20,
+      "mean_mm": 0.5843,
+      "mean_ci95_mm": [
+       0.29218749999999993,
+       0.9918074999999985
+      ],
+      "median_mm": 0.20900000000000002,
+      "p90_mm": 1.097500000000001,
+      "max_mm": 3.588,
+      "within_0_3": 0.55,
+      "within_0_3_ci95": [
+       0.34208534245034233,
+       0.7418021417443759
+      ],
+      "within_0_5": 0.6,
+      "within_0_5_ci95": [
+       0.3865815007622531,
+       0.781193467627183
+      ],
+      "signed_mean_mm": 0.2982
+     },
+     "cover": {
+      "n": 18,
+      "mean_mm": 0.930611111111111,
+      "mean_ci95_mm": [
+       0.3843958333333333,
+       1.5431708333333327
+      ],
+      "median_mm": 0.0985,
+      "p90_mm": 3.0602,
+      "max_mm": 3.622,
+      "within_0_3": 0.6666666666666666,
+      "within_0_3_ci95": [
+       0.43749467295945105,
+       0.837212252491663
+      ],
+      "within_0_5": 0.6666666666666666,
+      "within_0_5_ci95": [
+       0.43749467295945105,
+       0.837212252491663
+      ],
+      "signed_mean_mm": -0.8220555555555555
+     },
+     "hinge": {
+      "n": 20,
+      "mean_mm": 0.41870499999999994,
+      "mean_ci95_mm": [
+       0.17896424999999996,
+       0.7694947499999997
+      ],
+      "median_mm": 0.215,
+      "p90_mm": 0.8473,
+      "max_mm": 3.335,
+      "within_0_3": 0.65,
+      "within_0_3_ci95": [
+       0.43285427668523624,
+       0.818808175898918
+      ],
+      "within_0_5": 0.8,
+      "within_0_5_ci95": [
+       0.5839825677481064,
+       0.919342337420202
+      ],
+      "signed_mean_mm": -0.09483499999999997
+     },
+     "hook": {
+      "n": 21,
+      "mean_mm": 0.6647619047619047,
+      "mean_ci95_mm": [
+       0.3333583333333333,
+       1.0689488095238093
+      ],
+      "median_mm": 0.196,
+      "p90_mm": 1.382,
+      "max_mm": 3.237,
+      "within_0_3": 0.6190476190476191,
+      "within_0_3_ci95": [
+       0.4087865377511576,
+       0.7924898863143551
+      ],
+      "within_0_5": 0.6190476190476191,
+      "within_0_5_ci95": [
+       0.4087865377511576,
+       0.7924898863143551
+      ],
+      "signed_mean_mm": 0.004285714285714269
+     },
+     "knob": {
+      "n": 14,
+      "mean_mm": 0.2057142857142857,
+      "mean_ci95_mm": [
+       0.15343875,
+       0.25307696428571425
+      ],
+      "median_mm": 0.23005,
+      "p90_mm": 0.31761000000000006,
+      "max_mm": 0.3539,
+      "within_0_3": 0.8571428571428571,
+      "within_0_3_ci95": [
+       0.6005862050302965,
+       0.9599060787285351
+      ],
+      "within_0_5": 1.0,
+      "within_0_5_ci95": [
+       0.7846891972623643,
+       1.0
+      ],
+      "signed_mean_mm": -0.1422857142857143
+     },
+     "latch": {
+      "n": 24,
+      "mean_mm": 0.1998041666666667,
+      "mean_ci95_mm": [
+       0.13453072916666667,
+       0.26529260416666667
+      ],
+      "median_mm": 0.14350000000000002,
+      "p90_mm": 0.4038,
+      "max_mm": 0.6395,
+      "within_0_3": 0.7083333333333334,
+      "within_0_3_ci95": [
+       0.5083230633550337,
+       0.8508535180303913
+      ],
+      "within_0_5": 0.9583333333333334,
+      "within_0_5_ci95": [
+       0.7975819352134406,
+       0.9926065438344942
+      ],
+      "signed_mean_mm": -0.07912916666666667
+     },
+     "spacer": {
+      "n": 17,
+      "mean_mm": 0.4114,
+      "mean_ci95_mm": [
+       0.2429279411764706,
+       0.5946238235294117
+      ],
+      "median_mm": 0.208,
+      "p90_mm": 0.913,
+      "max_mm": 1.086,
+      "within_0_3": 0.5882352941176471,
+      "within_0_3_ci95": [
+       0.3600544264299978,
+       0.7838894320978518
+      ],
+      "within_0_5": 0.5882352941176471,
+      "within_0_5_ci95": [
+       0.3600544264299978,
+       0.7838894320978518
+      ],
+      "signed_mean_mm": -0.1525529411764706
+     },
+     "wheel": {
+      "n": 51,
+      "mean_mm": 0.22767450980392157,
+      "mean_ci95_mm": [
+       0.17467470588235293,
+       0.288823431372549
+      ],
+      "median_mm": 0.179,
+      "p90_mm": 0.571,
+      "max_mm": 0.853,
+      "within_0_3": 0.7843137254901961,
+      "within_0_3_ci95": [
+       0.6537364041400255,
+       0.8750606159176724
+      ],
+      "within_0_5": 0.8627450980392157,
+      "within_0_5_ci95": [
+       0.7427830774241833,
+       0.9318889826494312
+      ],
+      "signed_mean_mm": -0.22602745098039215
+     }
+    },
+    "by_mat": {
+     "paper-a4": {
+      "n": 53,
+      "mean_mm": 0.42550754716981143,
+      "mean_ci95_mm": [
+       0.29363731132075477,
+       0.5959582547169812
+      ],
+      "median_mm": 0.266,
+      "p90_mm": 0.8308000000000002,
+      "max_mm": 2.613,
+      "within_0_3": 0.6981132075471698,
+      "within_0_3_ci95": [
+       0.5646316733114988,
+       0.8048169727242108
+      ],
+      "within_0_5": 0.8490566037735849,
+      "within_0_5_ci95": [
+       0.7294575072380466,
+       0.9214758214915374
+      ],
+      "signed_mean_mm": -0.14647358490566037
+     },
+     "screen-l": {
+      "n": 61,
+      "mean_mm": 0.5330786885245901,
+      "mean_ci95_mm": [
+       0.33405676229508197,
+       0.7585270491803279
+      ],
+      "median_mm": 0.128,
+      "p90_mm": 1.376,
+      "max_mm": 3.588,
+      "within_0_3": 0.6557377049180327,
+      "within_0_3_ci95": [
+       0.5304974914056818,
+       0.7625249103965454
+      ],
+      "within_0_5": 0.7049180327868853,
+      "within_0_5_ci95": [
+       0.5811059794277964,
+       0.8044498124172395
+      ],
+      "signed_mean_mm": -0.09313770491803279
+     },
+     "screen-m": {
+      "n": 114,
+      "mean_mm": 0.45340701754385965,
+      "mean_ci95_mm": [
+       0.3042539912280701,
+       0.6210788596491227
+      ],
+      "median_mm": 0.128,
+      "p90_mm": 0.9913000000000002,
+      "max_mm": 5.316,
+      "within_0_3": 0.6842105263157895,
+      "within_0_3_ci95": [
+       0.5940657058910772,
+       0.762345360471455
+      ],
+      "within_0_5": 0.7631578947368421,
+      "within_0_5_ci95": [
+       0.6773413305318411,
+       0.8318173357003477
+      ],
+      "signed_mean_mm": 0.030528070175438606
+     }
+    },
+    "by_profile": {
+     "side: flat": {
+      "n": 20,
+      "mean_mm": 0.36330500000000004,
+      "mean_ci95_mm": [
+       0.244523375,
+       0.49807349999999995
+      ],
+      "median_mm": 0.27075,
+      "p90_mm": 0.7594000000000002,
+      "max_mm": 1.086,
+      "within_0_3": 0.5,
+      "within_0_3_ci95": [
+       0.2992980081982123,
+       0.7007019918017877
+      ],
+      "within_0_5": 0.7,
+      "within_0_5_ci95": [
+       0.4810271816464765,
+       0.8545227551323956
+      ],
+      "signed_mean_mm": -0.27480499999999997
+     },
+     "side: tall features": {
+      "n": 28,
+      "mean_mm": 1.1607142857142858,
+      "mean_ci95_mm": [
+       0.769204375,
+       1.605210982142857
+      ],
+      "median_mm": 0.7290000000000001,
+      "p90_mm": 3.1201,
+      "max_mm": 3.622,
+      "within_0_3": 0.2857142857142857,
+      "within_0_3_ci95": [
+       0.1525399605666909,
+       0.47059288433295715
+      ],
+      "within_0_5": 0.39285714285714285,
+      "within_0_5_ci95": [
+       0.2356568654157959,
+       0.5759095570340281
+      ],
+      "signed_mean_mm": -1.1557214285714286
+     },
+     "top: flat": {
+      "n": 82,
+      "mean_mm": 0.22640243902439022,
+      "mean_ci95_mm": [
+       0.1811176524390244,
+       0.27336045731707315
+      ],
+      "median_mm": 0.16549999999999998,
+      "p90_mm": 0.5435100000000005,
+      "max_mm": 0.9358,
+      "within_0_3": 0.7926829268292683,
+      "within_0_3_ci95": [
+       0.6928342703478702,
+       0.8663360962725591
+      ],
+      "within_0_5": 0.8902439024390244,
+      "within_0_5_ci95": [
+       0.804387633588628,
+       0.9411728552386109
+      ],
+      "signed_mean_mm": -0.15280975609756098
+     },
+     "top: tall features": {
+      "n": 98,
+      "mean_mm": 0.4941530612244899,
+      "mean_ci95_mm": [
+       0.32448576530612244,
+       0.6897624999999998
+      ],
+      "median_mm": 0.129,
+      "p90_mm": 1.3778,
+      "max_mm": 5.316,
+      "within_0_3": 0.7346938775510204,
+      "within_0_3_ci95": [
+       0.6396396953475812,
+       0.8120427582687727
+      ],
+      "within_0_5": 0.7857142857142857,
+      "within_0_5_ci95": [
+       0.6945197258584814,
+       0.8553545655005581
+      ],
+      "signed_mean_mm": 0.41247346938775514
+     }
+    },
+    "top_view_split": {
+     "top view, flat parts": {
+      "n": 82,
+      "mean_mm": 0.22640243902439022,
+      "mean_ci95_mm": [
+       0.1811176524390244,
+       0.27336045731707315
+      ],
+      "median_mm": 0.16549999999999998,
+      "p90_mm": 0.5435100000000005,
+      "max_mm": 0.9358,
+      "within_0_3": 0.7926829268292683,
+      "within_0_3_ci95": [
+       0.6928342703478702,
+       0.8663360962725591
+      ],
+      "within_0_5": 0.8902439024390244,
+      "within_0_5_ci95": [
+       0.804387633588628,
+       0.9411728552386109
+      ],
+      "signed_mean_mm": -0.15280975609756098
+     },
+     "top view, parts with tall features": {
+      "n": 98,
+      "mean_mm": 0.4941530612244899,
+      "mean_ci95_mm": [
+       0.32448576530612244,
+       0.6897624999999998
+      ],
+      "median_mm": 0.129,
+      "p90_mm": 1.3778,
+      "max_mm": 5.316,
+      "within_0_3": 0.7346938775510204,
+      "within_0_3_ci95": [
+       0.6396396953475812,
+       0.8120427582687727
+      ],
+      "within_0_5": 0.7857142857142857,
+      "within_0_5_ci95": [
+       0.6945197258584814,
+       0.8553545655005581
+      ],
+      "signed_mean_mm": 0.41247346938775514
+     }
+    }
+   },
+   "reference_objects_synthetic": {
+    "gt_source": "reference_spec (published spec; synthetic render of the nominal model)",
+    "expected_rejections": {
+     "k": 0,
+     "n": 0,
+     "rate": NaN,
+     "ci95": [
+      NaN,
+      NaN
+     ],
+     "missed": [],
+     "note": "white part on the light stage: the capture gate should send the user to the dark stage; a correct rejection is not an error and its photo is not scored"
+    },
+    "n_photos": 30,
+    "n_detected": 30,
+    "capture_gate_pass": {
+     "k": 21,
+     "n": 30,
+     "rate": 0.7,
+     "ci95": [
+      0.5212421254128504,
+      0.8333525173175619
+     ]
+    },
+    "accepted": {
+     "n": 35,
+     "mean_mm": 0.17765714285714285,
+     "mean_ci95_mm": [
+      0.11391285714285715,
+      0.26416428571428563
+     ],
+     "median_mm": 0.087,
+     "p90_mm": 0.3068,
+     "max_mm": 1.312,
+     "within_0_3": 0.8857142857142857,
+     "within_0_3_ci95": [
+      0.7404853135378618,
+      0.9546482066690264
+     ],
+     "within_0_5": 0.9142857142857143,
+     "within_0_5_ci95": [
+      0.7762072603410349,
+      0.9704176317330301
+     ],
+     "signed_mean_mm": 0.01537142857142858
+    },
+    "all_detected": {
+     "n": 50,
+     "mean_mm": 0.15835999999999997,
+     "mean_ci95_mm": [
+      0.1046535,
+      0.22676999999999994
+     ],
+     "median_mm": 0.0765,
+     "p90_mm": 0.2978,
+     "max_mm": 1.312,
+     "within_0_3": 0.9,
+     "within_0_3_ci95": [
+      0.7863976856252035,
+      0.9565242350681096
+     ],
+     "within_0_5": 0.92,
+     "within_0_5_ci95": [
+      0.8116175308165717,
+      0.968450485911407
+     ],
+     "signed_mean_mm": 0.0035999999999999956
+    },
+    "within_spec_accepted": {
+     "k": 15,
+     "n": 35,
+     "rate": 0.42857142857142855,
+     "ci95": [
+      0.2798456817718068,
+      0.5914258885602508
+     ]
+    },
+    "range_error_accepted": {
+     "n": 35,
+     "mean_mm": 0.05228571428571429,
+     "mean_ci95_mm": [
+      0.026685714285714285,
+      0.07866142857142856
+     ],
+     "median_mm": 0.012,
+     "p90_mm": 0.19240000000000002,
+     "max_mm": 0.264,
+     "within_0_3": 1.0,
+     "within_0_3_ci95": [
+      0.9010990076755959,
+      0.9999999999999999
+     ],
+     "within_0_5": 1.0,
+     "within_0_5_ci95": [
+      0.9010990076755959,
+      0.9999999999999999
+     ],
+     "signed_mean_mm": 0.05228571428571429
+    },
+    "pass_at_0.3": {
+     "k": 17,
+     "n": 21,
+     "rate": 0.8095238095238095,
+     "ci95": [
+      0.5999943530979508,
+      0.9233243494723822
+     ]
+    },
+    "pass_at_0.5": {
+     "k": 18,
+     "n": 21,
+     "rate": 0.8571428571428571,
+     "ci95": [
+      0.6536393971937906,
+      0.9501898750027473
+     ]
+    },
+    "by_dim": {
+     "side:thickness": {
+      "n": 7,
+      "mean_mm": 0.15157142857142855,
+      "mean_ci95_mm": [
+       0.07939285714285715,
+       0.22514285714285712
+      ],
+      "median_mm": 0.141,
+      "p90_mm": 0.29059999999999997,
+      "max_mm": 0.296,
+      "within_0_3": 1.0,
+      "within_0_3_ci95": [
+       0.6456695649333126,
+       1.0
+      ],
+      "within_0_5": 1.0,
+      "within_0_5_ci95": [
+       0.6456695649333126,
+       1.0
+      ],
+      "signed_mean_mm": 0.041285714285714294
+     },
+     "top:length": {
+      "n": 14,
+      "mean_mm": 0.2609285714285714,
+      "mean_ci95_mm": [
+       0.11199821428571427,
+       0.4575767857142857
+      ],
+      "median_mm": 0.0795,
+      "p90_mm": 0.5758,
+      "max_mm": 1.312,
+      "within_0_3": 0.7142857142857143,
+      "within_0_3_ci95": [
+       0.4535091567010681,
+       0.8827862135542308
+      ],
+      "within_0_5": 0.7857142857142857,
+      "within_0_5_ci95": [
+       0.524107694133997,
+       0.9242861328730683
+      ],
+      "signed_mean_mm": -0.08964285714285714
+     },
+     "top:width": {
+      "n": 14,
+      "mean_mm": 0.10742857142857143,
+      "mean_ci95_mm": [
+       0.07485714285714286,
+       0.14336071428571429
+      ],
+      "median_mm": 0.08149999999999999,
+      "p90_mm": 0.21440000000000006,
+      "max_mm": 0.272,
+      "within_0_3": 1.0,
+      "within_0_3_ci95": [
+       0.7846891972623643,
+       1.0
+      ],
+      "within_0_5": 1.0,
+      "within_0_5_ci95": [
+       0.7846891972623643,
+       1.0
+      ],
+      "signed_mean_mm": 0.10742857142857143
+     }
+    },
+    "by_preset": {
+     "blur": {
+      "n": 8,
+      "mean_mm": 0.278875,
+      "mean_ci95_mm": [
+       0.2071125,
+       0.37675
+      ],
+      "median_mm": 0.254,
+      "p90_mm": 0.39469999999999994,
+      "max_mm": 0.583,
+      "within_0_3": 0.75,
+      "within_0_3_ci95": [
+       0.40927543031016883,
+       0.9285207872478909
+      ],
+      "within_0_5": 0.875,
+      "within_0_5_ci95": [
+       0.5291118177871464,
+       0.9775825085499433
+      ],
+      "signed_mean_mm": 0.133125
+     },
+     "clean": {
+      "n": 10,
+      "mean_mm": 0.1638,
+      "mean_ci95_mm": [
+       0.0859975,
+       0.27020749999999993
+      ],
+      "median_mm": 0.11499999999999999,
+      "p90_mm": 0.31419999999999987,
+      "max_mm": 0.559,
+      "within_0_3": 0.9,
+      "within_0_3_ci95": [
+       0.5958499732047615,
+       0.9821237869049271
+      ],
+      "within_0_5": 0.9,
+      "within_0_5_ci95": [
+       0.5958499732047615,
+       0.9821237869049271
+      ],
+      "signed_mean_mm": -0.005400000000000007
+     },
+     "glare": {
+      "n": 5,
+      "mean_mm": 0.05740000000000001,
+      "mean_ci95_mm": [
+       0.04780000000000001,
+       0.06720999999999995
+      ],
+      "median_mm": 0.06,
+      "p90_mm": 0.06999999999999999,
+      "max_mm": 0.072,
+      "within_0_3": 1.0,
+      "within_0_3_ci95": [
+       0.5655175352168251,
+       1.0
+      ],
+      "within_0_5": 1.0,
+      "within_0_5_ci95": [
+       0.5655175352168251,
+       1.0
+      ],
+      "signed_mean_mm": 0.05740000000000001
+     },
+     "moire": {
+      "n": 2,
+      "mean_mm": 0.077,
+      "mean_ci95_mm": [
+       0.076,
+       0.078
+      ],
+      "median_mm": 0.077,
+      "p90_mm": 0.0778,
+      "max_mm": 0.078,
+      "within_0_3": 1.0,
+      "within_0_3_ci95": [
+       0.34238022750665303,
+       1.0
+      ],
+      "within_0_5": 1.0,
+      "within_0_5_ci95": [
+       0.34238022750665303,
+       1.0
+      ],
+      "signed_mean_mm": 0.077
+     },
+     "tilt": {
+      "n": 10,
+      "mean_mm": 0.19080000000000003,
+      "mean_ci95_mm": [
+       0.0511925,
+       0.44770000000000004
+      ],
+      "median_mm": 0.0785,
+      "p90_mm": 0.22029999999999958,
+      "max_mm": 1.312,
+      "within_0_3": 0.9,
+      "within_0_3_ci95": [
+       0.5958499732047615,
+       0.9821237869049271
+      ],
+      "within_0_5": 0.9,
+      "within_0_5_ci95": [
+       0.5958499732047615,
+       0.9821237869049271
+      ],
+      "signed_mean_mm": -0.09140000000000001
+     }
+    },
+    "by_group": {
+     "aa_cell": {
+      "n": 6,
+      "mean_mm": 0.47583333333333333,
+      "mean_ci95_mm": [
+       0.18483333333333332,
+       0.8571666666666667
+      ],
+      "median_mm": 0.3975,
+      "p90_mm": 0.9475,
+      "max_mm": 1.312,
+      "within_0_3": 0.5,
+      "within_0_3_ci95": [
+       0.1876163064826506,
+       0.8123836935173494
+      ],
+      "within_0_5": 0.5,
+      "within_0_5_ci95": [
+       0.1876163064826506,
+       0.8123836935173494
+      ],
+      "signed_mean_mm": -0.3421666666666667
+     },
+     "id1_card": {
+      "n": 6,
+      "mean_mm": 0.147,
+      "mean_ci95_mm": [
+       0.10883333333333334,
+       0.18234166666666662
+      ],
+      "median_mm": 0.1585,
+      "p90_mm": 0.1985,
+      "max_mm": 0.207,
+      "within_0_3": 1.0,
+      "within_0_3_ci95": [
+       0.6096657120978346,
+       1.0
+      ],
+      "within_0_5": 1.0,
+      "within_0_5_ci95": [
+       0.6096657120978346,
+       1.0
+      ],
+      "signed_mean_mm": 0.147
+     },
+     "lego_2x4": {
+      "n": 11,
+      "mean_mm": 0.1531818181818182,
+      "mean_ci95_mm": [
+       0.09253863636363636,
+       0.2167454545454545
+      ],
+      "median_mm": 0.097,
+      "p90_mm": 0.296,
+      "max_mm": 0.314,
+      "within_0_3": 0.9090909090909091,
+      "within_0_3_ci95": [
+       0.6226415635484043,
+       0.9837678271141151
+      ],
+      "within_0_5": 1.0,
+      "within_0_5_ci95": [
+       0.7411670330319684,
+       1.0
+      ],
+      "signed_mean_mm": 0.08300000000000002
+     },
+     "sd_card": {
+      "n": 12,
+      "mean_mm": 0.06633333333333334,
+      "mean_ci95_mm": [
+       0.044500000000000005,
+       0.09391874999999998
+      ],
+      "median_mm": 0.0485,
+      "p90_mm": 0.13470000000000001,
+      "max_mm": 0.17,
+      "within_0_3": 1.0,
+      "within_0_3_ci95": [
+       0.7575059933447592,
+       1.0
+      ],
+      "within_0_5": 1.0,
+      "within_0_5_ci95": [
+       0.7575059933447592,
+       1.0
+      ],
+      "signed_mean_mm": 0.06633333333333334
+     }
+    },
+    "by_mat": {
+     "paper-a4": {
+      "n": 5,
+      "mean_mm": 0.2472,
+      "mean_ci95_mm": [
+       0.1956,
+       0.2984
+      ],
+      "median_mm": 0.272,
+      "p90_mm": 0.3068,
+      "max_mm": 0.314,
+      "within_0_3": 0.8,
+      "within_0_3_ci95": [
+       0.37553462976252533,
+       0.9637758913675698
+      ],
+      "within_0_5": 1.0,
+      "within_0_5_ci95": [
+       0.5655175352168251,
+       1.0
+      ],
+      "signed_mean_mm": 0.2472
+     },
+     "screen-l": {
+      "n": 12,
+      "mean_mm": 0.15041666666666667,
+      "mean_ci95_mm": [
+       0.08207708333333334,
+       0.2450104166666666
+      ],
+      "median_mm": 0.08399999999999999,
+      "p90_mm": 0.2819,
+      "max_mm": 0.583,
+      "within_0_3": 0.9166666666666666,
+      "within_0_3_ci95": [
+       0.646120088858883,
+       0.9851349055950829
+      ],
+      "within_0_5": 0.9166666666666666,
+      "within_0_5_ci95": [
+       0.646120088858883,
+       0.9851349055950829
+      ],
+      "signed_mean_mm": -0.011083333333333327
+     },
+     "screen-m": {
+      "n": 18,
+      "mean_mm": 0.1765,
+      "mean_ci95_mm": [
+       0.07121805555555555,
+       0.33239166666666636
+      ],
+      "median_mm": 0.0695,
+      "p90_mm": 0.31260000000000027,
+      "max_mm": 1.312,
+      "within_0_3": 0.8888888888888888,
+      "within_0_3_ci95": [
+       0.672002348698212,
+       0.9689804773543876
+      ],
+      "within_0_5": 0.8888888888888888,
+      "within_0_5_ci95": [
+       0.672002348698212,
+       0.9689804773543876
+      ],
+      "signed_mean_mm": -0.0313888888888889
+     }
+    }
+   },
+   "reference_objects_real": {
+    "gt_source": "reference_spec (published spec; real photos)",
+    "expected_rejections": {
+     "k": 0,
+     "n": 0,
+     "rate": NaN,
+     "ci95": [
+      NaN,
+      NaN
+     ],
+     "missed": [],
+     "note": "white part on the light stage: the capture gate should send the user to the dark stage; a correct rejection is not an error and its photo is not scored"
+    },
+    "n_photos": 0,
+    "n_detected": 0,
+    "capture_gate_pass": {
+     "k": 0,
+     "n": 0,
+     "rate": NaN,
+     "ci95": [
+      NaN,
+      NaN
+     ]
+    },
+    "accepted": {
+     "n": 0,
+     "mean_mm": NaN,
+     "mean_ci95_mm": [
+      NaN,
+      NaN
+     ],
+     "median_mm": NaN,
+     "p90_mm": NaN,
+     "max_mm": NaN,
+     "within_0_3": NaN,
+     "within_0_3_ci95": [
+      NaN,
+      NaN
+     ],
+     "within_0_5": NaN,
+     "within_0_5_ci95": [
+      NaN,
+      NaN
+     ],
+     "signed_mean_mm": NaN
+    },
+    "all_detected": {
+     "n": 0,
+     "mean_mm": NaN,
+     "mean_ci95_mm": [
+      NaN,
+      NaN
+     ],
+     "median_mm": NaN,
+     "p90_mm": NaN,
+     "max_mm": NaN,
+     "within_0_3": NaN,
+     "within_0_3_ci95": [
+      NaN,
+      NaN
+     ],
+     "within_0_5": NaN,
+     "within_0_5_ci95": [
+      NaN,
+      NaN
+     ],
+     "signed_mean_mm": NaN
+    },
+    "within_spec_accepted": {
+     "k": 0,
+     "n": 0,
+     "rate": NaN,
+     "ci95": [
+      NaN,
+      NaN
+     ]
+    },
+    "range_error_accepted": {
+     "n": 0,
+     "mean_mm": NaN,
+     "mean_ci95_mm": [
+      NaN,
+      NaN
+     ],
+     "median_mm": NaN,
+     "p90_mm": NaN,
+     "max_mm": NaN,
+     "within_0_3": NaN,
+     "within_0_3_ci95": [
+      NaN,
+      NaN
+     ],
+     "within_0_5": NaN,
+     "within_0_5_ci95": [
+      NaN,
+      NaN
+     ],
+     "signed_mean_mm": NaN
+    },
+    "pass_at_0.3": {
+     "k": 0,
+     "n": 0,
+     "rate": NaN,
+     "ci95": [
+      NaN,
+      NaN
+     ]
+    },
+    "pass_at_0.5": {
+     "k": 0,
+     "n": 0,
+     "rate": NaN,
+     "ci95": [
+      NaN,
+      NaN
+     ]
+    },
+    "by_dim": {},
+    "by_preset": {},
+    "by_group": {},
+    "by_mat": {}
+   },
+   "real_parts_ruler": {
+    "gt_source": "ruler (\u00b10.5 mm)",
+    "expected_rejections": {
+     "k": 0,
+     "n": 0,
+     "rate": NaN,
+     "ci95": [
+      NaN,
+      NaN
+     ],
+     "missed": [],
+     "note": "white part on the light stage: the capture gate should send the user to the dark stage; a correct rejection is not an error and its photo is not scored"
+    },
+    "n_photos": 0,
+    "n_detected": 0,
+    "capture_gate_pass": {
+     "k": 0,
+     "n": 0,
+     "rate": NaN,
+     "ci95": [
+      NaN,
+      NaN
+     ]
+    },
+    "accepted": {
+     "n": 0,
+     "mean_mm": NaN,
+     "mean_ci95_mm": [
+      NaN,
+      NaN
+     ],
+     "median_mm": NaN,
+     "p90_mm": NaN,
+     "max_mm": NaN,
+     "within_0_3": NaN,
+     "within_0_3_ci95": [
+      NaN,
+      NaN
+     ],
+     "within_0_5": NaN,
+     "within_0_5_ci95": [
+      NaN,
+      NaN
+     ],
+     "signed_mean_mm": NaN
+    },
+    "all_detected": {
+     "n": 0,
+     "mean_mm": NaN,
+     "mean_ci95_mm": [
+      NaN,
+      NaN
+     ],
+     "median_mm": NaN,
+     "p90_mm": NaN,
+     "max_mm": NaN,
+     "within_0_3": NaN,
+     "within_0_3_ci95": [
+      NaN,
+      NaN
+     ],
+     "within_0_5": NaN,
+     "within_0_5_ci95": [
+      NaN,
+      NaN
+     ],
+     "signed_mean_mm": NaN
+    },
+    "within_spec_accepted": {
+     "k": 0,
+     "n": 0,
+     "rate": NaN,
+     "ci95": [
+      NaN,
+      NaN
+     ]
+    },
+    "range_error_accepted": {
+     "n": 0,
+     "mean_mm": NaN,
+     "mean_ci95_mm": [
+      NaN,
+      NaN
+     ],
+     "median_mm": NaN,
+     "p90_mm": NaN,
+     "max_mm": NaN,
+     "within_0_3": NaN,
+     "within_0_3_ci95": [
+      NaN,
+      NaN
+     ],
+     "within_0_5": NaN,
+     "within_0_5_ci95": [
+      NaN,
+      NaN
+     ],
+     "signed_mean_mm": NaN
+    },
+    "pass_at_0.3": {
+     "k": 0,
+     "n": 0,
+     "rate": NaN,
+     "ci95": [
+      NaN,
+      NaN
+     ]
+    },
+    "pass_at_0.5": {
+     "k": 0,
+     "n": 0,
+     "rate": NaN,
+     "ci95": [
+      NaN,
+      NaN
+     ]
+    },
+    "by_dim": {},
+    "by_preset": {},
+    "by_group": {},
+    "by_mat": {}
+   }
+  }
+ },
+ "failure_taxonomy": {
+  "control": {
+   "PS": {
+    "seg_fail": 0,
+    "scale_fail": 0,
+    "capture_reject": 0,
+    "codegen_error": 0,
+    "topology_wrong": 1,
+    "dim_off": 4,
+    "timeout": 0,
+    "refused": 0,
+    "judge_veto": 0,
+    "runs": 6
+   }
+  },
+  "reference_objects": {
+   "B1": {
+    "seg_fail": 0,
+    "scale_fail": 0,
+    "capture_reject": 0,
+    "codegen_error": 0,
+    "topology_wrong": 0,
+    "dim_off": 2,
+    "timeout": 0,
+    "refused": 0,
+    "judge_veto": 0,
+    "runs": 8
+   },
+   "PS": {
+    "seg_fail": 0,
+    "scale_fail": 0,
+    "capture_reject": 0,
+    "codegen_error": 0,
+    "topology_wrong": 0,
+    "dim_off": 2,
+    "timeout": 0,
+    "refused": 0,
+    "judge_veto": 0,
+    "runs": 8
+   },
+   "PS-noTemplate": {
+    "seg_fail": 0,
+    "scale_fail": 0,
+    "capture_reject": 0,
+    "codegen_error": 0,
+    "topology_wrong": 0,
+    "dim_off": 2,
+    "timeout": 0,
+    "refused": 0,
+    "judge_veto": 0,
+    "runs": 8
+   }
+  },
+  "synthetic": {
+   "B1": {
+    "seg_fail": 1,
+    "scale_fail": 0,
+    "capture_reject": 1,
+    "codegen_error": 0,
+    "topology_wrong": 1,
+    "dim_off": 8,
+    "timeout": 0,
+    "refused": 0,
+    "judge_veto": 0,
+    "runs": 12
+   },
+   "PS": {
+    "seg_fail": 1,
+    "scale_fail": 0,
+    "capture_reject": 1,
+    "codegen_error": 0,
+    "topology_wrong": 0,
+    "dim_off": 7,
+    "timeout": 0,
+    "refused": 0,
+    "judge_veto": 0,
+    "runs": 12
+   },
+   "PS-noTemplate": {
+    "seg_fail": 1,
+    "scale_fail": 0,
+    "capture_reject": 1,
+    "codegen_error": 0,
+    "topology_wrong": 2,
+    "dim_off": 7,
+    "timeout": 0,
+    "refused": 0,
+    "judge_veto": 0,
+    "runs": 12
+   }
+  }
+ },
+ "taxonomy_categories": {
+  "seg_fail": "no usable part mask",
+  "scale_fail": "no scale from the mat (markers / reprojection / marker size)",
+  "capture_reject": "capture gate rejected the photo (blur, glare, moir\u00e9, tilt, exposure, contrast)",
+  "codegen_error": "no runnable or valid final part program",
+  "topology_wrong": "features missing or extra in the final model",
+  "dim_off": "a named dimension is outside tolerance",
+  "timeout": "wall-clock or cost cap reached",
+  "refused": "the part class was refused",
+  "judge_veto": "a blocking judge veto on the final model"
+ }
+}

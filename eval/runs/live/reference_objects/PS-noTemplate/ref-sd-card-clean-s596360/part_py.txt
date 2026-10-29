@@ -1,0 +1,65 @@
+import cadquery as cq
+import math
+
+PARAMS = {
+    "length": (32.0, 28.0, 35.0, 0.1, "mm", True, "Card length X (long axis)"),
+    "width": (24.0, 20.0, 27.0, 0.1, "mm", True, "Card width Y"),
+    "thickness": (2.1, 1.5, 3.0, 0.05, "mm", True, "Card thickness Z"),
+    "bevel_dx": (3.93, 2.5, 5.5, 0.05, "mm", False, "Bevel cut along X"),
+    "bevel_dy": (4.05, 2.5, 5.5, 0.05, "mm", False, "Bevel cut along Y"),
+    "bevel_steps": (1, 1, 3, 1, "", False, "Bevel edge segments"),
+}
+
+def build(p: dict) -> cq.Workplane:
+    L = float(p["length"])
+    W = float(p["width"])
+    T = float(p["thickness"])
+    dx = float(p["bevel_dx"])
+    dy = float(p["bevel_dy"])
+    steps = int(p["bevel_steps"])
+
+    # Clamp bevel to stay inside footprint
+    dx = min(dx, L * 0.4)
+    dy = min(dy, W * 0.4)
+
+    hx = L / 2.0
+    hy = W / 2.0
+
+    # Polyline derived from measured points_mm:
+    # [-15.954,11.998] -> top-left (-hx, +hy)
+    # [-16.006,-7.89] -> before bevel (-hx, -hy+dy)
+    # [-12.079,-11.932] -> after bevel (-hx+dx, -hy)
+    # [15.956,-11.909] -> bottom-right (+hx, -hy)
+    # [15.918,11.956] -> top-right (+hx, +hy)
+    # Centered at origin, +Z up, mounting face on Z=0
+
+    p0 = (-hx, hy)
+    p1 = (-hx, -hy + dy)
+    p2 = (-hx + dx, -hy)
+    p3 = (hx, -hy)
+    p4 = (hx, hy)
+
+    # steps is topology parameter - if >1 split bevel into multiple collinear segments
+    # to keep topology variable without changing outline
+    wp = cq.Workplane("XY")
+    wp = wp.moveTo(p0[0], p0[1])
+    wp = wp.lineTo(p1[0], p1[1])
+
+    if steps <= 1:
+        wp = wp.lineTo(p2[0], p2[1])
+    else:
+        for i in range(1, steps + 1):
+            t = i / float(steps)
+            x = p1[0] + (p2[0] - p1[0]) * t
+            y = p1[1] + (p2[1] - p1[1]) * t
+            wp = wp.lineTo(x, y)
+
+    wp = wp.lineTo(p3[0], p3[1])
+    wp = wp.lineTo(p4[0], p4[1])
+    wp = wp.lineTo(p0[0], p0[1])
+    wp = wp.close()
+    # solid body to thickness, mounting face on Z=0, +Z up
+    result = wp.extrude(T, both=False)
+    return result
+
+result = build({k: v[0] for k, v in PARAMS.items()})

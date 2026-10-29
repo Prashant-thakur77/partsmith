@@ -1,0 +1,71 @@
+import cadquery as cq
+import math
+
+PARAMS = {
+    "card_length": (85.669, 84.0, 87.0, 0.1, "mm", True, "Card length X"),
+    "card_width": (54.042, 52.0, 56.0, 0.1, "mm", True, "Card width Y"),
+    "thickness": (0.76, 0.4, 1.5, 0.05, "mm", True, "Card thickness Z"),
+    "edge_subdiv": (1.0, 1, 4, 1, "mm", False, "Edge subdivision count"),
+}
+
+def build(p: dict) -> cq.Workplane:
+    base_pts = [
+        (-42.382, -25.406),
+        (-41.204, -26.577),
+        (-39.656, -27.021),
+        (40.094, -26.977),
+        (41.181, -26.611),
+        (42.408, -25.397),
+        (42.831, -23.66),
+        (42.828, 23.816),
+        (42.306, 25.524),
+        (41.097, 26.622),
+        (39.689, 27.021),
+        (-39.673, 27.016),
+        (-41.35, 26.5),
+        (-42.538, 25.123),
+        (-42.838, 23.394),
+        (-42.834, -23.856),
+    ]
+
+    # reference bounding box of measured polyline
+    xs = [pt[0] for pt in base_pts]
+    ys = [pt[1] for pt in base_pts]
+    ref_len = max(xs) - min(xs)
+    ref_wid = max(ys) - min(ys)
+    if ref_len < 1e-9:
+        ref_len = 1.0
+    if ref_wid < 1e-9:
+        ref_wid = 1.0
+
+    sx = p["card_length"] / ref_len
+    sy = p["card_width"] / ref_wid
+
+    # scale around origin to keep centre at origin and long axis +X
+    scaled = [(x * sx, y * sy) for x, y in base_pts]
+
+    # topology parameter: subdivides each edge linearly, preserves outline but uses parameter
+    subdiv = int(p["edge_subdiv"])
+    if subdiv < 1:
+        subdiv = 1
+    pts_dense = []
+    n = len(scaled)
+    for i in range(n):
+        x1, y1 = scaled[i]
+        x2, y2 = scaled[(i + 1) % n]
+        for s in range(subdiv):
+            t = s / float(subdiv)
+            x = x1 * (1.0 - t) + x2 * t
+            y = y1 * (1.0 - t) + y2 * t
+            pts_dense.append((x, y))
+
+    # build closed polyline on XY plane, mounting face at Z=0, extrude +Z
+    wp = cq.Workplane("XY")
+    wp = wp.moveTo(pts_dense[0][0], pts_dense[0][1])
+    for xm, ym in pts_dense[1:]:
+        wp = wp.lineTo(xm, ym)
+    wp = wp.close()
+    result = wp.extrude(p["thickness"])
+    return result
+
+result = build({k: v[0] for k, v in PARAMS.items()})

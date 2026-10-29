@@ -1,0 +1,77 @@
+import cadquery as cq
+import math
+
+# PartSpec base_profile polyline (measured outer footprint, XY plane)
+BASE_POINTS = [
+    (11.584, 16.912), (8.477, 18.55), (4.255, 19.829), (-0.037, 20.193),
+    (-3.885, 19.752), (-7.836, 18.496), (-11.33, 16.562), (-14.492, 13.887),
+    (-16.838, 10.951), (-18.587, 7.663), (-19.797, 3.706), (-20.199, -0.073),
+    (-19.824, -4.332), (-18.674, -8.191), (-16.912, -11.584), (-14.399, -14.506),
+    (-11.08, -17.078), (-7.994, -18.663), (-3.848, -19.871), (0.224, -20.193),
+    (3.849, -19.8), (7.599, -18.654), (11.273, -16.684), (14.28, -14.203),
+    (16.728, -11.202), (18.469, -8.07), (19.792, -3.905), (20.199, -0.153),
+    (19.897, 3.794), (18.792, 7.683), (17.112, 11.043), (14.331, 14.599)
+]
+
+# Measured center hole
+AXLE_CX = 0.071
+AXLE_CY = -0.047
+
+PARAMS = {
+    "thickness": (16.0, 8.0, 22.0, 0.1, "mm", False, "Wheel width - Z thickness, mounting face at Z=0"),
+    "axle_diameter": (7.221, 5.0, 10.0, 0.05, "mm", True, "Center axle bore diameter"),
+    "axle_clearance": (0.0, 0.0, 0.5, 0.05, "mm", True, "Extra clearance added to axle bore for FDM/PLA"),
+    "axle_cx": (0.071, -1.0, 1.0, 0.01, "mm", False, "Axle hole center X"),
+    "axle_cy": (-0.047, -1.0, 1.0, 0.01, "mm", False, "Axle hole center Y"),
+    "outer_scale": (1.005, 0.95, 1.05, 0.005, "", False, "Uniform XY scale of measured outer profile"),
+    "peripheral_count": (0, 0, 6, 1, "", False, "Number of peripheral holes (0=solid as per PartSpec, 6 if confirmed)"),
+    "peripheral_dia": (0.0, 0.0, 6.0, 0.1, "mm", False, "Peripheral hole diameter if used (0 means none)"),
+    "peripheral_bcd": (12.0, 8.0, 18.0, 0.1, "mm", False, "Bolt circle diameter for peripheral holes"),
+}
+
+def build(p: dict) -> cq.Workplane:
+    thickness = float(p["thickness"])
+    axle_diameter = float(p["axle_diameter"])
+    axle_clearance = float(p["axle_clearance"])
+    axle_cx = float(p["axle_cx"])
+    axle_cy = float(p["axle_cy"])
+    outer_scale = float(p["outer_scale"])
+    peripheral_count = int(p["peripheral_count"])
+    peripheral_dia = float(p["peripheral_dia"])
+    peripheral_bcd = float(p["peripheral_bcd"])
+
+    # Scale outer profile about origin
+    pts = [(x * outer_scale, y * outer_scale) for x, y in BASE_POINTS]
+
+    # Effective axle bore with clearance (clearance added to diameter for slip fit)
+    bore_d = axle_diameter + axle_clearance
+    bore_r = bore_d / 2.0
+
+    # Solid wheel body: mounting face on Z=0, extruded +Z to thickness
+    # Centered at origin in XY (profile is already centered), long axis +X nominal
+    body = cq.Workplane("XY").polyline(pts).close().extrude(thickness)
+
+    # Center axle through-hole
+    # Use a cutter solid to guarantee full through cut from Z=0 to Z=thickness
+    cutter = cq.Workplane("XY").moveTo(axle_cx, axle_cy).circle(bore_r).extrude(thickness, both=False)
+    body = body.cut(cutter)
+
+    # Optional peripheral holes - default 0 keeps part solid except for axle bore
+    # as required by PartSpec (unknowns default to no hole). Enabled only if user confirms.
+    if peripheral_count > 0 and peripheral_dia > 0.1:
+        r_bcd = peripheral_bcd / 2.0
+        for i in range(peripheral_count):
+            ang = 2 * math.pi * i / peripheral_count
+            # Start angle offset to avoid aligning with measured point artifacts
+            # offset 0 aligns first hole to +X
+            hx = math.cos(ang) * r_bcd
+            hy = math.sin(ang) * r_bcd
+            # Don't double-cut the center bore region
+            if math.hypot(hx - axle_cx, hy - axle_cy) < (bore_r + peripheral_dia/2 + 0.5):
+                continue
+            hole = cq.Workplane("XY").moveTo(hx, hy).circle(peripheral_dia/2).extrude(thickness)
+            body = body.cut(hole)
+
+    return body
+
+result = build({k: v[0] for k, v in PARAMS.items()})

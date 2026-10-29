@@ -1,0 +1,75 @@
+import cadquery as cq
+import math
+
+PARAMS = {
+    "thickness": (3.5, 1.0, 8.0, 0.1, "mm", False, "Plate thickness"),
+    "hole_dia": (9.945, 4.0, 15.0, 0.1, "mm", True, "Mounting hole diameter"),
+    "hole_x": (13.76, -20.0, 20.0, 0.1, "mm", False, "Hole X position"),
+    "hole_y": (-0.079, -8.0, 8.0, 0.1, "mm", False, "Hole Y position"),
+    "clearance": (0.2, 0.0, 1.0, 0.05, "mm", True, "Printing clearance"),
+    "csk_dia": (14.5, 8.0, 20.0, 0.1, "mm", True, "Countersink outer diameter"),
+    "csk_angle": (90.0, 60.0, 120.0, 1.0, "mm", False, "Countersink angle deg"),
+    "hole_count": (1.0, 0, 3, 1, "mm", False, "Number of mounting holes"),
+}
+
+def build(p: dict) -> cq.Workplane:
+    thickness = float(p["thickness"])
+    hole_dia_nom = float(p["hole_dia"])
+    hole_x = float(p["hole_x"])
+    hole_y = float(p["hole_y"])
+    clearance = float(p["clearance"])
+    csk_dia = float(p["csk_dia"])
+    csk_angle = float(p["csk_angle"])
+    hole_count = int(p["hole_count"])
+
+    # effective hole diameter with clearance for FDM
+    hole_dia_eff = hole_dia_nom + clearance
+    # ensure csk is larger than hole
+    if csk_dia <= hole_dia_eff:
+        csk_dia = hole_dia_eff + 2.0
+
+    # base profile from PartSpec polyline (measured top view)
+    pts = [
+        (-27.39, -7.163),
+        (-26.041, -7.508),
+        (-24.24, -8.909),
+        (-22.563, -9.3),
+        (23.902, -9.207),
+        (25.24, -8.691),
+        (26.184, -7.937),
+        (26.858, -7.043),
+        (27.33, -5.783),
+        (27.322, 5.712),
+        (26.895, 6.816),
+        (25.826, 8.12),
+        (24.523, 8.87),
+        (23.284, 9.137),
+        (-17.594, 9.314),
+        (-26.905, 8.876),
+        (-27.358, 8.67),
+    ]
+
+    # solid plate extruded +Z from mounting face Z=0, centred at origin per points
+    base = cq.Workplane("XY").polyline(pts).close().extrude(thickness)
+
+    # no holes if count == 0
+    if hole_count <= 0:
+        return base
+
+    # define hole locations - PartSpec has single hole at (hole_x, hole_y)
+    # for topology counts >1, distribute symmetrically along X for parametrization
+    if hole_count == 1:
+        points = [(hole_x, hole_y)]
+    elif hole_count == 2:
+        points = [(hole_x, hole_y), (-hole_x, hole_y)]
+    else:
+        # 3 holes: center + two sides
+        points = [(hole_x, hole_y), (0, hole_y), (-hole_x, hole_y)]
+
+    # cut countersunk through holes from top face
+    # use cskHole which creates through hole with conical countersink on top
+    base = base.faces(">Z").workplane().pushPoints(points).cskHole(hole_dia_eff, csk_dia, csk_angle)
+
+    return base
+
+result = build({k: v[0] for k, v in PARAMS.items()})

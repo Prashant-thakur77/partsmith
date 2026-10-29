@@ -1,0 +1,42 @@
+import cadquery as cq
+import math
+
+PARAMS = {
+    "length": (85.6, 80.0, 90.0, 0.1, "mm", True, "Overall length X"),
+    "width": (53.98, 50.0, 58.0, 0.1, "mm", True, "Overall width Y"),
+    "corner_radius": (3.18, 1.0, 5.0, 0.1, "mm", True, "Corner radius"),
+    "thickness": (0.76, 0.4, 2.0, 0.05, "mm", False, "Card thickness per card"),
+    "stack_count": (1.0, 1, 5, 1, "mm", False, "Number of cards stacked"),
+}
+
+def build(p: dict) -> cq.Workplane:
+    L = float(p["length"])
+    W = float(p["width"])
+    r = float(p["corner_radius"])
+    t = float(p["thickness"])
+    n = int(p["stack_count"])
+
+    # clamp radius to valid range for fillet
+    max_r = min(L, W) * 0.5 - 0.05
+    if r > max_r:
+        r = max_r
+    if r < 0.1:
+        r = 0.1
+
+    total_t = t * max(1, n)
+
+    # solid card body centred at origin, mounting face on Z=0, long axis +X
+    # start from sharp rectangle then fillet vertical edges to form rounded corners
+    base = cq.Workplane("XY").rect(L, W, centered=True).extrude(total_t, both=False)
+
+    # fillet the 4 vertical edges to create ID-1 corner radius
+    # |Z selects edges parallel to Z
+    try:
+        base = base.edges("|Z").fillet(r)
+    except Exception:
+        # fallback if fillet fails due to geometry limits: return sharp rect
+        pass
+
+    return base
+
+result = build({k: v[0] for k, v in PARAMS.items()})

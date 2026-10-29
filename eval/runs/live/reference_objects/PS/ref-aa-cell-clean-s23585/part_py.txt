@@ -1,0 +1,39 @@
+import cadquery as cq
+import math
+
+BASE_POINTS = [[-24.715, 6.434], [-24.971, 3.64], [-24.716, 2.721], [-24.599, -0.439], [-24.869, -5.329], [-24.598, -6.676], [-23.954, -7.112], [23.183, -7.106], [23.83, -6.593], [24.198, -2.866], [24.802, -2.271], [24.92, -0.512], [24.454, -0.948], [24.336, -0.035], [24.489, 0.827], [24.762, 0.419], [24.968, 0.459], [24.843, 2.151], [24.67, 2.578], [24.211, 2.872], [23.953, 6.176], [23.739, 6.8], [23.319, 7.097], [-23.797, 7.12], [-24.407, 6.949]]
+
+PARAMS = {
+    "thickness": (14.5, 10.0, 20.0, 0.1, "mm", True, "Body Thickness Z"),
+    "length": (49.939, 40.0, 60.0, 0.1, "mm", True, "Overall Length X"),
+    "width": (14.232, 10.0, 20.0, 0.1, "mm", True, "Overall Width Y"),
+    "clearance": (0.2, 0.0, 1.0, 0.05, "mm", True, "Fit Clearance"),
+    "detail_level": (24.0, 8, 32, 1, "mm", False, "Profile Detail Count"),
+}
+
+def build(p: dict) -> cq.Workplane:
+    thickness = float(p["thickness"])
+    target_length = float(p["length"])
+    target_width = float(p["width"])
+
+    meas_min_x = min(pt[0] for pt in BASE_POINTS)
+    meas_max_x = max(pt[0] for pt in BASE_POINTS)
+    meas_min_y = min(pt[1] for pt in BASE_POINTS)
+    meas_max_y = max(pt[1] for pt in BASE_POINTS)
+    meas_length = meas_max_x - meas_min_x
+    meas_width = meas_max_y - meas_min_y
+
+    sx = target_length / meas_length if meas_length != 0 else 1.0
+    sy = target_width / meas_width if meas_width != 0 else 1.0
+
+    pts = [(pt[0] * sx, pt[1] * sy) for pt in BASE_POINTS]
+
+    wp = cq.Workplane("XY")
+    wp = wp.moveTo(pts[0][0], pts[0][1])
+    for pt in pts[1:]:
+        wp = wp.lineTo(pt[0], pt[1])
+    wp = wp.close()
+    result = wp.extrude(thickness, combine=True)
+    return result
+
+result = build({k: v[0] for k, v in PARAMS.items()})

@@ -1,27 +1,27 @@
 {
  "report": "eval/run.py",
- "generated_at": "2026-10-28T17:42:07+00:00",
- "git_sha": "a1cc53261280969617163abde80865837dd61588",
+ "generated_at": "2026-10-29T20:43:37+00:00",
+ "git_sha": "304f9333bc2a5f23791c8529d43a990ad18c1c5f",
  "git_dirty": true,
- "mode": "mock",
+ "mode": "live",
  "stages": {
   "build": [
    {
-    "provider": "mock",
-    "model": "meta-models/muse-spark-open",
-    "mode": "mock",
-    "calls": 81,
-    "tokens_in": 0,
-    "tokens_out": 0,
-    "usd": 0.0
+    "provider": "baseten",
+    "model": "meta-models/muse-spark-open-1026",
+    "mode": "live",
+    "calls": 86,
+    "tokens_in": 164549,
+    "tokens_out": 235039,
+    "usd": 1.168414
    }
   ],
-  "fix": [
+  "capture_triage": [
    {
     "provider": "mock",
-    "model": "meta-models/muse-spark-open",
+    "model": "muse-glimmer",
     "mode": "mock",
-    "calls": 2,
+    "calls": 21,
     "tokens_in": 0,
     "tokens_out": 0,
     "usd": 0.0
@@ -29,10 +29,19 @@
   ],
   "fix_agent": [
    {
-    "provider": "mock",
-    "model": "mock fix agent",
-    "mode": "mock",
-    "calls": 876,
+    "provider": "baseten",
+    "model": "meta-models/muse-spark-open-1026",
+    "mode": "live",
+    "calls": 790,
+    "tokens_in": 7605597,
+    "tokens_out": 648233,
+    "usd": 6.137602
+   },
+   {
+    "provider": "meta",
+    "model": "muse-spark-1.3",
+    "mode": "live",
+    "calls": 1,
     "tokens_in": 0,
     "tokens_out": 0,
     "usd": 0.0
@@ -43,7 +52,7 @@
     "provider": "mock",
     "model": "muse-glimmer",
     "mode": "mock",
-    "calls": 44,
+    "calls": 42,
     "tokens_in": 0,
     "tokens_out": 0,
     "usd": 0.0
@@ -51,46 +60,46 @@
   ],
   "plan": [
    {
-    "provider": "mock",
-    "model": "meta-models/muse-spark-open",
-    "mode": "mock",
-    "calls": 60,
-    "tokens_in": 0,
-    "tokens_out": 0,
-    "usd": 0.0
+    "provider": "baseten",
+    "model": "meta-models/muse-spark-open-1026",
+    "mode": "live",
+    "calls": 42,
+    "tokens_in": 36986,
+    "tokens_out": 40827,
+    "usd": 0.212144
    }
   ],
   "segment": [
    {
-    "provider": "mock",
+    "provider": "meta",
     "model": "sam-3.1",
-    "mode": "mock",
-    "calls": 328,
+    "mode": "live",
+    "calls": 302,
     "tokens_in": 0,
     "tokens_out": 0,
-    "usd": 0.0
+    "usd": 0.755
    }
   ],
   "segment_points": [
    {
-    "provider": "mock",
+    "provider": "meta",
     "model": "sam-3.1",
-    "mode": "mock",
-    "calls": 35,
+    "mode": "live",
+    "calls": 53,
     "tokens_in": 0,
     "tokens_out": 0,
-    "usd": 0.0
+    "usd": 0.1325
    }
   ],
   "understand": [
    {
-    "provider": "mock",
+    "provider": "meta",
     "model": "muse-spark-1.3",
-    "mode": "mock",
-    "calls": 72,
-    "tokens_in": 0,
-    "tokens_out": 0,
-    "usd": 0.0
+    "mode": "live",
+    "calls": 63,
+    "tokens_in": 720093,
+    "tokens_out": 354549,
+    "usd": 1.891436
    }
   ]
  },
@@ -249,5 +258,5 @@
    }
   }
  },
- "n_runs": 86
+ "n_runs": 76
 }

@@ -1,0 +1,56 @@
+import cadquery as cq
+import math
+
+BASE_POINTS = [
+    (24.513, 6.203),
+    (24.201, 6.898),
+    (23.507, 7.059),
+    (-22.809, 7.051),
+    (-23.335, 6.641),
+    (-23.761, 5.848),
+    (-24.432, 2.684),
+    (-24.58, -0.624),
+    (-24.182, -4.633),
+    (-23.469, -6.503),
+    (-22.439, -7.049),
+    (23.74, -7.053),
+    (23.53, -4.229),
+    (23.601, 3.514),
+    (23.82, 5.372),
+    (24.139, 5.663),
+    (24.536, 5.097),
+]
+
+PARAMS = {
+    "thickness": (14.5, 10.0, 20.0, 0.1, "mm", True, "Extruded thickness (AA diameter)"),
+    "length_scale": (1.0, 0.9, 1.1, 0.01, "", False, "Length scale"),
+    "width_scale": (1.01, 0.9, 1.1, 0.01, "", False, "Width scale"),
+    "n_subdiv": (0, 0, 4, 1, "", False, "Edge subdivisions"),
+}
+
+def build(p: dict) -> cq.Workplane:
+    thickness = float(p["thickness"])
+    length_scale = float(p.get("length_scale", 1.0))
+    width_scale = float(p.get("width_scale", 1.0))
+    n_subdiv = int(p.get("n_subdiv", 0))
+
+    pts = [(x * length_scale, y * width_scale) for (x, y) in BASE_POINTS]
+
+    if n_subdiv > 0:
+        subdiv_pts = []
+        n = len(pts)
+        for i in range(n):
+            p0 = pts[i]
+            p1 = pts[(i + 1) % n]
+            subdiv_pts.append(p0)
+            for k in range(1, n_subdiv + 1):
+                t = k / (n_subdiv + 1)
+                xi = p0[0] * (1 - t) + p1[0] * t
+                yi = p0[1] * (1 - t) + p1[1] * t
+                subdiv_pts.append((xi, yi))
+        pts = subdiv_pts
+
+    result = cq.Workplane("XY").polyline(pts).close().extrude(thickness, both=False)
+    return result
+
+result = build({k: v[0] for k, v in PARAMS.items()})

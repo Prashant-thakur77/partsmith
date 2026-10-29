@@ -1,0 +1,109 @@
+{
+ "suite": "synthetic",
+ "config": "PS-noTemplate",
+ "sample_id": "syn-battery-cover-low-light-s790551",
+ "split": "held_out",
+ "kind": "template",
+ "preset": "low-light",
+ "mode": "live",
+ "gt_source": "synthetic_exact",
+ "status": "best_effort",
+ "verified": false,
+ "iterations": 5,
+ "iterations_to_converge": null,
+ "strategy": "free_code",
+ "template": null,
+ "verifier_max_error_mm": 3.2540036460103425,
+ "retake_reason": null,
+ "failed_checks": [],
+ "usd": 0.338381,
+ "tokens_in": 328089,
+ "tokens_out": 41284,
+ "model_calls": 43,
+ "model_ms": 467977,
+ "provider_modes": [
+  "live",
+  "mock"
+ ],
+ "providers": {
+  "segment": [
+   "meta:sam-3.1"
+  ],
+  "understand": [
+   "meta:muse-spark-1.3"
+  ],
+  "build": [
+   "baseten:meta-models/muse-spark-open-1026"
+  ],
+  "fix_agent": [
+   "baseten:meta-models/muse-spark-open-1026"
+  ],
+  "segment_points": [
+   "meta:sam-3.1"
+  ],
+  "judge": [
+   "mock:muse-glimmer"
+  ]
+ },
+ "convergence": [
+  {
+   "iter": 1,
+   "hausdorff_mm": 3.4927461976774214,
+   "iou": 0.8696896828123211,
+   "max_error_mm": 3.4927461976774214
+  },
+  {
+   "iter": 2,
+   "hausdorff_mm": 3.2540036460103425,
+   "iou": 0.7825421133231241,
+   "max_error_mm": 3.2540036460103425
+  },
+  {
+   "iter": 3,
+   "hausdorff_mm": 2.8380059211930084,
+   "iou": 0.6747492368076755,
+   "max_error_mm": 2.8380059211930084
+  },
+  {
+   "iter": 4,
+   "hausdorff_mm": 2.8380059211930084,
+   "iou": 0.6747492368076755,
+   "max_error_mm": 2.8380059211930084
+  },
+  {
+   "iter": 5,
+   "hausdorff_mm": 2.788814368422477,
+   "iou": 0.6732767578801524,
+   "max_error_mm": 2.788814368422477
+  }
+ ],
+ "wall_s": 534.25,
+ "dims": [
+  {
+   "name": "length",
+   "gt_mm": 58.8,
+   "model_mm": 58.5903,
+   "error_mm": -0.2097
+  },
+  {
+   "name": "width",
+   "gt_mm": 23.8,
+   "model_mm": 23.5851,
+   "error_mm": -0.2149
+  },
+  {
+   "name": "thickness",
+   "gt_mm": 5.25,
+   "model_mm": 2.2,
+   "error_mm": -3.05
+  }
+ ],
+ "missed": [],
+ "extra_holes": 0,
+ "pass_0_3": false,
+ "pass_0_5": false,
+ "valid": true,
+ "valid_reason": "",
+ "failure_category": "dim_off",
+ "failure": "worst thickness -3.05 mm"
+}

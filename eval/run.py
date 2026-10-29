@@ -34,7 +34,7 @@ import subprocess
 import sys
 import time
 from collections.abc import Mapping, Sequence
-from concurrent.futures import ProcessPoolExecutor
+from concurrent.futures import ProcessPoolExecutor, as_completed
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
@@ -617,9 +617,15 @@ def score_model(code: str | None, values: Mapping[str, float], task: Task) -> di
 # ---------------------------------------------------------------- running many
 
 
-def run_tasks(tasks: Sequence[Task], *, jobs: int, live: bool, log: Any = print) -> list[dict[str, Any]]:
-    """Run tasks grouped by config (a config's env is set per worker process). Bench jobs live in var/bench."""
+def run_tasks(
+    tasks: Sequence[Task], *, jobs: int, live: bool, log: Any = print, max_usd: float | None = None
+) -> list[dict[str, Any]]:
+    """Run tasks grouped by config (a config's env is set per worker process). Bench jobs live in var/bench.
+
+    `max_usd`: once the finished jobs cost this much, queued jobs are not started (running ones finish) and later
+    configs are skipped; the log says how many were left out."""
     results: list[dict[str, Any]] = []
+    spent = 0.0
     base_env = {"PARTSMITH_HOME": str(BENCH_HOME)}
     if not live:
         base_env["PROVIDER_MODE"] = "mock"
@@ -628,16 +634,32 @@ def run_tasks(tasks: Sequence[Task], *, jobs: int, live: bool, log: Any = print)
     )
     for cfg in dict.fromkeys(t.config for t in tasks):
         group = [t for t in tasks if t.config == cfg]
+        if max_usd is not None and spent >= max_usd:
+            log(f"{cfg:16s} {len(group):3d} runs not started: spend cap ${max_usd:g} reached (${spent:.2f})")
+            continue
         env = {**base_env, **CONFIGS[cfg].env}
         t0 = time.perf_counter()
         ctx = multiprocessing.get_context("spawn")  # fresh interpreters: no fork of a threaded parent
+        done: dict[int, dict[str, Any]] = {}
         with ProcessPoolExecutor(
             max_workers=max(1, jobs), mp_context=ctx, initializer=_init_worker, initargs=(env,)
         ) as ex:
-            got = list(ex.map(run_task, group, chunksize=1))
+            futs = {ex.submit(run_task, t): i for i, t in enumerate(group)}
+            for f in as_completed(futs):
+                if f.cancelled():
+                    continue
+                done[futs[f]] = r = f.result()
+                spent += float(r.get("usd") or 0)
+                if max_usd is not None and spent >= max_usd:
+                    n = sum(g.cancel() for g in futs)
+                    if n:
+                        log(f"{cfg:16s} spend cap ${max_usd:g} reached (${spent:.2f}): {n} queued run(s) not started")
+        got = [done[i] for i in sorted(done)]
         results += got
         ok = sum(bool(r.get("pass_0_5")) for r in got)
-        log(f"{cfg:16s} {len(got):3d} runs  pass@0.5 {ok}/{len(got)}  {time.perf_counter() - t0:.0f} s")
+        log(
+            f"{cfg:16s} {len(got):3d} runs  pass@0.5 {ok}/{len(got)}  {time.perf_counter() - t0:.0f} s  ${spent:.2f} so far"
+        )
     return results
 
 
@@ -1240,6 +1262,7 @@ def main(argv: Sequence[str] | None = None) -> int:
     ap.add_argument("--seed", type=int, default=7)
     ap.add_argument("--jobs", type=int, default=min(4, os.cpu_count() or 1))
     ap.add_argument("--live", action="store_true", help="real providers (refuses without a live builder)")
+    ap.add_argument("--max-usd", type=float, default=None, help="stop starting runs once finished ones cost this much")
     ap.add_argument("--from-runs", action="store_true", help="rebuild tables from eval/runs without re-running")
     ap.add_argument("--mode", choices=("mock", "live"), default=None, help="which stored runs --from-runs reads")
     ap.add_argument("--check-regression", action="store_true", help="exit 1 when worse than eval/baseline_metrics.json")
@@ -1284,7 +1307,7 @@ def main(argv: Sequence[str] | None = None) -> int:
         tasks, tnotes = collect_tasks(suites, cfgs, limit=limit or None, n_ref=n_ref, seed=a.seed, mode=mode)
         notes += tnotes
         print(f"{len(tasks)} runs ({mode}): {len(cfgs)} config(s) × {len(tasks) // max(len(cfgs), 1)} sample(s)")
-        scores = run_tasks(tasks, jobs=a.jobs, live=a.live)
+        scores = run_tasks(tasks, jobs=a.jobs, live=a.live, max_usd=a.max_usd)
     out = a.out or REPORTS_DIR / dt.date.today().isoformat()
     rep = build_report(scores, mode, notes, out)
     jp, mp = write_report(rep, out, scores, a.seed, latest=a.out is None)

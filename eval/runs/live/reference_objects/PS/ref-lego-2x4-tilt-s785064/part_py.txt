@@ -1,0 +1,53 @@
+import cadquery as cq
+import math
+
+PARAMS = {
+    "brick_length": (31.55, 30.0, 33.0, 0.05, "mm", True, "Brick length X"),
+    "brick_width": (15.9, 14.0, 17.0, 0.05, "mm", True, "Brick width Y"),
+    "brick_height": (9.85, 8.5, 10.5, 0.05, "mm", True, "Body height Z"),
+    "stud_diameter": (4.8, 4.0, 5.4, 0.05, "mm", True, "Stud outer diameter"),
+    "stud_height": (1.5, 1.0, 2.5, 0.05, "mm", True, "Stud height"),
+    "stud_pitch": (8.0, 7.0, 9.0, 0.05, "mm", True, "Stud pitch"),
+    "stud_count_x": (4, 2, 6, 1, "", False, "Studs along X"),
+    "stud_count_y": (2, 1, 4, 1, "", False, "Studs along Y"),
+}
+
+def build(p: dict) -> cq.Workplane:
+    L = float(p["brick_length"])
+    W = float(p["brick_width"])
+    H = float(p["brick_height"])
+    sd = float(p["stud_diameter"])
+    sh = float(p["stud_height"])
+    pitch = float(p["stud_pitch"])
+    nx = int(round(float(p["stud_count_x"])))
+    ny = int(round(float(p["stud_count_y"])))
+
+    body = cq.Workplane("XY").rect(L, W, centered=True).extrude(H, combine=True)
+
+    if nx < 1:
+        nx = 1
+    if ny < 1:
+        ny = 1
+
+    x0 = -(nx - 1) * pitch / 2.0
+    y0 = -(ny - 1) * pitch / 2.0
+
+    studs = None
+    for ix in range(nx):
+        cx = x0 + ix * pitch
+        for iy in range(ny):
+            cy = y0 + iy * pitch
+            s = cq.Workplane("XY").workplane(offset=H).moveTo(cx, cy).circle(sd / 2.0).extrude(sh)
+            if studs is None:
+                studs = s
+            else:
+                studs = studs.union(s)
+
+    if studs is not None:
+        result = body.union(studs)
+    else:
+        result = body
+
+    return result
+
+result = build({k: v[0] for k, v in PARAMS.items()})

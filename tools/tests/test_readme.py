@@ -207,3 +207,11 @@ def test_status_line_counts_live_replays_and_drops_the_no_live_call_claim(monkey
     s = readme.status_line()
     assert "17 of the 19 stored demo replays are live model runs" in s
     assert "no live model call has been made" not in s and "a live bench run is pending" in s
+
+
+def test_status_line_says_when_the_bench_ran_on_uncommitted_changes(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setattr(readme, "_replay_modes", lambda: (0, 0))
+    _fixtures(monkeypatch, REPORT_MOCK, **{"provenance.json": {"git_dirty": True}})
+    assert "at commit `1c91d0f` plus uncommitted changes ·" in readme.status_line()
+    _fixtures(monkeypatch, REPORT_MOCK, **{"provenance.json": {"git_dirty": False}})
+    assert "at commit `1c91d0f` ·" in readme.status_line()

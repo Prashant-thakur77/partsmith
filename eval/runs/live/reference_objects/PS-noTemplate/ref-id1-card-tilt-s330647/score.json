@@ -1,0 +1,93 @@
+{
+ "suite": "reference_objects",
+ "config": "PS-noTemplate",
+ "sample_id": "ref-id1-card-tilt-s330647",
+ "split": "held_out",
+ "kind": "reference_object",
+ "preset": "tilt",
+ "mode": "live",
+ "gt_source": "reference_spec",
+ "status": "verified",
+ "verified": true,
+ "iterations": 2,
+ "iterations_to_converge": 1,
+ "strategy": "free_code",
+ "template": null,
+ "verifier_max_error_mm": 0.11258701124211834,
+ "retake_reason": null,
+ "failed_checks": [],
+ "usd": 0.053669,
+ "tokens_in": 27040,
+ "tokens_out": 7901,
+ "model_calls": 12,
+ "model_ms": 78562,
+ "provider_modes": [
+  "live",
+  "mock"
+ ],
+ "providers": {
+  "capture_triage": [
+   "mock:muse-glimmer"
+  ],
+  "segment": [
+   "meta:sam-3.1"
+  ],
+  "understand": [
+   "meta:muse-spark-1.3"
+  ],
+  "build": [
+   "baseten:meta-models/muse-spark-open-1026"
+  ],
+  "fix_agent": [
+   "baseten:meta-models/muse-spark-open-1026"
+  ],
+  "judge": [
+   "mock:muse-glimmer"
+  ]
+ },
+ "convergence": [
+  {
+   "iter": 1,
+   "hausdorff_mm": 0.12075508503679137,
+   "iou": 0.9981482832341075,
+   "max_error_mm": 0.12075508503679137
+  },
+  {
+   "iter": 2,
+   "hausdorff_mm": 0.11258701124211834,
+   "iou": 0.9984851545142396,
+   "max_error_mm": 0.11258701124211834
+  }
+ ],
+ "wall_s": 86.14,
+ "dims": [
+  {
+   "name": "length",
+   "gt_mm": 85.6,
+   "model_mm": 85.669,
+   "error_mm": 0.069,
+   "within_spec": true
+  },
+  {
+   "name": "width",
+   "gt_mm": 53.98,
+   "model_mm": 54.042,
+   "error_mm": 0.062,
+   "within_spec": false
+  },
+  {
+   "name": "thickness",
+   "gt_mm": 0.76,
+   "model_mm": 0.8,
+   "error_mm": 0.04,
+   "within_spec": true
+  }
+ ],
+ "missed": [],
+ "extra_holes": 0,
+ "pass_0_3": true,
+ "pass_0_5": true,
+ "valid": true,
+ "valid_reason": "",
+ "failure_category": null
+}

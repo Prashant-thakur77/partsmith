@@ -1,0 +1,111 @@
+{
+ "suite": "reference_objects",
+ "config": "PS",
+ "sample_id": "ref-lego-2x4-clean-s496628",
+ "split": "held_out",
+ "kind": "reference_object",
+ "preset": "clean",
+ "mode": "live",
+ "gt_source": "reference_spec",
+ "status": "best_effort",
+ "verified": false,
+ "iterations": 5,
+ "iterations_to_converge": null,
+ "strategy": "free_code",
+ "template": null,
+ "verifier_max_error_mm": 0.5563090770570739,
+ "retake_reason": null,
+ "failed_checks": [],
+ "usd": 0.310212,
+ "tokens_in": 247984,
+ "tokens_out": 41503,
+ "model_calls": 37,
+ "model_ms": 388038,
+ "provider_modes": [
+  "live",
+  "mock"
+ ],
+ "providers": {
+  "segment": [
+   "meta:sam-3.1"
+  ],
+  "understand": [
+   "meta:muse-spark-1.3"
+  ],
+  "plan": [
+   "baseten:meta-models/muse-spark-open-1026"
+  ],
+  "build": [
+   "baseten:meta-models/muse-spark-open-1026"
+  ],
+  "fix_agent": [
+   "baseten:meta-models/muse-spark-open-1026"
+  ],
+  "judge": [
+   "mock:muse-glimmer"
+  ]
+ },
+ "convergence": [
+  {
+   "iter": 1,
+   "hausdorff_mm": 0.8770744001852178,
+   "iou": 0.9652745995423341,
+   "max_error_mm": 0.8770744001852178
+  },
+  {
+   "iter": 2,
+   "hausdorff_mm": 0.5563090770570739,
+   "iou": 0.9745402298850575,
+   "max_error_mm": 0.5563090770570739
+  },
+  {
+   "iter": 3,
+   "hausdorff_mm": 0.6181702692500006,
+   "iou": 0.9772176721651863,
+   "max_error_mm": 0.6181702692500006
+  },
+  {
+   "iter": 4,
+   "hausdorff_mm": 0.6256689065529706,
+   "iou": 0.9758793391284325,
+   "max_error_mm": 0.6256689065529706
+  },
+  {
+   "iter": 5,
+   "hausdorff_mm": 0.5962354201798268,
+   "iou": 0.9751349488916964,
+   "max_error_mm": 0.5962354201798268
+  }
+ ],
+ "wall_s": 473.23,
+ "dims": [
+  {
+   "name": "length",
+   "gt_mm": 31.8,
+   "model_mm": 31.8,
+   "error_mm": 0.0,
+   "within_spec": true
+  },
+  {
+   "name": "width",
+   "gt_mm": 15.8,
+   "model_mm": 15.8,
+   "error_mm": 0.0,
+   "within_spec": true
+  },
+  {
+   "name": "thickness",
+   "gt_mm": 11.3,
+   "model_mm": 11.2,
+   "error_mm": -0.1,
+   "within_spec": true
+  }
+ ],
+ "missed": [],
+ "extra_holes": 0,
+ "pass_0_3": true,
+ "pass_0_5": true,
+ "valid": true,
+ "valid_reason": "",
+ "failure_category": null
+}

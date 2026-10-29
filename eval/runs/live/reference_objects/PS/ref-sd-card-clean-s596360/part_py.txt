@@ -1,0 +1,70 @@
+import cadquery as cq
+import math
+
+PARAMS = {
+    "card_length": (32.0, 30.0, 34.0, 0.1, "mm", True, "length X"),
+    "card_width": (24.0, 22.0, 26.0, 0.1, "mm", True, "width Y"),
+    "thickness": (2.1, 1.2, 3.0, 0.1, "mm", True, "thickness Z"),
+    "chamfer_size": (4.0, 2.0, 6.0, 0.1, "mm", False, "chamfer corner cut"),
+    "corner_radius": (0.6, 0.0, 1.5, 0.1, "mm", False, "corner round"),
+    "facets": (16.0, 8, 32, 2, "mm", False, "arc facets"),
+}
+
+def build(p: dict) -> cq.Workplane:
+    L = float(p["card_length"])
+    W = float(p["card_width"])
+    T = float(p["thickness"])
+    C = float(p["chamfer_size"])
+    R = float(p["corner_radius"])
+
+    hx = L / 2.0
+    hy = W / 2.0
+
+    # Clamp chamfer to stay inside footprint
+    if C > hx:
+        C = hx * 0.45
+    if C > hy:
+        C = hy * 0.45
+    if R > 0.9:
+        R = 0.9
+    # Clamp radius vs remaining straight edges
+    if R * 2.0 > (L - C):
+        R = (L - C) / 2.0 - 0.01
+    if R * 2.0 > W:
+        R = W / 2.0 - 0.01
+    if R < 0:
+        R = 0
+
+    # Points for SD card outline centred at origin, long axis +X
+    # top-left, left-chamfer start, bottom-chamfer end, bottom-right, top-right
+    p0 = (-hx, hy)
+    p1 = (-hx, -hy + C)
+    p2 = (-hx + C, -hy)
+    p3 = (hx, -hy)
+    p4 = (hx, hy)
+
+    wp = cq.Workplane("XY")
+    wp = wp.moveTo(p0[0], p0[1])
+    wp = wp.lineTo(p1[0], p1[1])
+    wp = wp.lineTo(p2[0], p2[1])
+    wp = wp.lineTo(p3[0], p3[1])
+    wp = wp.lineTo(p4[0], p4[1])
+    wp = wp.close()
+
+    # Extrude solid from Z=0 up to thickness (mounting face on Z=0, +Z up)
+    body = wp.extrude(T, combine=True)
+
+    # Optional small corner rounds on the three square corners
+    # keep chamfer edge sharp as on real card
+    if R > 0.01:
+        # use CQ edge fillet on vertical edges; approximate with 2D offset then extrude is more stable
+        # instead do 3D fillet of the top and bottom vertical edges
+        # select edges parallel to Z at the outer corners
+        try:
+            body = body.edges("|Z").fillet(R)
+        except Exception:
+            pass
+
+    return body
+
+result = build({k: v[0] for k, v in PARAMS.items()})

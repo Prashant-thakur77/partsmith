@@ -1,0 +1,48 @@
+import cadquery as cq
+import math
+
+PARAMS = {
+    "length": (31.96, 30.0, 34.0, 0.05, "mm", True, "Overall length X"),
+    "width": (23.96, 22.0, 26.0, 0.05, "mm", True, "Overall width Y"),
+    "thickness": (2.1, 1.2, 3.0, 0.05, "mm", False, "Body thickness Z"),
+    "chamfer": (4.0, 2.0, 6.0, 0.05, "mm", False, "Corner chamfer cut size"),
+}
+
+def build(p: dict) -> cq.Workplane:
+    L = p["length"] / 2.0
+    W = p["width"] / 2.0
+    t = p["thickness"]
+    c = p["chamfer"]
+    # clamp chamfer to avoid degenerate polygon
+    c = min(c, L * 0.45, W * 0.45)
+    # separate x/y offsets for the measured slightly rectangular cut
+    # use same c for both to keep parametric simple, matches measured ~3.85/4.07
+    cx = c
+    cy = c
+
+    # Polyline points derived from measured base_profile:
+    # [15.938,-11.979] -> (L,-W) bottom right
+    # [15.921,11.953]  -> (L,W) top right
+    # [-15.968,11.92]  -> (-L,W) top left
+    # [-16.005,-7.903] -> (-L,-W+cy) chamfer start on left edge
+    # [-12.16,-11.879] -> (-L+cx,-W) chamfer end on bottom edge
+    pts = [
+        (L, -W),
+        (L, W),
+        (-L, W),
+        (-L, -W + cy),
+        (-L + cx, -W),
+    ]
+
+    body = (
+        cq.Workplane("XY")
+        .polyline(pts)
+        .close()
+        .extrude(t, combine=True)
+    )
+
+    # mounting face on Z=0, +Z up, centred at origin already by construction
+    # ensure clean solid
+    return body
+
+result = build({k: v[0] for k, v in PARAMS.items()})

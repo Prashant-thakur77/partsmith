@@ -157,5 +157,12 @@ Seven workstreams in flight: providers, verifier, synth/eval, API/registry, metr
   knob 0.498, AA cell 0.204 (top view only), caster 0.633. Worse: cable clip 0.91 → 1.761, hinge leaf 2.70 → 3.684 (template
   rule; the worker's rerun also gave 3.76), hook 4.04 → 4.696. Latch corner 8.57 mm: the SAM top mask closes the countersunk
   pivot hole that the threshold mask sees through. Glare clip fails capture by design. Replays: 19 of 19 stored are live.
-- **Next:** see-through openings from the threshold mask inside a model mask (latch corner) → live bench (cap ~$30) → README
-  and QUALITY re-score; waiting on Prashant for real photos, Modal login, deploy go-ahead.
+- **First live bench (Oct 29–30, `eval/reports/2026-10-30`, $10.30 for 76 runs):** two invocations with a spend cap
+  (`--max-usd`), tables rebuilt with `--from-runs --mode live`. Synthetic (n = 12): PS median 0.10 mm, mean 0.604 mm,
+  $0.21 per job; B1 single shot 0.18 / 0.856 mm; PS-noTemplate 0.23 / 0.914 mm; pass@0.5 3/12 vs 1/12 vs 1/12 (CIs
+  overlap). Verified but > 0.5 mm off: PS 0/2, B1 0/1, PS-noTemplate 1/2. Reference renders (n = 8): every config 6/8
+  within 0.5 mm; PS verifies 4/8, B1 2/8, none of them off. Control 6/6 (no false rejects), red-team 10/10. Judge and
+  capture triage still ran as labelled mocks (Glimmer not deployed). Also: through-holes a model mask closed come back
+  from the colour threshold (replay of the latch corner: the outline gains the pivot hole, 8.58 → 2.48 mm there).
+- **Next:** live rerun of the latch corner with the threshold openings; real photos, Modal login and deploy go-ahead
+  from Prashant; README hero media from a live replay.

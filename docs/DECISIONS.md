@@ -300,3 +300,18 @@ matches no outline hole has nothing to cross-check it. It is now added only when
 most 10 % of the circle lies outside the measured outline; otherwise it is noted and left out. In the second live seed
 of the broken latch, the SAM point mask spread over the plate around the countersunk pivot. The fit came back Ø25.9 mm
 (rms/r 0.21) on a part 17 mm wide, and that P0 test made the job 20 mm off.
+
+**2026-10-29 — Through-holes a model mask closed come back from the colour threshold.** A text-prompted mask can close a
+narrow or countersunk through-hole; the colour threshold, which only asks "is this the mat colour", still sees the mat
+through it. For thick parts measured with a model mask, the threshold's openings are used when both masks agree on the
+part (filled IoU ≥ 0.9). Each opening must be enclosed by the model mask, at least 0.25 mm², at most 15 % of the part and
+compact like a lens. The see-through cylinder fit then decides what each opening is. Thin parts keep the model mask as it
+is, because there is no fit to check an opening. In the live broken latch, SAM 3.1 closed the countersunk pivot and the
+verifier held the model's real pivot hole against a solid photo (8.6 mm). Replaying the recorded SAM answers with the
+threshold openings, the outline gains the hole and the top-view distance there drops to 2.5 mm; a live rerun is pending.
+
+**2026-10-30 — Live benches run with a spend cap.** `eval.run --max-usd` stops starting runs once the finished ones
+cost that much (running ones finish, later configs are skipped, the log says how many were left out). The first live
+bench ran in two invocations, so the gate suites were not repeated under every ablation: synthetic and reference renders
+under PS, B1 and PS-noTemplate, then control and red-team under PS only. `--from-runs --mode live` builds one report
+from both. The README status line says when a report came from a working tree with uncommitted changes.

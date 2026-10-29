@@ -1,0 +1,43 @@
+import cadquery as cq
+import math
+
+PARAMS = {
+    "body_length": (31.8, 30.0, 33.0, 0.1, "mm", True, "Body length X"),
+    "body_width": (15.8, 14.0, 17.0, 0.1, "mm", True, "Body width Y"),
+    "body_height": (9.6, 8.0, 11.0, 0.1, "mm", True, "Body height Z"),
+    "stud_dia": (4.8, 4.0, 5.2, 0.1, "mm", True, "Stud diameter"),
+    "stud_height": (1.8, 1.0, 2.4, 0.1, "mm", True, "Stud height"),
+    "pitch": (8.0, 7.0, 9.0, 0.1, "mm", True, "Stud pitch"),
+    "n_x": (4, 1, 6, 1, "", False, "Studs along X (long axis)"),
+    "n_y": (2, 1, 4, 1, "", False, "Studs along Y (short axis)"),
+}
+
+def build(p: dict) -> cq.Workplane:
+    length = float(p["body_length"])
+    width = float(p["body_width"])
+    height = float(p["body_height"])
+    stud_d = float(p["stud_dia"])
+    stud_h = float(p["stud_height"])
+    pitch = float(p["pitch"])
+    nx = int(round(float(p["n_x"])))
+    ny = int(round(float(p["n_y"])))
+
+    body = cq.Workplane("XY").box(length, width, height, centered=True).translate((0, 0, height / 2))
+    result = body
+
+    for i in range(nx):
+        x = (i - (nx - 1) / 2.0) * pitch
+        for j in range(ny):
+            y = (j - (ny - 1) / 2.0) * pitch
+            stud = (
+                cq.Workplane("XY")
+                .workplane(offset=height)
+                .moveTo(x, y)
+                .circle(stud_d / 2.0)
+                .extrude(stud_h)
+            )
+            result = result.union(stud)
+
+    return result
+
+result = build({k: v[0] for k, v in PARAMS.items()})

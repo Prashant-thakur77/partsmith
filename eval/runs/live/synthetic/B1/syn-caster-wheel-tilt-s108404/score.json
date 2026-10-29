@@ -1,0 +1,98 @@
+{
+ "suite": "synthetic",
+ "config": "B1",
+ "sample_id": "syn-caster-wheel-tilt-s108404",
+ "split": "held_out",
+ "kind": "template",
+ "preset": "tilt",
+ "mode": "live",
+ "gt_source": "synthetic_exact",
+ "status": "best_effort",
+ "verified": false,
+ "iterations": 1,
+ "iterations_to_converge": 1,
+ "strategy": "template",
+ "template": "caster_wheel",
+ "verifier_max_error_mm": 0.4913007774189886,
+ "retake_reason": null,
+ "failed_checks": [],
+ "usd": 0.070514,
+ "tokens_in": 16778,
+ "tokens_out": 9490,
+ "model_calls": 11,
+ "model_ms": 115605,
+ "provider_modes": [
+  "live",
+  "mock"
+ ],
+ "providers": {
+  "capture_triage": [
+   "mock:muse-glimmer"
+  ],
+  "segment": [
+   "meta:sam-3.1"
+  ],
+  "understand": [
+   "meta:muse-spark-1.3"
+  ],
+  "segment_points": [
+   "meta:sam-3.1"
+  ],
+  "plan": [
+   "baseten:meta-models/muse-spark-open-1026"
+  ],
+  "build": [
+   "baseten:meta-models/muse-spark-open-1026"
+  ]
+ },
+ "convergence": [
+  {
+   "iter": 1,
+   "hausdorff_mm": 0.4913007774189886,
+   "iou": 0.9697258128895575,
+   "max_error_mm": 0.4913007774189886
+  }
+ ],
+ "wall_s": 129.47,
+ "dims": [
+  {
+   "name": "length",
+   "gt_mm": 40.997526,
+   "model_mm": 40.4,
+   "error_mm": -0.5975
+  },
+  {
+   "name": "width",
+   "gt_mm": 40.995053,
+   "model_mm": 40.3922,
+   "error_mm": -0.6028
+  },
+  {
+   "name": "thickness",
+   "gt_mm": 16.2,
+   "model_mm": 16.0,
+   "error_mm": -0.2
+  },
+  {
+   "name": "hole_4.diameter",
+   "gt_mm": 7.4,
+   "model_mm": 7.22,
+   "error_mm": -0.18
+  }
+ ],
+ "missed": [
+  "hole_1.diameter",
+  "hole_2.diameter",
+  "hole_3.diameter",
+  "hole_5.diameter",
+  "hole_6.diameter",
+  "hole_7.diameter"
+ ],
+ "extra_holes": 0,
+ "pass_0_3": false,
+ "pass_0_5": false,
+ "valid": true,
+ "valid_reason": "",
+ "failure_category": "topology_wrong",
+ "failure": "worst width -0.60 mm; missing hole_1.diameter, hole_2.diameter, hole_3.diameter, hole_5.diameter"
+}

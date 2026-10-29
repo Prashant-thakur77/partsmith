@@ -1,0 +1,66 @@
+import cadquery as cq
+import math
+
+PARAMS = {
+    "length": (31.95, 28.0, 34.0, 0.1, "mm", True, "Length along X (long axis)"),
+    "width": (23.95, 20.0, 26.0, 0.1, "mm", True, "Width along Y"),
+    "thickness": (2.1, 1.0, 3.5, 0.05, "mm", True, "Card thickness"),
+    "chamfer": (4.0, 2.0, 6.0, 0.1, "mm", True, "Chamfer cut size (SW corner)"),
+    "corner_radius": (1.0, 0.0, 2.0, 0.1, "mm", False, "Outer corner fillet radius"),
+    "chamfer_count": (1.0, 0, 1, 1, "mm", False, "Number of chamfered corners (0/1)"),
+}
+
+def build(p: dict) -> cq.Workplane:
+    length = float(p["length"])
+    width = float(p["width"])
+    thickness = float(p["thickness"])
+    chamfer = float(p["chamfer"])
+    corner_radius = float(p["corner_radius"])
+    chamfer_count = int(round(float(p["chamfer_count"])))
+
+    lx = length / 2.0
+    wy = width / 2.0
+
+    # clamp chamfer to stay inside footprint
+    chamfer = min(chamfer, length * 0.35, width * 0.45)
+    if chamfer < 0:
+        chamfer = 0
+
+    # Define outline points centred at origin, CCW, start SE corner
+    # Order: SE -> NE -> NW -> (chamfer start on W edge) -> (chamfer end on S edge) -> SE
+    if chamfer_count >= 1 and chamfer > 0.01:
+        pts = [
+            (lx, -wy),               # SE
+            (lx, wy),                # NE
+            (-lx, wy),               # NW
+            (-lx, -wy + chamfer),    # W edge, north of chamfer
+            (-lx + chamfer, -wy),    # S edge, east of chamfer
+        ]
+    else:
+        pts = [
+            (lx, -wy),
+            (lx, wy),
+            (-lx, wy),
+            (-lx, -wy),
+        ]
+
+    # Build solid with mounting face on Z=0, extruded +Z
+    wp = cq.Workplane("XY")
+    wp = wp.moveTo(pts[0][0], pts[0][1])
+    for x, y in pts[1:]:
+        wp = wp.lineTo(x, y)
+    wp = wp.close()
+    solid = wp.extrude(thickness, combine=True)
+
+    # Optional outer corner fillets on vertical edges only
+    if corner_radius > 0.01:
+        # fillet vertical edges; keep chamfer edge sharp by filleting then chamfer dominates
+        # use small tolerance to avoid failing on tiny edges
+        try:
+            solid = solid.edges("|Z").fillet(corner_radius)
+        except Exception:
+            pass
+
+    return solid
+
+result = build({k: v[0] for k, v in PARAMS.items()})

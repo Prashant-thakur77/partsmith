@@ -2,6 +2,7 @@
 
 import json
 import math
+import time
 import xml.etree.ElementTree as ET
 from pathlib import Path
 from typing import Any
@@ -211,3 +212,25 @@ def test_one_real_run_end_to_end(tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     mode, stored = R.load_runs()
     assert mode == "mock" and stored[0]["sample_id"] == "demo-cupboard-latch"
     assert (Path(task.out_dir) / "run.jsonl.gz").exists()
+
+
+def test_the_spend_cap_stops_starting_runs_and_skips_later_configs(monkeypatch: pytest.MonkeyPatch) -> None:
+    from concurrent.futures import ThreadPoolExecutor
+
+    class OneThread(ThreadPoolExecutor):
+        def __init__(self, max_workers: int, mp_context: Any = None, initializer: Any = None, initargs: Any = ()):
+            super().__init__(max_workers=1)
+
+    def fake_run(t: R.Task) -> dict[str, Any]:
+        time.sleep(0.01)
+        return {"sample_id": t.sample_id, "config": t.config, "usd": 0.6}
+
+    monkeypatch.setattr(R, "run_task", fake_run)
+    monkeypatch.setattr(R, "ProcessPoolExecutor", OneThread)
+    tasks = [R.Task("synthetic", c, f"s{i}", "", "held_out", "template") for c in ("PS", "B1") for i in range(6)]
+    logs: list[str] = []
+    got = R.run_tasks(tasks, jobs=1, live=True, log=logs.append, max_usd=1.0)
+    # $0.60 + $0.60 crosses the cap: at most the one run already started finishes, nothing of B1 starts
+    assert 2 <= len(got) <= 3 and {r["config"] for r in got} == {"PS"}
+    assert [r["sample_id"] for r in got] == sorted(r["sample_id"] for r in got)
+    assert any("B1" in line and "not started" in line for line in logs)
