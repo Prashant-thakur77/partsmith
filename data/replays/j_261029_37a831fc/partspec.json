@@ -1,0 +1,147 @@
+{
+  "family": "clip",
+  "units": "mm",
+  "title": "",
+  "base_profile": {
+    "kind": "polyline",
+    "points_mm": [
+      [
+        -21.718,
+        -7.995
+      ],
+      [
+        -20.968,
+        -8.713
+      ],
+      [
+        -20.304,
+        -8.995
+      ],
+      [
+        21.732,
+        -8.916
+      ],
+      [
+        21.865,
+        6.755
+      ],
+      [
+        21.41,
+        7.009
+      ],
+      [
+        18.578,
+        7.007
+      ],
+      [
+        18.342,
+        8.87
+      ],
+      [
+        17.377,
+        9.049
+      ],
+      [
+        15.594,
+        8.941
+      ],
+      [
+        14.445,
+        8.426
+      ],
+      [
+        14.204,
+        7.22
+      ],
+      [
+        13.963,
+        7.025
+      ],
+      [
+        -20.498,
+        6.965
+      ],
+      [
+        -21.385,
+        6.451
+      ],
+      [
+        -21.884,
+        5.217
+      ],
+      [
+        -21.921,
+        -7.124
+      ]
+    ],
+    "source": "measured",
+    "sigma_mm": 0.1
+  },
+  "thickness": {
+    "value": 3.0,
+    "source": "user_stated",
+    "sigma_mm": 0.3,
+    "evidence": null,
+    "bound_mm": null
+  },
+  "features": [
+    {
+      "kind": "through_hole",
+      "id": "hole_1",
+      "center_mm": [
+        -16.83,
+        -1.005
+      ],
+      "diameter": {
+        "value": 3.546,
+        "source": "measured",
+        "sigma_mm": 0.061,
+        "evidence": {
+          "view": "top",
+          "pixels": [
+            [
+              960.91,
+              617.95
+            ]
+          ],
+          "note": "see-through fit, h=3.0 mm: vertical cylinder whose top and bottom openings overlap by 2.76 mm in the photo; rms 0.018 mm over 135 edge points",
+          "citation": null
+        },
+        "bound_mm": null
+      },
+      "countersink": false
+    }
+  ],
+  "broken_region": null,
+  "fit": {
+    "clearance_mm": 0.2,
+    "material": "PLA",
+    "printer": "FDM_0_4"
+  },
+  "unknowns": [
+    {
+      "id": "snap_height",
+      "question": "Side view shows ~9.6 mm total height over the 3 mm plate - what is the intended snap tower height above the plate?",
+      "expects": "number_mm",
+      "default": null,
+      "choices": null
+    },
+    {
+      "id": "snap_overhang",
+      "question": "What overhang / mating slot depth should the snap hook have?",
+      "expects": "number_mm",
+      "default": null,
+      "choices": null
+    },
+    {
+      "id": "break_detail",
+      "question": "Which edge of the snap is broken and what was its original profile?",
+      "expects": "text",
+      "default": null,
+      "choices": null
+    }
+  ],
+  "intent": "Make a replacement for this broken snap retaining clip.",
+  "refusal": null,
+  "template_hint": "clip"
+}

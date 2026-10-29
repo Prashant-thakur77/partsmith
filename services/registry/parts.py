@@ -26,7 +26,7 @@ from services.geom_worker import bake as geom_bake
 from services.geom_worker.program import clamp, closest_names, params_sha
 from services.geom_worker.sandbox import WarmPool
 from services.media.voice import RELATIVE_WORDS, map_utterance, snap_clamp
-from services.registry import gate
+from services.registry import gate, passport
 from services.registry.store import Registry, get_registry
 
 API = "/api/v1"
@@ -124,9 +124,12 @@ def bake_output(
     formats: Iterable[str] = DEFAULT_FORMATS,
     *,
     pool: WarmPool | None = None,
+    passport: str | None = None,
 ) -> geom_bake.BakeOutput:
-    """Bake (or fetch from the content-addressed cache). Raises UnknownParamError / BakeError / ValueError."""
-    return geom_bake.bake(part.code, dict(params or {}), list(formats), version=part.version, pool=pool)
+    """Bake (or fetch from the content-addressed cache). Raises UnknownParamError / BakeError / ValueError.
+    `passport` debosses that id where it is safe (off by default; see geom_worker/passport_mark.py)."""
+    return geom_bake.bake(part.code, dict(params or {}), list(formats), version=part.version, pool=pool,
+                          passport=passport)  # fmt: skip
 
 
 def bake_part(
@@ -761,4 +764,5 @@ def part_detail(part: PartRecord, reg: Registry | None = None) -> dict[str, Any]
     d["origin"] = part.provenance.origin.value
     d["verified"] = bool(part.verification and part.verification.verified)
     d["ship"] = gate.decide_part(part).to_dict()  # the export gate's decision, same as jobs and bundle.zip
+    d["passport"] = passport.link(passport.part_id(part)).model_dump(mode="json")
     return d

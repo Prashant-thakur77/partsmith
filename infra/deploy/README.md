@@ -87,3 +87,8 @@ machine is enough for the demo; `PARTSMITH_GEOM_WORKERS=1` keeps memory near 1.5
 Only with the owner's go-ahead (it spends credits): add the model keys to the secret or `api.env`, set
 `PROVIDER_MODE=` (empty = live where a key exists) and keep `PROVIDER_FALLBACK_TO_MOCK=1` so a failed provider
 degrades to a labelled mock instead of an error page.
+
+**Visitors' uploads in live mode.** Photos, clips and voice notes go to Meta's model API (GPS is stripped first). While
+the account uses Meta's free credits, Meta's billing page says that content may be used to improve its products; `/fix`
+tells visitors so and asks them to leave faces and anything private out of frame. Set a usage alert on the Meta billing
+page and keep `PARTSMITH_BUY_LOOKUP=0` if the public site should not run a web search per job.

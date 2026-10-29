@@ -126,6 +126,35 @@ class FitCheckResult(Strict):
     capture: CaptureReport
 
 
+MateKind = Literal["mate_hole", "mate_peg", "mate_slot"]
+
+
+class MateMeasurement(Strict):
+    """One mating feature measured on the "where it fits" photo (same mat, same metrology as the top view).
+
+    mate_hole: a socket or bore the part goes INTO (its diameter); mate_peg: a shaft or pin the part goes ONTO (its
+    diameter; a shaft lying on its side is read from its width with the round-section parallax removed); mate_slot: a
+    slot (opening) or a panel edge (material) the part clips into or onto (its width). The pixel comes from the user's
+    tap or from a model pointing at the photo; the size always comes from code."""
+
+    id: str
+    kind: MateKind
+    point_px: Point2
+    point_source: Literal["user", "model", "mock"] = "user"
+    ok: bool
+    material: Literal["opening", "material"] | None = None  # air the part goes into, or material it goes onto
+    shape: Literal["round", "strip", "region"] | None = None
+    size: Measured | None = None  # diameter (round) or width (strip/region), mm
+    length: Measured | None = None  # strips and slots: the long side, mm
+    method: str = ""
+    center_mm: Point2 | None = None  # mat frame
+    outline_mm: list[Point2] = Field(default_factory=list)  # mat frame, decimated
+    mask_source: str = ""
+    confidence: float | None = None
+    retake: str | None = None
+    reason: str | None = None
+
+
 class MeasureResult(Strict):
     capture: CaptureReport
     calibration: Calibration | None = None
@@ -143,6 +172,8 @@ __all__ = [
     "FitCheckResult",
     "Hole",
     "MatKind",
+    "MateKind",
+    "MateMeasurement",
     "MeasureResult",
     "Measured",
     "Measurements",

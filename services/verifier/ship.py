@@ -9,6 +9,9 @@ that was edited (or a model that merely *says* "verified") cannot open the gate:
 - best effort -> requires an explicit acknowledgement; the reason names the worst problem in plain words and points
   at the fit-test coupon
 - failed, invalid, inconsistent, or the job not finished -> blocked
+
+When the mating photo's "fits where it goes" check says the part does not fit, the reason carries a warning; the
+decision itself is unchanged (that check is informational, `verified` is about matching the broken part).
 """
 
 from __future__ import annotations
@@ -93,6 +96,21 @@ def worst_problem(v: Verification) -> str:
     return "the model does not match the measurements within tolerance"
 
 
+FIT_TEST_PREFIX = "fit.mate."  # services/verifier/mate_fit.py: "fits where it goes" (P1, informational)
+
+
+def fit_warning(v: Verification) -> str:
+    """The " Warning: …" suffix when the mating photo says the part does not fit where it goes, else "". It never changes the
+    decision (that check is informational); it makes the reason say so before anyone prints."""
+    bad = [t for t in v.tests if t.id.startswith(FIT_TEST_PREFIX) and not t.passed and t.value is not None]
+    if not bad:
+        return ""
+    what = bad[0].description.removeprefix("fits where it goes: ").removeprefix("does not fit: ")
+    what = what.split("; after printing")[0]
+    more = f" (and {len(bad) - 1} more)" if len(bad) > 1 else ""
+    return f" Warning: it does not fit where it goes — {what}{more}."
+
+
 def can_ship(
     verification: Verification | Mapping[str, Any] | None,
     *,
@@ -117,13 +135,16 @@ def can_ship(
             return ShipDecision(
                 False, "blocked: the record says verified but its own numbers disagree — " + "; ".join(problems)
             )
-        return ShipDecision(True, "verified: every measured dimension and view is within tolerance")
+        warn = fit_warning(v)
+        ok = "verified: every measured dimension and view is within tolerance"
+        return ShipDecision(True, ok + ("." + warn if warn else ""))
     if v.status == "verified":
         return ShipDecision(False, "blocked: the record is inconsistent (status verified, verified = false)")
     if v.status == "failed" or (v.validity is not None and not v.validity.is_valid):
         why = v.reasons[0] if v.reasons else "the program did not produce a valid solid"
         return ShipDecision(False, f"blocked: {why}")
     problem = worst_problem(v)
+    warn = fit_warning(v)
     if acknowledged_best_effort:
-        return ShipDecision(True, f"best effort, acknowledged: {problem}. {COUPON_HINT}", requires_ack=True)
-    return ShipDecision(False, f"best effort: {problem}. {COUPON_HINT}", requires_ack=True)
+        return ShipDecision(True, f"best effort, acknowledged: {problem}. {COUPON_HINT}{warn}", requires_ack=True)
+    return ShipDecision(False, f"best effort: {problem}. {COUPON_HINT}{warn}", requires_ack=True)

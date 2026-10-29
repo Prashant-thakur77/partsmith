@@ -25,6 +25,9 @@ from .media import BoolMask
 _RECORD_BOX_RE = re.compile(r"(\d+)<\|box;([^|]*)\|>")
 _BOX_KEYS = ("x1", "y1", "x2", "y2", "w", "h")
 _FRAME_RE = re.compile(r"^<(\d+)f>")
+# Live SAM 3.1 also puts `c=<float>` in the mask token (`<|mask;x=0;y=0;c=0.77;data=…|>`), which the parser rejects.
+# Only the part before `data=` is touched: the encoded mask bytes can contain any character.
+_MASK_CONF_RE = re.compile(r"(<\|mask;(?:(?!data=)[^|])*?);c=[-+0-9.eE]+")
 
 
 def _event_dict(event: Any) -> dict[str, Any]:
@@ -76,7 +79,7 @@ def stream_text(events: Iterable[Any]) -> tuple[str, Any]:
 
 
 def split_confidence(text: str) -> tuple[str, dict[tuple[int, str], float]]:
-    """Strip `;c=<float>` (and any other unknown box keys) from box tokens.
+    """Strip `;c=<float>` (and any other unknown box keys) from box tokens, and `;c=<float>` from mask tokens.
 
     Returns the clean text and {(frame index, object id): confidence}; the frame comes from each line's `<Nf>` header.
     """
@@ -96,7 +99,7 @@ def split_confidence(text: str) -> tuple[str, dict[tuple[int, str], float]]:
                 return m.group(0)
             return obj + "<|box;" + ";".join(f"{k}={params[k]}" for k in _BOX_KEYS) + "|>"
 
-        lines.append(_RECORD_BOX_RE.sub(repl, line))
+        lines.append(_MASK_CONF_RE.sub(r"\1", _RECORD_BOX_RE.sub(repl, line)))
     return "\n".join(lines), conf
 
 

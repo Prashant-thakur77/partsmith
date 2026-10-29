@@ -9,6 +9,7 @@ verification beyond copying its status.
 
 from __future__ import annotations
 
+import os
 import time
 from collections.abc import Mapping
 from typing import Any
@@ -128,6 +129,11 @@ def job_title(job: Job) -> tuple[str, str | None]:
     spec = job.read_json("partspec.json") or {}
     title = str(spec.get("title") or job.summary.title or "")
     return title, spec.get("family")
+
+
+def lookup_enabled() -> bool:
+    """`PARTSMITH_BUY_LOOKUP=0` skips the search-grounded lookup (benches set it: the card is not scored)."""
+    return os.environ.get("PARTSMITH_BUY_LOOKUP", "1").strip() != "0"
 
 
 def job_card(

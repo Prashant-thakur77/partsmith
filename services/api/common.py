@@ -28,7 +28,7 @@ MEDIA_TYPES = {
     "py": "text/x-python; charset=utf-8",
 }
 EXTENSIONS = {"stl": ".stl", "step": ".step", "3mf": ".3mf", "glb": ".glb", "view": ".view.json", "py": ".py"}
-RESERVED_QUERY = {"format", "formats", "download", "preset", "ack"}
+RESERVED_QUERY = {"format", "formats", "download", "preset", "ack", "passport"}
 
 
 def _svc() -> Any:

@@ -5,6 +5,7 @@ import * as React from "react";
 import type { Verification } from "@/lib/api-types";
 import { fmtNum } from "@/lib/format";
 import { noteCouponDownload } from "@/lib/coupon-fit";
+import { fitWarning } from "@/lib/mate-fit";
 import { useT } from "@/lib/i18n";
 import { shipState } from "@/lib/ship";
 
@@ -54,6 +55,7 @@ export function ExportGateNotice({
         <div className="space-y-0.5">
           <p className="font-medium text-fg">{blocked ? t("gate.blockedTitle") : t("gate.title")}</p>
           <p className="text-muted">{gateReason(verification, t)}</p>
+          {fitWarning(verification) ? <p className="text-fg">{fitWarning(verification)}</p> : null}
         </div>
       </div>
       {couponUrl ? (

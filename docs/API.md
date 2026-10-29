@@ -25,7 +25,7 @@ named something that does not exist (slug, parameter, mat, sample, job, format, 
 `too_small`, `too_large`, `empty_upload`, `unsupported_media_type`, `not_printable`, `rate_limited`,
 `agent_unavailable`, `not_implemented`, `internal_error`, `admin_required`, `needs_ack`, `not_shippable`,
 `unknown_preset`, `need_not_found`, `lesson_not_found`, `batch_not_found`, `no_measurements`, `busy`, `bad_frame`,
-`provider_error`.
+`provider_error`, `passport_not_found`.
 
 **Export gate** (`services/registry/gate.py` over `services.verifier.ship.can_ship`): job publish, job-part downloads
 (`/jobs/{id}/bake?download=1`), published-part downloads (`/parts/{slug}/bake?download=1`), both for any format but
@@ -91,14 +91,14 @@ Screen calibration (ID-1 card 85.60 × 53.98 mm) happens in the browser and is s
 | GET | `/jobs/demo/samples` | `[{"id": str, "title": str, "family_hint": str\|null, "kind": "template"\|"reference_object"}]` — bundled **synthetic** samples |
 | POST | `/jobs/demo` | `{"sample": str}` → `JobSummary` — runs a bundled **synthetic** sample (labelled synthetic everywhere); unknown ids → `404 sample_not_found` + closest |
 | GET | `/jobs?limit=&include_replays=&kind=` | `[JobSummary]` (newest first) |
-| GET | `/jobs/{id}` | `JobDetail = {"summary": JobSummary, "events": [Event], "partspec": PartSpec\|null, "measurements": {view: Measurements}, "verification": Verification\|null, "code": str\|null, "params": [ParamSpec], "values": {name: float}, "artifacts": {kind: url}, "question": QuestionEvent\|null}` |
+| GET | `/jobs/{id}` | `JobDetail = {"passport": PassportLink, "summary": JobSummary, "events": [Event], "partspec": PartSpec\|null, "measurements": {view: Measurements}, "verification": Verification\|null, "code": str\|null, "params": [ParamSpec], "values": {name: float}, "artifacts": {kind: url}, "question": QuestionEvent\|null}` |
 | GET | `/jobs/{id}/events` | **SSE**: one `data: <Event JSON>` per event (`id:` = seq). Agentic fix rounds add `thought` (`{"stage","model","text","iter","mode"}`), `tool_call` (`{"stage","name","args","result","ok","ms","iter","mode"}`) and `focus` (`{"feature","view","at_mm","label","iter"}`, a location code picked from the verifier's worst residual) events; `iter` on `thought`/`tool_call` is the agent's turn within its session, on `focus` the fix round; `mode` is `live`\|`replay`\|`mock`, and a mock run's thoughts come from the deterministic policy (`model: "mock fix agent"`, text ending "(deterministic mock)"). A job that verifies on its first build runs no agent and has none of them. Replays all past events first, then live ones. Ends after `done` — unless `?follow=1`: then the stream stays open (up to 30 min, keep-alives every 15 s) and delivers events appended after `done`, such as a fit check uploaded from a phone. `?from_seq=` (or the `Last-Event-ID` header) resumes. Events keep their original `ts` (the replay player paces on ts gaps). A `: keep-alive` comment is sent after 15 s without events; the stream starts with `retry: 3000`. Headers: `Cache-Control: no-cache, no-transform`, `X-Accel-Buffering: no` |
 | POST | `/jobs/{id}/answer` | `{"id": str, "value": str\|float, "via": "text"\|"voice"}` → `JobSummary` (resumes a paused job; `409 no_pending_question` otherwise) |
 | POST | `/jobs/{id}/edit` | JSON `{"text": str}` or multipart `audio` (+ optional `text`) → `{"transcript": str, "edits": [{"param","from","to","reason"}], "not_understood": [str], "confidence": float, "mode": str, "bake": BakeResult}` (voice/text edit; clamped to PARAMS) |
 | POST | `/jobs/{id}/preview` | → `{"url": str, "label": "AI preview", "mode": str}` (Muse Image "see the fix") |
 | GET | `/jobs/{id}/fit-outline?mat_id=` | `409 no_model_outline` when the job has no model outline (Steer lanes, failed runs); otherwise `{"mat_id": str, "outline_mm": [[x,y]], "holes": [{"center_mm":[x,y],"diameter_mm":float}], "dims": [{"label": str, "from_mm":[x,y], "to_mm":[x,y], "value_mm": float}], "placement": {"cx_mm","cy_mm","theta_deg"}}` in the **mat frame** (`mat_id` default `screen-m`) |
 | POST | `/jobs/{id}/fit-check` | multipart `photo`, `mat_id` → `FitCheckResult = {"passed": bool, "iou": float, "hausdorff_mm": float\|null, "mean_mm": float\|null, "reasons": [str], "overlay_url": str, "capture": CaptureReport}`; `hausdorff_mm` / `mean_mm` are `null` when nothing could be compared (no mat markers or no part found on the outline; then `passed: false`, `iou: 0` and `reasons` says what to retake), and `fit_check_hausdorff_mm` is not emitted. **Live update:** the job also gets metric events `fit_check_passed` (1/0), `fit_check_iou`, `fit_check_hausdorff_mm` and a `measure_overlay` artifact labelled `fit check on <mat>: PASS\|FAIL`, so a page following `/events?follow=1` (the laptop showing the outline) turns green when a phone uploads |
-| GET | `/jobs/{id}/bake?<param>=<value>&format=…[&preset=][&download=1]` | re-bake the job's current part program before it is published → `BakeResult` (same shape as part bakes; `&download=1` returns the first format's file through the export gate, `&ack=1` for best effort). `preset=<id>` applies a fit preset on top of the job's current values and the knobs by the same server rule as part bakes (`"preset": {"id","title","delta_mm","changes","source","label","reports","preset_delta_mm"}` in the result; unknown id → `422 unknown_preset` + closest). `fit_session=<device id>` uses that device's learned coupon clearance instead of the preset's |
+| GET | `/jobs/{id}/bake?<param>=<value>&format=…[&preset=][&download=1]` | re-bake the job's current part program before it is published → `BakeResult` (same shape as part bakes; `&download=1` returns the first format's file through the export gate, `&ack=1` for best effort). `preset=<id>` applies a fit preset on top of the job's current values and the knobs by the same server rule as part bakes (`"preset": {"id","title","delta_mm","changes","source","label","reports","preset_delta_mm"}` in the result; unknown id → `422 unknown_preset` + closest). `fit_session=<device id>` uses that device's learned coupon clearance instead of the preset's. `passport=1` debosses the job's passport id (see "Repair passport") |
 | GET | `/jobs/{id}/presets` | same shape as `/parts/{slug}/presets` with `"job_id"` instead of `"slug"`; `changes` are computed on the job's current values. `409 no_program` until the job has a part program |
 | POST | `/jobs/{id}/publish` | **admin**. `{"slug"?: str, "ack"?: bool}` (or `?ack=1`) → export gate, then part detail (+ `"ship"`) (as `GET /parts/{slug}`) + `"publish": {"slug","action": "created"\|"updated"\|"unchanged"\|"renamed","requested_slug","duplicate_of","version"}`; the job must be `done`; origin is preserved; thumbnails are rendered here. Publishing dedupes (see Registry) |
 | POST | `/jobs/{id}/cancel` | → `JobSummary` after the cancel took effect (`status: "cancelled"`); if the job has not stopped within 3 s the response says `status: "cancelling"` (it stops at its next check). Finished jobs are returned unchanged |
@@ -112,9 +112,11 @@ Screen calibration (ID-1 card 85.60 × 53.98 mm) happens in the browser and is s
 | GET | `/replays` | `[{"id": str, "title": str, "origin": DataOrigin, "provider_mode": str, "verified": bool, "max_error_mm": float\|null, "iterations": int}]` |
 | GET | `/jobs/{id}/buy-or-print` | `BuyOrPrint` (below): the stored card, or the print side computed now with `lookup: null` (a GET never starts a search). `409 no_program` before the job has a part program |
 | POST | `/jobs/{id}/buy-or-print` | `{"city"?: str}` → `BuyOrPrint` after a lookup (search grounding; `buy_lookup` model_call on the job, cost counted there); stored as the job's card. `409 not_finished` / `409 no_program` |
+| GET | `/jobs/{id}/mate-fit` | `MateFitResult` (below, the job's `mate_fit.json`): the mates measured on the "where it fits" photo and how the model fits them. `preset=` (a fit preset id) and/or `fit_session=` (device id) recompute only the "after printing on …" note with that preset and the clearance the device's coupon reports taught; the CAD and the measured mate never change. `404 no_mate_fit` without a mating photo, `422 unknown_preset` |
 
-`points` = feature taps in top-photo pixels as displayed (EXIF orientation applied, i.e. the browser's frame), `{"top": [{"x": float, "y": float, "kind": "hole"|"slot"|"tab"|"broken_edge"|"exclude", "id"?: str}]}`
-(`kind` defaults to `hole`, at most 32 points). Each feature tap becomes a point prompt for the segmenter and the feature is
+`points` = feature taps in photo pixels as displayed (EXIF orientation applied, i.e. the browser's frame), `{"top": [{"x": float, "y": float, "kind": "hole"|"slot"|"tab"|"broken_edge"|"exclude", "id"?: str}], "mating"?: [{"x", "y", "kind": "mate_hole"|"mate_peg"|"mate_slot"|"exclude", "id"?}]}`
+(`kind` defaults to `hole` on the top photo and `mate_hole` on the mating photo, at most 32 points per photo; mating
+taps need the `mating` photo, else `422 invalid_points`). Each feature tap becomes a point prompt for the segmenter and the feature is
 measured by code; a tap never sets a dimension. An `exclude` tap marks something that is not the part (a finger, glare,
 clutter): it is not a feature but a negative point sent with every point prompt whose crop holds it. A `broken_edge` tap
 also lets the length question ask only for the missing piece (see "A broken end of unknown length"). Malformed input →
@@ -144,6 +146,36 @@ the top photo saw it (footprint IoU ≥ 0.8); a part moved between photo and cli
 never sets a number. The job stores `narration.json` (`{"narration", "points": [{..., "ok", "reason", "frame_index"}],
 "measured", "merged", "same_placement"}`) and an artifact `narration`; dropped points are logged with the reason. Mock: labelled
 (`MOCK — no model watched the clip`), built from the typed intent and the clip's size/length only.
+
+**Fits where it goes (mating photo).** The `mating` photo is taken on the same mat and passes the same capture gate in
+the `capture` stage (a photo that fails is dropped with a warning and nothing is checked). In the `measure` stage each
+mating tap (`mate_hole`: a socket or bore the part goes into; `mate_peg`: a shaft or pin it goes onto; `mate_slot`: a
+slot or a panel edge it clips into) becomes a SAM 3.1 point prompt (negatives as above, plus `exclude` taps on that
+photo) and code measures it in mm: a socket is a circle fit, or, when the mat shows through it, a lens fit that solves
+the plate height from the photo; a shaft lying on its side is read from its two edges with the round section solved
+exactly for the camera position; a slot or panel edge is the distance between its two long sides. Readings that cannot
+know how high the edge stands carry a stated parallax allowance (an edge 0–3 mm above the mat: the value moves by half
+that parallax and ±σ covers the rest); mask confidence widens σ and below 0.5 asks for a retake. Without taps Spark 1.3
+points at the mate (`mate_points` model_call; pixels only, kept only on the mat's stage; mock: the code's own pick,
+labelled `MOCK: …`). The stage label says what was measured ("mating: shaft Ø6.00 ± 0.01 mm"); artifacts
+`mate_overlay` (png) and, after the verdict, `mate_fit` (json). In the final verdict each mate meets one model feature,
+measured on the CAD solid: a shaft ↔ a declared `interfaces(p)` bore for a shaft/axle/pin/cable (else any interface,
+else the model hole closest in size); a socket ↔ the narrowest outer width of the footprint; a slot opening ↔ the
+plate thickness; a panel edge ↔ a declared panel gap. The diametral clearance c (receiver − what goes in) is classified
+with the functional probes' classes (`does not fit` < 0 ≤ `press fit` < 0.1 ≤ `sliding fit` ≤ 0.3 < `loose fit` ≤ 0.6 <
+`very loose`), also at c ± σ, plus "after printing on <preset>": internal fits print the preset's clearance small (its
+documented delta, or the device's learned clearance via this route), with the preset applied they print back to c;
+outer sizes print as modelled. The verdict gains P1 tests `fit.mate.<id>` (value = c, expected 0; never in the pass
+rule) and one reason line "Fits where it goes …" / "Does not fit where it goes …"; `verified` is unchanged. When a fit
+test says it does not fit, the export gate's reason ends with "Warning: it does not fit where it goes — …" (the
+decision is unchanged). `MateFitResult = {"view": "mating", "capture": CaptureReport|null, "mates": [MateMeasurement],
+"fits": [MateFit], "preset": str|null, "notes": [str], "origin"}`; `MateMeasurement = {"id", "kind", "point_px",
+"point_source": "user"|"model"|"mock", "ok", "material": "opening"|"material", "shape": "round"|"strip"|"region",
+"size": Measured, "length": Measured|null, "method", "center_mm", "outline_mm", "mask_source", "confidence", "retake",
+"reason"}`; `MateFit = {"mate_id", "mate_kind", "model_feature", "model_feature_source":
+"interface"|"nearest_hole"|"outer_size"|"plate_thickness"|"none", "model_feature_note", "model_mm", "mate_mm",
+"mate_sigma_mm", "clearance_mm", "clearance_sigma_mm", "fit", "fit_low", "fit_high", "passed", "printed": PrintedFit,
+"text"}`. No mating photo: nothing runs and nothing changes.
 
 **Buy or print.** `BuyOrPrint = {"job_id", "slug", "title", "status" (copied from the verification, never changed),
 "prints": [PrintEstimate], "lookup": BuyLookup|null, "mode": "live"|"mock"|"replay", "created_at", "notes": [str]}`.
@@ -199,7 +231,7 @@ adds beyond the broken end out of every comparison (like the completed region), 
 | GET | `/parts?q=&family=&verified=&origin=&sort=&cursor=&limit=&role=` | `{"items": [PartCard], "next_cursor": str\|null, "total": int}`; `role` = `part` (default: functional parts) \| `reference` (bench reference objects, tag `role:reference`) \| `all`; `sort` = `relevance` (default) \| `newest` \| `error` (smallest max error first) \| `title`; `limit` ≤ 100; `cursor` is opaque |
 | GET | `/parts/{slug}` | part detail (below) |
 | GET | `/parts/{slug}/params` | `[ParamSpec]` |
-| GET | `/parts/{slug}/bake?<param>=<value>&format=stl\|3mf\|step\|glb\|view\|py` | `BakeResult` + `facts_notes` (or the file with `&download=1`). `format` may repeat or be comma-separated (default `stl,step,view`; `formats=` also accepted). Out-of-range values are clamped and listed in `clamped`; unknown knobs → `422 unknown_param` + closest. Identical requests are cache hits (`cache_hit: true`). `preset=<id>` applies a fit preset after the knob values (`"preset": {"id","title","delta_mm","changes","source","label","reports","preset_delta_mm"}` in the result); `fit_session=<device id>` uses that device's learned coupon clearance. `&download=1` goes through the export gate like `bundle.zip`: verified downloads, best effort answers `409 needs_ack` until `&ack=1`, failed answers `409 not_shippable`; `format=view` and `format=glb` stay open (the embed and AR viewers' previews) |
+| GET | `/parts/{slug}/bake?<param>=<value>&format=stl\|3mf\|step\|glb\|view\|py` | `BakeResult` + `facts_notes` (or the file with `&download=1`). `format` may repeat or be comma-separated (default `stl,step,view`; `formats=` also accepted). Out-of-range values are clamped and listed in `clamped`; unknown knobs → `422 unknown_param` + closest. Identical requests are cache hits (`cache_hit: true`). `preset=<id>` applies a fit preset after the knob values (`"preset": {"id","title","delta_mm","changes","source","label","reports","preset_delta_mm"}` in the result); `fit_session=<device id>` uses that device's learned coupon clearance. `&download=1` goes through the export gate like `bundle.zip`: verified downloads, best effort answers `409 needs_ack` until `&ack=1`, failed answers `409 not_shippable`; `format=view` and `format=glb` stay open (the embed and AR viewers' previews). `passport=1` debosses the part's passport id (see "Repair passport") |
 | GET | `/parts/{slug}/presets` | `{"slug", "fit_knobs": [str], "presets": [{"id","title","material","process","nozzle_mm","delta_mm","note","changes": [{"param","from","to","delta_mm"}]}], "note"}` |
 | GET | `/presets` | the 7 fit presets: `pla-fdm-0.4` (+0.20 mm), `petg-fdm-0.4` (+0.25), `abs-fdm-0.4` (+0.30), `pla-fdm-0.6` (+0.30), `petg-fdm-0.6` (+0.35), `abs-fdm-0.6` (+0.40), `resin-sla` (+0.10). A preset adds its clearance only to `affects_fit` mm knobs that are internal fits (hole, bore, pivot, pin, cable, gap, clearance, slot); outer dimensions never change. Documented starting points, not measurements |
 | GET | `/parts/{slug}/bundle.zip?<params>&preset=&ack=` | zip `<slug>/`: `part.py` (defaults baked to the values), `part.step`, `part.stl`, `part.3mf`, `verification.json` (record + sha256 of every file + ship decision), `README.md` (how to print, measured vs not measured, licence), `LICENSE`, `index.html` (offline viewer, mesh inline, three.js from a CDN). Export gate applies |
@@ -222,7 +254,7 @@ adds beyond the broken end out of every comparison (like the completed region), 
 
 `PartCard = {"slug","title","family","status","origin","verified","max_error_mm","thumbnail_url","thumbnail_2x_url","params_count","topology_knobs": [str],"summary","bbox_mm": [x,y,z]|null}`
 
-Part detail = `PartRecord` + `{"artifacts": {"stl","step","3mf","glb","view","py": url}, "lineage": [Lineage], "thumbnail_url", "thumbnail_2x_url", "facts_notes": {fact: how it is computed}, "fit_reports": [...], "origin": DataOrigin, "verified": bool, "ship": {"status": "verified"|"best_effort"|"blocked", "reason": str, "needs_ack": bool, "source": str}}`.
+Part detail = `PartRecord` + `{"artifacts": {"stl","step","3mf","glb","view","py": url}, "lineage": [Lineage], "thumbnail_url", "thumbnail_2x_url", "facts_notes": {fact: how it is computed}, "fit_reports": [...], "origin": DataOrigin, "verified": bool, "ship": {"status": "verified"|"best_effort"|"blocked", "reason": str, "needs_ack": bool, "source": str}, "passport": PassportLink}`.
 `ship` is the export gate's decision for the part (the same one job publish and `bundle.zip` use; plain-words `reason`).
 Artifact URLs are stable (`/parts/{slug}/bake?format=<fmt>&download=1`, default params, cached after the first bake);
 for a best-effort part the downloads answer `409 needs_ack` until `&ack=1` is added.
@@ -241,6 +273,51 @@ match is clear (else they go to `not_applied`), every value is clamped and snapp
 rescaling (a `scale` knob, or three or more mm dimensions changed by one common factor) is refused. The deterministic
 mock understands "M4 hole" (ISO 273 medium clearance), "2 mm taller", "for a 25 mm rail", "for an 8 mm cable", "3 ribs",
 "no gussets", "40 mm diameter", "6 mm shaft". Confidence is capped at 0.75 when something was not applied.
+
+## Repair passport
+| Method | Path | Returns |
+|---|---|---|
+| GET | `/passport/{id}` | `Passport` (below); the id is read case-insensitively, dashes and spaces ignored, O as 0 and I/L as 1. Unknown or malformed → `404 passport_not_found` + `closest_matches` (other passport ids) |
+| GET | `/passport/{id}/qr.svg`, `/passport/{id}/qr.png` | QR code (error correction M, 4-module quiet zone) encoding `<public origin>/p/{id}` (origin from `X-Forwarded-Host`/`-Proto`, else `PARTSMITH_PUBLIC_URL`, else the request); `Cache-Control: public, max-age=3600` |
+| GET | `/p/{id}` (web app) | the passport page: what the part is, its verification, **Reprint** (the passport's `bake_url` through the export gate with a fit preset, this device's learned coupon clearance as `fit_session`, optional `passport=1`) and "It broke in a new place" (`fix_url`, /fix with family and intent prefilled). A job that was never published redirects to `/jobs/{id}` |
+
+**Ids** (`services/registry/passport.py`): 6 symbols of Crockford base32 (30 bits) from a sha256, short enough to
+deboss at 4 mm cap height. A published part: `sha256("partsmith-passport/part/<identity>/<version>")` with the publish
+dedupe identity (program with PARAMS defaults normalised + clamped values), so the same part has the same id and a new
+version a new one; an older version's id still resolves (`superseded: true`; same program and values). A job:
+`sha256("partsmith-passport/job/<job id>")`; once the job is published it resolves to its part. No personal data goes
+in. Resolution order: current part versions, older versions, jobs (runs and replays on this server); a collision is
+named in `notes`. `PassportLink = {"id", "url": "/p/{id}", "qr_svg_url", "qr_png_url"}` (on part detail and job
+detail).
+
+`Passport = {"id", "kind": "part"|"job", "url", "title", "family", "slug", "version", "current_version", "superseded",
+"job_id", "job_status", "published", "values": {knob: float}, "preset": {"id","title","source": "job_spec"|"default",
+"delta_mm"}, "status": "verified"|"best_effort"|"failed"|"unknown", "verified", "max_error_mm", "threshold_mm",
+"ship": {"status","reason","needs_ack","source"}, "origin", "page_url", "bake_url", "presets_url", "qr_svg_url",
+"qr_png_url", "fix_url", "notes": [str]}`. `preset` is the job's stated material + printer (`fit`), else
+`pla-fdm-0.4`; `ship` is the export gate's decision, and `bake_url` is the ordinary gated bake route (best effort
+answers `409 needs_ack` until `ack=1`, failed answers `409 not_shippable`).
+
+**The passport mark** (`passport=1` on `/parts/{slug}/bake` and `/jobs/{id}/bake`, off by default; the job pipeline,
+publish, bundles and benches never set it). After the sandboxed part program has returned its solid, trusted code in
+the same sandbox child (`services/geom_worker/passport_mark.py`) debosses the id 0.4 mm deep (Bitstream Vera Sans from
+reportlab, cap height 4 mm) on the largest planar face facing +Z that has a free rectangle of at least 25 × 8 mm
+(wider for a wide id) 0.5 mm clear of its edges and holes, 3 mm clear of every declared `interfaces(p)` point, with
+≥ 0.8 mm of material under it and no material within 0.3 mm above it. The bottom (mounting) face and the side walls are never used.
+Raised text is not offered: it would add 0.4 mm to an outer face whose position is a measured dimension. It then
+re-measures: one valid solid, watertight mesh, bounding box, every hole (Ø, centre, depth), plate thickness and
+interface gaps unchanged within 0.001 mm, and removed material no more than the text. Any change undoes the mark. The
+bake's JSON gains `"passport": PassportMark = {"text", "applied", "reason", "style": "deboss", "depth_mm",
+"text_height_mm", "font", "face", "box_mm": {"cx","cy","w","h","angle_deg"}, "free_needed_mm", "removed_mm3",
+"checks": [{"name","passed","before","after"}]}`; a download carries `X-PartSmith-Passport: applied <id>` or
+`skipped <id>`. Knob values other than the passport's (`<param>=` different from the published or job values) get no
+mark (`applied: false`, reason says which knobs): the id would bring back the other values. A preset still applies.
+The cache key includes the id only for marked bakes, so every unmarked bake keeps its key. `format=py` is the program
+without the mark.
+
+**Repair card.** The job's `repair_card` PDF ends with a "Repair passport" block: a QR code to
+`<PARTSMITH_PUBLIC_URL or http://localhost:3000>/p/{id}`, the id in text and "Broke again? Scan to reprint — your
+printer's clearance comes with it." (moved to a second page when the first is full).
 
 ## Steer (factory)
 | Method | Path | Body / Returns |

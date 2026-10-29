@@ -116,7 +116,9 @@
             "zip",
             "share_card",
             "buy_or_print",
-            "narration"
+            "narration",
+            "mate_overlay",
+            "mate_fit"
           ],
           "title": "Kind",
           "type": "string"
@@ -1930,6 +1932,448 @@
       "title": "MatKind",
       "type": "string"
     },
+    "MateFit": {
+      "additionalProperties": false,
+      "description": "One measured mate against the model's matching feature. Informational: it never sets `verified`.",
+      "properties": {
+        "mate_id": {
+          "title": "Mate Id",
+          "type": "string"
+        },
+        "mate_kind": {
+          "enum": [
+            "mate_hole",
+            "mate_peg",
+            "mate_slot"
+          ],
+          "title": "Mate Kind",
+          "type": "string"
+        },
+        "model_feature": {
+          "default": "",
+          "title": "Model Feature",
+          "type": "string"
+        },
+        "model_feature_source": {
+          "default": "none",
+          "enum": [
+            "interface",
+            "nearest_hole",
+            "outer_size",
+            "plate_thickness",
+            "none"
+          ],
+          "title": "Model Feature Source",
+          "type": "string"
+        },
+        "model_feature_note": {
+          "default": "",
+          "title": "Model Feature Note",
+          "type": "string"
+        },
+        "model_mm": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Model Mm"
+        },
+        "mate_mm": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Mate Mm"
+        },
+        "mate_sigma_mm": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Mate Sigma Mm"
+        },
+        "clearance_mm": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Clearance Mm"
+        },
+        "clearance_sigma_mm": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Clearance Sigma Mm"
+        },
+        "fit": {
+          "anyOf": [
+            {
+              "enum": [
+                "does not fit",
+                "press fit",
+                "sliding fit",
+                "loose fit",
+                "very loose"
+              ],
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Fit"
+        },
+        "fit_low": {
+          "anyOf": [
+            {
+              "enum": [
+                "does not fit",
+                "press fit",
+                "sliding fit",
+                "loose fit",
+                "very loose"
+              ],
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Fit Low"
+        },
+        "fit_high": {
+          "anyOf": [
+            {
+              "enum": [
+                "does not fit",
+                "press fit",
+                "sliding fit",
+                "loose fit",
+                "very loose"
+              ],
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Fit High"
+        },
+        "passed": {
+          "default": false,
+          "title": "Passed",
+          "type": "boolean"
+        },
+        "printed": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/PrintedFit"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "text": {
+          "default": "",
+          "title": "Text",
+          "type": "string"
+        }
+      },
+      "required": [
+        "mate_id",
+        "mate_kind"
+      ],
+      "title": "MateFit",
+      "type": "object"
+    },
+    "MateFitResult": {
+      "additionalProperties": false,
+      "description": "mate_fit.json: the mating photo's measured mates and how the model fits them (code only).",
+      "properties": {
+        "view": {
+          "const": "mating",
+          "default": "mating",
+          "title": "View",
+          "type": "string"
+        },
+        "capture": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/CaptureReport"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "mates": {
+          "items": {
+            "$ref": "#/$defs/MateMeasurement"
+          },
+          "title": "Mates",
+          "type": "array"
+        },
+        "fits": {
+          "items": {
+            "$ref": "#/$defs/MateFit"
+          },
+          "title": "Fits",
+          "type": "array"
+        },
+        "preset": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Preset"
+        },
+        "notes": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Notes",
+          "type": "array"
+        },
+        "origin": {
+          "$ref": "#/$defs/DataOrigin",
+          "default": "real"
+        }
+      },
+      "title": "MateFitResult",
+      "type": "object"
+    },
+    "MateMeasurement": {
+      "additionalProperties": false,
+      "description": "One mating feature measured on the \"where it fits\" photo (same mat, same metrology as the top view).\n\nmate_hole: a socket or bore the part goes INTO (its diameter); mate_peg: a shaft or pin the part goes ONTO (its\ndiameter; a shaft lying on its side is read from its width with the round-section parallax removed); mate_slot: a\nslot (opening) or a panel edge (material) the part clips into or onto (its width). The pixel comes from the user's\ntap or from a model pointing at the photo; the size always comes from code.",
+      "properties": {
+        "id": {
+          "title": "Id",
+          "type": "string"
+        },
+        "kind": {
+          "enum": [
+            "mate_hole",
+            "mate_peg",
+            "mate_slot"
+          ],
+          "title": "Kind",
+          "type": "string"
+        },
+        "point_px": {
+          "maxItems": 2,
+          "minItems": 2,
+          "prefixItems": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "number"
+            }
+          ],
+          "title": "Point Px",
+          "type": "array"
+        },
+        "point_source": {
+          "default": "user",
+          "enum": [
+            "user",
+            "model",
+            "mock"
+          ],
+          "title": "Point Source",
+          "type": "string"
+        },
+        "ok": {
+          "title": "Ok",
+          "type": "boolean"
+        },
+        "material": {
+          "anyOf": [
+            {
+              "enum": [
+                "opening",
+                "material"
+              ],
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Material"
+        },
+        "shape": {
+          "anyOf": [
+            {
+              "enum": [
+                "round",
+                "strip",
+                "region"
+              ],
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Shape"
+        },
+        "size": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Measured"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "length": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Measured"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "method": {
+          "default": "",
+          "title": "Method",
+          "type": "string"
+        },
+        "center_mm": {
+          "anyOf": [
+            {
+              "maxItems": 2,
+              "minItems": 2,
+              "prefixItems": [
+                {
+                  "type": "number"
+                },
+                {
+                  "type": "number"
+                }
+              ],
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Center Mm"
+        },
+        "outline_mm": {
+          "items": {
+            "maxItems": 2,
+            "minItems": 2,
+            "prefixItems": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "number"
+              }
+            ],
+            "type": "array"
+          },
+          "title": "Outline Mm",
+          "type": "array"
+        },
+        "mask_source": {
+          "default": "",
+          "title": "Mask Source",
+          "type": "string"
+        },
+        "confidence": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Confidence"
+        },
+        "retake": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Retake"
+        },
+        "reason": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Reason"
+        }
+      },
+      "required": [
+        "id",
+        "kind",
+        "point_px",
+        "ok"
+      ],
+      "title": "MateMeasurement",
+      "type": "object"
+    },
     "MeasureResult": {
       "additionalProperties": false,
       "properties": {
@@ -2873,6 +3317,466 @@
       "title": "PartTest",
       "type": "object"
     },
+    "Passport": {
+      "additionalProperties": false,
+      "description": "`GET /passport/{id}`: what a printed passport id points at, and how to reprint it.",
+      "properties": {
+        "id": {
+          "title": "Id",
+          "type": "string"
+        },
+        "kind": {
+          "enum": [
+            "part",
+            "job"
+          ],
+          "title": "Kind",
+          "type": "string"
+        },
+        "url": {
+          "title": "Url",
+          "type": "string"
+        },
+        "title": {
+          "title": "Title",
+          "type": "string"
+        },
+        "family": {
+          "$ref": "#/$defs/Family"
+        },
+        "slug": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Slug"
+        },
+        "version": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Version"
+        },
+        "current_version": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Current Version"
+        },
+        "superseded": {
+          "default": false,
+          "title": "Superseded",
+          "type": "boolean"
+        },
+        "job_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Job Id"
+        },
+        "job_status": {
+          "anyOf": [
+            {
+              "enum": [
+                "queued",
+                "running",
+                "waiting_for_answer",
+                "done",
+                "failed",
+                "cancelled"
+              ],
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Job Status"
+        },
+        "published": {
+          "title": "Published",
+          "type": "boolean"
+        },
+        "values": {
+          "additionalProperties": {
+            "type": "number"
+          },
+          "title": "Values",
+          "type": "object"
+        },
+        "preset": {
+          "$ref": "#/$defs/PassportPreset"
+        },
+        "status": {
+          "enum": [
+            "verified",
+            "best_effort",
+            "failed",
+            "unknown"
+          ],
+          "title": "Status",
+          "type": "string"
+        },
+        "verified": {
+          "title": "Verified",
+          "type": "boolean"
+        },
+        "max_error_mm": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Max Error Mm"
+        },
+        "threshold_mm": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Threshold Mm"
+        },
+        "ship": {
+          "$ref": "#/$defs/PassportShip"
+        },
+        "origin": {
+          "$ref": "#/$defs/DataOrigin"
+        },
+        "page_url": {
+          "title": "Page Url",
+          "type": "string"
+        },
+        "bake_url": {
+          "title": "Bake Url",
+          "type": "string"
+        },
+        "presets_url": {
+          "title": "Presets Url",
+          "type": "string"
+        },
+        "qr_svg_url": {
+          "title": "Qr Svg Url",
+          "type": "string"
+        },
+        "qr_png_url": {
+          "title": "Qr Png Url",
+          "type": "string"
+        },
+        "fix_url": {
+          "title": "Fix Url",
+          "type": "string"
+        },
+        "notes": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Notes",
+          "type": "array"
+        }
+      },
+      "required": [
+        "id",
+        "kind",
+        "url",
+        "title",
+        "family",
+        "published",
+        "values",
+        "preset",
+        "status",
+        "verified",
+        "ship",
+        "origin",
+        "page_url",
+        "bake_url",
+        "presets_url",
+        "qr_svg_url",
+        "qr_png_url",
+        "fix_url"
+      ],
+      "title": "Passport",
+      "type": "object"
+    },
+    "PassportCheck": {
+      "additionalProperties": false,
+      "description": "One re-measurement after the passport id was debossed (before / after; any change undoes the mark).",
+      "properties": {
+        "name": {
+          "title": "Name",
+          "type": "string"
+        },
+        "passed": {
+          "title": "Passed",
+          "type": "boolean"
+        },
+        "before": {
+          "default": null,
+          "title": "Before"
+        },
+        "after": {
+          "default": null,
+          "title": "After"
+        }
+      },
+      "required": [
+        "name",
+        "passed"
+      ],
+      "title": "PassportCheck",
+      "type": "object"
+    },
+    "PassportLink": {
+      "additionalProperties": false,
+      "description": "The passport id as shown on a part page or a job (copy link, QR downloads).",
+      "properties": {
+        "id": {
+          "title": "Id",
+          "type": "string"
+        },
+        "url": {
+          "title": "Url",
+          "type": "string"
+        },
+        "qr_svg_url": {
+          "title": "Qr Svg Url",
+          "type": "string"
+        },
+        "qr_png_url": {
+          "title": "Qr Png Url",
+          "type": "string"
+        }
+      },
+      "required": [
+        "id",
+        "url",
+        "qr_svg_url",
+        "qr_png_url"
+      ],
+      "title": "PassportLink",
+      "type": "object"
+    },
+    "PassportMark": {
+      "additionalProperties": false,
+      "description": "What happened when a bake asked for `passport=1`. Code decides; `applied` is false whenever no safe face\nexisted or a re-measurement changed.",
+      "properties": {
+        "text": {
+          "title": "Text",
+          "type": "string"
+        },
+        "applied": {
+          "title": "Applied",
+          "type": "boolean"
+        },
+        "reason": {
+          "title": "Reason",
+          "type": "string"
+        },
+        "style": {
+          "const": "deboss",
+          "default": "deboss",
+          "title": "Style",
+          "type": "string"
+        },
+        "depth_mm": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Depth Mm"
+        },
+        "text_height_mm": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Text Height Mm"
+        },
+        "font": {
+          "default": "",
+          "title": "Font",
+          "type": "string"
+        },
+        "face": {
+          "anyOf": [
+            {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Face"
+        },
+        "box_mm": {
+          "anyOf": [
+            {
+              "additionalProperties": {
+                "type": "number"
+              },
+              "type": "object"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Box Mm"
+        },
+        "free_needed_mm": {
+          "anyOf": [
+            {
+              "items": {
+                "type": "number"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Free Needed Mm"
+        },
+        "removed_mm3": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Removed Mm3"
+        },
+        "checks": {
+          "items": {
+            "$ref": "#/$defs/PassportCheck"
+          },
+          "title": "Checks",
+          "type": "array"
+        }
+      },
+      "required": [
+        "text",
+        "applied",
+        "reason"
+      ],
+      "title": "PassportMark",
+      "type": "object"
+    },
+    "PassportPreset": {
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "title": "Id",
+          "type": "string"
+        },
+        "title": {
+          "title": "Title",
+          "type": "string"
+        },
+        "source": {
+          "enum": [
+            "job_spec",
+            "default"
+          ],
+          "title": "Source",
+          "type": "string"
+        },
+        "delta_mm": {
+          "title": "Delta Mm",
+          "type": "number"
+        }
+      },
+      "required": [
+        "id",
+        "title",
+        "source",
+        "delta_mm"
+      ],
+      "title": "PassportPreset",
+      "type": "object"
+    },
+    "PassportShip": {
+      "additionalProperties": false,
+      "properties": {
+        "status": {
+          "enum": [
+            "verified",
+            "best_effort",
+            "blocked"
+          ],
+          "title": "Status",
+          "type": "string"
+        },
+        "reason": {
+          "title": "Reason",
+          "type": "string"
+        },
+        "needs_ack": {
+          "title": "Needs Ack",
+          "type": "boolean"
+        },
+        "source": {
+          "title": "Source",
+          "type": "string"
+        }
+      },
+      "required": [
+        "status",
+        "reason",
+        "needs_ack",
+        "source"
+      ],
+      "title": "PassportShip",
+      "type": "object"
+    },
     "PrintEstimate": {
       "additionalProperties": false,
       "description": "Code's numbers for one material. Grams are the solid volume times the density (100 % infill), an upper\nbound; minutes and costs are labelled estimates (`assumptions` lists every constant used).",
@@ -2928,6 +3832,103 @@
         "price_per_kg"
       ],
       "title": "PrintEstimate",
+      "type": "object"
+    },
+    "PrintedFit": {
+      "additionalProperties": false,
+      "description": "The same fit after printing on one printer + material preset. Internal fits (a hole or gap in the model)\nprint about the preset's clearance small on FDM; outer sizes print as modelled and no preset changes them.",
+      "properties": {
+        "preset": {
+          "title": "Preset",
+          "type": "string"
+        },
+        "title": {
+          "title": "Title",
+          "type": "string"
+        },
+        "clearance_in_effect_mm": {
+          "title": "Clearance In Effect Mm",
+          "type": "number"
+        },
+        "clearance_source": {
+          "enum": [
+            "learned",
+            "preset"
+          ],
+          "title": "Clearance Source",
+          "type": "string"
+        },
+        "clearance_label": {
+          "default": "",
+          "title": "Clearance Label",
+          "type": "string"
+        },
+        "internal": {
+          "title": "Internal",
+          "type": "boolean"
+        },
+        "clearance_mm": {
+          "title": "Clearance Mm",
+          "type": "number"
+        },
+        "fit": {
+          "enum": [
+            "does not fit",
+            "press fit",
+            "sliding fit",
+            "loose fit",
+            "very loose"
+          ],
+          "title": "Fit",
+          "type": "string"
+        },
+        "with_preset_clearance_mm": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "With Preset Clearance Mm"
+        },
+        "with_preset_fit": {
+          "anyOf": [
+            {
+              "enum": [
+                "does not fit",
+                "press fit",
+                "sliding fit",
+                "loose fit",
+                "very loose"
+              ],
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "With Preset Fit"
+        },
+        "text": {
+          "title": "Text",
+          "type": "string"
+        }
+      },
+      "required": [
+        "preset",
+        "title",
+        "clearance_in_effect_mm",
+        "clearance_source",
+        "internal",
+        "clearance_mm",
+        "fit",
+        "text"
+      ],
+      "title": "PrintedFit",
       "type": "object"
     },
     "Provenance": {

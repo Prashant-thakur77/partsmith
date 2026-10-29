@@ -3,6 +3,9 @@
 Every number on the card is passed in by the caller (measurements, `Verification` from the verifier). Missing values
 print as "not measured" / "not verified" — the card never fills gaps. The Verified badge appears only when
 `verification.verified` is True, which only the deterministic verifier can set.
+
+With a passport id the card ends with a "Repair passport" block: a QR code to `/p/{id}` (reportlab's QR encoder, see
+`passport_qr.py`), the id in text and how to use it, so a part that breaks again is reprinted from one scan.
 """
 
 from __future__ import annotations
@@ -16,6 +19,8 @@ from reportlab.lib import colors
 from reportlab.lib.pagesizes import A4, A5
 from reportlab.lib.units import mm
 from reportlab.pdfgen.canvas import Canvas
+
+from services.media.passport_qr import draw as qr_passport
 
 PAGE_SIZES = {"A5": A5, "A4": A4}
 
@@ -54,6 +59,11 @@ class RepairCardData:
     provider_mode: str = "live"  # live | mock | replay | mixed
     notes: Sequence[str] = field(default_factory=list)
     job_id: str = ""
+    passport_id: str = ""  # repair passport id (services/registry/passport.py); empty = no passport block
+    passport_url: str = ""  # absolute URL of /p/{id} the QR code encodes
+
+
+PASSPORT_LINE = "Broke again? Scan to reprint \u2014 your printer's clearance comes with it."
 
 
 def _fmt_mm(v: float | None, digits: int = 2) -> str:
@@ -158,12 +168,39 @@ def make_repair_card(card: RepairCardData, page: str = "A5") -> bytes:
         for n in card.notes[:6]:
             text(f"- {n}", 8)
 
-    c.setFont("Helvetica", 7 * scale)
-    c.setFillColor(colors.grey)
-    footer = "All lengths in millimetres. Verified status is decided by PartSmith's deterministic verifier."
-    if card.job_id:
-        footer += f"  Job {card.job_id}"
-    c.drawString(margin, margin / 2, footer)
+    def footer() -> None:
+        c.setFont("Helvetica", 7 * scale)
+        c.setFillColor(colors.grey)
+        line = "All lengths in millimetres. Verified status is decided by PartSmith's deterministic verifier."
+        if card.job_id:
+            line += f"  Job {card.job_id}"
+        c.drawString(margin, margin / 2, line)
+
+    if card.passport_id:
+        qr_size = 26 * mm * scale
+        block = qr_size + 12 * mm * scale
+        if y - block < margin:  # no room left on this page: the passport gets the next one
+            footer()
+            c.showPage()
+            y = height - margin
+        y -= 3 * mm
+        text("Repair passport", 10, bold=True)
+        top = y + 2 * mm * scale
+        qr_passport(c, card.passport_url or card.passport_id, margin, top - qr_size, qr_size)
+        x = margin + qr_size + 5 * mm * scale
+        c.setFillColor(colors.black)
+        c.setFont("Courier-Bold", 18 * scale)
+        c.drawString(x, top - 8 * mm * scale, card.passport_id)
+        c.setFont("Helvetica", 8.5 * scale)
+        c.drawString(x, top - 14 * mm * scale, PASSPORT_LINE)
+        if card.passport_url:
+            c.setFillColor(colors.HexColor("#1d4ed8"))
+            c.setFont("Helvetica", 8 * scale)
+            c.drawString(x, top - 19 * mm * scale, card.passport_url)
+        c.setFillColor(colors.grey)
+        c.setFont("Helvetica", 7 * scale)
+        c.drawString(x, top - 24 * mm * scale, "Or type the id on the PartSmith site at /p/<id>. No new photos needed.")
+    footer()
     c.showPage()
     c.save()
     return buf.getvalue()

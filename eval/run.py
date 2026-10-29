@@ -622,6 +622,9 @@ def run_tasks(tasks: Sequence[Task], *, jobs: int, live: bool, log: Any = print)
     base_env = {"PARTSMITH_HOME": str(BENCH_HOME)}
     if not live:
         base_env["PROVIDER_MODE"] = "mock"
+    base_env["PARTSMITH_BUY_LOOKUP"] = (
+        "0"  # the search-grounded price lookup is not scored; it was most of a live job's cost
+    )
     for cfg in dict.fromkeys(t.config for t in tasks):
         group = [t for t in tasks if t.config == cfg]
         env = {**base_env, **CONFIGS[cfg].env}

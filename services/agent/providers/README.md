@@ -27,6 +27,7 @@ Adding a key to `.env` switches the stages that use it to live, with no code cha
 | `steer_plan` | Factory planner | muse-wonder-1.0 | Spark Open chain |
 | `spec_lookup` | Spec finder | muse-wonder-1.0 + `web_search` | mock |
 | `segment` | Segmenter (text prompt) | sam-3.1 → SAM 3 on Modal | SAM 3 on Modal |
+| `mate_points` | Mate pointer (where it fits: points, never sizes) | muse-spark-1.3 | Glimmer chain |
 | `segment_points` | Feature cutter (points/box) | sam-3.1 | mock |
 | `segment_video` | Orbit tracker | sam-3.1 video → SAM 3.1 multiplex on Modal | SAM 3.1 on Modal |
 | `image` | Previews, edits, install cards | muse-image-1.0 | mock |

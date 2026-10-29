@@ -39,7 +39,7 @@ from partsmith_schemas import (
 from partsmith_schemas.common import HAUSDORFF_PASS_MM, IOU_PASS, Evidence
 from partsmith_schemas.measurement import CaptureReport
 from partsmith_schemas.partspec import SlotFeature, ThroughHole, Unknown
-from partsmith_schemas.verification import Verification
+from partsmith_schemas.verification import MateFitResult, Verification
 from pydantic import ValidationError
 
 from services.agent import guards, lessons, mock_brain, prompt_loader, providers, stated
@@ -539,6 +539,9 @@ class FixRun:
         # they fix (knob -> why): the guards never move those, the verifier treats them as stated, not observed.
         self.stated: dict[str, Measured] = {}
         self.locked: dict[str, str] = {}
+        # The "where it fits" photo: its capture report and the measured mates (+ fits once the verdict is in).
+        self.mate_capture: CaptureReport | None = None
+        self.mate_result: MateFitResult | None = None
 
     # ---- events ------------------------------------------------------------------------------------------------------
     def stage_event(self, stage: StageName, status: str, label: str, ms: int | None = None) -> None:
@@ -620,8 +623,8 @@ class FixRun:
         self.plan()
         self.ask_stated_length()
         first = self.build_round(self.strategy, iter_label="first build")
-        if first.score == math.inf and self.strategy == "template" and not self.opts.single_shot:
-            self.switch_strategy()
+        if first.score == math.inf and self.strategy in ("template", "free_code") and not self.opts.single_shot:
+            self.switch_strategy()  # template → free code, or free code with no solid → the family's template
         self.first_values = dict(first.values)
         if not self.opts.single_shot:
             if self.opts.fix_mode == "agent":
@@ -692,7 +695,7 @@ class FixRun:
                 st.label = "No top photo"
                 raise _Finish("failed", {"retake_reason": "A top-view photo of the part on the mat is required."})
             reports: dict[str, CaptureReport] = {}
-            for view in ("top", "side"):
+            for view in ("top", "side", "mating"):
                 if view not in self.photos:
                     continue
                 img = decode_image(self.photos[view])
@@ -714,6 +717,12 @@ class FixRun:
             if side is not None and not side.passed:
                 self.log(f"side photo not usable ({side.retake_reason}); continuing with the top view only", "warn")
                 self.photos.pop("side", None)
+            mating = reports.get("mating")
+            if mating is not None:
+                self.mate_capture = mating
+                if not mating.passed:
+                    self.log(f"mating photo not usable ({mating.retake_reason}); the fit is not checked", "warn")
+                    self.photos.pop("mating", None)
             warns = [c for c in top.checks if c.severity == "warn"]
             if warns:
                 self.triage(top)
@@ -925,6 +934,12 @@ class FixRun:
                     assert sm.thickness is not None
                     labels.append(f"side ({profile}): height {sm.thickness.value:.2f} mm")
             self.surface_notes()
+            if "mating" in self.photos or self.mate_capture is not None:
+                from services.agent import mating as mating_photo
+
+                said_mate = mating_photo.measure(self)
+                if said_mate:
+                    labels.append(said_mate)
             if "orbit" in self.photos:
                 from services.agent import evidence
 
@@ -1426,6 +1441,16 @@ class FixRun:
             if strategy == "template" and self.template is None:
                 fam = [t for t in list_templates() if t.family == self.spec.family]
                 self.template = fam[0] if fam else None
+            if self.template is None:
+                hinted = self.family_template(self.spec.template_hint)
+                if hinted is not None and (self.spec.broken_region is not None or self.side_taller_than_plate()):
+                    # model proposes, code decides: an extruded outline would copy the break (or flatten tall
+                    # features), and the understand stage already named a template of this family
+                    self.log(
+                        f"planner chose free code; code uses the hinted {hinted.name} template instead: the part is "
+                        "broken or taller than its plate, which free code from the outline cannot express"
+                    )
+                    self.template = hinted
             self.strategy = "template" if self.template is not None else "free_code"
             st.label = (
                 f"Template: {self.template.name} ({self.template.title})"
@@ -1935,6 +1960,16 @@ class FixRun:
         side = self.measurements.get("side")
         return side is not None and any("clearly above the stated" in n for n in side.notes)
 
+    def family_template(self, name: str | None) -> Template | None:
+        """The named template if it exists and belongs to the part's family, else None."""
+        if not name or self.spec is None:
+            return None
+        try:
+            tpl = get_template(str(name))
+        except KeyError:
+            return None
+        return tpl if tpl.family == self.spec.family else None
+
     def switch_strategy(self) -> bool:
         """template → free code → ask the human. Returns False when the loop should stop."""
         cur = self.strategy
@@ -1955,6 +1990,17 @@ class FixRun:
             self.log("three rounds without progress: switching from the template to free code")
             self.build_round("free_code", iter_label="strategy switch: free code from the measured outline")
             return True
+        if cur == "free_code" and self.best is None and self.opts.templates and self.spec is not None:
+            fallback = self.family_template(self.spec.template_hint) or next(
+                (t for t in list_templates() if t.family == self.spec.family), None
+            )
+            if fallback is not None and "free_code → template" not in self.switches:
+                # every free-code program failed to produce a solid: the family's template is a known-good program
+                self.switches.append("free_code → template")
+                self.log(f"free code produced no valid solid; switching to the {fallback.name} template")
+                self.template = fallback
+                self.build_round("template", iter_label=f"strategy switch: the {fallback.name} template")
+                return True
         if cur == "free_code":
             self.switches.append("free_code → human")
             self.strategy = "human"
@@ -2071,6 +2117,12 @@ class FixRun:
             v = out.verification
             b.out = out
         v = self.label_unchecked(v, b)
+        if self.mate_result is not None and self.mate_result.mates:
+            from services.agent import mating as mating_photo
+
+            with self.stage("verify", "Fits where it goes: the mating photo against the model") as st:
+                v = mating_photo.check(self, v, b)
+                st.label = "Fits where it goes: " + (mating_photo.summary_label(self.mate_result) or "not checked")
         b.out.verification = v
         self.job.write_json("verification.json", v)
         self.job.write_text("part.py", set_defaults(b.code, b.values))
@@ -2147,6 +2199,9 @@ class FixRun:
                 stop = self.over_budget()
                 if stop:
                     self.log(f"buy-or-print lookup skipped: {stop}", "warn")
+                elif not bop.lookup_enabled():
+                    stop = "PARTSMITH_BUY_LOOKUP=0 (benches never score it); the print side is still computed"
+                    self.log(f"buy-or-print lookup skipped: {stop}")
                 card = bop.job_card(self.job, lookup=stop is None)
                 self.artifact("buy_or_print", card.model_dump_json(indent=2).encode(), ".json", "buy-or-print card")
                 lk = card.lookup
@@ -2178,8 +2233,10 @@ class FixRun:
 
     def repair_card(self, v: Verification) -> bool:
         from services.media.repair_card import KeyDim, PrintSettings, RepairCardData, make_repair_card
+        from services.registry import passport
 
         assert self.spec is not None
+        pid = passport.job_id(self.job.id)  # the card's QR brings the part back (docs/API.md "Repair passport")
         top = self.measurements["top"]
         dims = [
             KeyDim("Length", top.length.value, top.length.source.value, top.length.sigma_mm),
@@ -2204,8 +2261,10 @@ class FixRun:
             origin=self.job.input.origin.value,
             provider_mode=self.summary({})["mode"],
             job_id=self.job.id,
+            passport_id=pid,
+            passport_url=f"{passport.web_base()}/p/{pid}",
         )
-        self.artifact("repair_card", make_repair_card(card), ".pdf", "printable repair card")
+        self.artifact("repair_card", make_repair_card(card), ".pdf", f"printable repair card (passport {pid})")
         return True
 
     def coupon(self) -> bool:

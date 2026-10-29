@@ -140,6 +140,7 @@ class ExecResult:
     warnings: list[str] = field(default_factory=list)
     stage_ms: dict[str, int] = field(default_factory=dict)
     log: str = ""
+    passport: dict[str, Any] | None = None  # the passport mark's report (passport_mark.py) when one was asked for
     workdir: Path | None = None
     clamped: dict[str, float] = field(default_factory=dict)
 
@@ -373,8 +374,12 @@ def run_program(
     outputs: Iterable[str] = ("stl", "step", "view"),
     features: bool = True,
     pool: WarmPool | None = None,
+    passport: str | None = None,
 ) -> ExecResult:
     """Check, then execute a part program in the sandbox and collect its mesh, solid facts, features and artifacts.
+
+    ``passport``: deboss this id into the solid after the program ran (trusted code in the child, never the program;
+    see `passport_mark.py`); the report comes back as ``ExecResult.passport``.
 
     ``params`` are clamped to the PARAMS ranges (missing ones take defaults). Unknown names raise
     ``program.UnknownParamError``. Errors never raise: they come back as ``ExecResult.error`` with a kind and the
@@ -422,6 +427,8 @@ def run_program(
         "mem_mb": int(mem_mb),
         "workdir": str(workdir),
     }
+    if passport:
+        job["passport"] = passport
     reply = (pool or default_pool()).run_job(job)
     result_file = workdir / "result.json"
     log_file = workdir / "log.txt"
@@ -452,6 +459,7 @@ def run_program(
     if res.get("solid_info"):
         base.solid_info = SolidInfo.from_dict(res["solid_info"])
     base.features = res.get("features")
+    base.passport = res.get("passport")
     base.artifacts = {fmt: workdir / name for fmt, name in (res.get("artifacts") or {}).items()}
     if res.get("mesh_file") and (workdir / res["mesh_file"]).exists():
         base.mesh = _load_mesh(workdir / res["mesh_file"])

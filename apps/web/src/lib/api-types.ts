@@ -493,7 +493,12 @@ export const JobSummarySchema = z.object({
 });
 export type JobSummary = z.output<typeof JobSummarySchema>;
 
+/** A repair passport id as shown on a part page or a job (services/registry/passport.py). */
+export const PassportLinkSchema = z.object({ id: z.string(), url: z.string(), qr_svg_url: z.string(), qr_png_url: z.string() });
+export type PassportLink = z.output<typeof PassportLinkSchema>;
+
 export const JobDetailSchema = z.object({
+  passport: z.optional(PassportLinkSchema),
   summary: JobSummarySchema,
   events: z._default(z.array(EventSchema), []),
   partspec: z.nullish(PartSpecSchema),
@@ -664,8 +669,58 @@ export const PartRecordSchema = z.object({
   origin: z.optional(DataOriginSchema),
   verified: z.optional(z.boolean()),
   ship: z.optional(ShipDecisionSchema),
+  passport: z.optional(PassportLinkSchema),
 });
 export type PartRecord = z.output<typeof PartRecordSchema>;
+
+/** GET /passport/{id}: what a printed passport id points at and how to reprint it (docs/API.md "Repair passport"). */
+export const PassportSchema = z.object({
+  id: z.string(),
+  kind: z.enum(["part", "job"]),
+  url: z.string(),
+  title: z.string(),
+  family: z.string(),
+  slug: z.nullish(z.string()),
+  version: z.nullish(z.int()),
+  current_version: z.nullish(z.int()),
+  superseded: z._default(z.boolean(), false),
+  job_id: z.nullish(z.string()),
+  job_status: z.nullish(JobStatusSchema),
+  published: z.boolean(),
+  values: z.record(z.string(), num),
+  preset: z.object({ id: z.string(), title: z.string(), source: z.enum(["job_spec", "default"]), delta_mm: num }),
+  status: z.enum(["verified", "best_effort", "failed", "unknown"]),
+  verified: z.boolean(),
+  max_error_mm: z.nullish(num),
+  threshold_mm: z.nullish(num),
+  ship: z.object({ status: z.enum(["verified", "best_effort", "blocked"]), reason: z.string(), needs_ack: z.boolean(), source: z.string() }),
+  origin: DataOriginSchema,
+  page_url: z.string(),
+  bake_url: z.string(),
+  presets_url: z.string(),
+  qr_svg_url: z.string(),
+  qr_png_url: z.string(),
+  fix_url: z.string(),
+  notes: z._default(z.array(z.string()), []),
+});
+export type Passport = z.output<typeof PassportSchema>;
+
+/** The `passport` object of a bake that asked for `passport=1`: applied, or skipped with the reason. */
+export const PassportMarkSchema = z.object({
+  text: z.string(),
+  applied: z.boolean(),
+  reason: z.string(),
+  style: z._default(z.literal("deboss"), "deboss"),
+  depth_mm: z.nullish(num),
+  text_height_mm: z.nullish(num),
+  font: z._default(z.string(), ""),
+  face: z.nullish(z.record(z.string(), z.unknown())),
+  box_mm: z.nullish(z.record(z.string(), num)),
+  free_needed_mm: z.nullish(z.array(num)),
+  removed_mm3: z.nullish(num),
+  checks: z._default(z.array(z.object({ name: z.string(), passed: z.boolean(), before: z.optional(z.unknown()), after: z.optional(z.unknown()) })), []),
+});
+export type PassportMark = z.output<typeof PassportMarkSchema>;
 
 export const VariantResultSchema = z.object({
   params: z.record(z.string(), num),
@@ -1027,3 +1082,70 @@ export const NarrationRecordSchema = z.looseObject({
   same_placement: z.catch(z._default(z.boolean(), true), true),
 });
 export type NarrationRecord = z.output<typeof NarrationRecordSchema>;
+
+/**
+ * "Fits where it goes" (backend schema MateFitResult, `mate_fit.json`, docs/API.md "Fits where it goes"): the mates code
+ * measured on the "where it fits" photo and how the model fits them. Informational: it never sets `verified`. Every
+ * list is tolerant, so one odd entry from a newer backend never blanks the card.
+ */
+export const MateMeasurementSchema = z.looseObject({
+  id: z.string(),
+  kind: z.string(),
+  ok: z.boolean(),
+  point_px: z.catch(z.nullish(point2), null),
+  point_source: z.catch(z._default(z.string(), "user"), "user"),
+  material: z.catch(z.nullish(z.string()), null),
+  shape: z.catch(z.nullish(z.string()), null),
+  size: z.catch(z.nullish(MeasuredSchema), null),
+  length: z.catch(z.nullish(MeasuredSchema), null),
+  method: z.catch(z._default(z.string(), ""), ""),
+  confidence: z.catch(z.nullish(num), null),
+  retake: z.catch(z.nullish(z.string()), null),
+  reason: z.catch(z.nullish(z.string()), null),
+});
+export type MateMeasurement = z.output<typeof MateMeasurementSchema>;
+
+export const PrintedFitSchema = z.looseObject({
+  preset: z.string(),
+  title: z.string(),
+  clearance_in_effect_mm: num,
+  clearance_source: z.catch(z._default(z.string(), "preset"), "preset"),
+  clearance_label: z.catch(z._default(z.string(), ""), ""),
+  internal: z.boolean(),
+  clearance_mm: num,
+  fit: z.string(),
+  with_preset_clearance_mm: z.catch(z.nullish(num), null),
+  with_preset_fit: z.catch(z.nullish(z.string()), null),
+  text: z.string(),
+});
+export type PrintedFit = z.output<typeof PrintedFitSchema>;
+
+export const MateFitSchema = z.looseObject({
+  mate_id: z.string(),
+  mate_kind: z.string(),
+  model_feature: z.catch(z._default(z.string(), ""), ""),
+  model_feature_source: z.catch(z._default(z.string(), "none"), "none"),
+  model_feature_note: z.catch(z._default(z.string(), ""), ""),
+  model_mm: z.catch(z.nullish(num), null),
+  mate_mm: z.catch(z.nullish(num), null),
+  mate_sigma_mm: z.catch(z.nullish(num), null),
+  clearance_mm: z.catch(z.nullish(num), null),
+  clearance_sigma_mm: z.catch(z.nullish(num), null),
+  fit: z.catch(z.nullish(z.string()), null),
+  fit_low: z.catch(z.nullish(z.string()), null),
+  fit_high: z.catch(z.nullish(z.string()), null),
+  passed: z.catch(z._default(z.boolean(), false), false),
+  printed: z.catch(z.nullish(PrintedFitSchema), null),
+  text: z.catch(z._default(z.string(), ""), ""),
+});
+export type MateFit = z.output<typeof MateFitSchema>;
+
+export const MateFitResultSchema = z.looseObject({
+  view: z.catch(z._default(z.string(), "mating"), "mating"),
+  mates: tolerantArray(MateMeasurementSchema),
+  fits: tolerantArray(MateFitSchema),
+  preset: z.catch(z.nullish(z.string()), null),
+  notes: tolerantArray(z.string()),
+  origin: z.catch(z._default(DataOriginSchema, "real"), "real"),
+});
+export type MateFitResult = z.output<typeof MateFitResultSchema>;

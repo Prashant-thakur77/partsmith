@@ -10,6 +10,10 @@ touching the CAD kernel. Each bake also computes printing facts from the mesh:
 - supports: for each of the six axis-aligned orientations, the area of faces pointing down more steeply than 45 deg
   that are not on the bed. Recommended orientation = least overhang (then more bed contact, then lower height).
   Supports are needed when that area exceeds 4 mm^2 (small horizontal holes count, although they often bridge).
+
+`passport=<id>` (off unless asked for; benches and the job pipeline never pass it) debosses the id into the part after
+the program ran (`passport_mark.py`, trusted code in the sandbox child) and keys the cache on it; the mark's report is
+stored in the manifest (`BakeOutput.passport`, `passport_report(cache_key)`).
 """
 
 from __future__ import annotations
@@ -23,6 +27,7 @@ import time
 from collections.abc import Callable, Iterable, Mapping
 from dataclasses import dataclass, field
 from pathlib import Path
+from typing import Any
 
 import numpy as np
 from partsmith_schemas.registry import BakeResult, PartFacts
@@ -81,6 +86,7 @@ class BakeOutput:
     code_sha: str
     facts_notes: dict[str, str] = field(default_factory=lambda: dict(FACT_NOTES))
     overhang_mm2: dict[str, float] = field(default_factory=dict)
+    passport: dict[str, Any] | None = None
 
     def to_bake_result(self, part_slug: str, url_for: Callable[[str, Path], str]) -> BakeResult:
         """Registry contract: file URLs come from the caller (the API knows its routes)."""
@@ -97,17 +103,18 @@ class BakeOutput:
         )
 
 
-def cache_key(code: str, version: int, params: Mapping[str, float], formats: Iterable[str]) -> str:
-    blob = json.dumps(
-        {
-            "code_sha": code_sha(code),
-            "version": int(version),
-            "params": [[k, float(params[k])] for k in sorted(params)],
-            "formats": sorted(set(formats)),
-        },
-        separators=(",", ":"),
-    )
-    return hashlib.sha256(blob.encode()).hexdigest()
+def cache_key(
+    code: str, version: int, params: Mapping[str, float], formats: Iterable[str], passport: str | None = None
+) -> str:
+    doc: dict[str, Any] = {
+        "code_sha": code_sha(code),
+        "version": int(version),
+        "params": [[k, float(params[k])] for k in sorted(params)],
+        "formats": sorted(set(formats)),
+    }
+    if passport:  # only marked bakes carry the key, so every unmarked key stays what it was
+        doc["passport"] = passport
+    return hashlib.sha256(json.dumps(doc, separators=(",", ":")).encode()).hexdigest()
 
 
 def overhang_areas(mesh: Mesh) -> tuple[dict[str, float], dict[str, float], dict[str, float]]:
@@ -166,7 +173,19 @@ def _from_manifest(d: Path, t0: float) -> BakeOutput:
         code_sha=m["code_sha"],
         facts_notes=m.get("facts_notes", dict(FACT_NOTES)),
         overhang_mm2=m.get("overhang_mm2", {}),
+        passport=m.get("passport"),
     )
+
+
+def passport_report(key: str, root: Path | None = None) -> dict[str, Any] | None:
+    """The passport mark's report stored with a bake (None for an unmarked or unknown bake)."""
+    if len(key) != 64 or any(c not in "0123456789abcdef" for c in key):
+        return None
+    f = (root or bakes_dir()) / key[:2] / key / "manifest.json"
+    if not f.exists():
+        return None
+    rep = json.loads(f.read_text()).get("passport")
+    return rep if isinstance(rep, dict) else None
 
 
 def bake(
@@ -178,8 +197,10 @@ def bake(
     pool: WarmPool | None = None,
     timeout_s: float = 20.0,
     root: Path | None = None,
+    passport: str | None = None,
 ) -> BakeOutput:
-    """Build (or fetch from cache) the requested formats for `params` (clamped to PARAMS ranges).
+    """Build (or fetch from cache) the requested formats for `params` (clamped to PARAMS ranges). `passport`
+    debosses that id into the part where it is safe (see the module docstring); unset, nothing changes.
 
     Raises BakeError when the program fails, program.UnknownParamError for unknown parameter names and ValueError
     for unknown formats.
@@ -191,14 +212,14 @@ def bake(
         raise ValueError(f"unknown format(s) {bad}; choose from {list(FORMATS)}")
     specs = parse_params(code)
     values, changed = clamp(params or {}, specs)
-    key = cache_key(code, version, values, fmts)
+    key = cache_key(code, version, values, fmts, passport)
     base = root or bakes_dir()
     final = base / key[:2] / key
     if (final / "manifest.json").exists():
         return _from_manifest(final, t0)
 
     res = run_program(code, values, outputs=[f for f in fmts if f != "py"], features=False, pool=pool,
-                      timeout_s=timeout_s)  # fmt: skip
+                      timeout_s=timeout_s, passport=passport)  # fmt: skip
     try:
         if not res.ok or res.mesh is None or res.solid_info is None:
             raise BakeError(res.error or ExecError(kind="runtime", message="the program produced no mesh"))
@@ -229,6 +250,8 @@ def bake(
             "warnings": res.warnings,
             "versions": res.versions,
         }
+        if passport:
+            manifest["passport"] = res.passport or {"text": passport, "applied": False, "reason": "no report"}
         (tmp / "manifest.json").write_text(json.dumps(manifest, indent=1))
         try:
             os.replace(tmp, final)

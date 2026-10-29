@@ -1,0 +1,16 @@
+{
+  "id": "j_261029_dcc0a25b",
+  "kind": "fix",
+  "status": "done",
+  "created_at": 1793270571.471626,
+  "updated_at": 1793271032.4755871,
+  "title": "L-bracket (synthetic, clean) (synthetic sample)",
+  "origin": "synthetic",
+  "provider_mode": "live",
+  "verified": false,
+  "max_error_mm": 3.103382963335193,
+  "iterations": 6,
+  "cost_usd": 0.329208,
+  "part_slug": null,
+  "is_replay": false
+}

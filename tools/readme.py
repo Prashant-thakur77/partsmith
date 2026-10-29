@@ -328,6 +328,18 @@ def _photo_counts(rep: dict[str, Any]) -> tuple[int, int]:
     return photos, parts
 
 
+def _replay_modes() -> tuple[int, int]:
+    """(live, total) over the committed demo replays, from each replay's own summary."""
+    root = ROOT / "data" / "replays"
+    modes = []
+    for f in sorted(root.glob("j_*/summary.json")):
+        try:
+            modes.append(str(json.loads(f.read_text()).get("provider_mode", "")))
+        except (OSError, ValueError):
+            continue
+    return sum(m == "live" for m in modes), len(modes)
+
+
 def status_line() -> str:
     """Provider mode, report date and commit, real-data counts and a plain honesty sentence, all from the reports."""
     rep = _load("report.json")
@@ -343,11 +355,16 @@ def status_line() -> str:
         f"real parts with ruler ground truth: {parts} · real repairs logged: {repairs}"
     )
     on = "synthetic photos" if photos == 0 else f"synthetic photos and {photos} real photos"
+    live, total = _replay_modes()
+    replays = f"{live} of the {total} stored demo replays are live model runs" if total else "no stored replays yet"
     if mode == "mock":
+        pending = (
+            "a live bench run is pending" if live else "live runs are pending (no live model call has been made yet)"
+        )
         body = (
-            f"All numbers below come from deterministic mock models on {on}; live runs are pending (no live model call "
-            "has been made yet). They show that the pipeline, verifier and scorer work end to end; they do not measure "
-            "any model."
+            f"The bench numbers below come from deterministic mock models on {on}; {pending}. They show that the "
+            f"pipeline, verifier and scorer work end to end; they do not measure any model. {replays.capitalize()} "
+            "(each replay is labelled live or mock)."
         )
     else:
         rows = [r for t in (rep.get("tables") or {}).values() if isinstance(t, dict) for r in t.get("rows") or []]

@@ -103,6 +103,9 @@ def test_spark_open_id_selection() -> None:
     assert chat.pick_spark_open_id(["x/muse-spark-open"], "x/muse-spark-open") == "x/muse-spark-open"
     assert chat.pick_spark_open_id([], "custom/id") == "custom/id"
     assert chat.pick_spark_open_id([], None) == "meta-models/muse-spark-open"
+    both = ["meta-models/muse-spark-open", "meta-models/muse-spark-open-1026", "zai-org/GLM-5.2"]
+    assert chat.pick_spark_open_id(both, None) == "meta-models/muse-spark-open-1026"  # the hackathon deployment
+    assert chat.pick_spark_open_id(both, "meta-models/muse-spark-open") == "meta-models/muse-spark-open"
 
 
 def test_glimmer_llamacpp_shape(monkeypatch: pytest.MonkeyPatch, hub: FakeHub) -> None:

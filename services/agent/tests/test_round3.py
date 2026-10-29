@@ -102,3 +102,33 @@ def test_intent_for_models_carries_narrated_words_only() -> None:
     run.narration = providers.Narration("holds the rail", "", "left tab snapped", [], mode="live")
     text = run.intent_for_models()
     assert "function: holds the rail" in text and "break: left tab snapped" in text and "never a measurement" in text
+
+
+def test_the_price_lookup_can_be_switched_off_for_benches(monkeypatch: pytest.MonkeyPatch) -> None:
+    from services.agent import buy_or_print as bop
+
+    monkeypatch.delenv("PARTSMITH_BUY_LOOKUP", raising=False)
+    assert bop.lookup_enabled()
+    monkeypatch.setenv("PARTSMITH_BUY_LOOKUP", "0")
+    assert not bop.lookup_enabled()
+    monkeypatch.setenv("PARTSMITH_BUY_LOOKUP", "1")
+    assert bop.lookup_enabled()
+
+
+def test_free_code_that_never_builds_a_solid_falls_back_to_the_family_template() -> None:
+    # live, 2026-10-29: the planner chose free code for a broken latch and every program came back with no solid
+    from partsmith_schemas.partspec import Family
+
+    run = FixRun.__new__(FixRun)
+    run.spec = type("S", (), {"family": Family.latch, "template_hint": "cupboard_latch", "broken_region": None})()
+    run.opts = RunOptions()
+    run.strategy, run.best, run.switches, run.template = "free_code", None, [], None
+    logs: list[str] = []
+    built: list[str] = []
+    run.log = lambda msg, level="info": logs.append(msg)  # type: ignore[method-assign]
+    run.build_round = lambda strategy, **kw: built.append(strategy)  # type: ignore[method-assign,assignment]
+    assert run.family_template("cupboard_latch") is not None and run.family_template("hook") is None
+    assert run.family_template("no_such_template") is None
+    assert run.switch_strategy() is True
+    assert built == ["template"] and run.template is not None and run.template.name == "cupboard_latch"
+    assert run.switches == ["free_code → template"] and "no valid solid" in logs[-1]

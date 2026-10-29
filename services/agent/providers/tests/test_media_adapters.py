@@ -26,6 +26,23 @@ def _sam_text(conf: str = ";c=0.87") -> str:
     return f"<0f>3<|box;x1=10;y1=20;x2=17;y2=25;w=64;h=48{conf}|><|mask;x=0;y=0;data=3,4,{payload}|>"
 
 
+# A real sam-3.1 reply (2026-10-29, smoke prompt "black square" on a 128 px image with a 64 px square at 32..95):
+# the live API also puts the confidence in the mask token, which the parser library rejects unless it is stripped.
+LIVE_SAM_REPLY = (
+    "<0f>0<|box;x1=32;y1=32;x2=95;y2=95;w=128;h=128;c=0.7730495929718018|>"
+    "<|mask;x=0;y=0;c=0.7730495929718018;data=64,64,!!!!!(y:U@_p.y|>\n"
+)
+
+
+def test_parse_masks_reads_a_recorded_live_reply_with_confidence_in_the_mask_token() -> None:
+    ((mask, score),) = sam_parse.parse_masks(LIVE_SAM_REPLY, 128, 128)
+    assert score == pytest.approx(0.7730495929718018)
+    ys, xs = np.nonzero(mask)
+    assert [int(v) for v in (xs.min(), xs.max(), ys.min(), ys.max())] == [32, 95, 32, 95] and mask.sum() == 64 * 64
+    clean, _ = sam_parse.split_confidence(LIVE_SAM_REPLY)
+    assert "c=" not in clean and "data=64,64,!!!!!(y:U@_p.y" in clean
+
+
 def test_parse_masks_pastes_box_local_raster_into_full_frame() -> None:
     ((mask, score),) = sam_parse.parse_masks(_sam_text(), 64, 48)
     assert mask.shape == (48, 64) and score == pytest.approx(0.87)

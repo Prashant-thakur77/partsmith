@@ -18,6 +18,7 @@ import { FitPresets } from "@/components/jobs/fit-presets";
 import { ImpactPanel } from "@/components/jobs/impact-panel";
 import { ProgressLines } from "@/components/jobs/progress-lines";
 import { JobExtras } from "@/components/jobs/job-extras";
+import { MateFitCard } from "@/components/jobs/mate-fit-card";
 import { PhotoPanel, imagesByView } from "@/components/jobs/photo-panel";
 import { QuestionPanel } from "@/components/jobs/question-panel";
 import { ResidualTable } from "@/components/jobs/residual-table";
@@ -470,7 +471,7 @@ export function WorkspaceClient({ id }: { id: string }) {
                 <ScanLine aria-hidden /> {t("ws.fitCheck")}
               </Link>
             </Button>
-            <ExportMenu artifacts={artifacts} verification={verification} />
+            <ExportMenu artifacts={artifacts} verification={verification} passport={done ? d?.passport : undefined} />
             <LangToggle />
             <JobActions id={id} summary={sum} />
           </div>
@@ -729,6 +730,7 @@ export function WorkspaceClient({ id }: { id: string }) {
               }}
             />
             {measurements ? <MeasurementsCard m={measurements} items={itemsById} tinted={tintBySource} onSelect={selectFromCard} /> : null}
+            <MateFitCard jobId={id} finished={!!done} overlay={artifacts.mate_overlay} className="border-t border-border pt-4" />
             {artifacts.narration ? <NarrationPanel url={artifacts.narration} /> : null}
             {d.partspec?.features.length ? (
               <div className="space-y-1.5">

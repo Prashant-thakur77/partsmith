@@ -1159,6 +1159,13 @@ def variant(req: ModelRequest) -> dict[str, Any]:
     return {"edits": edits, "not_applied": missed, "confidence": conf}
 
 
+def mate_points(req: ModelRequest) -> dict[str, Any]:
+    """The mating photo's pointer: the code's own pick of the most prominent object (labelled, see mating.py)."""
+    from services.agent.mating import mate_points_mock
+
+    return mate_points_mock(req)
+
+
 HANDLERS = {
     "understand": understand,
     "plan": plan,
@@ -1167,6 +1174,7 @@ HANDLERS = {
     "judge": judge,
     "capture_triage": capture_triage,
     "variant": variant,
+    "mate_points": mate_points,
 }
 
 

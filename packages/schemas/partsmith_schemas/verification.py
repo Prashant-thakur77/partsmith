@@ -7,6 +7,7 @@ from typing import Literal
 from pydantic import Field
 
 from .common import HAUSDORFF_PASS_MM, IOU_PASS, DataOrigin, Source, Strict
+from .measurement import CaptureReport, MateKind, MateMeasurement
 
 
 class ParamSpec(Strict):
@@ -109,3 +110,56 @@ class Verification(Strict):
     versions: dict[str, str] = Field(default_factory=dict)
     hashes: dict[str, str] = Field(default_factory=dict)
     ms: int = 0
+
+
+FitClass = Literal["does not fit", "press fit", "sliding fit", "loose fit", "very loose"]
+
+
+class PrintedFit(Strict):
+    """The same fit after printing on one printer + material preset. Internal fits (a hole or gap in the model)
+    print about the preset's clearance small on FDM; outer sizes print as modelled and no preset changes them."""
+
+    preset: str
+    title: str
+    clearance_in_effect_mm: float  # what the preset (or the device's coupon learning) says internal fits lose
+    clearance_source: Literal["learned", "preset"]
+    clearance_label: str = ""
+    internal: bool  # the model side is a hole or gap (it prints undersize), not an outer size
+    clearance_mm: float  # printed as exported (no preset applied)
+    fit: FitClass
+    with_preset_clearance_mm: float | None = None  # with the preset applied at export (opens internal fit knobs)
+    with_preset_fit: FitClass | None = None
+    text: str
+
+
+class MateFit(Strict):
+    """One measured mate against the model's matching feature. Informational: it never sets `verified`."""
+
+    mate_id: str
+    mate_kind: MateKind
+    model_feature: str = ""  # e.g. "shaft bore (interface shaft_bore)", "hole_1", "outer width across the footprint"
+    model_feature_source: Literal["interface", "nearest_hole", "outer_size", "plate_thickness", "none"] = "none"
+    model_feature_note: str = ""  # how the model feature was chosen, in plain words
+    model_mm: float | None = None  # measured on the CAD solid (ray casts / B-rep features)
+    mate_mm: float | None = None
+    mate_sigma_mm: float | None = None
+    clearance_mm: float | None = None  # diametral: gap minus what goes into it
+    clearance_sigma_mm: float | None = None
+    fit: FitClass | None = None
+    fit_low: FitClass | None = None  # the class at clearance − σ
+    fit_high: FitClass | None = None  # the class at clearance + σ
+    passed: bool = False
+    printed: PrintedFit | None = None
+    text: str = ""
+
+
+class MateFitResult(Strict):
+    """mate_fit.json: the mating photo's measured mates and how the model fits them (code only)."""
+
+    view: Literal["mating"] = "mating"
+    capture: CaptureReport | None = None
+    mates: list[MateMeasurement] = Field(default_factory=list)
+    fits: list[MateFit] = Field(default_factory=list)
+    preset: str | None = None
+    notes: list[str] = Field(default_factory=list)
+    origin: DataOrigin = DataOrigin.real

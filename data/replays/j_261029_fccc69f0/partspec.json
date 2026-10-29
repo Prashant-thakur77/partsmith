@@ -1,0 +1,62 @@
+{
+  "family": "custom",
+  "units": "mm",
+  "title": "",
+  "base_profile": {
+    "kind": "polyline",
+    "points_mm": [
+      [
+        -15.949,
+        11.765
+      ],
+      [
+        -15.902,
+        -11.804
+      ],
+      [
+        -14.649,
+        -12.034
+      ],
+      [
+        15.689,
+        -12.001
+      ],
+      [
+        15.991,
+        -11.76
+      ],
+      [
+        15.95,
+        7.857
+      ],
+      [
+        11.959,
+        11.974
+      ],
+      [
+        -15.486,
+        12.009
+      ]
+    ],
+    "source": "measured",
+    "sigma_mm": 0.093
+  },
+  "thickness": {
+    "value": 2.1,
+    "source": "user_stated",
+    "sigma_mm": 0.3,
+    "evidence": null,
+    "bound_mm": null
+  },
+  "features": [],
+  "broken_region": null,
+  "fit": {
+    "clearance_mm": 0.2,
+    "material": "PLA",
+    "printer": "FDM_0_4"
+  },
+  "unknowns": [],
+  "intent": "",
+  "refusal": "This is a full-size SD electronic memory card, not a rigid mechanical part suitable for FDM printing.",
+  "template_hint": "spacer"
+}

@@ -22,12 +22,13 @@ import numpy as np
 
 from . import meta, mocks, pricing, replay, retry
 from .base import ImageResult, Usage
-from .config import settings
+from .config import log, settings
 from .core import Dispatched, Outcome, dispatch, retry_opts
 from .media import decode_image_rgb, encode_png, sha256
 from .routing import Route
 
 MAX_PANELS = 6
+STALE_RESPONSE = "referenced response not found"  # live API text when a stored image response cannot be continued
 COLOURS = {
     "black": (25, 25, 28), "white": (235, 235, 230), "red": (190, 35, 35), "blue": (40, 80, 190),
     "green": (40, 140, 70), "yellow": (225, 190, 40), "orange": (225, 120, 30), "grey": (128, 128, 128),
@@ -298,13 +299,27 @@ def install_card(photo_png: bytes, render_png: bytes, steps: Sequence[str]) -> l
         ) -> Outcome[tuple[bytes, str, str]]:
             timeout = max(settings().timeout_s, 300.0)
             anchored = k > 0 and bool(prev_id) and not prev_id.startswith("mock-img-")
-            refs = [] if anchored else [photo_png, render_png]  # no stored previous panel: re-send the references
-            value = retry.with_retries(
-                lambda: meta.image_generate(
-                    route, prompt, refs, timeout, store=True, previous_response_id=prev_id if anchored else None
-                ),
-                **retry_opts(route),
-            )
+
+            def panel(anchor: bool) -> tuple[bytes, str, str]:
+                refs = [] if anchor else [photo_png, render_png]  # no stored previous panel: re-send the references
+                return retry.with_retries(
+                    lambda: meta.image_generate(
+                        route, prompt, refs, timeout, store=True, previous_response_id=prev_id if anchor else None
+                    ),
+                    **retry_opts(route),
+                )
+
+            try:
+                value = panel(anchored)
+            except Exception as exc:
+                # the live API can answer "referenced response not found or expired" for a panel it just stored:
+                # redo this panel from the photo and render instead of losing the whole card
+                if not (anchored and STALE_RESPONSE in str(exc).lower()):
+                    raise
+                log.info(
+                    "install card panel %d: stored previous panel unavailable (%s); re-sending references", k + 1, exc
+                )
+                value = panel(False)
             return Outcome(value, Usage(), route.model, pricing.image_cost_usd(route.provider))
 
         def mock(k: int = k, step: str = step) -> tuple[bytes, str, str]:

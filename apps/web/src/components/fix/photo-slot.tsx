@@ -3,7 +3,9 @@
 import { useMutation } from "@tanstack/react-query";
 import { AlertTriangle, Camera, CheckCircle2, ImagePlus, RefreshCw, Trash2, XCircle } from "lucide-react";
 import * as React from "react";
+import { radioGroupKeys } from "@/lib/a11y";
 import { api } from "@/lib/api";
+import { MATE_TAP_KINDS, TOP_TAP_KINDS, type AnyTapKind } from "@/lib/mate-fit";
 import type { PhotoInfo } from "@/lib/photo-checks";
 import { cn } from "@/lib/utils";
 import { Badge } from "../ui/badge";
@@ -32,6 +34,7 @@ export function PhotoSlot({
   points,
   onPoints,
   pointsHint,
+  tapKinds = TOP_TAP_KINDS,
 }: {
   view: "top" | "side" | "mating";
   title: string;
@@ -47,9 +50,11 @@ export function PhotoSlot({
   points?: TapPoint[];
   onPoints?: (p: TapPoint[]) => void;
   pointsHint?: string;
+  /** What a tap can mark on this photo (the "where it fits" photo marks a socket, shaft or slot). */
+  tapKinds?: readonly TapKind[];
 }) {
   const [natural, setNatural] = React.useState<{ w: number; h: number } | null>(null);
-  const [tapKind, setTapKind] = React.useState<TapKind>("hole");
+  const [tapKind, setTapKind] = React.useState<TapKind>(tapKinds[0] ?? "hole");
   const camRef = React.useRef<HTMLInputElement>(null);
   const fileRef = React.useRef<HTMLInputElement>(null);
   const [busy, setBusy] = React.useState(false);
@@ -155,7 +160,7 @@ export function PhotoSlot({
           <div className="min-w-0 space-y-3">
             {onPoints ? (
               <div className="space-y-1.5">
-              <TapKindPicker value={tapKind} onChange={setTapKind} />
+              <TapKindPicker value={tapKind} onChange={setTapKind} kinds={tapKinds} />
               <p className="flex flex-wrap items-center gap-x-2 text-[12px] text-muted">
                 <span>{pointsHint}</span>
                 {points?.length ? (
@@ -199,23 +204,27 @@ export function PhotoSlot({
   );
 }
 
-export const TAP_KINDS = ["hole", "slot", "tab", "broken_edge", "exclude"] as const;
-export type TapKind = (typeof TAP_KINDS)[number];
-export type TapPoint = { x: number; y: number; kind: TapKind };
+export const TAP_KINDS = TOP_TAP_KINDS;
+export { MATE_TAP_KINDS };
+export type TapKind = AnyTapKind;
+export type TapPoint<K extends TapKind = TapKind> = { x: number; y: number; kind: K };
 const TAP_LABEL: Record<TapKind, string> = {
   hole: "Hole",
   slot: "Slot",
   tab: "Tab",
   broken_edge: "Broken edge",
-  exclude: "Not the part (finger, glare)",
+  exclude: "Not it (finger, glare)",
+  mate_hole: "Socket it goes into",
+  mate_peg: "Shaft or pin it goes onto",
+  mate_slot: "Slot or panel edge",
 };
-const TAP_MARK: Record<TapKind, string> = { hole: "H", slot: "S", tab: "T", broken_edge: "B", exclude: "×" };
+const TAP_MARK: Record<TapKind, string> = { hole: "H", slot: "S", tab: "T", broken_edge: "B", exclude: "×", mate_hole: "O", mate_peg: "P", mate_slot: "S" };
 const MAX_TAPS = 32;
 
-function TapKindPicker({ value, onChange }: { value: TapKind; onChange: (k: TapKind) => void }) {
+function TapKindPicker({ value, onChange, kinds }: { value: TapKind; onChange: (k: TapKind) => void; kinds: readonly TapKind[] }) {
   return (
-    <div role="radiogroup" aria-label="What a tap marks" className="inline-flex flex-wrap gap-1">
-      {TAP_KINDS.map((k) => (
+    <div role="radiogroup" onKeyDown={radioGroupKeys} aria-label="What a tap marks" className="inline-flex flex-wrap gap-1">
+      {kinds.map((k) => (
         <button
           key={k}
           type="button"

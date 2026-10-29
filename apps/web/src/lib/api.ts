@@ -10,6 +10,7 @@ import {
   BakeResultSchema,
   BenchReportSchema,
   BuyOrPrintSchema,
+  MateFitResultSchema,
   CouponReportResultSchema,
   JobImpactSchema,
   LearnedClearanceSchema,
@@ -29,6 +30,7 @@ import {
   PartCardSchema,
   PartListSchema,
   PartRecordSchema,
+  PassportSchema,
   PreviewResultSchema,
   ReplaySchema,
   StatsSchema,
@@ -43,6 +45,7 @@ import {
   type Measurements,
 } from "./api-types";
 import { apiOrigin } from "./api-origin";
+import { pointsPayload, type MateTapKind, type Tap, type TopTapKind } from "./mate-fit";
 
 export const API_PREFIX = "/api/v1";
 
@@ -174,7 +177,9 @@ export type FixJobInput = {
   /** Optional 6–8 s orbit clip ("walk around it", MP4/MOV/WebM); only sent when the server accepts an `orbit` field. */
   orbit?: File | null;
   /** Tap-to-point feature hints on the top photo (image pixels + kind); a tap is a segmenter prompt, never a dimension. */
-  points?: { x: number; y: number; kind: "hole" | "slot" | "tab" | "broken_edge" | "exclude" }[] | null;
+  points?: Tap<TopTapKind>[] | null;
+  /** Taps on the "where it fits" photo: the socket, shaft or slot the part fits (sent as `points.mating`). */
+  matingPoints?: Tap<MateTapKind>[] | null;
   /** Optional voice note about the walk-around clip (the narration steers; it never sets a number). */
   narration?: File | null;
   /** Optional city for nearby print shops on the buy-or-print card. */
@@ -212,7 +217,8 @@ export const api = {
     if (input.familyHint) fd.set("family_hint", input.familyHint);
     if (input.screenPxPerMm != null) fd.set("screen_px_per_mm", String(input.screenPxPerMm));
     if (input.orbit) fd.set("orbit", input.orbit);
-    if (input.points?.length) fd.set("points", JSON.stringify({ top: input.points }));
+    const points = pointsPayload(input.points, input.mating ? input.matingPoints : null);
+    if (points) fd.set("points", points);
     if (input.narration) fd.set("narration", input.narration);
     if (input.city) fd.set("city", input.city);
     return request(JobSummarySchema, "/jobs/fix", { method: "POST", body: fd });
@@ -334,6 +340,11 @@ export const api = {
   jobBuyOrPrintLookup: (id: string, city: string | null) =>
     request(BuyOrPrintSchema, `/jobs/${encodeURIComponent(id)}/buy-or-print`, json(city ? { city } : {})),
   partBuyOrPrint: (slug: string) => request(BuyOrPrintSchema, `/parts/${encodeURIComponent(slug)}/buy-or-print`),
+  /** The job's "fits where it goes" record; `fitSession` recomputes the printer note with this device's learned clearance. */
+  jobMateFit: (id: string, fitSession?: string | null) =>
+    request(MateFitResultSchema, `/jobs/${encodeURIComponent(id)}/mate-fit${fitSession ? `?fit_session=${encodeURIComponent(fitSession)}` : ""}`),
+  /** Repair passport: what a printed id points at (404 `passport_not_found` + closest ids otherwise). */
+  passport: (id: string) => request(PassportSchema, `/passport/${encodeURIComponent(id)}`),
   /** The job's `narration` artifact (an `/api/v1/blobs/...json` URL from the job detail). */
   narration: (artifact: string) => {
     if (!artifact.startsWith(`${API_PREFIX}/`)) return Promise.reject(new Error("narration artifact is not an API URL"));

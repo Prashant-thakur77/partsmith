@@ -7,6 +7,7 @@ import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import * as React from "react";
 import { Container, Fact, Section } from "@/components/layout/page";
 import { OpenInSlicer } from "@/components/open-in-slicer";
+import { PassportShare } from "@/components/passport/passport-share";
 import { ArView } from "@/components/registry/ar-view";
 import { KnobPanel } from "@/components/registry/knob-panel";
 import { useLivePart } from "@/components/registry/live-part";
@@ -449,6 +450,7 @@ export function PartClient({ slug, withDetails = true }: { slug: string; withDet
                 </a>
               ) : null}
               <OpenInSlicer fileUrl={dl("3mf")} ship={ship} ack={gateAck} className="border-t border-border pt-3" />
+              {part.passport ? <PassportShare passport={part.passport} title={part.title} className="border-t border-border pt-3" /> : null}
               <p className="pt-1 text-[11px] text-subtle">Downloads use the knob values above.</p>
               <div className="border-t border-border pt-3">
                 <FitFeedback slug={slug} reports={part.fit_reports.length} />

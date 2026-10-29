@@ -317,6 +317,21 @@ def execute(job: dict[str, Any], workdir: Path) -> dict[str, Any]:
     if info["n_solids"] == 0 or info["volume_mm3"] <= 0:
         res["error"] = _error("invalid_solid", "the program produced no solid with positive volume", None, code)
         return res
+    if job.get("passport") and info["valid"]:
+        # Trusted post-processing after the program returned: deboss the passport id where it touches nothing
+        # measured, re-measure, and undo it when anything changed (passport_mark.py).
+        from services.geom_worker import passport_mark
+
+        try:
+            shape, res["passport"] = passport_mark.emboss(
+                shape, str(job["passport"]), probes=_interface_probes(ns, params, [])
+            )
+        except Exception as e:
+            res["passport"] = {"text": str(job["passport"]), "applied": False,
+                               "reason": f"the mark failed: {type(e).__name__}: {e}"[:300]}  # fmt: skip
+        info = solid_info(shape)
+        res["solid_info"] = info
+        lap("passport")
 
     try:
         verts, tris = export.tessellate(shape, MESH_TOL_MM, MESH_ANG_RAD)

@@ -344,10 +344,12 @@ def _program(job: Job) -> tuple[str, dict[str, float]]:
     return code, values
 
 
-def _bake_result(code: str, params: dict[str, float], formats: tuple[str, ...], slug: str) -> BakeResult:
+def _bake_result(
+    code: str, params: dict[str, float], formats: tuple[str, ...], slug: str, passport: str | None = None
+) -> BakeResult:
     from services.geom_worker.bake import bake
 
-    bo = bake(code, params, formats)
+    bo = bake(code, params, formats, passport=passport)
     exts = {"stl": ".stl", "step": ".step", "3mf": ".3mf", "glb": ".glb", "view": ".json", "py": ".py"}
 
     def url_for(fmt: str, path: Path) -> str:
@@ -364,11 +366,14 @@ def job_params(job_id: str) -> tuple[list[ParamSpec], dict[str, float]]:
     return specs, {s.name: float(values.get(s.name, s.default)) for s in specs}
 
 
-def bake_job(job_id: str, params: dict[str, float], formats: tuple[str, ...] = ("view",)) -> BakeResult:
-    """Re-bake the job's current part program with `params` (clamped to PARAMS). Does not change the job."""
+def bake_job(
+    job_id: str, params: dict[str, float], formats: tuple[str, ...] = ("view",), *, passport: str | None = None
+) -> BakeResult:
+    """Re-bake the job's current part program with `params` (clamped to PARAMS). Does not change the job.
+    `passport` debosses that id where it is safe (geom_worker/passport_mark.py); the report is stored with the bake."""
     job = _job(job_id)
     code, values = _program(job)
-    return _bake_result(code, {**values, **params}, tuple(formats), job.summary.part_slug or job.id)
+    return _bake_result(code, {**values, **params}, tuple(formats), job.summary.part_slug or job.id, passport)
 
 
 def edit(

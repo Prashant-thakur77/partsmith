@@ -1,0 +1,278 @@
+{
+  "verified": false,
+  "status": "best_effort",
+  "reasons": [
+    "top: refined in the photo frame by +0.23 deg, (+0.05, +0.03) mm on the mat",
+    "side: refined in the photo frame by -0.07 deg, (-0.10, -0.05) mm on the mat",
+    "top view (photo frame): IoU 0.982 (needs >= 0.97), Hausdorff 0.37 mm (needs <= 0.5 mm)",
+    "side view (photo frame): IoU 0.970 (not gated), mean contour distance 0.19 mm (needs <= 0.15 mm), Hausdorff 0.43 mm (needs <= 0.5 mm) (worst at x=-14.1, y=-4.0 mm) - fails",
+    "side view: small silhouette (15.8 mm across, under 20 mm), so IoU is reported but not gated (it shrinks with size for the same edge error); gated on Hausdorff <= 0.5 mm and mean contour distance <= 0.15 mm, plus its part tests.",
+    "top view: length, width and holes compared like for like (model rendered with the photo's camera and measured with the same metrology code)."
+  ],
+  "thresholds": {
+    "hausdorff_mm": 0.5,
+    "iou": 0.97
+  },
+  "views": [
+    {
+      "view": "top",
+      "iou": 0.9818728092138207,
+      "hausdorff_mm": 0.37442249258481436,
+      "hd95_mm": 0.2868235656848551,
+      "mean_mm": 0.13569887916466156,
+      "worst_point_mm": [
+        5.5785540254954356,
+        -15.714092514765142
+      ],
+      "over_area_mm2": 6.529181051311807,
+      "under_area_mm2": 7.374133893246276
+    },
+    {
+      "view": "side",
+      "iou": 0.9703125,
+      "hausdorff_mm": 0.4334954377702554,
+      "hd95_mm": 0.41146927594048166,
+      "mean_mm": 0.189689296367679,
+      "worst_point_mm": [
+        -14.107753606884984,
+        -3.9988539061276356
+      ],
+      "over_area_mm2": 3.5951873108809442,
+      "under_area_mm2": 14.665516555276723
+    }
+  ],
+  "residuals": [
+    {
+      "feature_id": "outline",
+      "quantity": "width",
+      "measured_mm": 29.702,
+      "model_mm": 29.947,
+      "delta_mm": 0.24499999999999744,
+      "tol_mm": 0.3,
+      "passed": true
+    },
+    {
+      "feature_id": "outline",
+      "quantity": "length",
+      "measured_mm": 29.79,
+      "model_mm": 29.956,
+      "delta_mm": 0.16600000000000037,
+      "tol_mm": 0.3,
+      "passed": true
+    },
+    {
+      "feature_id": "side",
+      "quantity": "thickness",
+      "measured_mm": 15.823,
+      "model_mm": 15.931,
+      "delta_mm": 0.10799999999999876,
+      "tol_mm": 0.3,
+      "passed": true
+    },
+    {
+      "feature_id": "plate",
+      "quantity": "thickness",
+      "measured_mm": 16.0,
+      "model_mm": 16.0,
+      "delta_mm": 0.0,
+      "tol_mm": 0.3,
+      "passed": true
+    }
+  ],
+  "tests": [
+    {
+      "id": "bbox.x",
+      "description": "length (long side of the footprint) == 29.79 +/- 0.3 mm",
+      "value": 29.956,
+      "expected": 29.79,
+      "tol": 0.3,
+      "passed": true,
+      "priority": "P0"
+    },
+    {
+      "id": "bbox.y",
+      "description": "width (short side of the footprint) == 29.70 +/- 0.3 mm",
+      "value": 29.947,
+      "expected": 29.702,
+      "tol": 0.3,
+      "passed": true,
+      "priority": "P0"
+    },
+    {
+      "id": "side.thickness",
+      "description": "side-view thickness (short side of the side silhouette) == 15.82 +/- 0.3 mm",
+      "value": 15.931,
+      "expected": 15.823,
+      "tol": 0.3,
+      "passed": true,
+      "priority": "P0"
+    },
+    {
+      "id": "thickness",
+      "description": "plate thickness == 16.00 +/- 0.3 mm",
+      "value": 16.0,
+      "expected": 16.0,
+      "tol": 0.3,
+      "passed": true,
+      "priority": "P0"
+    },
+    {
+      "id": "valid",
+      "description": "the solid passes the OCCT validity check",
+      "value": 1.0,
+      "expected": null,
+      "tol": null,
+      "passed": true,
+      "priority": "P0"
+    },
+    {
+      "id": "single_solid",
+      "description": "exactly one solid body",
+      "value": 1.0,
+      "expected": null,
+      "tol": null,
+      "passed": true,
+      "priority": "P0"
+    },
+    {
+      "id": "watertight",
+      "description": "the mesh is watertight (printable)",
+      "value": 1.0,
+      "expected": null,
+      "tol": null,
+      "passed": true,
+      "priority": "P0"
+    },
+    {
+      "id": "volume",
+      "description": "volume > 0",
+      "value": 10914.004863675369,
+      "expected": 0.0,
+      "tol": 0.0,
+      "passed": true,
+      "priority": "P0"
+    },
+    {
+      "id": "min_wall",
+      "description": "thinnest wall >= 0.8 mm (FDM)",
+      "value": 11.759291401560018,
+      "expected": 0.8,
+      "tol": 0.0,
+      "passed": true,
+      "priority": "P0"
+    },
+    {
+      "id": "probe.shaft_bore",
+      "description": "shaft bore: a 6 mm shaft fits, 0.00 mm clearance (press fit)",
+      "value": 6.0,
+      "expected": 6.0,
+      "tol": null,
+      "passed": true,
+      "priority": "P1"
+    },
+    {
+      "id": "probe.min_feature",
+      "description": "thinnest feature 11.76 mm ≥ 0.8 mm (2 × 0.4 mm nozzle)",
+      "value": 11.759291401560018,
+      "expected": 0.8,
+      "tol": null,
+      "passed": true,
+      "priority": "P1"
+    },
+    {
+      "id": "probe.overhang",
+      "description": "1 % of the surface overhangs more than 45° in the best orientation (mounting face (Z=0) on the bed, as modelled); small overhangs",
+      "value": null,
+      "expected": null,
+      "tol": null,
+      "passed": true,
+      "priority": "P1"
+    }
+  ],
+  "validity": {
+    "is_valid": true,
+    "single_solid": true,
+    "watertight": true,
+    "volume_mm3": 10914.004863675369,
+    "bbox_mm": [
+      30.0611341693953,
+      30.061134169395295,
+      16.000000200000002
+    ],
+    "min_wall_mm": 11.759291401560018,
+    "issues": []
+  },
+  "vetoes": [],
+  "max_error_mm": 0.4334954377702554,
+  "unchecked": [
+    {
+      "param": "bore_d",
+      "label": "Shaft bore diameter",
+      "value": 6.0,
+      "unit": "mm",
+      "source": "inferred",
+      "note": "not measured: from the program (template default or inferred from the measured values); no test compares it with the photo, which covers it only as far as it changes the compared silhouettes (top, side)"
+    },
+    {
+      "param": "flat_depth",
+      "label": "D-flat depth (0 = round bore)",
+      "value": 1.0,
+      "unit": "mm",
+      "source": "inferred",
+      "note": "not measured: from the program (template default or inferred from the measured values); no test compares it with the photo, which covers it only as far as it changes the compared silhouettes (top, side)"
+    },
+    {
+      "param": "bore_depth",
+      "label": "Bore depth",
+      "value": 12.0,
+      "unit": "mm",
+      "source": "inferred",
+      "note": "not measured: from the program (template default or inferred from the measured values); no test compares it with the photo, which covers it only as far as it changes the compared silhouettes (top, side)"
+    },
+    {
+      "param": "grip_count",
+      "label": "Grip flutes",
+      "value": 24.0,
+      "unit": "mm",
+      "source": "inferred",
+      "note": "not measured: from the program (template default or inferred from the measured values); no test compares it with the photo, which covers it only as far as it changes the compared silhouettes (top, side)"
+    },
+    {
+      "param": "grip_depth",
+      "label": "Flute depth",
+      "value": 0.3,
+      "unit": "mm",
+      "source": "inferred",
+      "note": "not measured: from the program (template default or inferred from the measured values); no test compares it with the photo, which covers it only as far as it changes the compared silhouettes (top, side)"
+    },
+    {
+      "param": "top_fillet",
+      "label": "Top edge fillet",
+      "value": 1.7,
+      "unit": "mm",
+      "source": "inferred",
+      "note": "not measured: from the program (template default or inferred from the measured values); no test compares it with the photo, which covers it only as far as it changes the compared silhouettes (top, side)"
+    }
+  ],
+  "origin": "synthetic",
+  "versions": {
+    "verifier": "0.1.0",
+    "opencv": "5.0.0",
+    "numpy": "2.5.4",
+    "scipy": "1.18.1",
+    "trimesh": "5.2.0",
+    "python": "3.12.13",
+    "cadquery": "2.8.0",
+    "ocp": "7.9.3.1"
+  },
+  "hashes": {
+    "code_sha256": "587dabd7d2198305d46b07374b010f9afa3ee620c09c36c19047a2ecb9322bd5",
+    "params_sha256": "b4606f3d8b471d4ddc66f1587e5522def6ce087dea3eb3b3c787a92bdf114e25",
+    "measurements_sha256": "c80bb41893e1585502e28f26dd849482ea98d964c5718456aac4adb595841e70",
+    "partspec_sha256": "d266e940a0f7d4bfc8b1cec380b4e6837aab2b539039ae032466cd950b8c92cd",
+    "mesh_sha256": "84947c98a9de3b838f75e5c01649a0a3a032977a7ecd2707366e6138a4eea477",
+    "overlay:residual_top.png": "ee1996c0aae0daf339b6db00093eb847bcc9ca086e3b3364900a5f4fe745612c",
+    "overlay:residual_side.png": "ddaf8734847461d6a122b1c64016cb3d3035335d10245e88b3b467ff69d33d86"
+  },
+  "ms": 2248
+}

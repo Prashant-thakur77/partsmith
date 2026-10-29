@@ -90,3 +90,14 @@ def for_part(specs: Sequence[ParamSpec], values: Mapping[str, float]) -> list[di
         rows.append({"id": p.id, "title": p.title, "material": p.material, "process": p.process,
                      "nozzle_mm": p.nozzle_mm, "delta_mm": p.delta_mm, "note": p.note, "changes": changes})  # fmt: skip
     return rows
+
+
+DEFAULT_ID = "pla-fdm-0.4"
+
+
+def for_fit(material: str | None, printer: str | None) -> str | None:
+    """The preset id for a PartSpec `fit` (material + printer), None when no preset matches."""
+    if printer == "SLA":
+        return "resin-sla"
+    pid = f"{(material or '').lower()}-fdm-{'0.6' if printer == 'FDM_0_6' else '0.4'}"
+    return pid if pid in BY_ID else None

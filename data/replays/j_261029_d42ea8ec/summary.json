@@ -1,0 +1,16 @@
+{
+  "id": "j_261029_d42ea8ec",
+  "kind": "fix",
+  "status": "done",
+  "created_at": 1793265109.3459826,
+  "updated_at": 1793265551.9192219,
+  "title": "Wall hook — broken (synthetic, clean) (synthetic sample)",
+  "origin": "synthetic",
+  "provider_mode": "live",
+  "verified": true,
+  "max_error_mm": 0.49106945121824985,
+  "iterations": 4,
+  "cost_usd": 0.301211,
+  "part_slug": null,
+  "is_replay": false
+}

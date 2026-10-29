@@ -1,0 +1,13 @@
+{
+  "bbox_mm": [
+    46.400000000000006,
+    30.0,
+    31.3
+  ],
+  "volume_mm3": 5770.0350152256515,
+  "mass_g_pla": 7.15,
+  "mass_g_petg": 7.33,
+  "print_minutes_est": 22.5,
+  "supports_needed": true,
+  "orientation": "-Z: mounting face (Z=0) on the bed, as modelled"
+}

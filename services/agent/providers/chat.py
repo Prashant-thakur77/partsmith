@@ -18,7 +18,7 @@ from . import clients, media
 from .base import LiveText, ModelRequest, ProviderError, Usage
 from .clients import field
 from .config import env, log, warn_once
-from .routing import SPARK_OPEN_DEFAULT_ID, Route
+from .routing import SPARK_OPEN_DEFAULT_ID, SPARK_OPEN_HACKATHON_ID, Route
 
 SPARK_OPEN_EFFORTS = ("low", "medium", "high", "xhigh")
 GLIMMER_STRENGTHS = ("low", "medium", "high", "xhigh")
@@ -65,7 +65,8 @@ def pick_spark_open_id(ids: list[str], override: str | None) -> str:
     if override and (override in ids or not ids):
         return override
     if candidates:
-        chosen = SPARK_OPEN_DEFAULT_ID if SPARK_OPEN_DEFAULT_ID in candidates else sorted(candidates)[0]
+        preferred = [i for i in (SPARK_OPEN_HACKATHON_ID, SPARK_OPEN_DEFAULT_ID) if i in candidates]
+        chosen = preferred[0] if preferred else sorted(candidates)[0]
         if override:
             warn_once(f"SPARK_OPEN_MODEL={override!r} is not served by this provider; using {chosen!r}")
         return chosen

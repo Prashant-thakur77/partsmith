@@ -75,6 +75,8 @@ class ArtifactEvent(_Ev):
         "share_card",
         "buy_or_print",
         "narration",
+        "mate_overlay",  # the "where it fits" photo with the measured mate(s) drawn on
+        "mate_fit",  # mate_fit.json: measured mates and how the model fits them
     ]
     sha: str
     url: str

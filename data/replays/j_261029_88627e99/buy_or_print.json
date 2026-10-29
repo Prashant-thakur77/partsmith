@@ -1,0 +1,88 @@
+{
+  "job_id": "j_261029_88627e99",
+  "slug": null,
+  "title": "Hinge leaf",
+  "status": "best_effort",
+  "prints": [
+    {
+      "material": "PLA",
+      "volume_mm3": 4558.0,
+      "grams": 5.65,
+      "print_minutes": 10.5,
+      "filament_cost": {
+        "INR": 6.78,
+        "USD": 0.11
+      },
+      "price_per_kg": {
+        "INR": 1200.0,
+        "USD": 20.0
+      },
+      "assumptions": [
+        "grams: solid-volume mass at 100 % infill (volume x density: PLA 1.24, PETG 1.27 g/cm^3); a real print weighs less",
+        "minutes: rough estimate: (volume / 8 mm^3/s + layers x 4 s) / 60, 0.2 mm layers, 100 % infill",
+        "filament cost: grams x an assumed 1 kg spool price (INR 1200/kg, USD 20/kg); not a quote, and no shop margin or electricity"
+      ]
+    },
+    {
+      "material": "PETG",
+      "volume_mm3": 4558.0,
+      "grams": 5.79,
+      "print_minutes": 10.5,
+      "filament_cost": {
+        "INR": 8.1,
+        "USD": 0.13
+      },
+      "price_per_kg": {
+        "INR": 1400.0,
+        "USD": 22.0
+      },
+      "assumptions": [
+        "grams: solid-volume mass at 100 % infill (volume x density: PLA 1.24, PETG 1.27 g/cm^3); a real print weighs less",
+        "minutes: rough estimate: (volume / 8 mm^3/s + layers x 4 s) / 60, 0.2 mm layers, 100 % infill",
+        "filament cost: grams x an assumed 1 kg spool price (INR 1400/kg, USD 22/kg); not a quote, and no shop margin or electricity"
+      ]
+    }
+  ],
+  "lookup": {
+    "query": "Hinge leaf — user: Make a replacement for this broken hinge leaf.",
+    "city": null,
+    "oem": {
+      "name": "HINGE LEAF",
+      "number": "WH02X20920",
+      "url": "https://www.geappliances.com/appliance/HINGE-LEAF-WH02X20920",
+      "quote": "Model #: WH02X20920"
+    },
+    "offers": [
+      {
+        "seller": "GE Appliances",
+        "price": 18.95,
+        "currency": "USD",
+        "url": "https://www.geappliances.com/appliance/HINGE-LEAF-WH02X20920",
+        "quote": "Sale Clearance $18.95",
+        "title": "HINGE LEAF - WH02X20920 - GE Appliances",
+        "availability": "This model is no longer being manufactured"
+      },
+      {
+        "seller": "iFixit",
+        "price": 34.99,
+        "currency": "USD",
+        "url": "https://www.iFixit.com/products/ge-hinge-leaf-wh02x20920",
+        "quote": "$34.99",
+        "title": "GE Hinge Leaf - WH02X20920",
+        "availability": "Only 6 left in stock"
+      }
+    ],
+    "places": [],
+    "dropped": [],
+    "searched": true,
+    "queries": 8,
+    "mode": "live",
+    "provider": "meta",
+    "model": "muse-wonder-1.0",
+    "usd": 0.1448784,
+    "label": "web search with citations"
+  },
+  "mode": "live",
+  "created_at": 1793269673.6674943,
+  "notes": []
+}

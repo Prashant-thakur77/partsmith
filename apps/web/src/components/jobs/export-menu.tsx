@@ -1,16 +1,18 @@
 "use client";
 
 import { useMutation } from "@tanstack/react-query";
-import { Archive, Box, Download, FileCode2, FileText, Image as ImageIcon, Layers, Lock, Printer, ScanLine, Sparkles, Wrench } from "lucide-react";
+import { Archive, Box, Download, FileCode2, FileText, Image as ImageIcon, Layers, Link2, Lock, Printer, QrCode, ScanLine, Sparkles, Wrench } from "lucide-react";
 import Link from "next/link";
 import * as React from "react";
 import { api, artifactUrl } from "@/lib/api";
-import type { Verification } from "@/lib/api-types";
+import type { PassportLink, Verification } from "@/lib/api-types";
 import { noteCouponDownload } from "@/lib/coupon-fit";
+import { fitWarning } from "@/lib/mate-fit";
 import { useT } from "@/lib/i18n";
 import { PRINTABLE_KINDS, withAck } from "@/lib/ship";
 import { slicerHandoff } from "@/lib/slicers";
 import { useOrigin } from "@/lib/use-origin";
+import { groupPassportId, passportLink, qrFileName } from "@/lib/passport";
 import { ExportGateNotice, gateReason, useExportGate } from "../export-gate";
 import { Button } from "../ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogTitle, DialogTrigger } from "../ui/dialog";
@@ -19,6 +21,7 @@ import { ErrorState } from "../ui/error-state";
 import { ModeBadge } from "../ui/provenance";
 import { Badge } from "../ui/badge";
 import { Spinner } from "../ui/spinner";
+import { toast } from "../ui/toast";
 
 const ITEMS = [
   { kind: "stl", label: "STL", sub: "mesh for any slicer", icon: Box, file: "part.stl" },
@@ -36,9 +39,21 @@ const ITEMS = [
  * Export menu with the export gate: verified models download in one click; best-effort ones first show why they are
  * locked, suggest the fit-test coupon and need an explicit acknowledgement.
  */
-export function ExportMenu({ artifacts, disabled, verification }: { artifacts: Record<string, string>; disabled?: boolean; verification?: Verification | null }) {
+export function ExportMenu({
+  artifacts,
+  disabled,
+  verification,
+  passport,
+}: {
+  artifacts: Record<string, string>;
+  disabled?: boolean;
+  verification?: Verification | null;
+  /** The finished job's repair passport (the id on its repair card's QR code). */
+  passport?: PassportLink;
+}) {
   const any = ITEMS.some((i) => artifacts[i.kind]);
   const gate = useExportGate(verification);
+  const fitWarn = fitWarning(verification);
   const { t } = useT();
   const origin = useOrigin();
   const [gateOpen, setGateOpen] = React.useState(false);
@@ -68,6 +83,11 @@ export function ExportMenu({ artifacts, disabled, verification }: { artifacts: R
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-64">
         <DropdownMenuLabel>Download</DropdownMenuLabel>
+        {fitWarn ? (
+          <p role="note" className="mx-2 mb-1.5 rounded-md border border-bad-border bg-bad-soft/40 px-2 py-1.5 text-[12px] leading-5 text-fg">
+            {fitWarn}
+          </p>
+        ) : null}
         {ITEMS.map((i) => {
           const raw = artifactUrl(artifacts[i.kind]);
           const url = PRINTABLE_KINDS.has(i.kind) ? withAck(raw, acked) : raw;
@@ -110,6 +130,7 @@ export function ExportMenu({ artifacts, disabled, verification }: { artifacts: R
             ))}
           </>
         ) : null}
+        {passport ? <PassportItems passport={passport} origin={origin} /> : null}
         <DropdownMenuSeparator />
         <DropdownMenuItem asChild>
           <Link href="/calibrate">
@@ -118,6 +139,42 @@ export function ExportMenu({ artifacts, disabled, verification }: { artifacts: R
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>
+  );
+}
+
+/** The job's repair passport in the export menu: copy its link, download its QR code, open its page. */
+function PassportItems({ passport, origin }: { passport: PassportLink; origin: string }) {
+  const href = passportLink(origin, passport.id);
+  const copy = () => {
+    void navigator.clipboard
+      ?.writeText(href)
+      .then(() => toast("Passport link copied", { description: href, tone: "ok" }))
+      .catch(() => toast("Could not copy", { description: href }));
+  };
+  return (
+    <>
+      <DropdownMenuSeparator />
+      <DropdownMenuLabel>
+        Repair passport <span className="font-mono tracking-[0.08em] text-fg">{groupPassportId(passport.id)}</span>
+      </DropdownMenuLabel>
+      <DropdownMenuItem onSelect={copy}>
+        <Link2 aria-hidden />
+        <span className="flex-1">
+          <span className="block">Copy link</span>
+          <span className="block text-[11px] text-subtle">broke again? one scan reprints it</span>
+        </span>
+      </DropdownMenuItem>
+      <DropdownMenuItem asChild>
+        <a href={artifactUrl(passport.qr_png_url)} download={qrFileName(passport.id, "png")}>
+          <QrCode aria-hidden /> <span className="flex-1">Passport QR (PNG)</span>
+        </a>
+      </DropdownMenuItem>
+      <DropdownMenuItem asChild>
+        <a href={artifactUrl(passport.qr_svg_url)} download={qrFileName(passport.id, "svg")}>
+          <QrCode aria-hidden /> <span className="flex-1">Passport QR (SVG)</span>
+        </a>
+      </DropdownMenuItem>
+    </>
   );
 }
 

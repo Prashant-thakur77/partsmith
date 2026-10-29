@@ -224,3 +224,33 @@ AI-completed), each with a text label, icon and pattern so colour is never the o
 the evidence note, the residuals that compared the model with it and the overlay it came from. The strip above the job
 shows each fix round's max error, the knobs changed and the verdict, parsed from the run's events. Per-view verdicts per
 round are not emitted as structured data yet, so the strip shows per-view Hausdorff against the limit and says so.
+
+**2026-10-29 — "Fits where it goes" is measured by code and never sets verified.** The optional mating photo is taken on
+the same mat and passes the same capture gate. Each mate (socket, shaft or pin, slot or panel edge) is located by the
+user's tap, or Spark points at it (pixels only, kept only on the mat's stage); a SAM point prompt cuts it and code measures
+it in mm: a see-through socket gets a lens fit that solves the plate height, a shaft lying on its side gets its round
+section solved from both edges and the camera pose, slots and panel edges are measured between their long sides. Where the
+photo cannot tell how high an edge stands, the reading assumes an edge 0–3 mm above the mat and ±σ covers it (a stated
+choice). Each mate meets one feature measured on the CAD solid (a declared interface, else the closest hole, the narrowest
+outer width or the plate thickness; the verdict names which), classified with the functional probes' clearance classes
+at c and c ± σ, plus "after printing on <preset>" with the preset's or the device's learned clearance. The result is P1
+tests and one reason line; "does not fit" adds a warning to the export gate's reason without changing the decision,
+because `verified` stays a statement about matching the broken part. Synthetic mates: all six within σ of ground truth.
+
+**2026-10-29 — Repair passport: a 6-symbol id that brings a part back from one scan.** Every published part and every job
+gets a Crockford base32 id (30 bits of a sha256, case-insensitive, O read as 0 and I/L as 1): a part's id comes from its
+publish identity and version (same part → same id, new version → new id; older ids still resolve, marked superseded), a
+job's from its job id; no personal data goes in. `/p/{id}` and the repair card's QR resolve it to a reprint through the
+ordinary gated bake, with a preset and this device's learned coupon clearance. The physical mark (`passport=1`, off by
+default; pipeline, publish, bundles and benches never set it) is debossed only, 0.4 mm deep, by trusted code after the
+program ran, on the largest upward face with 25 × 8 mm free of edges, holes and interfaces and ≥ 0.8 mm of material
+under it; the bounding box, every hole, the plate thickness and interface gaps are re-checked to 0.001 mm and any change
+undoes the mark. Raised text is never used: it would move a measured outer face.
+
+**2026-10-29 — Live lesson: code overrides a planner that picks free code for a broken or tall part.** On the first live
+run of the broken latch, the understand stage named the latch template but the live planner chose free code from the
+outline, and all four free-code programs produced no solid, so the job failed. Two code rules now apply. When the planner
+picks free code but the PartSpec names a template of the same family and the part is broken (an extruded outline would
+copy the break) or taller than its plate, code uses that template and logs why. When free code never produces a valid
+solid, the loop switches to the family's template instead of failing. Benches already showed the template library
+verifying far more often than free code (PS vs PS-noTemplate).

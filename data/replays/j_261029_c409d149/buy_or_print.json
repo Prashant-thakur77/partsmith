@@ -1,0 +1,79 @@
+{
+  "job_id": "j_261029_c409d149",
+  "slug": null,
+  "title": "ID-1 card",
+  "status": "verified",
+  "prints": [
+    {
+      "material": "PLA",
+      "volume_mm3": 3913.3,
+      "grams": 4.85,
+      "print_minutes": 8.4,
+      "filament_cost": {
+        "INR": 5.82,
+        "USD": 0.1
+      },
+      "price_per_kg": {
+        "INR": 1200.0,
+        "USD": 20.0
+      },
+      "assumptions": [
+        "grams: solid-volume mass at 100 % infill (volume x density: PLA 1.24, PETG 1.27 g/cm^3); a real print weighs less",
+        "minutes: rough estimate: (volume / 8 mm^3/s + layers x 4 s) / 60, 0.2 mm layers, 100 % infill",
+        "filament cost: grams x an assumed 1 kg spool price (INR 1200/kg, USD 20/kg); not a quote, and no shop margin or electricity"
+      ]
+    },
+    {
+      "material": "PETG",
+      "volume_mm3": 3913.3,
+      "grams": 4.97,
+      "print_minutes": 8.4,
+      "filament_cost": {
+        "INR": 6.96,
+        "USD": 0.11
+      },
+      "price_per_kg": {
+        "INR": 1400.0,
+        "USD": 22.0
+      },
+      "assumptions": [
+        "grams: solid-volume mass at 100 % infill (volume x density: PLA 1.24, PETG 1.27 g/cm^3); a real print weighs less",
+        "minutes: rough estimate: (volume / 8 mm^3/s + layers x 4 s) / 60, 0.2 mm layers, 100 % infill",
+        "filament cost: grams x an assumed 1 kg spool price (INR 1400/kg, USD 22/kg); not a quote, and no shop margin or electricity"
+      ]
+    }
+  ],
+  "lookup": {
+    "query": "ID-1 card — user: Measure this ID-1 card (bank / ID card) (reference object).",
+    "city": null,
+    "oem": {
+      "name": "Zebra Premium Cards White - PVC - Blank CR80 - 30 Mil - 500 cards",
+      "number": "104523-111",
+      "url": "https://www.aptika.com/product/zebracard-104523-111/",
+      "quote": "Item # 104523-111"
+    },
+    "offers": [
+      {
+        "seller": "Aptika",
+        "price": 67.73,
+        "currency": "USD",
+        "url": "https://www.aptika.com/product/zebracard-104523-111/",
+        "quote": "**Price:** 67.73 USD",
+        "title": "Zebra Premium Cards White - PVC - Blank CR80 - 30 Mil - 500 cards",
+        "availability": "InStock"
+      }
+    ],
+    "places": [],
+    "dropped": [],
+    "searched": true,
+    "queries": 10,
+    "mode": "live",
+    "provider": "meta",
+    "model": "muse-wonder-1.0",
+    "usd": 0.2524312,
+    "label": "web search with citations"
+  },
+  "mode": "live",
+  "created_at": 1793271321.4110327,
+  "notes": []
+}

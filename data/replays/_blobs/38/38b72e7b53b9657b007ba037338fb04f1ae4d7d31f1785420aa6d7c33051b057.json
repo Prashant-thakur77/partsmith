@@ -1,0 +1,343 @@
+{
+  "family": "cover",
+  "units": "mm",
+  "title": "Battery compartment cover",
+  "base_profile": {
+    "kind": "polyline",
+    "points_mm": [
+      [
+        25.385,
+        -15.248
+      ],
+      [
+        25.573,
+        -9.295
+      ],
+      [
+        25.276,
+        -8.662
+      ],
+      [
+        24.947,
+        -8.495
+      ],
+      [
+        22.977,
+        -8.286
+      ],
+      [
+        22.878,
+        -4.644
+      ],
+      [
+        23.023,
+        -3.729
+      ],
+      [
+        24.049,
+        -3.423
+      ],
+      [
+        25.079,
+        -3.644
+      ],
+      [
+        25.505,
+        -3.044
+      ],
+      [
+        25.738,
+        2.632
+      ],
+      [
+        25.201,
+        3.318
+      ],
+      [
+        23.109,
+        3.53
+      ],
+      [
+        22.848,
+        4.718
+      ],
+      [
+        22.969,
+        7.982
+      ],
+      [
+        23.803,
+        8.327
+      ],
+      [
+        25.391,
+        8.292
+      ],
+      [
+        25.559,
+        14.178
+      ],
+      [
+        25.241,
+        15.077
+      ],
+      [
+        24.541,
+        15.337
+      ],
+      [
+        23.45,
+        15.257
+      ],
+      [
+        23.047,
+        15.493
+      ],
+      [
+        22.867,
+        17.845
+      ],
+      [
+        22.522,
+        18.497
+      ],
+      [
+        20.915,
+        18.89
+      ],
+      [
+        -0.718,
+        18.779
+      ],
+      [
+        -2.598,
+        18.969
+      ],
+      [
+        -3.278,
+        18.796
+      ],
+      [
+        -9.988,
+        18.883
+      ],
+      [
+        -10.774,
+        18.713
+      ],
+      [
+        -20.145,
+        18.802
+      ],
+      [
+        -20.525,
+        18.966
+      ],
+      [
+        -22.745,
+        18.709
+      ],
+      [
+        -24.25,
+        18.068
+      ],
+      [
+        -25.314,
+        16.625
+      ],
+      [
+        -25.673,
+        15.533
+      ],
+      [
+        -25.491,
+        13.715
+      ],
+      [
+        -25.731,
+        12.333
+      ],
+      [
+        -25.56,
+        11.133
+      ],
+      [
+        -25.745,
+        8.509
+      ],
+      [
+        -25.539,
+        7.921
+      ],
+      [
+        -25.745,
+        4.069
+      ],
+      [
+        -25.554,
+        -4.578
+      ],
+      [
+        -25.741,
+        -5.894
+      ],
+      [
+        -25.577,
+        -6.626
+      ],
+      [
+        -25.691,
+        -14.598
+      ],
+      [
+        -25.559,
+        -16.026
+      ],
+      [
+        -25.072,
+        -17.092
+      ],
+      [
+        -23.678,
+        -18.44
+      ],
+      [
+        -22.6,
+        -18.871
+      ],
+      [
+        -20.588,
+        -18.969
+      ],
+      [
+        -19.3,
+        -18.783
+      ],
+      [
+        -11.005,
+        -18.953
+      ],
+      [
+        -9.972,
+        -18.715
+      ],
+      [
+        -8.047,
+        -18.895
+      ],
+      [
+        -6.187,
+        -18.692
+      ],
+      [
+        -4.734,
+        -18.953
+      ],
+      [
+        0.169,
+        -18.772
+      ],
+      [
+        5.452,
+        -18.913
+      ],
+      [
+        6.017,
+        -18.736
+      ],
+      [
+        9.885,
+        -18.957
+      ],
+      [
+        22.311,
+        -18.806
+      ],
+      [
+        22.89,
+        -17.798
+      ],
+      [
+        22.98,
+        -15.616
+      ]
+    ],
+    "source": "measured",
+    "sigma_mm": 0.087
+  },
+  "thickness": {
+    "value": 1.5,
+    "source": "user_stated",
+    "sigma_mm": 0.3,
+    "evidence": null,
+    "bound_mm": null
+  },
+  "features": [
+    {
+      "kind": "snap_hook",
+      "id": "latch_1",
+      "anchor": "left_edge",
+      "overhang": {
+        "value": 2.0,
+        "source": "inferred",
+        "sigma_mm": 0.5,
+        "evidence": {
+          "view": "top",
+          "pixels": [
+            [
+              850.0,
+              580.0
+            ]
+          ],
+          "note": "L-shaped latch visible on left edge in top photo; overhang estimated, to be fit to mating slot",
+          "citation": null
+        },
+        "bound_mm": null
+      },
+      "angle_deg": 90.0,
+      "thickness": {
+        "value": 1.2,
+        "source": "inferred",
+        "sigma_mm": 0.3,
+        "evidence": {
+          "view": "top",
+          "pixels": [
+            [
+              850.0,
+              580.0
+            ]
+          ],
+          "note": "latch thickness estimated from typical battery cover latch; verify against mating part",
+          "citation": null
+        },
+        "bound_mm": null
+      },
+      "note": "L-shaped latch on left edge; stands about 3.2mm tall (4.737mm side total minus 1.5mm plate)"
+    }
+  ],
+  "broken_region": null,
+  "fit": {
+    "clearance_mm": 0.2,
+    "material": "PLA",
+    "printer": "FDM_0_4"
+  },
+  "unknowns": [
+    {
+      "id": "latch_height",
+      "question": "How tall is the latch lip above the plate? Side shows 4.7mm total vs 1.5mm plate (~3.2mm). Confirm with calipers.",
+      "expects": "number_mm",
+      "default": null,
+      "choices": null
+    },
+    {
+      "id": "mating_fit",
+      "question": "What are the battery compartment opening dimensions and tab-slot positions for fit check?",
+      "expects": "number_mm",
+      "default": null,
+      "choices": null
+    }
+  ],
+  "intent": "Make a replacement for this broken battery compartment cover.",
+  "refusal": null,
+  "template_hint": "battery_cover"
+}

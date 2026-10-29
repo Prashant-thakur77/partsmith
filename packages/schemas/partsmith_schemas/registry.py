@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import Literal
+from typing import Any, Literal
 
 from pydantic import Field
 
@@ -115,3 +115,88 @@ class Need(Strict):
     votes: int = 1
     status: Literal["open", "in_progress", "fulfilled"] = "open"
     created_at: float = 0.0
+
+
+# ---- repair passport (services/registry/passport.py, docs/API.md "Repair passport") --------------------------------
+
+
+class PassportCheck(Strict):
+    """One re-measurement after the passport id was debossed (before / after; any change undoes the mark)."""
+
+    name: str
+    passed: bool
+    before: Any = None
+    after: Any = None
+
+
+class PassportMark(Strict):
+    """What happened when a bake asked for `passport=1`. Code decides; `applied` is false whenever no safe face
+    existed or a re-measurement changed."""
+
+    text: str
+    applied: bool
+    reason: str
+    style: Literal["deboss"] = "deboss"
+    depth_mm: float | None = None
+    text_height_mm: float | None = None
+    font: str = ""
+    face: dict[str, Any] | None = None  # {"z_mm", "area_mm2", "normal"}
+    box_mm: dict[str, float] | None = None  # {"cx", "cy", "w", "h", "angle_deg"}
+    free_needed_mm: list[float] | None = None  # [long side, short side]
+    removed_mm3: float | None = None
+    checks: list[PassportCheck] = Field(default_factory=list)
+
+
+class PassportPreset(Strict):
+    id: str
+    title: str
+    source: Literal["job_spec", "default"]  # the job's stated material + printer, or the PLA 0.4 mm default
+    delta_mm: float
+
+
+class PassportShip(Strict):
+    status: Literal["verified", "best_effort", "blocked"]
+    reason: str
+    needs_ack: bool
+    source: str
+
+
+class PassportLink(Strict):
+    """The passport id as shown on a part page or a job (copy link, QR downloads)."""
+
+    id: str
+    url: str  # web path "/p/{id}"
+    qr_svg_url: str
+    qr_png_url: str
+
+
+class Passport(Strict):
+    """`GET /passport/{id}`: what a printed passport id points at, and how to reprint it."""
+
+    id: str
+    kind: Literal["part", "job"]
+    url: str  # "/p/{id}"
+    title: str
+    family: Family
+    slug: str | None = None
+    version: int | None = None  # the part version this id was issued for
+    current_version: int | None = None
+    superseded: bool = False  # issued for an older version of the same geometry (same program + values)
+    job_id: str | None = None
+    job_status: JobStatus | None = None
+    published: bool
+    values: dict[str, float]  # knob values the passport stands for
+    preset: PassportPreset
+    status: Literal["verified", "best_effort", "failed", "unknown"]
+    verified: bool
+    max_error_mm: float | None = None
+    threshold_mm: float | None = None
+    ship: PassportShip
+    origin: DataOrigin
+    page_url: str  # "/parts/{slug}" or "/jobs/{id}"
+    bake_url: str  # API bake route (BakeResult); add format/preset/fit_session/download/ack/passport
+    presets_url: str
+    qr_svg_url: str
+    qr_png_url: str
+    fix_url: str  # "/fix?family=…&intent=…" for "it broke in a new place"
+    notes: list[str] = Field(default_factory=list)

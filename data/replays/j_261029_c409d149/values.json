@@ -1,0 +1,10 @@
+{
+  "card_length": 85.6,
+  "card_width": 53.98,
+  "thickness": 0.85,
+  "corner_radius": 3.18,
+  "edge_bevel": 0.15,
+  "clearance": 0.2,
+  "stack_count": 1.0,
+  "stack_gap": 1.0
+}

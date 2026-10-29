@@ -10,6 +10,9 @@ type Assignable<A, B> = [A] extends [B] ? true : false;
 
 export type SchemaCompat = [
   Assert<Assignable<Z.Verification, G.Verification>>,
+  Assert<Assignable<Z.PassportLink, G.PassportLink>>,
+  Assert<Assignable<Z.PassportMark, G.PassportMark>>,
+  Assert<Assignable<Omit<Z.Passport, "family">, Omit<G.Passport, "family">>>,
   Assert<Assignable<Z.ParamSpec, G.ParamSpec>>,
   Assert<Assignable<Z.FeatureResidual, G.FeatureResidual>>,
   Assert<Assignable<Z.ViewMetrics, G.ViewMetrics>>,

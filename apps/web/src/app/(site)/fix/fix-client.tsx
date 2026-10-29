@@ -5,7 +5,7 @@ import { ArrowRight, Check, ExternalLink, FileDown, Monitor, Printer } from "luc
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import * as React from "react";
-import { PhotoSlot, type SlotValue, type TapPoint } from "@/components/fix/photo-slot";
+import { MATE_TAP_KINDS, PhotoSlot, type SlotValue, type TapPoint } from "@/components/fix/photo-slot";
 import { VideoSlot } from "@/components/fix/video-slot";
 import { VoiceNoteSlot } from "@/components/fix/voice-note-slot";
 import { useCapabilities } from "@/lib/capabilities";
@@ -21,6 +21,8 @@ import { cityParam } from "@/lib/buy-or-print";
 import { uploadRefusal, voiceNoteProblem } from "@/lib/evidence-notes";
 import { calibrationDrift, useCalibration } from "@/lib/calibration";
 import { FAMILIES } from "@/lib/families";
+import { fixPrefill } from "@/lib/passport";
+import type { MateTapKind, TopTapKind } from "@/lib/mate-fit";
 import { fmtNum, titleCase } from "@/lib/format";
 import { useT } from "@/lib/i18n";
 import { cn } from "@/lib/utils";
@@ -76,8 +78,15 @@ export function FixClient() {
   const [family, setFamily] = React.useState("");
   const [orbit, setOrbit] = React.useState<File | null>(null);
   const [points, setPoints] = React.useState<TapPoint[]>([]);
+  const [matingPoints, setMatingPoints] = React.useState<TapPoint[]>([]);
   const [voiceNote, setVoiceNote] = React.useState<File | null>(null);
   const [city, setCity] = React.useState("");
+  // "It broke in a new place" on a passport page links here with the family and an intent prefilled.
+  React.useEffect(() => {
+    const pre = fixPrefill(window.location.search, FAMILIES);
+    if (pre.family) setFamily(pre.family);
+    if (pre.intent) setIntent(pre.intent);
+  }, []);
   const caps = useCapabilities();
   const fixFields = caps.fields("post", "/jobs/fix");
   const canOrbit = fixFields.has("orbit");
@@ -100,7 +109,8 @@ export function FixClient() {
         familyHint: family || null,
         screenPxPerMm: mat === "screen" ? (calibration?.px_per_mm ?? null) : null,
         orbit: canOrbit ? orbit : null,
-        points: canPoints ? points : null,
+        points: canPoints ? (points as TapPoint<TopTapKind>[]) : null,
+        matingPoints: canPoints ? (matingPoints as TapPoint<MateTapKind>[]) : null,
         narration: sendNote ? voiceNote : null,
         city: canCity ? cityParam(city) : null,
       }),
@@ -228,9 +238,16 @@ export function FixClient() {
                 title={t("fix.mating")}
                 hint={t("fix.matingHint")}
                 value={mating}
-                onChange={setMating}
+                onChange={(v) => {
+                  setMating(v);
+                  setMatingPoints([]);
+                }}
                 gate={false}
                 compact
+                points={matingPoints}
+                onPoints={setMatingPoints}
+                tapKinds={MATE_TAP_KINDS}
+                pointsHint={t("fix.matingPoints", { n: matingPoints.length }) + (canPoints ? "" : " " + t("fix.pointsLocal"))}
               />
               {canOrbit ? <VideoSlot title={t("fix.orbit")} hint={t("fix.orbitHint")} value={orbit} onChange={setOrbit} /> : null}
               {canNarrate ? <VoiceNoteSlot value={voiceNote} onChange={setVoiceNote} hasClip={!!orbit} /> : null}

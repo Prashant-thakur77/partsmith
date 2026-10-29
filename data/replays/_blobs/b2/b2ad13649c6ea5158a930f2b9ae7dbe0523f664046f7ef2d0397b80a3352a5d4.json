@@ -1,0 +1,216 @@
+{
+  "family": "knob",
+  "units": "mm",
+  "title": "Replacement knurled knob with D-bore",
+  "base_profile": {
+    "kind": "polyline",
+    "points_mm": [
+      [
+        11.16,
+        10.013
+      ],
+      [
+        7.746,
+        12.305
+      ],
+      [
+        6.378,
+        13.574
+      ],
+      [
+        1.725,
+        14.836
+      ],
+      [
+        -3.468,
+        14.824
+      ],
+      [
+        -7.94,
+        13.136
+      ],
+      [
+        -9.07,
+        12.109
+      ],
+      [
+        -9.641,
+        11.881
+      ],
+      [
+        -11.519,
+        10.024
+      ],
+      [
+        -12.389,
+        8.419
+      ],
+      [
+        -13.385,
+        7.362
+      ],
+      [
+        -14.221,
+        5.725
+      ],
+      [
+        -14.647,
+        3.68
+      ],
+      [
+        -14.893,
+        -0.475
+      ],
+      [
+        -14.684,
+        -2.985
+      ],
+      [
+        -14.081,
+        -5.229
+      ],
+      [
+        -12.644,
+        -8.3
+      ],
+      [
+        -8.337,
+        -12.611
+      ],
+      [
+        -4.742,
+        -14.213
+      ],
+      [
+        -1.327,
+        -14.825
+      ],
+      [
+        1.322,
+        -14.833
+      ],
+      [
+        4.245,
+        -14.401
+      ],
+      [
+        6.401,
+        -13.803
+      ],
+      [
+        9.478,
+        -11.953
+      ],
+      [
+        12.437,
+        -8.948
+      ],
+      [
+        13.143,
+        -7.809
+      ],
+      [
+        14.215,
+        -5.09
+      ],
+      [
+        14.662,
+        -3.271
+      ],
+      [
+        14.887,
+        1.123
+      ],
+      [
+        14.322,
+        2.909
+      ],
+      [
+        14.246,
+        4.05
+      ],
+      [
+        13.436,
+        6.493
+      ],
+      [
+        12.576,
+        7.456
+      ]
+    ],
+    "source": "measured",
+    "sigma_mm": 0.279
+  },
+  "thickness": {
+    "value": 16.0,
+    "source": "user_stated",
+    "sigma_mm": 0.3,
+    "evidence": null,
+    "bound_mm": null
+  },
+  "features": [
+    {
+      "kind": "d_shaft_bore",
+      "id": "d_bore_1",
+      "diameter": {
+        "value": 6.0,
+        "source": "inferred",
+        "sigma_mm": 0.5,
+        "evidence": {
+          "view": "top",
+          "pixels": [
+            [
+              985.0,
+              951.0
+            ]
+          ],
+          "note": "Bore is on underside, not visible in photos; 6mm D assumed as common for ~30mm knob; confirm against mating shaft.",
+          "citation": null
+        },
+        "bound_mm": null
+      },
+      "flat_depth": {
+        "value": 1.0,
+        "source": "inferred",
+        "sigma_mm": 0.3,
+        "evidence": {
+          "view": "top",
+          "pixels": [
+            [
+              985.0,
+              951.0
+            ]
+          ],
+          "note": "Flat depth not visible; assumed 1.0mm for 6mm D-shaft; confirm against mating shaft flat.",
+          "citation": null
+        },
+        "bound_mm": null
+      }
+    }
+  ],
+  "broken_region": null,
+  "fit": {
+    "clearance_mm": 0.2,
+    "material": "PLA",
+    "printer": "FDM_0_4"
+  },
+  "unknowns": [
+    {
+      "id": "mating_shaft_dia",
+      "question": "What is the mating D-shaft diameter in mm?",
+      "expects": "number_mm",
+      "default": null,
+      "choices": null
+    },
+    {
+      "id": "bore_depth",
+      "question": "How deep should the D-bore be (blind depth in mm, or through)?",
+      "expects": "number_mm",
+      "default": null,
+      "choices": null
+    }
+  ],
+  "intent": "Make a replacement for this broken knob with d-shaft bore.",
+  "refusal": null,
+  "template_hint": "knob"
+}

@@ -169,7 +169,18 @@ def check_audio(data: bytes, mime: str | None, field: str = "audio") -> str:
 
 MAX_VIDEO_BYTES = 60 * 1024 * 1024
 MAX_POINTS = 32
-POINT_KINDS = ("hole", "slot", "tab", "broken_edge", "exclude")  # exclude: a negative point (finger, glare, clutter)
+TOP_POINT_KINDS = (
+    "hole",
+    "slot",
+    "tab",
+    "broken_edge",
+    "exclude",
+)  # exclude: a negative point (finger, glare, clutter)
+# The "where it fits" photo: a socket the part goes into, a shaft it goes onto, a slot or panel edge it clips into.
+MATE_POINT_KINDS = ("mate_hole", "mate_peg", "mate_slot", "exclude")
+POINT_KINDS = (*TOP_POINT_KINDS, *MATE_POINT_KINDS[:-1])
+VIEW_POINT_KINDS: dict[str, tuple[str, ...]] = {"top": TOP_POINT_KINDS, "mating": MATE_POINT_KINDS}
+DEFAULT_KIND = {"top": "hole", "mating": "mate_hole"}
 
 
 def check_video(data: bytes, field: str = "orbit") -> str:
@@ -187,34 +198,43 @@ def check_video(data: bytes, field: str = "orbit") -> str:
 
 def parse_points(raw: str | None) -> dict[str, list[dict[str, Any]]] | None:
     """User taps on features: JSON {"top": [{"x": px, "y": px, "kind"?: hole|slot|tab|broken_edge|exclude,
-    "id"?: str}]} in top-photo pixels (`exclude` marks something that is not the part: a negative point for every
-    point prompt). Returns None when absent; malformed input is a 422 with the reason."""
+    "id"?: str}], "mating": [{"x", "y", "kind"?: mate_hole|mate_peg|mate_slot|exclude, "id"?}]} in that photo's
+    pixels (`exclude` marks something that is not the part or the mate: a negative point for every point prompt on
+    that photo). Returns None when absent; malformed input is a 422 with the reason."""
     if raw is None or not raw.strip():
         return None
     try:
         data = json.loads(raw)
     except ValueError as exc:
         raise ApiError(422, "invalid_points", f"points: not JSON ({exc})") from exc
-    if not isinstance(data, dict) or set(data) - {"top"}:
-        raise ApiError(422, "invalid_points", 'points: expected {"top": [{"x", "y", "kind"?, "id"?}]}')
-    pts = data.get("top") or []
-    if not isinstance(pts, list) or len(pts) > MAX_POINTS:
-        raise ApiError(422, "invalid_points", f"points.top: a list of at most {MAX_POINTS} points")
-    out: list[dict[str, Any]] = []
-    for i, p in enumerate(pts):
-        if not isinstance(p, dict):
-            raise ApiError(422, "invalid_points", f"points.top[{i}]: expected an object")
-        try:
-            x, y = float(p["x"]), float(p["y"])
-        except (KeyError, TypeError, ValueError) as exc:
-            raise ApiError(422, "invalid_points", f"points.top[{i}]: x and y (photo pixels) are required") from exc
-        if not (0 <= x < 20000 and 0 <= y < 20000):
-            raise ApiError(422, "invalid_points", f"points.top[{i}]: pixel coordinates out of range")
-        kind = str(p.get("kind", "hole"))
-        if kind not in POINT_KINDS:
-            raise ApiError(422, "invalid_points", f"points.top[{i}]: kind must be one of {', '.join(POINT_KINDS)}")
-        item: dict[str, Any] = {"x": x, "y": y, "kind": kind}
-        if p.get("id"):
-            item["id"] = str(p["id"])[:40]
-        out.append(item)
-    return {"top": out} if out else None
+    if not isinstance(data, dict) or set(data) - set(VIEW_POINT_KINDS):
+        raise ApiError(
+            422, "invalid_points", 'points: expected {"top": [{"x", "y", "kind"?, "id"?}], "mating"?: [...]}'
+        )
+    out: dict[str, list[dict[str, Any]]] = {}
+    for view, kinds in VIEW_POINT_KINDS.items():
+        pts = data.get(view) or []
+        if not isinstance(pts, list) or len(pts) > MAX_POINTS:
+            raise ApiError(422, "invalid_points", f"points.{view}: a list of at most {MAX_POINTS} points")
+        items: list[dict[str, Any]] = []
+        for i, p in enumerate(pts):
+            if not isinstance(p, dict):
+                raise ApiError(422, "invalid_points", f"points.{view}[{i}]: expected an object")
+            try:
+                x, y = float(p["x"]), float(p["y"])
+            except (KeyError, TypeError, ValueError) as exc:
+                raise ApiError(
+                    422, "invalid_points", f"points.{view}[{i}]: x and y (photo pixels) are required"
+                ) from exc
+            if not (0 <= x < 20000 and 0 <= y < 20000):
+                raise ApiError(422, "invalid_points", f"points.{view}[{i}]: pixel coordinates out of range")
+            kind = str(p.get("kind", DEFAULT_KIND[view]))
+            if kind not in kinds:
+                raise ApiError(422, "invalid_points", f"points.{view}[{i}]: kind must be one of {', '.join(kinds)}")
+            item: dict[str, Any] = {"x": x, "y": y, "kind": kind}
+            if p.get("id"):
+                item["id"] = str(p["id"])[:40]
+            items.append(item)
+        if items:
+            out[view] = items
+    return out or None

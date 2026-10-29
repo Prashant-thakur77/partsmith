@@ -76,6 +76,7 @@ def _fixtures(monkeypatch: pytest.MonkeyPatch, report: dict[str, Any] | None, **
 
 
 def test_status_line_is_derived_from_the_report_mode(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setattr(readme, "_replay_modes", lambda: (0, 0))
     _fixtures(monkeypatch, REPORT_MOCK, **{"impact.json": {"n_sessions": 0}})
     s = readme.status_line()
     assert s.startswith("> **Status: mock providers** · bench report 2026-10-28 at commit `1c91d0f`")
@@ -198,3 +199,11 @@ def test_readme_pipeline_diagram_matches_the_architecture_doc() -> None:
 
     root = readme.ROOT
     assert mermaid((root / "README.md").read_text()) == mermaid((root / "docs" / "ARCHITECTURE.md").read_text())
+
+
+def test_status_line_counts_live_replays_and_drops_the_no_live_call_claim(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setattr(readme, "_replay_modes", lambda: (17, 19))
+    _fixtures(monkeypatch, REPORT_MOCK, **{"impact.json": {"n_sessions": 0}})
+    s = readme.status_line()
+    assert "17 of the 19 stored demo replays are live model runs" in s
+    assert "no live model call has been made" not in s and "a live bench run is pending" in s

@@ -237,6 +237,14 @@ def test_demo_job_from_sample_folder(sample_root: Path, monkeypatch: pytest.Monk
     job = service.start_demo_job("cover-01", sync=True)
     assert job.summary.origin.value == "synthetic" and "synthetic" in job.summary.title
     assert job.events[-1].status == "verified"
+    # the repair card carries the job's passport: QR to /p/{id}, the id and the reprint line
+    from services.common import blobs
+    from services.registry import passport
+
+    card_url = service.detail_of(job)["artifacts"]["repair_card"]
+    pdf = blobs.locate(card_url.rsplit("/", 1)[-1]).read_bytes().decode("latin-1")
+    pid = passport.job_id(job.id)
+    assert f"/p/{pid}" in pdf and "Broke again? Scan to reprint" in pdf
     with pytest.raises(KeyError, match="closest"):
         service.start_demo_job("cover-1", sync=True)
 

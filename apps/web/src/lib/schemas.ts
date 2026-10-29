@@ -17,7 +17,7 @@ export interface ArtifactEvent {
   ts?: number;
   ctx?: string;
   t?: "artifact";
-  kind: "photo" | "rectified" | "mask_overlay" | "measure_overlay" | "render_overlay" | "residual_heatmap" | "stl" | "step" | "threemf" | "code" | "view" | "verification" | "template_pdf" | "preview" | "repair_card" | "coupon" | "partspec" | "video" | "feature_mask" | "reconstruction" | "install_card" | "zip" | "share_card" | "buy_or_print" | "narration";
+  kind: "photo" | "rectified" | "mask_overlay" | "measure_overlay" | "render_overlay" | "residual_heatmap" | "stl" | "step" | "threemf" | "code" | "view" | "verification" | "template_pdf" | "preview" | "repair_card" | "coupon" | "partspec" | "video" | "feature_mask" | "reconstruction" | "install_card" | "zip" | "share_card" | "buy_or_print" | "narration" | "mate_overlay" | "mate_fit";
   sha: string;
   url: string;
   iter?: number | null;
@@ -308,6 +308,54 @@ export interface LogEvent {
 
 export type MatKind = "screen" | "paper";
 
+export interface MateFit {
+  mate_id: string;
+  mate_kind: "mate_hole" | "mate_peg" | "mate_slot";
+  model_feature?: string;
+  model_feature_source?: "interface" | "nearest_hole" | "outer_size" | "plate_thickness" | "none";
+  model_feature_note?: string;
+  model_mm?: number | null;
+  mate_mm?: number | null;
+  mate_sigma_mm?: number | null;
+  clearance_mm?: number | null;
+  clearance_sigma_mm?: number | null;
+  fit?: "does not fit" | "press fit" | "sliding fit" | "loose fit" | "very loose" | null;
+  fit_low?: "does not fit" | "press fit" | "sliding fit" | "loose fit" | "very loose" | null;
+  fit_high?: "does not fit" | "press fit" | "sliding fit" | "loose fit" | "very loose" | null;
+  passed?: boolean;
+  printed?: PrintedFit | null;
+  text?: string;
+}
+
+export interface MateFitResult {
+  view?: "mating";
+  capture?: CaptureReport | null;
+  mates?: Array<MateMeasurement>;
+  fits?: Array<MateFit>;
+  preset?: string | null;
+  notes?: Array<string>;
+  origin?: DataOrigin;
+}
+
+export interface MateMeasurement {
+  id: string;
+  kind: "mate_hole" | "mate_peg" | "mate_slot";
+  point_px: [number, number];
+  point_source?: "user" | "model" | "mock";
+  ok: boolean;
+  material?: "opening" | "material" | null;
+  shape?: "round" | "strip" | "region" | null;
+  size?: Measured | null;
+  length?: Measured | null;
+  method?: string;
+  center_mm?: [number, number] | null;
+  outline_mm?: Array<[number, number]>;
+  mask_source?: string;
+  confidence?: number | null;
+  retake?: string | null;
+  reason?: string | null;
+}
+
 export interface MeasureResult {
   capture: CaptureReport;
   calibration?: Calibration | null;
@@ -458,6 +506,79 @@ export interface PartTest {
   priority?: "P0" | "P1";
 }
 
+export interface Passport {
+  id: string;
+  kind: "part" | "job";
+  url: string;
+  title: string;
+  family: Family;
+  slug?: string | null;
+  version?: number | null;
+  current_version?: number | null;
+  superseded?: boolean;
+  job_id?: string | null;
+  job_status?: "queued" | "running" | "waiting_for_answer" | "done" | "failed" | "cancelled" | null;
+  published: boolean;
+  values: Record<string, number>;
+  preset: PassportPreset;
+  status: "verified" | "best_effort" | "failed" | "unknown";
+  verified: boolean;
+  max_error_mm?: number | null;
+  threshold_mm?: number | null;
+  ship: PassportShip;
+  origin: DataOrigin;
+  page_url: string;
+  bake_url: string;
+  presets_url: string;
+  qr_svg_url: string;
+  qr_png_url: string;
+  fix_url: string;
+  notes?: Array<string>;
+}
+
+export interface PassportCheck {
+  name: string;
+  passed: boolean;
+  before?: unknown;
+  after?: unknown;
+}
+
+export interface PassportLink {
+  id: string;
+  url: string;
+  qr_svg_url: string;
+  qr_png_url: string;
+}
+
+export interface PassportMark {
+  text: string;
+  applied: boolean;
+  reason: string;
+  style?: "deboss";
+  depth_mm?: number | null;
+  text_height_mm?: number | null;
+  font?: string;
+  face?: Record<string, unknown> | null;
+  box_mm?: Record<string, number> | null;
+  free_needed_mm?: Array<number> | null;
+  removed_mm3?: number | null;
+  checks?: Array<PassportCheck>;
+}
+
+export interface PassportPreset {
+  id: string;
+  title: string;
+  source: "job_spec" | "default";
+  delta_mm: number;
+}
+
+export interface PassportShip {
+  status: "verified" | "best_effort" | "blocked";
+  reason: string;
+  needs_ack: boolean;
+  source: string;
+}
+
 export interface PrintEstimate {
   material: "PLA" | "PETG";
   volume_mm3: number;
@@ -466,6 +587,20 @@ export interface PrintEstimate {
   filament_cost: Record<string, number>;
   price_per_kg: Record<string, number>;
   assumptions?: Array<string>;
+}
+
+export interface PrintedFit {
+  preset: string;
+  title: string;
+  clearance_in_effect_mm: number;
+  clearance_source: "learned" | "preset";
+  clearance_label?: string;
+  internal: boolean;
+  clearance_mm: number;
+  fit: "does not fit" | "press fit" | "sliding fit" | "loose fit" | "very loose";
+  with_preset_clearance_mm?: number | null;
+  with_preset_fit?: "does not fit" | "press fit" | "sliding fit" | "loose fit" | "very loose" | null;
+  text: string;
 }
 
 export interface Provenance {

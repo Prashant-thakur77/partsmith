@@ -35,6 +35,7 @@ from starlette.types import Receive, Scope, Send
 
 from services.agent import providers
 from services.api import agentdocs, auth, round3, usage, voice_live
+from services.api import passport as passport_api
 from services.api.auth import require_admin
 from services.api.common import (
     API,
@@ -61,6 +62,7 @@ from services.common.paths import REPO_ROOT
 from services.geom_worker import bake as geom_bake
 from services.registry import fit_learning, gate, impact, presets, steer
 from services.registry import parts as P
+from services.registry import passport as passport_ids
 from services.registry.publish import dedupe_published, publish_part
 from services.registry.store import get_registry
 
@@ -526,7 +528,11 @@ def jobs_fix(
     ] = None,
     points: Annotated[
         str | None,
-        Form(description='Feature taps in top-photo pixels: {"top": [{"x", "y", "kind"?, "id"?}]}', max_length=8000),
+        Form(
+            description='Feature taps in photo pixels: {"top": [{"x", "y", "kind"?, "id"?}], "mating"?: [{"x", "y", '
+            '"kind"?: mate_hole|mate_peg|mate_slot|exclude, "id"?}]}',
+            max_length=8000,
+        ),
     ] = None,
     narration: Annotated[
         UploadFile | None,
@@ -550,6 +556,8 @@ def jobs_fix(
         check_audio(note, narration.content_type, "narration")
         photos["narration"] = note
     taps = parse_points(points)
+    if taps and taps.get("mating") and "mating" not in photos:
+        raise ApiError(422, "invalid_points", "points.mating: taps on the mating photo need the mating photo itself")
     job_input = JobInput(
         intent=intent,
         mat_kind=mat_kind,
@@ -602,10 +610,12 @@ def jobs_list(
 )
 def job_detail(job_id: str) -> dict[str, Any]:
     try:
-        return dict(_svc().job_detail(job_id))
+        out = dict(_svc().job_detail(job_id))
     except KeyError:
         _job(job_id)
         raise
+    out["passport"] = passport_ids.link(passport_ids.job_id(job_id)).model_dump(mode="json")
+    return out
 
 
 def _sse(ev: Any) -> str:
@@ -871,12 +881,16 @@ def job_bake(
     ack: bool = False,
     preset: str | None = None,
     fit_session: FitSession = None,
+    passport: Annotated[
+        bool, Query(description="Deboss the job's passport id where it is safe (off by default)")
+    ] = False,
 ) -> Any:
     """Query: `<param>=<value>` knobs plus `format=` (repeat or comma-separate). Same BakeResult as part bakes.
     `preset=` applies a fit preset (GET /jobs/{id}/presets) on top of the job's current values and the knobs, by the
     same rule as part bakes; with `fit_session=` the clearance learned from that device's coupon reports replaces the
     preset's. `download=1` goes through the export gate: verified ships, best effort needs `ack=1`, failed is
-    refused."""
+    refused. `passport=1` debosses the job's passport id where it touches nothing measured (`"passport"`: the
+    mark's report; skipped with the reason when there is no safe face or the knobs moved)."""
     job = _job(job_id)
     params, fmts = _knob_params(request), _formats(request)
     svc = _svc()
@@ -887,11 +901,22 @@ def job_bake(
     if preset_info is not None and preset:
         specs, base = job_knobs(job_id)
         params, preset_info = _learned_preset(specs, base, raw, params, preset_info, preset, fit_session)
-    res = _service_call(svc.bake_job, job_id, params, fmts, conflict="no_program")
+    mark_id, mark = None, None
+    if passport:
+        specs, base = job_knobs(job_id)
+        mark_id, mark = passport_api.job_mark(job_id, specs, base, raw)
+    if mark_id:
+        res = _service_call(svc.bake_job, job_id, params, fmts, passport=mark_id, conflict="no_program")
+    else:
+        res = _service_call(svc.bake_job, job_id, params, fmts, conflict="no_program")
     data = res.model_dump(mode="json") if hasattr(res, "model_dump") else dict(res)
     _claim_job_bake(job_id, data)
     if preset_info is not None:
         data["preset"] = preset_info
+    if mark_id:
+        mark = geom_bake.passport_report(str(data.get("cache_key", ""))) or passport_api.refused(mark_id, "no report")
+    if mark is not None:
+        data["passport"] = mark
     if download:
         fmt = fmts[0]
         if fmt != "view":  # the viewer mesh is a preview, not a printable export
@@ -899,7 +924,9 @@ def job_bake(
         path = _resolve_artifact(data["artifacts"].get(fmt, ""))
         if path is None:
             raise ApiError(404, "artifact_not_found", f"no {fmt} file for this bake", sorted(data["artifacts"]))
-        return _file(path, fmt, f"{job_id}{EXTENSIONS[fmt]}")
+        resp = _file(path, fmt, f"{job_id}{EXTENSIONS[fmt]}")
+        resp.headers.update(passport_api.mark_header(mark))
+        return resp
     return data
 
 
@@ -1120,6 +1147,9 @@ def part_bake(
     preset: str | None = None,
     ack: bool = False,
     fit_session: FitSession = None,
+    passport: Annotated[
+        bool, Query(description="Deboss the part's passport id where it is safe (off by default)")
+    ] = False,
 ) -> Any:
     """Query: `<param>=<value>` for any knob plus `format=stl|3mf|step|glb|view|py` (repeat or comma-separate;
     default stl,step,view). Out-of-range values are clamped and listed in `clamped`; unknown knobs are a 422 with
@@ -1127,7 +1157,9 @@ def part_bake(
     `fit_session=` the clearance learned from that device's coupon reports replaces the preset's. Identical
     requests are content-addressed cache hits. `download=1` goes through the export gate like bundle.zip: verified
     ships, best effort needs `ack=1` (409 `needs_ack`), failed is refused (409 `not_shippable`); `format=view` and
-    `format=glb` are previews and stay open (the embed and AR viewers use them)."""
+    `format=glb` are previews and stay open (the embed and AR viewers use them). `passport=1` debosses the part's
+    passport id where it touches nothing measured (`"passport"`: the mark's report; skipped with the reason when
+    there is no safe face or the knobs differ from the published values)."""
     part = P.require_part(slug)
     params, fmts = _knob_params(request), _formats(request)
     if download and fmts[0] not in PREVIEW_FORMATS:
@@ -1136,18 +1168,25 @@ def part_bake(
     params, preset_info = apply_preset(part, params, preset)
     if preset_info is not None and preset:
         params, preset_info = _learned_preset(part.params, part.defaults, raw, params, preset_info, preset, fit_session)
-    out = P.bake_output(part, params, fmts)
+    mark_id, mark = passport_api.part_mark(part, raw) if passport else (None, None)
+    out = P.bake_output(part, params, fmts, passport=mark_id)
+    if mark_id:
+        mark = out.passport or passport_api.refused(mark_id, "no report")
     blobs.claim(out.cache_key, f"part:{slug}")  # its /bakes/... file links go through this part's gate
     if download:
         fmt = fmts[0]
         path = out.files.get(fmt)
         if path is None:
             raise ApiError(404, "artifact_not_found", f"no {fmt} file in this bake", sorted(out.files))
-        return _file(path, fmt, f"{slug}{EXTENSIONS[fmt]}")
+        resp = _file(path, fmt, f"{slug}{EXTENSIONS[fmt]}")
+        resp.headers.update(passport_api.mark_header(mark))
+        return resp
     res = out.to_bake_result(slug, lambda fmt, p: P.bake_url(out.cache_key, p.name)).model_dump(mode="json")
     res["facts_notes"] = out.facts_notes
     if preset_info is not None:
         res["preset"] = preset_info
+    if mark is not None:
+        res["passport"] = mark
     return res
 
 
@@ -1551,6 +1590,7 @@ def prompt_txt(request: Request) -> PlainTextResponse:
 app.include_router(router)
 app.include_router(round2_router)
 app.include_router(round3.router)
+app.include_router(passport_api.router)
 app.include_router(embed_router)
 app.add_api_route("/llms.txt", llms_txt, methods=["GET"], include_in_schema=False)
 app.add_api_route("/prompt.txt", prompt_txt, methods=["GET"], include_in_schema=False)

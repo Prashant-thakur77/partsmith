@@ -18,9 +18,12 @@ jobs:
           enable-cache: true
       - run: uv sync --all-extras
       - run: uv run ruff check services eval tools packages/schemas
+      - run: uv run ruff format --check services eval tools packages/schemas
       - run: uv run mypy services eval tools packages/schemas/partsmith_schemas
       - run: uv run pytest -m "not slow and not live"
       - run: uv run python -m tools.smoke
+      - run: make deploy-check
+      - run: make lie  # a scripted lying model must be refused (the target turns the refusal exit code into success)
 
   web:
     runs-on: ubuntu-latest
@@ -35,6 +38,7 @@ jobs:
       - run: pnpm install --frozen-lockfile
       - run: pnpm -C apps/web typecheck
       - run: pnpm -C apps/web lint
+      - run: pnpm -C apps/web test
       - run: pnpm -C apps/web build
       - run: pnpm -C apps/web exec playwright install --with-deps chromium
       - run: pnpm -C apps/web e2e

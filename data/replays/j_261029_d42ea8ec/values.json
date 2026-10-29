@@ -1,0 +1,16 @@
+{
+  "length": 66.35,
+  "width": 19.4,
+  "plate_thickness": 3.0,
+  "hole_d": 4.09,
+  "hole_count": 1.0,
+  "arm_width": 13.0,
+  "arm_thickness": 6.0,
+  "reach": 28.0,
+  "bend_radius": 8.0,
+  "tip_length": 14.0,
+  "corner_radius": 4.0,
+  "hole_shift": 1.7,
+  "hole_y": 0.0,
+  "hole_spread": 1.0
+}

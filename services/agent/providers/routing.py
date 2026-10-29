@@ -8,6 +8,7 @@
 | spec_lookup      | Spec finder      | muse-wonder-1.0 with web_search (citations)                                | none → deterministic mock          |
 | buy_lookup       | Buy-or-print finder | muse-wonder-1.0 → muse-spark-1.3, web_search (+ user city), citations    | none → deterministic mock          |
 | narrate          | Walk-around narrator | muse-spark-1.3 video + audio understanding (points, never numbers)      | none → deterministic mock          |
+| mate_points      | Mate pointer     | muse-spark-1.3 vision (points at the socket/shaft/slot, never a size)       | Glimmer (Modal → Together)         |
 | judge            | Judge            | Muse Glimmer 30B: llama.cpp on Modal → Together                            | same                               |
 | capture_triage   | Capture triage   | Muse Glimmer 30B: llama.cpp on Modal → Together                            | same                               |
 | voice_map        | Voice editor     | muse-spark-1.3                                                             | Spark Open                         |
@@ -93,6 +94,8 @@ MODAL_SAM3 = Endpoint("modal_sam3", "Modal GPU (self-hosted)", "SAM3_OPEN_API_KE
 ENDPOINTS = {e.name: e for e in (META, BASETEN, FIREWORKS, TOGETHER, MODAL_GLIMMER, MODAL_SAM3)}
 
 SPARK_OPEN_DEFAULT_ID = "meta-models/muse-spark-open"
+# the hackathon deployment named in the participant guide; served only to hackathon keys, preferred when listed
+SPARK_OPEN_HACKATHON_ID = "meta-models/muse-spark-open-1026"
 
 SPARK_13 = Route(META, "muse-spark-1.3", "Muse Spark 1.3", "responses")
 WONDER = Route(META, "muse-wonder-1.0", "Muse Wonder", "responses")
@@ -131,6 +134,7 @@ STAGES: dict[str, StageSpec] = {
         StageSpec("spec_lookup", "Spec finder", "search", (WONDER,), (), "medium"),
         StageSpec("buy_lookup", "Buy-or-print finder", "search", (WONDER, SPARK_13), (), "low"),
         StageSpec("narrate", "Walk-around narrator", "video", (SPARK_13,), (), "low"),
+        StageSpec("mate_points", "Mate pointer", "complete", (SPARK_13,), GLIMMER_CHAIN, "low"),
         StageSpec("judge", "Judge", "complete", GLIMMER_CHAIN, GLIMMER_CHAIN, "medium"),
         StageSpec("capture_triage", "Capture triage", "complete", GLIMMER_CHAIN, GLIMMER_CHAIN, "low"),
         StageSpec("voice_map", "Voice editor", "complete", (SPARK_13,), SPARK_OPEN_CHAIN, "low"),

@@ -224,6 +224,29 @@ def test_install_card_anchors_panels(monkeypatch: pytest.MonkeyPatch, hub: FakeH
         providers.install_card(photo, render, [])
 
 
+def test_install_card_redoes_a_panel_when_the_stored_previous_panel_is_gone(
+    monkeypatch: pytest.MonkeyPatch, hub: FakeHub
+) -> None:
+    photo = media.encode_png(np.full((60, 90, 3), 120, np.uint8))
+    render = media.encode_png(np.full((30, 30, 3), 250, np.uint8))
+    monkeypatch.setenv("MODEL_API_KEY", "k-meta-000000")
+    png = media.encode_png(np.zeros((4, 4, 3), np.uint8))
+    ids = iter(["resp_a", "resp_b"])
+
+    def reply(kw: dict[str, object]) -> Obj:
+        if kw.get("previous_response_id"):  # what the live API answered on 2026-10-29
+            raise RuntimeError("Error code: 400 - referenced response not found or expired")
+        return Obj(id=next(ids), output=[Obj(type="image_generation_call", result=base64.b64encode(png).decode())])
+
+    hub.handlers[("responses", "meta")] = reply
+    panels = providers.install_card(photo, render, ["step one", "step two"])
+    calls = hub.calls_for("responses")
+    resent = calls[-1]
+    assert [p.response_id for p in panels] == ["resp_a", "resp_b"] and all(p.mode == "live" for p in panels)
+    assert "previous_response_id" not in resent and len(resent["input"][0]["content"]) == 3  # photo + render again
+    assert "Panel 2 of 2" in resent["input"][0]["content"][0]["text"]
+
+
 # ------------------------------------------------------------------------------------------------ realtime voice
 
 
