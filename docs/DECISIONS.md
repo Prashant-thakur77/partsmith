@@ -315,3 +315,9 @@ cost that much (running ones finish, later configs are skipped, the log says how
 bench ran in two invocations, so the gate suites were not repeated under every ablation: synthetic and reference renders
 under PS, B1 and PS-noTemplate, then control and red-team under PS only. `--from-runs --mode live` builds one report
 from both. The README status line says when a report came from a working tree with uncommitted changes.
+
+**2026-10-30 — Bench reports are strict JSON and name the code their runs came from.** Non-finite numbers (a rate over
+zero runs) are written as `null`, and the writer refuses `NaN`. Each stored run records the commit and dirty flag of the
+tree it ran in. A report rebuilt with `--from-runs` takes them from the runs when they agree, and otherwise names the
+current tree and says so (`git_source`). Before this, rebuilding the first live bench after a commit stamped it with the
+rebuild's commit, not the one the runs were made at.

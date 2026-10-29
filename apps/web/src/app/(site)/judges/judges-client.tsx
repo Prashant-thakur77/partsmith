@@ -42,6 +42,13 @@ function ReplayPlayer({ id }: { id: string }) {
   const [idx, setIdx] = React.useState(0);
   const [playing, setPlaying] = React.useState(false);
   const [speed, setSpeed] = React.useState(2);
+  const traceRef = React.useRef<HTMLDivElement>(null);
+
+  // while playing, keep the newest stage in view inside the trace box (its own scroll only, never the page's)
+  React.useEffect(() => {
+    const el = traceRef.current;
+    if (playing && el) el.scrollTop = el.scrollHeight;
+  }, [playing, idx]);
 
   React.useEffect(() => {
     setIdx(0);
@@ -105,7 +112,7 @@ function ReplayPlayer({ id }: { id: string }) {
             <ConvergenceChart data={s.convergence} threshold={threshold} height={170} />
           </div>
         </div>
-        <div className="scrollbar-thin max-h-[360px] overflow-y-auto p-4" tabIndex={0} role="region" aria-label="Replay trace">
+        <div ref={traceRef} className="scrollbar-thin max-h-[360px] overflow-y-auto p-4" tabIndex={0} role="region" aria-label="Replay trace">
           <TraceTimeline summary={s} live={playing} />
         </div>
       </div>

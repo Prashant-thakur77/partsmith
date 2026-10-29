@@ -28,7 +28,7 @@ export function SiteHeader() {
   const active = (href: string) => pathname === href || pathname.startsWith(`${href}/`);
   return (
     <header className="sticky top-0 z-40">
-      <div className="border-b border-border bg-bg/85 backdrop-blur-md supports-[backdrop-filter]:bg-bg/75">
+      <div className="border-b border-border bg-bg/95 backdrop-blur-md supports-[backdrop-filter]:bg-bg/90">
         <div className={cn("mx-auto flex h-14 items-center gap-6 px-4 sm:px-6", wide ? "max-w-none" : "max-w-[1200px]")}>
           <Link href="/" aria-label="PartSmith home" className="rounded-md">
             <Logo />

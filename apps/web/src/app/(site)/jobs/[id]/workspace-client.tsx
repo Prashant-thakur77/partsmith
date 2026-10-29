@@ -730,7 +730,7 @@ export function WorkspaceClient({ id }: { id: string }) {
               }}
             />
             {measurements ? <MeasurementsCard m={measurements} items={itemsById} tinted={tintBySource} onSelect={selectFromCard} /> : null}
-            <MateFitCard jobId={id} finished={!!done} overlay={artifacts.mate_overlay} className="border-t border-border pt-4" />
+            <MateFitCard jobId={id} finished={!!done} hasMate={!!(artifacts.mate_fit || artifacts.mate_overlay)} overlay={artifacts.mate_overlay} className="border-t border-border pt-4" />
             {artifacts.narration ? <NarrationPanel url={artifacts.narration} /> : null}
             {d.partspec?.features.length ? (
               <div className="space-y-1.5">

@@ -341,20 +341,20 @@ All code in this repository was written during the hackathon (from Oct 26 2026, 
 are computed from `git log`, so they stay true as the history grows.
 
 <!-- BEGIN:built -->
-**44 commits** between 2026-10-27 05:59 ET and 2026-10-29 14:08 ET; the hackathon started 2026-10-26 12:00 ET. Commits dated before the start: **0**.
+**46 commits** between 2026-10-27 05:59 ET and 2026-10-29 17:03 ET; the hackathon started 2026-10-26 12:00 ET. Commits dated before the start: **0**.
 
 | Area | Files added | Lines added: code and docs | Lines added: data, reports, lockfiles, generated | First commit | Last commit |
 |---|---|---|---|---|---|
-| `services/` (Python backend) | 250 | 51,245 | 0 | 2026-10-27 | 2026-10-29 |
-| `apps/web/` (web app) | 244 | 24,967 | 2,384 | 2026-10-27 | 2026-10-29 |
-| `eval/` (benches and reports) | 325 | 5,299 | 65,426 | 2026-10-27 | 2026-10-29 |
+| `services/` (Python backend) | 250 | 51,335 | 0 | 2026-10-27 | 2026-10-29 |
+| `apps/web/` (web app) | 245 | 25,038 | 2,384 | 2026-10-27 | 2026-10-29 |
+| `eval/` (benches and reports) | 570 | 5,351 | 82,650 | 2026-10-27 | 2026-10-29 |
 | `packages/` (typed contracts) | 11 | 1,360 | 5,504 | 2026-10-27 | 2026-10-29 |
-| `tools/` (synthetic data, mats, generators) | 32 | 5,156 | 0 | 2026-10-27 | 2026-10-29 |
+| `tools/` (synthetic data, mats, generators) | 32 | 5,166 | 0 | 2026-10-27 | 2026-10-29 |
 | `infra/` (Modal, deploy) | 12 | 1,014 | 86 | 2026-10-27 | 2026-10-29 |
-| `docs/` | 16 | 1,439 | 7 | 2026-10-27 | 2026-10-29 |
-| `data/` (samples, replays) | 4,134 | 0 | 633,853 | 2026-10-27 | 2026-10-29 |
-| root files | 15 | 1,245 | 8,271 | 2026-10-27 | 2026-10-29 |
-| **Total** | **5,039** | **91,725** | **715,531** | | |
+| `docs/` | 16 | 1,468 | 7 | 2026-10-27 | 2026-10-29 |
+| `data/` (samples, replays) | 4,180 | 0 | 639,015 | 2026-10-27 | 2026-10-29 |
+| root files | 15 | 1,279 | 8,271 | 2026-10-27 | 2026-10-29 |
+| **Total** | **5,331** | **92,011** | **737,917** | | |
 
 <details><summary>Every commit since the start, oldest first</summary>
 
@@ -404,6 +404,8 @@ are computed from `git log`, so they stay true as the history grows.
 | 2026-10-28 14:36 ET | `7055646` | feat(web): README hero media from the real app; fix /fix clip crash and a stuck 3D camera |
 | 2026-10-29 07:23 ET | `95790e6` | feat: first live runs, fits-where-it-goes, repair passport, live fixes |
 | 2026-10-29 14:08 ET | `304f933` | feat: live lessons round 2, slow-route fallback, second live seed |
+| 2026-10-29 16:46 ET | `277f8fc` | feat: first live bench, spend cap, through-holes a model mask closed |
+| 2026-10-29 17:03 ET | `77d821a` | feat(web): README media from a live run, distinct replay chips; latch corner live rerun |
 
 </details>
 

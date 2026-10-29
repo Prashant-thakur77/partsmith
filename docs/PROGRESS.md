@@ -168,4 +168,11 @@ Seven workstreams in flight: providers, verifier, synth/eval, API/registry, metr
   the rest is at the broken corner (best effort, not published). README hero GIF and screenshot grid re-recorded from the
   stored live battery-cover run (fails its first build, verifies after two fixes); the corner label and grid header now
   come from the replay's own provider mode. /judges replay chips that share a name show their capture preset.
-- **Next:** real photos, Modal login and deploy go-ahead from Prashant; demo video draft from the app.
+- **Draft demo video (Oct 30):** `make video` records a screen-only cut from the app in replay mode (2:25, captions
+  burned in + `.srt` + beat list in `var/video/`, numbers read from the page while recording); beats that need real-world
+  footage are skipped and listed. Fixes found while recording: control/red-team headlines on /results printed counts as
+  millimetres ("6.00 mm" for 6/6); `report.json` held `NaN` (not strict JSON; now null); a report rebuilt from stored runs
+  named the rebuild's commit instead of the runs' (runs now record their commit); the replay trace follows the newest
+  stage while playing; the mate-fit card no longer asks the API for jobs without a mating photo (404 noise); the sticky
+  nav row is nearly opaque.
+- **Next:** real photos, Modal login and deploy go-ahead from Prashant; the final video with real-world shots.

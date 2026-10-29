@@ -234,3 +234,18 @@ def test_the_spend_cap_stops_starting_runs_and_skips_later_configs(monkeypatch: 
     assert 2 <= len(got) <= 3 and {r["config"] for r in got} == {"PS"}
     assert [r["sample_id"] for r in got] == sorted(r["sample_id"] for r in got)
     assert any("B1" in line and "not started" in line for line in logs)
+
+
+def test_reports_are_strict_json_with_unknown_rates_as_null(tmp_path: Path) -> None:
+    rep = {"tables": {"control": {"rate": math.nan, "ci": [math.nan, math.inf], "n": 0}}, "mode": "mock"}
+    assert R.json_safe(rep) == {"tables": {"control": {"rate": None, "ci": [None, None], "n": 0}}, "mode": "mock"}
+    json.dumps(R.json_safe(rep), allow_nan=False)  # raises on any NaN left behind
+
+
+def test_a_report_rebuilt_from_stored_runs_names_the_commit_the_runs_were_made_at() -> None:
+    a = {"git": {"sha": "aaa", "dirty": False}}
+    b = {"git": {"sha": "aaa", "dirty": True}}
+    assert R.runs_git([a, b]) == {"sha": "aaa", "dirty": True, "source": "runs"}
+    mixed = R.runs_git([a, {"git": {"sha": "bbb", "dirty": False}}])
+    assert mixed["source"] == "current tree"
+    assert R.runs_git([a, {}])["source"] == "current tree"  # a run stored before runs were stamped

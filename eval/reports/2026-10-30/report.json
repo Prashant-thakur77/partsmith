@@ -2781,10 +2781,10 @@
     "expected_rejections": {
      "k": 0,
      "n": 0,
-     "rate": NaN,
+     "rate": null,
      "ci95": [
-      NaN,
-      NaN
+      null,
+      null
      ],
      "missed": [],
      "note": "white part on the light stage: the capture gate should send the user to the dark stage; a correct rejection is not an error and its photo is not scored"
@@ -3237,10 +3237,10 @@
     "expected_rejections": {
      "k": 0,
      "n": 0,
-     "rate": NaN,
+     "rate": null,
      "ci95": [
-      NaN,
-      NaN
+      null,
+      null
      ],
      "missed": [],
      "note": "white part on the light stage: the capture gate should send the user to the dark stage; a correct rejection is not an error and its photo is not scored"
@@ -3250,103 +3250,103 @@
     "capture_gate_pass": {
      "k": 0,
      "n": 0,
-     "rate": NaN,
+     "rate": null,
      "ci95": [
-      NaN,
-      NaN
+      null,
+      null
      ]
     },
     "accepted": {
      "n": 0,
-     "mean_mm": NaN,
+     "mean_mm": null,
      "mean_ci95_mm": [
-      NaN,
-      NaN
+      null,
+      null
      ],
-     "median_mm": NaN,
-     "p90_mm": NaN,
-     "max_mm": NaN,
-     "within_0_3": NaN,
+     "median_mm": null,
+     "p90_mm": null,
+     "max_mm": null,
+     "within_0_3": null,
      "within_0_3_ci95": [
-      NaN,
-      NaN
+      null,
+      null
      ],
-     "within_0_5": NaN,
+     "within_0_5": null,
      "within_0_5_ci95": [
-      NaN,
-      NaN
+      null,
+      null
      ],
-     "signed_mean_mm": NaN
+     "signed_mean_mm": null
     },
     "all_detected": {
      "n": 0,
-     "mean_mm": NaN,
+     "mean_mm": null,
      "mean_ci95_mm": [
-      NaN,
-      NaN
+      null,
+      null
      ],
-     "median_mm": NaN,
-     "p90_mm": NaN,
-     "max_mm": NaN,
-     "within_0_3": NaN,
+     "median_mm": null,
+     "p90_mm": null,
+     "max_mm": null,
+     "within_0_3": null,
      "within_0_3_ci95": [
-      NaN,
-      NaN
+      null,
+      null
      ],
-     "within_0_5": NaN,
+     "within_0_5": null,
      "within_0_5_ci95": [
-      NaN,
-      NaN
+      null,
+      null
      ],
-     "signed_mean_mm": NaN
+     "signed_mean_mm": null
     },
     "within_spec_accepted": {
      "k": 0,
      "n": 0,
-     "rate": NaN,
+     "rate": null,
      "ci95": [
-      NaN,
-      NaN
+      null,
+      null
      ]
     },
     "range_error_accepted": {
      "n": 0,
-     "mean_mm": NaN,
+     "mean_mm": null,
      "mean_ci95_mm": [
-      NaN,
-      NaN
+      null,
+      null
      ],
-     "median_mm": NaN,
-     "p90_mm": NaN,
-     "max_mm": NaN,
-     "within_0_3": NaN,
+     "median_mm": null,
+     "p90_mm": null,
+     "max_mm": null,
+     "within_0_3": null,
      "within_0_3_ci95": [
-      NaN,
-      NaN
+      null,
+      null
      ],
-     "within_0_5": NaN,
+     "within_0_5": null,
      "within_0_5_ci95": [
-      NaN,
-      NaN
+      null,
+      null
      ],
-     "signed_mean_mm": NaN
+     "signed_mean_mm": null
     },
     "pass_at_0.3": {
      "k": 0,
      "n": 0,
-     "rate": NaN,
+     "rate": null,
      "ci95": [
-      NaN,
-      NaN
+      null,
+      null
      ]
     },
     "pass_at_0.5": {
      "k": 0,
      "n": 0,
-     "rate": NaN,
+     "rate": null,
      "ci95": [
-      NaN,
-      NaN
+      null,
+      null
      ]
     },
     "by_dim": {},
@@ -3359,10 +3359,10 @@
     "expected_rejections": {
      "k": 0,
      "n": 0,
-     "rate": NaN,
+     "rate": null,
      "ci95": [
-      NaN,
-      NaN
+      null,
+      null
      ],
      "missed": [],
      "note": "white part on the light stage: the capture gate should send the user to the dark stage; a correct rejection is not an error and its photo is not scored"
@@ -3372,103 +3372,103 @@
     "capture_gate_pass": {
      "k": 0,
      "n": 0,
-     "rate": NaN,
+     "rate": null,
      "ci95": [
-      NaN,
-      NaN
+      null,
+      null
      ]
     },
     "accepted": {
      "n": 0,
-     "mean_mm": NaN,
+     "mean_mm": null,
      "mean_ci95_mm": [
-      NaN,
-      NaN
+      null,
+      null
      ],
-     "median_mm": NaN,
-     "p90_mm": NaN,
-     "max_mm": NaN,
-     "within_0_3": NaN,
+     "median_mm": null,
+     "p90_mm": null,
+     "max_mm": null,
+     "within_0_3": null,
      "within_0_3_ci95": [
-      NaN,
-      NaN
+      null,
+      null
      ],
-     "within_0_5": NaN,
+     "within_0_5": null,
      "within_0_5_ci95": [
-      NaN,
-      NaN
+      null,
+      null
      ],
-     "signed_mean_mm": NaN
+     "signed_mean_mm": null
     },
     "all_detected": {
      "n": 0,
-     "mean_mm": NaN,
+     "mean_mm": null,
      "mean_ci95_mm": [
-      NaN,
-      NaN
+      null,
+      null
      ],
-     "median_mm": NaN,
-     "p90_mm": NaN,
-     "max_mm": NaN,
-     "within_0_3": NaN,
+     "median_mm": null,
+     "p90_mm": null,
+     "max_mm": null,
+     "within_0_3": null,
      "within_0_3_ci95": [
-      NaN,
-      NaN
+      null,
+      null
      ],
-     "within_0_5": NaN,
+     "within_0_5": null,
      "within_0_5_ci95": [
-      NaN,
-      NaN
+      null,
+      null
      ],
-     "signed_mean_mm": NaN
+     "signed_mean_mm": null
     },
     "within_spec_accepted": {
      "k": 0,
      "n": 0,
-     "rate": NaN,
+     "rate": null,
      "ci95": [
-      NaN,
-      NaN
+      null,
+      null
      ]
     },
     "range_error_accepted": {
      "n": 0,
-     "mean_mm": NaN,
+     "mean_mm": null,
      "mean_ci95_mm": [
-      NaN,
-      NaN
+      null,
+      null
      ],
-     "median_mm": NaN,
-     "p90_mm": NaN,
-     "max_mm": NaN,
-     "within_0_3": NaN,
+     "median_mm": null,
+     "p90_mm": null,
+     "max_mm": null,
+     "within_0_3": null,
      "within_0_3_ci95": [
-      NaN,
-      NaN
+      null,
+      null
      ],
-     "within_0_5": NaN,
+     "within_0_5": null,
      "within_0_5_ci95": [
-      NaN,
-      NaN
+      null,
+      null
      ],
-     "signed_mean_mm": NaN
+     "signed_mean_mm": null
     },
     "pass_at_0.3": {
      "k": 0,
      "n": 0,
-     "rate": NaN,
+     "rate": null,
      "ci95": [
-      NaN,
-      NaN
+      null,
+      null
      ]
     },
     "pass_at_0.5": {
      "k": 0,
      "n": 0,
-     "rate": NaN,
+     "rate": null,
      "ci95": [
-      NaN,
-      NaN
+      null,
+      null
      ]
     },
     "by_dim": {},

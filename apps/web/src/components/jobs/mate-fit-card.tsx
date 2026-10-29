@@ -99,10 +99,23 @@ function MateRow({ row }: { row: FitRow }) {
   );
 }
 
-export function MateFitCard({ jobId, finished, overlay, className }: { jobId: string; finished: boolean; overlay?: string; className?: string }) {
+export function MateFitCard({
+  jobId,
+  finished,
+  hasMate,
+  overlay,
+  className,
+}: {
+  jobId: string;
+  finished: boolean;
+  /** the job made a mate-fit artifact (it had a mating photo); without one the route would only answer 404 */
+  hasMate: boolean;
+  overlay?: string;
+  className?: string;
+}) {
   const { t } = useT();
-  const q = useJobMateFit(jobId, finished);
-  if (!finished || q.data === null || (!q.data && !q.isPending && !q.isError)) return null;
+  const q = useJobMateFit(jobId, finished && hasMate);
+  if (!finished || !hasMate || q.data === null || (!q.data && !q.isPending && !q.isError)) return null;
   if (q.isPending) return <Skeleton className={cn("h-40", className)} />;
   if (q.isError) return <ErrorState error={q.error} compact what={t("mate.title").toLowerCase()} onRetry={() => void q.refetch()} className={className} />;
   const res = q.data;

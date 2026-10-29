@@ -30,7 +30,6 @@ import math
 import multiprocessing
 import os
 import shutil
-import subprocess
 import sys
 import time
 from collections.abc import Mapping, Sequence
@@ -314,6 +313,27 @@ def _job_inputs(task: Task) -> tuple[dict[str, bytes], Any, dict[str, Any]]:
     return dict(sample.photos), service.sample_job_input(sample.meta), dict(sample.meta)
 
 
+def _stamped(score: dict[str, Any]) -> dict[str, Any]:
+    """The code a run was made with, so a report rebuilt later from stored runs names it (not the rebuild's commit)."""
+    from . import provenance
+
+    score["git"] = {"sha": provenance.git_sha(), "dirty": provenance.git_dirty()}
+    return score
+
+
+def runs_git(scores: Sequence[Mapping[str, Any]]) -> dict[str, Any]:
+    """The commit the runs were made at when they all name the same one (dirty if any run's tree was), else the
+    current tree's, marked as such."""
+    from . import provenance
+
+    stamps = [s.get("git") for s in scores]
+    shas = {g.get("sha") for g in stamps if isinstance(g, dict)}
+    if scores and len(shas) == 1 and all(isinstance(g, dict) for g in stamps) and None not in shas:
+        dirty = any(bool(g.get("dirty")) for g in stamps if isinstance(g, dict))
+        return {"sha": shas.pop(), "dirty": dirty, "source": "runs"}
+    return {"sha": provenance.git_sha(), "dirty": provenance.git_dirty(), "source": "current tree"}
+
+
 def run_task(task: Task) -> dict[str, Any]:
     """Run one fix job and score it; writes score.json, run.jsonl.gz (and overlay.png on failure)."""
     from services.agent import service
@@ -356,7 +376,7 @@ def run_task(task: Task) -> dict[str, Any]:
             failure=f"{type(exc).__name__}: {exc}"[:300],
             wall_s=round(time.perf_counter() - t0, 2),
         )
-        (out / "score.json").write_text(json.dumps(score, indent=1))
+        (out / "score.json").write_text(json.dumps(_stamped(score), indent=1))
         return score
     wall = time.perf_counter() - t0
     events = [e.model_dump(mode="json", exclude_none=True) for e in job.events]
@@ -382,7 +402,7 @@ def run_task(task: Task) -> dict[str, Any]:
             (out / "overlay.png").write_bytes(png)
             score["overlay"] = "overlay.png"
         score["failure"] = failure_reason(score, events)
-    (out / "score.json").write_text(json.dumps(score, indent=1))
+    (out / "score.json").write_text(json.dumps(_stamped(score), indent=1))
     return score
 
 
@@ -1021,24 +1041,15 @@ def latest_measure_only() -> dict[str, Any] | None:
     }
 
 
-def git_sha() -> str | None:
-    try:
-        return (
-            subprocess.run(
-                ["git", "rev-parse", "HEAD"], cwd=REPO, capture_output=True, text=True, timeout=5, check=True
-            ).stdout.strip()
-            or None
-        )
-    except Exception:
-        return None
-
-
 def build_report(scores: Sequence[Mapping[str, Any]], mode: str, notes: Sequence[str], out_dir: Path) -> dict[str, Any]:
     out_dir.mkdir(parents=True, exist_ok=True)
+    git = runs_git(scores)
     return {
         "status": "ok",
         "generated_at": dt.datetime.now(dt.UTC).isoformat(timespec="seconds"),
-        "git_sha": git_sha(),
+        "git_sha": git["sha"],
+        "git_dirty": git["dirty"],
+        "git_source": git["source"],
         "mode": mode,
         "label": MOCK_TITLE if mode == "mock" else "live providers",
         "notes": list(notes),
@@ -1145,6 +1156,17 @@ def to_markdown(rep: Mapping[str, Any]) -> str:
     return "\n".join(L)
 
 
+def json_safe(x: Any) -> Any:
+    """`x` with every NaN/±inf float replaced by None: strict JSON for every reader (a rate over zero runs is unknown)."""
+    if isinstance(x, float):
+        return x if math.isfinite(x) else None
+    if isinstance(x, dict):
+        return {k: json_safe(v) for k, v in x.items()}
+    if isinstance(x, list | tuple):
+        return [json_safe(v) for v in x]
+    return x
+
+
 def write_report(
     rep: Mapping[str, Any],
     out_dir: Path,
@@ -1158,12 +1180,13 @@ def write_report(
     from . import open_weights, provenance
 
     jp, mp = out_dir / "report.json", out_dir / "report.md"
-    jp.write_text(json.dumps(rep, indent=1) + "\n")
+    text = json.dumps(json_safe(rep), indent=1, allow_nan=False) + "\n"
+    jp.write_text(text)
     mp.write_text(to_markdown(rep))
     targets = [out_dir]
     if latest:
         (REPORTS_DIR / "latest").mkdir(parents=True, exist_ok=True)
-        (REPORTS_DIR / "latest" / "report.json").write_text(json.dumps(rep, indent=1) + "\n")
+        (REPORTS_DIR / "latest" / "report.json").write_text(text)
         targets.append(REPORTS_DIR / "latest")
     run_dirs = [RUNS_DIR / str(s.get("mode")) / s["suite"] / s["config"] / s["sample_id"] for s in scores]
     calls = open_weights.read_model_calls(run_dirs)
@@ -1174,6 +1197,8 @@ def write_report(
         seeds={"synthetic_bench": BENCH_SEED, "subset": seed, "suites": SUITE_SEED},
         extra={"configs": rep.get("configs"), "n_runs": len(scores)},
     )
+    if rep.get("git_source") == "runs":  # the code the runs were made with, not the tree that rebuilt the tables
+        prov["git_sha"], prov["git_dirty"] = rep["git_sha"], rep["git_dirty"]
     provenance.write(prov, *(t / "provenance.json" for t in targets))
     rows = {k: t.get("rows") or [] for k, t in rep["tables"].items() if k in SUITES}
     ow = {

@@ -44,11 +44,17 @@ export type BenchKey = (typeof BENCH_TABLES)[number]["key"];
 export function benchHeadline(t: BenchTable): { value: string; n: number; gt: string } | null {
   if (t.status === "pending") return null;
   const gt = gtLabel(t.ground_truth, "");
-  for (const [k, v] of Object.entries(t.headline)) {
+  const h = t.headline as Record<string, unknown>;
+  // expected-outcome suites (control, red team) count cases handled as expected: "6/6", never a length
+  if (typeof h.correct === "number" && typeof h.n === "number") {
+    return { value: `${h.correct}/${h.n}`, n: t.n, gt: `handled as expected · ${gt}` };
+  }
+  for (const [k, v] of Object.entries(h)) {
     if (typeof v !== "number") continue;
     const rate = /rate|share|frac/.test(k);
     const label = k.replace(/_mm$/, "").replace(/_/g, " ");
-    return { value: rate ? `${(v * 100).toFixed(1)} %` : `${v.toFixed(2)} mm`, n: t.n, gt: `${label} · ${gt}` };
+    const value = rate ? `${(v * 100).toFixed(1)} %` : k.endsWith("_mm") ? `${v.toFixed(2)} mm` : String(v);
+    return { value, n: t.n, gt: `${label} · ${gt}` };
   }
   return t.n ? { value: `${t.n} cases`, n: t.n, gt } : null;
 }
