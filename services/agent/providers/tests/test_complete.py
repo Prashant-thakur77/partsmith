@@ -1,12 +1,22 @@
 from __future__ import annotations
 
 import json
+from types import SimpleNamespace
 from typing import Any
 
 import pytest
 
 from services.agent import providers
-from services.agent.providers import ModelRequest, ProviderError, SchemaValidationError, chat, media
+from services.agent.providers import (
+    ModelRequest,
+    ProviderError,
+    SchemaValidationError,
+    chat,
+    core,
+    health,
+    media,
+    routing,
+)
 
 from .conftest import FakeHTTPError, FakeHub, Obj, chat_stream, responses_stream
 
@@ -241,3 +251,46 @@ def test_self_hosted_endpoint_waits_for_cold_start(monkeypatch: pytest.MonkeyPat
     hub.handlers[("chat", "modal.run")] = replies
     out = providers.complete("capture_triage", ModelRequest(messages=[{"role": "user", "content": "ok?"}]))
     assert out.text == "ready" and len(hub.calls_for("chat")) == 7
+
+
+def test_a_slow_route_goes_behind_the_ready_fallback_until_its_cool_down_ends(
+    monkeypatch: pytest.MonkeyPatch, hub: FakeHub, events: list[Any]
+) -> None:
+    monkeypatch.setenv("BASETEN_API_KEY", "k-baseten-000")
+    monkeypatch.setenv("MODEL_API_KEY", "k-meta-000000")
+    now = [1000.0]
+    monkeypatch.setattr(core, "time", SimpleNamespace(monotonic=lambda: now[0]))
+    monkeypatch.setattr(health, "clock", lambda: now[0])
+
+    def slow_baseten(kw: dict[str, Any]) -> Any:
+        now[0] += 50.0  # live, 2026-10-29: shared hackathon deployment, 28 s median and up to 318 s per turn
+        return chat_stream('{"family": "clip", "n": 1}')
+
+    hub.handlers[("chat", "baseten")] = slow_baseten
+    hub.handlers[("responses", "meta")] = lambda kw: responses_stream('{"family": "clip", "n": 1}')
+    with providers.job_context("j", events.append):
+        served = [providers.complete("plan", _req()).provider for _ in range(health.MIN_CALLS + 1)]
+        assert served == ["baseten"] * health.MIN_CALLS + ["meta"]
+        assert "Baseten slow (50 s per call) → Meta Model API first" in routing.resolve("plan").note
+        now[0] += health.COOL_DOWN_S
+        assert providers.complete("plan", _req()).provider == "baseten"  # a fresh window after the cool-down
+    assert [e.provider for e in events] == [*served, "baseten"]  # every call still names the model that served it
+
+
+def test_a_slow_route_with_no_ready_alternative_keeps_its_place(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("BASETEN_API_KEY", "k-baseten-000")
+    route = routing.SPARK_OPEN_BASETEN
+    for _ in range(health.MIN_CALLS):
+        health.note(route, "fix_agent", 90_000)
+    assert health.slow(route, "fix_agent") == pytest.approx(90.0)
+    res = routing.resolve("fix_agent")  # Spark 1.3 is not ready without a Meta key
+    assert res.routes == [route] and "slow" not in res.note
+    health.note(routing.SPARK_13, "fix_agent", 2_000)
+    assert health.slow(routing.SPARK_13, "fix_agent") is None
+
+
+def test_a_stage_that_is_slow_by_nature_does_not_demote_the_route_for_other_stages() -> None:
+    for _ in range(health.MIN_CALLS):  # live, 2026-10-29: understand reads two photos, 36–55 s per call
+        health.note(routing.SPARK_13, "understand", 49_000)
+    assert health.slow(routing.SPARK_13, "understand") is not None
+    assert health.slow(routing.SPARK_13, "fix_agent") is None

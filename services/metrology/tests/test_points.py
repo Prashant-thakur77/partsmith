@@ -162,3 +162,32 @@ def test_mock_is_deterministic(tol: float) -> None:
     b = call(png, [(40.0, 30.0)], [], None)
     assert len(a) == 1 and 300 <= a[0][0].sum() <= 400 and np.array_equal(a[0][0], b[0][0])
     assert call(png, [(40.0, 30.0)], [(45.0, 35.0)], None) == []
+
+
+def test_an_unmatched_point_hole_must_be_a_clean_circle_on_the_part() -> None:
+    from partsmith_schemas.common import Measured
+    from partsmith_schemas.measurement import Measurements, ViewKind
+
+    from services.metrology.points import FeatureMeasurement
+
+    meas = Measurements(
+        view=ViewKind.top,
+        origin="real",
+        outline_mm=[(-23.56, -8.56), (23.53, -8.56), (23.53, 8.56), (-23.56, 8.56)],  # live broken latch, 47 × 17 mm
+        length=Measured(value=47.12),
+        width=Measured(value=17.12),
+        area_mm2=806.0,
+        part_to_mat=np.eye(3).tolist(),
+    )
+
+    def point(d: float, q: float, xy: tuple[float, float] = (-7.19, 0.62)) -> FeatureMeasurement:
+        return FeatureMeasurement(
+            "hole_1", "hole", (0, 0), ok=True, center_mm=xy, quality=q, values={"diameter": Measured(value=d)}
+        )
+
+    holes, notes = merge_holes(meas, [], [point(25.889, 0.21)])  # the recorded SAM point fit
+    assert holes == [] and "not a circle" in notes[0]
+    holes, notes = merge_holes(meas, [], [point(25.889, 0.04)])
+    assert holes == [] and "outside the part outline" in notes[0]
+    holes, notes = merge_holes(meas, [], [point(5.03, 0.04)])  # the see-through fit of the same pivot
+    assert [h.diameter.value for h in holes] == [5.03] and "did not see it" in notes[0]

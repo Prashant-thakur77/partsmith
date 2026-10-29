@@ -1,0 +1,16 @@
+{
+  "id": "j_261029_ab1a980f",
+  "kind": "fix",
+  "status": "done",
+  "created_at": 1793295566.1051297,
+  "updated_at": 1793296148.337012,
+  "title": "Cupboard turn-button latch — broken (synthetic, paper) (synthetic sample)",
+  "origin": "synthetic",
+  "provider_mode": "live",
+  "verified": false,
+  "max_error_mm": 8.568873978929002,
+  "iterations": 5,
+  "cost_usd": 0.55257,
+  "part_slug": null,
+  "is_replay": false
+}

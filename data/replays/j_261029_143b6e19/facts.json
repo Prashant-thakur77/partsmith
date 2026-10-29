@@ -1,0 +1,13 @@
+{
+  "bbox_mm": [
+    57.8,
+    29.69929195252261,
+    6.049951343522622
+  ],
+  "volume_mm3": 4148.181097711282,
+  "mass_g_pla": 5.14,
+  "mass_g_petg": 5.27,
+  "print_minutes_est": 27.9,
+  "supports_needed": true,
+  "orientation": "+X: +X end on the bed"
+}

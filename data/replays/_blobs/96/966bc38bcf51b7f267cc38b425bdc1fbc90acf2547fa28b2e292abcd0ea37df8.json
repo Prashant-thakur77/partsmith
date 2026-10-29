@@ -1,0 +1,193 @@
+{
+  "family": "clip",
+  "units": "mm",
+  "title": "Snap retaining clip",
+  "base_profile": {
+    "kind": "rect",
+    "points_mm": [
+      [
+        -21.718,
+        -7.995
+      ],
+      [
+        -20.968,
+        -8.713
+      ],
+      [
+        -20.304,
+        -8.995
+      ],
+      [
+        21.732,
+        -8.916
+      ],
+      [
+        21.865,
+        6.755
+      ],
+      [
+        21.41,
+        7.009
+      ],
+      [
+        18.578,
+        7.007
+      ],
+      [
+        18.342,
+        8.87
+      ],
+      [
+        17.377,
+        9.049
+      ],
+      [
+        15.594,
+        8.941
+      ],
+      [
+        14.445,
+        8.426
+      ],
+      [
+        14.204,
+        7.22
+      ],
+      [
+        13.963,
+        7.025
+      ],
+      [
+        -20.498,
+        6.965
+      ],
+      [
+        -21.385,
+        6.451
+      ],
+      [
+        -21.884,
+        5.217
+      ],
+      [
+        -21.921,
+        -7.124
+      ]
+    ],
+    "source": "measured",
+    "sigma_mm": 0.1
+  },
+  "thickness": {
+    "value": 3.0,
+    "source": "user_stated",
+    "sigma_mm": 0.3,
+    "evidence": null,
+    "bound_mm": null
+  },
+  "features": [
+    {
+      "kind": "through_hole",
+      "id": "hole_1",
+      "center_mm": [
+        -16.83,
+        -1.005
+      ],
+      "diameter": {
+        "value": 3.546,
+        "source": "measured",
+        "sigma_mm": 0.061,
+        "evidence": {
+          "view": "top",
+          "pixels": [
+            [
+              960.91,
+              617.95
+            ]
+          ],
+          "note": "see-through fit, h=3.0 mm: vertical cylinder whose top and bottom openings overlap by 2.76 mm in the photo; rms 0.018 mm over 135 edge points",
+          "citation": null
+        },
+        "bound_mm": null
+      },
+      "countersink": false
+    },
+    {
+      "kind": "rib",
+      "id": "rib_1",
+      "from_mm": [
+        15.5,
+        -8.916
+      ],
+      "to_mm": [
+        15.5,
+        7.025
+      ],
+      "width": {
+        "value": 2.5,
+        "source": "inferred",
+        "sigma_mm": 0.5,
+        "evidence": {
+          "view": "top",
+          "pixels": [
+            [
+              1072.0,
+              698.0
+            ]
+          ],
+          "note": "transverse snap wall thickness across plate inferred from top bar width; confirm against mating slot",
+          "citation": null
+        },
+        "bound_mm": null
+      },
+      "height": {
+        "value": 6.612,
+        "source": "inferred",
+        "sigma_mm": 0.8,
+        "evidence": {
+          "view": "top",
+          "pixels": [
+            [
+              1072.0,
+              698.0
+            ]
+          ],
+          "note": "total standing height 9.612 mm in side view minus 3.0 mm plate = 6.612 mm upstand; side view allows taller if wall is lower than 18.1 mm plane",
+          "citation": null
+        },
+        "bound_mm": null
+      }
+    }
+  ],
+  "broken_region": null,
+  "fit": {
+    "clearance_mm": 0.2,
+    "material": "PETG",
+    "printer": "FDM_0_4"
+  },
+  "unknowns": [
+    {
+      "id": "snap_upstand_height",
+      "question": "What was the original full height of the transverse snap wall above the plate? Side scan shows 9.61 mm total (~6.6 mm above plate).",
+      "expects": "number_mm",
+      "default": 6.6,
+      "choices": null
+    },
+    {
+      "id": "snap_tooth_engagement",
+      "question": "What overhang/undercut depth must the snap tooth engage in the mating part?",
+      "expects": "number_mm",
+      "default": 1.0,
+      "choices": null
+    },
+    {
+      "id": "mating_part",
+      "question": "What does this clip retain (panel thickness and slot width the snap fits into)?",
+      "expects": "text",
+      "default": null,
+      "choices": null
+    }
+  ],
+  "intent": "Make a replacement for this broken snap retaining clip.",
+  "refusal": null,
+  "template_hint": "clip"
+}

@@ -1,0 +1,18 @@
+{
+  "kind": "fix",
+  "intent": "Measure this LEGO 2×4 brick (reference object).",
+  "photo_shas": {
+    "top": "737b1363fa1a31f64af0fb00db08539d9b939b65d8497027ade6344d632a00d1.jpg",
+    "side": "27cb0eeb8e5e7bde4fdfa71bca9417bc8e458f036fa05f590e031a5ec002324b.jpg"
+  },
+  "mat_kind": "paper",
+  "screen_px_per_mm": null,
+  "thickness_mm": 9.6,
+  "family_hint": null,
+  "origin": "synthetic",
+  "max_iters": 6,
+  "budget_usd": 0.5,
+  "provider_mode": null,
+  "city": null,
+  "purpose": "reference_check"
+}

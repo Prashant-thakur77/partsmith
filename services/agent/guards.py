@@ -337,3 +337,26 @@ def refusal_message(cls: str) -> str:
         f"PartSmith does not make replacement parts in this class ({cls}). A printed copy could fail without warning "
         "where people's safety depends on it — please use an original part from the manufacturer."
     )
+
+
+# ---- is a proposed break backed by evidence? ------------------------------------------------------------------------
+# Every repair request calls its part "broken", so that word alone says nothing about where; these words name the damage
+# ("a corner cracked off", "a piece is missing at one end").
+DAMAGE_WORDS = re.compile(r"\b(missing|cracked|chipped|snapped off|broken off|broke off|piece|corner|tip)\b", re.I)
+BROKEN_SYMMETRY = 0.97  # below this mirror score the top outline is asymmetric enough to suggest missing material
+
+
+def break_evidence(words: str, *, broken_edge_taps: int, symmetry: float | None, taller_than_plate: bool) -> str | None:
+    """Why a model-proposed outline break is backed by something other than the model, else None.
+
+    Backing: the user tapped the broken edge; the user's words (or narration) name the damage; or the outline is
+    asymmetric while no side photo shows features above the plate (a tall feature seen from above in perspective makes
+    an intact outline asymmetric, so then asymmetry proves nothing)."""
+    if broken_edge_taps:
+        return f"the user tapped {broken_edge_taps} broken edge(s)"
+    m = DAMAGE_WORDS.search(words or "")
+    if m:
+        return f"the user says {m.group(1).lower()!r}"
+    if symmetry is not None and symmetry < BROKEN_SYMMETRY and not taller_than_plate:
+        return f"the outline is asymmetric (mirror score {symmetry:.2f} < {BROKEN_SYMMETRY})"
+    return None

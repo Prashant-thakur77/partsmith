@@ -9,7 +9,7 @@ from collections.abc import Callable, Iterable
 from dataclasses import dataclass, replace
 from typing import Any
 
-from . import chat, meta, mocks, pricing, replay, retry, sam_open
+from . import chat, health, meta, mocks, pricing, replay, retry, sam_open
 from .base import (
     Completion,
     ImageResult,
@@ -63,11 +63,14 @@ def _run_chain[T](
     """Try each live route in order. Emits one event per route tried. Returns None if every route failed."""
     errors: list[str] = []
     failures: list[ProviderError] = []
+    text = res.spec.kind in ("complete", "agent")
     for route in res.routes:
         t0 = time.monotonic()
         try:
             out = attempt(route)
         except Exception as exc:
+            if text:
+                health.note(route, stage, _ms(t0))
             err = retry.classify(exc, route.provider)
             usage = err.usage
             usd = pricing.token_cost_usd(route.provider, route.model, usage) if usage.tokens_in else 0.0
@@ -86,6 +89,8 @@ def _run_chain[T](
             failures.append(err)
             continue
         ms = _ms(t0)
+        if text:
+            health.note(route, stage, ms)
         record_call(
             stage=stage, provider=route.provider, model=out.model, mode="live", usage=out.usage, ms=ms, usd=out.usd
         )

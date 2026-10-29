@@ -1,0 +1,18 @@
+{
+  "kind": "fix",
+  "intent": "Make a replacement for this broken cupboard turn-button latch: a corner cracked off.",
+  "photo_shas": {
+    "top": "94f6c1e09b79709c97c7b12fd32a28d9cb16742632424d96b02a0c501d01af79.jpg",
+    "side": "b7698942d7e313d427aa13c4c789d19228124373f27e6be7ecdd9218d1c23c24.jpg"
+  },
+  "mat_kind": "paper",
+  "screen_px_per_mm": null,
+  "thickness_mm": 5.0,
+  "family_hint": "latch",
+  "origin": "synthetic",
+  "max_iters": 6,
+  "budget_usd": 0.5,
+  "provider_mode": null,
+  "city": null,
+  "purpose": "repair"
+}

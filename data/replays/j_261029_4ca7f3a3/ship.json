@@ -1,0 +1,6 @@
+{
+  "ok": true,
+  "reason": "measurement check of a reference object, not a replacement part: verified: every measured dimension and view is within tolerance",
+  "requires_ack": false,
+  "purpose": "reference_check"
+}

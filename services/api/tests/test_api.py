@@ -391,6 +391,14 @@ def test_fix_upload_strips_gps_and_validates(client: TestClient, fake: FakeServi
     assert stored[stored.index(b"\xff\xda") :] == photo[photo.index(b"\xff\xda") :]
     ji = fake.inputs[jid]
     assert ji.thickness_mm == 3.5 and ji.screen_px_per_mm == 4.2 and ji.family_hint is not None
+    # a measurement check (no refusal, nothing printed) is server-set only: the public route never accepts it
+    r = client.post(
+        "/api/v1/jobs/fix",
+        files={"top": ("top.jpg", _jpeg(), "image/jpeg")},
+        data={"intent": "measure this", "purpose": "reference_check"},
+    )
+    assert r.status_code == 200, r.text
+    assert fake.inputs[r.json()["id"]].purpose == "repair"
     _err(client.post("/api/v1/jobs/fix", files={"top": ("t.jpg", b"not an image", "image/jpeg")}), 422, "bad_image")
     _err(client.post("/api/v1/jobs/fix", files={"top": ("t.jpg", _jpeg(100, 80), "image/jpeg")}), 422, "too_small")
     gif = io.BytesIO()

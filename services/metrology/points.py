@@ -15,7 +15,7 @@ made sub-pixel against the photo (colour unmixing across the edge); the result i
 
 Everything is `source=measured` with the prompt point as evidence. `merge_holes` combines these with the holes the outline
 pass found: a point-derived hole replaces an outline hole only when its fit is strictly better (lower rms radial residual
-relative to the radius); holes the outline pass missed are added.
+relative to the radius); holes the outline pass missed are added when they are a clean circle lying on the part.
 """
 
 from __future__ import annotations
@@ -32,6 +32,7 @@ from numpy.typing import NDArray
 from partsmith_schemas.common import Evidence, Measured, Source
 from partsmith_schemas.measurement import Hole, Measurements
 from scipy.ndimage import distance_transform_edt
+from shapely.geometry import Point as ShapelyPoint
 from shapely.geometry import Polygon
 
 from services.common.images import decode_bgr
@@ -534,6 +535,28 @@ def outline_hole_quality(out: MeasureOutput) -> list[float]:
     return q
 
 
+ADDED_HOLE_MAX_RMS_R = 0.10  # good point fits on real and synthetic photos sit at 0.001–0.06
+ADDED_HOLE_MAX_OUTSIDE = 0.10  # share of the circle's area allowed outside the part outline (edge noise)
+
+
+def _implausible_added_hole(meas: Measurements, c: tuple[float, float], r: float, quality: float | None) -> str | None:
+    """Why a point-derived hole that matches no outline hole cannot be one, else None. Nothing cross-checks such a hole,
+    so it must be a clean circle that lies on the part.
+
+    Live, 2026-10-29: on the broken latch the SAM point mask spread over the plate around a countersunk pivot; the fit
+    came back Ø25.9 mm (rms/r 0.21) on a part 17 mm wide, and that P0 test made the job 20 mm off."""
+    if quality is None or not math.isfinite(quality) or quality > ADDED_HOLE_MAX_RMS_R:
+        q = f"{quality:.2f}" if quality is not None and math.isfinite(quality) else "unknown"
+        return f"the edge is not a circle (fit rms/r {q} > {ADDED_HOLE_MAX_RMS_R:g})"
+    if len(meas.outline_mm) >= 3 and r > 0:
+        part = Polygon(meas.outline_mm).buffer(0)
+        disc = ShapelyPoint(c).buffer(r)
+        outside = disc.difference(part).area / max(disc.area, 1e-9)
+        if outside > ADDED_HOLE_MAX_OUTSIDE:
+            return f"a Ø{2 * r:.1f} mm circle there lies {outside:.0%} outside the part outline"
+    return None
+
+
 def merge_holes(
     meas: Measurements, outline_quality: Sequence[float], features: Sequence[FeatureMeasurement]
 ) -> tuple[list[Hole], list[str]]:
@@ -541,7 +564,8 @@ def merge_holes(
 
     Rule: a point-derived hole matches an outline hole when their centres are within max(r, 1 mm). It replaces it only
     when its fit is strictly better (rms/r lower than the outline hole's `outline_quality`); otherwise the outline value
-    stays and the point result is noted. Unmatched point holes are added — those are holes the outline pass missed.
+    stays and the point result is noted. Unmatched point holes are added — those are holes the outline pass missed —
+    but only when they are a clean circle on the part (`_implausible_added_hole`); otherwise they are noted.
     """
     M = np.asarray(meas.part_to_mat, dtype=np.float64)
     inv = np.linalg.inv(M) if M.shape == (3, 3) else np.eye(3)
@@ -572,6 +596,10 @@ def merge_holes(
                 notes.append(f"{h.id}: point measurement used (fit rms/r {fq:.3f} better than the outline's)")
             else:
                 notes.append(f"{h.id}: outline measurement kept (point fit rms/r {fq:.3f} not better)")
+            continue
+        why = _implausible_added_hole(meas, (float(c[0]), float(c[1])), d.value / 2, fm.quality)
+        if why is not None:
+            notes.append(f"{fm.id}: point result not added as a hole: {why}")
             continue
         new_id = f"hole_{len(holes) + 1}"
         holes.append(Hole(id=new_id, center_mm=(round(float(c[0]), 3), round(float(c[1]), 3)), diameter=d))

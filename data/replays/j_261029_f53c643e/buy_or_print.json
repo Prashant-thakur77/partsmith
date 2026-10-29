@@ -1,0 +1,88 @@
+{
+  "job_id": "j_261029_f53c643e",
+  "slug": null,
+  "title": "LEGO 2x4 brick reference",
+  "status": "best_effort",
+  "prints": [
+    {
+      "material": "PLA",
+      "volume_mm3": 5055.0,
+      "grams": 6.27,
+      "print_minutes": 14.3,
+      "filament_cost": {
+        "INR": 7.52,
+        "USD": 0.13
+      },
+      "price_per_kg": {
+        "INR": 1200.0,
+        "USD": 20.0
+      },
+      "assumptions": [
+        "grams: solid-volume mass at 100 % infill (volume x density: PLA 1.24, PETG 1.27 g/cm^3); a real print weighs less",
+        "minutes: rough estimate: (volume / 8 mm^3/s + layers x 4 s) / 60, 0.2 mm layers, 100 % infill",
+        "filament cost: grams x an assumed 1 kg spool price (INR 1200/kg, USD 20/kg); not a quote, and no shop margin or electricity"
+      ]
+    },
+    {
+      "material": "PETG",
+      "volume_mm3": 5055.0,
+      "grams": 6.42,
+      "print_minutes": 14.3,
+      "filament_cost": {
+        "INR": 8.99,
+        "USD": 0.14
+      },
+      "price_per_kg": {
+        "INR": 1400.0,
+        "USD": 22.0
+      },
+      "assumptions": [
+        "grams: solid-volume mass at 100 % infill (volume x density: PLA 1.24, PETG 1.27 g/cm^3); a real print weighs less",
+        "minutes: rough estimate: (volume / 8 mm^3/s + layers x 4 s) / 60, 0.2 mm layers, 100 % infill",
+        "filament cost: grams x an assumed 1 kg spool price (INR 1400/kg, USD 22/kg); not a quote, and no shop margin or electricity"
+      ]
+    }
+  ],
+  "lookup": {
+    "query": "LEGO 2x4 brick reference — user: Measure this LEGO 2×4 brick (reference object).",
+    "city": null,
+    "oem": {
+      "name": "Brick 2 x 4",
+      "number": "3001",
+      "url": "https://www.bricklink.com/v2/catalog/catalogitem.page?P=3001&name=Brick%202%20x%204&category=%5BBrick%5D",
+      "quote": "Brick 2 x 4"
+    },
+    "offers": [
+      {
+        "seller": "LEGO® Pick a Brick | Official LEGO® Shop US",
+        "price": 0.21,
+        "currency": "USD",
+        "url": "https://www.lego.com/en-us/pick-and-build/pick-a-brick?query=300126&CMP=AFC-AffiliateUS-oSv/vWYkQIY-2014326-1606623-10",
+        "quote": "BRICK 2X4 ID: 300126/3001 Qty in set: 3 $0.21",
+        "title": "LEGO® Pick a Brick | Official LEGO® Shop US",
+        "availability": "Available Now"
+      },
+      {
+        "seller": "Brick Owl",
+        "price": 0.02,
+        "currency": "USD",
+        "url": "https://www.brickowl.com/catalog/lego-white-brick-2-x-4-3001",
+        "quote": "**Price:** 0.02 USD",
+        "title": "LEGO White Brick 2 x 4 (3001)",
+        "availability": "InStock"
+      }
+    ],
+    "places": [],
+    "dropped": [],
+    "searched": true,
+    "queries": 6,
+    "mode": "live",
+    "provider": "meta",
+    "model": "muse-wonder-1.0",
+    "usd": 0.124656,
+    "label": "web search with citations"
+  },
+  "mode": "live",
+  "created_at": 1793295035.2121623,
+  "notes": []
+}

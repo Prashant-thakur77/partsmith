@@ -13,6 +13,7 @@ from .verification import ParamSpec, Verification
 JobKind = Literal["fix", "steer", "bake", "variant", "fit_check"]
 JobStatus = Literal["queued", "running", "waiting_for_answer", "done", "failed", "cancelled"]
 ProviderMode = Literal["live", "mock", "replay"]
+JobPurpose = Literal["repair", "reference_check"]
 
 
 class JobInput(Strict):
@@ -28,6 +29,9 @@ class JobInput(Strict):
     budget_usd: float = 0.5
     provider_mode: ProviderMode | None = None
     city: str | None = None  # optional: lets the buy-or-print card look for nearby print shops and repair cafés
+    # "reference_check": a measurement check of a known object (bundled reference samples, benches). Set only by
+    # server code (start_demo_job / eval), never from a public request; nothing is meant to be printed.
+    purpose: JobPurpose = "repair"
 
 
 class JobSummary(Strict):

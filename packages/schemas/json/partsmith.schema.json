@@ -1729,6 +1729,15 @@
           ],
           "default": null,
           "title": "City"
+        },
+        "purpose": {
+          "default": "repair",
+          "enum": [
+            "repair",
+            "reference_check"
+          ],
+          "title": "Purpose",
+          "type": "string"
         }
       },
       "title": "JobInput",

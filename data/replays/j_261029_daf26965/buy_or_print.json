@@ -1,0 +1,64 @@
+{
+  "job_id": "j_261029_daf26965",
+  "slug": null,
+  "title": "Battery compartment cover",
+  "status": "verified",
+  "prints": [
+    {
+      "material": "PLA",
+      "volume_mm3": 1969.4,
+      "grams": 2.44,
+      "print_minutes": 5.8,
+      "filament_cost": {
+        "INR": 2.93,
+        "USD": 0.05
+      },
+      "price_per_kg": {
+        "INR": 1200.0,
+        "USD": 20.0
+      },
+      "assumptions": [
+        "grams: solid-volume mass at 100 % infill (volume x density: PLA 1.24, PETG 1.27 g/cm^3); a real print weighs less",
+        "minutes: rough estimate: (volume / 8 mm^3/s + layers x 4 s) / 60, 0.2 mm layers, 100 % infill",
+        "filament cost: grams x an assumed 1 kg spool price (INR 1200/kg, USD 20/kg); not a quote, and no shop margin or electricity"
+      ]
+    },
+    {
+      "material": "PETG",
+      "volume_mm3": 1969.4,
+      "grams": 2.5,
+      "print_minutes": 5.8,
+      "filament_cost": {
+        "INR": 3.5,
+        "USD": 0.06
+      },
+      "price_per_kg": {
+        "INR": 1400.0,
+        "USD": 22.0
+      },
+      "assumptions": [
+        "grams: solid-volume mass at 100 % infill (volume x density: PLA 1.24, PETG 1.27 g/cm^3); a real print weighs less",
+        "minutes: rough estimate: (volume / 8 mm^3/s + layers x 4 s) / 60, 0.2 mm layers, 100 % infill",
+        "filament cost: grams x an assumed 1 kg spool price (INR 1400/kg, USD 22/kg); not a quote, and no shop margin or electricity"
+      ]
+    }
+  ],
+  "lookup": {
+    "query": "Battery compartment cover — user: Make a replacement for this broken battery compartment cover.",
+    "city": null,
+    "oem": null,
+    "offers": [],
+    "places": [],
+    "dropped": [],
+    "searched": true,
+    "queries": 3,
+    "mode": "live",
+    "provider": "meta",
+    "model": "muse-wonder-1.0",
+    "usd": 0.0584,
+    "label": "web search with citations"
+  },
+  "mode": "live",
+  "created_at": 1793285170.250593,
+  "notes": []
+}

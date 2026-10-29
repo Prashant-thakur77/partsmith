@@ -1,0 +1,13 @@
+{
+  "bbox_mm": [
+    30.0,
+    29.99067546002449,
+    15.8
+  ],
+  "volume_mm3": 10843.74140245056,
+  "mass_g_pla": 13.45,
+  "mass_g_petg": 13.77,
+  "print_minutes_est": 27.9,
+  "supports_needed": true,
+  "orientation": "+Z: upside down (top face on the bed)"
+}

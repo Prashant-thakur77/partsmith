@@ -11,6 +11,7 @@ on is discarded. The model proposes; code decides: measured values override the 
 
 from __future__ import annotations
 
+import ast
 import difflib
 import json
 import math
@@ -80,6 +81,7 @@ MISSING_TEST_PENALTY = 3.0  # a P0 test the model cannot even be measured for (e
 MASK_PX_PER_MM = 20.0
 MODEL_IMAGE_MAX_PX = 1600
 MIN_OPENING_MM2 = 2.0
+HOLLOW_RATIO = 0.5  # free-code plate thickness below this share of the expected one, at full height: a hidden cavity
 
 # ------------------------------------------------------------------------------------------------- JSON schemas
 
@@ -147,6 +149,10 @@ TRIAGE_SCHEMA: dict[str, Any] = {
     "additionalProperties": False,
 }
 
+REFERENCE_CHECK_NOTE = (
+    "\nPurpose: a measurement check of a known reference object. Describe it as a rigid solid of its shape (family "
+    "`custom` unless a template fits); do not refuse it: nothing will be printed."
+)
 PLAN_PROMPT = (
     "You plan how to build a replacement part. Choose `template` when one of these templates matches the PartSpec "
     "family and shape (the builder then only fills its PARAMS), otherwise `free_code`. Templates: {templates}. "
@@ -415,6 +421,39 @@ def format_views(v: Verification) -> str:
     )
 
 
+def why_not_verified(v: Verification, gates: Mapping[str, Sequence[str]] | None = None, limit: int = 6) -> list[str]:
+    """Each pass rule `v` breaks, in plain words: the failing P0 tests and every view gate (the same rules
+    `Round.rank` sums). A small silhouette is gated on its mean edge distance instead of IoU; a fixer shown only IoU
+    and Hausdorff cannot see that rule (live, 2026-10-29: the knob's side view failed it at 0.19 mm, Hausdorff 0.43)."""
+    out = [
+        f"P0 test {t.id}: {t.description}" + (f" (model {t.value:.2f})" if t.value is not None else "")
+        for t in v.tests
+        if t.priority == "P0" and not t.passed and not t.id.endswith(PHOTO_LIMITED_SUFFIX)
+    ]
+    th = v.thresholds
+    for m in v.views:
+        applied = (gates or {}).get(m.view, ["hausdorff", "iou"])
+        if m.hausdorff_mm > th.hausdorff_mm:
+            out.append(f"{m.view} view: Hausdorff {m.hausdorff_mm:.2f} mm > {th.hausdorff_mm:g} mm")
+        if "iou" in applied and m.iou < th.iou:
+            out.append(f"{m.view} view: IoU {m.iou:.3f} < {th.iou:g}")
+        if "mean" in applied and m.mean_mm > MEAN_GATE_MM:
+            out.append(
+                f"{m.view} view: mean edge distance {m.mean_mm:.2f} mm > {MEAN_GATE_MM:g} mm (small silhouette: gated "
+                f"on the mean distance between the outlines, not on IoU; extra {m.over_area_mm2:.1f} mm², missing "
+                f"{m.under_area_mm2:.1f} mm²)"
+            )
+    return out[:limit]
+
+
+def format_gate_failures(v: Verification, gates: Mapping[str, Sequence[str]] | None = None) -> str:
+    """Empty when `v` is verified, else one line naming what still fails."""
+    if v.verified:
+        return ""
+    why = why_not_verified(v, gates)
+    return "\nnot verified because: " + ("; ".join(why) if why else "a P1 check or a veto (see the tests)")
+
+
 VISUAL_ONLY_NOTE = "(withheld: visual-only feedback — compare the overlay images)"
 NO_SCALE_DISTANCE_MM = 300.0  # B0 guess: a phone held ~30 cm above the part with a 26 mm-equivalent lens
 NO_SCALE_FOCAL35_MM = 26.0
@@ -535,6 +574,7 @@ class FixRun:
         self.narration: providers.Narration | None = None  # Spark's reading of a narrated walk-around (steers only)
         self.orbit_footprint: Any = None  # the walk-around's own footprint on the mat (shapely Polygon) when measured
         self.completion_accepted = False
+        self.rebuilt: set[str] = set()  # code findings that already triggered their one rebuild
         # Dimensions the user stated because the photo cannot show them (measured quantity -> value), and the knobs
         # they fix (knob -> why): the guards never move those, the verifier treats them as stated, not observed.
         self.stated: dict[str, Measured] = {}
@@ -1011,6 +1051,11 @@ class FixRun:
             f"measurement] " + "; ".join(said)
         )
 
+    @property
+    def reference_check(self) -> bool:
+        """A measurement check of a known object (server-set `JobInput.purpose`; never from a public request)."""
+        return getattr(self.job.input, "purpose", "repair") == "reference_check"
+
     def understand(self) -> None:
         with self.stage("understand", "Understanding the part (features, family, unknowns)") as st:
             top = self.measurements["top"]
@@ -1031,6 +1076,7 @@ class FixRun:
                 measurements=json.dumps(meas_json),
                 intent=self.intent_for_models(),
                 side_note=" and side view" if len(images) > 1 else "",
+                purpose_note=REFERENCE_CHECK_NOTE if self.reference_check else "",
             )
             req = ModelRequest(
                 messages=[{"role": "developer", "content": dev}, {"role": "user", "content": user}],
@@ -1063,6 +1109,12 @@ class FixRun:
             else:
                 self.log("ablation (no mat scale): the model's own size estimates are kept", "warn")
             cls = guards.refused_class(self.job.input.intent, spec.title, spec.intent)
+            if spec.refusal and self.reference_check and cls is None:
+                # live, 2026-10-29: Spark refused the AA cell and SD card reference samples ("not a rigid plastic
+                # part"). A measurement check prints nothing, so the model's refusal is logged and ignored; code's own
+                # refused classes still apply, and the export gate labels the job as a measurement check.
+                self.log(f"model refusal ignored on a reference check (nothing is printed): {spec.refusal}", "warn")
+                spec.refusal = None
             reason = spec.refusal or (guards.refusal_message(cls) if cls else None)
             self.spec = spec
             if reason:
@@ -1074,6 +1126,7 @@ class FixRun:
 
             evidence.apply_points(self)
             self.enforce_measured(spec, self.measurements["top"])
+            dropped = evidence.check_break_support(self)
             evidence.propose_completion(self)
             side_h = self.heights.get("side")
             if side_h is not None and side_h[1] != "round" and self.round_part() and self.measure_side("round"):
@@ -1083,6 +1136,7 @@ class FixRun:
             st.label = (
                 f"{spec.family.value}: {len(spec.features)} feature(s), thickness {spec.thickness.value:.2f} mm "
                 f"({spec.thickness.source.value}), {len(spec.unknowns)} question(s)"
+                + (" · proposed break dropped (no evidence besides the model)" if dropped else "")
             )
 
     def note_unknowns(self, spec: PartSpec) -> None:
@@ -1442,15 +1496,7 @@ class FixRun:
                 fam = [t for t in list_templates() if t.family == self.spec.family]
                 self.template = fam[0] if fam else None
             if self.template is None:
-                hinted = self.family_template(self.spec.template_hint)
-                if hinted is not None and (self.spec.broken_region is not None or self.side_taller_than_plate()):
-                    # model proposes, code decides: an extruded outline would copy the break (or flatten tall
-                    # features), and the understand stage already named a template of this family
-                    self.log(
-                        f"planner chose free code; code uses the hinted {hinted.name} template instead: the part is "
-                        "broken or taller than its plate, which free code from the outline cannot express"
-                    )
-                    self.template = hinted
+                self.template = self.free_code_override()
             self.strategy = "template" if self.template is not None else "free_code"
             st.label = (
                 f"Template: {self.template.name} ({self.template.title})"
@@ -1459,8 +1505,9 @@ class FixRun:
             )
 
     # ---- 5–7. build, execute, verify ------------------------------------------------------------------------------------------
-    def build_program(self, strategy: Strategy) -> str:
-        """Ask the builder for a part program; policy/compile/runtime errors are fed back for up to BUILD_RETRIES."""
+    def build_program(self, strategy: Strategy, feedback: tuple[str, str] | None = None) -> str:
+        """Ask the builder for a part program; policy/compile/runtime errors are fed back for up to BUILD_RETRIES.
+        `feedback` = (previous program, what code found wrong with its solid) starts the exchange from that program."""
         assert self.spec is not None
         tpl = self.template if strategy == "template" else None
         family = self.spec.family.value
@@ -1476,8 +1523,8 @@ class FixRun:
             partspec=self.spec.model_dump_json(exclude_none=True),
             template_source=tpl.code if tpl else "(none)",
         )
-        error: str | None = None
-        last_code = ""
+        error: str | None = feedback[1] if feedback else None
+        last_code = feedback[0] if feedback else ""
         for attempt in range(BUILD_RETRIES + 1):
             messages = [{"role": "developer", "content": dev}, {"role": "user", "content": user}]
             if error:
@@ -1505,9 +1552,28 @@ class FixRun:
             last_code = code
             error = self.program_error(code)
             if error is None:
-                return code
+                return self.template_program(tpl, code) if tpl is not None else code
             self.log(f"build attempt {attempt + 1}: {error}", "warn")
         raise _BuildFailed(error or "the builder returned no usable program", last_code)
+
+    def template_program(self, tpl: Template, code: str) -> str:
+        """In template mode the builder only fills PARAMS: code runs the template's own source with the builder's
+        values for the knobs they share (clamped to the template's ranges). A rewritten body would otherwise be
+        verified as the known template form (`known_form`) and its knobs mapped with the template's MEASURE_MAP.
+
+        Live, 2026-10-29: for the knob (rerun) and the white-on-light cover the builder returned new geometry with the
+        template's MEASURE_MAP (an extruded polyline; a cover without length/width knobs) under the template label."""
+        values = {s.name: float(s.default) for s in parse_params(code)}
+        out = set_defaults(tpl.code, {k: v for k, v in values.items() if k in {p.name for p in tpl.params}})
+        if ast.dump(ast.parse(out)) == ast.dump(ast.parse(code)):
+            return code  # the template with new defaults (comments, e.g. a part.py header, do not count)
+        mine, theirs = {p.name for p in tpl.params}, set(values)
+        what = f"; its PARAMS differ (+{sorted(theirs - mine)} -{sorted(mine - theirs)})" if mine != theirs else ""
+        self.log(
+            f"builder changed the {tpl.name} template's program{what}; code runs the template source with the "
+            "builder's values for the shared knobs"
+        )
+        return out
 
     @staticmethod
     def program_error(code: str) -> str | None:
@@ -1523,8 +1589,11 @@ class FixRun:
             return "PARAMS is empty — every dimension must be a parameter"
         return None
 
-    def build_round(self, strategy: Strategy, *, iter_label: str, analysis: str = "") -> Round:
-        """Build a new program with `strategy`, run it, verify it. Counts as one iteration."""
+    def build_round(
+        self, strategy: Strategy, *, iter_label: str, analysis: str = "", feedback: tuple[str, str] | None = None
+    ) -> Round:
+        """Build a new program with `strategy`, run it, verify it. Counts as one iteration. A free-code solid that code
+        finds hollow where no photo looks is rebuilt once with that finding (`hollow_finding`)."""
         self.iteration += 1
         self.strategy = strategy
         label = "Writing the part program" + (
@@ -1535,7 +1604,7 @@ class FixRun:
         code = ""
         with self.stage("build", label) as st:
             try:
-                code = self.build_program(strategy)
+                code = self.build_program(strategy, feedback)
             except _BuildFailed as bf:
                 st.status = "fail"
                 st.label = f"Builder failed after {BUILD_RETRIES + 1} attempts: {bf.error}"
@@ -1547,7 +1616,35 @@ class FixRun:
             self.record_round(rnd, [], analysis or "builder failed", prev=self.current)
             return rnd
         values = self.apply_stated(code, {s.name: float(s.default) for s in parse_params(code)})
-        return self.evaluate(code, values, strategy, [], analysis or iter_label, prev=self.current)
+        rnd = self.evaluate(code, values, strategy, [], analysis or iter_label, prev=self.current)
+        finding = self.hollow_finding(rnd) if strategy == "free_code" and not self.opts.single_shot else None
+        if finding is not None and "hollow" not in self.rebuilt:
+            self.rebuilt.add("hollow")
+            self.log(f"free-code solid rejected by code: {finding}; rebuilding once with that finding", "warn")
+            return self.build_round(
+                strategy, iter_label="rebuild: solid where no photo looks", feedback=(code, finding)
+            )
+        return rnd
+
+    def hollow_finding(self, rnd: Round) -> str | None:
+        """The plate-thickness P0 test fails because the solid is hollow (full height, little material along vertical
+        lines), not short: the program invented a cavity no photo can see. Code's finding for the builder, else None.
+
+        Live, 2026-10-29: free code for the LEGO 2×4 reference hollowed out its underside with a 1.2–2 mm wall; the
+        stated 9.6 mm body failed by 7.9 mm and no knob in the program's own ranges could close it."""
+        v = rnd.verification
+        si = rnd.exec_result.solid_info if rnd.exec_result is not None else None
+        t = next((t for t in v.tests if t.id == "thickness"), None) if v is not None else None
+        if t is None or si is None or t.passed or t.value is None or t.expected is None or not t.tol:
+            return None
+        if t.value >= HOLLOW_RATIO * t.expected or si.size_mm[2] < t.expected - t.tol:
+            return None  # thin but not far off, or simply too short: a knob edit fixes that
+        return (
+            f"the verifier measured a plate thickness of {t.value:.2f} mm (the most common amount of material along "
+            f"vertical lines through the footprint) on a solid {si.size_mm[2]:.2f} mm tall, but the part is "
+            f"{t.expected:.2f} mm thick. No photo shows its underside or inside: model the body solid to that "
+            "thickness and add only the features the PartSpec names"
+        )
 
     def evaluate(
         self,
@@ -1767,7 +1864,11 @@ class FixRun:
             limits=limits,
             param_names=", ".join(s.name for s in specs),
             residuals=format_residuals(v) if numeric else VISUAL_ONLY_NOTE,
-            views=(format_views(v) + format_spots(spots)) if numeric else VISUAL_ONLY_NOTE,
+            views=(
+                format_views(v) + format_spots(spots) + format_gate_failures(v, rnd.out.view_gates if rnd.out else None)
+            )
+            if numeric
+            else VISUAL_ONLY_NOTE,
             values=json.dumps(rnd.values),
             history=hist_text,
         )
@@ -1959,6 +2060,41 @@ class FixRun:
     def side_taller_than_plate(self) -> bool:
         side = self.measurements.get("side")
         return side is not None and any("clearly above the stated" in n for n in side.notes)
+
+    def free_code_override(self) -> Template | None:
+        """The template code uses when the planner picked free code: the PartSpec's hinted template, if it belongs to
+        the part's family and the measured size fits its ranges. Model proposes, code decides: templates verify far
+        more often than free code (PS vs PS-noTemplate); free code stays the fallback after rounds without progress,
+        except for a broken or tall part (an extruded outline would copy the break or flatten the tall features).
+
+        Live, 2026-10-29: the planner chose free code for the intact cupboard latch, hinge leaf, snap clip and cable
+        clip although understand named their templates ("a template would discard measured fidelity"); all four ended
+        best effort, 0.9–2.7 mm. The latch is neither broken nor tall, so only this rule moves it to its template."""
+        assert self.spec is not None
+        hinted = self.family_template(self.spec.template_hint)
+        if hinted is None:
+            return None
+        misfit = self.template_misfit(hinted)
+        if misfit is not None:
+            self.log(f"planner chose free code and the hinted {hinted.name} template does not fit: {misfit}")
+            return None
+        why = (
+            "the part is broken or taller than its plate, which free code from the outline cannot express"
+            if self.spec.broken_region is not None or self.side_taller_than_plate()
+            else "the measured size fits it; free code stays the fallback if the template stalls"
+        )
+        self.log(f"planner chose free code; code uses the hinted {hinted.name} template instead: {why}")
+        return hinted
+
+    def template_misfit(self, tpl: Template) -> str | None:
+        """Why the measured size cannot be this template (a mapped size far outside its PARAMS range), else None."""
+        top = self.measurements.get("top")
+        if top is None or self.spec is None:
+            return None
+        th = self.spec.thickness
+        return mock_brain.template_misfit(
+            tpl, top.model_dump(mode="json"), th.value if th.source != Source.inferred else None
+        )
 
     def family_template(self, name: str | None) -> Template | None:
         """The named template if it exists and belongs to the part's family, else None."""
@@ -2184,6 +2320,9 @@ class FixRun:
             except Exception as exc:
                 self.log(f"zip skipped: {type(exc).__name__}: {exc}", "warn")
             ship = evidence.ship_decision(self, v)
+            if self.reference_check:  # labelled: the files exist to measure the measurer, not to replace a part
+                ship["purpose"] = "reference_check"
+                ship["reason"] = f"measurement check of a reference object, not a replacement part: {ship['reason']}"
             self.job.write_json("ship.json", ship)
             st.label = "Exported: " + ", ".join(made) + f" · ship gate: {'open' if ship['ok'] else 'closed'}"
 

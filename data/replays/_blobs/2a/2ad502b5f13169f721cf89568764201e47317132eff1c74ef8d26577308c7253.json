@@ -1,0 +1,64 @@
+{
+  "job_id": "j_261029_e8bd62e7",
+  "slug": null,
+  "title": "Wall hook — broken (synthetic, clean) (synthetic sample)",
+  "status": "verified",
+  "prints": [
+    {
+      "material": "PLA",
+      "volume_mm3": 7223.6,
+      "grams": 8.96,
+      "print_minutes": 26.0,
+      "filament_cost": {
+        "INR": 10.75,
+        "USD": 0.18
+      },
+      "price_per_kg": {
+        "INR": 1200.0,
+        "USD": 20.0
+      },
+      "assumptions": [
+        "grams: solid-volume mass at 100 % infill (volume x density: PLA 1.24, PETG 1.27 g/cm^3); a real print weighs less",
+        "minutes: rough estimate: (volume / 8 mm^3/s + layers x 4 s) / 60, 0.2 mm layers, 100 % infill",
+        "filament cost: grams x an assumed 1 kg spool price (INR 1200/kg, USD 20/kg); not a quote, and no shop margin or electricity"
+      ]
+    },
+    {
+      "material": "PETG",
+      "volume_mm3": 7223.6,
+      "grams": 9.17,
+      "print_minutes": 26.0,
+      "filament_cost": {
+        "INR": 12.84,
+        "USD": 0.2
+      },
+      "price_per_kg": {
+        "INR": 1400.0,
+        "USD": 22.0
+      },
+      "assumptions": [
+        "grams: solid-volume mass at 100 % infill (volume x density: PLA 1.24, PETG 1.27 g/cm^3); a real print weighs less",
+        "minutes: rough estimate: (volume / 8 mm^3/s + layers x 4 s) / 60, 0.2 mm layers, 100 % infill",
+        "filament cost: grams x an assumed 1 kg spool price (INR 1400/kg, USD 22/kg); not a quote, and no shop margin or electricity"
+      ]
+    }
+  ],
+  "lookup": {
+    "query": "Wall hook — broken (synthetic, clean) (synthetic sample) — user: Make a replacement for this broken wall hook: the top of the part snapped off.",
+    "city": null,
+    "oem": null,
+    "offers": [],
+    "places": [],
+    "dropped": [],
+    "searched": true,
+    "queries": 3,
+    "mode": "live",
+    "provider": "meta",
+    "model": "muse-wonder-1.0",
+    "usd": 0.0566776,
+    "label": "web search with citations"
+  },
+  "mode": "live",
+  "created_at": 1793286584.0591388,
+  "notes": []
+}

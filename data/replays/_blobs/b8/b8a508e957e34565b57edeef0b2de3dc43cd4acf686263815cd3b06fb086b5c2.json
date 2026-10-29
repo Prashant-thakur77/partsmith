@@ -1,0 +1,371 @@
+{
+  "family": "custom",
+  "units": "mm",
+  "title": "LEGO 2x4 brick reference",
+  "base_profile": {
+    "kind": "rect",
+    "points_mm": [
+      [
+        15.884,
+        -7.644
+      ],
+      [
+        15.997,
+        6.468
+      ],
+      [
+        15.754,
+        7.843
+      ],
+      [
+        -15.116,
+        8.012
+      ],
+      [
+        -15.941,
+        7.706
+      ],
+      [
+        -15.888,
+        -7.916
+      ],
+      [
+        15.396,
+        -7.949
+      ]
+    ],
+    "source": "measured",
+    "sigma_mm": 0.116
+  },
+  "thickness": {
+    "value": 9.6,
+    "source": "user_stated",
+    "sigma_mm": 0.3,
+    "evidence": null,
+    "bound_mm": null
+  },
+  "features": [
+    {
+      "kind": "boss",
+      "id": "stud_1",
+      "center_mm": [
+        -12.0,
+        -4.0
+      ],
+      "outer_d": {
+        "value": 4.8,
+        "source": "inferred",
+        "sigma_mm": 0.3,
+        "evidence": {
+          "view": "top",
+          "pixels": [
+            [
+              300.0,
+              150.0
+            ]
+          ],
+          "note": "inferred standard LEGO stud dia 4.8mm on 8mm pitch for 2x4 brick",
+          "citation": null
+        },
+        "bound_mm": null
+      },
+      "inner_d": null,
+      "height": {
+        "value": 1.8,
+        "source": "inferred",
+        "sigma_mm": 0.3,
+        "evidence": {
+          "view": "side",
+          "pixels": null,
+          "note": "standard LEGO stud height ~1.8mm above 9.6mm body; consistent with side total 11.06mm",
+          "citation": null
+        },
+        "bound_mm": null
+      }
+    },
+    {
+      "kind": "boss",
+      "id": "stud_2",
+      "center_mm": [
+        -4.0,
+        -4.0
+      ],
+      "outer_d": {
+        "value": 4.8,
+        "source": "inferred",
+        "sigma_mm": 0.3,
+        "evidence": {
+          "view": "top",
+          "pixels": [
+            [
+              380.0,
+              140.0
+            ]
+          ],
+          "note": "inferred standard LEGO stud dia 4.8mm on 8mm pitch for 2x4 brick",
+          "citation": null
+        },
+        "bound_mm": null
+      },
+      "inner_d": null,
+      "height": {
+        "value": 1.8,
+        "source": "inferred",
+        "sigma_mm": 0.3,
+        "evidence": {
+          "view": "side",
+          "pixels": null,
+          "note": "standard LEGO stud height ~1.8mm above 9.6mm body; consistent with side total 11.06mm",
+          "citation": null
+        },
+        "bound_mm": null
+      }
+    },
+    {
+      "kind": "boss",
+      "id": "stud_3",
+      "center_mm": [
+        4.0,
+        -4.0
+      ],
+      "outer_d": {
+        "value": 4.8,
+        "source": "inferred",
+        "sigma_mm": 0.3,
+        "evidence": {
+          "view": "top",
+          "pixels": [
+            [
+              460.0,
+              130.0
+            ]
+          ],
+          "note": "inferred standard LEGO stud dia 4.8mm on 8mm pitch for 2x4 brick",
+          "citation": null
+        },
+        "bound_mm": null
+      },
+      "inner_d": null,
+      "height": {
+        "value": 1.8,
+        "source": "inferred",
+        "sigma_mm": 0.3,
+        "evidence": {
+          "view": "side",
+          "pixels": null,
+          "note": "standard LEGO stud height ~1.8mm above 9.6mm body; consistent with side total 11.06mm",
+          "citation": null
+        },
+        "bound_mm": null
+      }
+    },
+    {
+      "kind": "boss",
+      "id": "stud_4",
+      "center_mm": [
+        12.0,
+        -4.0
+      ],
+      "outer_d": {
+        "value": 4.8,
+        "source": "inferred",
+        "sigma_mm": 0.3,
+        "evidence": {
+          "view": "top",
+          "pixels": [
+            [
+              530.0,
+              120.0
+            ]
+          ],
+          "note": "inferred standard LEGO stud dia 4.8mm on 8mm pitch for 2x4 brick",
+          "citation": null
+        },
+        "bound_mm": null
+      },
+      "inner_d": null,
+      "height": {
+        "value": 1.8,
+        "source": "inferred",
+        "sigma_mm": 0.3,
+        "evidence": {
+          "view": "side",
+          "pixels": null,
+          "note": "standard LEGO stud height ~1.8mm above 9.6mm body; consistent with side total 11.06mm",
+          "citation": null
+        },
+        "bound_mm": null
+      }
+    },
+    {
+      "kind": "boss",
+      "id": "stud_5",
+      "center_mm": [
+        -12.0,
+        4.0
+      ],
+      "outer_d": {
+        "value": 4.8,
+        "source": "inferred",
+        "sigma_mm": 0.3,
+        "evidence": {
+          "view": "top",
+          "pixels": [
+            [
+              310.0,
+              210.0
+            ]
+          ],
+          "note": "inferred standard LEGO stud dia 4.8mm on 8mm pitch for 2x4 brick",
+          "citation": null
+        },
+        "bound_mm": null
+      },
+      "inner_d": null,
+      "height": {
+        "value": 1.8,
+        "source": "inferred",
+        "sigma_mm": 0.3,
+        "evidence": {
+          "view": "side",
+          "pixels": null,
+          "note": "standard LEGO stud height ~1.8mm above 9.6mm body; consistent with side total 11.06mm",
+          "citation": null
+        },
+        "bound_mm": null
+      }
+    },
+    {
+      "kind": "boss",
+      "id": "stud_6",
+      "center_mm": [
+        -4.0,
+        4.0
+      ],
+      "outer_d": {
+        "value": 4.8,
+        "source": "inferred",
+        "sigma_mm": 0.3,
+        "evidence": {
+          "view": "top",
+          "pixels": [
+            [
+              390.0,
+              200.0
+            ]
+          ],
+          "note": "inferred standard LEGO stud dia 4.8mm on 8mm pitch for 2x4 brick",
+          "citation": null
+        },
+        "bound_mm": null
+      },
+      "inner_d": null,
+      "height": {
+        "value": 1.8,
+        "source": "inferred",
+        "sigma_mm": 0.3,
+        "evidence": {
+          "view": "side",
+          "pixels": null,
+          "note": "standard LEGO stud height ~1.8mm above 9.6mm body; consistent with side total 11.06mm",
+          "citation": null
+        },
+        "bound_mm": null
+      }
+    },
+    {
+      "kind": "boss",
+      "id": "stud_7",
+      "center_mm": [
+        4.0,
+        4.0
+      ],
+      "outer_d": {
+        "value": 4.8,
+        "source": "inferred",
+        "sigma_mm": 0.3,
+        "evidence": {
+          "view": "top",
+          "pixels": [
+            [
+              470.0,
+              190.0
+            ]
+          ],
+          "note": "inferred standard LEGO stud dia 4.8mm on 8mm pitch for 2x4 brick",
+          "citation": null
+        },
+        "bound_mm": null
+      },
+      "inner_d": null,
+      "height": {
+        "value": 1.8,
+        "source": "inferred",
+        "sigma_mm": 0.3,
+        "evidence": {
+          "view": "side",
+          "pixels": null,
+          "note": "standard LEGO stud height ~1.8mm above 9.6mm body; consistent with side total 11.06mm",
+          "citation": null
+        },
+        "bound_mm": null
+      }
+    },
+    {
+      "kind": "boss",
+      "id": "stud_8",
+      "center_mm": [
+        12.0,
+        4.0
+      ],
+      "outer_d": {
+        "value": 4.8,
+        "source": "inferred",
+        "sigma_mm": 0.3,
+        "evidence": {
+          "view": "top",
+          "pixels": [
+            [
+              540.0,
+              180.0
+            ]
+          ],
+          "note": "inferred standard LEGO stud dia 4.8mm on 8mm pitch for 2x4 brick",
+          "citation": null
+        },
+        "bound_mm": null
+      },
+      "inner_d": null,
+      "height": {
+        "value": 1.8,
+        "source": "inferred",
+        "sigma_mm": 0.3,
+        "evidence": {
+          "view": "side",
+          "pixels": null,
+          "note": "standard LEGO stud height ~1.8mm above 9.6mm body; consistent with side total 11.06mm",
+          "citation": null
+        },
+        "bound_mm": null
+      }
+    }
+  ],
+  "broken_region": null,
+  "fit": {
+    "clearance_mm": 0.2,
+    "material": "PLA",
+    "printer": "FDM_0_4"
+  },
+  "unknowns": [
+    {
+      "id": "underside_tubes",
+      "question": "What is the underside tube inner/outer diameter and depth? Hidden in these photos.",
+      "expects": "number_mm",
+      "default": null,
+      "choices": null
+    }
+  ],
+  "intent": "Measure this LEGO 2x4 brick (reference object).",
+  "refusal": null,
+  "template_hint": "spacer"
+}

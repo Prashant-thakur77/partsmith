@@ -1,0 +1,79 @@
+{
+  "job_id": "j_261029_39ea05f7",
+  "slug": null,
+  "title": "Battery compartment cover",
+  "status": "best_effort",
+  "prints": [
+    {
+      "material": "PLA",
+      "volume_mm3": 3339.1,
+      "grams": 4.14,
+      "print_minutes": 19.5,
+      "filament_cost": {
+        "INR": 4.97,
+        "USD": 0.08
+      },
+      "price_per_kg": {
+        "INR": 1200.0,
+        "USD": 20.0
+      },
+      "assumptions": [
+        "grams: solid-volume mass at 100 % infill (volume x density: PLA 1.24, PETG 1.27 g/cm^3); a real print weighs less",
+        "minutes: rough estimate: (volume / 8 mm^3/s + layers x 4 s) / 60, 0.2 mm layers, 100 % infill",
+        "filament cost: grams x an assumed 1 kg spool price (INR 1200/kg, USD 20/kg); not a quote, and no shop margin or electricity"
+      ]
+    },
+    {
+      "material": "PETG",
+      "volume_mm3": 3339.1,
+      "grams": 4.24,
+      "print_minutes": 19.5,
+      "filament_cost": {
+        "INR": 5.94,
+        "USD": 0.09
+      },
+      "price_per_kg": {
+        "INR": 1400.0,
+        "USD": 22.0
+      },
+      "assumptions": [
+        "grams: solid-volume mass at 100 % infill (volume x density: PLA 1.24, PETG 1.27 g/cm^3); a real print weighs less",
+        "minutes: rough estimate: (volume / 8 mm^3/s + layers x 4 s) / 60, 0.2 mm layers, 100 % infill",
+        "filament cost: grams x an assumed 1 kg spool price (INR 1400/kg, USD 22/kg); not a quote, and no shop margin or electricity"
+      ]
+    }
+  ],
+  "lookup": {
+    "query": "Battery compartment cover — user: Make a replacement for this broken battery compartment cover.",
+    "city": null,
+    "oem": {
+      "name": "Battery Compartment Cover",
+      "number": "089041009009",
+      "url": "https://www.ereplacementparts.com/parts/miter-saw/ryobi/erp11855825/battery-compartment-cover-089041009009/",
+      "quote": "Part Number: 089041009009"
+    },
+    "offers": [
+      {
+        "seller": "eReplacementParts.com",
+        "price": 6.55,
+        "currency": "USD",
+        "url": "https://www.ereplacementparts.com/parts/miter-saw/ryobi/erp11855825/battery-compartment-cover-089041009009/",
+        "quote": "$6.55",
+        "title": "Battery Compartment Cover 089041009009 - OEM Ryobi - eReplacementParts.com",
+        "availability": "In Stock"
+      }
+    ],
+    "places": [],
+    "dropped": [],
+    "searched": true,
+    "queries": 6,
+    "mode": "live",
+    "provider": "meta",
+    "model": "muse-wonder-1.0",
+    "usd": 0.17898,
+    "label": "web search with citations"
+  },
+  "mode": "live",
+  "created_at": 1793291065.9441454,
+  "notes": []
+}

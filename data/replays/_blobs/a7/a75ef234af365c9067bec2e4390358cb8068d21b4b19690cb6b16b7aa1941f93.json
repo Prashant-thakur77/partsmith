@@ -1,0 +1,79 @@
+{
+  "job_id": "j_261029_74b387ec",
+  "slug": null,
+  "title": "Snap retaining clip",
+  "status": "verified",
+  "prints": [
+    {
+      "material": "PLA",
+      "volume_mm3": 2382.2,
+      "grams": 2.95,
+      "print_minutes": 10.3,
+      "filament_cost": {
+        "INR": 3.54,
+        "USD": 0.06
+      },
+      "price_per_kg": {
+        "INR": 1200.0,
+        "USD": 20.0
+      },
+      "assumptions": [
+        "grams: solid-volume mass at 100 % infill (volume x density: PLA 1.24, PETG 1.27 g/cm^3); a real print weighs less",
+        "minutes: rough estimate: (volume / 8 mm^3/s + layers x 4 s) / 60, 0.2 mm layers, 100 % infill",
+        "filament cost: grams x an assumed 1 kg spool price (INR 1200/kg, USD 20/kg); not a quote, and no shop margin or electricity"
+      ]
+    },
+    {
+      "material": "PETG",
+      "volume_mm3": 2382.2,
+      "grams": 3.03,
+      "print_minutes": 10.3,
+      "filament_cost": {
+        "INR": 4.24,
+        "USD": 0.07
+      },
+      "price_per_kg": {
+        "INR": 1400.0,
+        "USD": 22.0
+      },
+      "assumptions": [
+        "grams: solid-volume mass at 100 % infill (volume x density: PLA 1.24, PETG 1.27 g/cm^3); a real print weighs less",
+        "minutes: rough estimate: (volume / 8 mm^3/s + layers x 4 s) / 60, 0.2 mm layers, 100 % infill",
+        "filament cost: grams x an assumed 1 kg spool price (INR 1400/kg, USD 22/kg); not a quote, and no shop margin or electricity"
+      ]
+    }
+  ],
+  "lookup": {
+    "query": "Snap retaining clip — user: Make a replacement for this broken snap retaining clip.",
+    "city": null,
+    "oem": {
+      "name": "Dryer Retaining Ring WP9703438",
+      "number": "WP9703438",
+      "url": "https://www.ereplacementparts.com/clip-retaining-p-622003.html?manufacturers_id=598",
+      "quote": "Part Number: WP9703438"
+    },
+    "offers": [
+      {
+        "seller": "eReplacementParts.com",
+        "price": 6.47,
+        "currency": "USD",
+        "url": "https://www.ereplacementparts.com/clip-retaining-p-622003.html?manufacturers_id=598",
+        "quote": "$6.47",
+        "title": "Dryer Retaining Ring WP9703438 - OEM KitchenAid - eReplacementParts.com",
+        "availability": "In Stock"
+      }
+    ],
+    "places": [],
+    "dropped": [],
+    "searched": true,
+    "queries": 7,
+    "mode": "live",
+    "provider": "meta",
+    "model": "muse-wonder-1.0",
+    "usd": 0.1434328,
+    "label": "web search with citations"
+  },
+  "mode": "live",
+  "created_at": 1793289298.992095,
+  "notes": []
+}

@@ -25,7 +25,7 @@ OPEN_WEIGHTS_ONLY=1 routes every stage to open-weight models. Routing table: `ro
 
 from __future__ import annotations
 
-from . import chat, clients, config, mocks, telemetry
+from . import chat, clients, config, health, mocks, telemetry
 from .agent import AgentResult, ToolResult, ToolSpec, run_agent
 from .base import (
     Completion,
@@ -69,6 +69,7 @@ def reset_state() -> None:
     reset_warnings()
     config._dotenv_cache.clear()
     mocks._mock_images.clear()
+    health.reset()
 
 
 __all__ = [

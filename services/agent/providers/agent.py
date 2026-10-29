@@ -31,7 +31,7 @@ from collections.abc import Callable, Sequence
 from dataclasses import dataclass, field
 from typing import Any, Protocol
 
-from . import chat, meta, mocks, pricing, replay, retry, sam_parse
+from . import chat, health, meta, mocks, pricing, replay, retry, sam_parse
 from .base import ModelRequest, ProviderError, Usage
 from .clients import field as get
 from .config import Mode, settings, warn_once
@@ -468,6 +468,8 @@ def run_agent(
         except Exception as exc:
             err = retry.classify(exc, driver.provider)
             ms = round((time.monotonic() - t0) * 1000)
+            if isinstance(driver, (MetaDriver, ChatDriver)):
+                health.note(driver.route, stage, ms)
             record_call(
                 stage=stage, provider=driver.provider, model=driver.model, mode=driver.mode, usage=Usage(), ms=ms,
                 usd=0.0, ok=False, error=str(err),
@@ -486,6 +488,8 @@ def run_agent(
             return result("error", error=str(err))
         ms = round((time.monotonic() - t0) * 1000)
         turn_usd = 0.0
+        if isinstance(driver, (MetaDriver, ChatDriver)):
+            health.note(driver.route, stage, ms)
         if driver.mode == "live":
             turn_usd = pricing.token_cost_usd(driver.provider, decision.model or driver.model, decision.usage)
             if s.record:

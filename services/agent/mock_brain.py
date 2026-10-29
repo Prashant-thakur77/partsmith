@@ -28,14 +28,14 @@ from typing import Any
 from partsmith_schemas.verification import ParamSpec
 from shapely.geometry import Polygon
 
-from services.agent import providers
+from services.agent import guards, providers
 from services.agent.guards import max_delta, residual_param
 from services.agent.providers import ModelRequest
 from services.agent.templates import Template, get_template, list_templates
 from services.geom_worker.program import clamp, set_defaults
 
 MOCK_TAG = "deterministic mock"
-BROKEN_SYMMETRY = 0.97  # below this, an outline the user calls damaged is treated as having a broken region
+BROKEN_SYMMETRY = guards.BROKEN_SYMMETRY  # below this, an outline the user calls damaged has a broken region
 # "the top of the part snapped off", "the tip broke": the part is missing height, which only the side photo shows
 TOP_DAMAGE = re.compile(
     r"\b(?:top|tip|upper)\b[^.]{0,40}?\b(snapped|broke|broken|cracked|missing|came off)\b"
@@ -392,9 +392,7 @@ def understand(req: ModelRequest) -> dict[str, Any]:
             }
         )
     sym = cues.get("symmetry")
-    damage = re.search(
-        r"\b(missing|cracked|chipped|snapped off|broken off|broke off|piece|corner|tip)\b", intent.lower()
-    )
+    damage = guards.DAMAGE_WORDS.search(intent.lower())
     top_damage = TOP_DAMAGE.search(intent.lower())
     if top_damage and side is not None:
         spec["broken_region"] = {

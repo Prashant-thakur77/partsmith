@@ -271,6 +271,7 @@ export interface JobInput {
   budget_usd?: number;
   provider_mode?: "live" | "mock" | "replay" | null;
   city?: string | null;
+  purpose?: "repair" | "reference_check";
 }
 
 export interface JobSummary {

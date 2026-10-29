@@ -1,0 +1,18 @@
+{
+  "kind": "fix",
+  "intent": "Make a replacement for this broken caster wheel.",
+  "photo_shas": {
+    "top": "017d95df24286e63d2cc047932d573698ac94b5dcf9c26609758b84c96b6ad38.jpg",
+    "side": "b31e70b392ee12f24a155927765a9e606640f66324ff9ebf1e3c899b8f78c13d.jpg"
+  },
+  "mat_kind": "screen",
+  "screen_px_per_mm": null,
+  "thickness_mm": 15.0,
+  "family_hint": "wheel",
+  "origin": "synthetic",
+  "max_iters": 6,
+  "budget_usd": 0.5,
+  "provider_mode": null,
+  "city": null,
+  "purpose": "repair"
+}

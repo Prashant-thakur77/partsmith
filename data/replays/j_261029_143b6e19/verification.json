@@ -1,0 +1,479 @@
+{
+  "verified": false,
+  "status": "best_effort",
+  "reasons": [
+    "top: refined in the photo frame by +0.09 deg, (-0.03, -0.09) mm on the mat",
+    "side: refined in the photo frame by +0.14 deg, (+0.01, +0.11) mm on the mat",
+    "top view (photo frame): IoU 0.920 (needs >= 0.97), Hausdorff 3.43 mm (needs <= 0.5 mm) (worst at x=27.6, y=-15.4 mm) - fails",
+    "side view (photo frame): IoU 0.748 (not gated), mean contour distance 0.84 mm (needs <= 0.15 mm), Hausdorff 3.68 mm (needs <= 0.5 mm) (worst at x=29.7, y=-6.8 mm) - fails",
+    "side view: small silhouette (5.8 mm across, under 20 mm), so IoU is reported but not gated (it shrinks with size for the same edge error); gated on Hausdorff <= 0.5 mm and mean contour distance <= 0.15 mm, plus its part tests.",
+    "hole_4 center_x: model 21.71 vs measured 22.02 mm (-0.31 mm, tolerance +/-0.3 mm).",
+    "top view: length, width and holes compared like for like (model rendered with the photo's camera and measured with the same metrology code)."
+  ],
+  "thresholds": {
+    "hausdorff_mm": 0.5,
+    "iou": 0.97
+  },
+  "views": [
+    {
+      "view": "top",
+      "iou": 0.9201430787795207,
+      "hausdorff_mm": 3.429678900857528,
+      "hd95_mm": 3.302725645840672,
+      "mean_mm": 0.5705151979114003,
+      "worst_point_mm": [
+        27.59673885275103,
+        -15.351992312189253
+      ],
+      "over_area_mm2": 94.06996888837658,
+      "under_area_mm2": 38.5873007845015
+    },
+    {
+      "view": "side",
+      "iou": 0.7477504056645523,
+      "hausdorff_mm": 3.684286140661687,
+      "hd95_mm": 3.608104649266165,
+      "mean_mm": 0.8416258082429688,
+      "worst_point_mm": [
+        29.690562482463235,
+        -6.785527984442167
+      ],
+      "over_area_mm2": 86.06244213853854,
+      "under_area_mm2": 31.482906149720968
+    }
+  ],
+  "residuals": [
+    {
+      "feature_id": "hole_4",
+      "quantity": "center_x",
+      "measured_mm": 22.024,
+      "model_mm": 21.712922315442245,
+      "delta_mm": -0.3110776845577554,
+      "tol_mm": 0.3,
+      "passed": false
+    },
+    {
+      "feature_id": "outline",
+      "quantity": "width",
+      "measured_mm": 29.666,
+      "model_mm": 29.882,
+      "delta_mm": 0.21600000000000108,
+      "tol_mm": 0.3,
+      "passed": true
+    },
+    {
+      "feature_id": "hole_4",
+      "quantity": "center_y",
+      "measured_mm": 4.551,
+      "model_mm": 4.369546623668143,
+      "delta_mm": -0.18145337633185754,
+      "tol_mm": 0.3,
+      "passed": true
+    },
+    {
+      "feature_id": "hole_3",
+      "quantity": "center_x",
+      "measured_mm": 7.316,
+      "model_mm": 7.154945326960444,
+      "delta_mm": -0.16105467303955567,
+      "tol_mm": 0.3,
+      "passed": true
+    },
+    {
+      "feature_id": "hole_1",
+      "quantity": "center_x",
+      "measured_mm": -22.125,
+      "model_mm": -21.977024774555996,
+      "delta_mm": 0.14797522544400366,
+      "tol_mm": 0.3,
+      "passed": true
+    },
+    {
+      "feature_id": "hole_3",
+      "quantity": "center_y",
+      "measured_mm": 4.542,
+      "model_mm": 4.395909530077747,
+      "delta_mm": -0.14609046992225316,
+      "tol_mm": 0.3,
+      "passed": true
+    },
+    {
+      "feature_id": "hole_2",
+      "quantity": "center_y",
+      "measured_mm": 4.531,
+      "model_mm": 4.41227831699227,
+      "delta_mm": -0.11872168300772934,
+      "tol_mm": 0.3,
+      "passed": true
+    },
+    {
+      "feature_id": "hole_1",
+      "quantity": "center_y",
+      "measured_mm": 4.535,
+      "model_mm": 4.437658833692838,
+      "delta_mm": -0.09734116630716194,
+      "tol_mm": 0.3,
+      "passed": true
+    },
+    {
+      "feature_id": "outline",
+      "quantity": "length",
+      "measured_mm": 58.543,
+      "model_mm": 58.464,
+      "delta_mm": -0.07900000000000063,
+      "tol_mm": 0.3,
+      "passed": true
+    },
+    {
+      "feature_id": "hole_4",
+      "quantity": "diameter",
+      "measured_mm": 4.233,
+      "model_mm": 4.298,
+      "delta_mm": 0.06500000000000039,
+      "tol_mm": 0.15,
+      "passed": true
+    },
+    {
+      "feature_id": "side",
+      "quantity": "thickness",
+      "measured_mm": 5.801,
+      "model_mm": 5.826,
+      "delta_mm": 0.024999999999999467,
+      "tol_mm": 0.3,
+      "passed": true
+    },
+    {
+      "feature_id": "hole_1",
+      "quantity": "diameter",
+      "measured_mm": 4.232,
+      "model_mm": 4.251,
+      "delta_mm": 0.019000000000000128,
+      "tol_mm": 0.15,
+      "passed": true
+    },
+    {
+      "feature_id": "hole_3",
+      "quantity": "diameter",
+      "measured_mm": 4.272,
+      "model_mm": 4.253,
+      "delta_mm": -0.019000000000000128,
+      "tol_mm": 0.15,
+      "passed": true
+    },
+    {
+      "feature_id": "hole_2",
+      "quantity": "diameter",
+      "measured_mm": 4.252,
+      "model_mm": 4.246,
+      "delta_mm": -0.005999999999999339,
+      "tol_mm": 0.15,
+      "passed": true
+    },
+    {
+      "feature_id": "hole_2",
+      "quantity": "center_x",
+      "measured_mm": -7.413,
+      "model_mm": -7.407046331559861,
+      "delta_mm": 0.005953668440139559,
+      "tol_mm": 0.3,
+      "passed": true
+    },
+    {
+      "feature_id": "plate",
+      "quantity": "thickness",
+      "measured_mm": 2.5,
+      "model_mm": 2.5,
+      "delta_mm": 0.0,
+      "tol_mm": 0.3,
+      "passed": true
+    }
+  ],
+  "tests": [
+    {
+      "id": "hole_1.diameter",
+      "description": "hole_1 diameter == 4.23 +/- 0.15 mm",
+      "value": 4.251,
+      "expected": 4.232,
+      "tol": 0.15,
+      "passed": true,
+      "priority": "P0"
+    },
+    {
+      "id": "hole_1.center",
+      "description": "hole_1 centre within 0.3 mm of the measured position",
+      "value": 0.1771213425966568,
+      "expected": 0.0,
+      "tol": 0.3,
+      "passed": true,
+      "priority": "P1"
+    },
+    {
+      "id": "hole_2.diameter",
+      "description": "hole_2 diameter == 4.25 +/- 0.15 mm",
+      "value": 4.246,
+      "expected": 4.252,
+      "tol": 0.15,
+      "passed": true,
+      "priority": "P0"
+    },
+    {
+      "id": "hole_2.center",
+      "description": "hole_2 centre within 0.3 mm of the measured position",
+      "value": 0.1188708718908164,
+      "expected": 0.0,
+      "tol": 0.3,
+      "passed": true,
+      "priority": "P1"
+    },
+    {
+      "id": "hole_3.diameter",
+      "description": "hole_3 diameter == 4.27 +/- 0.15 mm",
+      "value": 4.253,
+      "expected": 4.272,
+      "tol": 0.15,
+      "passed": true,
+      "priority": "P0"
+    },
+    {
+      "id": "hole_3.center",
+      "description": "hole_3 centre within 0.3 mm of the measured position",
+      "value": 0.21744202241053348,
+      "expected": 0.0,
+      "tol": 0.3,
+      "passed": true,
+      "priority": "P1"
+    },
+    {
+      "id": "hole_4.diameter",
+      "description": "hole_4 diameter == 4.23 +/- 0.15 mm",
+      "value": 4.298,
+      "expected": 4.233,
+      "tol": 0.15,
+      "passed": true,
+      "priority": "P0"
+    },
+    {
+      "id": "hole_4.center",
+      "description": "hole_4 centre within 0.3 mm of the measured position",
+      "value": 0.36013143935519587,
+      "expected": 0.0,
+      "tol": 0.3,
+      "passed": false,
+      "priority": "P1"
+    },
+    {
+      "id": "bbox.x",
+      "description": "length (long side of the footprint) == 58.54 +/- 0.3 mm",
+      "value": 58.464,
+      "expected": 58.543,
+      "tol": 0.3,
+      "passed": true,
+      "priority": "P0"
+    },
+    {
+      "id": "bbox.y",
+      "description": "width (short side of the footprint) == 29.67 +/- 0.3 mm",
+      "value": 29.882,
+      "expected": 29.666,
+      "tol": 0.3,
+      "passed": true,
+      "priority": "P0"
+    },
+    {
+      "id": "side.thickness",
+      "description": "side-view thickness (short side of the side silhouette) == 5.80 +/- 0.3 mm",
+      "value": 5.826,
+      "expected": 5.801,
+      "tol": 0.3,
+      "passed": true,
+      "priority": "P0"
+    },
+    {
+      "id": "thickness",
+      "description": "plate thickness == 2.50 +/- 0.3 mm",
+      "value": 2.5,
+      "expected": 2.5,
+      "tol": 0.3,
+      "passed": true,
+      "priority": "P0"
+    },
+    {
+      "id": "valid",
+      "description": "the solid passes the OCCT validity check",
+      "value": 1.0,
+      "expected": null,
+      "tol": null,
+      "passed": true,
+      "priority": "P0"
+    },
+    {
+      "id": "single_solid",
+      "description": "exactly one solid body",
+      "value": 1.0,
+      "expected": null,
+      "tol": null,
+      "passed": true,
+      "priority": "P0"
+    },
+    {
+      "id": "watertight",
+      "description": "the mesh is watertight (printable)",
+      "value": 1.0,
+      "expected": null,
+      "tol": null,
+      "passed": true,
+      "priority": "P0"
+    },
+    {
+      "id": "volume",
+      "description": "volume > 0",
+      "value": 4148.181097711282,
+      "expected": 0.0,
+      "tol": 0.0,
+      "passed": true,
+      "priority": "P0"
+    },
+    {
+      "id": "min_wall",
+      "description": "thinnest wall >= 0.8 mm (FDM)",
+      "value": 1.0054347627887767,
+      "expected": 0.8,
+      "tol": 0.0,
+      "passed": true,
+      "priority": "P0"
+    },
+    {
+      "id": "probe.hole_1.screw",
+      "description": "hole_1: M3 screw passes (normal fit), 0.62 mm radial clearance",
+      "value": 4.25,
+      "expected": 3.2,
+      "tol": null,
+      "passed": true,
+      "priority": "P1"
+    },
+    {
+      "id": "probe.hole_2.screw",
+      "description": "hole_2: M3 screw passes (normal fit), 0.62 mm radial clearance",
+      "value": 4.25,
+      "expected": 3.2,
+      "tol": null,
+      "passed": true,
+      "priority": "P1"
+    },
+    {
+      "id": "probe.hole_3.screw",
+      "description": "hole_3: M3 screw passes (normal fit), 0.62 mm radial clearance",
+      "value": 4.25,
+      "expected": 3.2,
+      "tol": null,
+      "passed": true,
+      "priority": "P1"
+    },
+    {
+      "id": "probe.hole_4.screw",
+      "description": "hole_4: M3 screw passes (normal fit), 0.62 mm radial clearance",
+      "value": 4.25,
+      "expected": 3.2,
+      "tol": null,
+      "passed": true,
+      "priority": "P1"
+    },
+    {
+      "id": "probe.pin_hole",
+      "description": "hinge pin hole: a 2.5 mm pin fits, 0.35 mm clearance (loose fit)",
+      "value": 2.8499999999999903,
+      "expected": 2.5,
+      "tol": null,
+      "passed": true,
+      "priority": "P1"
+    },
+    {
+      "id": "probe.min_feature",
+      "description": "thinnest feature 1.01 mm ≥ 0.8 mm (2 × 0.4 mm nozzle)",
+      "value": 1.0054347627887767,
+      "expected": 0.8,
+      "tol": null,
+      "passed": true,
+      "priority": "P1"
+    },
+    {
+      "id": "probe.overhang",
+      "description": "1 % of the surface overhangs more than 45° in the best orientation (+X end on the bed); small overhangs",
+      "value": null,
+      "expected": null,
+      "tol": null,
+      "passed": true,
+      "priority": "P1"
+    }
+  ],
+  "validity": {
+    "is_valid": true,
+    "single_solid": true,
+    "watertight": true,
+    "volume_mm3": 4148.181097711282,
+    "bbox_mm": [
+      57.8,
+      29.7,
+      6.05
+    ],
+    "min_wall_mm": 1.0054347627887767,
+    "issues": []
+  },
+  "vetoes": [],
+  "max_error_mm": 3.684286140661687,
+  "unchecked": [
+    {
+      "param": "knuckle_wall",
+      "label": "Knuckle wall",
+      "value": 1.5,
+      "unit": "mm",
+      "source": "inferred",
+      "note": "not measured: from the program (template default or inferred from the measured values); no test compares it with the photo, which covers it only as far as it changes the compared silhouettes (top, side)"
+    },
+    {
+      "param": "knuckle_gap",
+      "label": "Gap to the other leaf's knuckles",
+      "value": 0.3,
+      "unit": "mm",
+      "source": "inferred",
+      "note": "not measured: from the program (template default or inferred from the measured values); no test compares it with the photo, which covers it only as far as it changes the compared silhouettes (top, side)"
+    },
+    {
+      "param": "knuckle_offset",
+      "label": "Knuckle pattern shift along the hinge axis",
+      "value": 0.0,
+      "unit": "mm",
+      "source": "inferred",
+      "note": "not measured: from the program (template default or inferred from the measured values); no test compares it with the photo, which covers it only as far as it changes the compared silhouettes (top, side)"
+    },
+    {
+      "param": "corner_radius",
+      "label": "Free corner radius",
+      "value": 0.0,
+      "unit": "mm",
+      "source": "inferred",
+      "note": "not measured: from the program (template default or inferred from the measured values); no test compares it with the photo, which covers it only as far as it changes the compared silhouettes (top, side)"
+    }
+  ],
+  "origin": "synthetic",
+  "versions": {
+    "verifier": "0.1.0",
+    "opencv": "5.0.0",
+    "numpy": "2.5.4",
+    "scipy": "1.18.1",
+    "trimesh": "5.2.0",
+    "python": "3.12.13",
+    "cadquery": "2.8.0",
+    "ocp": "7.9.3.1"
+  },
+  "hashes": {
+    "code_sha256": "732844df288e318cf8dfbb8c30dd00ced4a405f15191ebfd19b8167f2def9f17",
+    "params_sha256": "251cb1890b8206c6e85fff27d07fc6567e4aa29f53f3a50f16668176ed265d83",
+    "measurements_sha256": "7d44b2615111b0f3fca461829fa1f787eb89019f4a34d2e9969ea6c7eb3688f4",
+    "partspec_sha256": "560d2b9eca771e69112cc53a41e700066ac878cfcefa65ca37ccbe8d420bc34a",
+    "mesh_sha256": "41c554e0188144368f59b6419fef17f75afc1725e3be4d236913df793509437a",
+    "overlay:residual_top.png": "89a766679634ebfb1a598cd9d521d3575c4debd775926f317339c87bfa0bb9dd",
+    "overlay:residual_side.png": "4334a47108fe061affca636a19d62868c3e23c01311c18e0ad0a13a97749c6f9"
+  },
+  "ms": 1824
+}

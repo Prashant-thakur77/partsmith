@@ -1,0 +1,16 @@
+{
+  "id": "j_261029_205551ee",
+  "kind": "fix",
+  "status": "done",
+  "created_at": 1793285172.7384937,
+  "updated_at": 1793286083.917303,
+  "title": "Battery compartment cover — broken (synthetic, clean) (synthetic sample)",
+  "origin": "synthetic",
+  "provider_mode": "live",
+  "verified": false,
+  "max_error_mm": 1.1050859498171435,
+  "iterations": 4,
+  "cost_usd": 0.60676,
+  "part_slug": null,
+  "is_replay": false
+}

@@ -27,5 +27,5 @@ Output must match the PartSpec JSON schema exactly. No prose outside the JSON.
 
 # user
 Measurements (JSON): {measurements}
-User intent: "{intent}"
+User intent: "{intent}"{purpose_note}
 Photos: top view{side_note}.

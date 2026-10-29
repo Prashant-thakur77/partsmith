@@ -30,6 +30,7 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from typing import Literal
 
+from . import health
 from .config import Mode, env, settings, warn_once
 
 Protocol = Literal["responses", "chat", "sam_meta", "sam_open", "image", "voice"]
@@ -202,4 +203,7 @@ def resolve(stage: str) -> Resolution:
     note = ""
     if ready[0] is not primary and primary is not None:
         note = f"{' / '.join(primary.endpoint.missing())} missing → {ready[0].endpoint.where} fallback"
+    ready, slow_note = health.order(ready, stage)
+    if slow_note:
+        note = f"{note}; {slow_note}" if note else slow_note
     return Resolution(spec, "live", ready, ready[0], missing, note)

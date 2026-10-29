@@ -1,0 +1,16 @@
+{
+  "id": "j_261029_5e9d54d1",
+  "kind": "fix",
+  "status": "done",
+  "created_at": 1793291857.6408634,
+  "updated_at": 1793292649.0158942,
+  "title": "Wall hook (synthetic, paper) (synthetic sample)",
+  "origin": "synthetic",
+  "provider_mode": "live",
+  "verified": false,
+  "max_error_mm": 4.696413340954089,
+  "iterations": 6,
+  "cost_usd": 0.444075,
+  "part_slug": null,
+  "is_replay": false
+}

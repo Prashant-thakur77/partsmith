@@ -1,0 +1,281 @@
+{
+  "family": "hinge",
+  "units": "mm",
+  "title": "Hinge leaf",
+  "base_profile": {
+    "kind": "polyline",
+    "points_mm": [
+      [
+        -29.123,
+        -11.383
+      ],
+      [
+        -28.348,
+        -11.679
+      ],
+      [
+        -17.527,
+        -11.692
+      ],
+      [
+        -17.225,
+        -12.009
+      ],
+      [
+        -17.199,
+        -14.44
+      ],
+      [
+        -16.757,
+        -14.787
+      ],
+      [
+        -6.426,
+        -14.756
+      ],
+      [
+        -6.159,
+        -14.125
+      ],
+      [
+        -6.167,
+        -11.933
+      ],
+      [
+        -5.632,
+        -11.676
+      ],
+      [
+        5.719,
+        -11.671
+      ],
+      [
+        6.164,
+        -12.135
+      ],
+      [
+        6.432,
+        -14.735
+      ],
+      [
+        14.329,
+        -14.827
+      ],
+      [
+        17.097,
+        -14.65
+      ],
+      [
+        17.363,
+        -14.09
+      ],
+      [
+        17.417,
+        -11.93
+      ],
+      [
+        17.661,
+        -11.721
+      ],
+      [
+        28.894,
+        -11.584
+      ],
+      [
+        29.143,
+        -11.248
+      ],
+      [
+        29.264,
+        -9.868
+      ],
+      [
+        29.269,
+        10.639
+      ],
+      [
+        28.908,
+        12.72
+      ],
+      [
+        28.29,
+        13.693
+      ],
+      [
+        27.454,
+        14.284
+      ],
+      [
+        26.493,
+        14.68
+      ],
+      [
+        25.037,
+        14.816
+      ],
+      [
+        -25.632,
+        14.822
+      ],
+      [
+        -27.14,
+        14.452
+      ],
+      [
+        -28.621,
+        13.233
+      ],
+      [
+        -29.212,
+        11.636
+      ]
+    ],
+    "source": "measured",
+    "sigma_mm": 0.129
+  },
+  "thickness": {
+    "value": 2.5,
+    "source": "user_stated",
+    "sigma_mm": 0.3,
+    "evidence": null,
+    "bound_mm": null
+  },
+  "features": [
+    {
+      "kind": "through_hole",
+      "id": "hole_1",
+      "center_mm": [
+        -22.125,
+        4.535
+      ],
+      "diameter": {
+        "value": 4.232,
+        "source": "measured",
+        "sigma_mm": 0.011,
+        "evidence": {
+          "view": "top",
+          "pixels": [
+            [
+              882.58,
+              760.35
+            ]
+          ],
+          "note": "SAM point prompt (sam-3.1); circle on the top-face plane, rms 0.019 mm; mask confidence 0.90: ±σ × 1.20",
+          "citation": null
+        },
+        "bound_mm": null
+      },
+      "countersink": true
+    },
+    {
+      "kind": "through_hole",
+      "id": "hole_2",
+      "center_mm": [
+        -7.413,
+        4.531
+      ],
+      "diameter": {
+        "value": 4.252,
+        "source": "measured",
+        "sigma_mm": 0.012,
+        "evidence": {
+          "view": "top",
+          "pixels": [
+            [
+              908.37,
+              809.12
+            ]
+          ],
+          "note": "SAM point prompt (sam-3.1); circle on the top-face plane, rms 0.020 mm; mask confidence 0.88: ±σ × 1.23",
+          "citation": null
+        },
+        "bound_mm": null
+      },
+      "countersink": true
+    },
+    {
+      "kind": "through_hole",
+      "id": "hole_3",
+      "center_mm": [
+        7.316,
+        4.542
+      ],
+      "diameter": {
+        "value": 4.272,
+        "source": "measured",
+        "sigma_mm": 0.024,
+        "evidence": {
+          "view": "top",
+          "pixels": [
+            [
+              934.18,
+              857.81
+            ]
+          ],
+          "note": "SAM point prompt (sam-3.1); circle on the top-face plane, rms 0.033 mm; mask confidence 0.71: ±σ × 1.59",
+          "citation": null
+        },
+        "bound_mm": null
+      },
+      "countersink": true
+    },
+    {
+      "kind": "through_hole",
+      "id": "hole_4",
+      "center_mm": [
+        22.024,
+        4.551
+      ],
+      "diameter": {
+        "value": 4.233,
+        "source": "measured",
+        "sigma_mm": 0.017,
+        "evidence": {
+          "view": "top",
+          "pixels": [
+            [
+              959.99,
+              906.57
+            ]
+          ],
+          "note": "SAM point prompt (sam-3.1); circle on the top-face plane, rms 0.020 mm; mask confidence 0.64: ±σ × 1.72",
+          "citation": null
+        },
+        "bound_mm": null
+      },
+      "countersink": true
+    }
+  ],
+  "broken_region": null,
+  "fit": {
+    "clearance_mm": 0.2,
+    "material": "PLA",
+    "printer": "FDM_0_4"
+  },
+  "unknowns": [
+    {
+      "id": "pin_bore",
+      "question": "What is the hinge pin bore diameter inside the two knuckles?",
+      "expects": "number_mm",
+      "default": null,
+      "choices": null
+    },
+    {
+      "id": "knuckle_od",
+      "question": "What is the outer diameter of the hinge knuckles? Side view suggests ~5.8 mm tall.",
+      "expects": "number_mm",
+      "default": null,
+      "choices": null
+    },
+    {
+      "id": "screw_csk",
+      "question": "What screw size and countersink angle/depth for the 4 mounting holes?",
+      "expects": "text",
+      "default": null,
+      "choices": null
+    }
+  ],
+  "intent": "Make a replacement for this broken hinge leaf.",
+  "refusal": null,
+  "template_hint": "hinge_leaf"
+}

@@ -140,3 +140,22 @@ Seven workstreams in flight: providers, verifier, synth/eval, API/registry, metr
   `.env`: Meta, Baseten (smoke ✅), Hugging Face (SAM 3 gated access approved).
 - **Next:** live runs once the Meta credits show → Modal deploys → real photos and a print from Prashant → reseed, bench,
   re-score.
+- **First live runs (Oct 29, `95790e6`):** `make smoke` 8/8 ✅ live (Spark 1.3, Wonder, Image, Voice file + realtime, SAM 3.1,
+  Spark Open `-1026` on Baseten). First live seed of the 19 demos, $6.31 in total: 4 verified (spacer 0.077, ID-1 card 0.180,
+  battery cover 0.249, broken hook tip 0.491 mm), AA cell and SD card refused by the model, broken latch failed (no solid).
+  Live fixes: SAM confidence inside the mask token, stale `previous_response_id` on the install card, hinted template for
+  broken/tall parts. Fits-where-it-goes (mating-part check) and the repair passport landed in the same commit.
+- **Live lessons, round 2 (Oct 29):** seven code checks built from recorded live runs (reference checks never refused, a
+  model-proposed break kept only with evidence besides the model, hinted templates for intact parts, template mode fills
+  PARAMS only, hollow free code rebuilt once, the fixer told which pass rule fails, countersink rims not taken as through-holes),
+  12 single-sample live reruns for $3.13. A slow route goes to the back of its chain per stage (Baseten Spark Open went from
+  8 s to 28 s median per fixer turn, up to 318 s; the fallback is Spark 1.3 on the Meta API at the same price; it fired live
+  three times). A point-found hole must be a clean circle on the part (the latch corner's Ø25.9 mm fit on a 17 mm part).
+- **Second live seed (Oct 29), $7.82 + $0.55 for the latch-corner rerun after the hole fix:** 6 verified (spacer 0.077, ID-1
+  card 0.187, battery cover 0.387, broken hook tip 0.426, SD card 0.468, panel clip 0.496 mm); closer but best effort:
+  L-bracket 3.10 → 0.431, LEGO 7.90 → 0.558, cupboard latch 1.95 → 0.764, cover tab 2.50 → 1.105, white cover 2.98 → 1.161,
+  knob 0.498, AA cell 0.204 (top view only), caster 0.633. Worse: cable clip 0.91 → 1.761, hinge leaf 2.70 → 3.684 (template
+  rule; the worker's rerun also gave 3.76), hook 4.04 → 4.696. Latch corner 8.57 mm: the SAM top mask closes the countersunk
+  pivot hole that the threshold mask sees through. Glare clip fails capture by design. Replays: 19 of 19 stored are live.
+- **Next:** see-through openings from the threshold mask inside a model mask (latch corner) → live bench (cap ~$30) → README
+  and QUALITY re-score; waiting on Prashant for real photos, Modal login, deploy go-ahead.

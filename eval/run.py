@@ -296,6 +296,7 @@ def _job_inputs(task: Task) -> tuple[dict[str, bytes], Any, dict[str, Any]]:
             intent=f"Measure this {ref.title} (reference object).",
             thickness_mm=ref.user_thickness_mm,
             origin=DataOrigin.reference_object,
+            purpose="reference_check",
         )
         return {"top": Path(task.photo).read_bytes()}, ji, meta
     if task.kind == "real":

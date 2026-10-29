@@ -1,0 +1,23 @@
+{
+  "outline_mm": [
+    [
+      -15.895,
+      7.887
+    ],
+    [
+      -15.895,
+      -7.863
+    ],
+    [
+      15.855,
+      -7.863
+    ],
+    [
+      15.855,
+      7.887
+    ]
+  ],
+  "holes": [],
+  "thickness_mm": 9.6,
+  "frame": "measured top-view part frame (mm, Y up)"
+}

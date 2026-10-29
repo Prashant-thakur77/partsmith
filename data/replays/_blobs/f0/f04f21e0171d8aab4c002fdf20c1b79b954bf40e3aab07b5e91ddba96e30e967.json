@@ -1,0 +1,254 @@
+{
+  "verified": true,
+  "status": "verified",
+  "reasons": [
+    "top: refined in the photo frame by -0.04 deg, (-0.03, -0.07) mm on the mat",
+    "side: refined in the photo frame by +0.12 deg, (+0.04, -0.01) mm on the mat",
+    "Verified: all 9 P0 tests pass and every measured view is within tolerance.",
+    "top view (photo frame): IoU 0.993 (needs >= 0.97), Hausdorff 0.22 mm (needs <= 0.5 mm)",
+    "side view (photo frame): IoU 0.978 (not gated), mean contour distance 0.06 mm (needs <= 0.15 mm), Hausdorff 0.47 mm (needs <= 0.5 mm)",
+    "side view: small silhouette (2.2 mm across, under 20 mm), so IoU is reported but not gated (it shrinks with size for the same edge error); gated on Hausdorff <= 0.5 mm and mean contour distance <= 0.15 mm, plus its part tests.",
+    "top view: length, width and holes compared like for like (model rendered with the photo's camera and measured with the same metrology code)."
+  ],
+  "thresholds": {
+    "hausdorff_mm": 0.5,
+    "iou": 0.97
+  },
+  "views": [
+    {
+      "view": "top",
+      "iou": 0.9925096715779076,
+      "hausdorff_mm": 0.22447783679836625,
+      "hd95_mm": 0.1383449316735018,
+      "mean_mm": 0.05567136879744293,
+      "worst_point_mm": [
+        2.8576159066440567,
+        12.08916376502384
+      ],
+      "over_area_mm2": 3.3482413805692954,
+      "under_area_mm2": 2.4006258955025137
+    },
+    {
+      "view": "side",
+      "iou": 0.9780701754385965,
+      "hausdorff_mm": 0.4681190590271868,
+      "hd95_mm": 0.2675116104879006,
+      "mean_mm": 0.06249312186145932,
+      "worst_point_mm": [
+        -12.086924631769762,
+        -4.718634649578902
+      ],
+      "over_area_mm2": 2.3639426391456766,
+      "under_area_mm2": 1.5759617594304511
+    }
+  ],
+  "residuals": [
+    {
+      "feature_id": "side",
+      "quantity": "thickness",
+      "measured_mm": 2.156,
+      "model_mm": 2.211,
+      "delta_mm": 0.054999999999999716,
+      "tol_mm": 0.3,
+      "passed": true
+    },
+    {
+      "feature_id": "outline",
+      "quantity": "width",
+      "measured_mm": 24.073,
+      "model_mm": 24.118,
+      "delta_mm": 0.04499999999999815,
+      "tol_mm": 0.3,
+      "passed": true
+    },
+    {
+      "feature_id": "outline",
+      "quantity": "length",
+      "measured_mm": 32.081,
+      "model_mm": 32.054,
+      "delta_mm": -0.027000000000001023,
+      "tol_mm": 0.3,
+      "passed": true
+    },
+    {
+      "feature_id": "plate",
+      "quantity": "thickness",
+      "measured_mm": 2.1,
+      "model_mm": 2.1,
+      "delta_mm": 0.0,
+      "tol_mm": 0.3,
+      "passed": true
+    }
+  ],
+  "tests": [
+    {
+      "id": "bbox.x",
+      "description": "length (long side of the footprint) == 32.08 +/- 0.3 mm",
+      "value": 32.054,
+      "expected": 32.081,
+      "tol": 0.3,
+      "passed": true,
+      "priority": "P0"
+    },
+    {
+      "id": "bbox.y",
+      "description": "width (short side of the footprint) == 24.07 +/- 0.3 mm",
+      "value": 24.118,
+      "expected": 24.073,
+      "tol": 0.3,
+      "passed": true,
+      "priority": "P0"
+    },
+    {
+      "id": "side.thickness",
+      "description": "side-view thickness (short side of the side silhouette) == 2.16 +/- 0.3 mm",
+      "value": 2.211,
+      "expected": 2.156,
+      "tol": 0.3,
+      "passed": true,
+      "priority": "P0"
+    },
+    {
+      "id": "thickness",
+      "description": "plate thickness == 2.10 +/- 0.3 mm",
+      "value": 2.1,
+      "expected": 2.1,
+      "tol": 0.3,
+      "passed": true,
+      "priority": "P0"
+    },
+    {
+      "id": "valid",
+      "description": "the solid passes the OCCT validity check",
+      "value": 1.0,
+      "expected": null,
+      "tol": null,
+      "passed": true,
+      "priority": "P0"
+    },
+    {
+      "id": "single_solid",
+      "description": "exactly one solid body",
+      "value": 1.0,
+      "expected": null,
+      "tol": null,
+      "passed": true,
+      "priority": "P0"
+    },
+    {
+      "id": "watertight",
+      "description": "the mesh is watertight (printable)",
+      "value": 1.0,
+      "expected": null,
+      "tol": null,
+      "passed": true,
+      "priority": "P0"
+    },
+    {
+      "id": "volume",
+      "description": "volume > 0",
+      "value": 1601.0760000000005,
+      "expected": 0.0,
+      "tol": 0.0,
+      "passed": true,
+      "priority": "P0"
+    },
+    {
+      "id": "min_wall",
+      "description": "thinnest wall >= 0.8 mm (FDM)",
+      "value": 2.1,
+      "expected": 0.8,
+      "tol": 0.0,
+      "passed": true,
+      "priority": "P0"
+    },
+    {
+      "id": "probe.min_feature",
+      "description": "thinnest feature 2.10 mm ≥ 0.8 mm (2 × 0.4 mm nozzle)",
+      "value": 2.1,
+      "expected": 0.8,
+      "tol": null,
+      "passed": true,
+      "priority": "P1"
+    },
+    {
+      "id": "probe.overhang",
+      "description": "0 % of the surface overhangs more than 45° in the best orientation (mounting face (Z=0) on the bed, as modelled); prints without supports",
+      "value": null,
+      "expected": null,
+      "tol": null,
+      "passed": true,
+      "priority": "P1"
+    }
+  ],
+  "validity": {
+    "is_valid": true,
+    "single_solid": true,
+    "watertight": true,
+    "volume_mm3": 1601.0760000000005,
+    "bbox_mm": [
+      31.94,
+      24.0,
+      2.25
+    ],
+    "min_wall_mm": 2.1,
+    "issues": []
+  },
+  "vetoes": [],
+  "max_error_mm": 0.4681190590271868,
+  "unchecked": [
+    {
+      "param": "card_length",
+      "label": "Length X",
+      "value": 31.94,
+      "unit": "mm",
+      "source": "inferred",
+      "note": "not measured: from the program (template default or inferred from the measured values); no test compares it with the photo, which covers it only as far as it changes the compared silhouettes (top, side)"
+    },
+    {
+      "param": "card_width",
+      "label": "Width Y",
+      "value": 24.0,
+      "unit": "mm",
+      "source": "inferred",
+      "note": "not measured: from the program (template default or inferred from the measured values); no test compares it with the photo, which covers it only as far as it changes the compared silhouettes (top, side)"
+    },
+    {
+      "param": "thickness",
+      "label": "Thickness Z",
+      "value": 2.1,
+      "unit": "mm",
+      "source": "inferred",
+      "note": "not measured: from the program (template default or inferred from the measured values); no test compares it with the photo, which covers it only as far as it changes the compared silhouettes (top, side)"
+    },
+    {
+      "param": "chamfer_size",
+      "label": "Corner chamfer",
+      "value": 4.0,
+      "unit": "mm",
+      "source": "inferred",
+      "note": "not measured: from the program (template default or inferred from the measured values); no test compares it with the photo, which covers it only as far as it changes the compared silhouettes (top, side)"
+    }
+  ],
+  "origin": "synthetic",
+  "versions": {
+    "verifier": "0.1.0",
+    "opencv": "5.0.0",
+    "numpy": "2.5.4",
+    "scipy": "1.18.1",
+    "trimesh": "5.2.0",
+    "python": "3.12.13",
+    "cadquery": "2.8.0",
+    "ocp": "7.9.3.1"
+  },
+  "hashes": {
+    "code_sha256": "932012ff80fa00167f5119a08c59a23317625f7d273a4a507e2107db342cd3e0",
+    "params_sha256": "4c8536cc8e5112e00168c443e842e498bcfd6dd2b0d810f4f7d15f23496f7a9a",
+    "measurements_sha256": "ea246960870399ffdf28038fb76fe647257c3f06ed29157cd38d270b67feb3c6",
+    "partspec_sha256": "5dcd19ef9a7c61782c3c49c5604302f5dfc1d57779e7bd96c9eaa5bbe9231fd4",
+    "mesh_sha256": "b8afb661d9f7e51762b9964c469724cdf69236324d70ca992776413c39b44523",
+    "overlay:residual_top.png": "ab70f67e165f303ae545d4e4f07664b76c927168097a5cd0c1ef6e68bdad0543",
+    "overlay:residual_side.png": "72f669083e135ed20bb2d7518465f5bc6ba1e62bfbbff216e3196fd2131321a8"
+  },
+  "ms": 515
+}

@@ -1,0 +1,10 @@
+{
+  "diameter": 30.0,
+  "height": 15.8,
+  "bore_d": 6.0,
+  "flat_depth": 0.75,
+  "bore_depth": 12.0,
+  "grip_count": 0.0,
+  "grip_depth": 0.8,
+  "top_fillet": 0.7
+}

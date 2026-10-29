@@ -215,6 +215,8 @@ def sample_job_input(meta: dict[str, Any]) -> JobInput:
         family_hint=Family(str(hint)) if hint in Family.__members__ else None,
         origin=DataOrigin.synthetic,
         mat_kind="paper" if mat_id.startswith("paper") else "screen",
+        # a bundled reference object (ID-1 card, AA cell …) is a measurement check, set here by the server only
+        purpose="reference_check" if meta.get("kind") == "reference_object" else "repair",
     )
 
 

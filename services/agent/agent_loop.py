@@ -194,7 +194,13 @@ class AgentSession:
         return res
 
     def tool_inspect_residuals(self, args: dict[str, Any]) -> Any:
-        from services.agent.orchestrator import fit_png, format_residuals, format_spots, format_views
+        from services.agent.orchestrator import (
+            fit_png,
+            format_gate_failures,
+            format_residuals,
+            format_spots,
+            format_views,
+        )
 
         rnd = self.base
         v = rnd.verification
@@ -211,6 +217,7 @@ class AgentSession:
             f"{'VERIFIED' if v.verified else 'not verified'} · {self.rounds_left()} round(s) left\n"
             f"{format_views(v)}{format_spots(spots)}\nresiduals:\n{format_residuals(v)}"
             + (f"\nfailing P0 tests: {'; '.join(failing)}" if failing else "")
+            + format_gate_failures(v, rnd.out.view_gates if rnd.out else None)
         )
         return tool_result(
             text,
@@ -296,6 +303,8 @@ class AgentSession:
         return cand, g
 
     def _describe(self, cand: Round, g: Any) -> tuple[str, dict[str, Any]]:
+        from services.agent.orchestrator import why_not_verified
+
         v = cand.verification
         assert v is not None
         base = self.base
@@ -306,6 +315,9 @@ class AgentSession:
             f"{' — would verify' if v.verified else ''}"
             + (f"; rejected: {'; '.join(g.rejected)}" if g.rejected else "")
         )
+        if not v.verified:
+            why = why_not_verified(v, cand.out.view_gates if cand.out else None, limit=3)
+            text += f"; still failing: {'; '.join(why)}" if why else ""
         data = {
             "values": cand.values,
             "applied": [e.to_dict() for e in g.applied],
@@ -421,7 +433,7 @@ class AgentSession:
 
     # ---- session -------------------------------------------------------------------------------------------------------
     def request(self) -> ModelRequest:
-        from services.agent.orchestrator import format_residuals, format_views
+        from services.agent.orchestrator import format_gate_failures, format_residuals, format_views
 
         run = self.run
         rnd = self.base
@@ -436,7 +448,8 @@ class AgentSession:
             family=run.spec.family.value,
             strategy=rnd.strategy,
             residuals=format_residuals(rnd.verification),
-            views=format_views(rnd.verification),
+            views=format_views(rnd.verification)
+            + format_gate_failures(rnd.verification, rnd.out.view_gates if rnd.out else None),
             values=json.dumps(rnd.values),
         )
         return ModelRequest(

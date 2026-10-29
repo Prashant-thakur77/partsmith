@@ -1,0 +1,365 @@
+{
+  "top": {
+    "view": "top",
+    "origin": "synthetic",
+    "outline_mm": [
+      [
+        23.533,
+        -0.792
+      ],
+      [
+        23.517,
+        0.909
+      ],
+      [
+        23.028,
+        3.282
+      ],
+      [
+        21.333,
+        5.904
+      ],
+      [
+        19.301,
+        7.435
+      ],
+      [
+        15.96,
+        8.306
+      ],
+      [
+        4.81,
+        8.558
+      ],
+      [
+        -6.074,
+        8.36
+      ],
+      [
+        -18.737,
+        8.537
+      ],
+      [
+        -22.154,
+        7.833
+      ],
+      [
+        -23.559,
+        6.921
+      ],
+      [
+        -23.486,
+        6.189
+      ],
+      [
+        -22.622,
+        4.332
+      ],
+      [
+        -22.044,
+        0.197
+      ],
+      [
+        -20.079,
+        -6.419
+      ],
+      [
+        -19.385,
+        -7.899
+      ],
+      [
+        -18.369,
+        -8.451
+      ],
+      [
+        -7.137,
+        -8.547
+      ],
+      [
+        -5.603,
+        -8.342
+      ],
+      [
+        -2.114,
+        -8.558
+      ],
+      [
+        2.701,
+        -8.342
+      ],
+      [
+        14.493,
+        -8.558
+      ],
+      [
+        17.598,
+        -8.015
+      ],
+      [
+        20.328,
+        -6.617
+      ],
+      [
+        21.264,
+        -5.716
+      ],
+      [
+        22.787,
+        -3.543
+      ]
+    ],
+    "holes": [],
+    "slots": [],
+    "length": {
+      "value": 47.118,
+      "source": "measured",
+      "sigma_mm": 0.279,
+      "evidence": {
+        "view": "top",
+        "pixels": [
+          [
+            1041.17,
+            941.91
+          ],
+          [
+            1256.61,
+            885.21
+          ]
+        ],
+        "note": "long side of the footprint's minimum-area rectangle; mask confidence 0.55 (sam-3.1): \u00b1\u03c3 \u00d7 1.91",
+        "citation": null
+      },
+      "bound_mm": [
+        47.118,
+        47.818
+      ]
+    },
+    "width": {
+      "value": 17.116,
+      "source": "measured",
+      "sigma_mm": 0.269,
+      "evidence": {
+        "view": "top",
+        "pixels": [
+          [
+            1159.32,
+            952.84
+          ],
+          [
+            1138.47,
+            874.35
+          ]
+        ],
+        "note": "short side of the footprint's minimum-area rectangle; mask confidence 0.55 (sam-3.1): \u00b1\u03c3 \u00d7 1.91",
+        "citation": null
+      },
+      "bound_mm": [
+        17.116,
+        17.677
+      ]
+    },
+    "thickness": {
+      "value": 5.0,
+      "source": "user_stated",
+      "sigma_mm": 0.3,
+      "evidence": null,
+      "bound_mm": null
+    },
+    "area_mm2": 731.62,
+    "symmetry_axis_deg": 179.96,
+    "symmetry_score": 0.9469,
+    "height_correction_scale": 0.98565,
+    "part_to_mat": [
+      [
+        0.29239115579850133,
+        0.9562988089560797,
+        69.33425903320312
+      ],
+      [
+        0.9562988089560797,
+        -0.29239115579850133,
+        160.83364868164062
+      ],
+      [
+        0.0,
+        0.0,
+        1.0
+      ]
+    ],
+    "mask_source": "sam-3.1",
+    "mask_confidence": 0.5461,
+    "notes": [
+      "camera intrinsics: exif; camera 348 mm above the mat, tilt 1.9\u00b0",
+      "height-corrected for a 5.00 mm top face: outline mapped onto the mat plane and the top-face plane (scale 0.9857 about the camera nadir) and intersected; through-holes fitted as vertical cylinders to the region where the mat shows through",
+      "possible hidden hole near mat (67.6, 152.9) mm, about \u00d89.4 mm: the bore is not seen through from this angle \u2014 retake from straight above it or state its diameter",
+      "top view at 5.0 mm: read with every edge at the stated height; an end or side that sits lower reads short, so this photo alone allows length 47.12\u201347.82 mm, width 17.12\u201317.68 mm (a side photo settles it)"
+    ]
+  },
+  "side": {
+    "view": "side",
+    "origin": "synthetic",
+    "outline_mm": [
+      [
+        -23.636,
+        1.556
+      ],
+      [
+        -23.524,
+        -2.175
+      ],
+      [
+        -19.37,
+        -2.835
+      ],
+      [
+        16.799,
+        -2.063
+      ],
+      [
+        17.405,
+        -2.786
+      ],
+      [
+        18.58,
+        -2.708
+      ],
+      [
+        19.194,
+        -1.989
+      ],
+      [
+        22.813,
+        -1.641
+      ],
+      [
+        23.639,
+        -1.285
+      ],
+      [
+        23.428,
+        -0.583
+      ],
+      [
+        22.276,
+        -0.351
+      ],
+      [
+        11.688,
+        -0.227
+      ],
+      [
+        11.441,
+        0.111
+      ],
+      [
+        11.292,
+        2.593
+      ],
+      [
+        10.616,
+        2.835
+      ],
+      [
+        -23.204,
+        2.101
+      ]
+    ],
+    "holes": [],
+    "slots": [],
+    "length": {
+      "value": 47.278,
+      "source": "measured",
+      "sigma_mm": 0.14,
+      "evidence": {
+        "view": "side",
+        "pixels": [
+          [
+            1031.71,
+            709.21
+          ],
+          [
+            1088.94,
+            536.13
+          ]
+        ],
+        "note": "long side of the footprint's minimum-area rectangle",
+        "citation": null
+      },
+      "bound_mm": null
+    },
+    "width": {
+      "value": 5.676,
+      "source": "measured",
+      "sigma_mm": 0.135,
+      "evidence": {
+        "view": "side",
+        "pixels": [
+          [
+            1070.49,
+            626.57
+          ],
+          [
+            1049.84,
+            619.77
+          ]
+        ],
+        "note": "short side of the footprint's minimum-area rectangle",
+        "citation": null
+      },
+      "bound_mm": null
+    },
+    "thickness": {
+      "value": 5.676,
+      "source": "measured",
+      "sigma_mm": 0.377,
+      "evidence": {
+        "view": "side",
+        "pixels": [
+          [
+            1070.49,
+            626.57
+          ],
+          [
+            1049.84,
+            619.77
+          ]
+        ],
+        "note": "short side of the footprint's minimum-area rectangle",
+        "citation": null
+      },
+      "bound_mm": null
+    },
+    "area_mm2": 197.74,
+    "symmetry_axis_deg": 0.55,
+    "symmetry_score": 0.7499,
+    "height_correction_scale": 0.958184,
+    "part_to_mat": [
+      [
+        0.6719621921689625,
+        -0.740585452392553,
+        130.1878204345703
+      ],
+      [
+        -0.740585452392553,
+        -0.6719621921689625,
+        93.96665954589844
+      ],
+      [
+        0.0,
+        0.0,
+        1.0
+      ]
+    ],
+    "mask_source": "threshold",
+    "mask_confidence": 0.9238,
+    "notes": [
+      "camera intrinsics: exif; camera 409 mm above the mat, tilt 7.0\u00b0",
+      "sam-3.1 found no part with score \u2265 0.4; deterministic fallback used.",
+      "threshold segmentation: background model from the stage border, contrast 244/255",
+      "mask grown from the brightest faces to 327 mm\u00b2 (shaded walls)",
+      "height-corrected for a 17.12 mm top face: outline mapped onto the mat plane and the top-face plane (scale 0.9582 about the camera nadir) and intersected; through-holes fitted as vertical cylinders to the region where the mat shows through",
+      "side view: 5.68 mm if the part is equally tall everywhere along this profile; a feature lower than 17.1 mm on the side away from the camera reads short (the photo allows up to 6.90 mm) \u2014 a side photo taken straight above the part narrows this",
+      "side view: thickness = short side of the profile"
+    ]
+  }
+}

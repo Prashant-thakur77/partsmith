@@ -13,7 +13,7 @@ Live site _(coming)_ · Video _(coming)_ · Judges page _(coming)_ · Try a samp
 <!-- BEGIN:status -->
 > **Status: mock providers** · bench report 2026-10-28 at commit `a1cc532` · real photos measured: 0 · real parts with ruler ground truth: 0 · real repairs logged: 0
 >
-> The bench numbers below come from deterministic mock models on synthetic photos; a live bench run is pending. They show that the pipeline, verifier and scorer work end to end; they do not measure any model. 18 of the 19 stored demo replays are live model runs (each replay is labelled live or mock). Real-photo results are pending and say so in their tables.
+> The bench numbers below come from deterministic mock models on synthetic photos; a live bench run is pending. They show that the pipeline, verifier and scorer work end to end; they do not measure any model. 19 of the 19 stored demo replays are live model runs (each replay is labelled live or mock). Real-photo results are pending and say so in their tables.
 <!-- END:status -->
 
 <!-- BEGIN:headline -->
@@ -97,12 +97,12 @@ workspace shows them live. This table's file:line links are generated from the c
 <!-- BEGIN:meta-tooling -->
 | Meta model | How we run it | Role | Where |
 |---|---|---|---|
-| **SAM 3.1** | Meta Model API | The measuring instrument: text-prompted part masks, point-prompted feature cuts (holes, slots, tapped points) and video tracking of a walk-around clip. Code turns every mask into millimetres | [`services/agent/providers/routing.py:107`](services/agent/providers/routing.py#L107) · [`services/metrology/segment.py:664`](services/metrology/segment.py#L664) · [`services/agent/evidence.py:125`](services/agent/evidence.py#L125) · [`services/agent/evidence.py:197`](services/agent/evidence.py#L197) |
-| **Muse Spark 1.3** | Meta Model API | Understand stage: family, features, broken region, unknowns (strict PartSpec JSON), and the pixel it saw each hole or slot at, which SAM 3.1 then cuts and code measures. Watches and listens to a narrated walk-around clip and points at the features it hears about (frame and pixel), kept only if they land on the part | [`services/agent/orchestrator.py:1051`](services/agent/orchestrator.py#L1051) · [`services/agent/evidence.py:57`](services/agent/evidence.py#L57) · [`services/agent/evidence.py:272`](services/agent/evidence.py#L272) |
-| **Muse Spark Open** | open weights (Baseten / Fireworks / Together) | CadQuery builder, and the fix agent that operates PartSmith's own tools (inspect residuals, measure, segment, render, run tests, set knobs) until the verifier agrees | [`services/agent/orchestrator.py:1501`](services/agent/orchestrator.py#L1501) · [`services/agent/agent_loop.py:458`](services/agent/agent_loop.py#L458) |
-| **Muse Glimmer 30B** | open weights (llama.cpp on a Modal GPU) | Independent veto-only judge, shown side-by-side photo and model crops zoomed on the verifier's worst spots | [`services/agent/orchestrator.py:2038`](services/agent/orchestrator.py#L2038) · [`infra/modal/glimmer.py:51`](infra/modal/glimmer.py#L51) |
-| **Muse Wonder** | Meta Model API | Finds a published spec for the named appliance with web search. Code accepts a value only if a search really ran and its URL is one the search returned; cited values fill unknowns and never override a measurement. Also finds the original part's price with search grounding for the buy-or-print card (a price is kept only with its source link and a quote showing it) and plans part families for the factory | [`services/agent/evidence.py:356`](services/agent/evidence.py#L356) · [`services/agent/providers/buy.py:294`](services/agent/providers/buy.py#L294) · [`services/agent/providers/spec.py:140`](services/agent/providers/spec.py#L140) · [`services/registry/steer.py:545`](services/registry/steer.py#L545) |
-| **Muse Image** | Meta Model API | Completes the broken region of the photo (accepted only if markers and the intact part are unchanged), an in-place repair preview and an install card (both labelled AI images) | [`services/agent/evidence.py:488`](services/agent/evidence.py#L488) · [`services/metrology/recon_gate.py:205`](services/metrology/recon_gate.py#L205) · [`services/media/preview.py:78`](services/media/preview.py#L78) |
+| **SAM 3.1** | Meta Model API | The measuring instrument: text-prompted part masks, point-prompted feature cuts (holes, slots, tapped points) and video tracking of a walk-around clip. Code turns every mask into millimetres | [`services/agent/providers/routing.py:108`](services/agent/providers/routing.py#L108) · [`services/metrology/segment.py:664`](services/metrology/segment.py#L664) · [`services/agent/evidence.py:166`](services/agent/evidence.py#L166) · [`services/agent/evidence.py:239`](services/agent/evidence.py#L239) |
+| **Muse Spark 1.3** | Meta Model API | Understand stage: family, features, broken region, unknowns (strict PartSpec JSON), and the pixel it saw each hole or slot at, which SAM 3.1 then cuts and code measures. Watches and listens to a narrated walk-around clip and points at the features it hears about (frame and pixel), kept only if they land on the part | [`services/agent/orchestrator.py:1097`](services/agent/orchestrator.py#L1097) · [`services/agent/evidence.py:57`](services/agent/evidence.py#L57) · [`services/agent/evidence.py:314`](services/agent/evidence.py#L314) |
+| **Muse Spark Open** | open weights (Baseten / Fireworks / Together) | CadQuery builder, and the fix agent that operates PartSmith's own tools (inspect residuals, measure, segment, render, run tests, set knobs) until the verifier agrees | [`services/agent/orchestrator.py:1548`](services/agent/orchestrator.py#L1548) · [`services/agent/agent_loop.py:471`](services/agent/agent_loop.py#L471) |
+| **Muse Glimmer 30B** | open weights (llama.cpp on a Modal GPU) | Independent veto-only judge, shown side-by-side photo and model crops zoomed on the verifier's worst spots | [`services/agent/orchestrator.py:2174`](services/agent/orchestrator.py#L2174) · [`infra/modal/glimmer.py:51`](infra/modal/glimmer.py#L51) |
+| **Muse Wonder** | Meta Model API | Finds a published spec for the named appliance with web search. Code accepts a value only if a search really ran and its URL is one the search returned; cited values fill unknowns and never override a measurement. Also finds the original part's price with search grounding for the buy-or-print card (a price is kept only with its source link and a quote showing it) and plans part families for the factory | [`services/agent/evidence.py:398`](services/agent/evidence.py#L398) · [`services/agent/providers/buy.py:294`](services/agent/providers/buy.py#L294) · [`services/agent/providers/spec.py:140`](services/agent/providers/spec.py#L140) · [`services/registry/steer.py:545`](services/registry/steer.py#L545) |
+| **Muse Image** | Meta Model API | Completes the broken region of the photo (accepted only if markers and the intact part are unchanged), an in-place repair preview and an install card (both labelled AI images) | [`services/agent/evidence.py:569`](services/agent/evidence.py#L569) · [`services/metrology/recon_gate.py:205`](services/metrology/recon_gate.py#L205) · [`services/media/preview.py:78`](services/media/preview.py#L78) |
 | **Muse Voice Transcribe** | Meta Model API | Hindi/English voice edits ("make the hole a bit bigger") mapped to knob changes, live while you talk (realtime stream relayed by the API, knob names as keywords) or from a recorded clip, and spoken answers | [`services/media/voice.py:452`](services/media/voice.py#L452) · [`services/api/voice_live.py:139`](services/api/voice_live.py#L139) |
 | **SAM 3 (open weights)** | open weights (Modal GPU) | All-open-weights segmentation path and bench | [`infra/modal/sam3.py:47`](infra/modal/sam3.py#L47) |
 <!-- END:meta-tooling -->
@@ -355,20 +355,20 @@ All code in this repository was written during the hackathon (from Oct 26 2026, 
 are computed from `git log`, so they stay true as the history grows.
 
 <!-- BEGIN:built -->
-**42 commits** between 2026-10-27 05:59 ET and 2026-10-28 14:36 ET; the hackathon started 2026-10-26 12:00 ET. Commits dated before the start: **0**.
+**43 commits** between 2026-10-27 05:59 ET and 2026-10-29 07:23 ET; the hackathon started 2026-10-26 12:00 ET. Commits dated before the start: **0**.
 
 | Area | Files added | Lines added: code and docs | Lines added: data, reports, lockfiles, generated | First commit | Last commit |
 |---|---|---|---|---|---|
-| `services/` (Python backend) | 232 | 47,152 | 0 | 2026-10-27 | 2026-10-28 |
-| `apps/web/` (web app) | 230 | 23,795 | 1,101 | 2026-10-27 | 2026-10-28 |
-| `eval/` (benches and reports) | 325 | 5,295 | 65,426 | 2026-10-27 | 2026-10-28 |
-| `packages/` (typed contracts) | 11 | 1,159 | 4,058 | 2026-10-27 | 2026-10-28 |
-| `tools/` (synthetic data, mats, generators) | 31 | 4,975 | 0 | 2026-10-27 | 2026-10-28 |
-| `infra/` (Modal, deploy) | 12 | 1,009 | 84 | 2026-10-27 | 2026-10-28 |
-| `docs/` | 16 | 1,260 | 7 | 2026-10-27 | 2026-10-28 |
-| `data/` (samples, replays) | 2,721 | 0 | 442,906 | 2026-10-27 | 2026-10-28 |
-| root files | 15 | 1,211 | 8,268 | 2026-10-27 | 2026-10-28 |
-| **Total** | **3,593** | **85,856** | **521,850** | | |
+| `services/` (Python backend) | 247 | 50,317 | 0 | 2026-10-27 | 2026-10-29 |
+| `apps/web/` (web app) | 243 | 24,964 | 2,309 | 2026-10-27 | 2026-10-29 |
+| `eval/` (benches and reports) | 325 | 5,298 | 65,426 | 2026-10-27 | 2026-10-29 |
+| `packages/` (typed contracts) | 11 | 1,356 | 5,495 | 2026-10-27 | 2026-10-29 |
+| `tools/` (synthetic data, mats, generators) | 32 | 5,156 | 0 | 2026-10-27 | 2026-10-29 |
+| `infra/` (Modal, deploy) | 12 | 1,014 | 86 | 2026-10-27 | 2026-10-29 |
+| `docs/` | 16 | 1,374 | 7 | 2026-10-27 | 2026-10-29 |
+| `data/` (samples, replays) | 3,374 | 0 | 542,554 | 2026-10-27 | 2026-10-29 |
+| root files | 15 | 1,226 | 8,271 | 2026-10-27 | 2026-10-29 |
+| **Total** | **4,275** | **90,705** | **624,148** | | |
 
 <details><summary>Every commit since the start, oldest first</summary>
 
@@ -416,6 +416,7 @@ are computed from `git log`, so they stay true as the history grows.
 | 2026-10-28 12:13 ET | `a1cc532` | feat: round 3 — bounded top views, buy-or-print, narrated walk-around, live voice, coupon learning, lie caught, deploy files |
 | 2026-10-28 13:53 ET | `d7586ff` | feat: stated lengths, SAM negatives and confidence, value sources in 3D, fail-to-fix strip, judge-first README |
 | 2026-10-28 14:36 ET | `7055646` | feat(web): README hero media from the real app; fix /fix clip crash and a stuck 3D camera |
+| 2026-10-29 07:23 ET | `95790e6` | feat: first live runs, fits-where-it-goes, repair passport, live fixes |
 
 </details>
 

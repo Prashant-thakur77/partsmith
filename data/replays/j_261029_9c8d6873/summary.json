@@ -1,0 +1,16 @@
+{
+  "id": "j_261029_9c8d6873",
+  "kind": "fix",
+  "status": "done",
+  "created_at": 1793294100.8172228,
+  "updated_at": 1793294258.589204,
+  "title": "AA cell (lying on its side) (synthetic, clean) (synthetic sample)",
+  "origin": "synthetic",
+  "provider_mode": "live",
+  "verified": false,
+  "max_error_mm": 0.20439516003492653,
+  "iterations": 1,
+  "cost_usd": 0.292596,
+  "part_slug": null,
+  "is_replay": false
+}

@@ -23,7 +23,7 @@ import numpy as np
 from partsmith_schemas import ArtifactEvent, Measured, Source
 from partsmith_schemas.common import Citation, Evidence
 
-from services.agent import providers
+from services.agent import guards, providers
 from services.common import blobs
 
 if TYPE_CHECKING:
@@ -120,6 +120,47 @@ def _quality_of(note: str | None, radius: float) -> float:
     return float(m.group(1)) / radius if m and radius > 0 else math.inf
 
 
+RIM_FIT = "top-opening rim"
+
+
+def _rim_of_hidden_bore(run: FixRun, fm: Any) -> bool:
+    """A pointed hole that the outline pass did not see, measured only from the rim of its top opening, where the
+    metrology already flagged a bore the camera cannot see through: the rim bounds a countersink or blind recess, not
+    the through-bore, so it must not become a measured through-hole (the hidden-hole question stays). Logged.
+
+    Live, 2026-10-29: on the broken latch the SAM mask closed the countersunk pivot hole; Spark's point measured the
+    10.4 mm countersink rim as a through-hole (the threshold mask's see-through fit on the same photo reads Ø5.0 mm) and
+    the template chased it (8.6 mm off)."""
+    from services.agent.orchestrator import HIDDEN_HOLE_RE
+
+    top = run.measurements.get("top")
+    d: Measured | None = (getattr(fm, "values", None) or {}).get("diameter")
+    if d is None or top is None or fm.kind != "hole" or not fm.ok or fm.center_mm is None:
+        return False
+    if not (d.evidence is not None and RIM_FIT in (d.evidence.note or "")):
+        return False
+    if top.part_to_mat:
+        Mi = np.linalg.inv(np.asarray(top.part_to_mat, dtype=np.float64))
+        c = (Mi @ np.array([fm.center_mm[0], fm.center_mm[1], 1.0]))[:2]
+        if any(
+            math.hypot(h.center_mm[0] - c[0], h.center_mm[1] - c[1]) < max(h.diameter.value / 2, 1.0) for h in top.holes
+        ):
+            return False  # it matches a hole the outline pass saw: the usual better-fit rule decides
+    for n in top.notes:
+        m = HIDDEN_HOLE_RE.search(n)
+        if m is None:
+            continue
+        x, y, dia = (float(g) for g in m.groups())
+        if math.hypot(fm.center_mm[0] - x, fm.center_mm[1] - y) <= max(dia / 2, 2.0):
+            run.log(
+                f"point {fm.id}: not used as a through-hole — only the rim of its top opening was measured "
+                f"(Ø{d.value:.2f} mm) where the camera cannot see through the bore (about Ø{dia:.1f} mm flagged); "
+                "its diameter stays a question"
+            )
+            return True
+    return False
+
+
 def apply_points(run: FixRun) -> None:
     """Measure the pointed-at features with point-prompted segmentation and merge better hole fits into the top view."""
     seg = getattr(providers, "segment_points", None)
@@ -139,6 +180,7 @@ def apply_points(run: FixRun) -> None:
     with providers.job_context(run.job.id, run.job.emit, ctx=run.job.ctx):
         feats = measure(img, mo.detection, mo.pose, points, seg, thickness_mm=height, part_mask=mo.photo_mask,
                         mask_source=point_mask_source(), negatives_px=negatives)  # fmt: skip
+    feats = [f for f in feats if not _rim_of_hidden_bore(run, f)]
     quality = [
         _quality_of(h.diameter.evidence.note if h.diameter.evidence else None, h.diameter.value / 2) for h in top.holes
     ]
@@ -468,6 +510,45 @@ def mirror_completion(outline: Sequence[Sequence[float]], axis_deg: float | None
     if u.geom_type != "Polygon":
         return None
     return [(round(x, 3), round(y, 3)) for x, y in list(u.exterior.coords)[:-1]]
+
+
+def check_break_support(run: FixRun) -> bool:
+    """Model proposes, code decides: an outline break the model proposed stays only when something besides the model
+    backs it (`guards.break_evidence`: a broken-edge tap, the user's damage words, or an asymmetric outline that no
+    tall feature explains). Otherwise code drops it, logs why and keeps the model's note in `break_check.json`: an
+    unsupported region would hide the measured outline from every test it spans. Returns True when it was dropped.
+
+    Live, 2026-10-29: for an intact L-bracket ("this broken l-bracket"), Spark read the perspective of the upright leg
+    as a broken flange; the region took the width test out of the max error and the fixer never narrowed the base."""
+    spec, top = run.spec, run.measurements.get("top")
+    if spec is None or top is None or spec.broken_region is None or spec.broken_region.kind != "outline":
+        return False
+    br = spec.broken_region
+    taps = [t for t in user_taps(run) if t.get("kind") == "broken_edge"]
+    narrated = bool(run.narration is not None and run.narration.break_description)
+    why = "the narration describes the break" if narrated else None
+    why = why or guards.break_evidence(
+        run.intent_for_models(),
+        broken_edge_taps=len(taps),
+        symmetry=top.symmetry_score,
+        taller_than_plate=run.side_taller_than_plate(),
+    )
+    if why is not None:
+        run.log(f"broken region kept: {why}")
+        return False
+    sym = f"{top.symmetry_score:.2f}" if top.symmetry_score is not None else "not measured"
+    tall = " (the side photo shows features above the plate, which make an intact outline asymmetric)"
+    reason = (
+        f"the model proposed a broken outline but nothing else backs it: no broken-edge tap, no damage words in the "
+        f"request, mirror score {sym}{tall if run.side_taller_than_plate() else ''}"
+    )
+    run.job.write_json(
+        "break_check.json",
+        {"dropped": True, "reason": reason, "model_region": br.model_dump(mode="json")},
+    )
+    spec.broken_region = None
+    run.log(f"broken region dropped: {reason}; the whole measured outline is compared (model note: {br.note!r})")
+    return True
 
 
 def propose_completion(run: FixRun) -> None:

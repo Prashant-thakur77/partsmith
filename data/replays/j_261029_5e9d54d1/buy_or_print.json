@@ -1,0 +1,64 @@
+{
+  "job_id": "j_261029_5e9d54d1",
+  "slug": null,
+  "title": "Wall hook",
+  "status": "best_effort",
+  "prints": [
+    {
+      "material": "PLA",
+      "volume_mm3": 7254.0,
+      "grams": 8.99,
+      "print_minutes": 28.6,
+      "filament_cost": {
+        "INR": 10.79,
+        "USD": 0.18
+      },
+      "price_per_kg": {
+        "INR": 1200.0,
+        "USD": 20.0
+      },
+      "assumptions": [
+        "grams: solid-volume mass at 100 % infill (volume x density: PLA 1.24, PETG 1.27 g/cm^3); a real print weighs less",
+        "minutes: rough estimate: (volume / 8 mm^3/s + layers x 4 s) / 60, 0.2 mm layers, 100 % infill",
+        "filament cost: grams x an assumed 1 kg spool price (INR 1200/kg, USD 20/kg); not a quote, and no shop margin or electricity"
+      ]
+    },
+    {
+      "material": "PETG",
+      "volume_mm3": 7254.0,
+      "grams": 9.21,
+      "print_minutes": 28.6,
+      "filament_cost": {
+        "INR": 12.9,
+        "USD": 0.2
+      },
+      "price_per_kg": {
+        "INR": 1400.0,
+        "USD": 22.0
+      },
+      "assumptions": [
+        "grams: solid-volume mass at 100 % infill (volume x density: PLA 1.24, PETG 1.27 g/cm^3); a real print weighs less",
+        "minutes: rough estimate: (volume / 8 mm^3/s + layers x 4 s) / 60, 0.2 mm layers, 100 % infill",
+        "filament cost: grams x an assumed 1 kg spool price (INR 1400/kg, USD 22/kg); not a quote, and no shop margin or electricity"
+      ]
+    }
+  ],
+  "lookup": {
+    "query": "Wall hook — user: Make a replacement for this broken wall hook.",
+    "city": null,
+    "oem": null,
+    "offers": [],
+    "places": [],
+    "dropped": [],
+    "searched": true,
+    "queries": 4,
+    "mode": "live",
+    "provider": "meta",
+    "model": "muse-wonder-1.0",
+    "usd": 0.1018112,
+    "label": "web search with citations"
+  },
+  "mode": "live",
+  "created_at": 1793292648.9329898,
+  "notes": []
+}

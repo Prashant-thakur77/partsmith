@@ -254,3 +254,49 @@ picks free code but the PartSpec names a template of the same family and the par
 copy the break) or taller than its plate, code uses that template and logs why. When free code never produces a valid
 solid, the loop switches to the family's template instead of failing. Benches already showed the template library
 verifying far more often than free code (PS vs PS-noTemplate).
+
+**2026-10-29 — Live lessons, round 2: code checks what the live models got wrong on the first seed.** Each rule came
+from a recorded live run and has a test built from that run's numbers.
+(1) Reference checks: `JobInput.purpose = "reference_check"` is set only by server code (bundled reference samples in
+`sample_job_input`, eval's real reference photos); the public `/jobs/fix` form never accepts it. The understand prompt
+then says the object is a measurement check of a known rigid object and that nothing will be printed. A model refusal
+on such a job is logged and ignored; code's own refused classes still apply. The export gate's decision is unchanged,
+but `ship.json` is labelled ("measurement check of a reference object, not a replacement part"). Live, Spark had
+refused the AA cell and SD card.
+(2) A model-proposed outline break stays only when something besides the model backs it: a broken-edge tap, damage
+words in the request or narration ("missing", "cracked", "corner", "tip", …; "broken" alone does not count, because
+every repair request says it), or an asymmetric outline (mirror score < 0.97) while no side photo shows features above
+the plate. A tall feature seen from above in perspective makes an intact outline asymmetric. Otherwise code drops the
+region, logs why and keeps the model's region in `break_check.json`. An unsupported region would take the outline out
+of every test it spans. Live, the intact L-bracket's upright leg read as a broken flange. Height breaks are unchanged.
+(3) When the planner picks free code, code uses the PartSpec's hinted template whenever it belongs to the part's family
+and the measured size fits its ranges, not only for broken or tall parts. Free code stays the fallback after rounds
+without progress, except for broken or tall parts.
+(4) In template mode the builder only fills PARAMS: code runs the template's own source with the builder's values for
+the shared knobs. Live, the builder twice returned new geometry under the template label, which the verifier would
+have treated as the known template form.
+(5) Free code that comes out hollow where no photo looks (the plate-thickness P0 test below half the expected value on a
+full-height solid) is rebuilt once with code's finding as feedback. The build prompt (v2) asks for a solid body. Live,
+the LEGO brick was hollowed out and failed by 7.9 mm.
+(6) The fixer is told which pass rule fails. Small silhouettes are gated on mean edge distance, not IoU, and the fixer
+used to see only IoU and Hausdorff.
+(7) A pointed hole that the outline pass missed is not accepted as a measured through-hole when it was measured only
+from its top-opening rim, at a spot where metrology flagged a bore it cannot see through; the hidden-hole question
+stays.
+
+**2026-10-29 — A slow provider goes to the back of its chain for a while.** The fallback chains used to move on only
+when a provider failed. During the second live seed, the shared Baseten hackathon deployment of Spark Open slowed from a
+median of 8 s per fixer turn (first seed) to 28 s, and one turn took 318 s. The battery cover hit the job's 900 s
+wall-clock cap and ended best effort; the first seed had verified it. Now a text route whose last 6 calls average more
+than 40 s for a stage is tried after the other ready routes for that stage, for 15 minutes, then gets a fresh window.
+Windows are per stage: a first version pooled all text calls and demoted Spark 1.3 because of its understand calls, which
+read two photos and take 36–55 s by nature. For plan, build and fix that
+fallback is Muse Spark 1.3 on the Meta API, at the same token price. A turn already streaming is not cut off: that would
+throw away the agent's progress in its run. Only the order changes, and every `model_call` event still names the model
+that served the call.
+
+**2026-10-29 — A hole found only from a model's point must be a clean circle on the part.** A point-prompted hole that
+matches no outline hole has nothing to cross-check it. It is now added only when its circle fit has rms/r ≤ 0.10 and at
+most 10 % of the circle lies outside the measured outline; otherwise it is noted and left out. In the second live seed
+of the broken latch, the SAM point mask spread over the plate around the countersunk pivot. The fit came back Ø25.9 mm
+(rms/r 0.21) on a part 17 mm wide, and that P0 test made the job 20 mm off.

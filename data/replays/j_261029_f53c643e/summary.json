@@ -1,0 +1,16 @@
+{
+  "id": "j_261029_f53c643e",
+  "kind": "fix",
+  "status": "done",
+  "created_at": 1793294449.7664487,
+  "updated_at": 1793295035.2309191,
+  "title": "LEGO 2×4 brick (synthetic, paper) (synthetic sample)",
+  "origin": "synthetic",
+  "provider_mode": "live",
+  "verified": false,
+  "max_error_mm": 0.5575248087311312,
+  "iterations": 6,
+  "cost_usd": 0.427108,
+  "part_slug": null,
+  "is_replay": false
+}

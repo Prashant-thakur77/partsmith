@@ -1,0 +1,92 @@
+{
+  "job_id": "j_261029_ab1a980f",
+  "slug": null,
+  "title": "Broken cupboard turn-button latch replacement",
+  "status": "best_effort",
+  "prints": [
+    {
+      "material": "PLA",
+      "volume_mm3": 3253.1,
+      "grams": 4.03,
+      "print_minutes": 12.5,
+      "filament_cost": {
+        "INR": 4.84,
+        "USD": 0.08
+      },
+      "price_per_kg": {
+        "INR": 1200.0,
+        "USD": 20.0
+      },
+      "assumptions": [
+        "grams: solid-volume mass at 100 % infill (volume x density: PLA 1.24, PETG 1.27 g/cm^3); a real print weighs less",
+        "minutes: rough estimate: (volume / 8 mm^3/s + layers x 4 s) / 60, 0.2 mm layers, 100 % infill",
+        "filament cost: grams x an assumed 1 kg spool price (INR 1200/kg, USD 20/kg); not a quote, and no shop margin or electricity"
+      ]
+    },
+    {
+      "material": "PETG",
+      "volume_mm3": 3253.1,
+      "grams": 4.13,
+      "print_minutes": 12.5,
+      "filament_cost": {
+        "INR": 5.78,
+        "USD": 0.09
+      },
+      "price_per_kg": {
+        "INR": 1400.0,
+        "USD": 22.0
+      },
+      "assumptions": [
+        "grams: solid-volume mass at 100 % infill (volume x density: PLA 1.24, PETG 1.27 g/cm^3); a real print weighs less",
+        "minutes: rough estimate: (volume / 8 mm^3/s + layers x 4 s) / 60, 0.2 mm layers, 100 % infill",
+        "filament cost: grams x an assumed 1 kg spool price (INR 1400/kg, USD 22/kg); not a quote, and no shop margin or electricity"
+      ]
+    }
+  ],
+  "lookup": {
+    "query": "Broken cupboard turn-button latch replacement — user: Make a replacement for this broken cupboard turn-button latch: a corner cracked off.",
+    "city": null,
+    "oem": null,
+    "offers": [
+      {
+        "seller": "Shell Lumber and Hardware",
+        "price": 7.66,
+        "currency": "USD",
+        "url": "https://www.shelllumber.com/products/national-hardware-v699-series-n149-625-cupboard-turn-1-1-4-in-l-1-3-4-in-w-steel-brass",
+        "quote": "$7.66 ~~$11.65 you save $3.99~~",
+        "title": "National Hardware V699 Series N149-625 Cupboard Turn, 1-1/4 in L, 1-3/4 in W, Steel, Brass",
+        "availability": "InStock"
+      },
+      {
+        "seller": "Ace Hardware",
+        "price": 12.99,
+        "currency": "USD",
+        "url": "https://www.acehardware.com/departments/hardware/cabinet-and-furniture-hardware/cabinet-latches-and-locks/5739693",
+        "quote": "$12.99",
+        "title": "National Hardware Bright Brass Gold Steel Cupboard Turn  Mfr# N149-625 -  Ace Hardware",
+        "availability": "InStock"
+      },
+      {
+        "seller": "Simply Door Handles",
+        "price": 24.43,
+        "currency": "GBP",
+        "url": "https://www.simplydoorhandles.co.uk/oval-turn-cupboard-latch-in-satin-nickel-v1112-sn",
+        "quote": "£24.43 inc VAT",
+        "title": "Simply Door Handles, Oval Turn Cupboard Latch in Satin Nickel - Buy Online at Simply Door Handles",
+        "availability": "InStock"
+      }
+    ],
+    "places": [],
+    "dropped": [],
+    "searched": true,
+    "queries": 12,
+    "mode": "live",
+    "provider": "meta",
+    "model": "muse-wonder-1.0",
+    "usd": 0.2699968,
+    "label": "web search with citations"
+  },
+  "mode": "live",
+  "created_at": 1793296148.2741635,
+  "notes": []
+}

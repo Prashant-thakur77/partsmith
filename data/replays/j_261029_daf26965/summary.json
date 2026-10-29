@@ -1,0 +1,16 @@
+{
+  "id": "j_261029_daf26965",
+  "kind": "fix",
+  "status": "done",
+  "created_at": 1793284591.2639713,
+  "updated_at": 1793285170.2861676,
+  "title": "Battery compartment cover (synthetic, clean) (synthetic sample)",
+  "origin": "synthetic",
+  "provider_mode": "live",
+  "verified": true,
+  "max_error_mm": 0.386737915217362,
+  "iterations": 3,
+  "cost_usd": 0.237175,
+  "part_slug": null,
+  "is_replay": false
+}

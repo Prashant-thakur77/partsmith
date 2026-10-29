@@ -1,0 +1,39 @@
+{
+  "dropped": true,
+  "reason": "the model proposed a broken outline but nothing else backs it: no broken-edge tap, no damage words in the request, mirror score 0.97 (the side photo shows features above the plate, which make an intact outline asymmetric)",
+  "model_region": {
+    "polygon_mm": [
+      [
+        13.963,
+        7.025
+      ],
+      [
+        18.578,
+        7.007
+      ],
+      [
+        18.342,
+        8.87
+      ],
+      [
+        17.377,
+        9.049
+      ],
+      [
+        15.594,
+        8.941
+      ],
+      [
+        14.445,
+        8.426
+      ],
+      [
+        14.204,
+        7.22
+      ]
+    ],
+    "strategy": "template",
+    "kind": "outline",
+    "note": "irregular raised snap ledge at +X end; rebuild as full-width transverse wall per clip template and mating slot"
+  }
+}

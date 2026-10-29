@@ -1,0 +1,6 @@
+{
+  "ok": false,
+  "reason": "measurement check of a reference object, not a replacement part: best effort: the side outline differs from the photo by up to 0.6 mm near (-21, 7) mm. Print the fit-test coupon first: it checks the critical holes and edges in a few minutes of printing.",
+  "requires_ack": true,
+  "purpose": "reference_check"
+}

@@ -78,6 +78,10 @@ P.register_mock(stage, handler)        # agent stages: handler(req, history) -> 
   - `reasoning_effort` is not supported, so reasoning goes through `chat_template_kwargs.reasoning_strength`.
   - Several images per message work. Each one is downscaled to at most 1,024 px, and a request takes at most 12.
   - Images share a 65,536-token slot with the reasoning.
+- **Slow routes go last (`health.py`):** the chains move on when a provider fails, and also when it is slow.
+  - A text route whose last 6 calls for a stage average more than 40 s is tried after the other ready routes for that stage, for 15 minutes.
+  - Windows are per stage: vision calls in understand are slow by nature and say nothing about fixer turns.
+  - This only applies when another route is ready. Every call still emits its `model_call` event with the model that served it.
 - **Cost:** every call reports `usd` from `pricing.py`.
   - Meta per-token, per-image, per-video-frame (minimum 50 frames), per-search and per-audio-hour rates come from the published price list.
   - Self-hosted Modal calls report $0, because the cost is GPU time.

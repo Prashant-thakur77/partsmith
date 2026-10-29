@@ -1,0 +1,18 @@
+{
+  "kind": "fix",
+  "intent": "Make a replacement for this broken cupboard turn-button latch.",
+  "photo_shas": {
+    "top": "15dfb0a2989649c486b7a004c37f02016bb795805fca37f2b98509690ecbdc87.jpg",
+    "side": "a594be58c6cf1897a89d6ee6527e88fd0d070d1a001c4e75924e3e27e1a44ebc.jpg"
+  },
+  "mat_kind": "screen",
+  "screen_px_per_mm": null,
+  "thickness_mm": 7.5,
+  "family_hint": "latch",
+  "origin": "synthetic",
+  "max_iters": 6,
+  "budget_usd": 0.5,
+  "provider_mode": null,
+  "city": null,
+  "purpose": "repair"
+}

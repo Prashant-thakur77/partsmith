@@ -1,0 +1,18 @@
+{
+  "kind": "fix",
+  "intent": "Make a replacement for this broken l-bracket.",
+  "photo_shas": {
+    "top": "19da3655f6782a2d2e0f8cef2d5e56eaa2bbe7fdd8423232daf873d53d83ff31.jpg",
+    "side": "4e550a33d00210c6c3fe2152b986e23135dca3b7a246e3cea7681127eb9d701d.jpg"
+  },
+  "mat_kind": "screen",
+  "screen_px_per_mm": null,
+  "thickness_mm": 2.5,
+  "family_hint": "bracket",
+  "origin": "synthetic",
+  "max_iters": 6,
+  "budget_usd": 0.5,
+  "provider_mode": null,
+  "city": null,
+  "purpose": "repair"
+}
