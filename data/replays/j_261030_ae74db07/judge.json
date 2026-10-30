@@ -1,0 +1,34 @@
+{
+  "model": "muse-spark-1.3",
+  "mode": "live",
+  "scores": [
+    {
+      "criterion": "outline",
+      "score": 3,
+      "reason": "Rectangular leaf with rounded outer corners matches, but hinge edge is flat tabs not barrels."
+    },
+    {
+      "criterion": "features",
+      "score": 2,
+      "reason": "Four holes are present in a row, but hinge knuckles are missing as formed cylinders."
+    },
+    {
+      "criterion": "printability",
+      "score": 5,
+      "reason": "Flat plate with through holes has a flat face and no floating parts."
+    },
+    {
+      "criterion": "fit",
+      "score": 1,
+      "reason": "Without rolled barrels to accept hinge pin it cannot function as a hinge leaf."
+    }
+  ],
+  "vetoes": [
+    {
+      "feature": "hinge_knuckles",
+      "issue": "missing - photo shows two rolled cylindrical barrels on hinge edge, model shows only flat tabs with no cylinders",
+      "severity": "blocking"
+    }
+  ],
+  "notes": "Photo shows hinge leaf with two rolled barrels; model is flat plate with 4 holes and flat tabs where barrels should be, so it cannot hinge."
+}

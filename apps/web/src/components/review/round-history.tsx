@@ -23,6 +23,11 @@ export function RoundHistory({ rounds, className }: { rounds: ReviewRound[]; cla
                 {verdictText(r.verdict)}
               </Badge>
               <Badge tone={r.decision ? (DECISION_TONE[r.decision] ?? "neutral") : "warn"}>{r.decision ? (DECISION_LABEL[r.decision] ?? r.decision) : "waiting"}</Badge>
+              {r.decision && r.by === "test" ? (
+                <Badge tone="mock" title="A scripted or developer-agent check: not a person's review, not counted in agreement or rules">
+                  test review, not a person
+                </Badge>
+              ) : null}
               {r.at ? <span className="text-[11.5px] text-subtle">{timeAgo(r.at)}</span> : null}
             </div>
             <div className="flex flex-wrap gap-x-3 gap-y-0.5 text-[12px]">

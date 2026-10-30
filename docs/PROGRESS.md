@@ -184,4 +184,12 @@ Seven workstreams in flight: providers, verifier, synth/eval, API/registry, metr
   rule's later reviews; `/review` shows judge-vs-person agreement and κ. First live reviewer round on the hinge leaf
   ($0.39): pins 3.20 → 0.05 and 2.85 → 0.25 mm, job 3.68 → 1.15 mm, still best effort. Also removed a duplicated README
   section.
+- **Review loop, second pass (Oct 30):** every decision records who made it; developer-agent test reviews run the same
+  flow but never promote a rule, publish, or count in agreement and rule track records, and the page labels them. Live
+  hinge-leaf chain, four rounds, $1.41: 3.68 → 1.15 → 0.38 mm → verified at 0.376 mm. Round 3 measured inside the
+  limits but the live judge vetoed "flat tabs, no barrels": it had only seen the model's top silhouette, and its prompt
+  promised a side photo that was never attached. The judge now gets a shaded 3D view (`services/verifier/shade.py`) and
+  the side photo; re-asked, it scored 5/5/5/5 with no veto, and round 4 verified. The chain is recorded with the replays
+  (`data/replays/_reviews/`), round 4 left for a person to accept. Pin photo zooms to the part; a flaky review e2e came
+  from a mock API that forgot decisions.
 - **Next:** real photos, a dozen honest reviews on `/review`, Modal login and deploy go-ahead from Prashant; the final video with real-world shots.

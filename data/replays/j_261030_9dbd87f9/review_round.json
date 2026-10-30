@@ -1,0 +1,39 @@
+{
+  "parent_job": "j_261029_143b6e19",
+  "round": 2,
+  "note": "match the two knuckles on the left edge",
+  "pins": [
+    {
+      "id": 1,
+      "u": 0.25,
+      "v": 0.537,
+      "note": "the model sticks out past the leaf here; the left edge of the plate is the knuckle line",
+      "mat_mm": [
+        93.0,
+        94.736
+      ],
+      "part_mm": [
+        -22.289,
+        -13.868
+      ],
+      "before_mm": 3.2,
+      "after_mm": 0.05
+    },
+    {
+      "id": 2,
+      "u": 0.261,
+      "v": 0.644,
+      "note": "the photo shows a knuckle tab sticking out here; the model has a notch instead",
+      "mat_mm": [
+        95.948,
+        108.432
+      ],
+      "part_mm": [
+        -8.308,
+        -12.966
+      ],
+      "before_mm": 2.85,
+      "after_mm": 0.25
+    }
+  ]
+}

@@ -1,0 +1,39 @@
+{
+  "parent_job": "j_261030_9dbd87f9",
+  "round": 3,
+  "note": "round the two outer corners of the leaf (the side away from the knuckles)",
+  "pins": [
+    {
+      "id": 3,
+      "u": 0.351,
+      "v": 0.4516,
+      "note": "this corner is rounded in the photo (radius about 3 mm); the model's corner is sharp",
+      "mat_mm": [
+        120.068,
+        83.805
+      ],
+      "part_mm": [
+        -29.122,
+        14.513
+      ],
+      "before_mm": 1.18,
+      "after_mm": 0.354
+    },
+    {
+      "id": 4,
+      "u": 0.383,
+      "v": 0.9,
+      "note": "same here: rounded corner in the photo, sharp in the model",
+      "mat_mm": [
+        128.644,
+        141.2
+      ],
+      "part_mm": [
+        28.911,
+        14.558
+      ],
+      "before_mm": 1.097,
+      "after_mm": 0.283
+    }
+  ]
+}

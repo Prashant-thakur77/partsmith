@@ -451,6 +451,7 @@ export function reviewDetail(id: string): Record<string, unknown> | null {
           round: 1,
           job_id: "job_rev_1",
           decision: "improve",
+          by: "person",
           at: NOW - 1200,
           note: "the clip face is the flat one",
           pins: [{ id: 1, u: 0.3, v: 0.4, note: "this corner was square", mat_mm: [102.5, 88.1], before_mm: 0.84, after_mm: 0.21 }],
@@ -463,7 +464,7 @@ export function reviewDetail(id: string): Record<string, unknown> | null {
     };
   if (id === "job_demo_1") return { root_job: "job_demo_1", status: "waiting", rounds: [round({ round: 1, job_id: "job_demo_1", verdict: { status: "verified", max_error_mm: 0.31 } })], images: reviewImages };
   if (id === "job_replay_1")
-    return { root_job: "job_replay_1", status: "accepted", rounds: [round({ round: 1, job_id: "job_replay_1", decision: "accept", at: NOW - 9000, judge: null, verdict: { status: "verified", max_error_mm: 0.22 } })], images: reviewImages };
+    return { root_job: "job_replay_1", status: "accepted", rounds: [round({ round: 1, job_id: "job_replay_1", decision: "accept", by: "test", at: NOW - 9000, judge: null, verdict: { status: "verified", max_error_mm: 0.22 } })], images: reviewImages };
   return null;
 }
 
@@ -474,7 +475,7 @@ export const draftRules = {
   ],
 };
 
-export const reviewStats = { n: 4, agree: 3, both_ok: 2, both_not: 1, judge_ok_person_not: 1, judge_not_person_ok: 0, kappa: 0.5, reviewers: 1 };
+export const reviewStats = { n: 4, agree: 3, both_ok: 2, both_not: 1, judge_ok_person_not: 1, judge_not_person_ok: 0, kappa: 0.5, reviewers: 1, tests_excluded: 1 };
 
 const json = (route: Route, body: unknown, status = 200) => route.fulfill({ status, contentType: "application/json", body: JSON.stringify(body) });
 
@@ -492,6 +493,7 @@ export const captureContrastFail = {
 /** Route every `/api/v1/*` call to fixtures. Returns a log of requested paths for assertions. */
 export async function mockApi(page: Page, opts: MockOptions = {}): Promise<string[]> {
   const log: string[] = [];
+  const reviewed = new Map<string, Record<string, unknown>>(); // review chains decided on this page, by root job
   await page.route("**/api/v1/**", async (route) => {
     const url = new URL(route.request().url());
     const path = url.pathname.replace(/^\/api\/v1/, "");
@@ -520,8 +522,9 @@ export async function mockApi(page: Page, opts: MockOptions = {}): Promise<strin
     if (path === "/review/stats") return json(route, reviewStats);
     const rv = path.match(/^\/review\/([^/]+)(\/rules\/draft)?$/);
     if (rv) {
-      const detail = reviewDetail(rv[1]!);
-      if (!detail) return json(route, { error: { code: "job_not_found", message: `no job ${rv[1]}` } }, 404);
+      const fresh = reviewDetail(rv[1]!);
+      if (!fresh) return json(route, { error: { code: "job_not_found", message: `no job ${rv[1]}` } }, 404);
+      const detail = reviewed.get(String(fresh.root_job)) ?? fresh; // like the server: a decision sticks
       if (rv[2] && method === "POST") return json(route, draftRules);
       if (method === "POST") {
         const body = JSON.parse(route.request().postData() ?? "{}") as { action?: string; pins?: unknown[]; note?: string; reason?: string };
@@ -529,7 +532,9 @@ export async function mockApi(page: Page, opts: MockOptions = {}): Promise<strin
         const rounds = (detail.rounds as Record<string, unknown>[]).map((r, i, all) =>
           i === all.length - 1 ? { ...r, decision: body.action, at: NOW, note: body.note ?? "", reason: body.reason ?? "", child_job: body.action === "improve" ? "job_rev_3" : null } : r,
         );
-        return json(route, { state: { ...detail, status: decided, rounds }, child_job: body.action === "improve" ? "job_rev_3" : null, part_slug: null });
+        const state = { ...detail, status: decided, rounds };
+        reviewed.set(String(detail.root_job), state);
+        return json(route, { state, child_job: body.action === "improve" ? "job_rev_3" : null, part_slug: null });
       }
       return json(route, detail);
     }

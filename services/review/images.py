@@ -101,10 +101,10 @@ def part_box(job: Job, key: str, margin_mm: float = FOCUS_MARGIN_MM) -> list[flo
     x0, y0 = pts.min(axis=0) - m
     x1, y1 = pts.max(axis=0) + m
     return [
-        round(max(0.0, x0 / w), 4),
-        round(max(0.0, y0 / h), 4),
-        round(min(1.0, x1 / w), 4),
-        round(min(1.0, y1 / h), 4),
+        round(float(max(0.0, x0 / w)), 4),
+        round(float(max(0.0, y0 / h)), 4),
+        round(float(min(1.0, x1 / w)), 4),
+        round(float(min(1.0, y1 / h)), 4),
     ]
 
 

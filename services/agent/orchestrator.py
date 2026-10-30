@@ -61,6 +61,7 @@ from services.metrology.segment import ProviderSegmenter
 from services.verifier.camera import CameraView
 from services.verifier.part_tests import unchecked_values
 from services.verifier.render import Frame, rasterize_polygon
+from services.verifier.shade import shaded_png
 from services.verifier.verify import MEAN_GATE_MM, BreakEnds, PhotoMask, VerifyOutput, break_ends, verify
 
 Strategy = Literal["template", "free_code", "human"]
@@ -2468,15 +2469,29 @@ class FixRun:
         photo_n, model_n = self.openings(rnd)
         p = prompt_loader.load("judge")
         feats = [f"{f.kind} {f.id}" for f in self.spec.features] or ["outline only"]
-        dev, user = p.render(
-            features=", ".join(feats),
-            intent=self.job.input.intent or "replacement part",
-            side_note=", photo (side)" if "side" in self.mo else "",
-        )
         from services.agent import evidence
 
         images = [fit_png(self.mo["top"].rectified_png or self.photos["top"])[0], mask_png(vr.model_mask)]
-        images += evidence.hotspot_crops(rnd)  # photo | model, zoomed on the verifier's worst spots
+        names = ["photo (top, rectified)", "the model's top silhouette in the same frame"]
+        mesh = rnd.exec_result.mesh if rnd.exec_result is not None else None
+        shaded = shaded_png(mesh.vertices, mesh.faces) if mesh is not None else None
+        if shaded is not None:  # a silhouette cannot show a barrel, a countersink or a step
+            images.append(shaded)
+            names.append("a shaded 3D view of the model (its own orientation)")
+        side = rnd.out.views.get("side")
+        if side is not None and "side" in self.photos:
+            images += [fit_png(self.photos["side"])[0], mask_png(side.model_mask)]
+            names += ["photo (side)", "the model's side silhouette"]
+        crops = evidence.hotspot_crops(rnd)  # photo | model, zoomed on the verifier's worst spots
+        images += crops
+        if crops:
+            names.append(f"{len(crops)} photo | model crop(s) at the worst spots")
+        dev, user = p.render(
+            features=", ".join(feats),
+            intent=self.job.input.intent or "replacement part",
+            images="; ".join(f"{i + 1}) {n}" for i, n in enumerate(names)),
+            side_note=", photo (side)" if "side" in self.photos else "",
+        )
         validity = rnd.verification.validity if rnd.verification is not None else None
         req = ModelRequest(
             messages=[{"role": "developer", "content": dev}, {"role": "user", "content": user}],

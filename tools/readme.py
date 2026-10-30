@@ -97,8 +97,9 @@ USES: tuple[Use, ...] = (
     Use(
         "Muse Glimmer 30B",
         "open weights (llama.cpp on a Modal GPU)",
-        "Independent judge: vetoes plus an advisory 1–5 scorecard (outline, features, printability, fit), shown "
-        "side-by-side photo and model crops zoomed on the verifier's worst spots. It can block, never pass",
+        "Independent judge: vetoes plus an advisory 1–5 scorecard (outline, features, printability, fit), shown the "
+        "photos, the model's silhouettes, a shaded 3D view and crops zoomed on the verifier's worst spots. It can "
+        "block, never pass",
         (
             ("services/agent/orchestrator.py", r"evidence\.hotspot_crops\(rnd\)"),
             ("infra/modal/glimmer.py", r"^app = "),

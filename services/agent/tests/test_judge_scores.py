@@ -140,3 +140,20 @@ def test_judge_provider_error_gives_no_scorecard(spacer: Path) -> None:
     assert done.t == "done" and done.status in ("verified", "best_effort")
     assert job.read_json("judge.json") is None
     assert any(e.t == "log" and "judge unavailable" in e.msg for e in job.events)
+
+
+@pytest.mark.slow
+def test_judge_sees_a_shaded_3d_view(spacer: Path) -> None:
+    seen: list[ModelRequest] = []
+
+    def judge(req: ModelRequest) -> dict[str, Any]:
+        seen.append(req)
+        return {"vetoes": [], "scores": [], "notes": ""}
+
+    providers.register_mock("judge", judge, replace=True)
+    _run(spacer)
+    assert seen
+    user = str(seen[0].messages[1]["content"])
+    # a silhouette cannot show a barrel or a countersink: the judge gets a shaded view and is told which image is which
+    assert "1) photo (top, rectified)" in user and "3) a shaded 3D view of the model" in user
+    assert len(seen[0].images) >= 3 and bytes(seen[0].images[2])[:8] == b"\x89PNG\r\n\x1a\n"

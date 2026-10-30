@@ -64,7 +64,10 @@ function StatsStrip() {
       <Users className="size-4 text-muted" aria-hidden />
       <span className="font-medium tnum">{text}</span>
       <Badge tone="neutral">{reviewersLabel(stats.data.reviewers)}</Badge>
-      <span className="text-[12px] text-subtle">Counted from saved reviews that have a judge scorecard.</span>
+      <span className="text-[12px] text-subtle">
+        Counted from saved reviews that have a judge scorecard
+        {stats.data.tests_excluded ? `; ${stats.data.tests_excluded} test review${stats.data.tests_excluded === 1 ? "" : "s"} not counted` : ""}.
+      </span>
     </div>
   );
 }
@@ -416,7 +419,8 @@ function ReviewDetailPanel({ jobId, item, admin }: { jobId: string; item: Review
           </p>
         ) : status === "accepted" ? (
           <p role="note" className="rounded-md border border-ok-border bg-ok-soft px-3 py-2 text-[13px]">
-            Accepted by a person{cur?.at ? ` ${timeAgo(cur.at)}` : ""}. The code&apos;s verdict above is unchanged.
+            {cur?.by === "test" ? "Accepted in a test review (not a person)" : "Accepted by a person"}
+            {cur?.at ? ` ${timeAgo(cur.at)}` : ""}. The code&apos;s verdict above is unchanged.
           </p>
         ) : status === "rejected" ? (
           <p role="note" className="rounded-md border border-border bg-surface-2 px-3 py-2 text-[13px]">

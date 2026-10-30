@@ -1,0 +1,169 @@
+{
+  "root_job": "j_261029_143b6e19",
+  "rounds": [
+    {
+      "round": 1,
+      "job_id": "j_261029_143b6e19",
+      "decision": "improve",
+      "at": 1793343987.7309105,
+      "note": "match the two knuckles on the left edge",
+      "reason": "",
+      "pins": [
+        {
+          "id": 1,
+          "u": 0.25,
+          "v": 0.537,
+          "note": "the model sticks out past the leaf here; the left edge of the plate is the knuckle line"
+        },
+        {
+          "id": 2,
+          "u": 0.261,
+          "v": 0.644,
+          "note": "the photo shows a knuckle tab sticking out here; the model has a notch instead"
+        }
+      ],
+      "child_job": "j_261030_9dbd87f9",
+      "verdict": {
+        "status": "best_effort",
+        "verified": false,
+        "max_error_mm": 3.684286140661687
+      },
+      "judge": null,
+      "lesson_ids": [
+        "l_095c328b21",
+        "l_d7d825cbd0",
+        "l_a22665ba54"
+      ],
+      "by": "test"
+    },
+    {
+      "round": 2,
+      "job_id": "j_261030_9dbd87f9",
+      "decision": "improve",
+      "at": 1793367663.1244626,
+      "note": "round the two outer corners of the leaf (the side away from the knuckles)",
+      "reason": "",
+      "pins": [
+        {
+          "id": 3,
+          "u": 0.351,
+          "v": 0.4516,
+          "note": "this corner is rounded in the photo (radius about 3 mm); the model's corner is sharp"
+        },
+        {
+          "id": 4,
+          "u": 0.383,
+          "v": 0.9,
+          "note": "same here: rounded corner in the photo, sharp in the model"
+        }
+      ],
+      "child_job": "j_261030_ae74db07",
+      "verdict": {
+        "status": "best_effort",
+        "verified": false,
+        "max_error_mm": 1.1482407160755244
+      },
+      "judge": {
+        "model": "muse-spark-1.3",
+        "mode": "live",
+        "scores": [
+          {
+            "criterion": "outline",
+            "score": 4,
+            "reason": "Top outline is rectangular with side tabs matching leaf and knuckle positions in photo."
+          },
+          {
+            "criterion": "features",
+            "score": 5,
+            "reason": "All through holes are present in a line on the correct face as in the photo."
+          },
+          {
+            "criterion": "printability",
+            "score": 5,
+            "reason": "Flat plate has no thin walls or floating pieces and has a flat face to print on."
+          },
+          {
+            "criterion": "fit",
+            "score": 2,
+            "reason": "Without formed hinge barrels for a pin the part cannot work as a hinge leaf."
+          }
+        ],
+        "vetoes": [],
+        "notes": "Model matches the flat leaf and 4-hole pattern but shows flat tabs instead of cylindrical hinge barrels with a pin bore, so it cannot pivot as a hinge leaf without rework."
+      },
+      "by": "test",
+      "lesson_ids": [
+        "l_3968de66db",
+        "l_2866112410",
+        "l_3da75bfe33"
+      ]
+    },
+    {
+      "round": 3,
+      "job_id": "j_261030_ae74db07",
+      "decision": "improve",
+      "at": 1793368910.503299,
+      "note": "outline, corners and holes look right now; keep them. The knuckles are rolled barrels around a pin: check them against the side photo",
+      "reason": "",
+      "pins": [],
+      "child_job": "j_261030_d5f8831e",
+      "verdict": {
+        "status": "best_effort",
+        "verified": false,
+        "max_error_mm": 0.3764159478386045
+      },
+      "judge": {
+        "model": "muse-spark-1.3",
+        "mode": "live",
+        "scores": [
+          {
+            "criterion": "outline",
+            "score": 3,
+            "reason": "Rectangular leaf with rounded outer corners matches, but hinge edge is flat tabs not barrels."
+          },
+          {
+            "criterion": "features",
+            "score": 2,
+            "reason": "Four holes are present in a row, but hinge knuckles are missing as formed cylinders."
+          },
+          {
+            "criterion": "printability",
+            "score": 5,
+            "reason": "Flat plate with through holes has a flat face and no floating parts."
+          },
+          {
+            "criterion": "fit",
+            "score": 1,
+            "reason": "Without rolled barrels to accept hinge pin it cannot function as a hinge leaf."
+          }
+        ],
+        "vetoes": [
+          {
+            "feature": "hinge_knuckles",
+            "issue": "missing - photo shows two rolled cylindrical barrels on hinge edge, model shows only flat tabs with no cylinders",
+            "severity": "blocking"
+          }
+        ],
+        "notes": "Photo shows hinge leaf with two rolled barrels; model is flat plate with 4 holes and flat tabs where barrels should be, so it cannot hinge."
+      },
+      "by": "test",
+      "lesson_ids": [
+        "l_4a96f1db34"
+      ]
+    },
+    {
+      "round": 4,
+      "job_id": "j_261030_d5f8831e",
+      "decision": null,
+      "at": null,
+      "note": "",
+      "reason": "",
+      "pins": [],
+      "child_job": null,
+      "verdict": null,
+      "judge": null
+    }
+  ],
+  "created_at": 1793343987.7303293,
+  "updated_at": 1793368910.8252766
+}

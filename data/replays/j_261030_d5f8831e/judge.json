@@ -1,0 +1,28 @@
+{
+  "model": "muse-spark-1.3",
+  "mode": "live",
+  "scores": [
+    {
+      "criterion": "outline",
+      "score": 5,
+      "reason": "Rectangular leaf with two knuckle tabs matches photo in top and side views."
+    },
+    {
+      "criterion": "features",
+      "score": 5,
+      "reason": "Four line holes with countersinks and two hollow hinge barrels are present on correct edge and face."
+    },
+    {
+      "criterion": "printability",
+      "score": 5,
+      "reason": "Flat back face for bed, solid plate and attached barrels with no thin or floating parts."
+    },
+    {
+      "criterion": "fit",
+      "score": 5,
+      "reason": "Screw pattern plus mating knuckles should function as replacement hinge leaf."
+    }
+  ],
+  "vetoes": [],
+  "notes": "Hinge leaf with 4 countersunk screw holes and 2 hollow knuckles matches photos; no missing or mirrored features seen."
+}

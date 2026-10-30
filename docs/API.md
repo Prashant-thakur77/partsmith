@@ -346,15 +346,15 @@ plain-words change through the variant guard and rebuilds the lane; `reject` dro
 |---|---|---|
 | GET | `/review/queue?include_replays=&limit=` | `{"items": [QueueItem]}`: waiting first, then running reviewer rounds, then decided chains |
 | GET | `/review/{job_id}` | `ReviewDetail` for the chain `job_id` belongs to |
-| GET | `/review/stats` | `{"n","agree","both_ok","both_not","judge_ok_person_not","judge_not_person_ok","kappa": float\|null,"reviewers"}` |
+| GET | `/review/stats` | `{"n","agree","both_ok","both_not","judge_ok_person_not","judge_not_person_ok","kappa": float\|null,"reviewers","tests_excluded"}` |
 | POST | `/review/{job_id}/rules/draft` | **admin**. No body → `{"rules": [{"text","source_pin","scope"}]}` (stage `review_rules`, one rule per note) |
 | POST | `/review/{job_id}` | **admin**. `{"action": "accept"\|"improve"\|"reject", "pins": [{"u","v","note"}], "note", "reason", "rules": [{"text","keep","source_pin"}], "publish": bool}` → `{"state": ReviewDetail, "child_job": str\|null, "part_slug": str\|null}` |
 
 ```
 QueueItem = {"job_id", "root_job", "round", "title", "family", "status": "waiting"|"improving"|"accepted"|"rejected",
   "verdict": {"status","max_error_mm","verified"}, "judge": Judge|null, "cost_usd", "chain_cost_usd", "is_replay", "updated_at"}
-ReviewDetail = {"root_job", "status", "family", "updated_at", "images": {"rectified","overlay"},
-  "rounds": [{"round","job_id","job_status","title","decision": "accept"|"improve"|"reject"|null,"at","note","reason",
+ReviewDetail = {"root_job", "status", "family", "updated_at", "images": {"rectified","overlay","focus": [u0,v0,u1,v1]|null},
+  "rounds": [{"round","job_id","job_status","title","decision": "accept"|"improve"|"reject"|null,"by": "person"|"test"|null,"at","note","reason",
               "pins": [{"id","u","v","note","mat_mm","before_mm","after_mm"}],"verdict","judge","child_job","cost_usd",
               "is_replay","rules","part_slug","lesson_ids"}]}
 Judge = {"model","mode","scores": [{"criterion": "outline"|"features"|"printability"|"fit","score": 1..5,"reason"}],
@@ -368,7 +368,9 @@ the notes; its `review_round.json` holds each pin in mat and part mm with code's
 part (best effort labelled "accepted by a person"; never `verified` unless the verifier said so). `reject` needs a
 reason. Errors: 404 `job_not_found`, 409 `review_busy` / `review_decided` / `not_finished`, 422 `review_empty` /
 `validation_error`. Job detail carries `judge` and `review` (`{"status","round","root_job"}`); lessons carry `track`.
-Review state lives in `$PARTSMITH_HOME/reviews/` (never in committed replays).
+Review state lives in `$PARTSMITH_HOME/reviews/` (never in committed replays). Chains recorded with the replays
+(`data/replays/_reviews/`) are shown read only; a new decision on one is saved locally. API decisions are `by: "person"`;
+`by: "test"` (scripts, the developer agent) cannot promote rules or publish and is left out of `stats`.
 
 ## Repair-shop batches (all admin)
 | Method | Path | Body / Returns |

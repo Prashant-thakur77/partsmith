@@ -34,6 +34,10 @@ MAX_REASON = 500
 LIST_LIMIT = 500  # jobs scanned for the queue
 CHAIN_MAX = 50
 ACCEPTED_NOTE = "best effort, accepted by a person"
+# Who decided: "person" (the API: whoever holds the admin token) or "test" (a scripted or developer-agent check). Test
+# decisions run the same flow but never count as a person's: no rule promotion, no publishing, left out of agreement
+# and rule track records.
+Reviewer = Literal["person", "test"]
 _ID_RE = re.compile(r"^[A-Za-z0-9_.-]{1,80}$")
 
 _locks: dict[str, threading.Lock] = {}
@@ -72,9 +76,18 @@ def _lock(root: str) -> threading.Lock:
         return _locks.setdefault(root, threading.Lock())
 
 
+def recorded_dir() -> Path:
+    """Review chains recorded next to the committed replays (read only; a new decision is saved locally)."""
+    from services.agent import jobs
+
+    return jobs.REPLAYS_DIR / "_reviews"
+
+
 def _load(root: str) -> dict[str, Any] | None:
-    p = _path(root)
-    return dict(json.loads(p.read_text(encoding="utf-8"))) if p.exists() else None
+    for p in (_path(root), recorded_dir() / f"{root}.json"):
+        if p.exists():
+            return dict(json.loads(p.read_text(encoding="utf-8")))
+    return None
 
 
 def _save(state: dict[str, Any]) -> None:
@@ -85,13 +98,39 @@ def _save(state: dict[str, Any]) -> None:
 
 
 def _all_states() -> list[dict[str, Any]]:
-    out: list[dict[str, Any]] = []
-    for p in sorted(reviews_dir().glob("*.json")):
+    """Every chain: the local ones, then recorded ones nobody has continued locally."""
+    out: dict[str, dict[str, Any]] = {}
+    rec = recorded_dir()
+    for p in [*sorted(reviews_dir().glob("*.json")), *(sorted(rec.glob("*.json")) if rec.exists() else [])]:
+        if p.stem in out:
+            continue
         try:
-            out.append(dict(json.loads(p.read_text(encoding="utf-8"))))
+            out[p.stem] = dict(json.loads(p.read_text(encoding="utf-8")))
         except (OSError, ValueError):
             continue
-    return out
+    return list(out.values())
+
+
+def export_chain(root: str, *, svc: Any = None) -> Path:
+    """Record a review chain with the replays: every round's job is exported as a replay (already-replay jobs are
+    kept as they are) and the chain is written to `recorded_dir()`, so a fresh clone or the public site shows it."""
+    from services.agent import jobs
+
+    mgr = _svc(svc).manager()
+    state = _load(root)
+    if state is None:
+        raise ReviewError(404, "job_not_found", f"no review chain for {root!r}")
+    for r in state["rounds"]:
+        job = _get(mgr, str(r["job_id"]))
+        if job is None or not job.finished:
+            raise ReviewError(409, "not_finished", f"round {r['round']} ({r['job_id']}) is not a finished job")
+        if not job.summary.is_replay:
+            jobs.export_replay(job)
+    rec = recorded_dir()
+    rec.mkdir(parents=True, exist_ok=True)
+    dest = rec / f"{root}.json"
+    dest.write_text(json.dumps(state, indent=2, default=str) + "\n", encoding="utf-8")
+    return dest
 
 
 def _get(mgr: Any, job_id: str) -> Any:
@@ -217,6 +256,7 @@ def _round_out(mgr: Any, rnd: Mapping[str, Any]) -> dict[str, Any]:
         "round": rnd["round"],
         "job_id": rnd["job_id"],
         "decision": rnd.get("decision"),
+        "by": rnd.get("by", "person") if rnd.get("decision") else None,
         "at": rnd.get("at"),
         "note": rnd.get("note", ""),
         "reason": rnd.get("reason", ""),
@@ -359,6 +399,7 @@ def _lesson_evidence(state: Mapping[str, Any], rnd: Mapping[str, Any], **extra: 
         "job_id": rnd["job_id"],
         "job_ids": [r["job_id"] for r in state["rounds"]],
         "round": rnd["round"],
+        "by": rnd.get("by", "person"),
         **extra,
     }
 
@@ -379,6 +420,7 @@ def decide(
     rules: Sequence[RuleChoice | Mapping[str, Any]] = (),
     publish: bool = False,
     publisher: Publisher | None = None,
+    by: Reviewer = "person",
     svc: Any = None,
 ) -> dict[str, Any]:
     """Record a person's decision on the latest round of `job_id`'s chain. Returns {"state", "child_job",
@@ -400,6 +442,10 @@ def decide(
         raise ReviewError(422, "review_empty", "improve needs at least one pin or a note")
     if action == "reject" and not reason:
         raise ReviewError(422, "validation_error", "reject needs a short reason")
+    if by not in ("person", "test"):
+        raise ReviewError(422, "validation_error", f"unknown reviewer {by!r}")
+    if by == "test" and action == "accept" and publish:
+        raise ReviewError(422, "validation_error", "a test review cannot publish: publishing needs a person's sign-off")
     with _lock(root):
         rj = _get(mgr, root)
         if rj is None or not reviewable(rj):
@@ -421,6 +467,7 @@ def decide(
         rnd.update(
             {
                 "decision": action,
+                "by": by,
                 "at": time.time(),
                 "note": note,
                 "reason": reason,
@@ -463,7 +510,7 @@ def decide(
             if publish and not job.summary.is_replay and publisher is not None:
                 part_slug = publisher(job.id, "" if verified else ACCEPTED_NOTE)
             rnd["sign_off"] = {
-                "by": "reviewer",
+                "by": "reviewer" if by == "person" else "test",
                 "at": rnd["at"],
                 "verified_by_code": verified,
                 "label": "verified by code, accepted by a person" if verified else ACCEPTED_NOTE,
@@ -499,7 +546,7 @@ def _keep_rules(
             pin_note=o.get("note"),
         )
         lid = reg.add_lesson(family, c.text, ev)
-        if c.keep:
+        if c.keep and rnd.get("by", "person") == "person":  # only a person's tick promotes; a test's stays a candidate
             reg.set_lesson_status(lid, "promoted", "reviewer")
         ids.append(lid)
     return ids
@@ -518,8 +565,12 @@ def stats() -> dict[str, Any]:
     """Judge vs person over every decided round that has a judge scorecard: judge_ok = no blocking veto and every
     score ≥ 3; person_ok = accept. Cohen's kappa on the 2×2 table (None when n < 2 or undefined)."""
     t = {"both_ok": 0, "both_not": 0, "judge_ok_person_not": 0, "judge_not_person_ok": 0}
+    tests = 0
     for state in _all_states():
         for r in state.get("rounds") or []:
+            if r.get("decision") and r.get("by", "person") != "person":
+                tests += 1  # a test decision is not a person's label
+                continue
             judge = r.get("judge")
             if r.get("decision") not in ("accept", "improve", "reject") or not isinstance(judge, Mapping):
                 continue
@@ -545,7 +596,7 @@ def stats() -> dict[str, Any]:
         p_ok = (t["both_ok"] + t["judge_not_person_ok"]) / n
         pe = j_ok * p_ok + (1 - j_ok) * (1 - p_ok)
         kappa = round((po - pe) / (1 - pe), 4) if pe < 1 else None
-    return {"n": n, "agree": agree, **t, "kappa": kappa, "reviewers": 1}
+    return {"n": n, "agree": agree, **t, "kappa": kappa, "reviewers": 1, "tests_excluded": tests}
 
 
 def _used_by() -> dict[str, list[str]]:
@@ -572,7 +623,7 @@ def lesson_tracks() -> dict[str, dict[str, int]]:
     decisions: dict[str, str] = {}
     for state in _all_states():
         for r in state.get("rounds") or []:
-            if r.get("decision"):
+            if r.get("decision") and r.get("by", "person") == "person":
                 decisions[str(r["job_id"])] = str(r["decision"])
     out: dict[str, dict[str, int]] = {}
     for lid, job_ids in used.items():
@@ -594,6 +645,7 @@ __all__ = [
     "ReviewError",
     "decide",
     "detail",
+    "export_chain",
     "lesson_track",
     "lesson_tracks",
     "queue",

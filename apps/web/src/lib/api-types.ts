@@ -1226,6 +1226,8 @@ export const ReviewRoundSchema = z.object({
   round: z.int(),
   job_id: z.string(),
   decision: z.catch(z.nullish(z.string()), null),
+  // who decided: "person" or "test" (a scripted or developer-agent check, never counted as a person's review)
+  by: z.catch(z.nullish(z.string()), null),
   at: nullableNum,
   note: z.catch(z._default(z.string(), ""), ""),
   reason: z.catch(z._default(z.string(), ""), ""),
@@ -1281,6 +1283,7 @@ export const ReviewStatsSchema = z.object({
   judge_not_person_ok: count,
   kappa: nullableNum,
   reviewers: z.catch(z._default(z.int(), 1), 1),
+  tests_excluded: z.catch(z._default(z.int(), 0), 0),
 });
 export type ReviewStats = z.output<typeof ReviewStatsSchema>;
 

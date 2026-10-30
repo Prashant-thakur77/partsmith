@@ -211,3 +211,49 @@ def test_lesson_track_counts_jobs_and_later_reviews(svc: FakeService) -> None:
     assert store.lesson_track("l_x") == {"used_in": 3, "accepted": 1, "improved": 0, "rejected": 1}
     assert store.lesson_track("l_none") == {"used_in": 0, "accepted": 0, "improved": 0, "rejected": 0}
     assert json.loads((store.reviews_dir() / f"{a.id}.json").read_text())["rounds"][0]["decision"] == "accept"
+
+
+def test_a_test_review_never_counts_as_a_person(svc: FakeService) -> None:
+    a = finish(svc.new_job(), "best_effort")
+    with pytest.raises(ReviewError) as e:
+        store.decide(a.id, "accept", publish=True, publisher=lambda j, n: "x", by="test", svc=svc)
+    _err(e, 422, "validation_error")
+    out = store.decide(
+        a.id,
+        "accept",
+        rules=[{"text": "spacer: ticked by a test", "keep": True, "source_pin": None}],
+        by="test",
+        svc=svc,
+    )
+    (rnd,) = out["state"]["rounds"]
+    assert rnd["by"] == "test" and out["part_slug"] is None
+    assert get_registry().lessons("spacer", "promoted") == []  # only a person's tick promotes
+    assert [x["rule"] for x in get_registry().lessons("spacer", "candidate")] == ["spacer: ticked by a test"]
+    _state("j_t", [("accept", _judge(True))])
+    st = store._load("j_t")
+    assert st is not None
+    st["rounds"][0]["by"] = "test"
+    store._save(st)
+    s = store.stats()
+    assert s["n"] == 0 and s["tests_excluded"] == 2
+
+
+def test_a_recorded_chain_is_shown_and_continued_locally(svc: FakeService, tmp_path: Path) -> None:
+    a = finish(svc.new_job())
+    out = store.decide(a.id, "improve", note="corners are rounded", by="test", svc=svc)
+    child = svc.mgr.get(out["child_job"])
+    assert child is not None
+    with pytest.raises(ReviewError) as e:
+        store.export_chain(a.id, svc=svc)  # the reviewer round is still running
+    _err(e, 409, "not_finished")
+    finish(child)
+    dest = store.export_chain(a.id, svc=svc)
+    assert dest.parent == store.recorded_dir() and (jobs.REPLAYS_DIR / child.id / "run.jsonl").exists()
+    recorded = dest.read_text(encoding="utf-8")
+    (store.reviews_dir() / f"{a.id}.json").unlink()  # a fresh clone: only the recorded chain is left
+    svc.mgr = jobs.JobManager(root=tmp_path / "fresh_runs")
+    d = store.detail(child.id, svc=svc)
+    assert [(r["round"], r["decision"], r["by"]) for r in d["rounds"]] == [(1, "improve", "test"), (2, None, None)]
+    store.decide(child.id, "reject", reason="still not round", by="test", svc=svc)
+    assert (store.reviews_dir() / f"{a.id}.json").exists() and dest.read_text(encoding="utf-8") == recorded
+    assert store.detail(a.id, svc=svc)["status"] == "rejected"

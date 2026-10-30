@@ -27,6 +27,8 @@ flowchart TD
     verifier -->|"passes"| judge["Muse Glimmer judge<br/>vetoes + advisory scorecard"]
     verifier -->|"rounds used up"| exportgate
     judge --> exportgate{"Export gate (code)"}
+    out --> review{"Person on /review<br/>accept · improve · reject"}
+    review -->|"improve: pins + notes"| fix
     exportgate -->|"verified"| out["STL · 3MF · STEP · part.py<br/>screen fit check · install card"]
     exportgate -->|"best effort"| ack["Download only after an explicit OK"]
     exportgate -->|"failed"| noexport["No export"]

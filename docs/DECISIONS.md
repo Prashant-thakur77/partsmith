@@ -349,3 +349,24 @@ note (or skips a one-off); the reviewer edits and ticks them, and only ticked ru
 reach the fixer as well as the builder, scoped to the family, and each job records which rules it was given, so
 `/lessons` can show how later reviews of those jobs went. Rules injected everywhere without a check tend to lock in
 their own mistakes; scoping, evidence and the track record are how a bad rule gets noticed and retired.
+
+**2026-10-30 — Every review says who made it; test reviews never count as a person's.** A decision is `by: "person"`
+(the API: whoever holds the admin token) or `by: "test"` (a scripted or developer-agent check). Test decisions run the
+same flow, so the loop can be exercised live, but they cannot promote a rule or publish a part, they are left out of the
+judge-vs-person agreement and the rule track records, and the page labels them "test review, not a person". The first
+live hinge rounds were made by the developer agent and are labelled that way.
+
+**2026-10-30 — Review chains can be recorded with the replays.** `export_chain` exports every round's job as a replay and
+writes the chain to `data/replays/_reviews/`, so a fresh clone or the public replay site shows a real reviewer chain
+(round history, pins, before → after). Recorded chains are read only: a new decision on one is saved under
+`$PARTSMITH_HOME/reviews/`, which then takes precedence.
+
+**2026-10-30 — The judge sees a shaded 3D view of the model, and the side photo it was promised.** In the third live
+reviewer round on the hinge leaf the measurements passed (top 0.38 mm, side 0.27 mm) but the live judge vetoed:
+"photo shows rolled cylindrical barrels, model shows only flat tabs". The model had barrels; the judge had only been
+shown the model's top silhouette, where a barrel and a flat tab look the same, and its prompt mentioned a side photo
+that was never attached. The judge now gets, in a numbered list its prompt names: the top photo, the model's top
+silhouette, a shaded 3D view (`services/verifier/shade.py`: orthographic, flat-shaded, painter's order, ~10 ms; a
+picture only, nothing is measured from it), the side photo with the model's side silhouette when there is one, and the
+worst-spot crops. Re-asked with that evidence, the same live judge scored the round-3 model 5/5/5/5 with no veto
+("shaded view confirms knuckles and countersinks"). A veto can still block a pass; it now has the evidence to be right.

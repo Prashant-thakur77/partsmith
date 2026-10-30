@@ -12,10 +12,21 @@ function decisions(page: Page): Record<string, unknown>[] {
   return out;
 }
 
+/** The photo's box once the image has loaded and the layout has settled (two equal readings in a row). */
 async function photoBox(page: Page) {
   const img = page.getByRole("img", { name: /Rectified top photo/ });
   await expect(img).toBeVisible();
-  await expect.poll(async () => (await img.boundingBox())?.height ?? 0).toBeGreaterThan(40);
+  await expect.poll(() => img.evaluate((el: HTMLImageElement) => el.complete && el.naturalWidth > 0)).toBe(true);
+  let last = "";
+  await expect
+    .poll(async () => {
+      const box = await img.boundingBox();
+      const now = box && box.height > 40 ? JSON.stringify(box) : "";
+      const stable = now !== "" && now === last;
+      last = now;
+      return stable;
+    })
+    .toBe(true);
   return (await img.boundingBox())!;
 }
 
@@ -54,6 +65,7 @@ test.describe("functional", () => {
     await expect(queue.getByRole("option").nth(2)).toContainText("replay");
     await expect(page.getByRole("note", { name: "Judge and reviewer agreement" })).toContainText("Judge agreed with the reviewer in 3/4 reviews (κ 0.50)");
     await expect(page.getByRole("note", { name: "Judge and reviewer agreement" })).toContainText("1 reviewer");
+    await expect(page.getByRole("note", { name: "Judge and reviewer agreement" })).toContainText("1 test review not counted");
     await expect(page.getByRole("navigation", { name: "Main" }).getByRole("link", { name: /Review/ })).toContainText("2");
     const card = page.getByRole("region", { name: "Judge scorecard" });
     await expect(card).toContainText("Advice from the judge. Pass/fail comes from the measurements.");
@@ -72,8 +84,10 @@ test.describe("functional", () => {
     await expect(improve).toBeDisabled();
     const b = await photoBox(page);
     await page.mouse.click(b.x + b.width * 0.25, b.y + b.height * 0.5);
+    await expect(page.getByRole("button", { name: /^Pin 1/ })).toBeVisible();
     await page.getByLabel("Note for pin 1").fill("this corner was square");
-    await page.mouse.click(b.x + b.width * 0.75, b.y + b.height * 0.2);
+    const b2 = await photoBox(page); // measured again: the note list may have moved the page
+    await page.mouse.click(b2.x + b2.width * 0.75, b2.y + b2.height * 0.2);
     await page.getByLabel("Note for pin 2").fill("hole is for an M3 screw");
     await page.getByLabel("Note for the builder").fill("keep the clip face flat");
     await page.getByRole("heading", { level: 1 }).click();
@@ -163,7 +177,9 @@ test.describe("functional", () => {
     await page.keyboard.press("k");
     await expect(page).toHaveURL(/\?job=job_rev_2$/);
     await page.goto("/review?job=job_replay_1");
-    await expect(page.getByRole("note").filter({ hasText: "Accepted by a person" })).toBeVisible();
+    // a test review is labelled as one, never as a person's
+    await expect(page.getByRole("note").filter({ hasText: "Accepted in a test review (not a person)" })).toBeVisible();
+    await expect(page.getByRole("region", { name: "Round history" })).toContainText("test review, not a person");
     await expect(page.getByRole("button", { name: "Accept" })).toHaveCount(0);
   });
 

@@ -1,0 +1,16 @@
+{
+  "id": "j_261030_ae74db07",
+  "kind": "fix",
+  "status": "done",
+  "created_at": 1793367663.1277306,
+  "updated_at": 1793368635.8878894,
+  "title": "Hinge leaf (synthetic, clean) (synthetic sample) · review round 3",
+  "origin": "synthetic",
+  "provider_mode": "live",
+  "verified": false,
+  "max_error_mm": 0.3764159478386045,
+  "iterations": 7,
+  "cost_usd": 0.519421,
+  "part_slug": null,
+  "is_replay": false
+}

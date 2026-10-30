@@ -1,0 +1,15 @@
+{
+  "length": 58.4,
+  "leaf_width": 29.2,
+  "thickness": 2.5,
+  "pin_d": 2.85,
+  "knuckle_wall": 1.5,
+  "knuckle_count": 2.0,
+  "knuckle_gap": 0.6,
+  "knuckle_phase": 1.0,
+  "knuckle_offset": 0.0,
+  "knuckle_fill": 1.0,
+  "hole_d": 4.25,
+  "hole_count": 4.0,
+  "corner_radius": 0.5
+}
