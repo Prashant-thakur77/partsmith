@@ -1,8 +1,7 @@
 "use client";
 
 import { useMutation, useQuery } from "@tanstack/react-query";
-import { ArrowRight, FlaskConical, History, Play } from "lucide-react";
-import Link from "next/link";
+import { FlaskConical, History, Play } from "lucide-react";
 import { useRouter } from "next/navigation";
 import * as React from "react";
 import { Container, PageHeader, Section } from "@/components/layout/page";
@@ -10,14 +9,48 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { EmptyState } from "@/components/ui/empty-state";
 import { ErrorState } from "@/components/ui/error-state";
-import { ModeBadge, OriginBadge } from "@/components/ui/provenance";
+import { ReplayCard } from "@/components/jobs/replay-card";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Spinner } from "@/components/ui/spinner";
 import { api } from "@/lib/api";
-import { fmtNum, titleCase, splitTitle } from "@/lib/format";
+import type { Replay } from "@/lib/api-types";
+import { titleCase, splitTitle } from "@/lib/format";
+import { curateReplays } from "@/lib/replays";
 import { cn } from "@/lib/utils";
 import { radioGroupKeys } from "@/lib/a11y";
+
+function RecordedRuns({ replays }: { replays: Replay[] }) {
+  const { featured, rest } = React.useMemo(() => curateReplays(replays), [replays]);
+  const [more, setMore] = React.useState(false);
+  return (
+    <div className="space-y-4">
+      <ul className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
+        {featured.map((f) => (
+          <li key={f.replay.id}>
+            <ReplayCard replay={f.replay} why={f.why} thumb href={`/jobs/${encodeURIComponent(f.replay.id)}`} />
+          </li>
+        ))}
+      </ul>
+      {rest.length ? (
+        <>
+          <Button variant="ghost" size="sm" onClick={() => setMore((v) => !v)} aria-expanded={more}>
+            {more ? "Fewer runs" : `More runs (${rest.length})`}
+          </Button>
+          {more ? (
+            <ul className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
+              {rest.map((r) => (
+                <li key={r.id}>
+                  <ReplayCard replay={r} href={`/jobs/${encodeURIComponent(r.id)}`} />
+                </li>
+              ))}
+            </ul>
+          ) : null}
+        </>
+      ) : null}
+    </div>
+  );
+}
 
 export function DemoClient() {
   const router = useRouter();
@@ -108,7 +141,7 @@ export function DemoClient() {
           {run.isError ? <ErrorState error={run.error} compact what="the sample job" /> : null}
         </Section>
 
-        <Section title="Or watch a recorded run" description="Replays play back a stored run log event by event. Nothing is recomputed, and they are labelled replay.">
+        <Section title="Or watch a recorded run" description="A recorded run is a real earlier run played back from its log, event by event. Nothing is recomputed.">
           {replays.isPending ? (
             <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
               {[0, 1].map((i) => (
@@ -122,29 +155,7 @@ export function DemoClient() {
               Runs are recorded automatically; the first finished job becomes replayable.
             </EmptyState>
           ) : (
-            <ul className="grid grid-cols-1 gap-3 md:grid-cols-2">
-              {replays.data.map((r) => (
-                <li key={r.id}>
-                  <Link
-                    href={`/jobs/${encodeURIComponent(r.id)}`}
-                    className="group flex items-center justify-between gap-4 rounded-lg border border-border bg-surface p-4 hover:border-border-strong"
-                  >
-                    <div className="min-w-0 space-y-2">
-                      <div className="truncate text-[14px] font-medium">{splitTitle(r.title).title}</div>
-                      <div className="flex flex-wrap gap-1.5">
-                        <OriginBadge origin={r.origin} />
-                        <ModeBadge mode={r.provider_mode} />
-                        <Badge tone={r.verified ? "ok" : "warn"}>{r.verified ? "verified" : "not verified"}</Badge>
-                        <Badge tone="neutral" className="font-mono tnum">
-                          {r.iterations} iter · {r.max_error_mm != null ? `${fmtNum(r.max_error_mm)} mm` : "—"}
-                        </Badge>
-                      </div>
-                    </div>
-                    <ArrowRight className="size-4 shrink-0 text-subtle group-hover:text-fg" aria-hidden />
-                  </Link>
-                </li>
-              ))}
-            </ul>
+            <RecordedRuns replays={replays.data} />
           )}
         </Section>
       </Container>

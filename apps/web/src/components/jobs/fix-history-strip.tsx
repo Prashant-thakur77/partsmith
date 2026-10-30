@@ -3,8 +3,9 @@
 /**
  * Fail → fix history: one tile per build round (error, per-view Hausdorff against the limit, knobs changed, the
  * verifier's verdict), failing rounds in amber/red and a verified one in green, each with an icon and words so colour
- * is never the only cue. Selecting a round shows its residual overlays. Everything comes from the job's events
- * (`roundsFromEvents`); a single round says so plainly.
+ * is never the only cue. The round the job shipped carries a "kept" chip; attempts after it are marked discarded, so a
+ * worse last try never reads as the result. Selecting a round shows its residual overlays. Everything comes from the
+ * job's events (`roundsFromEvents`); a single round says so plainly.
  */
 import { CircleCheck, CircleDashed, CircleX, ImageOff, TriangleAlert } from "lucide-react";
 import * as React from "react";
@@ -25,6 +26,15 @@ function roundName(r: FixRound): string {
   return r.firstBuild && r.iter === 1 ? "First build" : `Round ${r.iter}`;
 }
 
+/** One plain sentence when the shipped round is not the last one, e.g. "The result is the first build (kept); the 1 later try scored worse and was discarded." */
+function keptNote(kept: FixRound, rounds: FixRound[]): string {
+  const later = rounds.filter((r) => r.iter > kept.iter);
+  const allWorse = later.every((r) => r.maxErrorMm != null && kept.maxErrorMm != null && r.maxErrorMm > kept.maxErrorMm);
+  const n = later.length;
+  const what = n === 1 ? "the 1 later try" : `the ${n} later tries`;
+  return `The result is ${roundName(kept) === "First build" ? "the first build" : roundName(kept).toLowerCase()} (kept); ${what} ${allWorse ? "scored worse and" : ""} ${n === 1 ? "was" : "were"} discarded.`.replace("  ", " ");
+}
+
 /** ✓ / ✗ for a view's Hausdorff against the limit, with words for screen readers. */
 function LimitMark({ within }: { within: boolean | null }) {
   if (within == null) return null;
@@ -43,7 +53,7 @@ export function FixHistoryStrip({ events, className }: { events: JobEvent[]; cla
   const panelId = React.useId();
   if (!s.rounds.length) return null;
   const selected = s.rounds.find((r) => r.iter === sel) ?? null;
-  const lastIter = s.rounds.at(-1)!.iter;
+  const kept = s.rounds.find((r) => r.iter === s.keptIter) ?? null;
   return (
     <section aria-labelledby={titleId} className={cn("min-w-0 max-w-full rounded-lg border border-border bg-surface p-3", className)}>
       <div className="mb-2 flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1">
@@ -60,6 +70,9 @@ export function FixHistoryStrip({ events, className }: { events: JobEvent[]; cla
           const v = VERDICT[r.verdict];
           const Icon = v.icon;
           const on = r.iter === sel;
+          const isKept = kept != null && r.iter === kept.iter;
+          const discarded = kept != null && r.iter > kept.iter;
+          const worse = discarded && r.maxErrorMm != null && kept.maxErrorMm != null && r.maxErrorMm > kept.maxErrorMm;
           return (
             <li key={r.iter} className="flex shrink-0 items-stretch gap-2">
               {i > 0 ? (
@@ -73,19 +86,27 @@ export function FixHistoryStrip({ events, className }: { events: JobEvent[]; cla
                 aria-controls={panelId}
                 onClick={() => setSel(on ? null : r.iter)}
                 className={cn(
-                  "flex w-[188px] flex-col gap-1 rounded-md border px-2.5 py-2 text-left text-[12px] hover:brightness-[0.98]",
-                  v.tile,
+                  "flex w-[204px] flex-col gap-1 rounded-md border px-2.5 py-2 text-left text-[12px] hover:brightness-[0.98]",
+                  discarded ? "border-dashed border-border-strong bg-surface-2" : v.tile,
+                  isKept && "border-2",
                   on && "ring-2 ring-[var(--ring)] ring-offset-1 ring-offset-[var(--surface)]",
                 )}
               >
                 <span className="flex items-center justify-between gap-2">
-                  <span className="font-medium text-fg">{roundName(r)}</span>
-                  <span className={cn("inline-flex items-center gap-1 text-[11px] font-medium", v.text)}>
+                  <span className="inline-flex items-center gap-1.5 font-medium whitespace-nowrap text-fg">
+                    {roundName(r)}
+                    {isKept ? (
+                      <span className={cn("rounded-[4px] border px-1 text-[10px] font-semibold uppercase tracking-[0.06em]", v.text, "border-current")}>kept</span>
+                    ) : null}
+                  </span>
+                  <span className={cn("inline-flex items-center gap-1 text-[11px] font-medium", discarded ? "text-muted" : v.text)}>
                     <Icon className="size-3.5" aria-hidden />
                     {v.word}
-                    {r.iter === lastIter && s.final ? <span className="text-subtle">· final</span> : null}
                   </span>
                 </span>
+                {discarded ? (
+                  <span className="text-[11px] font-medium text-muted">{worse ? "tried, worse, discarded" : "tried, discarded"}</span>
+                ) : null}
                 <span className="font-mono text-[13px] text-fg tnum">
                   {r.maxErrorMm != null ? `${fmtNum(r.maxErrorMm)} mm` : "—"}
                   <span className="ml-1 font-sans text-[10.5px] text-subtle">max error</span>
@@ -112,7 +133,8 @@ export function FixHistoryStrip({ events, className }: { events: JobEvent[]; cla
       <div id={panelId} role="region" aria-live="polite" aria-label="Selected round">
         {selected ? <RoundDetail r={selected} limit={s.limitMm} /> : (
           <p className="mt-1 text-[11.5px] text-subtle">
-            Select a round to see its overlay. Per view: Hausdorff distance against the limit (✓ within, ✗ over); the verdict also needs the IoU and the part tests.
+            {kept && kept.iter !== s.rounds.at(-1)!.iter ? `${keptNote(kept, s.rounds)} ` : ""}
+            Select a round to see its overlay. Per view: the biggest gap (Hausdorff) against the limit (✓ within, ✗ over); the verdict also needs the overlap (IoU) and the part tests.
           </p>
         )}
       </div>

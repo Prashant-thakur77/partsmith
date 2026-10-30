@@ -108,6 +108,28 @@ def part_box(job: Job, key: str, margin_mm: float = FOCUS_MARGIN_MM) -> list[flo
     ]
 
 
+def worst_marks(job: Job, key: str) -> list[dict[str, Any]]:
+    """Where the verifier found the biggest gap on the top view, as a point on photo `key`: [{"view", "u", "v",
+    "gap_mm", "limit_mm"}] (empty when the view passed, or without a pose). The page circles it."""
+    v = job.read_json("verification.json") or {}
+    limit = float((v.get("thresholds") or {}).get("hausdorff_mm") or 0.5)
+    top = next((x for x in v.get("views") or [] if x.get("view") == "top"), None)
+    if top is None or not top.get("worst_point_mm") or float(top.get("hausdorff_mm") or 0.0) <= limit:
+        return []
+    proj = _projection(job, key)
+    if proj is None:
+        return []
+    img, _outline, _ppm, to_px = proj
+    h, w = img.shape[:2]
+    px = to_px([top["worst_point_mm"]])[0].astype(np.float64) / 16
+    u, vv = float(px[0] / w), float(px[1] / h)
+    if not (0.0 <= u <= 1.0 and 0.0 <= vv <= 1.0):
+        return []
+    return [
+        {"view": "top", "u": round(u, 4), "v": round(vv, 4), "gap_mm": float(top["hausdorff_mm"]), "limit_mm": limit}
+    ]
+
+
 def model_overlay(job: Job, key: str) -> bytes | None:
     """The rectified photo `key` with the model's top outline (holes cleared) filled and stroked on it, or None when
     the job has no model outline."""
@@ -131,11 +153,11 @@ def model_overlay(job: Job, key: str) -> bytes | None:
 
 
 def review_images(job: Job) -> dict[str, Any]:
-    """{"rectified": url, "overlay": url, "focus": [u0, v0, u1, v1]} for the review page (None when the job has no
+    """{"rectified": url, "overlay": url, "focus": [u0, v0, u1, v1], "worst": marks} for the review page (None when the job has no
     rectified top photo, no model outline or no part box)."""
     key = top_rectified_key(job)
     if key is None:
-        return {"rectified": None, "overlay": None, "focus": None}
+        return {"rectified": None, "overlay": None, "focus": None, "worst": []}
     with _lock:
         cached = _cache.get((job.id, key))
     if cached is None:
@@ -144,4 +166,9 @@ def review_images(job: Job) -> dict[str, Any]:
             cached = blobs.put(png, ".jpg")
             with _lock:
                 _cache[(job.id, key)] = cached
-    return {"rectified": blobs.url(key), "overlay": blobs.url(cached) if cached else None, "focus": part_box(job, key)}
+    return {
+        "rectified": blobs.url(key),
+        "overlay": blobs.url(cached) if cached else None,
+        "focus": part_box(job, key),
+        "worst": worst_marks(job, key),
+    }

@@ -15,8 +15,7 @@ export function ModeBanner({ className, wide = false }: { className?: string; wi
   if (health.isError) {
     return (
       <Bar wide={wide} className={className} icon={PlugZap} tone="offline">
-        <strong className="font-semibold">API offline.</strong> Start the backend with{" "}
-        <code className="rounded bg-surface-3 px-1 py-px font-mono text-[12px]">make dev</code> — pages show empty states, never
+        <strong className="font-semibold">API offline.</strong> The server is not answering, so pages show empty states — never
         invented data.
       </Bar>
     );

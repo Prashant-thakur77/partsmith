@@ -370,3 +370,14 @@ silhouette, a shaded 3D view (`services/verifier/shade.py`: orthographic, flat-s
 picture only, nothing is measured from it), the side photo with the model's side silhouette when there is one, and the
 worst-spot crops. Re-asked with that evidence, the same live judge scored the round-3 model 5/5/5/5 with no veto
 ("shaded view confirms knuckles and countersinks"). A veto can still block a pass; it now has the evidence to be right.
+
+**2026-10-30 — The review page answers one question: does what was made match what it should be?** The photo
+("Should look like", where pins go) and the 3D model ("Agent made") sit side by side above the fold; a round strip
+tells the chain's story (each round's worst gap and decision); a measurement card says pass or fail in words, which
+views and must-pass sizes fail, and the verifier's biggest gap is circled on the photo (`images.worst`, the top
+view's worst point projected with the same mat transform as the overlay). The decision bar stays at the bottom of the
+screen on larger screens; when the code has not passed a part, Improve is the primary action and Accept reads
+"Accept anyway". A reviewer can paste a screenshot (Ctrl+V), drop or attach up to 4 pictures; they are cleaned like
+photos (GPS removed), stored as blobs and sent to the fixer after the pin crops, named in its notes as references for
+shape, not for sizes. The same pass made a browser GET on `/mcp` answer at once with how to connect instead of
+holding the request open.

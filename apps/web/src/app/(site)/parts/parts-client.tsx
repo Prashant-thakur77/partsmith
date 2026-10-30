@@ -1,7 +1,8 @@
 "use client";
 
 import { useInfiniteQuery, useMutation, useQuery } from "@tanstack/react-query";
-import { Megaphone, Search, X } from "lucide-react";
+import { Boxes, Megaphone, Search, X } from "lucide-react";
+import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import * as React from "react";
 import { Container, PageHeader } from "@/components/layout/page";
@@ -139,6 +140,23 @@ export function PartsClient() {
               <PartCardSkeleton key={i} />
             ))}
           </div>
+        ) : items.length === 0 && !dq && !family && !verified ? (
+          <EmptyState
+            icon={Boxes}
+            title="No parts published yet"
+            action={
+              <>
+                <Button asChild variant="primary" size="sm">
+                  <Link href="/fix">Fix a part</Link>
+                </Button>
+                <Button asChild variant="outline" size="sm">
+                  <Link href="/jobs/demo">Try a sample</Link>
+                </Button>
+              </>
+            }
+          >
+            Every part here passed the photo check first. Fix a broken part to add the first one, or watch a sample run.
+          </EmptyState>
         ) : items.length === 0 ? (
           <EmptyState
             icon={Search}

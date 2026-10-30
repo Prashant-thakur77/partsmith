@@ -347,8 +347,10 @@ plain-words change through the variant guard and rebuilds the lane; `reject` dro
 | GET | `/review/queue?include_replays=&limit=` | `{"items": [QueueItem]}`: waiting first, then running reviewer rounds, then decided chains |
 | GET | `/review/{job_id}` | `ReviewDetail` for the chain `job_id` belongs to |
 | GET | `/review/stats` | `{"n","agree","both_ok","both_not","judge_ok_person_not","judge_not_person_ok","kappa": float\|null,"reviewers","tests_excluded"}` |
+| GET | `/review/feedback?family=&outcome=&by=` | The feedback log: `{"items": [FeedbackEntry], "counts": {outcome: n}, "families": [str]}` |
+| POST | `/review/{job_id}/attachments` | **admin**. Multipart `image` (JPEG/PNG/WebP, GPS removed) → `{"key","url"}`; send the key in a decision's `attachments` |
 | POST | `/review/{job_id}/rules/draft` | **admin**. No body → `{"rules": [{"text","source_pin","scope"}]}` (stage `review_rules`, one rule per note) |
-| POST | `/review/{job_id}` | **admin**. `{"action": "accept"\|"improve"\|"reject", "pins": [{"u","v","note"}], "note", "reason", "rules": [{"text","keep","source_pin"}], "publish": bool}` → `{"state": ReviewDetail, "child_job": str\|null, "part_slug": str\|null}` |
+| POST | `/review/{job_id}` | **admin**. `{"action": "accept"\|"improve"\|"reject", "pins": [{"u","v","note"}], "note", "reason", "rules": [{"text","keep","source_pin"}], "publish": bool, "why": str, "attachments": [key]}` → `{"state": ReviewDetail, "child_job": str\|null, "part_slug": str\|null}` |
 
 ```
 QueueItem = {"job_id", "root_job", "round", "title", "family", "status": "waiting"|"improving"|"accepted"|"rejected",
@@ -357,6 +359,10 @@ ReviewDetail = {"root_job", "status", "family", "updated_at", "images": {"rectif
   "rounds": [{"round","job_id","job_status","title","decision": "accept"|"improve"|"reject"|null,"by": "person"|"test"|null,"at","note","reason",
               "pins": [{"id","u","v","note","mat_mm","before_mm","after_mm"}],"verdict","judge","child_job","cost_usd",
               "is_replay","rules","part_slug","lesson_ids"}]}
+FeedbackEntry = {"id","root_job","job_id","round","family","title","kind": "pin"|"note"|"picture"|"reject"|"accept",
+  "what","why","by","at","photo","picture","where": {"pin","u","v"}|null,"before_mm","after_mm","limit_mm",
+  "outcome": "fixed"|"better"|"not_fixed"|"waiting"|"not_measured"|"rejected"|"accepted","next_job",
+  "used_in": {"jobs","accepted","improved","rejected"}}
 Judge = {"model","mode","scores": [{"criterion": "outline"|"features"|"printability"|"fit","score": 1..5,"reason"}],
   "vetoes": [{"feature","issue","severity"}], "notes"}
 ```

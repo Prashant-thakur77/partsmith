@@ -2,31 +2,32 @@
 
 import { useQuery } from "@tanstack/react-query";
 import * as React from "react";
-import { FlaskConical, GitCommit, Hourglass, ImageOff } from "lucide-react";
+import { ChevronRight, FlaskConical, GitCommit, Hourglass, ImageOff } from "lucide-react";
 import { Container, PageHeader, Section } from "@/components/layout/page";
 import { Badge } from "@/components/ui/badge";
 import { EmptyState } from "@/components/ui/empty-state";
 import { ErrorState } from "@/components/ui/error-state";
-import { Kbd } from "@/components/ui/kbd";
 import { ModeBadge } from "@/components/ui/provenance";
 import { Skeleton } from "@/components/ui/skeleton";
 import { api, ApiError, artifactUrl } from "@/lib/api";
 import type { BenchTable } from "@/lib/api-types";
-import { BENCH_TABLES, benchHeadline, cellText, gtLabel } from "@/lib/bench";
+import { BENCH_TABLES, EXTRA_TITLES, benchHeadline, benchSentence, cellText, columnLabel, configLabel, gtLabel, KEY_COLUMNS } from "@/lib/bench";
 import { titleCase } from "@/lib/format";
+import { cn } from "@/lib/utils";
 
-function TableView({ t }: { t: BenchTable }) {
+function TableView({ t, only, label }: { t: BenchTable; only?: readonly string[]; label?: string }) {
   const rows = t.rows ?? [];
-  const cols = t.columns ?? (rows[0] ? Object.keys(rows[0]) : []);
+  const all = t.columns ?? (rows[0] ? Object.keys(rows[0]) : []);
+  const cols = only ? all.filter((c) => only.includes(c)) : all;
   if (!rows.length) return <p className="text-[13px] text-muted">The table has no rows.</p>;
   return (
-    <div tabIndex={0} role="region" aria-label={t.title ?? "Bench table"} className="scrollbar-thin overflow-x-auto rounded-lg border border-border bg-surface">
-      <table className="w-full min-w-[560px] text-[12.5px]">
+    <div tabIndex={0} role="region" aria-label={label ?? t.title ?? "Bench table"} className="scrollbar-thin overflow-x-auto rounded-lg border border-border bg-surface">
+      <table className={cn("w-full text-[12.5px]", only ? "min-w-[480px]" : "min-w-[560px]")}>
         <thead className="bg-surface-2 text-left text-[11px] text-subtle">
           <tr>
             {cols.map((c) => (
-              <th key={c} scope="col" className="px-3 py-2 font-medium whitespace-nowrap">
-                {c}
+              <th key={c} scope="col" title={c} className="px-3 py-2 font-medium whitespace-nowrap">
+                {columnLabel(c)}
               </th>
             ))}
           </tr>
@@ -36,7 +37,11 @@ function TableView({ t }: { t: BenchTable }) {
             <tr key={i} className="border-t border-border">
               {cols.map((c, j) => (
                 <td key={c} className={j === 0 ? "px-3 py-2 font-sans whitespace-nowrap" : "px-3 py-2 whitespace-nowrap"}>
-                  {cellText(r[c])}
+                  {c === "config" && typeof r[c] === "string" ? (
+                    <span title={`${r[c]}${typeof r.description === "string" ? `: ${r.description}` : ""}`}>{configLabel(r[c])}</span>
+                  ) : (
+                    cellText(r[c])
+                  )}
                 </td>
               ))}
             </tr>
@@ -44,6 +49,33 @@ function TableView({ t }: { t: BenchTable }) {
         </tbody>
       </table>
     </div>
+  );
+}
+
+/** A short table of the key columns, the full eval table behind a disclosure. */
+function Tables({ t }: { t: BenchTable }) {
+  const all = t.columns ?? (t.rows?.[0] ? Object.keys(t.rows[0]) : []);
+  const key = all.filter((c) => KEY_COLUMNS.includes(c));
+  const compact = key.length >= 3 && key.length < all.length;
+  return (
+    <>
+      {compact ? <TableView t={t} only={KEY_COLUMNS} label={`${t.title ?? "Bench table"} (key columns)`} /> : null}
+      {compact || (t.rows?.length ?? 0) > 3 ? (
+        <details className="group rounded-lg">
+          <summary className="inline-flex cursor-pointer items-center gap-1 rounded-md text-[13px] font-medium text-accent-text hover:underline">
+            <ChevronRight className="size-3.5 transition-transform group-open:rotate-90" aria-hidden /> Show the full table
+            <span className="font-normal text-subtle">
+              ({all.length} columns, {t.rows?.length ?? 0} rows)
+            </span>
+          </summary>
+          <div className="mt-3">
+            <TableView t={t} />
+          </div>
+        </details>
+      ) : (
+        <TableView t={t} />
+      )}
+    </>
   );
 }
 
@@ -100,12 +132,17 @@ export function BenchClient() {
           <>
             {missing ? (
               <EmptyState icon={Hourglass} title="No bench report has been generated yet">
-                Run <Kbd className="h-auto px-1.5 py-0.5 text-[12px]">make bench</Kbd> to build tables from stored runs. Until then there are no
-                accuracy numbers to show — on purpose.
+                The tables are built by the eval scripts from stored runs. Until they run there are no accuracy numbers to show — on
+                purpose.
               </EmptyState>
             ) : null}
             {[...BENCH_TABLES.map((t) => [t.key, r?.tables[t.key] ?? null, t] as const), ...extra.map(([k, v]) => [k, v, null] as const)].map(([key, table, meta]) => (
-              <Section key={key} id={key} title={meta?.title ?? table?.title ?? titleCase(key)} description={meta?.blurb ?? table?.note}>
+              <Section
+                key={key}
+                id={key}
+                title={meta?.title ?? EXTRA_TITLES[key]?.title ?? table?.title ?? titleCase(key)}
+                description={meta?.blurb ?? EXTRA_TITLES[key]?.blurb ?? table?.note}
+              >
                 {table && table.status !== "pending" ? (
                   <div className="space-y-3">
                     {table.title ? <p className="text-[13px] font-medium text-fg">{table.title}</p> : null}
@@ -124,7 +161,8 @@ export function BenchClient() {
                         <span className="font-sans text-[13px] font-normal text-muted">{benchHeadline(table)!.gt}</span>
                       </div>
                     ) : null}
-                    <TableView t={table} />
+                    {benchSentence(key, table) ? <p className="max-w-3xl text-[15px] leading-6 text-fg">{benchSentence(key, table)}</p> : null}
+                    <Tables t={table} />
                     {table.note ? (
                       <p className="rounded-md border border-warn-border bg-warn-soft px-3 py-2 text-[12.5px] leading-5 text-fg">{table.note}</p>
                     ) : null}

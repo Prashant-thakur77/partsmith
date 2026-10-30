@@ -155,7 +155,7 @@ export function CalibrateClient() {
             <Button variant="outline" size="icon" aria-label="Grow by 1 pixel" onClick={() => nudge(1)}>
               <Plus aria-hidden />
             </Button>
-            <div className="text-[12px] text-muted">
+            <div className="hidden text-[12px] text-muted sm:block">
               Focus the card and use <Kbd>←</Kbd> <Kbd>→</Kbd> (1 px), <Kbd>Shift</Kbd> 10 px, <Kbd>Alt</Kbd> 0.25 px
             </div>
           </div>

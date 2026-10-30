@@ -160,6 +160,7 @@ JUDGE_SCHEMA: dict[str, Any] = {
     "additionalProperties": False,
 }
 JUDGE_CRITERIA = ("outline", "features", "printability", "fit")
+MAX_REVIEW_ATTACHMENTS = 4  # reference images a reviewer can paste into one round
 JUDGE_LETTERS = {"outline": "o", "features": "f", "printability": "p", "fit": "u"}  # u = fit for use
 
 TRIAGE_SCHEMA: dict[str, Any] = {
@@ -195,6 +196,7 @@ class ReviewRound:
     pins: list[Pin] = field(default_factory=list)
     note: str = ""
     parent_dir: Path | None = None  # the parent's run directory (read only: a replay's files are never written)
+    attachments: list[str] = field(default_factory=list)  # blob keys of images the reviewer pasted (screenshots)
 
 
 @dataclass
@@ -681,6 +683,7 @@ class FixRun:
         # this job was given (lessons_used.json).
         self.review_pins: list[dict[str, Any]] = []
         self.lessons_used: list[str] = []
+        self.feedback_used: list[str] = []  # feedback-log entries this job's prompts carried (feedback_used.json)
 
     # ---- events ------------------------------------------------------------------------------------------------------
     def stage_event(self, stage: StageName, status: str, label: str, ms: int | None = None) -> None:
@@ -1760,6 +1763,11 @@ class FixRun:
                          + f': "{row["note"]}" — {said}')  # fmt: skip
         if rv.note:
             lines.append(f'Reviewer note: "{rv.note}"')
+        if rv.attachments:
+            lines.append(
+                f"The reviewer attached {len(rv.attachments)} reference image(s) after the pin crops (a screenshot "
+                "or picture of how the part should look); use them for shape, not for sizes"
+            )
         if not lines:
             return ""
         return (
@@ -1775,7 +1783,11 @@ class FixRun:
             return []
         placed = [(int(r["id"]), (float(r["part_mm"][0]), float(r["part_mm"][1])))
                   for r in self.review_pins if r.get("part_mm") is not None]  # fmt: skip
-        return pinmath.pin_crops(rnd.out.views["top"], placed) if placed else []
+        out = pinmath.pin_crops(rnd.out.views["top"], placed) if placed else []
+        for key in self.opts.review.attachments[:MAX_REVIEW_ATTACHMENTS]:  # the reviewer's pasted references
+            if blobs.exists(key):
+                out.append(fit_png(blobs.get(key))[0])
+        return out
 
     def family_rules(self) -> list[dict[str, str]]:
         """Promoted rules for the part's family (a person approved each one); records their ids in
@@ -1794,6 +1806,28 @@ class FixRun:
             )
         return rows
 
+    def past_feedback(self) -> list[str]:
+        """A person's earlier feedback on this family that code measured as fixed, with their reason, as prompt lines;
+        records the entries in feedback_used.json so the log can show whether the lesson held."""
+        if self.spec is None:
+            return []
+        from services.review import ledger
+
+        roots = [self.opts.review.parent_job] if self.opts.review is not None else []
+        try:
+            got = ledger.for_prompt(self.spec.family.value, exclude_roots=roots)
+        except Exception:
+            return []
+        new = [str(e["id"]) for e in got if str(e["id"]) not in self.feedback_used]
+        if new:
+            self.feedback_used += new
+            self.job.write_json("feedback_used.json", {"family": self.spec.family.value, "ids": self.feedback_used})
+        return [ledger.prompt_line(e) for e in got]
+
+    def taught(self) -> list[str]:
+        """Everything earlier reviews teach this family: promoted rules, then fixed feedback with its reason."""
+        return [r["rule"] for r in self.family_rules()] + self.past_feedback()
+
     # ---- 5–7. build, execute, verify ------------------------------------------------------------------------------------------
     def build_program(self, strategy: Strategy, feedback: tuple[str, str] | None = None) -> str:
         """Ask the builder for a part program; policy/compile/runtime errors are fed back for up to BUILD_RETRIES.
@@ -1801,7 +1835,7 @@ class FixRun:
         assert self.spec is not None
         tpl = self.template if strategy == "template" else None
         family = self.spec.family.value
-        rules = [r["rule"] for r in self.family_rules()]
+        rules = self.taught()
         p = prompt_loader.load("build")
         dev, user = p.render(
             template_name=tpl.name if tpl else "(none — write free code from the outline)",
@@ -2180,10 +2214,10 @@ class FixRun:
         """What a fixer prompt gets besides the residuals: the family rules a person approved, and in a reviewer round
         the reviewer's notes."""
         out = ""
-        rules = self.family_rules()
+        rules = self.taught()
         if rules:
-            out += "\nFamily rules a person approved (from earlier reviews):\n" + lessons.format_for_prompt(
-                [r["rule"] for r in rules]
+            out += "\nFrom earlier reviews of this family (rules a person approved, fixes code measured):\n" + (
+                lessons.format_for_prompt(rules)
             )
         said = self.reviewer_text(rnd, numeric=numeric)
         return out + ("\n" + said if said else "")

@@ -1232,6 +1232,8 @@ export const ReviewRoundSchema = z.object({
   note: z.catch(z._default(z.string(), ""), ""),
   reason: z.catch(z._default(z.string(), ""), ""),
   pins: tolerantArray(ReviewPinSchema),
+  attachments: tolerantArray(z.string()),
+  why: z.catch(z._default(z.string(), ""), ""),
   verdict: z.catch(z.nullish(ReviewVerdictSchema), null),
   judge: z.catch(z.nullish(JudgeSchema), null),
   child_job: z.catch(z.nullish(z.string()), null),
@@ -1249,10 +1251,12 @@ export const ReviewDetailSchema = z.object({
         overlay: z.catch(z.nullish(z.string()), null),
         // the part's box on the photo as [u0, v0, u1, v1] fractions, for zooming in
         focus: z.catch(z.nullish(z.tuple([num, num, num, num])), null),
+        // where the verifier found the biggest gap (top view), as a point on the photo; only when it fails
+        worst: tolerantArray(z.object({ view: z.string(), u: num, v: num, gap_mm: num, limit_mm: num })),
       }),
-      {},
+      { worst: [] },
     ),
-    {},
+    { worst: [] },
   ),
 });
 export type ReviewDetail = z.output<typeof ReviewDetailSchema>;
@@ -1274,6 +1278,43 @@ export type ReviewDecisionResult = z.output<typeof ReviewDecisionResultSchema>;
 
 const count = z.catch(z._default(z.int(), 0), 0);
 /** Judge-vs-reviewer agreement, computed by the server from the review store. */
+export const ReviewAttachmentSchema = z.object({ key: z.string(), url: z.string() });
+
+// ── feedback log (GET /review/feedback): what a reviewer said, why, and what code measured next ─────────────
+export const FeedbackOutcomeSchema = z.enum(["fixed", "better", "not_fixed", "waiting", "not_measured", "rejected", "accepted"]);
+export type FeedbackOutcome = z.output<typeof FeedbackOutcomeSchema>;
+export const FeedbackEntrySchema = z.object({
+  id: z.string(),
+  root_job: z.string(),
+  job_id: z.string(),
+  round: z.int(),
+  family: z.catch(z.nullish(z.string()), null),
+  title: z.catch(z._default(z.string(), ""), ""),
+  kind: z.catch(z.enum(["pin", "note", "picture", "reject", "accept"]), "note"),
+  what: z.catch(z._default(z.string(), ""), ""),
+  why: z.catch(z._default(z.string(), ""), ""),
+  by: z.catch(z._default(z.string(), "person"), "person"),
+  at: nullableNum,
+  photo: z.catch(z.nullish(z.string()), null),
+  picture: z.catch(z.nullish(z.string()), null),
+  where: z.catch(z.nullish(z.object({ pin: z.int(), u: num, v: num })), null),
+  before_mm: nullableNum,
+  after_mm: nullableNum,
+  limit_mm: z.catch(z._default(num, 0.5), 0.5),
+  outcome: z.catch(FeedbackOutcomeSchema, "not_measured"),
+  next_job: z.catch(z.nullish(z.string()), null),
+  used_in: z.catch(
+    z._default(z.object({ jobs: count, accepted: count, improved: count, rejected: count }), { jobs: 0, accepted: 0, improved: 0, rejected: 0 }),
+    { jobs: 0, accepted: 0, improved: 0, rejected: 0 },
+  ),
+});
+export type FeedbackEntry = z.output<typeof FeedbackEntrySchema>;
+export const FeedbackLogSchema = z.object({
+  items: tolerantArray(FeedbackEntrySchema),
+  counts: z.catch(z._default(z.record(z.string(), z.int()), {}), {}),
+  families: z.catch(z._default(z.array(z.string()), []), []),
+});
+
 export const ReviewStatsSchema = z.object({
   n: count,
   agree: count,

@@ -21,7 +21,6 @@ export function FixHeader() {
           </div>
           <h1 className="text-[28px] leading-tight font-semibold tracking-[-0.025em] sm:text-[34px]">{t("fix.title")}</h1>
           <p className="text-[15px] leading-6 text-muted">{t("fix.lead")}</p>
-          <p className="text-[12.5px] leading-5 text-subtle">{t("fix.privacy")}</p>
           <Button asChild variant="outline" className="mt-2">
             <Link href="/jobs/demo">
               <FlaskConical aria-hidden /> {t("fix.trySample")}

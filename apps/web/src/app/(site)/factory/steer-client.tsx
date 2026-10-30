@@ -121,7 +121,7 @@ function ApprovalQueue({ runId, items }: { runId: string; items: SteerQueueItem[
             <X aria-hidden /> Reject
           </Button>
         </div>
-        <p className="flex flex-wrap items-center gap-1 text-[12px] text-muted">
+        <p className="hidden flex-wrap items-center gap-1 text-[12px] text-muted sm:flex">
           <Kbd>a</Kbd> approve <Kbd>s</Kbd> send back <Kbd>r</Kbd> reject <Kbd>j</Kbd>/<Kbd>k</Kbd> move
         </p>
         {cur?.job_id ? (
@@ -174,7 +174,14 @@ export function SteerClient() {
           }}
         >
           <Label htmlFor="brief">Brief</Label>
-          <Textarea id="brief" value={brief} onChange={(e) => setBrief(e.target.value)} rows={2} placeholder="Cupboard hardware kit, 4 mm grid: latches, hinge pins, shelf supports" />
+          <Textarea
+            id="brief"
+            value={brief}
+            onChange={(e) => setBrief(e.target.value)}
+            rows={2}
+            placeholder="Example: cupboard hardware kit, 4 mm grid — latches, hinge pins, shelf supports"
+            className="placeholder:italic placeholder:text-subtle/70"
+          />
           <div className="flex flex-wrap items-end justify-between gap-3">
             <div className="flex items-center gap-2">
               <Label htmlFor="count">Parts</Label>

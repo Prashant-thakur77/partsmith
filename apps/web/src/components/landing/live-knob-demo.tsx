@@ -41,7 +41,17 @@ export function LiveKnobDemo() {
   if (list.isSuccess && parts.length === 0) {
     return (
       <div className="overflow-hidden rounded-xl border border-dashed border-border-strong bg-surface p-8 text-center text-[13px] text-muted">
-        The registry is empty. Seed it (<code className="font-mono">partsmith seed</code>) or publish your first fix.
+        <p>No parts are published yet, so there are no knobs to turn here.</p>
+        <p className="mt-2">
+          <Link href="/jobs/demo" className="font-medium text-accent-text hover:underline">
+            Try a sample
+          </Link>{" "}
+          or{" "}
+          <Link href="/fix" className="font-medium text-accent-text hover:underline">
+            fix a part
+          </Link>{" "}
+          to make the first one.
+        </p>
       </div>
     );
   }

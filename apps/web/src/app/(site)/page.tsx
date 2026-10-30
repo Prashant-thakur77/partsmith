@@ -77,7 +77,18 @@ export default async function HomePage() {
       <Container className="space-y-20 py-14 sm:py-16">
         {stats.status === "fulfilled" ? <StatsView stats={stats.value} state="ok" /> : <StatsStrip />}
 
-        <Section id="how" title="How it works" description="Three steps. The middle one is a phone photo.">
+        <Section
+          id="how"
+          title="How it works"
+          description="Three steps. The middle one is a phone photo."
+          actions={
+            <Button asChild variant="ghost" size="sm">
+              <Link href="/how">
+                The whole pipeline in plain words <ArrowRight aria-hidden />
+              </Link>
+            </Button>
+          }
+        >
           <HowItWorks />
         </Section>
 
@@ -92,7 +103,7 @@ export default async function HomePage() {
           actions={
             <Button asChild variant="ghost" size="sm">
               <Link href="/results">
-                Full bench <ArrowRight aria-hidden />
+                Accuracy <ArrowRight aria-hidden />
               </Link>
             </Button>
           }

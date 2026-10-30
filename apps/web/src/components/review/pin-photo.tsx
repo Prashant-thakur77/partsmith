@@ -23,6 +23,8 @@ export function PinPhoto({
   pins,
   onChange,
   earlier = [],
+  title = "Rectified photo",
+  worst = [],
   className,
 }: {
   rectified: string | null | undefined;
@@ -33,6 +35,10 @@ export function PinPhoto({
   /** Omit for a read-only photo (no admin token, or the round is already decided). */
   onChange?: (pins: DraftPin[]) => void;
   earlier?: ReviewPin[];
+  /** The panel's small heading. */
+  title?: string;
+  /** The verifier's biggest gap, circled (from the API; never computed here). */
+  worst?: { u: number; v: number; gap_mm: number; limit_mm: number }[];
   className?: string;
 }) {
   const [showOverlay, setShowOverlay] = React.useState(true);
@@ -63,7 +69,7 @@ export function PinPhoto({
   return (
     <div className={cn("overflow-hidden rounded-lg border border-border bg-surface", className)}>
       <div className="flex flex-wrap items-center gap-x-3 gap-y-2 border-b border-border px-3 py-2">
-        <Eyebrow>Rectified photo</Eyebrow>
+        <Eyebrow>{title}</Eyebrow>
         {editable ? <span className="text-[12px] text-muted">Click the photo where something is wrong.</span> : null}
         <div className="ml-auto flex items-center gap-3">
           {zoom ? <Switch label="Zoom to part" checked={zoomed} onCheckedChange={setZoomed} className="text-[12px]" /> : null}
@@ -108,7 +114,20 @@ export function PinPhoto({
                 onLoad={(e) => setNatural({ w: e.currentTarget.naturalWidth, h: e.currentTarget.naturalHeight })}
                 className={z ? "block h-auto w-full max-w-none" : "block h-auto max-h-[min(62vh,560px)] w-auto max-w-full"}
               />
-              {earlier.map((p) => (
+              {worst.map((w) => (
+              <span
+                key={`worst-${w.u}-${w.v}`}
+                className="pointer-events-none absolute size-0"
+                style={{ left: `${w.u * 100}%`, top: `${w.v * 100}%` }}
+                title={`The verifier's biggest gap: ${w.gap_mm.toFixed(2)} mm (limit ${w.limit_mm.toFixed(2)} mm)`}
+              >
+                <span className="absolute size-10 -translate-x-1/2 -translate-y-1/2 animate-pulse rounded-full border-2 border-dashed border-warn" />
+                <span className={cn("absolute -translate-y-[2.1rem] rounded border border-warn bg-black/75 px-1 font-mono text-[10px] whitespace-nowrap text-white tnum", w.u > 0.7 ? "right-2" : "left-2")}>
+                  biggest gap {w.gap_mm.toFixed(2)} mm
+                </span>
+              </span>
+            ))}
+            {earlier.map((p) => (
                 <span
                   key={`old-${p.id}-${p.u}-${p.v}`}
                   className="pointer-events-none absolute size-0"
@@ -117,7 +136,9 @@ export function PinPhoto({
                 >
                   {/* the ring is centred on the point; the before → after label hangs to its right */}
                   <span className="absolute flex size-5 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full border border-white/80 bg-subtle/90 font-mono text-[10px] text-white">{p.id}</span>
-                  <span className="absolute left-3 -translate-y-1/2 rounded bg-black/55 px-1 font-mono text-[10px] whitespace-nowrap text-white tnum">{pinOutcome(p)}</span>
+                  <span className={cn("absolute -translate-y-1/2 rounded bg-black/55 px-1 font-mono text-[10px] whitespace-nowrap text-white tnum", p.u > 0.7 ? "right-3" : "left-3")}>
+                    {pinOutcome(p)}
+                  </span>
                 </span>
               ))}
               {pins.map((p, i) => (

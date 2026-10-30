@@ -10,12 +10,15 @@ from collections.abc import Callable, Iterator
 from contextlib import contextmanager
 from typing import Annotated, Any, Literal
 
-from fastapi import APIRouter, Depends, Query
+from fastapi import APIRouter, Depends, File, Query, UploadFile
 from pydantic import BaseModel, Field
 
 from services.api.auth import require_admin
 from services.api.common import API, _svc, publish_job
 from services.api.errors import ApiError
+from services.api.uploads import clean_image
+from services.common import blobs
+from services.review import ledger as review_ledger
 from services.review import rules as review_rules
 from services.review import store
 
@@ -51,6 +54,12 @@ class DecisionRequest(BaseModel):
     reason: str = Field("", max_length=store.MAX_REASON)
     rules: list[RuleIn] = Field(default_factory=list, max_length=50)
     publish: bool = Field(False, description="Accept only: publish the part (best effort is labelled as accepted)")
+    why: str = Field("", max_length=store.MAX_REASON, description="Why it matters (kept in the feedback log)")
+    attachments: list[str] = Field(
+        default_factory=list,
+        max_length=store.MAX_ATTACHMENTS,
+        description="Keys from POST /review/{job_id}/attachments: pasted screenshots or reference pictures",
+    )
 
 
 @router.get("/queue", summary="Finished fix jobs waiting for a person's review (latest round of each chain)")
@@ -63,6 +72,17 @@ def review_queue(
 @router.get("/stats", summary="Judge vs person: agreement counts and Cohen's kappa, computed from the reviews")
 def review_stats() -> dict[str, Any]:
     return store.stats()
+
+
+@router.get("/feedback", summary="The feedback log: every send-back, rejection and accept, why, and what happened next")
+def review_feedback(
+    family: str | None = None,
+    outcome: Literal["fixed", "better", "not_fixed", "waiting", "not_measured", "rejected", "accepted"] | None = None,
+    by: Literal["person", "test"] | None = None,
+) -> dict[str, Any]:
+    """Read from the review chains; "what happened next" is measured by code (mismatch at the pin, or the round's
+    worst gap, before and after the next round)."""
+    return review_ledger.feedback(family=family, outcome=outcome, by=by, svc=_svc())
 
 
 @router.get("/{job_id}", summary="A review chain: rounds, pins with before/after mismatch, verdicts, judge scorecards")
@@ -85,6 +105,20 @@ def _publisher() -> Callable[[str, str], str | None]:
     return publish
 
 
+@router.post("/{job_id}/attachments", summary="Upload a pasted screenshot or reference picture for a decision (admin)")
+async def review_attachment(
+    job_id: str,
+    image: Annotated[UploadFile, File(description="JPEG, PNG or WebP, ≤ 25 MB; location metadata is removed")],
+    _admin: None = Depends(require_admin),
+) -> dict[str, str]:
+    """Returns `{key, url}`; send the key in the decision's `attachments`. The image goes to the fixer with the notes."""
+    with _mapped():
+        store.detail(job_id, svc=_svc())  # 404 for an unknown job
+    data, mime = clean_image(await image.read(), "image")
+    key = blobs.put(data, ".jpg" if mime == "image/jpeg" else ".png")
+    return {"key": key, "url": blobs.url(key)}
+
+
 @router.post("/{job_id}", summary="Accept, improve (starts a reviewer round) or reject (admin)")
 def review_decide(job_id: str, body: DecisionRequest, _admin: None = Depends(require_admin)) -> dict[str, Any]:
     """Send it to the chain's latest round. Improve needs a pin or a note; reject needs a reason. Returns the chain
@@ -99,5 +133,7 @@ def review_decide(job_id: str, body: DecisionRequest, _admin: None = Depends(req
             rules=[r.model_dump() for r in body.rules],
             publish=body.publish,
             publisher=_publisher(),
+            attachments=body.attachments,
+            why=body.why,
             svc=_svc(),
         )

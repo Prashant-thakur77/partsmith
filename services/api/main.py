@@ -98,6 +98,10 @@ class RateLimiter:
             q.append(now)
             return True, 0
 
+    def reset(self) -> None:
+        with self._lock:
+            self._hits.clear()
+
 
 class McpMount:
     """ASGI endpoint for `/mcp`. The MCP session manager is created in the app lifespan (it can run only once per
@@ -107,6 +111,19 @@ class McpMount:
         self.inner: Any = None
 
     async def __call__(self, scope: Scope, receive: Receive, send: Send) -> None:
+        if scope.get("method") == "GET" and b"text/event-stream" not in dict(scope.get("headers") or []).get(
+            b"accept", b""
+        ):
+            # a browser, not an MCP client: say how to connect instead of holding the request open
+            hint = JSONResponse(
+                {
+                    "mcp": "PartSmith MCP server (streamable HTTP). MCP clients POST JSON-RPC here.",
+                    "connect": "claude mcp add --transport http partsmith <this URL>",
+                    "docs": "/llms.txt",
+                }
+            )
+            await hint(scope, receive, send)
+            return
         if self.inner is None:
             resp = JSONResponse(
                 {"error": {"code": "mcp_unavailable", "message": "MCP starts with the app lifespan"}}, status_code=503

@@ -12,6 +12,7 @@ export function PageHeader({
   actions,
   className,
   children,
+  compact = false,
 }: {
   eyebrow?: React.ReactNode;
   title: React.ReactNode;
@@ -19,14 +20,16 @@ export function PageHeader({
   actions?: React.ReactNode;
   className?: string;
   children?: React.ReactNode;
+  /** A working tool's header: one short block so the work starts above the fold. */
+  compact?: boolean;
 }) {
   return (
     <div className={cn("border-b border-border bg-surface/40", className)}>
-      <Container className="flex flex-col gap-5 py-10 sm:py-12 md:flex-row md:items-end md:justify-between">
-        <div className="max-w-2xl space-y-3">
-          {eyebrow ? <div className="text-[12px] font-medium uppercase tracking-[0.08em] text-accent-text">{eyebrow}</div> : null}
-          <h1 className="text-[28px] leading-[1.15] font-semibold tracking-[-0.025em] text-fg sm:text-[34px]">{title}</h1>
-          {description ? <p className="text-[15px] leading-6 text-muted">{description}</p> : null}
+      <Container className={cn("flex flex-col gap-5 md:flex-row md:items-end md:justify-between", compact ? "py-5" : "py-10 sm:py-12")}>
+        <div className={cn("max-w-2xl", compact ? "space-y-1" : "space-y-3")}>
+          {eyebrow && !compact ? <div className="text-[12px] font-medium uppercase tracking-[0.08em] text-accent-text">{eyebrow}</div> : null}
+          <h1 className={cn("leading-[1.15] font-semibold tracking-[-0.025em] text-fg", compact ? "text-[22px]" : "text-[28px] sm:text-[34px]")}>{title}</h1>
+          {description ? <p className={cn("text-muted", compact ? "text-[13.5px] leading-5" : "text-[15px] leading-6")}>{description}</p> : null}
           {children}
         </div>
         {actions ? <div className="flex shrink-0 flex-wrap gap-2">{actions}</div> : null}

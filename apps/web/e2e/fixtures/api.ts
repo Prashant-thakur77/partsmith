@@ -301,6 +301,7 @@ export const openapi = {
         ["/needs/{id}/vote", "post"],
         ["/review/queue", "get"],
         ["/review/stats", "get"],
+        ["/review/feedback", "get"],
       ] as [string, string, string[]?][]
     ).map(([p, m, f]) => [`/api/v1${p}`, { [m]: op(f) }]),
   ),
@@ -460,7 +461,7 @@ export function reviewDetail(id: string): Record<string, unknown> | null {
         }),
         round({ round: 2, job_id: "job_rev_2", verdict: { status: "best_effort", max_error_mm: 0.62 } }),
       ],
-      images: reviewImages,
+      images: { ...reviewImages, worst: [{ view: "top", u: 0.55, v: 0.45, gap_mm: 0.62, limit_mm: 0.5 }] },
     };
   if (id === "job_demo_1") return { root_job: "job_demo_1", status: "waiting", rounds: [round({ round: 1, job_id: "job_demo_1", verdict: { status: "verified", max_error_mm: 0.31 } })], images: reviewImages };
   if (id === "job_replay_1")
@@ -474,6 +475,53 @@ export const draftRules = {
     { text: "latch: the clip face is the flat one", source_pin: null, scope: "latch" },
   ],
 };
+
+export const feedbackLog = [
+  {
+    id: "job_rev_1/1/pin1",
+    root_job: "job_rev_1",
+    job_id: "job_rev_1",
+    round: 1,
+    family: "clip",
+    title: "Cupboard latch",
+    kind: "pin",
+    what: "this corner was square",
+    why: "the latch has to sit flush against the door frame",
+    by: "person",
+    at: NOW - 1200,
+    photo: `${A}/photo.png`,
+    picture: null,
+    where: { pin: 1, u: 0.3, v: 0.4 },
+    before_mm: 0.84,
+    after_mm: 0.21,
+    limit_mm: 0.5,
+    outcome: "fixed",
+    next_job: "job_rev_2",
+    used_in: { jobs: 2, accepted: 1, improved: 1, rejected: 0 },
+  },
+  {
+    id: "job_replay_1/1/reject1",
+    root_job: "job_replay_1",
+    job_id: "job_replay_1",
+    round: 1,
+    family: "clip",
+    title: "L-bracket",
+    kind: "reject",
+    what: "wrong part photographed",
+    why: "",
+    by: "test",
+    at: NOW - 9000,
+    photo: null,
+    picture: null,
+    where: null,
+    before_mm: null,
+    after_mm: null,
+    limit_mm: 0.5,
+    outcome: "rejected",
+    next_job: null,
+    used_in: { jobs: 0, accepted: 0, improved: 0, rejected: 0 },
+  },
+];
 
 export const reviewStats = { n: 4, agree: 3, both_ok: 2, both_not: 1, judge_ok_person_not: 1, judge_not_person_ok: 0, kappa: 0.5, reviewers: 1, tests_excluded: 1 };
 
@@ -520,6 +568,14 @@ export async function mockApi(page: Page, opts: MockOptions = {}): Promise<strin
     if (vote) return json(route, { ...(needs.find((n) => n.id === vote[1]) ?? needs[0]!), votes: 5, counted: true });
     if (path === "/review/queue") return json(route, reviewQueue);
     if (path === "/review/stats") return json(route, reviewStats);
+    if (path === "/review/feedback") {
+      const outcome = url.searchParams.get("outcome");
+      const items = feedbackLog.filter((e) => !outcome || e.outcome === outcome);
+      const counts: Record<string, number> = {};
+      for (const e of items) counts[e.outcome] = (counts[e.outcome] ?? 0) + 1;
+      return json(route, { items, counts, families: ["clip"] });
+    }
+    if (/^\/review\/[^/]+\/attachments$/.test(path) && method === "POST") return json(route, { key: "att_1.png", url: `${A}/photo.png` });
     const rv = path.match(/^\/review\/([^/]+)(\/rules\/draft)?$/);
     if (rv) {
       const fresh = reviewDetail(rv[1]!);

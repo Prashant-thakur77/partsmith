@@ -192,4 +192,14 @@ Seven workstreams in flight: providers, verifier, synth/eval, API/registry, metr
   the side photo; re-asked, it scored 5/5/5/5 with no veto, and round 4 verified. The chain is recorded with the replays
   (`data/replays/_reviews/`), round 4 left for a person to accept. Pin photo zooms to the part; a flaky review e2e came
   from a mock API that forgot decisions.
+- **Easier review and the feedback log (Oct 30):** a fresh-eyes audit of every page (desktop + phone) found 15
+  problems; fixed: a 5-item nav plus a "How it works" page with a glossary, an
+  opaque replay banner (a class-merge bug had dropped its background), no CLI commands shown to visitors, job pages say
+  which round was kept and which tries were discarded, one plain provenance chip ("Recorded run · live models"), plain
+  sentences above every results table, env diagnostics only for admins, a shorter /fix, curated replay cards. The review
+  page puts the photo ("Should look like") next to the 3D model ("Agent made"), shows the round story, says why a part
+  fails and circles the verifier's biggest gap on the photo; Improve leads when the code has not passed a part; the
+  decision bar takes a pasted screenshot and a "why it matters". New `/review/log`: every send-back and rejection with
+  what, why, a close-up of the pin and what code measured next; a person's fixed feedback (with its reason) is given to
+  later jobs of that family and each entry shows how those jobs' reviews went. `/mcp` answers a browser at once.
 - **Next:** real photos, a dozen honest reviews on `/review`, Modal login and deploy go-ahead from Prashant; the final video with real-world shots.

@@ -3,13 +3,14 @@
 import { useQuery } from "@tanstack/react-query";
 import * as React from "react";
 import { AlertTriangle, Check, KeyRound, Lock, MapPin, Unlock, X } from "lucide-react";
+import { useAdmin } from "@/components/admin-access";
 import { Container, PageHeader, Section } from "@/components/layout/page";
 import { Badge } from "@/components/ui/badge";
 import { ErrorState } from "@/components/ui/error-state";
 import { ModeBadge } from "@/components/ui/provenance";
 import { Skeleton } from "@/components/ui/skeleton";
 import { api } from "@/lib/api";
-import type { ProviderStatus } from "@/lib/api-types";
+import type { ProviderStatus, Status } from "@/lib/api-types";
 import { fmtInt, fmtMs, fmtUsd, titleCase } from "@/lib/format";
 import { cn } from "@/lib/utils";
 
@@ -74,10 +75,66 @@ function Warnings({ items }: { items: string[] }) {
   );
 }
 
+const MODE_WORD: Record<string, string> = { live: "live", replay: "recorded", mock: "mock" };
+
+/** How a stage ran, in one plain word; live gets the accent, recorded and mock the hatched label. */
+function ModeWord({ mode }: { mode: string }) {
+  return (
+    <Badge tone={mode === "live" ? "accent" : "mock"}>{MODE_WORD[mode] ?? mode}</Badge>
+  );
+}
+
+/**
+ * Public view: one row per stage and model. Rows with calls come from the server's model_call log (how those calls ran);
+ * a stage with no logged calls shows the model and mode it would use now.
+ */
+function StageTable({ s }: { s: Status }) {
+  const rows = s.providers.flatMap((p) => {
+    const calls = s.model_calls.filter((m) => m.stage === p.stage);
+    if (!calls.length) return [{ key: `${p.stage}-${p.role}`, role: p.role, stage: p.stage, model: p.model, open: p.open_weights, mode: p.mode, calls: 0, usd: null as number | null }];
+    return calls.map((m) => ({ key: `${p.stage}-${p.role}-${m.model}-${m.mode}`, role: p.role, stage: p.stage, model: m.model, open: m.open_weights, mode: m.mode, calls: m.calls, usd: m.usd as number | null }));
+  });
+  return (
+    <div tabIndex={0} role="region" aria-label="Models by stage" className="scrollbar-thin overflow-x-auto rounded-lg border border-border bg-surface">
+      <table className="w-full min-w-[560px] text-[13px]">
+        <thead className="bg-surface-2 text-left text-[11px] text-subtle">
+          <tr>
+            {["Stage", "Model", "Mode", "Calls", "Cost"].map((h, i) => (
+              <th key={h} scope="col" className={cn("px-3 py-2 font-medium whitespace-nowrap", i >= 3 && "text-right")}>
+                {h}
+              </th>
+            ))}
+          </tr>
+        </thead>
+        <tbody>
+          {rows.map((r) => (
+            <tr key={r.key} className="border-t border-border">
+              <th scope="row" className="px-3 py-2 text-left font-normal whitespace-nowrap">
+                {r.role} <span className="text-subtle">· {titleCase(r.stage)}</span>
+              </th>
+              <td className="px-3 py-2 font-mono text-[12px]">
+                {r.model}
+                {r.open ? <Badge tone="accent" className="ml-1.5 font-sans">open weights</Badge> : null}
+              </td>
+              <td className="px-3 py-2">
+                <ModeWord mode={r.mode} />
+              </td>
+              <td className="px-3 py-2 text-right font-mono tnum">{r.calls ? fmtInt(r.calls) : "—"}</td>
+              <td className="px-3 py-2 text-right font-mono tnum">{r.usd != null ? fmtUsd(r.usd) : "—"}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
 export function StatusClient() {
   const q = useQuery({ queryKey: ["status"], queryFn: api.status, refetchInterval: 15_000 });
   const h = useQuery({ queryKey: ["health"], queryFn: api.health, retry: false });
   const s = q.data;
+  // env-var diagnostics and provider warnings are for whoever runs this server, not for visitors
+  const { hasToken } = useAdmin();
   return (
     <>
       <PageHeader
@@ -87,8 +144,8 @@ export function StatusClient() {
         actions={
           s ? (
             <div className="flex items-center gap-2 rounded-lg border border-border bg-surface px-3 py-2 text-[13px]">
-              <span className="text-muted">Overall mode</span>
-              <ModeBadge mode={s.mode} />
+              <span className="text-muted">Right now</span>
+              <ModeWord mode={s.mode} />
               {h.data ? <span className="font-mono text-[12px] text-subtle">v{h.data.version}</span> : null}
             </div>
           ) : null
@@ -105,13 +162,11 @@ export function StatusClient() {
           </div>
         ) : (
           <>
-            {s.warnings.length ? <Warnings items={s.warnings} /> : null}
-            <Section title="Providers by stage">
-              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
-                {s.providers.map((p) => (
-                  <ProviderCard key={`${p.stage}-${p.role}`} p={p} />
-                ))}
-              </div>
+            <Section
+              title="Providers by stage"
+              description="Each step of the pipeline, the model behind it, and the calls logged on this server. Mode is how those calls ran; a step with no calls shows how it would run now (recorded = answers played back from saved runs)."
+            >
+              <StageTable s={s} />
             </Section>
             <Section title="Jobs and cost" description="Totals from the job log on this instance.">
               <dl className="grid grid-cols-2 gap-px overflow-hidden rounded-xl border border-border bg-border md:grid-cols-4">
@@ -149,46 +204,58 @@ export function StatusClient() {
                 </div>
               </Section>
             ) : null}
-            <Section title="Model calls" description="Every model_call event from every non-replay job, grouped by stage and model.">
-              {s.model_calls.length ? (
-                <div tabIndex={0} role="region" aria-label="Model calls" className="scrollbar-thin overflow-x-auto rounded-lg border border-border bg-surface">
-                  <table className="w-full min-w-[720px] text-[12.5px]">
-                    <thead className="bg-surface-2 text-left text-[11px] text-subtle">
-                      <tr>
-                        {["Stage", "Model", "Mode", "Calls", "Failed", "Tokens in / out", "Mean latency", "Cost"].map((h, i) => (
-                          <th key={h} scope="col" className={cn("px-3 py-2 font-medium whitespace-nowrap", i >= 3 && "text-right")}>
-                            {h}
-                          </th>
-                        ))}
-                      </tr>
-                    </thead>
-                    <tbody className="font-mono tnum">
-                      {s.model_calls.map((m) => (
-                        <tr key={`${m.stage}-${m.provider}-${m.model}`} className="border-t border-border">
-                          <th scope="row" className="px-3 py-2 text-left font-sans font-normal whitespace-nowrap">{titleCase(m.stage)}</th>
-                          <td className="px-3 py-2">
-                            {m.model}
-                            {m.open_weights ? <Badge tone="accent" className="ml-1.5 font-sans">open</Badge> : null}
-                          </td>
-                          <td className="px-3 py-2">
-                            <ModeBadge mode={m.mode} />
-                          </td>
-                          <td className="px-3 py-2 text-right">{fmtInt(m.calls)}</td>
-                          <td className={cn("px-3 py-2 text-right", m.failed > 0 && "text-bad")}>{fmtInt(m.failed)}</td>
-                          <td className="px-3 py-2 text-right">
-                            {fmtInt(m.tokens_in)} / {fmtInt(m.tokens_out)}
-                          </td>
-                          <td className="px-3 py-2 text-right">{fmtMs(m.ms_mean)}</td>
-                          <td className="px-3 py-2 text-right">{fmtUsd(m.usd)}</td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              ) : (
-                <p className="text-[13px] text-muted">No model calls recorded yet.</p>
-              )}
-            </Section>
+            {hasToken ? (
+              <>
+                <Section title="Server diagnostics" description="Admin only: keys, warnings and per-provider notes for whoever runs this server.">
+                  {s.warnings.length ? <Warnings items={s.warnings} /> : null}
+                  <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                    {s.providers.map((p) => (
+                      <ProviderCard key={`${p.stage}-${p.role}`} p={p} />
+                    ))}
+                  </div>
+                </Section>
+                <Section title="Model calls" description="Every model_call event from every non-replay job, grouped by stage and model.">
+                  {s.model_calls.length ? (
+                    <div tabIndex={0} role="region" aria-label="Model calls" className="scrollbar-thin overflow-x-auto rounded-lg border border-border bg-surface">
+                      <table className="w-full min-w-[720px] text-[12.5px]">
+                        <thead className="bg-surface-2 text-left text-[11px] text-subtle">
+                          <tr>
+                            {["Stage", "Model", "Mode", "Calls", "Failed", "Tokens in / out", "Mean latency", "Cost"].map((h, i) => (
+                              <th key={h} scope="col" className={cn("px-3 py-2 font-medium whitespace-nowrap", i >= 3 && "text-right")}>
+                                {h}
+                              </th>
+                            ))}
+                          </tr>
+                        </thead>
+                        <tbody className="font-mono tnum">
+                          {s.model_calls.map((m) => (
+                            <tr key={`${m.stage}-${m.provider}-${m.model}`} className="border-t border-border">
+                              <th scope="row" className="px-3 py-2 text-left font-sans font-normal whitespace-nowrap">{titleCase(m.stage)}</th>
+                              <td className="px-3 py-2">
+                                {m.model}
+                                {m.open_weights ? <Badge tone="accent" className="ml-1.5 font-sans">open</Badge> : null}
+                              </td>
+                              <td className="px-3 py-2">
+                                <ModeBadge mode={m.mode} />
+                              </td>
+                              <td className="px-3 py-2 text-right">{fmtInt(m.calls)}</td>
+                              <td className={cn("px-3 py-2 text-right", m.failed > 0 && "text-bad")}>{fmtInt(m.failed)}</td>
+                              <td className="px-3 py-2 text-right">
+                                {fmtInt(m.tokens_in)} / {fmtInt(m.tokens_out)}
+                              </td>
+                              <td className="px-3 py-2 text-right">{fmtMs(m.ms_mean)}</td>
+                              <td className="px-3 py-2 text-right">{fmtUsd(m.usd)}</td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  ) : (
+                    <p className="text-[13px] text-muted">No model calls recorded yet.</p>
+                  )}
+                </Section>
+              </>
+            ) : null}
           </>
         )}
       </Container>

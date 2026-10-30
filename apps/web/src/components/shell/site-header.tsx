@@ -15,15 +15,12 @@ import { ApiHealth } from "./api-health";
 import { Logo } from "./logo";
 import { ModeBanner } from "./mode-banner";
 
+/** Main nav: kept short on purpose. Everything else lives in the footer (site-footer.tsx). "Fix a part" is the CTA button. */
 export const NAV = [
-  { href: "/fix", label: "Fix a part" },
   { href: "/parts", label: "Parts" },
-  { href: "/agents", label: "For agents" },
-  { href: "/results", label: "Results" },
-  { href: "/factory", label: "Factory" },
+  { href: "/how", label: "How it works" },
   { href: "/review", label: "Review" },
-  { href: "/models", label: "Models" },
-  { href: "/judges", label: "Judges" },
+  { href: "/agents", label: "For developers" },
 ] as const;
 
 /** Parts waiting for a person's review, shown next to the nav link; only when this API serves the review queue. */
@@ -52,7 +49,7 @@ export function SiteHeader() {
           <Link href="/" aria-label="PartSmith home" className="rounded-md">
             <Logo />
           </Link>
-          <nav aria-label="Main" className="hidden items-center gap-0.5 lg:flex">
+          <nav aria-label="Main" className="hidden items-center gap-0.5 md:flex">
             {NAV.map((n) => (
               <Link
                 key={n.href}
@@ -71,10 +68,12 @@ export function SiteHeader() {
           <div className="ml-auto flex items-center gap-2">
             <ApiHealth />
             <ThemeToggle className="hidden sm:inline-flex" />
-            <Button asChild variant="primary" size="sm" className="hidden sm:inline-flex">
-              <Link href="/fix">Fix a broken part</Link>
+            <Button asChild variant="primary" size="sm">
+              <Link href="/fix" aria-current={active("/fix") ? "page" : undefined}>
+                Fix a part
+              </Link>
             </Button>
-            <Button variant="ghost" size="icon" className="lg:hidden" aria-label="Open menu" aria-haspopup="dialog" onClick={() => menu.current?.showModal()}>
+            <Button variant="ghost" size="icon" className="md:hidden" aria-label="Open menu" aria-haspopup="dialog" onClick={() => menu.current?.showModal()}>
               <Menu aria-hidden />
             </Button>
             {/* Native modal dialog: focus trap, Esc to close and inert background come from the browser. */}
@@ -96,7 +95,7 @@ export function SiteHeader() {
                 </button>
               </div>
               <nav aria-label="Mobile" className="mt-6 flex flex-col">
-                {[...NAV, { href: "/requests", label: "Requests" }, { href: "/lessons", label: "Lessons" }, { href: "/shop", label: "Repair shops" }, { href: "/calibrate", label: "Calibrate screen" }].map((n) => (
+                {[{ href: "/fix", label: "Fix a part" }, ...NAV, { href: "/jobs/demo", label: "Try a sample" }].map((n) => (
                   <Link
                     key={n.href}
                     href={n.href}
@@ -110,15 +109,11 @@ export function SiteHeader() {
                   </Link>
                 ))}
               </nav>
+              <p className="mt-4 text-[13px] leading-5 text-subtle">Accuracy, models, the judge path and more are at the bottom of every page.</p>
               <div className="mt-6 flex items-center justify-between">
                 <span className="text-[13px] text-muted">Theme</span>
                 <ThemeToggle />
               </div>
-              <Button asChild variant="primary" className="mt-6 w-full">
-                <Link href="/fix" onClick={() => menu.current?.close()}>
-                  Fix a broken part
-                </Link>
-              </Button>
             </dialog>
           </div>
         </div>

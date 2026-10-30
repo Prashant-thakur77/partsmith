@@ -87,18 +87,22 @@ test("agreement text appears only with at least one review and shows kappa only 
 
 test("decision bodies: improve needs a pin or a note, reject a reason; each action sends only its fields", () => {
   const pins = [{ key: 1, u: 0.2, v: 0.3, note: " further left " }, { key: 2, u: 0.7, v: 0.8, note: "" }];
-  assert.equal(blocker("improve", { pins: [], note: " ", reason: "" }), "Add a pin on the photo or a note first.");
+  assert.equal(blocker("improve", { pins: [], note: " ", reason: "" }), "Add a pin on the photo, a note or a screenshot first.");
   assert.equal(blocker("improve", { pins: [], note: "square corner", reason: "" }), null);
   assert.equal(blocker("reject", { pins, note: "", reason: "" }), "Write a short reason.");
   assert.equal(blocker("accept", { pins: [], note: "", reason: "" }), null);
-  assert.deepEqual(decisionBody("improve", { pins, note: " also thicker ", reason: "ignored" }), {
+  assert.deepEqual(decisionBody("improve", { pins, note: " also thicker ", reason: "ignored", attachments: ["k1.png"] }), {
     action: "improve",
     pins: [{ u: 0.2, v: 0.3, note: "further left" }, { u: 0.7, v: 0.8, note: "" }],
     note: "also thicker",
     reason: "",
     rules: [],
     publish: false,
+    attachments: ["k1.png"],
+    why: "",
   });
+  // a pasted screenshot alone is enough to send a part back
+  assert.equal(blocker("improve", { pins: [], note: "", reason: "", attachments: ["k1.png"] }), null);
   const accept = decisionBody("accept", {
     pins,
     note: "",

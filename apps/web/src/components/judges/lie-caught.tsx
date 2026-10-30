@@ -106,8 +106,7 @@ export function LieCaught({ report }: { report: BypassReport | null | undefined 
   if (!report) {
     return (
       <p className="flex items-center gap-2 rounded-lg border border-dashed border-border-strong bg-surface px-4 py-3 text-[13px] text-muted">
-        <TriangleAlert className="size-4 shrink-0" aria-hidden /> Not run yet: <code className="font-mono">uv run python -m eval.bypass</code> writes this
-        evidence.
+        <TriangleAlert className="size-4 shrink-0" aria-hidden /> Not run yet: this evidence appears once the lying-model test has been run.
       </p>
     );
   }
@@ -127,7 +126,7 @@ export function LieCaught({ report }: { report: BypassReport | null | undefined 
         </div>
       ) : (
         <p className="text-[13px] text-muted">
-          This report has no caught-lie images yet: rerun <code className="font-mono">uv run python -m eval.bypass</code>.
+          This report has no caught-lie images yet.
         </p>
       )}
       {report.rows.length ? (

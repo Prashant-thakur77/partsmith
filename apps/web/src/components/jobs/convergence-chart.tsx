@@ -1,6 +1,6 @@
 "use client";
 
-import { CartesianGrid, LabelList, Line, LineChart, ReferenceArea, ReferenceLine, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
+import { CartesianGrid, LabelList, Line, LineChart, ReferenceArea, ReferenceDot, ReferenceLine, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { fmtNum } from "@/lib/format";
 
 type Point = { iter: number; hausdorff_mm: number | null };
@@ -9,9 +9,10 @@ const NICE = [0.1, 0.2, 0.25, 0.5, 1, 2, 2.5, 5, 10, 20, 25, 50, 100];
 
 /**
  * Max error (Hausdorff, mm) per iteration. The green band is the verifier's pass zone (0 … threshold); every point carries
- * its value. Data and threshold come from the job's events / verification record.
+ * its value. Data and threshold come from the job's events / verification record. When the finished job shipped an
+ * earlier round (`keptIter`), that point is ringed and labelled "kept" and the later points read as discarded tries.
  */
-export function ConvergenceChart({ data, threshold, height = 160 }: { data: Point[]; threshold: number | null; height?: number }) {
+export function ConvergenceChart({ data, threshold, height = 160, keptIter = null }: { data: Point[]; threshold: number | null; height?: number; keptIter?: number | null }) {
   const pts = data.filter((d): d is { iter: number; hausdorff_mm: number } => d.hausdorff_mm != null);
   if (pts.length === 0) {
     return (
@@ -29,7 +30,10 @@ export function ConvergenceChart({ data, threshold, height = 160 }: { data: Poin
   const hi = Math.max(...iters);
   const xTicks = Array.from({ length: hi - lo + 1 }, (_, i) => lo + i);
   const dp = top < 2 ? 2 : 1;
-  const summary = pts.map((p) => `iteration ${p.iter}: ${fmtNum(p.hausdorff_mm)} mm`).join(", ");
+  const kept = keptIter != null ? pts.find((p) => p.iter === keptIter) ?? null : null;
+  const discardedAfter = kept != null && pts.some((p) => p.iter > kept.iter);
+  const tag = (iter: number) => (kept == null ? "" : iter === kept.iter ? " (kept)" : iter > kept.iter ? " (discarded)" : "");
+  const summary = pts.map((p) => `iteration ${p.iter}: ${fmtNum(p.hausdorff_mm)} mm${tag(p.iter)}`).join(", ");
   return (
     <figure className="m-0">
       <div style={{ height }} aria-hidden>
@@ -68,7 +72,7 @@ export function ConvergenceChart({ data, threshold, height = 160 }: { data: Poin
             <Tooltip
               cursor={{ stroke: "var(--border-strong)" }}
               contentStyle={{ background: "var(--surface)", border: "1px solid var(--border)", borderRadius: 6, fontSize: 12 }}
-              labelFormatter={(v) => `iteration ${v}`}
+              labelFormatter={(v) => `iteration ${v}${tag(Number(v))}`}
               formatter={(v) => [`${fmtNum(Number(v))} mm`, "max error"]}
             />
             <Line
@@ -83,9 +87,25 @@ export function ConvergenceChart({ data, threshold, height = 160 }: { data: Poin
             >
               <LabelList dataKey="hausdorff_mm" position="top" offset={8} formatter={(v: unknown) => fmtNum(Number(v))} style={{ fontSize: 10.5, fill: "var(--fg)", fontFamily: "var(--font-mono)" }} />
             </Line>
+            {kept && discardedAfter ? (
+              <ReferenceDot
+                x={kept.iter}
+                y={kept.hausdorff_mm}
+                r={7}
+                fill="none"
+                stroke="var(--ok)"
+                strokeWidth={2}
+                label={{ value: "kept", position: "right", fill: "var(--ok)", fontSize: 10.5, fontWeight: 600, dx: 2, dy: 9 }}
+              />
+            ) : null}
           </LineChart>
         </ResponsiveContainer>
       </div>
+      {discardedAfter ? (
+        <p className="mt-1 text-[11.5px] text-muted">
+          Iteration #{kept!.iter} is the result. Later points are tries that were discarded.
+        </p>
+      ) : null}
       <figcaption className="sr-only">Max error by iteration: {summary}.</figcaption>
     </figure>
   );

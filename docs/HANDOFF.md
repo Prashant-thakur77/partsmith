@@ -90,7 +90,10 @@ outline and photograph it. The app shows pass or fail.
   drawn on it. **A** if it is right (tick the rules worth keeping), **I** to click where it is wrong and say what (a
   reviewer round runs live, roughly $0.05–0.50 each), **R** with a reason if it is hopeless. Your decisions are the
   only source of the judge-vs-person agreement numbers and of the family rules, so a dozen honest reviews matter more
-  than speed. Notes in plain words are fine ("this corner was square", "hole is for an M3 screw"). The hinge leaf opens
+  than speed. Notes in plain words are fine ("this corner was square", "hole is for an M3 screw"). Fill the
+  "Why it matters" box when you can ("so the cover closes"): the reason is what later parts learn from. Paste a screenshot
+  (Ctrl+V) of how the part should look if that is easier than words. `/review/log` shows every piece of feedback and
+  whether the next round fixed it. The hinge leaf opens
   first: a recorded four-round chain (my test reviews, labelled) whose round 4 verified and waits for your decision.
 
 - Real 3D prints: order the demo parts' STLs online only if you want to (Robu.in, Makenica, Zbotic, iamrapid, NIT lab). Never

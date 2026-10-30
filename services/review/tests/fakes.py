@@ -30,6 +30,7 @@ class FakeService:
     def __init__(self) -> None:
         self.mgr = jobs.JobManager()
         self.started: list[tuple[str, int, list[Pin], str]] = []
+        self.attachments: list[list[str]] = []
 
     def manager(self) -> jobs.JobManager:
         return self.mgr
@@ -47,4 +48,5 @@ class FakeService:
         if self.mgr.get(parent_id) is None:
             raise KeyError(f"no job {parent_id!r}")
         self.started.append((parent_id, round, list(pins), note))
+        self.attachments.append(list(kw.get("attachments") or []))
         return self.new_job(parent=parent_id, round=round)

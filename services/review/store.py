@@ -22,7 +22,7 @@ from typing import Any, Literal
 
 from partsmith_schemas import Pin, RuleChoice
 
-from services.common import paths
+from services.common import blobs, paths
 
 Action = Literal["accept", "improve", "reject"]
 Status = Literal["waiting", "improving", "accepted", "rejected"]
@@ -31,6 +31,7 @@ Publisher = Callable[[str, str], "str | None"]  # (job_id, provenance note) -> p
 MAX_PINS = 20
 MAX_NOTE = 1000
 MAX_REASON = 500
+MAX_ATTACHMENTS = 4  # pasted screenshots / reference pictures per decision
 LIST_LIMIT = 500  # jobs scanned for the queue
 CHAIN_MAX = 50
 ACCEPTED_NOTE = "best effort, accepted by a person"
@@ -260,6 +261,8 @@ def _round_out(mgr: Any, rnd: Mapping[str, Any]) -> dict[str, Any]:
         "at": rnd.get("at"),
         "note": rnd.get("note", ""),
         "reason": rnd.get("reason", ""),
+        "why": rnd.get("why", ""),
+        "attachments": [blobs.url(str(k)) for k in rnd.get("attachments") or [] if _blob_ok(str(k))],
         "pins": _pins_out(mgr, rnd),
         "verdict": rnd.get("verdict") if decided and rnd.get("verdict") else _verdict(job),
         "judge": rnd.get("judge") if decided else _judge(job),
@@ -288,7 +291,9 @@ def _detail(mgr: Any, state: Mapping[str, Any]) -> dict[str, Any]:
         "root_job": state["root_job"],
         "status": _status(mgr, state),
         "rounds": [_round_out(mgr, r) for r in state["rounds"]],
-        "images": review_images(last) if last is not None else {"rectified": None, "overlay": None, "focus": None},
+        "images": review_images(last)
+        if last is not None
+        else {"rectified": None, "overlay": None, "focus": None, "worst": []},
         "family": _family(last),
         "updated_at": _updated(mgr, state),
     }
@@ -404,6 +409,13 @@ def _lesson_evidence(state: Mapping[str, Any], rnd: Mapping[str, Any], **extra: 
     }
 
 
+def _blob_ok(key: str) -> bool:
+    try:
+        return blobs.exists(key)
+    except ValueError:  # not a blob key at all
+        return False
+
+
 def _registry() -> Any:
     from services.registry.store import get_registry
 
@@ -421,6 +433,8 @@ def decide(
     publish: bool = False,
     publisher: Publisher | None = None,
     by: Reviewer = "person",
+    attachments: Sequence[str] = (),
+    why: str = "",
     svc: Any = None,
 ) -> dict[str, Any]:
     """Record a person's decision on the latest round of `job_id`'s chain. Returns {"state", "child_job",
@@ -431,15 +445,23 @@ def decide(
     job, root = _locate(mgr, job_id)
     if action not in ("accept", "improve", "reject"):
         raise ReviewError(422, "validation_error", f"unknown action {action!r}")
-    note, reason = note.strip()[:MAX_NOTE], reason.strip()[:MAX_REASON]
+    note, reason, why = note.strip()[:MAX_NOTE], reason.strip()[:MAX_REASON], why.strip()[:MAX_REASON]
     first_id = 1
     if _load(root) is not None:
         used = [int(p["id"]) for r in _state(mgr, root)["rounds"] for p in r.get("pins") or []]
         first_id = max(used, default=0) + 1  # pin numbers continue across the chain's rounds
     clean = _clean_pins(pins, first_id)
+    keys = [str(k) for k in attachments]
+    if len(keys) > MAX_ATTACHMENTS:
+        raise ReviewError(422, "validation_error", f"at most {MAX_ATTACHMENTS} attached images per decision")
+    missing = [k for k in keys if not _blob_ok(k)]
+    if missing:
+        raise ReviewError(
+            422, "validation_error", f"unknown attachment(s): {', '.join(missing[:3])}; upload them first"
+        )
     choices = [r if isinstance(r, RuleChoice) else RuleChoice.model_validate(r) for r in rules]
-    if action == "improve" and not clean and not note:
-        raise ReviewError(422, "review_empty", "improve needs at least one pin or a note")
+    if action == "improve" and not clean and not note and not keys:
+        raise ReviewError(422, "review_empty", "improve needs at least one pin, a note or an image")
     if action == "reject" and not reason:
         raise ReviewError(422, "validation_error", "reject needs a short reason")
     if by not in ("person", "test"):
@@ -468,6 +490,8 @@ def decide(
             {
                 "decision": action,
                 "by": by,
+                "why": why,
+                "attachments": keys,
                 "at": time.time(),
                 "note": note,
                 "reason": reason,
@@ -479,7 +503,7 @@ def decide(
         part_slug: str | None = None
         if action == "improve":
             try:
-                child = service.start_review_job(job.id, int(rnd["round"]) + 1, clean, note)
+                child = service.start_review_job(job.id, int(rnd["round"]) + 1, clean, note, attachments=keys)
             except KeyError as exc:
                 raise ReviewError(404, "job_not_found", str(exc.args[0]) if exc.args else str(exc)) from exc
             except ValueError as exc:

@@ -16,7 +16,7 @@ import { fmtNum } from "@/lib/format";
 import { summarizeEvents } from "@/lib/job-events";
 import { cn } from "@/lib/utils";
 import { Badge } from "../ui/badge";
-import { OriginBadge } from "../ui/provenance";
+import { OriginBadge, RunBadge } from "../ui/provenance";
 
 type Frame = { key: string; caption: string };
 const FRAME_MS = 2600;
@@ -150,11 +150,10 @@ export function ReplayLoop() {
     <>
       <div className="flex flex-wrap items-center justify-between gap-2 border-b border-border px-4 py-2.5">
         <div className="flex min-w-0 items-center gap-2">
-          <Badge tone="inverse">
-            <PlayCircle aria-hidden /> Replay
-          </Badge>
+          <PlayCircle className="size-4 shrink-0 text-muted" aria-hidden />
           <span className="truncate text-[13px] font-medium">{pick.title}</span>
-          <OriginBadge origin={pick.origin} />
+          <RunBadge mode={pick.provider_mode} recorded />
+          <OriginBadge origin={pick.origin} hideReal />
         </div>
         <div className="flex items-center gap-1">
           <button type="button" aria-label="Previous step" onClick={() => (setStep(0), setI((x) => (x - 1 + n) % n))} className="rounded p-1 text-muted hover:bg-surface-2 hover:text-fg">

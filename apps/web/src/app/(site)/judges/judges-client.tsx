@@ -6,20 +6,22 @@ import Link from "next/link";
 import dynamic from "next/dynamic";
 import * as React from "react";
 import { TraceTimeline } from "@/components/jobs/trace-timeline";
-import { LieCaught } from "@/components/judges/lie-caught";
+import { ReplayCard } from "@/components/jobs/replay-card";
+import { LieCaught, reportFileUrl } from "@/components/judges/lie-caught";
 import { Container, PageHeader, Section } from "@/components/layout/page";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Eyebrow } from "@/components/ui/card";
 import { EmptyState } from "@/components/ui/empty-state";
 import { ErrorState } from "@/components/ui/error-state";
-import { ModeBadge, OriginBadge } from "@/components/ui/provenance";
+import { ModeBadge, OriginBadge, RunBadge } from "@/components/ui/provenance";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Slider } from "@/components/ui/slider";
 import { VerifiedBadge } from "@/components/ui/verified-badge";
 import { api } from "@/lib/api";
 import { distinctTitles, fmtNum, splitTitle } from "@/lib/format";
 import { STAGE_LABELS, summarizeEvents } from "@/lib/job-events";
+import { curateReplays, replayTitle } from "@/lib/replays";
 import { cn } from "@/lib/utils";
 import { radioGroupKeys } from "@/lib/a11y";
 
@@ -78,12 +80,9 @@ function ReplayPlayer({ id }: { id: string }) {
   return (
     <div className="overflow-hidden rounded-xl border border-border bg-surface">
       <div className="flex flex-wrap items-center gap-2 border-b border-border px-4 py-3">
-        <Badge tone="mock" upper>
-          <History aria-hidden /> replay
-        </Badge>
-        <span className="truncate text-[14px] font-medium">{splitTitle(job.data.summary.title || id).title}</span>
+        <span className="truncate text-[14px] font-medium">{replayTitle(job.data.summary.title || id, splitTitle)}</span>
+        <RunBadge mode={job.data.summary.provider_mode} recorded />
         <OriginBadge origin={job.data.summary.origin} hideReal />
-        <ModeBadge mode={job.data.summary.provider_mode} />
         <div className="ml-auto">
           {finished ? (
             <VerifiedBadge verification={job.data.verification} />
@@ -163,8 +162,22 @@ export function JudgesClient() {
   const status = useQuery({ queryKey: ["status"], queryFn: api.status });
   const bench = useQuery({ queryKey: ["bench"], queryFn: api.bench, retry: false });
   const [picked, setPicked] = React.useState<string | null>(null);
-  const active = picked ?? replays.data?.[0]?.id ?? null;
-  const chipLabels = React.useMemo(() => distinctTitles((replays.data ?? []).map((r) => r.title)), [replays.data]);
+  const [more, setMore] = React.useState(false);
+  const playerRef = React.useRef<HTMLDivElement>(null);
+  const curated = React.useMemo(() => curateReplays(replays.data ?? []), [replays.data]);
+  const active = picked ?? curated.featured[0]?.replay.id ?? replays.data?.[0]?.id ?? null;
+  const chipLabels = React.useMemo(() => {
+    const all = replays.data ?? [];
+    const labels = distinctTitles(all.map((r) => r.title));
+    return Object.fromEntries(all.map((r, i) => [r.id, labels[i]!]));
+  }, [replays.data]);
+  const bypass = bench.data?.evidence?.bypass ?? null;
+  const pick = (id: string) => {
+    setPicked(id);
+    const el = playerRef.current;
+    if (el && el.getBoundingClientRect().top > window.innerHeight * 0.6)
+      el.scrollIntoView({ behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth", block: "start" });
+  };
 
   const steps = [
     { n: "1", title: "Watch a stored run", body: "Below: photo → mm → CAD → verify, played back from its run log.", href: "#replay", icon: History },
@@ -212,7 +225,7 @@ export function JudgesClient() {
           ))}
         </ol>
 
-        <Section id="replay" title="Replay a run">
+        <Section id="replay" title="Watch a recorded run" description="Real earlier runs, played back from their logs. Pick one; the player below steps through it.">
           {replays.isPending ? (
             <Skeleton className="h-80" />
           ) : replays.isError ? (
@@ -222,27 +235,64 @@ export function JudgesClient() {
               The first finished job becomes replayable here.
             </EmptyState>
           ) : (
-            <div className="space-y-3">
-              {replays.data.length > 1 ? (
-                <div className="flex flex-wrap gap-1.5" role="radiogroup" onKeyDown={radioGroupKeys} aria-label="Stored runs">
-                  {replays.data.map((r, i) => (
-                    <button
-                      key={r.id}
-                      type="button"
-                      role="radio"
-                      aria-checked={active === r.id}
-                      onClick={() => setPicked(r.id)}
-                      className={cn(
-                        "h-8 rounded-full border px-3 text-[12.5px]",
-                        active === r.id ? "border-fg bg-fg text-bg" : "border-border bg-surface text-muted hover:text-fg",
-                      )}
-                    >
-                      {chipLabels[i]}
-                    </button>
-                  ))}
+            <div className="space-y-4">
+              <ul className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4" aria-label="Runs worth a look">
+                {curated.featured.map((f) => (
+                  <li key={f.replay.id}>
+                    <ReplayCard replay={f.replay} why={f.why} thumb selected={active === f.replay.id} onSelect={() => pick(f.replay.id)} />
+                  </li>
+                ))}
+                {bypass ? (
+                  <li>
+                    <a href="#lie-caught" className="group flex h-full flex-col overflow-hidden rounded-lg border border-border bg-surface hover:border-border-strong">
+                      {bypass.caught[0]?.overlay ? (
+                        <div className="aspect-[16/10] overflow-hidden border-b border-border bg-white">
+                          {/* eslint-disable-next-line @next/next/no-img-element -- report file served by the API */}
+                          <img src={reportFileUrl(bypass.caught[0].overlay)} alt="Verifier overlay from the lying-model test" loading="lazy" decoding="async" className="size-full object-cover" />
+                        </div>
+                      ) : null}
+                      <div className="flex flex-1 flex-col gap-2 p-3.5">
+                        <span className="text-[14px] leading-5 font-medium text-fg">A lying model, caught</span>
+                        <p className="text-[12.5px] leading-5 text-muted">
+                          A scripted model claims “verified”. Code blocked {bypass.blocked} of {bypass.attempts} such claims.
+                        </p>
+                        <span className="mt-auto flex flex-wrap gap-1.5">
+                          <Badge tone="mock">scripted test · no model call</Badge>
+                        </span>
+                      </div>
+                    </a>
+                  </li>
+                ) : null}
+              </ul>
+              <div ref={playerRef} className="scroll-mt-28">
+                <ReplayPlayer id={active} />
+              </div>
+              {curated.rest.length ? (
+                <div className="space-y-2">
+                  <Button variant="ghost" size="sm" onClick={() => setMore((v) => !v)} aria-expanded={more}>
+                    {more ? "Fewer runs" : `More runs (${curated.rest.length})`}
+                  </Button>
+                  {more ? (
+                    <div className="flex flex-wrap gap-1.5" role="radiogroup" onKeyDown={radioGroupKeys} aria-label="More stored runs">
+                      {curated.rest.map((r) => (
+                        <button
+                          key={r.id}
+                          type="button"
+                          role="radio"
+                          aria-checked={active === r.id}
+                          onClick={() => pick(r.id)}
+                          className={cn(
+                            "h-8 rounded-full border px-3 text-[12.5px]",
+                            active === r.id ? "border-fg bg-fg text-bg" : "border-border bg-surface text-muted hover:text-fg",
+                          )}
+                        >
+                          {chipLabels[r.id]}
+                        </button>
+                      ))}
+                    </div>
+                  ) : null}
                 </div>
               ) : null}
-              <ReplayPlayer id={active} />
             </div>
           )}
         </Section>

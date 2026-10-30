@@ -78,6 +78,9 @@ test("fix: tap-to-point taps and the orbit slot go out with the job", async ({ p
     if (r.url().endsWith("/jobs/fix") && r.method() === "POST") bodies.push(r.postData() ?? "");
   });
   await page.goto("/fix");
+  // the optional inputs sit behind one disclosure
+  await expect(page.getByText("Walk around it (video)")).toBeHidden();
+  await page.getByRole("button", { name: /Add more \(optional\)/ }).click();
   await expect(page.getByText("Walk around it (video)")).toBeVisible();
   await page.getByLabel("Upload Top view photo").setInputFiles(join(__dirname, "fixtures/generated/photo.png"));
   await expect(page.getByText("Capture gate passed").first()).toBeVisible();
@@ -95,6 +98,9 @@ test("fix: tap-to-point taps and the orbit slot go out with the job", async ({ p
 test("fix: a photo plus a walk-around clip attach without a page error and the voice-note slot appears", async ({ page }) => {
   const { errors } = await setup(page);
   await page.goto("/fix");
+  // the optional inputs sit behind one disclosure
+  await expect(page.getByText("Walk around it (video)")).toBeHidden();
+  await page.getByRole("button", { name: /Add more \(optional\)/ }).click();
   await expect(page.getByText("Walk around it (video)")).toBeVisible();
   await page.getByLabel("Upload Top view photo").setInputFiles(join(__dirname, "fixtures/generated/photo.png"));
   await expect(page.getByText("Capture gate passed").first()).toBeVisible();

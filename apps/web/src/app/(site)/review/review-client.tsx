@@ -1,15 +1,21 @@
 "use client";
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Check, ClipboardCheck, CornerUpLeft, ExternalLink, Users, X } from "lucide-react";
+import { Check, ClipboardCheck, ExternalLink, History, Users, X } from "lucide-react";
 import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import * as React from "react";
+import dynamic from "next/dynamic";
 import { AdminAccess, AdminLock, useAdmin } from "@/components/admin-access";
+import { ExportMenu } from "@/components/jobs/export-menu";
+import { PhotoPanel, imagesByView } from "@/components/jobs/photo-panel";
 import { Container, PageHeader } from "@/components/layout/page";
+import { DecisionBar, MAX_ATTACHMENTS, type Attachment } from "@/components/review/decision-bar";
 import { JudgeScorecard } from "@/components/review/judge-scorecard";
+import { MeasureCheck } from "@/components/review/measure-check";
 import { PinPhoto } from "@/components/review/pin-photo";
 import { RoundHistory } from "@/components/review/round-history";
+import { RoundStrip } from "@/components/review/round-strip";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Eyebrow } from "@/components/ui/card";
@@ -17,16 +23,14 @@ import { Dialog, DialogClose, DialogContent, DialogDescription, DialogTitle } fr
 import { EmptyState } from "@/components/ui/empty-state";
 import { ErrorState } from "@/components/ui/error-state";
 import { Input, Label, Textarea } from "@/components/ui/input";
-import { Kbd } from "@/components/ui/kbd";
 import { OriginBadge } from "@/components/ui/provenance";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Spinner } from "@/components/ui/spinner";
 import { toast } from "@/components/ui/toast";
 import { Switch } from "@/components/ui/toggle";
-import { TranscribeButton } from "@/components/voice-button";
 import { api } from "@/lib/api";
 import { REVIEW, review, type DecisionBody } from "@/lib/api-review";
-import type { ReviewQueueItem, ReviewVerdict } from "@/lib/api-types";
+import type { ArtifactEvent, ReviewQueueItem, ReviewVerdict } from "@/lib/api-types";
 import { useCapabilities } from "@/lib/capabilities";
 import { fmtUsd, timeAgo, titleCase } from "@/lib/format";
 import {
@@ -43,6 +47,15 @@ import {
   type DraftPin,
 } from "@/lib/review";
 import { cn } from "@/lib/utils";
+
+const CadViewer = dynamic(() => import("@/components/viewer/cad-viewer").then((m) => m.CadViewer), {
+  ssr: false,
+  loading: () => (
+    <div role="status" aria-label="Loading the 3D viewer" className="relative h-[420px]">
+      <Skeleton className="absolute inset-0 rounded-none" />
+    </div>
+  ),
+});
 
 type Tone = "ok" | "warn" | "bad" | "accent" | "neutral" | "info";
 const STATUS_TONE: Record<string, Tone> = { waiting: "warn", improving: "accent", accepted: "ok", rejected: "neutral" };
@@ -309,6 +322,7 @@ function ReviewDetailPanel({ jobId, item, admin }: { jobId: string; item: Review
   const job = useQuery({ queryKey: ["job", jobId], queryFn: () => api.job(jobId) });
   const [pins, setPins] = React.useState<DraftPin[]>([]);
   const [note, setNote] = React.useState("");
+  const [why, setWhy] = React.useState("");
   const [reason, setReason] = React.useState("");
   const [hint, setHint] = React.useState<string | null>(null);
   const [acceptOpen, setAcceptOpen] = React.useState(false);
@@ -325,6 +339,44 @@ function ReviewDetailPanel({ jobId, item, admin }: { jobId: string; item: Review
   const isReplay = item?.is_replay ?? job.data?.summary.is_replay ?? false;
   const family = item?.family || job.data?.partspec?.family || "";
   const earlier = React.useMemo(() => (d ? d.rounds.slice(0, -1).flatMap((r) => r.pins) : []), [d]);
+  const [attachments, setAttachments] = React.useState<Attachment[]>([]);
+  const nextAttachment = React.useRef(1);
+  const keys = attachments.flatMap((a) => (a.key ? [a.key] : []));
+  const addImages = React.useCallback(
+    (files: File[]) => {
+      if (!cur) return;
+      const room = MAX_ATTACHMENTS - attachments.length;
+      if (room <= 0) {
+        toast(`At most ${MAX_ATTACHMENTS} pictures per decision`, { tone: "info" });
+        return;
+      }
+      for (const f of files.slice(0, room)) {
+        const id = nextAttachment.current++;
+        setAttachments((xs) => [...xs, { id, preview: URL.createObjectURL(f), key: null, error: null }]);
+        review
+          .uploadAttachment(cur.job_id, f, f.name || "screenshot.png")
+          .then((res) => setAttachments((xs) => xs.map((a) => (a.id === id ? { ...a, key: res.key } : a))))
+          .catch((e: unknown) =>
+            setAttachments((xs) => xs.map((a) => (a.id === id ? { ...a, error: e instanceof Error ? e.message.slice(0, 60) : "upload failed" } : a))),
+          );
+      }
+      setHint(null);
+    },
+    [cur, attachments.length],
+  );
+  const removeAttachment = React.useCallback((id: number) => {
+    setAttachments((xs) => {
+      const gone = xs.find((a) => a.id === id);
+      if (gone) URL.revokeObjectURL(gone.preview);
+      return xs.filter((a) => a.id !== id);
+    });
+  }, []);
+  const artifacts = React.useMemo(() => job.data?.artifacts ?? {}, [job.data?.artifacts]);
+  const photoViews = React.useMemo(
+    () => imagesByView((job.data?.events ?? []).filter((e): e is ArtifactEvent => e.t === "artifact"), artifacts),
+    [job.data?.events, artifacts],
+  );
+  const modelUrl = artifacts.view;
 
   const decide = useMutation({
     mutationFn: (body: DecisionBody) => review.decide(cur!.job_id, body),
@@ -334,7 +386,12 @@ function ReviewDetailPanel({ jobId, item, admin }: { jobId: string; item: Review
       else if (body.action === "accept") toast("Accepted", { description: res.part_slug ? `Published as ${res.part_slug}` : "Your sign-off is saved.", tone: "ok" });
       else toast("Rejected", { tone: "info" });
       setPins([]);
+      setAttachments((xs) => {
+        for (const a of xs) URL.revokeObjectURL(a.preview);
+        return [];
+      });
       setNote("");
+      setWhy("");
       setReason("");
       setHint(null);
       setAcceptOpen(false);
@@ -345,14 +402,14 @@ function ReviewDetailPanel({ jobId, item, admin }: { jobId: string; item: Review
   });
 
   const improve = React.useCallback(() => {
-    const why = blocker("improve", { pins, note, reason });
-    if (why) {
-      setHint(why);
+    const missing = blocker("improve", { pins, note, reason, attachments: keys });
+    if (missing) {
+      setHint(missing);
       noteRef.current?.focus();
       return;
     }
-    decide.mutate(decisionBody("improve", { pins, note, reason }));
-  }, [pins, note, reason, decide]);
+    decide.mutate(decisionBody("improve", { pins, note, reason, attachments: keys, why }));
+  }, [pins, note, reason, keys, why, decide]);
 
   const onKey = React.useRef<(e: KeyboardEvent) => void>(() => {});
   React.useEffect(() => {
@@ -376,7 +433,6 @@ function ReviewDetailPanel({ jobId, item, admin }: { jobId: string; item: Review
   if (detail.isError) return <ErrorState error={detail.error} what="this review" onRetry={() => void detail.refetch()} />;
   if (!d) return <Skeleton className="h-[520px]" />;
 
-  const improveBlocked = blocker("improve", { pins, note, reason });
   return (
     <div className="space-y-4">
       <div className="space-y-3 rounded-lg border border-border bg-surface p-4">
@@ -385,7 +441,11 @@ function ReviewDetailPanel({ jobId, item, admin }: { jobId: string; item: Review
           <Badge tone="outline">{roundLabel(cur?.round ?? item?.round ?? 1)}</Badge>
           {isReplay ? <OriginBadge origin="replay" /> : null}
         </div>
-        <h2 className="text-[18px] leading-tight font-semibold tracking-tight">{title}</h2>
+        <div className="flex flex-wrap items-start justify-between gap-2">
+          <h2 className="text-[18px] leading-tight font-semibold tracking-tight">{title}</h2>
+          {Object.keys(artifacts).length ? <ExportMenu artifacts={artifacts} verification={job.data?.verification ?? null} /> : null}
+        </div>
+        <RoundStrip rounds={d.rounds} />
         <dl className="flex flex-wrap gap-x-6 gap-y-2">
           <div className="space-y-0.5">
             <dt className="text-[11px] text-subtle">Code verdict</dt>
@@ -429,54 +489,79 @@ function ReviewDetailPanel({ jobId, item, admin }: { jobId: string; item: Review
         ) : null}
       </div>
 
-      <div className="grid grid-cols-1 gap-4 xl:grid-cols-[minmax(0,1.5fr)_minmax(0,1fr)]">
-        <div className="min-w-0 space-y-4">
-          <PinPhoto rectified={d.images.rectified} overlay={d.images.overlay} focus={d.images.focus} pins={pins} onChange={canAct ? setPins : undefined} earlier={earlier} />
-          {earlier.length ? <p className="-mt-2 text-[12px] text-subtle">Grey pins are from earlier rounds, with the mismatch there before → after that round (mm, measured by code).</p> : null}
-          {canAct ? (
-            <div className="space-y-3 rounded-lg border border-border bg-surface p-4">
-              <div className="flex items-end justify-between gap-2">
-                <Label htmlFor="review-note">Note for the builder</Label>
-                <TranscribeButton label="Speak" onText={(t) => setNote((n) => (n.trim() ? `${n.trim()} ${t}` : t))} />
-              </div>
-              <Textarea
-                id="review-note"
-                ref={noteRef}
-                value={note}
-                maxLength={600}
-                onChange={(e) => {
-                  setNote(e.target.value);
-                  setHint(null);
-                }}
-                rows={2}
-                placeholder="e.g. the hole is for an M3 screw; the broken corner was square"
-              />
-              <div className="grid grid-cols-3 gap-2">
-                <Button variant="solid" size="sm" disabled={decide.isPending} onClick={() => setAcceptOpen(true)}>
-                  <Check aria-hidden /> Accept
-                </Button>
-                <Button variant="outline" size="sm" disabled={decide.isPending || !!improveBlocked} onClick={improve}>
-                  {decide.isPending && decide.variables?.action === "improve" ? <Spinner label="Sending" /> : <CornerUpLeft aria-hidden />} Improve
-                </Button>
-                <Button variant="outline" size="sm" disabled={decide.isPending} onClick={() => setRejectOpen(true)}>
-                  <X aria-hidden /> Reject
-                </Button>
-              </div>
-              <p className="flex flex-wrap items-center gap-1 text-[12px] text-muted">
-                <Kbd>A</Kbd> accept <Kbd>I</Kbd> improve <Kbd>R</Kbd> reject <Kbd>j</Kbd>/<Kbd>k</Kbd> move <Kbd>Esc</Kbd> close
-              </p>
-              <p className={cn("text-[12px]", hint ? "text-warn" : "text-subtle")} role={hint ? "alert" : undefined}>
-                {hint ?? (improveBlocked ? "Improve needs a pin on the photo or a note." : `Improve starts ${roundLabel((cur?.round ?? 1) + 1)} from this model with your notes.`)}
-              </p>
-            </div>
-          ) : null}
-        </div>
-        <div className="min-w-0 space-y-4">
-          <JudgeScorecard judge={judge} />
-          <AgentsCard jobId={jobId} costUsd={item?.cost_usd} />
-          <RoundHistory rounds={d.rounds} />
-        </div>
+      {/* the question a reviewer answers: does what was made match what it should be? */}
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+        <section aria-label="Should look like" className="min-w-0 space-y-2">
+          <h3 className="text-[13px] font-semibold">
+            Should look like <span className="font-normal text-muted">· the photo{canAct ? ", click where something is wrong" : ""}</span>
+          </h3>
+          <PinPhoto
+            rectified={d.images.rectified}
+            overlay={d.images.overlay}
+            focus={d.images.focus}
+            pins={pins}
+            onChange={canAct ? setPins : undefined}
+            earlier={earlier}
+            title="Photo"
+            worst={d.images.worst}
+          />
+          {earlier.length ? <p className="text-[12px] text-subtle">Grey pins are from earlier rounds, with the gap there before → after that round (mm, measured by code).</p> : null}
+        </section>
+        <section aria-label="Agent made" className="min-w-0 space-y-2">
+          <h3 className="text-[13px] font-semibold">
+            Agent made <span className="font-normal text-muted">· the 3D model, drag to turn it</span>
+          </h3>
+          <div className="overflow-hidden rounded-lg border border-border bg-surface">
+            <CadViewer viewUrl={modelUrl} className="h-[380px] lg:h-[460px]" label="Model" emptyText="This round has no 3D model." />
+          </div>
+        </section>
       </div>
+
+      {canAct ? (
+        <DecisionBar
+          pins={pins.length}
+          note={note}
+          onNote={(v) => {
+            setNote(v);
+            setHint(null);
+          }}
+          why={why}
+          onWhy={setWhy}
+          noteRef={noteRef}
+          attachments={attachments}
+          onAddImages={addImages}
+          onRemoveAttachment={removeAttachment}
+          onAccept={() => setAcceptOpen(true)}
+          onImprove={improve}
+          onReject={() => setRejectOpen(true)}
+          pending={decide.isPending ? (decide.variables?.action ?? null) : null}
+          hint={hint}
+          nextRound={(cur?.round ?? 1) + 1}
+          verified={verdict?.status === "verified"}
+        />
+      ) : null}
+
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+        <MeasureCheck verification={job.data?.verification} />
+        <JudgeScorecard judge={judge} />
+      </div>
+
+      <details className="group rounded-lg border border-border bg-surface">
+        <summary className="cursor-pointer list-none px-4 py-3 text-[13px] font-medium select-none">
+          <span className="text-muted group-open:hidden">▸</span>
+          <span className="hidden text-muted group-open:inline">▾</span> More views: slide between photo and model, colour the differences
+        </summary>
+        <div className="border-t border-border">
+          <PhotoPanel views={photoViews} className="h-[420px]" />
+        </div>
+      </details>
+
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+        <RoundHistory rounds={d.rounds} />
+        <AgentsCard jobId={jobId} costUsd={item?.cost_usd} />
+      </div>
+
+
 
       {cur ? (
         <>
@@ -488,7 +573,7 @@ function ReviewDetailPanel({ jobId, item, admin }: { jobId: string; item: Review
             isReplay={isReplay}
             verdict={verdict}
             pending={decide.isPending}
-            onConfirm={(rules, publish) => decide.mutate(decisionBody("accept", { pins, note, reason, rules, publish }))}
+            onConfirm={(rules, publish) => decide.mutate(decisionBody("accept", { pins, note, reason, rules, publish, why }))}
           />
           <RejectDialog
             open={rejectOpen}
@@ -496,7 +581,7 @@ function ReviewDetailPanel({ jobId, item, admin }: { jobId: string; item: Review
             reason={reason}
             setReason={setReason}
             pending={decide.isPending}
-            onConfirm={() => decide.mutate(decisionBody("reject", { pins, note, reason }))}
+            onConfirm={() => decide.mutate(decisionBody("reject", { pins, note, reason, why }))}
           />
         </>
       ) : null}
@@ -552,9 +637,15 @@ export function ReviewClient() {
   return (
     <>
       <PageHeader
+        compact
         eyebrow="Review"
         title="Review finished parts"
-        description="Every finished fix waits here. Accept it, send it back with pins on the photo, or reject it. The measurements decide pass or fail; your decision is a separate sign-off."
+        description="Compare the photo with what the agent made, then accept, send back with pins, or reject. The measurements decide pass or fail; your decision is a separate sign-off."
+        actions={
+          <Link href="/review/log" className="inline-flex h-8 items-center gap-1.5 rounded-md border border-border bg-surface px-3 text-[13px] font-medium hover:bg-surface-2">
+            <History className="size-4" aria-hidden /> Feedback log
+          </Link>
+        }
       />
       <Container className="space-y-6 py-8">
         {!caps.ready ? (

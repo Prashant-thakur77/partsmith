@@ -1,7 +1,7 @@
 "use client";
 
 import { useMutation } from "@tanstack/react-query";
-import { ArrowRight, Check, ExternalLink, FileDown, Monitor, Printer } from "lucide-react";
+import { ArrowRight, Check, ChevronDown, ExternalLink, FileDown, Monitor, Printer } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import * as React from "react";
@@ -81,6 +81,7 @@ export function FixClient() {
   const [matingPoints, setMatingPoints] = React.useState<TapPoint[]>([]);
   const [voiceNote, setVoiceNote] = React.useState<File | null>(null);
   const [city, setCity] = React.useState("");
+  const [more, setMore] = React.useState(false);
   // "It broke in a new place" on a passport page links here with the family and an intent prefilled.
   React.useEffect(() => {
     const pre = fixPrefill(window.location.search, FAMILIES);
@@ -120,6 +121,9 @@ export function FixClient() {
   const thicknessBad = thickness.trim() !== "" && !(Number(thickness) > 0 && Number(thickness) < 200);
   const topBlocked = top?.info.checks.some((c) => c.level === "fail") ?? false;
   const canStart = !!top && !topBlocked && !thicknessBad && !noteProblem && !start.isPending;
+  // when the button is off, say why right next to it
+  const whyNot = start.isPending ? null : !top ? t("fix.whyNoTop") : topBlocked ? t("fix.whyBlocked") : thicknessBad ? t("fix.whyThickness") : noteProblem;
+  const extras = [side, mating, orbit, sendNote ? voiceNote : null].filter(Boolean).length;
   const refusal = start.error instanceof ApiError ? uploadRefusal(start.error.status, start.error.message) : null;
 
   return (
@@ -224,33 +228,53 @@ export function FixClient() {
                 pointsHint={t("fix.points", { n: points.length }) + (canPoints ? "" : " " + t("fix.pointsLocal"))}
                 onGate={setTopGate}
               />
-              <PhotoSlot
-                view="side"
-                matKind={mat}
-                title={t("fix.side")}
-                hint={t("fix.sideHint")}
-                value={side}
-                onChange={setSide}
-                compact
-              />
-              <PhotoSlot
-                view="mating"
-                title={t("fix.mating")}
-                hint={t("fix.matingHint")}
-                value={mating}
-                onChange={(v) => {
-                  setMating(v);
-                  setMatingPoints([]);
-                }}
-                gate={false}
-                compact
-                points={matingPoints}
-                onPoints={setMatingPoints}
-                tapKinds={MATE_TAP_KINDS}
-                pointsHint={t("fix.matingPoints", { n: matingPoints.length }) + (canPoints ? "" : " " + t("fix.pointsLocal"))}
-              />
-              {canOrbit ? <VideoSlot title={t("fix.orbit")} hint={t("fix.orbitHint")} value={orbit} onChange={setOrbit} /> : null}
-              {canNarrate ? <VoiceNoteSlot value={voiceNote} onChange={setVoiceNote} hasClip={!!orbit} /> : null}
+              <div className="rounded-lg border border-border bg-surface">
+                <button
+                  type="button"
+                  aria-expanded={more}
+                  aria-controls="fix-more"
+                  onClick={() => setMore((v) => !v)}
+                  className="flex w-full items-center justify-between gap-3 rounded-lg px-4 py-3 text-left hover:bg-surface-2"
+                >
+                  <span className="min-w-0 space-y-0.5">
+                    <span className="flex items-center gap-2 text-[14px] font-medium text-fg">
+                      {t("fix.addMore")}
+                      {extras ? <Badge tone="neutral">{t("fix.addMoreCount", { n: extras })}</Badge> : null}
+                    </span>
+                    <span className="block text-[12.5px] leading-5 text-muted">{t("fix.addMoreHint")}</span>
+                  </span>
+                  <ChevronDown className={cn("size-4 shrink-0 text-muted transition-transform", more && "rotate-180")} aria-hidden />
+                </button>
+                <div id="fix-more" hidden={!more} className="space-y-3 border-t border-border p-3">
+                  <PhotoSlot
+                    view="side"
+                    matKind={mat}
+                    title={t("fix.side")}
+                    hint={t("fix.sideHint")}
+                    value={side}
+                    onChange={setSide}
+                    compact
+                  />
+                  <PhotoSlot
+                    view="mating"
+                    title={t("fix.mating")}
+                    hint={t("fix.matingHint")}
+                    value={mating}
+                    onChange={(v) => {
+                      setMating(v);
+                      setMatingPoints([]);
+                    }}
+                    gate={false}
+                    compact
+                    points={matingPoints}
+                    onPoints={setMatingPoints}
+                    tapKinds={MATE_TAP_KINDS}
+                    pointsHint={t("fix.matingPoints", { n: matingPoints.length }) + (canPoints ? "" : " " + t("fix.pointsLocal"))}
+                  />
+                  {canOrbit ? <VideoSlot title={t("fix.orbit")} hint={t("fix.orbitHint")} value={orbit} onChange={setOrbit} /> : null}
+                  {canNarrate ? <VoiceNoteSlot value={voiceNote} onChange={setVoiceNote} hasClip={!!orbit} /> : null}
+                </div>
+              </div>
             </div>
           </Step>
 
@@ -351,17 +375,23 @@ export function FixClient() {
               </p>
             ) : null}
             {start.isError && !refusal ? <ErrorState error={start.error} compact what="the job" /> : null}
-            {noteProblem ? <p className="text-[12px] text-bad">{noteProblem}</p> : null}
-            <Button variant="primary" size="lg" className="w-full" disabled={!canStart} onClick={() => start.mutate()}>
+            {noteProblem && whyNot !== noteProblem ? <p className="text-[12px] text-bad">{noteProblem}</p> : null}
+            <Button variant="primary" size="lg" className="w-full" disabled={!canStart} onClick={() => start.mutate()} aria-describedby={whyNot ? "fix-why" : undefined}>
               {start.isPending ? <Spinner className="text-accent-fg" label="Starting" /> : null}
               {start.isPending ? t("fix.starting") : t("fix.start")}
               {!start.isPending ? <ArrowRight aria-hidden /> : null}
             </Button>
+            {whyNot ? (
+              <p id="fix-why" className={cn("-mt-1 text-[12.5px] leading-5", noteProblem && whyNot === noteProblem ? "text-bad" : "text-fg")}>
+                {whyNot}
+              </p>
+            ) : null}
             <p className="text-[12px] leading-5 text-subtle">
               {topGate === false
                 ? t("fix.startNoteRetake")
                 : t("fix.startNote")}
             </p>
+            <p className="border-t border-border pt-3 text-[11.5px] leading-[1.45] text-subtle">{t("fix.privacy")}</p>
           </div>
         </aside>
       </div>

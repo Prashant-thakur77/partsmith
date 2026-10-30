@@ -89,13 +89,17 @@ def test_reviewer_notes_reach_fixer(parent: Any) -> None:
 
     providers.register_mock("fix", fix, replace=True)
     pin = edge_pin(parent, note="this corner is square on the real part")
-    child = service.start_review_job(parent.id, 1, [pin], "", sync=True)
+    rect = parent.read_json("rectified.json")
+    assert rect is not None
+    pasted = blobs.put(blobs.get(rect["sha"]), ".png")  # any picture stands in for a pasted screenshot
+    child = service.start_review_job(parent.id, 1, [pin], "", attachments=[pasted], sync=True)
     assert child.events[-1].t == "done"
     hits = [r for r in seen if "Reviewer pin 1" in r.messages[-1]["content"]]
     assert hits, [r.messages[-1]["content"][-400:] for r in seen]
     text = hits[0].messages[-1]["content"]
     assert "this corner is square on the real part" in text and "local mismatch" in text
-    assert len(hits[0].images) >= 1  # the pin crop rides along with the overlays
+    assert "attached 1 reference image" in text  # a pasted screenshot is named in the notes...
+    assert len(hits[0].images) >= 2  # ...and rides along after the pin crop
 
 
 def test_review_round_from_replay_writes_no_replay_files(
@@ -140,3 +144,28 @@ def test_lessons_used_recorded(spacer: Path) -> None:
         assert used is not None and used["family"] == "spacer" and lid in used["lesson_ids"]
     finally:
         reg.set_lesson_status(lid, "rejected", "test")
+
+
+def test_fixed_feedback_reaches_the_builder(spacer: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    from services.review import ledger
+
+    past = {
+        "id": "j_old/1/pin1",
+        "family": "spacer",
+        "what": "the bore was too small for the screw",
+        "why": "an M3 screw must pass",
+        "before_mm": 0.84,
+        "after_mm": 0.21,
+    }
+    monkeypatch.setattr(ledger, "for_prompt", lambda family, **kw: [past] if family == "spacer" else [])
+    seen: list[ModelRequest] = []
+
+    def build(req: ModelRequest) -> Any:
+        seen.append(req)
+        return mock_brain.build(req)
+
+    providers.register_mock("build", build, replace=True)
+    job = _run(spacer)
+    assert any("an M3 screw must pass" in str(m["content"]) for r in seen for m in r.messages)
+    used = job.read_json("feedback_used.json")
+    assert used is not None and used["ids"] == ["j_old/1/pin1"]

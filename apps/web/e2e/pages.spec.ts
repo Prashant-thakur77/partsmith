@@ -30,6 +30,7 @@ const PAGES: PageCase[] = [
   { name: "shop", path: "/shop?batch=b_1", opts: { admin: true }, ready: async (p) => { await expect(p.getByRole("region", { name: "Batch jobs" })).toBeVisible(); } },
   { name: "embed", path: "/embed/parts/l-bracket", full: false, ready: async (p) => { await expect(p.getByText("L-bracket").first()).toBeVisible(); } },
   { name: "workspace-best-effort", path: "/jobs/job_best", ready: async (p) => { await expect(p.getByRole("button", { name: "Export" })).toBeVisible(); } },
+  { name: "how", path: "/how", ready: async (p) => { await expect(p.getByRole("heading", { name: "From a phone photo to a part you can print", level: 1 })).toBeVisible(); } },
   { name: "agents", path: "/agents", ready: async (p) => { await expect(p.getByRole("heading", { name: "Connect over MCP" })).toBeVisible(); } },
   { name: "judges", path: "/judges", ready: async (p) => { await expect(p.getByRole("button", { name: "Play" })).toBeVisible(); } },
   { name: "not-found", path: "/definitely-not-here", ready: async (p) => { await expect(p.getByRole("heading", { name: /doesn.t exist/ })).toBeVisible(); } },

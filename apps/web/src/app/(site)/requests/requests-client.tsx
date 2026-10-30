@@ -1,7 +1,7 @@
 "use client";
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { ArrowUp, Inbox, Send } from "lucide-react";
+import { ArrowUp, ImagePlus, Inbox, Send, X } from "lucide-react";
 import * as React from "react";
 import { Container, PageHeader, Section } from "@/components/layout/page";
 import { Badge } from "@/components/ui/badge";
@@ -29,6 +29,7 @@ export function RequestsClient() {
   const needs = useQuery({ queryKey: ["needs"], queryFn: api.needs });
   const [text, setText] = React.useState("");
   const [photo, setPhoto] = React.useState<File | null>(null);
+  const fileRef = React.useRef<HTMLInputElement>(null);
   const [voted, setVoted] = React.useState<Set<string>>(new Set());
   const caps = useCapabilities();
   const onRecorded = (n: Need) => {
@@ -61,6 +62,7 @@ export function RequestsClient() {
                 onSuccess: () => {
                   setText("");
                   setPhoto(null);
+                  if (fileRef.current) fileRef.current.value = "";
                 },
               });
           }}
@@ -70,14 +72,41 @@ export function RequestsClient() {
             <Input id="need" value={text} onChange={(e) => setText(e.target.value)} placeholder="e.g. Usha cooler wheel, 32 mm, 8 mm axle" />
           </div>
           <div className="space-y-1.5 sm:w-56">
-            <Label htmlFor="need-photo">Photo (optional)</Label>
-            <input
-              id="need-photo"
-              type="file"
-              accept="image/jpeg,image/png,image/webp"
-              onChange={(e) => setPhoto(e.target.files?.[0] ?? null)}
-              className="block w-full text-[12px] text-muted file:mr-2 file:h-8 file:rounded-md file:border file:border-border file:bg-surface-2 file:px-2 file:text-[12px] file:text-fg"
-            />
+            <span id="need-photo-label" className="block text-[13px] font-medium text-fg">
+              Photo (optional)
+            </span>
+            <div className="flex items-center gap-1.5">
+              <input
+                ref={fileRef}
+                id="need-photo"
+                type="file"
+                accept="image/jpeg,image/png,image/webp"
+                aria-labelledby="need-photo-label"
+                onChange={(e) => setPhoto(e.target.files?.[0] ?? null)}
+                className="peer sr-only"
+              />
+              <label
+                htmlFor="need-photo"
+                className="inline-flex h-9 min-w-0 flex-1 cursor-pointer items-center gap-2 rounded-md border border-border-strong bg-surface px-3 text-[13px] text-fg shadow-sm hover:border-subtle peer-focus-visible:ring-2 peer-focus-visible:ring-ring/30"
+              >
+                <ImagePlus className="size-4 shrink-0 text-muted" aria-hidden />
+                <span className="truncate">{photo ? photo.name : "Add a photo"}</span>
+              </label>
+              {photo ? (
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon"
+                  aria-label="Remove the photo"
+                  onClick={() => {
+                    setPhoto(null);
+                    if (fileRef.current) fileRef.current.value = "";
+                  }}
+                >
+                  <X aria-hidden />
+                </Button>
+              ) : null}
+            </div>
           </div>
           <Button type="submit" variant="primary" disabled={!text.trim() || post.isPending}>
             {post.isPending ? <Spinner className="text-accent-fg" label="Sending" /> : <Send aria-hidden />} Request it

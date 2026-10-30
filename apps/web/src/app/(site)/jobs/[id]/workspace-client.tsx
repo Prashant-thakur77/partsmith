@@ -11,6 +11,7 @@ import { EditPanel } from "@/components/jobs/edit-panel";
 import { BoundNote, NarratedBadge, NarrationPanel, UncheckedList } from "@/components/jobs/evidence-notes";
 import { ExportMenu, PreviewDialog } from "@/components/jobs/export-menu";
 import { FixHistoryStrip } from "@/components/jobs/fix-history-strip";
+import { roundsFromEvents } from "@/lib/fix-rounds";
 import { SourceSwatch, sourceColor } from "@/components/jobs/source-key";
 import { ValueSourcesPanel } from "@/components/jobs/value-sources-panel";
 import { JobStatusBadge } from "@/components/jobs/job-badges";
@@ -31,7 +32,7 @@ import { Eyebrow } from "@/components/ui/card";
 import { CodeBlock } from "@/components/ui/code-block";
 import { ErrorState } from "@/components/ui/error-state";
 import { Mm } from "@/components/ui/mm";
-import { ModeBadge, OriginBadge } from "@/components/ui/provenance";
+import { OriginBadge, RunBadge } from "@/components/ui/provenance";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Spinner } from "@/components/ui/spinner";
 import { StatusDot } from "@/components/ui/status-dot";
@@ -343,6 +344,8 @@ export function WorkspaceClient({ id }: { id: string }) {
   const { events: streamed, stream, contractErrors } = useJobEvents(id);
   const events = React.useMemo(() => mergeEvents(detail.data?.events ?? [], streamed), [detail.data?.events, streamed]);
   const s = React.useMemo(() => summarizeEvents(events), [events]);
+  // the round the finished job shipped: not always the last one (a later, worse try is discarded)
+  const keptIter = React.useMemo(() => roundsFromEvents(events).keptIter, [events]);
   const d: JobDetail | undefined = detail.data;
 
   // Pull the authoritative detail (verification, params, artifacts) whenever the stream reaches a milestone.
@@ -396,7 +399,9 @@ export function WorkspaceClient({ id }: { id: string }) {
   const verification = d?.verification ?? null;
   const done = s.done ?? (d && ["done", "failed", "cancelled"].includes(d.summary.status) ? d.summary : null);
   const live = !done && stream === "live";
-  const lastIterErr = s.convergence.filter((c) => c.hausdorff_mm != null).at(-1)?.hausdorff_mm ?? null;
+  const measured = s.convergence.filter((c) => c.hausdorff_mm != null);
+  // once a round is kept, the headline number is the kept round's, never a discarded later try's
+  const lastIterErr = (keptIter != null ? measured.find((c) => c.iter === keptIter) : undefined)?.hausdorff_mm ?? measured.at(-1)?.hausdorff_mm ?? null;
   const threshold = verification?.thresholds.hausdorff_mm ?? s.metrics.findLast((m) => m.threshold != null)?.threshold ?? null;
   const counting = useCountTo(lastIterErr);
   const [liveMsg, setLiveMsg] = React.useState("");
@@ -452,9 +457,8 @@ export function WorkspaceClient({ id }: { id: string }) {
                 </Badge>
               ))}
               {sum.status !== "done" ? <JobStatusBadge job={sum} /> : null}
-              {replay ? <OriginBadge origin="replay" /> : null}
-              <OriginBadge origin={sum.origin} hideReal />
-              <ModeBadge mode={sum.provider_mode} />
+              <RunBadge mode={sum.provider_mode} recorded={replay} finished={!!done} />
+              {sum.origin !== "replay" ? <OriginBadge origin={sum.origin} hideReal /> : null}
               {d.review ? (
                 <Link href={`/review?job=${encodeURIComponent(id)}`} className="rounded-[5px] hover:opacity-80">
                   <Badge tone={REVIEW_TONE[d.review.status] ?? "neutral"}>
@@ -590,9 +594,14 @@ export function WorkspaceClient({ id }: { id: string }) {
           <div className="rounded-lg border border-border bg-surface p-4">
             <div className="mb-2 flex items-center justify-between">
               <Eyebrow>{t("ws.errorChart")}</Eyebrow>
-              {lastIterErr != null ? <Mm value={counting ?? lastIterErr} size="sm" /> : null}
+              {lastIterErr != null ? (
+                <span className="inline-flex items-baseline gap-1.5">
+                  {keptIter != null ? <span className="text-[11px] text-subtle">kept #{keptIter}</span> : null}
+                  <Mm value={counting ?? lastIterErr} size="sm" />
+                </span>
+              ) : null}
             </div>
-            <ConvergenceChart data={s.convergence} threshold={threshold} />
+            <ConvergenceChart data={s.convergence} threshold={threshold} keptIter={keptIter} />
             <ProgressLines lines={s.progress} className="mt-3 border-t border-border pt-3" />
           </div>
           {d.judge ? <JudgeScorecard judge={d.judge} /> : null}

@@ -4,7 +4,6 @@ import { AlertTriangle, PlugZap, RotateCw } from "lucide-react";
 import { ApiError, ApiSchemaError, isOffline } from "@/lib/api";
 import { cn } from "@/lib/utils";
 import { Button } from "./button";
-import { Kbd } from "./kbd";
 
 /** Renders an API failure honestly: offline backend, HTTP error with its code, or a contract mismatch. Never fake data. */
 export function ErrorState({
@@ -28,8 +27,7 @@ export function ErrorState({
     title = "The PartSmith API is offline";
     body = (
       <>
-        Start the backend with <Kbd className="h-auto px-1.5 py-0.5 text-[12px]">make dev</Kbd> and this page fills in. Nothing
-        here is shown from cached or invented data.
+        The server is not answering right now; try again in a minute. Nothing here is shown from cached or invented data.
       </>
     );
   } else if (error instanceof ApiError) {

@@ -6,7 +6,10 @@
  *    each compared with the Hausdorff limit the server sent on the `hausdorff_mm` metric;
  *  - the knobs the agent changed (`iteration.edits`, else that round's committed `set_params` call);
  *  - the verdict: the round's verify stage label ("Verified" / "best effort" / "failed"), written by code;
- *  - the overlays: `residual_heatmap` artifacts tagged with that round.
+ *  - the overlays: `residual_heatmap` artifacts tagged with that round;
+ *  - which round was kept: the one whose trace context (`ctx`) the `done` event carries — the orchestrator packages and
+ *    ships that round, which is not always the last one (a later, worse attempt is discarded). Fallback: the round whose
+ *    max error equals the `done` summary's, then the last round.
  * Nothing is computed that the server did not already decide. Pure, so `node --test` can load it directly.
  */
 import type { JobEvent } from "./api-types";
@@ -28,6 +31,8 @@ export type RoundOverlay = { view: string; url: string; label: string };
 export type FixRound = {
   iter: number;
   seq: number;
+  /** Trace context of the round's `iteration` event ("" on old runs). */
+  ctx: string;
   strategy: "template" | "free_code" | "human" | null;
   maxErrorMm: number | null;
   hausdorffMm: number | null;
@@ -50,6 +55,8 @@ export type RoundsSummary = {
   rounds: FixRound[];
   /** Final status from the `done` event; null while the job runs. */
   final: { status: string; verified: boolean } | null;
+  /** The round the job shipped (its verdict and files); null while the job runs or when nothing was built. */
+  keptIter: number | null;
   limitMm: number | null;
   /** Plain-words line: "Passed on the first build", "Verified after 5 rounds", "Best effort after 6 rounds", … */
   headline: string;
@@ -103,6 +110,8 @@ export function roundsFromEvents(events: readonly JobEvent[]): RoundsSummary {
   const metricMax = new Map<number, number>();
   let limitMm: number | null = null;
   let final: RoundsSummary["final"] = null;
+  let doneCtx = "";
+  let doneMaxMm: number | null = null;
   // tool results to attach to the latest round that exists when they arrive
   let latest: FixRound | null = null;
   // Overlays arrive before their round's iteration event (the orchestrator emits them first).
@@ -122,6 +131,7 @@ export function roundsFromEvents(events: readonly JobEvent[]): RoundsSummary {
         const r: FixRound = {
           iter: e.iter,
           seq: e.seq,
+          ctx: e.ctx,
           strategy: e.strategy,
           maxErrorMm: null,
           hausdorffMm: e.hausdorff_mm ?? null,
@@ -164,6 +174,8 @@ export function roundsFromEvents(events: readonly JobEvent[]): RoundsSummary {
         break;
       case "done":
         final = { status: e.status, verified: e.verified };
+        doneCtx = e.ctx;
+        doneMaxMm = num(e.summary.max_error_mm);
         break;
     }
   }
@@ -179,14 +191,37 @@ export function roundsFromEvents(events: readonly JobEvent[]): RoundsSummary {
     r.views = r.views.map((x) => ({ ...x, withinLimit: limitMm != null && x.hausdorffMm != null ? x.hausdorffMm <= limitMm : null }));
   }
 
-  return { rounds, final, limitMm, headline: headline(rounds, final) };
+  const keptIter = final ? keptRound(rounds, doneCtx, doneMaxMm) : null;
+  return { rounds, final, keptIter, limitMm, headline: headline(rounds, final, keptIter) };
 }
 
-export function headline(rounds: FixRound[], final: RoundsSummary["final"]): string {
+/** The round the finished job shipped: matched by the `done` event's trace context, else by its max error, else the last. */
+export function keptRound(rounds: readonly FixRound[], doneCtx: string, doneMaxMm: number | null): number | null {
+  if (rounds.length === 0) return null;
+  const byCtx = doneCtx ? rounds.filter((r) => r.ctx === doneCtx) : [];
+  if (byCtx.length === 1) return byCtx[0]!.iter;
+  const pool = byCtx.length ? byCtx : rounds;
+  if (doneMaxMm != null) {
+    const byErr = pool.filter((r) => r.maxErrorMm != null && Math.abs(r.maxErrorMm - doneMaxMm) < 1e-6);
+    if (byErr.length) return byErr.at(-1)!.iter;
+  }
+  return pool.at(-1)!.iter;
+}
+
+export function headline(rounds: FixRound[], final: RoundsSummary["final"], keptIter: number | null = null): string {
   const n = rounds.length;
   if (n === 0) return final ? "No model was built." : "No build yet.";
   const rs = n === 1 ? "1 round" : `${n} rounds`;
   if (!final) return `${rs} so far`;
+  const last = rounds.at(-1)!.iter;
+  const later = keptIter != null && keptIter !== last ? rounds.filter((r) => r.iter > keptIter).length : 0;
+  if (later) {
+    const kept = rounds.find((r) => r.iter === keptIter)!;
+    const name = kept.firstBuild && kept.iter === 1 ? "the first build" : `round ${kept.iter}`;
+    const tries = `${later} later ${later === 1 ? "try" : "tries"} discarded`;
+    if (final.verified) return `Verified on ${name}; ${tries}`;
+    if (final.status === "best_effort") return `Best effort: kept ${name} of ${n}; ${tries}`;
+  }
   if (final.verified) return n === 1 ? "Passed on the first build" : `Verified after ${rs} (${n - 1} fix${n - 1 === 1 ? "" : "es"})`;
   if (final.status === "best_effort") return `Best effort after ${rs}`;
   if (final.status === "failed") return `Failed after ${rs}`;

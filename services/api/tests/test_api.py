@@ -742,6 +742,8 @@ def test_mcp_over_http(fake: FakeService) -> None:
                 "clientInfo": {"name": "test", "version": "0"},
             },
         }
+        browser = c.get("/mcp", headers={"Accept": "text/html"})  # a person opening the URL gets a hint, at once
+        assert browser.status_code == 200 and "claude mcp add" in browser.json()["connect"]
         r = c.post("/mcp", json=init, headers=headers)
         assert r.status_code == 200, r.text
         assert r.json()["result"]["serverInfo"]["name"] == "partsmith"

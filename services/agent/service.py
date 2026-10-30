@@ -166,6 +166,7 @@ def start_review_job(
     pins: Sequence[Pin],
     note: str,
     *,
+    attachments: Sequence[str] = (),
     sync: bool = False,
     on_created: Callable[[Job], None] | None = None,
 ) -> Job:
@@ -194,7 +195,9 @@ def start_review_job(
     state = parent.read_json("state.json") or {}
     mat_id = (state.get("calibration") or {}).get("mat_id")
     opts = RunOptions(
-        review=ReviewRound(parent.id, int(round), list(pins), note, parent_dir=parent.dir),
+        review=ReviewRound(
+            parent.id, int(round), list(pins), note, parent_dir=parent.dir, attachments=list(attachments)
+        ),
         mat_id=str(mat_id) if mat_id else None,
         answers=dict(REVIEW_ANSWERS),
         question_timeout_s=SYNC_QUESTION_TIMEOUT_S if sync else ASYNC_QUESTION_TIMEOUT_S,
@@ -280,7 +283,8 @@ def start_demo_job(
 ) -> Job:
     """Run a bundled synthetic sample (labelled synthetic everywhere)."""
     sample = load_sample(find_sample(sample_id))
-    title = f"{sample.meta.get('title') or sample.id} (synthetic sample)"
+    base = str(sample.meta.get("title") or sample.id)
+    title = base if "synthetic" in base.lower() else f"{base} (synthetic sample)"  # say "synthetic" once
     opts = options
     if opts is None and sample.meta.get("mat_id"):
         opts = RunOptions(

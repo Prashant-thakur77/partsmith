@@ -8,7 +8,7 @@ import { Container, PageHeader } from "@/components/layout/page";
 import { Button } from "@/components/ui/button";
 import { EmptyState } from "@/components/ui/empty-state";
 import { ErrorState } from "@/components/ui/error-state";
-import { ModeBadge, OriginBadge } from "@/components/ui/provenance";
+import { ModeBadge, OriginBadge, RunBadge } from "@/components/ui/provenance";
 import { Skeleton } from "@/components/ui/skeleton";
 import { api } from "@/lib/api";
 import { fmtUsd, timeAgo, splitTitle } from "@/lib/format";
@@ -70,9 +70,8 @@ export function JobsClient() {
                     </div>
                   </div>
                   <div className="hidden flex-wrap items-center justify-end gap-1.5 sm:flex">
-                    <OriginBadge origin={j.origin} hideReal />
-                    {j.is_replay ? <OriginBadge origin="replay" /> : null}
-                    <ModeBadge mode={j.provider_mode} hideLive />
+                    {j.origin !== "replay" ? <OriginBadge origin={j.origin} hideReal /> : null}
+                    {j.is_replay || j.origin === "replay" ? <RunBadge mode={j.provider_mode} recorded /> : <ModeBadge mode={j.provider_mode} hideLive />}
                     <JobStatusBadge job={j} />
                   </div>
                   <div className="sm:hidden">

@@ -64,6 +64,7 @@ def test_reads_are_public_and_listed_in_openapi(client: TestClient, svc: Svc, mo
         "rectified",
         "overlay",
         "focus",
+        "worst",
     }
     focus = d["images"]["focus"]
     if focus is not None:  # the part's box on the photo, as fractions, for the page's zoom
@@ -147,3 +148,52 @@ def test_error_codes(client: TestClient, svc: Svc) -> None:
         client.post(f"/api/v1/review/{a.id}", json={**EMPTY, "action": "reject", "reason": "wrong"}).status_code == 200
     )
     _err(client.post(f"/api/v1/review/{a.id}", json={**EMPTY, "action": "accept"}), 409, "review_decided")
+
+
+def _png(w: int = 320, h: int = 240) -> bytes:
+    import io
+
+    from PIL import Image
+
+    buf = io.BytesIO()
+    Image.new("RGB", (w, h), (200, 120, 40)).save(buf, format="PNG")
+    return buf.getvalue()
+
+
+def test_a_pasted_screenshot_goes_with_an_improve(client: TestClient, svc: Svc) -> None:
+    a = finish(svc.new_job(), "best_effort")
+    up = client.post(f"/api/v1/review/{a.id}/attachments", files={"image": ("paste.png", _png(), "image/png")})
+    assert up.status_code == 200, up.text
+    key = up.json()["key"]
+    assert up.json()["url"].endswith(key)
+    _err(
+        client.post(f"/api/v1/review/{a.id}/attachments", files={"image": ("x.txt", b"not an image", "text/plain")}),
+        422,
+        "bad_image",
+    )
+    _err(
+        client.post(f"/api/v1/review/{a.id}", json={**EMPTY, "action": "improve", "attachments": ["nope.png"]}),
+        422,
+        "validation_error",
+    )
+    # an image alone is enough to send a part back
+    r = client.post(f"/api/v1/review/{a.id}", json={**EMPTY, "action": "improve", "attachments": [key]})
+    assert r.status_code == 200, r.text
+    assert svc.attachments[-1] == [key]
+    (rnd, _) = r.json()["state"]["rounds"]
+    assert len(rnd["attachments"]) == 1 and rnd["attachments"][0].endswith(key)
+
+
+def test_the_feedback_log_is_public_and_keeps_the_why(client: TestClient, svc: Svc) -> None:
+    a = finish(svc.new_job(), "best_effort")
+    r = client.post(
+        f"/api/v1/review/{a.id}",
+        json={**EMPTY, "action": "reject", "reason": "wrong part", "why": "a clip, not a cover"},
+    )
+    assert r.status_code == 200, r.text
+    log = client.get("/api/v1/review/feedback").json()  # not taken for a job id
+    (e,) = log["items"]
+    assert (e["kind"], e["what"], e["why"], e["outcome"]) == ("reject", "wrong part", "a clip, not a cover", "rejected")
+    assert log["counts"] == {"rejected": 1} and log["families"] == ["spacer"]
+    assert client.get("/api/v1/review/feedback", params={"outcome": "fixed"}).json()["items"] == []
+    assert client.get("/api/v1/review/feedback", params={"outcome": "nonsense"}).status_code == 422

@@ -120,11 +120,11 @@ export function PhotoSlot({
           }}
           className={cn(
             "m-3 flex rounded-md border border-dashed border-border-strong px-4 transition-colors",
-            compact ? "flex-col gap-3 py-3 sm:flex-row sm:items-center sm:justify-between sm:text-left" : "flex-col items-center gap-3 py-7 text-center",
+            compact ? "flex-col gap-3 py-3 sm:flex-row sm:items-center sm:justify-between sm:text-left" : "min-h-[240px] flex-col items-center justify-center gap-3 py-10 text-center",
             drag && "border-accent bg-accent-soft",
           )}
         >
-          {busy ? <Spinner /> : compact ? null : <ImagePlus className="size-6 text-subtle" aria-hidden />}
+          {busy ? <Spinner /> : compact ? null : <ImagePlus className="size-8 text-subtle" aria-hidden />}
           <p className={cn("text-[12.5px] leading-5 text-muted", compact ? "max-w-md" : "max-w-xs")}>{hint}</p>
           <div className="flex flex-wrap justify-center gap-2">
             <Button size="sm" variant="solid" onClick={() => camRef.current?.click()} className="sm:hidden" aria-label={`Take photo: ${title.toLowerCase()}`}>

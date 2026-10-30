@@ -3,7 +3,7 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import test from "node:test";
 import { EventSchema } from "../src/lib/api-types.ts";
-import { editsText, headline, parseViews, roundsFromEvents, verdictFromLabel } from "../src/lib/fix-rounds.ts";
+import { editsText, headline, keptRound, parseViews, roundsFromEvents, verdictFromLabel } from "../src/lib/fix-rounds.ts";
 
 const REPLAYS = new URL("../../../data/replays/", import.meta.url);
 // replays are found by their demo sample (data/replays/seed_index.json), so a re-seed with new job ids keeps working
@@ -34,6 +34,7 @@ test("the L-bracket replay shows four failing rounds and a verified fifth, all f
   assert.equal(s.final?.verified, true);
   assert.equal(s.limitMm, 0.5);
   assert.equal(s.headline, "Verified after 5 rounds (4 fixes)");
+  assert.equal(s.keptIter, 5);
   const [r1, r2, , , r5] = s.rounds;
   assert.equal(r1.firstBuild, true);
   assert.equal(editsText(r1), "first build");
@@ -63,8 +64,31 @@ test("a best-effort job keeps its final status honest", () => {
   const s = roundsFromEvents(replayEvents(replayOf("demo-hook")));
   assert.equal(s.rounds.length, 6);
   assert.equal(s.final?.status, "best_effort");
-  assert.equal(s.headline, "Best effort after 6 rounds");
+  // the shipped round is the one the done event names; later attempts are called discarded, never "final"
+  assert.ok(s.rounds.some((r) => r.iter === s.keptIter));
+  const later = s.rounds.filter((r) => r.iter > s.keptIter).length;
+  assert.equal(s.headline, later ? `Best effort: kept round ${s.keptIter} of 6; ${later} later ${later === 1 ? "try" : "tries"} discarded` : "Best effort after 6 rounds");
   assert.ok(s.rounds.every((r) => r.verdict !== "verified"));
+});
+
+test("a verified round followed by a worse try: the verified round is kept, the later one is discarded", () => {
+  const events = [
+    ev("stage", 1, { ctx: "a", stage: "verify", status: "ok", label: "Verified: top: IoU 0.988, Hausdorff 0.38 mm", iter: 1 }),
+    ev("iteration", 2, { ctx: "a", iter: 1, strategy: "template", edits: [], hausdorff_mm: 0.38, iou: 0.97, passed_tests: 24, total_tests: 24 }),
+    ev("metric", 3, { ctx: "a", iter: 1, name: "max_error_mm", value: 0.38, unit: "mm" }),
+    ev("stage", 4, { ctx: "b", stage: "verify", status: "ok", label: "best effort: top: IoU 0.930, Hausdorff 3.02 mm", iter: 2 }),
+    ev("iteration", 5, { ctx: "b", iter: 2, strategy: "template", edits: [{ param: "knuckle_count", from: 2, to: 3 }], hausdorff_mm: 3.71 }),
+    ev("metric", 6, { ctx: "b", iter: 2, name: "max_error_mm", value: 3.71, unit: "mm" }),
+    ev("done", 7, { ctx: "a", verified: true, status: "verified", summary: { max_error_mm: 0.38 } }),
+  ];
+  const s = roundsFromEvents(events);
+  assert.equal(s.keptIter, 1);
+  assert.equal(s.headline, "Verified on the first build; 1 later try discarded");
+  // without trace contexts the done summary's max error still finds it
+  const noCtx = roundsFromEvents(events.map((e) => ({ ...e, ctx: "" })));
+  assert.equal(noCtx.keptIter, 1);
+  // and with neither, the last round is assumed (the old behaviour)
+  assert.equal(keptRound(s.rounds, "", null), 2);
 });
 
 test("verdicts come only from the verify stage label prefix; anything else is unknown", () => {

@@ -6,12 +6,29 @@ const COLS = [
     title: "Product",
     links: [
       { href: "/fix", label: "Fix a part" },
-      { href: "/parts", label: "Registry" },
-      { href: "/mat", label: "Screen mat" },
+      { href: "/parts", label: "Parts" },
+      { href: "/requests", label: "Request a part" },
+      { href: "/jobs/demo", label: "Try a sample" },
       { href: "/calibrate", label: "Calibrate screen" },
-      { href: "/jobs", label: "Recent jobs" },
-      { href: "/requests", label: "Part requests" },
+      { href: "/mat", label: "Screen mat" },
+    ],
+  },
+  {
+    title: "Proof",
+    links: [
+      { href: "/how", label: "How it works" },
+      { href: "/results", label: "Accuracy" },
+      { href: "/models", label: "Which AI did what" },
+      { href: "/lessons", label: "What it learned" },
+      { href: "/judges", label: "Judge path" },
+    ],
+  },
+  {
+    title: "Labs",
+    links: [
+      { href: "/factory", label: "Make a part family" },
       { href: "/shop", label: "Repair shops" },
+      { href: "/jobs", label: "All jobs" },
     ],
   },
   {
@@ -23,23 +40,13 @@ const COLS = [
       { href: "/api/v1/openapi.json", label: "OpenAPI" },
     ],
   },
-  {
-    title: "Proof",
-    links: [
-      { href: "/results", label: "Results" },
-      { href: "/models", label: "Models" },
-      { href: "/judges", label: "Judge path" },
-      { href: "/factory", label: "Factory" },
-      { href: "/lessons", label: "Lessons" },
-    ],
-  },
 ] as const;
 
 export function SiteFooter() {
   return (
     <footer className="mt-24 border-t border-border bg-surface">
-      <div className="mx-auto grid max-w-[1200px] gap-10 px-4 py-12 sm:px-6 md:grid-cols-[1.4fr_repeat(3,1fr)]">
-        <div className="space-y-3">
+      <div className="mx-auto grid max-w-[1200px] gap-10 px-4 py-12 sm:px-6 grid-cols-2 md:grid-cols-[1.4fr_repeat(4,1fr)]">
+        <div className="col-span-2 space-y-3 md:col-span-1">
           <Logo />
           <p className="max-w-xs text-[13px] leading-5 text-muted">
             Photos of a broken plastic part in, a measured and verified parametric replacement out. The model proposes; code

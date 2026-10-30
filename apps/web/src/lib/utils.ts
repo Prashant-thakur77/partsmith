@@ -1,5 +1,11 @@
 import { clsx, type ClassValue } from "clsx";
-import { twMerge } from "tailwind-merge";
+import { extendTailwindMerge } from "tailwind-merge";
+
+/**
+ * `bg-hatch` is our own background-image utility (globals.css). Without this, tailwind-merge reads it as a background
+ * colour and drops the real one next to it (`bg-surface-2 bg-hatch` became see-through).
+ */
+const twMerge = extendTailwindMerge({ extend: { classGroups: { "bg-image": ["bg-hatch"] } } });
 
 export function cn(...inputs: ClassValue[]): string {
   return twMerge(clsx(inputs));

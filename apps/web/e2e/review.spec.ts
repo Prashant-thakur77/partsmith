@@ -17,6 +17,7 @@ async function photoBox(page: Page) {
   const img = page.getByRole("img", { name: /Rectified top photo/ });
   await expect(img).toBeVisible();
   await expect.poll(() => img.evaluate((el: HTMLImageElement) => el.complete && el.naturalWidth > 0)).toBe(true);
+  await img.evaluate((el) => el.scrollIntoView({ block: "center" })); // clear of the decision bar pinned to the bottom
   let last = "";
   await expect
     .poll(async () => {
@@ -80,8 +81,6 @@ test.describe("functional", () => {
     await setup(page);
     const posts = decisions(page);
     await page.goto("/review");
-    const improve = page.getByRole("button", { name: "Improve" });
-    await expect(improve).toBeDisabled();
     const b = await photoBox(page);
     await page.mouse.click(b.x + b.width * 0.25, b.y + b.height * 0.5);
     await expect(page.getByRole("button", { name: /^Pin 1/ })).toBeVisible();
@@ -118,7 +117,7 @@ test.describe("functional", () => {
     await expect(page.getByRole("button", { name: /^Pin 1/ })).toHaveCount(0);
     await page.getByRole("heading", { level: 1 }).click();
     await page.keyboard.press("i");
-    await expect(page.getByRole("alert").filter({ hasText: "Add a pin on the photo or a note first." })).toBeVisible();
+    await expect(page.getByRole("alert").filter({ hasText: "Add a pin on the photo, a note or a screenshot first." })).toBeVisible();
     expect(posts).toHaveLength(0);
   });
 
@@ -199,6 +198,56 @@ test.describe("functional", () => {
     await expect(page.getByText("Review is not available on this server yet")).toBeVisible();
   });
 
+  test("the photo and the 3D model sit side by side, with the files and the measurement check", async ({ page }) => {
+    await asAdmin(page);
+    await setup(page);
+    await page.goto("/review?job=job_demo_1");
+    await expect(page.getByRole("region", { name: "Should look like" }).getByRole("img", { name: /Rectified top photo/ })).toBeVisible();
+    await expect(page.getByRole("region", { name: "Agent made" })).toBeVisible();
+    await expect(page.getByRole("button", { name: "Export" })).toBeVisible();
+    await expect(page.getByRole("region", { name: "Measurements" })).toContainText("code decides");
+    await page.getByText("More views: slide between photo and model").click();
+    await expect(page.getByRole("region", { name: "Your decision" })).toBeVisible();
+  });
+
+  test("a part that does not pass yet: the gap is circled and Improve leads", async ({ page }) => {
+    await asAdmin(page);
+    await setup(page);
+    await page.goto("/review?job=job_rev_2");
+    await expect(page.getByRole("region", { name: "Should look like" })).toContainText("biggest gap 0.62 mm");
+    const bar = page.getByRole("region", { name: "Your decision" });
+    await expect(bar.getByRole("button", { name: /Accept anyway/ })).toBeVisible();
+    await page.goto("/review?job=job_demo_1"); // verified: a plain Accept
+    await expect(page.getByRole("region", { name: "Your decision" }).getByRole("button", { name: /^Accept A$/ })).toBeVisible();
+  });
+
+  test("a pasted screenshot is uploaded and sent with Improve", async ({ page }) => {
+    await asAdmin(page);
+    await setup(page);
+    const posts = decisions(page);
+    await page.goto("/review?job=job_demo_1");
+    const note = page.getByLabel("Note for the builder");
+    await note.click();
+    // a clipboard paste carrying a PNG, as the browser hands over a screenshot
+    await note.evaluate(async (el) => {
+      const c = document.createElement("canvas");
+      c.width = c.height = 240;
+      const blob = await new Promise<Blob>((ok) => c.toBlob((b) => ok(b!), "image/png"));
+      const dt = new DataTransfer();
+      dt.items.add(new File([blob], "screenshot.png", { type: "image/png" }));
+      el.dispatchEvent(new ClipboardEvent("paste", { clipboardData: dt, bubbles: true, cancelable: true }));
+    });
+    await expect(page.getByRole("img", { name: "Attached picture 1" })).toBeVisible();
+    await expect(page.getByRole("button", { name: "Remove attached picture 1" })).toBeVisible();
+    await page.getByRole("heading", { level: 1 }).click();
+    await page.keyboard.press("i");
+    await expect.poll(() => posts.length).toBe(1);
+    const body = posts[0] as { action: string; attachments: string[]; pins: unknown[] };
+    expect(body.action).toBe("improve");
+    expect(body.pins).toHaveLength(0);
+    expect(body.attachments).toEqual(["att_1.png"]);
+  });
+
   test("job page shows the scorecard and a review badge that links to the review", async ({ page }) => {
     await setup(page);
     await page.goto("/jobs/job_demo_1");
@@ -211,5 +260,33 @@ test.describe("functional", () => {
     await setup(page);
     await page.goto("/lessons");
     await expect(page.getByText("Used in 3 jobs · later reviews: 2 accepted, 1 sent back, 0 rejected")).toBeVisible();
+  });
+});
+
+test.describe("feedback log", () => {
+  test.beforeEach(({}, info) => {
+    test.skip(!functional(info.project.name), "functional flows run once");
+  });
+
+  test("each piece of feedback shows what, why and what the next round measured", async ({ page }) => {
+    await setup(page);
+    await page.goto("/review");
+    await page.getByRole("link", { name: "Feedback log" }).click();
+    await expect(page).toHaveURL(/\/review\/log$/);
+    const list = page.getByRole("list", { name: "Feedback, newest first" });
+    const first = list.getByRole("listitem").first();
+    await expect(first).toContainText("“this corner was square”");
+    await expect(first).toContainText("“the latch has to sit flush against the door frame”");
+    await expect(first).toContainText("gap 0.84 → 0.21 mm");
+    await expect(first).toContainText("fixed");
+    await expect(first).toContainText("Given to 2 later jobs · their reviews: 1 accepted, 1 sent back, 0 rejected");
+    await expect(first.getByRole("img", { name: "Close-up of pin 1 on the photo" })).toBeVisible();
+    const second = list.getByRole("listitem").nth(1);
+    await expect(second).toContainText("test review, not a person");
+    await expect(second).toContainText("no reason given");
+    await expect(page.getByText("2 pieces of feedback · 1 fixed · 1 rejected")).toBeVisible();
+    await page.getByLabel("Result").selectOption("fixed");
+    await expect(page).toHaveURL(/outcome=fixed/);
+    await expect(list.getByRole("listitem")).toHaveCount(1);
   });
 });

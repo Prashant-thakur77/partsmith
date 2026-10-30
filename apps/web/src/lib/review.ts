@@ -141,11 +141,15 @@ export type DecisionDraft = {
   reason: string;
   rules?: readonly { text: string; keep: boolean; source_pin: number | null }[];
   publish?: boolean;
+  /** Uploaded attachment keys (pasted screenshots). */
+  attachments?: readonly string[];
+  /** Why it matters (optional, any action). */
+  why?: string;
 };
 
 /** Why a decision cannot be sent yet (null when it can). Improve needs a pin or a note; reject needs a reason. */
-export function blocker(action: ReviewAction, d: Pick<DecisionDraft, "pins" | "note" | "reason">): string | null {
-  if (action === "improve" && d.pins.length === 0 && !d.note.trim()) return "Add a pin on the photo or a note first.";
+export function blocker(action: ReviewAction, d: Pick<DecisionDraft, "pins" | "note" | "reason" | "attachments">): string | null {
+  if (action === "improve" && d.pins.length === 0 && !d.note.trim() && !d.attachments?.length) return "Add a pin on the photo, a note or a screenshot first.";
   if (action === "reject" && !d.reason.trim()) return "Write a short reason.";
   return null;
 }
@@ -159,6 +163,8 @@ export function decisionBody(action: ReviewAction, d: DecisionDraft): DecisionBo
     reason: action === "reject" ? d.reason.trim() : "",
     rules: action === "accept" ? (d.rules ?? []).filter((r) => r.text.trim()).map((r) => ({ text: r.text.trim(), keep: r.keep, source_pin: r.source_pin })) : [],
     publish: action === "accept" ? !!d.publish : false,
+    attachments: action === "improve" ? [...(d.attachments ?? [])] : [],
+    why: (d.why ?? "").trim(),
   };
 }
 
@@ -189,4 +195,36 @@ export function trackText(t: LessonTrack | null | undefined): string | null {
   const reviewed = t.accepted + t.improved + t.rejected;
   if (!reviewed) return `${used} · no reviews of those jobs yet`;
   return `${used} · later reviews: ${t.accepted} accepted, ${t.improved} sent back, ${t.rejected} rejected`;
+}
+
+// ── feedback log ──────────────────────────────────────────────────────────────
+export const OUTCOME_LABEL: Record<string, string> = {
+  fixed: "fixed",
+  better: "better, not fixed",
+  not_fixed: "not fixed",
+  waiting: "next round running",
+  not_measured: "not measured",
+  rejected: "rejected",
+  accepted: "accepted",
+};
+
+export function outcomeTone(o: string): "ok" | "warn" | "bad" | "info" | "neutral" {
+  return o === "fixed" || o === "accepted" ? "ok" : o === "better" ? "warn" : o === "not_fixed" ? "bad" : o === "waiting" ? "info" : "neutral";
+}
+
+export const KIND_LABEL: Record<string, string> = { pin: "Pin on the photo", note: "Note", picture: "Picture", reject: "Rejected", accept: "Accepted" };
+
+/** "12 pieces of feedback · 5 fixed · 2 better · 1 not fixed" from the API's counts, in a fixed order. */
+export function feedbackSummary(counts: Record<string, number>): string {
+  const total = Object.values(counts).reduce((a, b) => a + b, 0);
+  const parts = ["fixed", "better", "not_fixed", "waiting", "rejected", "accepted"].filter((k) => counts[k]).map((k) => `${counts[k]} ${OUTCOME_LABEL[k]}`);
+  return [`${total} piece${total === 1 ? "" : "s"} of feedback`, ...parts].join(" · ");
+}
+
+/** "Given to 2 later jobs · their reviews: 1 accepted, 1 sent back" — whether the lesson held. */
+export function usedText(u: { jobs: number; accepted: number; improved: number; rejected: number }): string | null {
+  if (!u.jobs) return null;
+  const reviewed = u.accepted + u.improved + u.rejected;
+  const head = `Given to ${u.jobs} later job${u.jobs === 1 ? "" : "s"}`;
+  return reviewed ? `${head} · their reviews: ${u.accepted} accepted, ${u.improved} sent back, ${u.rejected} rejected` : `${head} · not reviewed yet`;
 }

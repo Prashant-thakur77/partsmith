@@ -30,10 +30,18 @@ const ORIGIN: Record<DataOrigin, { label: string; tip: string; icon: typeof Rule
   replay: { label: "replay", tip: "A recorded run played back. Nothing is recomputed live.", icon: History },
 };
 
-export function OriginBadge({ origin, hideReal = false }: { origin: DataOrigin; hideReal?: boolean }) {
+/** `plain`: no focusable tooltip (the tip goes in `title`), for use inside a button or link. */
+export function OriginBadge({ origin, hideReal = false, plain = false }: { origin: DataOrigin; hideReal?: boolean; plain?: boolean }) {
   if (hideReal && origin === "real") return null;
   const o = ORIGIN[origin];
   const Icon = o.icon;
+  if (plain)
+    return (
+      <Badge tone={origin === "real" ? "outline" : "mock"} title={o.tip}>
+        <Icon aria-hidden />
+        {o.label}
+      </Badge>
+    );
   return (
     <Tooltip content={o.tip}>
       <Badge tone={origin === "real" ? "outline" : "mock"} tabIndex={0} className="cursor-help">
@@ -62,6 +70,48 @@ export function ModeBadge({ mode, hideLive = false }: { mode: ProviderMode | str
       </Badge>
     </Tooltip>
   );
+}
+
+const MODELS: Record<string, string> = { live: "live models", mock: "mock models", replay: "recorded model answers" };
+
+/**
+ * One chip for where a run's model answers came from, so "REPLAY" never sits next to "LIVE" on the same card:
+ *  - `recorded`: a stored run played back → "Recorded run · live models" / "Recorded run · mock models";
+ *  - `finished` (not recorded): a run that already ended → "live models" (they were live then, not now);
+ *  - otherwise the calls are happening now → the LIVE / MOCK chip.
+ */
+export function RunBadge({
+  mode,
+  recorded = false,
+  finished = false,
+  plain = false,
+}: {
+  mode: ProviderMode | string;
+  recorded?: boolean;
+  finished?: boolean;
+  /** No focusable tooltip (the tip goes in `title`), for use inside a button or link. */
+  plain?: boolean;
+}) {
+  if (!recorded && !finished) return <ModeBadge mode={mode} />;
+  const models = MODELS[mode] ?? `${mode} models`;
+  const tip = recorded
+    ? mode === "live"
+      ? "A run made earlier with real model calls, played back from its log. No model is called now."
+      : mode === "mock"
+        ? "A run made earlier with deterministic mocks (no API key), played back from its log. Not model output."
+        : "A stored run played back from its log. Nothing is recomputed."
+    : mode === "live"
+      ? "This run used real model calls when it ran."
+      : mode === "mock"
+        ? "This run used deterministic mocks (no API key). Not model output."
+        : `This run's provider mode was ${mode}.`;
+  const chip = (
+    <Badge tone={recorded || mode !== "live" ? "mock" : "outline"} {...(plain ? { title: tip } : { tabIndex: 0, className: "cursor-help" })}>
+      {recorded ? <History aria-hidden /> : mode === "live" ? <Sparkles aria-hidden /> : <Bot aria-hidden />}
+      {recorded ? `Recorded run · ${models}` : models}
+    </Badge>
+  );
+  return plain ? chip : <Tooltip content={tip}>{chip}</Tooltip>;
 }
 
 /** Footnote marker for a cited value: hover/focus shows title and quote; the marker links to the source. */

@@ -98,9 +98,9 @@ workspace shows them live. This table's file:line links are generated from the c
 | Meta model | How we run it | Role | Where |
 |---|---|---|---|
 | **SAM 3.1** | Meta Model API | The measuring instrument: text-prompted part masks, point-prompted feature cuts (holes, slots, tapped points) and video tracking of a walk-around clip. Code turns every mask into millimetres | [`services/agent/providers/routing.py:109`](services/agent/providers/routing.py#L109) · [`services/metrology/segment.py:664`](services/metrology/segment.py#L664) · [`services/agent/evidence.py:166`](services/agent/evidence.py#L166) · [`services/agent/evidence.py:239`](services/agent/evidence.py#L239) |
-| **Muse Spark 1.3** | Meta Model API | Understand stage: family, features, broken region, unknowns (strict PartSpec JSON), and the pixel it saw each hole or slot at, which SAM 3.1 then cuts and code measures. Watches and listens to a narrated walk-around clip and points at the features it hears about (frame and pixel), kept only if they land on the part. Turns a reviewer's notes into family rules the person ticks before they are kept, and judges when Glimmer is not deployed | [`services/agent/orchestrator.py:1214`](services/agent/orchestrator.py#L1214) · [`services/review/rules.py:83`](services/review/rules.py#L83) · [`services/agent/evidence.py:57`](services/agent/evidence.py#L57) · [`services/agent/evidence.py:314`](services/agent/evidence.py#L314) |
-| **Muse Spark Open** | open weights (Baseten / Fireworks / Together) | CadQuery builder, and the fix agent that operates PartSmith's own tools (inspect residuals, measure, segment, render, run tests, set knobs) until the verifier agrees | [`services/agent/orchestrator.py:1835`](services/agent/orchestrator.py#L1835) · [`services/agent/agent_loop.py:473`](services/agent/agent_loop.py#L473) |
-| **Muse Glimmer 30B** | open weights (llama.cpp on a Modal GPU) | Independent judge: vetoes plus an advisory 1–5 scorecard (outline, features, printability, fit), shown the photos, the model's silhouettes, a shaded 3D view and crops zoomed on the verifier's worst spots. It can block, never pass | [`services/agent/orchestrator.py:2485`](services/agent/orchestrator.py#L2485) · [`infra/modal/glimmer.py:51`](infra/modal/glimmer.py#L51) |
+| **Muse Spark 1.3** | Meta Model API | Understand stage: family, features, broken region, unknowns (strict PartSpec JSON), and the pixel it saw each hole or slot at, which SAM 3.1 then cuts and code measures. Watches and listens to a narrated walk-around clip and points at the features it hears about (frame and pixel), kept only if they land on the part. Turns a reviewer's notes into family rules the person ticks before they are kept, and judges when Glimmer is not deployed | [`services/agent/orchestrator.py:1217`](services/agent/orchestrator.py#L1217) · [`services/review/rules.py:83`](services/review/rules.py#L83) · [`services/agent/evidence.py:57`](services/agent/evidence.py#L57) · [`services/agent/evidence.py:314`](services/agent/evidence.py#L314) |
+| **Muse Spark Open** | open weights (Baseten / Fireworks / Together) | CadQuery builder, and the fix agent that operates PartSmith's own tools (inspect residuals, measure, segment, render, run tests, set knobs) until the verifier agrees | [`services/agent/orchestrator.py:1869`](services/agent/orchestrator.py#L1869) · [`services/agent/agent_loop.py:473`](services/agent/agent_loop.py#L473) |
+| **Muse Glimmer 30B** | open weights (llama.cpp on a Modal GPU) | Independent judge: vetoes plus an advisory 1–5 scorecard (outline, features, printability, fit), shown the photos, the model's silhouettes, a shaded 3D view and crops zoomed on the verifier's worst spots. It can block, never pass | [`services/agent/orchestrator.py:2519`](services/agent/orchestrator.py#L2519) · [`infra/modal/glimmer.py:51`](infra/modal/glimmer.py#L51) |
 | **Muse Wonder** | Meta Model API | Finds a published spec for the named appliance with web search. Code accepts a value only if a search really ran and its URL is one the search returned; cited values fill unknowns and never override a measurement. Also finds the original part's price with search grounding for the buy-or-print card (a price is kept only with its source link and a quote showing it) and plans part families for the factory | [`services/agent/evidence.py:398`](services/agent/evidence.py#L398) · [`services/agent/providers/buy.py:294`](services/agent/providers/buy.py#L294) · [`services/agent/providers/spec.py:140`](services/agent/providers/spec.py#L140) · [`services/registry/steer.py:545`](services/registry/steer.py#L545) |
 | **Muse Image** | Meta Model API | Completes the broken region of the photo (accepted only if markers and the intact part are unchanged), an in-place repair preview and an install card (both labelled AI images) | [`services/agent/evidence.py:569`](services/agent/evidence.py#L569) · [`services/metrology/recon_gate.py:205`](services/metrology/recon_gate.py#L205) · [`services/media/preview.py:78`](services/media/preview.py#L78) |
 | **Muse Voice Transcribe** | Meta Model API | Hindi/English voice edits ("make the hole a bit bigger") mapped to knob changes, live while you talk (realtime stream relayed by the API, knob names as keywords) or from a recorded clip, and spoken answers | [`services/media/voice.py:452`](services/media/voice.py#L452) · [`services/api/voice_live.py:139`](services/api/voice_live.py#L139) |
@@ -179,6 +179,11 @@ numbers, the judge's scorecard, each agent's calls and the cost.
   reading or plan): the fixer gets each note, a photo | model crop with the pin drawn as a numbered ring, and the
   local mismatch code measures at the pin. It comes back as round 2 with each pin's mismatch before → after.
 - **Reject (R)** with a reason, kept as a lesson candidate.
+- **Paste a screenshot** (Ctrl+V) or drop a picture of how the part should look; it goes to the fixer with the notes.
+- **Feedback log** (`/review/log`): every send-back and rejection with what was wrong, *why it matters* (the reviewer's
+  reason), a close-up of the pinned spot and what code measured in the next round (fixed, better, not fixed). A
+  person's feedback measured as fixed, with its reason, is given to later jobs of the same family; each entry shows
+  how later reviews of those jobs went, so a lesson that does not hold is visible.
 - **Memory.** On accept, Muse Spark drafts one general rule per note for the part's family; the reviewer edits and ticks
   them. Only ticked rules reach future builder and fixer prompts for that family, each with the job it came from, and
   `/lessons` shows how later reviews of jobs that used a rule went, so a rule that does not help is visible.
@@ -339,20 +344,20 @@ All code in this repository was written during the hackathon (from Oct 26 2026, 
 are computed from `git log`, so they stay true as the history grows.
 
 <!-- BEGIN:built -->
-**48 commits** between 2026-10-27 05:59 ET and 2026-10-30 03:28 ET; the hackathon started 2026-10-26 12:00 ET. Commits dated before the start: **0**.
+**49 commits** between 2026-10-27 05:59 ET and 2026-10-30 10:27 ET; the hackathon started 2026-10-26 12:00 ET. Commits dated before the start: **0**.
 
 | Area | Files added | Lines added: code and docs | Lines added: data, reports, lockfiles, generated | First commit | Last commit |
 |---|---|---|---|---|---|
-| `services/` (Python backend) | 267 | 53,872 | 0 | 2026-10-27 | 2026-10-30 |
-| `apps/web/` (web app) | 256 | 27,523 | 2,405 | 2026-10-27 | 2026-10-30 |
+| `services/` (Python backend) | 270 | 54,155 | 0 | 2026-10-27 | 2026-10-30 |
+| `apps/web/` (web app) | 256 | 27,566 | 2,405 | 2026-10-27 | 2026-10-30 |
 | `eval/` (benches and reports) | 570 | 5,409 | 82,872 | 2026-10-27 | 2026-10-29 |
 | `packages/` (typed contracts) | 12 | 1,408 | 5,625 | 2026-10-27 | 2026-10-30 |
-| `tools/` (synthetic data, mats, generators) | 32 | 5,171 | 0 | 2026-10-27 | 2026-10-30 |
+| `tools/` (synthetic data, mats, generators) | 32 | 5,174 | 0 | 2026-10-27 | 2026-10-30 |
 | `infra/` (Modal, deploy) | 12 | 1,014 | 86 | 2026-10-27 | 2026-10-29 |
-| `docs/` | 18 | 1,900 | 7 | 2026-10-27 | 2026-10-30 |
-| `data/` (samples, replays) | 4,180 | 0 | 639,015 | 2026-10-27 | 2026-10-29 |
-| root files | 15 | 1,348 | 8,271 | 2026-10-27 | 2026-10-30 |
-| **Total** | **5,362** | **97,645** | **738,281** | | |
+| `docs/` | 18 | 1,941 | 7 | 2026-10-27 | 2026-10-30 |
+| `data/` (samples, replays) | 4,293 | 0 | 656,495 | 2026-10-27 | 2026-10-30 |
+| root files | 15 | 1,364 | 8,271 | 2026-10-27 | 2026-10-30 |
+| **Total** | **5,478** | **98,031** | **755,761** | | |
 
 <details><summary>Every commit since the start, oldest first</summary>
 
@@ -406,6 +411,7 @@ are computed from `git log`, so they stay true as the history grows.
 | 2026-10-29 17:03 ET | `77d821a` | feat(web): README media from a live run, distinct replay chips; latch corner live rerun |
 | 2026-10-29 17:41 ET | `1cce252` | feat: draft demo video target, strict-JSON bench reports, results and replay fixes |
 | 2026-10-30 03:28 ET | `57ece97` | feat: human review loop with reviewer rounds, judge scorecard and family rules |
+| 2026-10-30 10:27 ET | `d4025df` | feat: judge sees a shaded 3D view, labelled test reviews, recorded review chain |
 
 </details>
 
