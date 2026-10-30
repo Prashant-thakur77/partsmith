@@ -5,6 +5,7 @@
 import { z } from "zod/mini";
 import { adminToken } from "./admin";
 import { API_PREFIX, ApiError, ApiOfflineError, ApiSchemaError } from "./api";
+import { LessonTrackSchema } from "./api-types";
 
 export const R2 = {
   lessons: "/lessons",
@@ -57,6 +58,8 @@ export const LessonSchema = z.object({
   promoted_by: z.nullish(z.string()),
   created_at: z._default(z.number(), 0),
   links: z._default(z.array(LessonLinkSchema), []),
+  /** Jobs given this rule and how their reviews went (newer APIs only; absent or malformed reads as null). */
+  track: z.catch(z.nullish(LessonTrackSchema), null),
 });
 export type Lesson = z.output<typeof LessonSchema>;
 const p = (tpl: string, id: string) => tpl.replace("{id}", encodeURIComponent(id));

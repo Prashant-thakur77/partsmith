@@ -71,6 +71,18 @@ class JudgeVeto(Strict):
     severity: Literal["blocking", "minor"]
 
 
+JudgeCriterion = Literal["outline", "features", "printability", "fit"]
+
+
+class JudgeScore(Strict):
+    """One criterion of the judge's scorecard (1 = wrong, 3 = usable with fixes, 5 = matches the photo). Advice
+    only: it is saved next to the verdict (judge.json), never in it, and never sets `verified`."""
+
+    criterion: JudgeCriterion
+    score: int = Field(ge=1, le=5)
+    reason: str = Field("", max_length=200)
+
+
 class Thresholds(Strict):
     hausdorff_mm: float = HAUSDORFF_PASS_MM
     iou: float = IOU_PASS

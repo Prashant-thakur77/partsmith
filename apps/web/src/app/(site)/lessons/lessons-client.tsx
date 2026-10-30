@@ -13,6 +13,7 @@ import { Button } from "@/components/ui/button";
 import { decideLesson, lessons, R2, type Lesson } from "@/lib/api-r2";
 import { useCapabilities } from "@/lib/capabilities";
 import { timeAgo, titleCase } from "@/lib/format";
+import { trackText } from "@/lib/review";
 
 function evidenceFacts(ev: Record<string, unknown>): string[] {
   const skip = new Set(["job_id", "job_ids", "slug", "part_slug", "fit_report_ids"]);
@@ -29,6 +30,7 @@ function LessonCard({ l, admin }: { l: Lesson; admin: boolean }) {
     onSuccess: () => void qc.invalidateQueries({ queryKey: ["lessons"] }),
   });
   const facts = evidenceFacts(l.evidence);
+  const track = trackText(l.track);
   return (
     <li className="space-y-2 rounded-lg border border-border bg-surface p-4">
       <div className="flex flex-wrap items-center gap-1.5">
@@ -39,6 +41,9 @@ function LessonCard({ l, admin }: { l: Lesson; admin: boolean }) {
       </div>
       <p className="text-[14px] leading-6 text-fg">{l.rule}</p>
       {facts.length ? <p className="font-mono text-[11.5px] leading-5 text-muted tnum">{facts.join(" · ")}</p> : null}
+      {track ? (
+        <p className="text-[12px] leading-5 text-muted tnum">{track}</p>
+      ) : null}
       {l.links.length ? (
         <ul className="flex flex-wrap gap-x-3 gap-y-1 text-[12px]" aria-label="Evidence">
           {l.links.map((e) => (

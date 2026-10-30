@@ -177,7 +177,16 @@ def _lesson_links(evidence: dict[str, Any]) -> list[dict[str, str]]:
 
 
 def lessons_out(scope: str | None = None, status: str | None = None) -> list[dict[str, Any]]:
-    return [dict(x, links=_lesson_links(x["evidence"])) for x in get_registry().lessons(scope, status)]
+    """Lessons with evidence links and, per rule, its track record: the jobs it was given to and how the person's
+    later reviews of those jobs went (`track`, counted by code from the review store)."""
+    from services.review.store import lesson_tracks
+
+    tracks = lesson_tracks()
+    empty = {"used_in": 0, "accepted": 0, "improved": 0, "rejected": 0}
+    return [
+        dict(x, links=_lesson_links(x["evidence"]), track=tracks.get(x["id"], empty))
+        for x in get_registry().lessons(scope, status)
+    ]
 
 
 @router.get(

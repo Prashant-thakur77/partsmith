@@ -175,4 +175,13 @@ Seven workstreams in flight: providers, verifier, synth/eval, API/registry, metr
   named the rebuild's commit instead of the runs' (runs now record their commit); the replay trace follows the newest
   stage while playing; the mate-fit card no longer asks the API for jobs without a mating photo (404 noise); the sticky
   nav row is nearly opaque.
-- **Next:** real photos, Modal login and deploy go-ahead from Prashant; the final video with real-world shots.
+- **Human review loop (Oct 30):** every finished job waits on `/review` (photo with the model drawn on it, zoom to the
+  part, verdict, judge scorecard, agents and cost, round history). Accept records a person's sign-off (never `verified`),
+  improve sends pins + notes into a reviewer round (a linked job that starts from the reviewed model; the fixer gets the
+  notes, pin crops with numbered rings and code's local mismatch), reject keeps the reason. The judge now also scores
+  outline / features / printability / fit 1–5 (advice; Spark 1.3 until Glimmer is up). On accept, Muse Spark drafts
+  family rules from the notes and only the ticked ones reach future builder and fixer prompts; `/lessons` shows each
+  rule's later reviews; `/review` shows judge-vs-person agreement and κ. First live reviewer round on the hinge leaf
+  ($0.39): pins 3.20 → 0.05 and 2.85 → 0.25 mm, job 3.68 → 1.15 mm, still best effort. Also removed a duplicated README
+  section.
+- **Next:** real photos, a dozen honest reviews on `/review`, Modal login and deploy go-ahead from Prashant; the final video with real-world shots.

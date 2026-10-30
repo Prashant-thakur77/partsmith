@@ -1,7 +1,8 @@
 """Lessons (PLAN §6.8): after each job, code extracts candidate lessons from what the loop actually measured.
 
 Candidates go into the registry with status "candidate" and are never promoted here: promotion needs a human in the
-Steer queue or a fit check / printed part that confirms it. Only promoted lessons are shown to the builder.
+Steer queue or the review page, or a fit check / printed part that confirms it. Only promoted lessons are shown to the
+builder and the fixer.
 """
 
 from __future__ import annotations
@@ -89,10 +90,16 @@ def record(candidates: Sequence[LessonCandidate], registry: Any) -> list[str]:
     return [registry.add_lesson(c.scope, c.rule, c.evidence) for c in candidates]
 
 
+def promoted_lessons(registry: Any, family: str) -> list[dict[str, str]]:
+    """Promoted lessons for a family (plus global ones) as {"id", "rule"}, newest last, capped for the prompt. The ids
+    let a job record which rules it was given (`lessons_used.json`), so a rule's later reviews can be traced."""
+    rows = registry.lessons(scope=family, status="promoted")
+    return [{"id": str(r["id"]), "rule": str(r["rule"])} for r in rows][-MAX_PROMPT_LESSONS:]
+
+
 def promoted_rules(registry: Any, family: str) -> list[str]:
     """Promoted lessons for a family (plus global ones), newest last, capped for the prompt."""
-    rows = registry.lessons(scope=family, status="promoted")
-    return [str(r["rule"]) for r in rows][-MAX_PROMPT_LESSONS:]
+    return [r["rule"] for r in promoted_lessons(registry, family)]
 
 
 def format_for_prompt(rules: Sequence[str]) -> str:

@@ -86,6 +86,12 @@ outline and photograph it. The app shows pass or fail.
 
 ## 3. Optional
 
+- **Be the reviewer (10–20 min, worth it).** `make dev`, open `/review`. For each job: look at the photo with the model
+  drawn on it. **A** if it is right (tick the rules worth keeping), **I** to click where it is wrong and say what (a
+  reviewer round runs live, roughly $0.05–0.50 each), **R** with a reason if it is hopeless. Your decisions are the
+  only source of the judge-vs-person agreement numbers and of the family rules, so a dozen honest reviews matter more
+  than speed. Notes in plain words are fine ("this corner was square", "hole is for an M3 screw").
+
 - Real 3D prints: order the demo parts' STLs online only if you want to (Robu.in, Makenica, Zbotic, iamrapid, NIT lab). Never
   claim a print that wasn't made.
 - **Deploy (only when you decide to go public: it makes the project public).** Everything is prepared in

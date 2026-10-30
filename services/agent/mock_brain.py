@@ -1137,7 +1137,45 @@ def judge(req: ModelRequest) -> dict[str, Any]:
         vetoes.append(
             {"feature": "slot", "issue": "a slot in the photo is missing from the render", "severity": "blocking"}
         )
-    return {"vetoes": vetoes, "notes": f"rule-based review of openings ({MOCK_TAG})"}
+    return {"vetoes": vetoes, "scores": judge_scores(ctx), "notes": f"rule-based review of openings ({MOCK_TAG})"}
+
+
+def judge_scores(ctx: Mapping[str, Any]) -> list[dict[str, Any]]:
+    """The mock scorecard: rules on what code already measured (labelled mock; a real judge looks at the images)."""
+    hd = ctx.get("hausdorff_mm")
+    if hd is None:
+        outline, why_o = 3, "no outline distance to compare"
+    else:
+        hd = float(hd)
+        outline = 5 if hd <= 0.25 else 4 if hd <= 0.5 else 3 if hd <= 1.0 else 2 if hd <= 2.0 else 1
+        why_o = f"outline within {hd:.2f} mm of the photo"
+    po, mo = int(ctx.get("photo_openings", 0)), int(ctx.get("model_openings", 0))
+    features = 5 if po == mo else 3 if mo > po else 2
+    why_f = f"{mo} opening(s) in the render, {po} in the photo"
+    valid, wall = ctx.get("valid"), ctx.get("min_wall_mm")
+    if valid is False:
+        printability, why_p = 1, "the solid is not valid"
+    elif wall is not None:
+        printability = 5 if float(wall) >= 1.2 else 3 if float(wall) >= 0.8 else 2
+        why_p = f"thinnest wall {float(wall):.2f} mm"
+    else:
+        printability, why_p = 4, "valid solid; wall thickness not measured"
+    rows = (
+        ("outline", outline, why_o),
+        ("features", features, why_f),
+        ("printability", printability, why_p),
+        ("fit", 3, "fit for use cannot be judged from a rule"),
+    )
+    return [{"criterion": c, "score": n, "reason": f"{why} ({MOCK_TAG})"[:200]} for c, n, why in rows]
+
+
+def review_rules(req: ModelRequest) -> dict[str, Any]:
+    """The mock rule writer: the reviewer's note itself, scoped to the family (a real model generalises it)."""
+    ctx = req.mock_context
+    note = " ".join(str(ctx.get("note") or "").split())
+    if not note:
+        return {"rule": "skip"}
+    return {"rule": f"{ctx.get('family') or 'custom'}: {note}"[:160]}
 
 
 def capture_triage(req: ModelRequest) -> dict[str, Any]:
@@ -1170,6 +1208,7 @@ HANDLERS = {
     "build": build,
     "fix": fix,
     "judge": judge,
+    "review_rules": review_rules,
     "capture_triage": capture_triage,
     "variant": variant,
     "mate_points": mate_points,

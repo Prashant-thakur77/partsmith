@@ -20,6 +20,7 @@ import time
 from collections.abc import Callable, Iterator, Mapping, Sequence
 from contextlib import contextmanager
 from dataclasses import dataclass, field
+from pathlib import Path
 from typing import Any, Literal
 
 import cv2
@@ -28,11 +29,13 @@ from partsmith_schemas import (
     ArtifactEvent,
     DoneEvent,
     IterationEvent,
+    JudgeScore,
     JudgeVeto,
     Measured,
     Measurements,
     MetricEvent,
     PartSpec,
+    Pin,
     QuestionEvent,
     Source,
     StageEvent,
@@ -136,11 +139,27 @@ JUDGE_SCHEMA: dict[str, Any] = {
                 "additionalProperties": False,
             },
         },
+        # Bounds are checked by code (`parse_judge_reply`): one out-of-range score is dropped, not the whole reply.
+        "scores": {
+            "type": "array",
+            "items": {
+                "type": "object",
+                "properties": {
+                    "criterion": {"type": "string", "description": "outline | features | printability | fit"},
+                    "score": {"type": "integer", "description": "1 = wrong, 3 = usable with fixes, 5 = matches"},
+                    "reason": {"type": "string"},
+                },
+                "required": ["criterion", "score", "reason"],
+                "additionalProperties": False,
+            },
+        },
         "notes": {"type": "string"},
     },
-    "required": ["vetoes", "notes"],
+    "required": ["vetoes", "scores", "notes"],
     "additionalProperties": False,
 }
+JUDGE_CRITERIA = ("outline", "features", "printability", "fit")
+JUDGE_LETTERS = {"outline": "o", "features": "f", "printability": "p", "fit": "u"}  # u = fit for use
 
 TRIAGE_SCHEMA: dict[str, Any] = {
     "type": "object",
@@ -166,6 +185,18 @@ TRIAGE_PROMPT = (
 
 
 @dataclass
+class ReviewRound:
+    """A reviewer round: the person reviewed `parent_job` and sent it back with pins (normalised points on its
+    rectified top photo, each with a note) and a general note. The job starts from the parent's model."""
+
+    parent_job: str
+    round: int
+    pins: list[Pin] = field(default_factory=list)
+    note: str = ""
+    parent_dir: Path | None = None  # the parent's run directory (read only: a replay's files are never written)
+
+
+@dataclass
 class RunOptions:
     """How one fix job runs. `answers` pre-fill questions by id (non-interactive runs)."""
 
@@ -185,6 +216,61 @@ class RunOptions:
     height_correction: bool = True  # PS-noHeightCorr: False = measure on the mat plane, no parallax correction
     fix_mode: Literal["agent", "pipeline"] = "agent"  # agent = the model operates the tools; pipeline = fixed loop
     points: dict[str, list[dict[str, Any]]] | None = None  # user taps: {"top": [{"x", "y", "kind"?, "id"?}]} (photo px)
+    review: ReviewRound | None = None  # a reviewer round: start from the parent's model, give the fixer the notes
+
+
+@dataclass
+class JudgeResult:
+    """One judge reply as code accepted it: vetoes (they feed the verifier) and the advisory 1–5 scorecard."""
+
+    vetoes: list[JudgeVeto] = field(default_factory=list)
+    scores: list[JudgeScore] = field(default_factory=list)
+    notes: str = ""
+    model: str | None = None
+    mode: str = "mock"
+
+    def score_label(self) -> str:
+        """`scores o4 f3 p5 u4` (outline, features, printability, fit for use), or "" without a scorecard."""
+        by = {s.criterion: s.score for s in self.scores}
+        parts = [f"{JUDGE_LETTERS[c]}{by[c]}" for c in JUDGE_CRITERIA if c in by]
+        return "scores " + " ".join(parts) if parts else ""
+
+    def to_json(self) -> dict[str, Any]:
+        return {
+            "model": self.model,
+            "mode": self.mode,
+            "scores": [s.model_dump(mode="json") for s in self.scores],
+            "vetoes": [v.model_dump(mode="json") for v in self.vetoes],
+            "notes": self.notes,
+        }
+
+
+def parse_judge_reply(data: Mapping[str, Any], *, model: str | None, mode: str) -> JudgeResult:
+    """Code's reading of a judge reply: malformed vetoes, unknown criteria, out-of-range or repeated scores are
+    dropped one by one; a reply without scores (older prompt, replay) is still a valid reply."""
+    vetoes: list[JudgeVeto] = []
+    for raw in data.get("vetoes") or []:
+        try:
+            vetoes.append(JudgeVeto.model_validate(raw))
+        except ValidationError:
+            continue
+    scores: list[JudgeScore] = []
+    seen: set[str] = set()
+    for raw in data.get("scores") or []:
+        if not isinstance(raw, Mapping):
+            continue
+        val = raw.get("score")
+        if isinstance(val, float) and val.is_integer():
+            val = int(val)
+        try:
+            sc = JudgeScore(criterion=raw.get("criterion"), score=val, reason=str(raw.get("reason") or "")[:200])
+        except ValidationError:
+            continue
+        if sc.criterion in seen:
+            continue
+        seen.add(sc.criterion)
+        scores.append(sc)
+    return JudgeResult(vetoes, scores, str(data.get("notes") or "")[:1000], model, mode)
 
 
 class _Finish(Exception):
@@ -294,6 +380,14 @@ def png_bytes(img: np.ndarray[Any, Any]) -> bytes:
     if not ok:
         raise RuntimeError("PNG encode failed")
     return bytes(buf.tobytes())
+
+
+def image_size(data: bytes) -> tuple[int, int] | None:
+    """(width, height) of an encoded image: the PNG header when it is one, else a decode. None when unreadable."""
+    if data[:8] == b"\x89PNG\r\n\x1a\n" and len(data) >= 24:
+        return int.from_bytes(data[16:20], "big"), int.from_bytes(data[20:24], "big")
+    img = cv2.imdecode(np.frombuffer(data, np.uint8), cv2.IMREAD_UNCHANGED)
+    return (int(img.shape[1]), int(img.shape[0])) if img is not None else None
 
 
 def fit_png(png: bytes, max_side: int = MODEL_IMAGE_MAX_PX) -> tuple[bytes, float]:
@@ -582,6 +676,10 @@ class FixRun:
         # The "where it fits" photo: its capture report and the measured mates (+ fits once the verdict is in).
         self.mate_capture: CaptureReport | None = None
         self.mate_result: MateFitResult | None = None
+        # A reviewer round's pins resolved on this job's own photo (review_round.json), and the promoted family rules
+        # this job was given (lessons_used.json).
+        self.review_pins: list[dict[str, Any]] = []
+        self.lessons_used: list[str] = []
 
     # ---- events ------------------------------------------------------------------------------------------------------
     def stage_event(self, stage: StageName, status: str, label: str, ms: int | None = None) -> None:
@@ -658,15 +756,28 @@ class FixRun:
         self.set_ctx()
         self.capture()
         self.measure()
-        self.understand()
-        self.ask()
-        self.plan()
-        self.ask_stated_length()
-        first = self.build_round(self.strategy, iter_label="first build")
-        if first.score == math.inf and self.strategy in ("template", "free_code") and not self.opts.single_shot:
-            self.switch_strategy()  # template → free code, or free code with no solid → the family's template
+        if self.opts.review is not None:
+            first = self.start_from_parent(
+                self.opts.review
+            )  # no understand / ask / plan: the reviewed model is round 1
+        else:
+            self.understand()
+            self.ask()
+            self.plan()
+            self.ask_stated_length()
+            first = self.build_round(self.strategy, iter_label="first build")
+            if first.score == math.inf and self.strategy in ("template", "free_code") and not self.opts.single_shot:
+                self.switch_strategy()  # template → free code, or free code with no solid → the family's template
         self.first_values = dict(first.values)
         if not self.opts.single_shot:
+            b = self.best
+            if (
+                self.opts.review is not None
+                and b is not None
+                and b.verification is not None
+                and b.verification.status != "failed"
+            ):
+                self.fix_round(reviewer=True)  # the person says something is wrong: one round even if verified
             if self.opts.fix_mode == "agent":
                 self.agent_fix()
             else:
@@ -674,6 +785,8 @@ class FixRun:
             if self.opts.judge:
                 self.judge()
         final = self.final_verification()
+        if self.opts.review is not None:
+            self.save_review_pins(after=self.best)
         if self.opts.package:
             self.package(final)
             self.buy_or_print(final)
@@ -703,6 +816,9 @@ class FixRun:
         if ship:
             out["can_ship"] = bool(ship.get("ok"))
         out["fix_mode"] = self.opts.fix_mode
+        if self.opts.review is not None:
+            out["parent_job"] = self.opts.review.parent_job
+            out["review_round"] = self.opts.review.round
         if v is not None and v.views:
             out["hausdorff_mm"] = max(m.hausdorff_mm for m in v.views)
             out["iou"] = min(m.iou for m in v.views)
@@ -1504,6 +1620,179 @@ class FixRun:
                 else "Free code from the outline"
             )
 
+    # ---- 4b. reviewer round: start from the reviewed model ------------------------------------------------------------------
+    def start_from_parent(self, rv: ReviewRound) -> Round:
+        """A reviewer round skips understand / ask / plan: the parent's PartSpec, template and stated values are loaded
+        (its measurements are redone on the same photos, so the mat frame is the same) and its program is rebuilt and
+        verified as round 1. Then the pins are resolved on this job's own rectified photo."""
+        from services.agent import evidence
+        from services.agent.jobs import load_job
+
+        if rv.parent_dir is None:
+            raise _Finish("failed", {"error": f"reviewer round: the parent job {rv.parent_job} was not found"})
+        parent = load_job(rv.parent_dir)
+        notes = "; ".join(f'{p.id}: "{p.note}"' for p in rv.pins) + (f'; note: "{rv.note}"' if rv.note else "")
+        self.log(f"Reviewer round {rv.round}: {len(rv.pins)} pin(s) on {rv.parent_job} — {notes or 'no notes'}")
+        with self.stage("plan", f"Reviewer round {rv.round}: starting from the reviewed model") as st:
+            spec_data, code = parent.read_json("partspec.json"), parent.read_text("part.py")
+            if not spec_data or not code:
+                st.status = "fail"
+                st.label = f"Reviewer round {rv.round}: {rv.parent_job} has no PartSpec or part program"
+                raise _Finish("failed", {"error": st.label})
+            self.spec = PartSpec.model_validate(spec_data)
+            done = next((e for e in reversed(parent.events) if e.t == "done"), None)
+            summary = dict(done.summary) if done is not None else {}
+            try:
+                self.template = get_template(str(summary["template"])) if summary.get("template") else None
+            except KeyError:
+                self.template = None
+            self.strategy = "template" if summary.get("strategy") == "template" and self.template else "free_code"
+            if self.strategy == "free_code":
+                self.template = None
+            said = parent.read_json("stated.json") or {}
+            if isinstance(said.get("length"), Mapping) and said.get("knob"):
+                m = Measured.model_validate(said["length"])
+                self.stated["length"] = m
+                self.locked[str(said["knob"])] = f"the user stated the original length ({m.value:g} mm)"
+                self.job.write_json("stated.json", said)
+            evidence.apply_points(self)  # the user's taps on the parent's photo (points.json copied with the photos)
+            self.enforce_measured(self.spec, self.measurements["top"])
+            side_h = self.heights.get("side")
+            if side_h is not None and side_h[1] != "round" and self.round_part() and self.measure_side("round"):
+                self.save_measurements()
+            self.save_spec()
+            values = {str(k): float(v) for k, v in (parent.read_json("values.json") or {}).items()}
+            st.label = (
+                f"Reviewer round {rv.round}: {rv.parent_job}'s PartSpec and "
+                + (f"{self.template.name} template" if self.template else "free-code program")
+                + " (no new reading, no new plan)"
+            )
+        self.iteration += 1
+        with self.stage("build", f"Rebuilding the reviewed model ({rv.parent_job}'s part.py)") as st:
+            err = self.program_error(code)
+            if err is not None:
+                st.status = "fail"
+                st.label = f"The reviewed program does not pass the sandbox check: {err}"
+        if err is not None:
+            rnd = Round(self.iteration, self.strategy, code, values, None, None, error=err)
+            self.record_round(rnd, [], "reviewed model", prev=None)
+            raise _Finish("failed", {"error": f"reviewer round: {err}"})
+        specs = parse_params(code)
+        values = {s.name: float(values.get(s.name, s.default)) for s in specs}
+        rnd = self.evaluate(code, values, self.strategy, [], "reviewed model", prev=None)
+        self.resolve_pins(rv, rnd)
+        return rnd
+
+    def resolve_pins(self, rv: ReviewRound, rnd: Round) -> None:
+        """Each pin in mat mm (this job's rectified grid) and part mm (`part_to_mat`), and the local mismatch on the
+        reviewed model ("before"). A pin that cannot be placed keeps its note with null numbers."""
+        from services.review import pins as pinmath
+
+        rect = self.job.read_json("rectified.json")
+        mo, top = self.mo.get("top"), self.measurements.get("top")
+        size = image_size(mo.rectified_png) if mo is not None and mo.rectified_png else None
+        self.review_pins = []
+        for pin in rv.pins:
+            row: dict[str, Any] = {"id": pin.id, "u": pin.u, "v": pin.v, "note": pin.note, "mat_mm": None,
+                                   "part_mm": None, "before_mm": None, "after_mm": None}  # fmt: skip
+            if rect and size and top is not None and top.part_to_mat:
+                mat = pinmath.uv_to_mat_mm(pin.u, pin.v, rect, size)
+                part = pinmath.mat_to_part_mm(mat, top.part_to_mat)
+                row["mat_mm"] = [round(mat[0], 3), round(mat[1], 3)]
+                row["part_mm"] = [round(part[0], 3), round(part[1], 3)]
+                row["before_mm"] = self.pin_mismatch(rnd, row)
+            self.review_pins.append(row)
+        self.save_review_pins()
+
+    def pin_mismatch(self, rnd: Round | None, row: Mapping[str, Any]) -> float | None:
+        from services.review import pins as pinmath
+
+        part = row.get("part_mm")
+        if rnd is None or rnd.out is None or part is None or "top" not in rnd.out.views:
+            return None
+        return pinmath.local_mismatch_mm(rnd.out.views["top"], (float(part[0]), float(part[1])))
+
+    def save_review_pins(self, after: Round | None = None) -> None:
+        """review_round.json: the pins with their mm positions and code's mismatch before (reviewed model) and after
+        (the final best round)."""
+        rv = self.opts.review
+        if rv is None:
+            return
+        if after is not None:
+            for row in self.review_pins:
+                row["after_mm"] = self.pin_mismatch(after, row)
+        self.job.write_json(
+            "review_round.json",
+            {"parent_job": rv.parent_job, "round": rv.round, "note": rv.note, "pins": self.review_pins},
+        )
+
+    def near_feature(self, part_mm: Sequence[float]) -> str | None:
+        """The measured hole or slot a pin sits on or next to (within 3 mm of its edge), for the fixer's note."""
+        top = self.measurements.get("top")
+        if top is None:
+            return None
+        best: tuple[float, str] | None = None
+        for h in top.holes:
+            d = math.hypot(part_mm[0] - h.center_mm[0], part_mm[1] - h.center_mm[1]) - h.diameter.value / 2
+            if best is None or d < best[0]:
+                best = (d, h.id)
+        for sl in top.slots:
+            d = math.hypot(part_mm[0] - sl.center_mm[0], part_mm[1] - sl.center_mm[1]) - sl.length.value / 2
+            if best is None or d < best[0]:
+                best = (d, sl.id)
+        return best[1] if best is not None and best[0] <= 3.0 else None
+
+    def reviewer_text(self, rnd: Round, *, numeric: bool = True) -> str:
+        """The reviewer's notes for a fixer prompt: one line per pin (code's local mismatch on `rnd`) + the general
+        note. Empty outside a reviewer round."""
+        rv = self.opts.review
+        if rv is None:
+            return ""
+        lines: list[str] = []
+        for row in self.review_pins:
+            part = row.get("part_mm")
+            where = f"at ({part[0]:.1f}, {part[1]:.1f}) mm" if part is not None else "(position not measurable)"
+            near = self.near_feature(part) if part is not None else None
+            m = self.pin_mismatch(rnd, row) if numeric else None
+            said = f"local mismatch {m:.2f} mm" if m is not None else "local mismatch not measurable here"
+            lines.append(f'Reviewer pin {row["id"]} {where}' + (f" near {near}" if near else "")
+                         + f': "{row["note"]}" — {said}')  # fmt: skip
+        if rv.note:
+            lines.append(f'Reviewer note: "{rv.note}"')
+        if not lines:
+            return ""
+        return (
+            f"Reviewer round {rv.round}: a person looked at the model and says something is wrong (part-frame mm; "
+            "each pin is a numbered red ring on the attached photo | model crops). Address these notes; code still "
+            "decides pass/fail.\n" + "\n".join(lines)
+        )
+
+    def reviewer_images(self, rnd: Round) -> list[bytes]:
+        from services.review import pins as pinmath
+
+        if self.opts.review is None or rnd.out is None or "top" not in rnd.out.views:
+            return []
+        placed = [(int(r["id"]), (float(r["part_mm"][0]), float(r["part_mm"][1])))
+                  for r in self.review_pins if r.get("part_mm") is not None]  # fmt: skip
+        return pinmath.pin_crops(rnd.out.views["top"], placed) if placed else []
+
+    def family_rules(self) -> list[dict[str, str]]:
+        """Promoted rules for the part's family (a person approved each one); records their ids in
+        lessons_used.json so later reviews of this job count for or against each rule."""
+        if self.spec is None:
+            return []
+        try:
+            rows = lessons.promoted_lessons(self._registry(), self.spec.family.value)
+        except Exception:
+            return []
+        new = [r["id"] for r in rows if r["id"] not in self.lessons_used]
+        if new:
+            self.lessons_used += new
+            self.job.write_json(
+                "lessons_used.json", {"family": self.spec.family.value, "lesson_ids": self.lessons_used}
+            )
+        return rows
+
     # ---- 5–7. build, execute, verify ------------------------------------------------------------------------------------------
     def build_program(self, strategy: Strategy, feedback: tuple[str, str] | None = None) -> str:
         """Ask the builder for a part program; policy/compile/runtime errors are fed back for up to BUILD_RETRIES.
@@ -1511,10 +1800,7 @@ class FixRun:
         assert self.spec is not None
         tpl = self.template if strategy == "template" else None
         family = self.spec.family.value
-        try:
-            rules = lessons.promoted_rules(self._registry(), family)
-        except Exception:
-            rules = []
+        rules = [r["rule"] for r in self.family_rules()]
         p = prompt_loader.load("build")
         dev, user = p.render(
             template_name=tpl.name if tpl else "(none — write free code from the outline)",
@@ -1873,6 +2159,8 @@ class FixRun:
             history=hist_text,
         )
         images = [fit_png(png)[0] for name, png in sorted((rnd.out.overlays if rnd.out else {}).items())][:2]
+        user += self.prompt_extras(rnd, numeric=numeric)
+        images += self.reviewer_images(rnd)
         req = ModelRequest(
             messages=[{"role": "developer", "content": dev}, {"role": "user", "content": user}],
             images=images,
@@ -1886,6 +2174,18 @@ class FixRun:
             self.log(f"fixer unavailable ({exc})", "warn")
             return None
         return dict(out.json) if out is not None and isinstance(out.json, dict) else None
+
+    def prompt_extras(self, rnd: Round, *, numeric: bool = True) -> str:
+        """What a fixer prompt gets besides the residuals: the family rules a person approved, and in a reviewer round
+        the reviewer's notes."""
+        out = ""
+        rules = self.family_rules()
+        if rules:
+            out += "\nFamily rules a person approved (from earlier reviews):\n" + lessons.format_for_prompt(
+                [r["rule"] for r in rules]
+            )
+        said = self.reviewer_text(rnd, numeric=numeric)
+        return out + ("\n" + said if said else "")
 
     def guard(self, base: Round, edits: Sequence[Mapping[str, Any]]) -> guards.GuardResult:
         """The guards for edits proposed against `base` (unknown names, ranges, step caps, no whole-outline rescale)."""
@@ -1906,13 +2206,17 @@ class FixRun:
             locked=self.locked,
         )
 
-    def fix_round(self) -> bool:
-        """One fix iteration from the best round so far. Returns True when it improved on the best."""
+    def fix_round(self, *, reviewer: bool = False) -> bool:
+        """One fix iteration from the best round so far. Returns True when it improved on the best. `reviewer`: the
+        round a reviewer round always runs (the person's notes lead, even when the model already verified)."""
         base = self.best
         assert base is not None and self.spec is not None
         self.iteration += 1
         before = base.score
-        with self.stage("fix", f"Round {self.iteration}: asking the fixer about the largest residuals") as st:
+        rv = self.opts.review
+        tag = f"Reviewer round {rv.round} · " if reviewer and rv is not None else ""
+        ask = "the reviewer's notes" if tag else "the largest residuals"
+        with self.stage("fix", f"{tag}Round {self.iteration}: asking the fixer about {ask}") as st:
             proposal = self.propose_fix(base) or {"analysis": "no proposal", "edits": [], "code_patch": None}
             analysis = str(proposal.get("analysis", ""))
             patch = proposal.get("code_patch")
@@ -1930,7 +2234,7 @@ class FixRun:
                 else:
                     self.log(f"code patch rejected by the sandbox check: {err}", "warn")
             changed = new_code != base.code or new_values != base.values
-            st.label = f"Round {self.iteration}: " + (
+            st.label = f"{tag}Round {self.iteration}: " + (
                 ", ".join(f"{e.param} {e.from_value:g}→{e.to:g}" for e in g.applied)
                 or ("code patch" if new_code != base.code else "no applicable edit")
             )
@@ -2155,10 +2459,11 @@ class FixRun:
         return False
 
     # ---- 9. judge ---------------------------------------------------------------------------------------------------------------
-    def run_judge(self, rnd: Round) -> list[JudgeVeto]:
+    def run_judge(self, rnd: Round) -> JudgeResult | None:
+        """One judge call on `rnd`. None when the judge is unavailable (no vetoes, no scorecard)."""
         assert self.spec is not None
         if rnd.out is None or "top" not in rnd.out.views:
-            return []
+            return None
         vr = rnd.out.views["top"]
         photo_n, model_n = self.openings(rnd)
         p = prompt_loader.load("judge")
@@ -2172,6 +2477,7 @@ class FixRun:
 
         images = [fit_png(self.mo["top"].rectified_png or self.photos["top"])[0], mask_png(vr.model_mask)]
         images += evidence.hotspot_crops(rnd)  # photo | model, zoomed on the verifier's worst spots
+        validity = rnd.verification.validity if rnd.verification is not None else None
         req = ModelRequest(
             messages=[{"role": "developer", "content": dev}, {"role": "user", "content": user}],
             images=images,
@@ -2183,44 +2489,52 @@ class FixRun:
                 "model_openings": model_n,
                 "measured_slots": len(self.measurements["top"].slots),
                 "intent": self.job.input.intent,
+                "hausdorff_mm": rnd.worst_hd,
+                "valid": validity.is_valid if validity is not None else None,
+                "min_wall_mm": validity.min_wall_mm if validity is not None else None,
             },
         )
         try:
             out = self.call("judge", req)
         except ProviderError as exc:
-            self.log(f"judge unavailable ({exc}); no vetoes recorded", "warn")
-            return []
-        vetoes: list[JudgeVeto] = []
-        for raw in ((out.json if out else None) or {}).get("vetoes", []):
-            try:
-                vetoes.append(JudgeVeto.model_validate(raw))
-            except ValidationError:
-                continue
-        return vetoes
+            self.log(f"judge unavailable ({exc}); no vetoes or scores recorded", "warn")
+            return None
+        if out is None:
+            return None
+        return parse_judge_reply(out.json if isinstance(out.json, Mapping) else {}, model=out.model, mode=out.mode)
+
+    def judge_label(self, res: JudgeResult | None) -> str:
+        if res is None:
+            return "Judge unavailable: no vetoes, no scorecard"
+        label = (
+            "Judge: no vetoes"
+            if not res.vetoes
+            else "Judge vetoes: " + "; ".join(f"{x.feature}: {x.issue} ({x.severity})" for x in res.vetoes)
+        )
+        sl = res.score_label()
+        return f"{label} · {sl}" if sl else label
+
+    def run_judge_stage(self, label: str) -> None:
+        """The judge stage on the best round: vetoes for the verifier, the scorecard to judge.json (advice only)."""
+        assert self.best is not None
+        with self.stage("judge", label) as st:
+            res = self.run_judge(self.best)
+            self.vetoes = res.vetoes if res is not None else []
+            if res is not None:
+                self.job.write_json("judge.json", res.to_json())
+            st.label = self.judge_label(res)
 
     def judge(self) -> None:
         if self.best is None or self.best.out is None or self.best.verification is None:
             return
         if self.best.verification.status == "failed":
             return
-        with self.stage("judge", "Independent judge looks at photo vs render (veto only)") as st:
-            self.vetoes = self.run_judge(self.best)
-            blocking = [x for x in self.vetoes if x.severity == "blocking"]
-            st.label = (
-                "Judge: no vetoes"
-                if not self.vetoes
-                else "Judge vetoes: " + "; ".join(f"{x.feature}: {x.issue} ({x.severity})" for x in self.vetoes)
-            )
+        self.run_judge_stage("Independent judge looks at photo vs render (vetoes + advisory scorecard)")
+        blocking = [x for x in self.vetoes if x.severity == "blocking"]
         if blocking and self.over_budget() is None:
             self.log("blocking veto: one more fix round with the judge's notes")
             self.fix_round()
-            with self.stage("judge", "Judge looks again after the extra round") as st:
-                self.vetoes = self.run_judge(self.best)
-                st.label = (
-                    "Judge: no vetoes"
-                    if not self.vetoes
-                    else "Judge vetoes: " + "; ".join(f"{x.feature}: {x.issue} ({x.severity})" for x in self.vetoes)
-                )
+            self.run_judge_stage("Judge looks again after the extra round")
 
     def label_unchecked(self, v: Verification, b: Round) -> Verification:
         """The verdict plus every knob no test checked (template defaults, inferred values): labelled inferred."""

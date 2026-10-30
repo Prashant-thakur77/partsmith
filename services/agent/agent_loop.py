@@ -452,8 +452,10 @@ class AgentSession:
             + format_gate_failures(rnd.verification, rnd.out.view_gates if rnd.out else None),
             values=json.dumps(rnd.values),
         )
+        user += run.prompt_extras(rnd)  # approved family rules; in a reviewer round, the person's pinned notes
         return ModelRequest(
             messages=[{"role": "developer", "content": dev}, {"role": "user", "content": user}],
+            images=run.reviewer_images(rnd),  # photo | model crops with each pin's numbered ring
             mock_context={"run_id": self.id},
         )
 

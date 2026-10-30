@@ -321,3 +321,31 @@ zero runs) are written as `null`, and the writer refuses `NaN`. Each stored run 
 tree it ran in. A report rebuilt with `--from-runs` takes them from the runs when they agree, and otherwise names the
 current tree and says so (`git_source`). Before this, rebuilding the first live bench after a commit stamped it with the
 rebuild's commit, not the one the runs were made at.
+
+**2026-10-30 — A person reviews every finished job; "improve" is a linked reviewer round.** Finished jobs stay
+immutable, so sending one back starts a new fix job (`input.parent_job`, `input.review_round`) on the same photos. It
+measures again (same photos, same mat frame), skips understand / ask / plan by loading the parent's PartSpec, template
+and stated values, rebuilds the parent's program as round 1, and runs at least one fix round even when the parent
+verified, because a person said something is wrong. Pins are normalised points on the rectified top photo, resolved to
+mat and part mm inside the reviewer round. The fixer gets one line per pin with code's local mismatch there (within
+3 mm, larger of the two edge distances) and a photo | model crop with the pin drawn as a numbered ring, since marks drawn
+on an image point a vision model at the right spot. Each pin's mismatch before → after is stored. Review state lives
+in `$PARTSMITH_HOME/reviews/`, so committed replays can be reviewed without being written.
+
+**2026-10-30 — Accept is a sign-off, not a verdict.** Only the verifier sets `verified`. An accepted part the verifier
+did not pass publishes as "best effort, accepted by a person" (the existing export gate with the person's
+acknowledgement). The publish logic moved into `services/api/common.py` so the publish route and accept share it.
+
+**2026-10-30 — The judge also scores, as advice; Spark 1.3 judges until Glimmer is deployed.** Besides vetoes it returns
+1–5 for outline, features, printability and fit for use, each with a reason, saved to `judge.json` (not to
+`verification.json`). Code drops a malformed or repeated score instead of the reply. In the product path the judge chain
+is Glimmer first, then Muse Spark 1.3 on the Meta API, so the scorecard is a real model's opinion before Modal is up; the
+open-weights path stays Glimmer only. `/review` reports agreement with the reviewer (judge OK = no blocking veto and no
+score below 3; person OK = accept) and Cohen's κ with the reviewer count, because raw agreement overstates a judge.
+
+**2026-10-30 — Reviewer notes become family rules only with a person's tick.** Every note and reject reason is kept as
+a lesson candidate with its evidence (jobs, pin, before/after mm). On accept, Muse Spark drafts one general rule per
+note (or skips a one-off); the reviewer edits and ticks them, and only ticked rules are promoted. Promoted rules now
+reach the fixer as well as the builder, scoped to the family, and each job records which rules it was given, so
+`/lessons` can show how later reviews of those jobs went. Rules injected everywhere without a check tend to lock in
+their own mistakes; scoping, evidence and the track record are how a bad rule gets noticed and retired.

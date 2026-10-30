@@ -28,13 +28,13 @@ from fastapi.responses import FileResponse, JSONResponse, PlainTextResponse, Res
 from partsmith_schemas import ArtifactEvent, JobInput, Measurements, MetricEvent, Need, PartRecord
 from partsmith_schemas.partspec import Family
 from partsmith_schemas.registry import BakeResult, VariantResult
-from partsmith_schemas.verification import ParamSpec, Verification
+from partsmith_schemas.verification import ParamSpec
 from pydantic import BaseModel, Field
 from starlette.routing import Route, WebSocketRoute
 from starlette.types import Receive, Scope, Send
 
 from services.agent import providers
-from services.api import agentdocs, auth, round3, usage, voice_live
+from services.api import agentdocs, auth, review_routes, round3, usage, voice_live
 from services.api import passport as passport_api
 from services.api.auth import require_admin
 from services.api.common import (
@@ -51,7 +51,9 @@ from services.api.common import (
     _resolve_artifact,
     _service_call,
     _svc,
+    job_decision,
     public_base,
+    publish_job,
 )
 from services.api.errors import ApiError, install
 from services.api.round2 import apply_job_preset, apply_preset, embed_router, job_knobs
@@ -63,7 +65,6 @@ from services.geom_worker import bake as geom_bake
 from services.registry import fit_learning, gate, impact, presets, steer
 from services.registry import parts as P
 from services.registry import passport as passport_ids
-from services.registry.publish import dedupe_published, publish_part
 from services.registry.store import get_registry
 
 VERSION = "0.1.0"
@@ -430,7 +431,7 @@ def _owner_decisions(owners: list[str], sha: str | None) -> tuple[list[gate.Ship
                 }
                 if kinds and kinds <= TEST_PIECE_KINDS:
                     return [], True
-            decisions.append(_job_decision(job))
+            decisions.append(job_decision(job))
     return decisions, False
 
 
@@ -920,7 +921,7 @@ def job_bake(
     if download:
         fmt = fmts[0]
         if fmt != "view":  # the viewer mesh is a preview, not a printable export
-            gate.require(_job_decision(job), ack)
+            gate.require(job_decision(job), ack)
         path = _resolve_artifact(data["artifacts"].get(fmt, ""))
         if path is None:
             raise ApiError(404, "artifact_not_found", f"no {fmt} file for this bake", sorted(data["artifacts"]))
@@ -947,12 +948,6 @@ class PublishRequest(BaseModel):
     ack: bool = Field(False, description="Acknowledge a best-effort part (required to publish one)")
 
 
-def _job_decision(job: Any) -> gate.ShipDecision:
-    data = job.read_json("verification.json")
-    ver = Verification.model_validate(data) if data else None
-    return gate.decide(verification=ver, job=job)
-
-
 @router.post(
     "/jobs/{job_id}/publish", summary="Publish a finished job to the registry (origin preserved)", tags=["jobs"]
 )
@@ -963,26 +958,7 @@ def job_publish(
     _admin: None = Depends(require_admin),
 ) -> dict[str, Any]:
     """Admin. Export gate: verified publishes; best effort needs `ack` (body or `?ack=1`); failed is refused."""
-    job = _job(job_id)
-    if not job.finished or job.summary.status != "done":
-        raise ApiError(
-            409, "not_finished", f"job {job_id} is {job.summary.status}; only finished jobs can be published"
-        )
-    decision = _job_decision(job)
-    gate.require(decision, ack or bool(body and body.ack))
-    slug = body.slug if body else None
-    if slug and get_registry().get_part(slug) is not None:
-        raise ApiError(409, "slug_taken", f"slug {slug!r} is taken", P.closest_slugs(slug))
-    part = _service_call(_svc().publish, job_id, slug=slug, conflict="no_program")
-    # an identical part (same program + params) already published is reused instead of a second card
-    outcome = dedupe_published(part.slug) if get_registry().get_part(part.slug) else publish_part(part)
-    if outcome.part.slug != part.slug:
-        job.summary.part_slug = outcome.part.slug
-        job.save_summary()
-    detail = P.part_detail(outcome.part)
-    detail["publish"] = outcome.to_dict()
-    detail["ship"] = decision.to_dict()
-    return detail
+    return publish_job(job_id, slug=body.slug if body else None, ack=ack or bool(body and body.ack))
 
 
 CANCEL_WAIT_S = 3.0
@@ -1591,6 +1567,7 @@ app.include_router(router)
 app.include_router(round2_router)
 app.include_router(round3.router)
 app.include_router(passport_api.router)
+app.include_router(review_routes.router)
 app.include_router(embed_router)
 app.add_api_route("/llms.txt", llms_txt, methods=["GET"], include_in_schema=False)
 app.add_api_route("/prompt.txt", prompt_txt, methods=["GET"], include_in_schema=False)

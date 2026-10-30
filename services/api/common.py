@@ -15,6 +15,7 @@ from services.api import deps
 from services.api.errors import ApiError
 from services.common import blobs
 from services.geom_worker.program import ProgramError, UnknownParamError
+from services.registry import gate
 from services.registry import parts as P
 
 API = "/api/v1"
@@ -138,3 +139,44 @@ def public_base(request: Request) -> str:
     if env:
         return env.rstrip("/")
     return str(request.base_url).rstrip("/")
+
+
+# ------------------------------------------------------------------------------------------------- publishing a job
+
+
+def job_decision(job: Any) -> gate.ShipDecision:
+    """The export gate's decision for a job, from its verification record."""
+    from partsmith_schemas.verification import Verification
+
+    data = job.read_json("verification.json")
+    ver = Verification.model_validate(data) if data else None
+    return gate.decide(verification=ver, job=job)
+
+
+def publish_job(job_id: str, *, slug: str | None = None, ack: bool = False, note: str = "") -> dict[str, Any]:
+    """Publish a finished job through the export gate (the one path for `POST /jobs/{id}/publish` and an accepted
+    review): verified publishes, best effort needs `ack`, failed is refused. `note` is added to the part's
+    provenance (e.g. "best effort, accepted by a person")."""
+    from services.registry.publish import dedupe_published, publish_part
+    from services.registry.store import get_registry
+
+    job = _job(job_id)
+    if not job.finished or job.summary.status != "done":
+        raise ApiError(
+            409, "not_finished", f"job {job_id} is {job.summary.status}; only finished jobs can be published"
+        )
+    decision = job_decision(job)
+    gate.require(decision, ack)
+    if slug and get_registry().get_part(slug) is not None:
+        raise ApiError(409, "slug_taken", f"slug {slug!r} is taken", P.closest_slugs(slug))
+    extra = {"note": note} if note else {}
+    part = _service_call(_svc().publish, job_id, slug=slug, conflict="no_program", **extra)
+    # an identical part (same program + params) already published is reused instead of a second card
+    outcome = dedupe_published(part.slug) if get_registry().get_part(part.slug) else publish_part(part)
+    if outcome.part.slug != part.slug:
+        job.summary.part_slug = outcome.part.slug
+        job.save_summary()
+    detail = P.part_detail(outcome.part)
+    detail["publish"] = outcome.to_dict()
+    detail["ship"] = decision.to_dict()
+    return detail

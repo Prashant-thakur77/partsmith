@@ -272,6 +272,8 @@ export interface JobInput {
   provider_mode?: "live" | "mock" | "replay" | null;
   city?: string | null;
   purpose?: "repair" | "reference_check";
+  parent_job?: string | null;
+  review_round?: number;
 }
 
 export interface JobSummary {
@@ -289,6 +291,12 @@ export interface JobSummary {
   cost_usd?: number;
   part_slug?: string | null;
   is_replay?: boolean;
+}
+
+export interface JudgeScore {
+  criterion: "outline" | "features" | "printability" | "fit";
+  score: number;
+  reason?: string;
 }
 
 export interface JudgeVeto {
@@ -580,6 +588,13 @@ export interface PassportShip {
   source: string;
 }
 
+export interface Pin {
+  id: number;
+  u: number;
+  v: number;
+  note?: string;
+}
+
 export interface PrintEstimate {
   material: "PLA" | "PETG";
   volume_mm3: number;
@@ -635,6 +650,12 @@ export interface Rib {
   to_mm: [number, number];
   width: Measured;
   height: Measured;
+}
+
+export interface RuleChoice {
+  text: string;
+  keep?: boolean;
+  source_pin?: number | null;
 }
 
 export interface Slot {

@@ -1738,6 +1738,23 @@
           ],
           "title": "Purpose",
           "type": "string"
+        },
+        "parent_job": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Parent Job"
+        },
+        "review_round": {
+          "default": 0,
+          "title": "Review Round",
+          "type": "integer"
         }
       },
       "title": "JobInput",
@@ -1853,6 +1870,40 @@
         "updated_at"
       ],
       "title": "JobSummary",
+      "type": "object"
+    },
+    "JudgeScore": {
+      "additionalProperties": false,
+      "description": "One criterion of the judge's scorecard (1 = wrong, 3 = usable with fixes, 5 = matches the photo). Advice\nonly: it is saved next to the verdict (judge.json), never in it, and never sets `verified`.",
+      "properties": {
+        "criterion": {
+          "enum": [
+            "outline",
+            "features",
+            "printability",
+            "fit"
+          ],
+          "title": "Criterion",
+          "type": "string"
+        },
+        "score": {
+          "maximum": 5,
+          "minimum": 1,
+          "title": "Score",
+          "type": "integer"
+        },
+        "reason": {
+          "default": "",
+          "maxLength": 200,
+          "title": "Reason",
+          "type": "string"
+        }
+      },
+      "required": [
+        "criterion",
+        "score"
+      ],
+      "title": "JudgeScore",
       "type": "object"
     },
     "JudgeVeto": {
@@ -3786,6 +3837,42 @@
       "title": "PassportShip",
       "type": "object"
     },
+    "Pin": {
+      "additionalProperties": false,
+      "description": "A reviewer's point on the rectified top photo, normalised to its width (u) and height (v), 0\u20131, with a note.\nCode turns it into mat and part-frame millimetres inside the job that uses it.",
+      "properties": {
+        "id": {
+          "minimum": 1,
+          "title": "Id",
+          "type": "integer"
+        },
+        "u": {
+          "maximum": 1.0,
+          "minimum": 0.0,
+          "title": "U",
+          "type": "number"
+        },
+        "v": {
+          "maximum": 1.0,
+          "minimum": 0.0,
+          "title": "V",
+          "type": "number"
+        },
+        "note": {
+          "default": "",
+          "maxLength": 300,
+          "title": "Note",
+          "type": "string"
+        }
+      },
+      "required": [
+        "id",
+        "u",
+        "v"
+      ],
+      "title": "Pin",
+      "type": "object"
+    },
     "PrintEstimate": {
       "additionalProperties": false,
       "description": "Code's numbers for one material. Grams are the solid volume times the density (100 % infill), an upper\nbound; minutes and costs are labelled estimates (`assumptions` lists every constant used).",
@@ -4157,6 +4244,40 @@
         "height"
       ],
       "title": "Rib",
+      "type": "object"
+    },
+    "RuleChoice": {
+      "additionalProperties": false,
+      "description": "A drafted family rule as the reviewer left it on accept: `keep` promotes it, otherwise it stays a candidate.",
+      "properties": {
+        "text": {
+          "maxLength": 200,
+          "minLength": 1,
+          "title": "Text",
+          "type": "string"
+        },
+        "keep": {
+          "default": false,
+          "title": "Keep",
+          "type": "boolean"
+        },
+        "source_pin": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Source Pin"
+        }
+      },
+      "required": [
+        "text"
+      ],
+      "title": "RuleChoice",
       "type": "object"
     },
     "Slot": {

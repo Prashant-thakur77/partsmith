@@ -32,6 +32,10 @@ class JobInput(Strict):
     # "reference_check": a measurement check of a known object (bundled reference samples, benches). Set only by
     # server code (start_demo_job / eval), never from a public request; nothing is meant to be printed.
     purpose: JobPurpose = "repair"
+    # A reviewer round: the job a person reviewed and sent back with notes (server-set by the review page; the round
+    # starts from that job's model). 0 / None for every other job.
+    parent_job: str | None = None
+    review_round: int = 0
 
 
 class JobSummary(Strict):

@@ -24,6 +24,7 @@ import { QuestionPanel } from "@/components/jobs/question-panel";
 import { ResidualTable } from "@/components/jobs/residual-table";
 import { IterationList, TraceTimeline } from "@/components/jobs/trace-timeline";
 import { KnobPanel } from "@/components/registry/knob-panel";
+import { JudgeScorecard } from "@/components/review/judge-scorecard";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Eyebrow } from "@/components/ui/card";
@@ -46,6 +47,7 @@ import { useBake, useCountTo, useJobBake } from "@/lib/hooks";
 import { STAGE_LABELS, summarizeEvents, useJobEvents, type EventSummary, type StreamState } from "@/lib/job-events";
 import { VOTE_ENABLED, VoteBanner } from "@/components/vote-banner";
 import { I18nRegion, LangToggle, useT } from "@/lib/i18n";
+import { roundLabel } from "@/lib/review";
 import { cn } from "@/lib/utils";
 import { valueItems, valueText, type ValueItem } from "@/lib/value-sources";
 import type { SceneSourceMark } from "@/components/viewer/cad-scene";
@@ -332,6 +334,9 @@ function JobActions({ id, summary }: { id: string; summary: JobDetail["summary"]
   return null;
 }
 
+const REVIEW_TONE: Record<string, "ok" | "warn" | "accent" | "neutral"> = { waiting: "warn", improving: "accent", accepted: "ok", rejected: "neutral" };
+const REVIEW_TEXT: Record<string, string> = { waiting: "waiting", improving: "next round running", accepted: "accepted by a person", rejected: "rejected" };
+
 export function WorkspaceClient({ id }: { id: string }) {
   const qc = useQueryClient();
   const detail = useQuery({ queryKey: ["job", id], queryFn: () => api.job(id) });
@@ -450,6 +455,13 @@ export function WorkspaceClient({ id }: { id: string }) {
               {replay ? <OriginBadge origin="replay" /> : null}
               <OriginBadge origin={sum.origin} hideReal />
               <ModeBadge mode={sum.provider_mode} />
+              {d.review ? (
+                <Link href={`/review?job=${encodeURIComponent(id)}`} className="rounded-[5px] hover:opacity-80">
+                  <Badge tone={REVIEW_TONE[d.review.status] ?? "neutral"}>
+                    review: {REVIEW_TEXT[d.review.status] ?? d.review.status} · {roundLabel(d.review.round)}
+                  </Badge>
+                </Link>
+              ) : null}
             </div>
             <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-[12px] text-subtle">
               <span className="font-mono">{sum.id}</span>
@@ -583,6 +595,7 @@ export function WorkspaceClient({ id }: { id: string }) {
             <ConvergenceChart data={s.convergence} threshold={threshold} />
             <ProgressLines lines={s.progress} className="mt-3 border-t border-border pt-3" />
           </div>
+          {d.judge ? <JudgeScorecard judge={d.judge} /> : null}
           <ImpactPanel jobId={id} finished={!!done} />
           <div className="rounded-lg border border-border bg-surface">
             <Tabs defaultValue={s.agent.length ? "agent" : "trace"}>

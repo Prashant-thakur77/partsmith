@@ -29,6 +29,7 @@ from partsmith_schemas import (
     ParamSpec,
     PartRecord,
     PartSpec,
+    Pin,
     Provenance,
     Verification,
 )
@@ -37,7 +38,7 @@ from partsmith_schemas.registry import PartFacts, ProviderMode
 
 from services.agent import providers
 from services.agent.jobs import REPLAYS_DIR, Job, JobManager, context_hash, export_replay
-from services.agent.orchestrator import RunOptions, make_runner, png_bytes
+from services.agent.orchestrator import ReviewRound, RunOptions, make_runner, png_bytes
 from services.common import blobs
 from services.common.images import decode_bgr
 from services.common.paths import REPO_ROOT
@@ -152,6 +153,56 @@ def start_fix_job(
     else:
         manager().start(job, runner)
     return job
+
+
+REVIEW_TITLE_RE = r" · review round \d+$"
+# Capture questions a reviewer round answers with their defaults: the parent already passed them on the same photos.
+REVIEW_ANSWERS: dict[str, str | float] = {"capture.retake": "continue", "capture.retake.mask": "continue"}
+
+
+def start_review_job(
+    parent_id: str,
+    round: int,
+    pins: Sequence[Pin],
+    note: str,
+    *,
+    sync: bool = False,
+    on_created: Callable[[Job], None] | None = None,
+) -> Job:
+    """A reviewer round: a new fix job linked to `parent_id` (live or replay) that reuses its photos and starts from
+    its model, with the reviewer's pins and note for the fixer. The parent is only read; a replay's directory is never
+    written. KeyError when the parent is unknown, ValueError when it cannot be reviewed (no program, photos missing)."""
+    import re
+
+    parent = _job(parent_id)
+    if not parent.finished or parent.summary.status != "done":
+        raise ValueError(f"job {parent_id} is {parent.summary.status}; only finished jobs can be reviewed")
+    if not parent.read_text("part.py") or not parent.read_json("partspec.json"):
+        raise ValueError(f"job {parent_id} has no part program to start from")
+    missing = [v for v, key in parent.input.photo_shas.items() if not blobs.exists(key)]
+    if "top" not in parent.input.photo_shas or missing:
+        raise ValueError(f"job {parent_id}: photo(s) {missing or ['top']} not available to rerun")
+    photos = {v: blobs.get(key) for v, key in parent.input.photo_shas.items()}
+    spec = parent.read_json("partspec.json") or {}
+    thick = (spec.get("thickness") or {}) if isinstance(spec.get("thickness"), dict) else {}
+    thickness_mm = parent.input.thickness_mm
+    if thickness_mm is None and thick.get("source") == "user_stated":
+        thickness_mm = float(thick["value"])  # the parent's answer, so the photos are measured at the same height
+    ji = parent.input.model_copy(
+        update={"parent_job": parent.id, "review_round": int(round), "thickness_mm": thickness_mm}
+    )
+    state = parent.read_json("state.json") or {}
+    mat_id = (state.get("calibration") or {}).get("mat_id")
+    opts = RunOptions(
+        review=ReviewRound(parent.id, int(round), list(pins), note, parent_dir=parent.dir),
+        mat_id=str(mat_id) if mat_id else None,
+        answers=dict(REVIEW_ANSWERS),
+        question_timeout_s=SYNC_QUESTION_TIMEOUT_S if sync else ASYNC_QUESTION_TIMEOUT_S,
+    )
+    base = re.sub(REVIEW_TITLE_RE, "", parent.summary.title or "Fix job")
+    points = parent.read_json("points.json")
+    return start_fix_job(photos, ji, sync=sync, options=opts, title=f"{base} · review round {int(round)}",
+                         on_created=on_created, points=points if isinstance(points, Mapping) else None)  # fmt: skip
 
 
 # ------------------------------------------------------------------------------------------------- demo samples
@@ -276,6 +327,16 @@ def current_ctx(job: Job) -> str:
     return str(state.get("ctx") or job.ctx or "")
 
 
+def _review_of(job: Job) -> dict[str, Any] | None:
+    """{"status", "round", "root_job"} of the review chain the job is in, or None (not a job to review)."""
+    try:
+        from services.review.store import review_of
+
+        return review_of(job)
+    except Exception:  # the review badge is optional on the job page
+        return None
+
+
 def detail_of(job: Job) -> dict[str, Any]:
     """JobDetail (docs/API.md) reduced from the event log + side files."""
     events = [e.model_dump(mode="json", exclude_none=True) for e in job.events]
@@ -297,7 +358,10 @@ def detail_of(job: Job) -> dict[str, Any]:
             continue  # a preview of an older state is stale
         artifacts[e.kind] = e.url
     q = job.pending_question()
+    judge = job.read_json("judge.json")
     return {
+        "judge": judge if isinstance(judge, dict) else None,  # the judge's advisory scorecard (never the verdict)
+        "review": _review_of(job),
         "summary": job.summary.model_dump(mode="json"),
         "events": events,
         "partspec": PartSpec.model_validate(spec).model_dump(mode="json") if spec else None,
@@ -558,8 +622,9 @@ def _slugify(text: str) -> str:
     return s[:48] or "part"
 
 
-def publish(job_id: str, *, slug: str | None = None) -> PartRecord:
-    """Turn a finished job's part program into a registry part (origin, provider mode and builder kept)."""
+def publish(job_id: str, *, slug: str | None = None, note: str = "") -> PartRecord:
+    """Turn a finished job's part program into a registry part (origin, provider mode and builder kept). `note` is
+    added to the provenance (an accepted review: "best effort, accepted by a person")."""
     from services.registry.store import get_registry
 
     job = _job(job_id)
@@ -605,7 +670,14 @@ def publish(job_id: str, *, slug: str | None = None) -> PartRecord:
             photo_shas=list(job.input.photo_shas.values()),
             builder_model=builder,
             provider_mode=job.summary.provider_mode,
-            note="mock builder — deterministic, no model was called" if job.summary.provider_mode == "mock" else "",
+            note="; ".join(
+                n
+                for n in (
+                    "mock builder — deterministic, no model was called" if job.summary.provider_mode == "mock" else "",
+                    note,
+                )
+                if n
+            ),
         ),
         facts=facts,
         created_at=time.time(),
@@ -673,4 +745,5 @@ __all__ = [
     "reset_manager",
     "start_demo_job",
     "start_fix_job",
+    "start_review_job",
 ]

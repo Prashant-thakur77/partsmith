@@ -24,7 +24,7 @@ flowchart TD
     sandbox --> verifier{"Verifier (code)<br/>render from the photo's camera,<br/>Hausdorff mm, IoU, part tests"}
     verifier -->|"misfit"| fix["Fix agent: Muse Spark Open<br/>operates PartSmith's tools, bounded rounds"]
     fix -->|"guarded knob and code edits"| sandbox
-    verifier -->|"passes"| judge["Muse Glimmer judge<br/>veto only"]
+    verifier -->|"passes"| judge["Muse Glimmer judge<br/>vetoes + advisory scorecard"]
     verifier -->|"rounds used up"| exportgate
     judge --> exportgate{"Export gate (code)"}
     exportgate -->|"verified"| out["STL · 3MF · STEP · part.py<br/>screen fit check · install card"]
@@ -46,7 +46,7 @@ flowchart TD
 | Broken-region completion | Muse Image | every mat marker re-detects in place and the intact part is unchanged; accepted completions enter as inferred | `services/metrology/recon_gate.py`, `services/agent/evidence.py` |
 | Cited specs | Muse Wonder (web search) | a value is accepted only if a search ran and its URL came back from it; it fills unknowns and never overrides a measurement | `services/agent/providers/spec.py` |
 | Buy or print | Muse Wonder (search grounding) | a price is kept only with its source link and a quote showing it; grams, print time and cost come from the mesh | `services/agent/providers/buy.py`, `services/agent/buy_or_print.py` |
-| Judge | Muse Glimmer 30B | veto only: it can block a pass, never grant one | `services/agent/orchestrator.py` |
+| Judge | Muse Glimmer 30B (Spark 1.3 when Glimmer is not deployed) | vetoes can block a pass, never grant one; a 1–5 scorecard is advice for the reviewer | `services/agent/orchestrator.py` |
 | Voice edits | Muse Voice Transcribe | knob names and ranges clamp every edit; the edited part is re-baked in the sandbox and labelled "not re-verified" | `services/media/voice.py`, `services/agent/service.py` |
 
 ## Runtime

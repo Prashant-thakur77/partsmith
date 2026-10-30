@@ -79,7 +79,7 @@ def test_meta_key_only_routes_builder_to_spark_13_fallback(monkeypatch: pytest.M
     assert rows["understand"]["mode"] == "live" and rows["understand"]["model"] == "muse-spark-1.3"
     assert rows["build"]["mode"] == "live" and rows["build"]["provider"] == "meta"
     assert "BASETEN_API_KEY missing" in rows["build"]["note"]
-    assert rows["judge"]["mode"] == "mock"  # Glimmer needs GLIMMER_BASE_URL or TOGETHER_API_KEY
+    assert rows["judge"]["mode"] == "live" and rows["judge"]["model"] == "muse-spark-1.3"  # no Glimmer deployed
     assert rows["steer_plan"]["model"] == "muse-wonder-1.0"
     assert providers.overall_mode() == "mixed"
 
@@ -108,6 +108,19 @@ def test_open_weights_only_routes_to_open_models(monkeypatch: pytest.MonkeyPatch
     assert rows["image"]["mode"] == "mock" and "no open-weight" in rows["image"]["note"]
     assert rows["transcribe"]["mode"] == "mock"
     assert all(r["open_weights"] for r in rows.values())
+
+
+def test_product_judge_falls_back_to_spark_13(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Product path: Glimmer first, Spark 1.3 on the Meta API when Glimmer is not deployed. Open weights: Glimmer only."""
+    monkeypatch.setenv("MODEL_API_KEY", "k-meta-000000")
+    res = routing.resolve("judge")
+    assert res.mode == "live" and [r.model for r in res.routes] == ["muse-spark-1.3"]
+    monkeypatch.setenv("GLIMMER_BASE_URL", "https://example--glimmer.modal.run")
+    assert [r.model for r in routing.resolve("judge").routes] == ["muse-glimmer", "muse-spark-1.3"]
+    monkeypatch.delenv("GLIMMER_BASE_URL")
+    monkeypatch.setenv("OPEN_WEIGHTS_ONLY", "1")
+    assert routing.resolve("judge").mode == "mock"
+    assert routing.resolve("review_rules").mode == "mock"  # the rule writer has no Glimmer either
 
 
 def test_unknown_stage_is_a_clear_error() -> None:

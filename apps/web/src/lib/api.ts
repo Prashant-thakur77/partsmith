@@ -102,7 +102,8 @@ export function artifactUrl(url: string | null | undefined): string | undefined 
   return `${API_PREFIX}/${url}`;
 }
 
-async function request<S extends z.ZodMiniType>(
+/** Validated fetch against `/api/v1` with the admin token attached when one is stored (used by api-review.ts too). */
+export async function request<S extends z.ZodMiniType>(
   schema: S,
   path: string,
   init?: RequestInit & { query?: Record<string, string | number | boolean | null | undefined> },

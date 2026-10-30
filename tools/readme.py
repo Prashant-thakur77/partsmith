@@ -75,9 +75,11 @@ USES: tuple[Use, ...] = (
         "Meta Model API",
         "Understand stage: family, features, broken region, unknowns (strict PartSpec JSON), and the pixel it saw each "
         "hole or slot at, which SAM 3.1 then cuts and code measures. Watches and listens to a narrated walk-around clip "
-        "and points at the features it hears about (frame and pixel), kept only if they land on the part",
+        "and points at the features it hears about (frame and pixel), kept only if they land on the part. Turns a "
+        "reviewer's notes into family rules the person ticks before they are kept, and judges when Glimmer is not deployed",
         (
             ("services/agent/orchestrator.py", r'self\.call\("understand"'),
+            ("services/review/rules.py", r'providers\.complete\("review_rules"'),
             ("services/agent/evidence.py", r"def feature_points"),
             ("services/agent/evidence.py", r"providers\.narrate_video\("),
         ),
@@ -95,7 +97,8 @@ USES: tuple[Use, ...] = (
     Use(
         "Muse Glimmer 30B",
         "open weights (llama.cpp on a Modal GPU)",
-        "Independent veto-only judge, shown side-by-side photo and model crops zoomed on the verifier's worst spots",
+        "Independent judge: vetoes plus an advisory 1–5 scorecard (outline, features, printability, fit), shown "
+        "side-by-side photo and model crops zoomed on the verifier's worst spots. It can block, never pass",
         (
             ("services/agent/orchestrator.py", r"evidence\.hotspot_crops\(rnd\)"),
             ("infra/modal/glimmer.py", r"^app = "),

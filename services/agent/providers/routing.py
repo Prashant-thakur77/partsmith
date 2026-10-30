@@ -9,7 +9,8 @@
 | buy_lookup       | Buy-or-print finder | muse-wonder-1.0 → muse-spark-1.3, web_search (+ user city), citations    | none → deterministic mock          |
 | narrate          | Walk-around narrator | muse-spark-1.3 video + audio understanding (points, never numbers)      | none → deterministic mock          |
 | mate_points      | Mate pointer     | muse-spark-1.3 vision (points at the socket/shaft/slot, never a size)       | Glimmer (Modal → Together)         |
-| judge            | Judge            | Muse Glimmer 30B: llama.cpp on Modal → Together                            | same                               |
+| judge            | Judge            | Muse Glimmer 30B: llama.cpp on Modal → Together → muse-spark-1.3           | Glimmer (Modal → Together)         |
+| review_rules     | Rule writer      | muse-spark-1.3 (a reviewer's note → one general rule for the family)       | Glimmer (Modal → Together)         |
 | capture_triage   | Capture triage   | Muse Glimmer 30B: llama.cpp on Modal → Together                            | same                               |
 | voice_map        | Voice editor     | muse-spark-1.3                                                             | Spark Open                         |
 | variant          | Variant mapper   | muse-spark-1.3                                                             | Spark Open                         |
@@ -136,7 +137,8 @@ STAGES: dict[str, StageSpec] = {
         StageSpec("buy_lookup", "Buy-or-print finder", "search", (WONDER, SPARK_13), (), "low"),
         StageSpec("narrate", "Walk-around narrator", "video", (SPARK_13,), (), "low"),
         StageSpec("mate_points", "Mate pointer", "complete", (SPARK_13,), GLIMMER_CHAIN, "low"),
-        StageSpec("judge", "Judge", "complete", GLIMMER_CHAIN, GLIMMER_CHAIN, "medium"),
+        StageSpec("judge", "Judge", "complete", (*GLIMMER_CHAIN, SPARK_13), GLIMMER_CHAIN, "medium"),
+        StageSpec("review_rules", "Rule writer", "complete", (SPARK_13,), GLIMMER_CHAIN, "low"),
         StageSpec("capture_triage", "Capture triage", "complete", GLIMMER_CHAIN, GLIMMER_CHAIN, "low"),
         StageSpec("voice_map", "Voice editor", "complete", (SPARK_13,), SPARK_OPEN_CHAIN, "low"),
         StageSpec("variant", "Variant mapper", "complete", (SPARK_13,), SPARK_OPEN_CHAIN, "low"),

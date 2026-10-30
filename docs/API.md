@@ -341,6 +341,35 @@ executes the template at the planned parameters and verifies it against its **ow
 SYNTHETIC self-check, not a photo. `approve` publishes to the registry (origin `synthetic`); `send_back` applies the note as a
 plain-words change through the variant guard and rebuilds the lane; `reject` drops it.
 
+## Review (human in the loop)
+| Method | Path | Body / Returns |
+|---|---|---|
+| GET | `/review/queue?include_replays=&limit=` | `{"items": [QueueItem]}`: waiting first, then running reviewer rounds, then decided chains |
+| GET | `/review/{job_id}` | `ReviewDetail` for the chain `job_id` belongs to |
+| GET | `/review/stats` | `{"n","agree","both_ok","both_not","judge_ok_person_not","judge_not_person_ok","kappa": float\|null,"reviewers"}` |
+| POST | `/review/{job_id}/rules/draft` | **admin**. No body → `{"rules": [{"text","source_pin","scope"}]}` (stage `review_rules`, one rule per note) |
+| POST | `/review/{job_id}` | **admin**. `{"action": "accept"\|"improve"\|"reject", "pins": [{"u","v","note"}], "note", "reason", "rules": [{"text","keep","source_pin"}], "publish": bool}` → `{"state": ReviewDetail, "child_job": str\|null, "part_slug": str\|null}` |
+
+```
+QueueItem = {"job_id", "root_job", "round", "title", "family", "status": "waiting"|"improving"|"accepted"|"rejected",
+  "verdict": {"status","max_error_mm","verified"}, "judge": Judge|null, "cost_usd", "chain_cost_usd", "is_replay", "updated_at"}
+ReviewDetail = {"root_job", "status", "family", "updated_at", "images": {"rectified","overlay"},
+  "rounds": [{"round","job_id","job_status","title","decision": "accept"|"improve"|"reject"|null,"at","note","reason",
+              "pins": [{"id","u","v","note","mat_mm","before_mm","after_mm"}],"verdict","judge","child_job","cost_usd",
+              "is_replay","rules","part_slug","lesson_ids"}]}
+Judge = {"model","mode","scores": [{"criterion": "outline"|"features"|"printability"|"fit","score": 1..5,"reason"}],
+  "vetoes": [{"feature","issue","severity"}], "notes"}
+```
+Pins are normalised (0–1) points on the rectified top photo (`images.rectified`; `images.overlay` is the same photo with
+the model drawn on it, same size). `improve` needs a pin or a note and starts a reviewer round: a new fix job
+(`input.parent_job`, `input.review_round`) that reuses the photos, starts from the reviewed program and gives the fixer
+the notes; its `review_round.json` holds each pin in mat and part mm with code's local mismatch before and after.
+`accept` records the sign-off, promotes the ticked rules (unticked stay candidates) and with `publish` publishes the
+part (best effort labelled "accepted by a person"; never `verified` unless the verifier said so). `reject` needs a
+reason. Errors: 404 `job_not_found`, 409 `review_busy` / `review_decided` / `not_finished`, 422 `review_empty` /
+`validation_error`. Job detail carries `judge` and `review` (`{"status","round","root_job"}`); lessons carry `track`.
+Review state lives in `$PARTSMITH_HOME/reviews/` (never in committed replays).
+
 ## Repair-shop batches (all admin)
 | Method | Path | Body / Returns |
 |---|---|---|

@@ -294,6 +294,38 @@ export const VerificationSchema = z.object({
 });
 export type Verification = z.output<typeof VerificationSchema>;
 
+// ── judge scorecard (judge.json; advice only — never the code's verdict) ──────
+export const JudgeCriterionSchema = z.enum(["outline", "features", "printability", "fit"]);
+export type JudgeCriterion = z.output<typeof JudgeCriterionSchema>;
+
+export const JudgeScoreSchema = z.object({
+  criterion: JudgeCriterionSchema,
+  score: z.int().check(z.gte(1), z.lte(5)),
+  reason: z.catch(z._default(z.string(), ""), ""),
+});
+export type JudgeScore = z.output<typeof JudgeScoreSchema>;
+
+export const JudgeVetoSchema = z.object({ feature: z.string(), issue: z.string(), severity: z.catch(z.enum(["blocking", "minor"]), "minor") });
+export type JudgeVeto = z.output<typeof JudgeVetoSchema>;
+
+/** Malformed scores or vetoes are dropped; a missing model or mode reads as unknown (null), never as "live". */
+export const JudgeSchema = z.object({
+  model: z.catch(z.nullish(z.string()), null),
+  mode: z.catch(z.nullish(z.string()), null),
+  scores: tolerantArray(JudgeScoreSchema),
+  vetoes: tolerantArray(JudgeVetoSchema),
+  notes: z.catch(z._default(z.string(), ""), ""),
+});
+export type Judge = z.output<typeof JudgeSchema>;
+
+/** A job's place in a review chain (job detail `review`). */
+export const ReviewRefSchema = z.object({
+  status: z.string(),
+  round: z.catch(z._default(z.int(), 1), 1),
+  root_job: z.catch(z.nullish(z.string()), null),
+});
+export type ReviewRef = z.output<typeof ReviewRefSchema>;
+
 // ── partspec (only what the UI reads; the rest passes through untyped) ───────
 export const PartSpecSchema = z.looseObject({
     family: z.string(),
@@ -509,6 +541,9 @@ export const JobDetailSchema = z.object({
   values: z._default(z.record(z.string(), num), {}),
   artifacts: z._default(z.record(z.string(), z.string()), {}),
   question: z.nullish(QuestionEventSchema),
+  /** Newer APIs only; an older API leaves these out and a malformed value reads as absent. */
+  judge: z.catch(z.nullish(JudgeSchema), null),
+  review: z.catch(z.nullish(ReviewRefSchema), null),
 });
 export type JobDetail = z.output<typeof JobDetailSchema>;
 
@@ -1149,3 +1184,106 @@ export const MateFitResultSchema = z.looseObject({
   origin: z.catch(z._default(DataOriginSchema, "real"), "real"),
 });
 export type MateFitResult = z.output<typeof MateFitResultSchema>;
+
+// ── human review (/review/*; docs/design/human-review.md) ─────────────────────
+const nullableNum = z.catch(z.nullish(num), null);
+
+/** The code's verdict for a round: verifier status and max error, as the API wrote them. */
+export const ReviewVerdictSchema = z.object({ status: z.catch(z._default(z.string(), "unknown"), "unknown"), max_error_mm: nullableNum });
+export type ReviewVerdict = z.output<typeof ReviewVerdictSchema>;
+
+export const ReviewQueueItemSchema = z.object({
+  job_id: z.string(),
+  root_job: z.catch(z._default(z.string(), ""), ""),
+  round: z.catch(z._default(z.int(), 1), 1),
+  title: z.catch(z._default(z.string(), ""), ""),
+  family: z.catch(z._default(z.string(), ""), ""),
+  /** waiting | improving | accepted | rejected; any other value is shown as written. */
+  status: z.string(),
+  verdict: z.catch(z.nullish(ReviewVerdictSchema), null),
+  judge: z.catch(z.nullish(JudgeSchema), null),
+  cost_usd: nullableNum,
+  is_replay: z.catch(z._default(z.boolean(), false), false),
+  updated_at: z.catch(z._default(num, 0), 0),
+});
+export type ReviewQueueItem = z.output<typeof ReviewQueueItemSchema>;
+
+export const ReviewQueueSchema = z.object({ items: tolerantArray(ReviewQueueItemSchema) });
+
+/** A reviewer pin: u, v are 0–1 on the rectified top image; the mm numbers are computed by the server. */
+export const ReviewPinSchema = z.object({
+  id: z.int(),
+  u: num,
+  v: num,
+  note: z.catch(z._default(z.string(), ""), ""),
+  mat_mm: z.catch(z.nullish(point2), null),
+  before_mm: nullableNum,
+  after_mm: nullableNum,
+});
+export type ReviewPin = z.output<typeof ReviewPinSchema>;
+
+export const ReviewRoundSchema = z.object({
+  round: z.int(),
+  job_id: z.string(),
+  decision: z.catch(z.nullish(z.string()), null),
+  at: nullableNum,
+  note: z.catch(z._default(z.string(), ""), ""),
+  reason: z.catch(z._default(z.string(), ""), ""),
+  pins: tolerantArray(ReviewPinSchema),
+  verdict: z.catch(z.nullish(ReviewVerdictSchema), null),
+  judge: z.catch(z.nullish(JudgeSchema), null),
+  child_job: z.catch(z.nullish(z.string()), null),
+});
+export type ReviewRound = z.output<typeof ReviewRoundSchema>;
+
+export const ReviewDetailSchema = z.object({
+  root_job: z.string(),
+  status: z.string(),
+  rounds: tolerantArray(ReviewRoundSchema),
+  images: z.catch(
+    z._default(
+      z.object({
+        rectified: z.catch(z.nullish(z.string()), null),
+        overlay: z.catch(z.nullish(z.string()), null),
+        // the part's box on the photo as [u0, v0, u1, v1] fractions, for zooming in
+        focus: z.catch(z.nullish(z.tuple([num, num, num, num])), null),
+      }),
+      {},
+    ),
+    {},
+  ),
+});
+export type ReviewDetail = z.output<typeof ReviewDetailSchema>;
+
+export const DraftRuleSchema = z.object({
+  text: z.string(),
+  source_pin: z.catch(z.nullish(z.int()), null),
+  scope: z.catch(z._default(z.string(), ""), ""),
+});
+export type DraftRule = z.output<typeof DraftRuleSchema>;
+export const DraftRulesSchema = z.object({ rules: tolerantArray(DraftRuleSchema) });
+
+export const ReviewDecisionResultSchema = z.object({
+  state: ReviewDetailSchema,
+  child_job: z.catch(z.nullish(z.string()), null),
+  part_slug: z.catch(z.nullish(z.string()), null),
+});
+export type ReviewDecisionResult = z.output<typeof ReviewDecisionResultSchema>;
+
+const count = z.catch(z._default(z.int(), 0), 0);
+/** Judge-vs-reviewer agreement, computed by the server from the review store. */
+export const ReviewStatsSchema = z.object({
+  n: count,
+  agree: count,
+  both_ok: count,
+  both_not: count,
+  judge_ok_person_not: count,
+  judge_not_person_ok: count,
+  kappa: nullableNum,
+  reviewers: z.catch(z._default(z.int(), 1), 1),
+});
+export type ReviewStats = z.output<typeof ReviewStatsSchema>;
+
+/** How later reviews went for jobs that were given a promoted lesson (lessons list `track`). */
+export const LessonTrackSchema = z.object({ used_in: count, accepted: count, improved: count, rejected: count });
+export type LessonTrack = z.output<typeof LessonTrackSchema>;

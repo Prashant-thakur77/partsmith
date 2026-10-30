@@ -190,7 +190,23 @@ export const jobEvents = [
   ev({ t: "done", verified: true, status: "verified", summary: { max_error_mm: 0.31 } }),
 ];
 
+/** A mock judge scorecard (rule-based, labelled mock) as judge.json would hold it. */
+export const judgeMock = {
+  model: "muse-glimmer-30b-q4_k_m",
+  mode: "mock",
+  scores: [
+    { criterion: "outline", score: 4, reason: "Outline within 0.5 mm of the photo (mock rule)." },
+    { criterion: "features", score: 3, reason: "Both holes found; hole_1 sits off its measured centre (mock rule)." },
+    { criterion: "printability", score: 5, reason: "Thinnest wall 2.8 mm (mock rule)." },
+    { criterion: "fit", score: 3, reason: "mock" },
+  ],
+  vetoes: [{ feature: "hole_1", issue: "a little off centre", severity: "minor" }],
+  notes: "Mock judge: rule-based scores, not model output.",
+};
+
 export const jobDetail = {
+  judge: judgeMock,
+  review: { status: "waiting", round: 1, root_job: "job_demo_1" },
   summary: jobSummary,
   events: [],
   partspec: {
@@ -249,7 +265,7 @@ export const presets = [
 ];
 
 export const lessons = [
-  { id: "l_1", scope: "bracket", rule: "Start hole_d 0.3 mm above the measured diameter for FDM prints.", evidence: { job_id: "job_demo_1", param: "hole_d", first: 4.2, final: 4.5 }, status: "promoted", promoted_by: "admin", created_at: NOW - 7200, links: [{ kind: "job", id: "job_demo_1", url: "/api/v1/jobs/job_demo_1", page: "/jobs/job_demo_1" }] },
+  { id: "l_1", scope: "bracket", rule: "Start hole_d 0.3 mm above the measured diameter for FDM prints.", evidence: { job_id: "job_demo_1", param: "hole_d", first: 4.2, final: 4.5 }, status: "promoted", promoted_by: "admin", created_at: NOW - 7200, links: [{ kind: "job", id: "job_demo_1", url: "/api/v1/jobs/job_demo_1", page: "/jobs/job_demo_1" }], track: { used_in: 3, accepted: 2, improved: 1, rejected: 0 } },
   { id: "l_2", scope: "global", rule: "Switch to free code after two template rounds that do not reduce the error.", evidence: { job_id: "job_demo_1", switch: "template→free_code" }, status: "candidate", promoted_by: null, created_at: NOW - 3600, links: [{ kind: "job", id: "job_demo_1", url: "/api/v1/jobs/job_demo_1", page: "/jobs/job_demo_1" }] },
 ];
 
@@ -283,6 +299,8 @@ export const openapi = {
         ["/lessons", "get"],
         ["/batches", "get"],
         ["/needs/{id}/vote", "post"],
+        ["/review/queue", "get"],
+        ["/review/stats", "get"],
       ] as [string, string, string[]?][]
     ).map(([p, m, f]) => [`/api/v1${p}`, { [m]: op(f) }]),
   ),
@@ -411,6 +429,53 @@ function sse(events: unknown[]): string {
   return events.map((e) => `id: ${(e as { seq: number }).seq}\ndata: ${JSON.stringify(e)}\n\n`).join("");
 }
 
+// ── human review (/review/*) ─────────────────────────────────────────────────
+export const reviewQueue = {
+  items: [
+    { job_id: "job_rev_2", root_job: "job_rev_1", round: 2, title: "Cupboard latch · review round 2", family: "latch", status: "waiting", verdict: { status: "best_effort", max_error_mm: 0.62 }, judge: judgeMock, cost_usd: 0.0123, is_replay: false, updated_at: NOW - 300 },
+    { job_id: "job_demo_1", root_job: "job_demo_1", round: 1, title: "L-bracket (synthetic sample)", family: "bracket", status: "waiting", verdict: { status: "verified", max_error_mm: 0.31 }, judge: judgeMock, cost_usd: 0, is_replay: false, updated_at: NOW - 400 },
+    { job_id: "job_replay_1", root_job: "job_replay_1", round: 1, title: "Spacer (replay)", family: "spacer", status: "accepted", verdict: { status: "verified", max_error_mm: 0.22 }, judge: null, cost_usd: 0.004, is_replay: true, updated_at: NOW - 9000 },
+  ],
+};
+
+const reviewImages = { rectified: `${A}/photo.png`, overlay: `${A}/measure.png` };
+const round = (r: Record<string, unknown>) => ({ decision: null, at: null, note: "", reason: "", pins: [], judge: judgeMock, child_job: null, ...r });
+
+export function reviewDetail(id: string): Record<string, unknown> | null {
+  if (id === "job_rev_1" || id === "job_rev_2")
+    return {
+      root_job: "job_rev_1",
+      status: "waiting",
+      rounds: [
+        round({
+          round: 1,
+          job_id: "job_rev_1",
+          decision: "improve",
+          at: NOW - 1200,
+          note: "the clip face is the flat one",
+          pins: [{ id: 1, u: 0.3, v: 0.4, note: "this corner was square", mat_mm: [102.5, 88.1], before_mm: 0.84, after_mm: 0.21 }],
+          verdict: { status: "best_effort", max_error_mm: 0.83 },
+          child_job: "job_rev_2",
+        }),
+        round({ round: 2, job_id: "job_rev_2", verdict: { status: "best_effort", max_error_mm: 0.62 } }),
+      ],
+      images: reviewImages,
+    };
+  if (id === "job_demo_1") return { root_job: "job_demo_1", status: "waiting", rounds: [round({ round: 1, job_id: "job_demo_1", verdict: { status: "verified", max_error_mm: 0.31 } })], images: reviewImages };
+  if (id === "job_replay_1")
+    return { root_job: "job_replay_1", status: "accepted", rounds: [round({ round: 1, job_id: "job_replay_1", decision: "accept", at: NOW - 9000, judge: null, verdict: { status: "verified", max_error_mm: 0.22 } })], images: reviewImages };
+  return null;
+}
+
+export const draftRules = {
+  rules: [
+    { text: "latch: keep a broken corner square when the photo shows a square edge nearby", source_pin: 1, scope: "latch" },
+    { text: "latch: the clip face is the flat one", source_pin: null, scope: "latch" },
+  ],
+};
+
+export const reviewStats = { n: 4, agree: 3, both_ok: 2, both_not: 1, judge_ok_person_not: 1, judge_not_person_ok: 0, kappa: 0.5, reviewers: 1 };
+
 const json = (route: Route, body: unknown, status = 200) => route.fulfill({ status, contentType: "application/json", body: JSON.stringify(body) });
 
 export type MockOptions = { offline?: boolean; emptyRegistry?: boolean; noBench?: boolean; contrastFail?: boolean; liveFitCheck?: boolean };
@@ -451,6 +516,23 @@ export async function mockApi(page: Page, opts: MockOptions = {}): Promise<strin
     if (path === "/needs" && method === "GET") return json(route, needs);
     const vote = path.match(/^\/needs\/([^/]+)\/vote$/);
     if (vote) return json(route, { ...(needs.find((n) => n.id === vote[1]) ?? needs[0]!), votes: 5, counted: true });
+    if (path === "/review/queue") return json(route, reviewQueue);
+    if (path === "/review/stats") return json(route, reviewStats);
+    const rv = path.match(/^\/review\/([^/]+)(\/rules\/draft)?$/);
+    if (rv) {
+      const detail = reviewDetail(rv[1]!);
+      if (!detail) return json(route, { error: { code: "job_not_found", message: `no job ${rv[1]}` } }, 404);
+      if (rv[2] && method === "POST") return json(route, draftRules);
+      if (method === "POST") {
+        const body = JSON.parse(route.request().postData() ?? "{}") as { action?: string; pins?: unknown[]; note?: string; reason?: string };
+        const decided = { accept: "accepted", improve: "improving", reject: "rejected" }[body.action ?? ""] ?? "waiting";
+        const rounds = (detail.rounds as Record<string, unknown>[]).map((r, i, all) =>
+          i === all.length - 1 ? { ...r, decision: body.action, at: NOW, note: body.note ?? "", reason: body.reason ?? "", child_job: body.action === "improve" ? "job_rev_3" : null } : r,
+        );
+        return json(route, { state: { ...detail, status: decided, rounds }, child_job: body.action === "improve" ? "job_rev_3" : null, part_slug: null });
+      }
+      return json(route, detail);
+    }
     if (path === "/health") return json(route, { ok: true, version: "0.1.0" });
     if (path === "/status") return json(route, status);
     if (path === "/stats") return json(route, stats);
