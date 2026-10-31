@@ -11,7 +11,7 @@ import { EditPanel } from "@/components/jobs/edit-panel";
 import { BoundNote, NarratedBadge, NarrationPanel, UncheckedList } from "@/components/jobs/evidence-notes";
 import { ExportMenu, PreviewDialog } from "@/components/jobs/export-menu";
 import { FixHistoryStrip } from "@/components/jobs/fix-history-strip";
-import { roundsFromEvents } from "@/lib/fix-rounds";
+import { chartSizeNote, roundsFromEvents } from "@/lib/fix-rounds";
 import { SourceSwatch, sourceColor } from "@/components/jobs/source-key";
 import { ValueSourcesPanel } from "@/components/jobs/value-sources-panel";
 import { JobStatusBadge } from "@/components/jobs/job-badges";
@@ -53,7 +53,8 @@ import { useBake, useCountTo, useJobBake } from "@/lib/hooks";
 import { STAGE_LABELS, summarizeEvents, useJobEvents, type EventSummary, type StreamState } from "@/lib/job-events";
 import { VOTE_ENABLED, VoteBanner } from "@/components/vote-banner";
 import { I18nRegion, LangToggle, useT } from "@/lib/i18n";
-import { judgeRunFromEvents, roundLabel } from "@/lib/review";
+import { blockingVeto, judgeRunFromEvents, roundLabel } from "@/lib/review";
+import { boxVsPhotoNote, nearLimitNote, statedThicknessNote } from "@/lib/verdict-notes";
 import { cn } from "@/lib/utils";
 import { valueItems, valueText, type ValueItem } from "@/lib/value-sources";
 import type { SceneSourceMark } from "@/components/viewer/cad-scene";
@@ -379,7 +380,9 @@ export function WorkspaceClient({ id }: { id: string }) {
   const events = React.useMemo(() => mergeEvents(detail.data?.events ?? [], streamed), [detail.data?.events, streamed]);
   const s = React.useMemo(() => summarizeEvents(events), [events]);
   // the round the finished job shipped: not always the last one (a later, worse try is discarded)
-  const keptIter = React.useMemo(() => roundsFromEvents(events).keptIter, [events]);
+  const fixRounds = React.useMemo(() => roundsFromEvents(events), [events]);
+  const keptIter = fixRounds.keptIter;
+  const chartNote = React.useMemo(() => chartSizeNote(fixRounds.rounds), [fixRounds]);
   // how the judge ran (live / mock), from its own model_call events: shown even when no scorecard was saved
   const judgeRun = React.useMemo(() => judgeRunFromEvents(events), [events]);
   const d: JobDetail | undefined = detail.data;
@@ -473,7 +476,13 @@ export function WorkspaceClient({ id }: { id: string }) {
   const doneStatus = s.done?.status ?? (sum.status === "done" ? (sum.verified ? "verified" : "best_effort") : sum.status === "failed" ? "failed" : null);
   const usd = s.usd || sum.cost_usd;
   const heading = splitTitle(sum.title || d.partspec?.title || "Fix job");
-  const autoFocus = s.focus?.at_mm ? { at: s.focus.at_mm, key: `a${s.focus.seq}`, label: s.focus.feature || s.focus.label } : null;
+  // the agent's last "looking at" point flies the camera there while the job runs; a finished job opens framed on the
+  // whole part (a click on a focus line in the agent log still flies there)
+  const autoFocus = !done && s.focus?.at_mm ? { at: s.focus.at_mm, key: `a${s.focus.seq}`, label: s.focus.feature || s.focus.label } : null;
+  const veto = doneStatus && doneStatus !== "verified" ? blockingVeto(d.judge) : null;
+  const nearNote = done ? nearLimitNote(verification) : null;
+  const boxNote = boxVsPhotoNote(verification);
+  const thicknessNote = statedThicknessNote(verification, (d.partspec?.thickness ?? measurements?.thickness)?.source);
   const focusPoint = manualFocus ?? autoFocus;
 
   return (
@@ -509,7 +518,7 @@ export function WorkspaceClient({ id }: { id: string }) {
               <span className="font-mono tnum">{s.modelCalls.length} model calls · {fmtUsd(usd)}</span>
               {lastIterErr != null && !verification ? (
                 <span className="font-mono tnum">
-                  silhouette error <span className="text-fg">{fmtNum(counting ?? lastIterErr)} mm</span>
+                  outline gap <span className="text-fg">{fmtNum(counting ?? lastIterErr)} mm</span>
                   {threshold != null ? <> / limit {fmtNum(threshold)} mm</> : null}
                 </span>
               ) : null}
@@ -534,6 +543,14 @@ export function WorkspaceClient({ id }: { id: string }) {
       {verification?.verified && VOTE_ENABLED ? (
         <div className="px-4 pt-4 sm:px-6">
           <VoteBanner />
+        </div>
+      ) : null}
+
+      {nearNote ? (
+        <div className="px-4 pt-4 sm:px-6">
+          <p role="note" className="rounded-lg border border-warn-border bg-warn-soft px-4 py-2.5 text-[13px] text-fg" data-testid="near-limit">
+            {nearNote}
+          </p>
         </div>
       ) : null}
 
@@ -571,7 +588,14 @@ export function WorkspaceClient({ id }: { id: string }) {
                       : t("ws.bestEffort")}
               </div>
               {d.partspec?.refusal ? <p className="text-muted">{d.partspec.refusal}</p> : null}
-              {doneStatus === "best_effort" && d.status_reason ? <p className="text-fg">Why: {d.status_reason}.</p> : null}
+              {veto ? (
+                <p className="text-fg" data-testid="judge-veto">
+                  Why: the {veto.text} <span className="font-mono text-[12px] text-muted">({veto.by})</span>.
+                  <span className="block text-[12.5px] text-muted">The judge said: {veto.detail}. A blocking veto keeps a part from verifying even when every measurement passes.</span>
+                </p>
+              ) : doneStatus === "best_effort" && d.status_reason ? (
+                <p className="text-fg">Why: {d.status_reason}.</p>
+              ) : null}
               {verification?.reasons.length ? <VerifierNotes reasons={verification.reasons} /> : null}
             </div>
           </div>
@@ -610,6 +634,12 @@ export function WorkspaceClient({ id }: { id: string }) {
                 onSelect={setSelectedValue}
                 inViewer={!!viewUrl}
               />
+              {boxNote || thicknessNote ? (
+                <div className="mt-3 space-y-1.5 border-t border-border pt-3 text-[12px] leading-5 text-muted" data-testid="size-notes">
+                  {boxNote ? <p>{boxNote}</p> : null}
+                  {thicknessNote ? <p>{thicknessNote}</p> : null}
+                </div>
+              ) : null}
             </div>
           ) : null}
         </div>
@@ -635,6 +665,11 @@ export function WorkspaceClient({ id }: { id: string }) {
               ) : null}
             </div>
             <ConvergenceChart data={s.convergence} threshold={threshold} keptIter={keptIter} />
+            {chartNote ? (
+              <p className="mt-2 text-[11.5px] leading-4 text-muted" data-testid="chart-size-note">
+                {chartNote}
+              </p>
+            ) : null}
             <ProgressLines lines={s.progress} className="mt-3 border-t border-border pt-3" />
           </div>
           {d.judge || judgeRun ? <JudgeScorecard judge={d.judge} ran={judgeRun} /> : null}
@@ -744,7 +779,7 @@ export function WorkspaceClient({ id }: { id: string }) {
 
         {/* bottom: knobs + edits */}
         <div className="grid min-w-0 grid-cols-1 gap-4 xl:order-4 xl:col-span-2 lg:grid-cols-[minmax(0,3fr)_minmax(0,2fr)]">
-          <div className="rounded-lg border border-border bg-surface p-4">
+          <div id="job-knobs" className="scroll-mt-20 rounded-lg border border-border bg-surface p-4">
             {d.params.length ? (
               <>
                 <KnobPanel
@@ -809,9 +844,10 @@ export function WorkspaceClient({ id }: { id: string }) {
             base={d.values}
             slug={slug}
             family={d.partspec?.family}
+            knobsHref="#job-knobs"
           />
         ) : null}
-        <JobExtras artifactEvents={artifactEvents} rectified={views.top?.rectified ?? views.top?.photo} />
+        <JobExtras artifactEvents={artifactEvents} rectified={views.top?.rectified ?? views.top?.photo} family={d.partspec?.family} />
       </div>
     </I18nRegion>
   );

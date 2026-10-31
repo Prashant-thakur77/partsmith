@@ -24,15 +24,16 @@ def model_calls(job: Any) -> list[dict[str, Any]]:
     return calls
 
 
-def aggregate(summaries: list[Any], mgr: Any) -> dict[str, Any]:
+def aggregate(summaries: list[Any], mgr: Any, *, recorded: bool = False) -> dict[str, Any]:
     """{"jobs": {total, verified}, "cost": {usd_total, usd_per_job_mean, n_jobs}, "model_calls": [...],
-    "last_live_call_ts": {provider: ts}} over the non-replay jobs in `summaries`."""
+    "last_live_call_ts": {provider: ts}} over the non-replay jobs in `summaries` (`recorded=True`: over the recorded
+    runs instead, kept apart so a played-back log never counts as this server's spend)."""
     jobs_total = jobs_verified = 0
     costs: list[float] = []
     agg: dict[tuple[str, str, str, str], dict[str, Any]] = {}
     last_live: dict[str, float] = {}
     for s in summaries:
-        if s.is_replay:
+        if bool(s.is_replay) != recorded:
             continue
         jobs_total += 1
         jobs_verified += int(s.verified)

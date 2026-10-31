@@ -671,19 +671,21 @@ def _used_by() -> dict[str, list[str]]:
     return out
 
 
-def lesson_tracks() -> dict[str, dict[str, int]]:
-    """Per promoted rule: the jobs that were given it, and how the person's later reviews of those jobs went."""
+def lesson_tracks() -> dict[str, dict[str, Any]]:
+    """Per promoted rule: the jobs that were given it (`jobs`, counted in `used_in`), and how the person's later reviews
+    of those jobs went."""
     used = _used_by()
     decisions: dict[str, str] = {}
     for state in _all_states():
         for r in state.get("rounds") or []:
             if r.get("decision") and r.get("by", "person") == "person":
                 decisions[str(r["job_id"])] = str(r["decision"])
-    out: dict[str, dict[str, int]] = {}
+    out: dict[str, dict[str, Any]] = {}
     for lid, job_ids in used.items():
         got = [decisions.get(j) for j in job_ids]
         out[lid] = {
             "used_in": len(set(job_ids)),
+            "jobs": sorted(set(job_ids)),
             "accepted": got.count("accept"),
             "improved": got.count("improve"),
             "rejected": got.count("reject"),
@@ -691,8 +693,8 @@ def lesson_tracks() -> dict[str, dict[str, int]]:
     return out
 
 
-def lesson_track(lesson_id: str) -> dict[str, int]:
-    return lesson_tracks().get(lesson_id, {"used_in": 0, "accepted": 0, "improved": 0, "rejected": 0})
+def lesson_track(lesson_id: str) -> dict[str, Any]:
+    return lesson_tracks().get(lesson_id, {"used_in": 0, "jobs": [], "accepted": 0, "improved": 0, "rejected": 0})
 
 
 __all__ = [

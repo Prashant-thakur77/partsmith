@@ -262,7 +262,11 @@ export function CadViewer({
       ) : null}
 
       {dims && !minimal ? (
-        <div className="pointer-events-none absolute right-3 bottom-3 z-10 rounded-md border border-border bg-surface/90 px-2 py-1 font-mono text-[11px] text-muted tnum shadow-sm backdrop-blur">
+        <div
+          className="pointer-events-none absolute right-3 bottom-3 z-10 rounded-md border border-border bg-surface/90 px-2 py-1 font-mono text-[11px] text-muted tnum shadow-sm backdrop-blur"
+          title="The model's bounding box in its own X, Y and Z axes (not a photo measurement)"
+        >
+          <span className="font-sans text-subtle">box X×Y×Z </span>
           {fmtNum(dims[0]!, 1)} × {fmtNum(dims[1]!, 1)} × {fmtNum(dims[2]!, 1)} mm
         </div>
       ) : null}
@@ -271,7 +275,7 @@ export function CadViewer({
 
       {focus?.label && data ? (
         <div className={cn("pointer-events-none absolute left-3 z-10", sources?.on ? "top-24" : "top-14", "max-w-[70%] rounded-md bg-inverse px-2.5 py-1 text-[12px] text-inverse-fg shadow-md")} role="status">
-          Agent is looking at: {focus.label}
+          The fixer is checking: {focus.label}
         </div>
       ) : null}
 

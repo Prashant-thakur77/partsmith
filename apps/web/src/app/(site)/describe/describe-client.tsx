@@ -103,6 +103,39 @@ function DescribeForm({ initial = "" }: { initial?: string }) {
   );
 }
 
+/** The person's own sentence, kept on every screen after they send it (questions, result, no fit, failure). */
+function YouAsked({ rec }: { rec: DescribeRecord }) {
+  return (
+    <figure className="flex flex-col gap-2 rounded-lg border border-border bg-surface-2/60 px-4 py-3 sm:flex-row sm:items-start sm:justify-between" data-testid="describe-you-asked">
+      <div className="min-w-0 space-y-0.5">
+        <figcaption className="text-[11px] font-medium tracking-wide text-subtle uppercase">You asked</figcaption>
+        <blockquote className="text-[15px] leading-6 text-fg">“{rec.text}”</blockquote>
+      </div>
+      <Link href={`/describe?q=${encodeURIComponent(rec.text)}`} className="shrink-0 text-[12.5px] font-medium text-accent-text hover:underline">
+        Edit the sentence
+      </Link>
+    </figure>
+  );
+}
+
+/** What was read from the sentence: one line per value the person gave, with the knob it set. */
+function ReadFromSentence({ rec }: { rec: DescribeRecord }) {
+  const said = rec.values.filter((v) => v.source === "user" || v.source === "answer");
+  if (!said.length) return <p className="text-[13px] text-muted">No sizes were read from the sentence yet.</p>;
+  return (
+    <ul className="space-y-1 text-[12.5px]" data-testid="describe-read">
+      {said.map((v) => (
+        <li key={v.param} className="flex min-w-0 flex-wrap items-baseline justify-between gap-x-3 gap-y-0.5 border-b border-border py-1 last:border-0">
+          <span className="min-w-0 text-muted">“{v.quote}”</span>
+          <span className="shrink-0 font-mono tnum">
+            {v.label || v.param} {fmtNum(v.value, 2).replace(/\.?0+$/, "")} {v.unit}
+          </span>
+        </li>
+      ))}
+    </ul>
+  );
+}
+
 function Questions({ rec }: { rec: DescribeRecord }) {
   const qc = useQueryClient();
   const [fields, setFields] = React.useState<Record<string, string>>(() => Object.fromEntries(rec.questions.map((q) => [q.param, ""])));
@@ -124,11 +157,12 @@ function Questions({ rec }: { rec: DescribeRecord }) {
           <MessageSquareText className="size-4 text-muted" aria-hidden /> A few numbers are missing
         </CardTitle>
         <p className="text-[13px] text-muted">
-          This looks like a <span className="font-medium text-fg">{rec.title || rec.template}</span>
-          {said.length ? <> — you gave {said.map((v) => `“${v.quote}”`).join(", ")}</> : null}. These sizes decide whether it fits; answer what you know.
+          This looks like a <span className="font-medium text-fg">{rec.title || rec.template}</span>. {said.length ? "Read from your sentence:" : ""}
         </p>
       </CardHeader>
-      <CardContent>
+      <CardContent className="space-y-4">
+        {said.length ? <ReadFromSentence rec={rec} /> : null}
+        <p className="text-[13px] font-medium text-fg">These sizes decide whether it fits and were not in the sentence. Answer what you know.</p>
         <form
           className="space-y-4"
           onSubmit={(e) => {
@@ -284,7 +318,6 @@ function Result({ rec }: { rec: DescribeRecord }) {
               {name}.py · {said} of {rec.values.length} values from you
             </Badge>
           </div>
-          <p className="max-w-2xl text-[13px] text-muted">“{rec.text}”</p>
         </div>
         <div className="flex flex-wrap gap-2">
           <Button asChild variant="primary" size="sm" className="h-auto min-h-8 shrink py-1.5 whitespace-normal">
@@ -304,6 +337,7 @@ function Result({ rec }: { rec: DescribeRecord }) {
             <CadViewer viewUrl={artifactUrl(viewUrl)} busy={moved && live.pending} className="h-[340px] sm:h-[440px]" label={`3D model of ${rec.title || name}`} />
           </div>
           <ChecksCard rec={rec} />
+          <HowMade rec={rec} fixHref={fixHref} />
           {rec.plan_notes.length ? (
             <details className="text-[12px] text-muted">
               <summary className="cursor-pointer select-none">What code changed in the plan ({rec.plan_notes.length})</summary>
@@ -344,6 +378,62 @@ function Result({ rec }: { rec: DescribeRecord }) {
         </div>
       </div>
     </div>
+  );
+}
+
+/** How this part was made, step by step from the record, and what to do next. */
+function HowMade({ rec, fixHref }: { rec: DescribeRecord; fixHref: string }) {
+  const said = rec.values.filter((v) => v.source === "user" || v.source === "answer");
+  const answered = rec.values.filter((v) => v.source === "answer").length;
+  const c = rec.checks;
+  const planner = rec.planner;
+  const steps: { k: string; v: React.ReactNode }[] = [
+    {
+      k: "Picked a program",
+      v: (
+        <>
+          <span className="font-mono">{rec.template}.py</span>
+          {planner ? (
+            <>
+              {" "}by {planner.mode === "mock" ? "the rule-based planner (no model call)" : <span className="font-mono">{planner.model || planner.provider}</span>} <ModeBadge mode={planner.mode} hideLive />
+            </>
+          ) : null}
+        </>
+      ),
+    },
+    { k: "Read your sizes", v: said.length ? `${said.length} value${said.length === 1 ? "" : "s"} from you${answered ? ` (${answered} by answering)` : ""}; the other ${rec.values.length - said.length} are defaults or inferred` : "none: every value is a default or inferred" },
+    { k: "Checked the plan (code)", v: rec.plan_notes.length ? `${rec.plan_notes.length} change${rec.plan_notes.length === 1 ? "" : "s"}, listed below` : "nothing to change" },
+    { k: "Built and measured", v: c ? `${c.label}${c.measured ? ` · ${c.met} of ${c.measured} measured on the model` : ""}` : "built in the sandbox" },
+  ];
+  return (
+    <section aria-labelledby="how-made-title" className="grid gap-4 rounded-lg border border-border bg-surface p-4 sm:grid-cols-2" data-testid="describe-how-made">
+      <div className="space-y-2">
+        <h2 id="how-made-title" className="text-[15px] font-semibold tracking-tight">
+          How it was made
+        </h2>
+        <ol className="space-y-1.5 text-[12.5px]">
+          {steps.map((st, i) => (
+            <li key={st.k} className="flex gap-2">
+              <span className="font-mono text-subtle">{i + 1}</span>
+              <span>
+                <span className="font-medium text-fg">{st.k}:</span> <span className="text-muted">{st.v}</span>
+              </span>
+            </li>
+          ))}
+        </ol>
+      </div>
+      <div className="space-y-2">
+        <h2 className="text-[15px] font-semibold tracking-tight">Next</h2>
+        <ul className="space-y-1.5 text-[12.5px] text-muted">
+          <li>
+            <Link href={fixHref} className="font-medium text-accent-text hover:underline">Photograph the real part</Link> to check it against a photo. Only that can mark a part verified.
+          </li>
+          <li>Move a knob on the right to change a size; the model rebuilds.</li>
+          <li>{rec.ship?.reason ? "Read the note under Export and tick its box to unlock the STL, 3MF and STEP files." : "Download STL, 3MF or STEP under Export."}</li>
+          {rec.coupon ? <li>Print the small fit coupon first to test the holes.</li> : null}
+        </ul>
+      </div>
+    </section>
   );
 }
 
@@ -482,6 +572,12 @@ export function DescribeClient() {
         {!id ? <DescribeExample /> : null}
         {id && rec.isPending ? <Skeleton className="h-96" /> : null}
         {id && rec.isError ? <ErrorState error={rec.error} what="this description" onRetry={() => void rec.refetch()} /> : null}
+        {id && r ? <YouAsked rec={r} /> : null}
+        {r?.status === "planning" ? (
+          <p role="status" className="flex items-center gap-2 text-[13px] text-muted">
+            <Spinner label="Working" /> Picking a program and building it…
+          </p>
+        ) : null}
         {r?.status === "needs_answers" ? <Questions key={r.id} rec={r} /> : null}
         {r?.status === "done" && r.template ? <Result key={r.id} rec={r} /> : null}
         {r?.status === "no_fit" ? <NoFit rec={r} /> : null}

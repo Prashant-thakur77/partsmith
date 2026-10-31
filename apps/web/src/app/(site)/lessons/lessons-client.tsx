@@ -15,7 +15,7 @@ import { decideLesson, lessons, R2, type Lesson } from "@/lib/api-r2";
 import { useCapabilities } from "@/lib/capabilities";
 import { timeAgo, titleCase } from "@/lib/format";
 import { PRODUCT, productApi } from "@/lib/api-product";
-import { groupLessons, groupLinks, humanName, knobRuns, lessonText, type LessonGroup } from "@/lib/page-groups";
+import { buildsUsing, groupLessons, groupLinks, humanName, knobRuns, lessonConflict, lessonText, type LessonGroup } from "@/lib/page-groups";
 import { trackText } from "@/lib/review";
 
 /** Evidence worth a line under the rule; a knob lesson's template, knob and values are already in its wording. */
@@ -70,21 +70,33 @@ function LessonCard({ g, admin, knobLabel }: { g: LessonGroup<Lesson>; admin: bo
   // a run listed with its values above is not listed again as an evidence link
   const links = groupLinks(g.members).filter((e) => e.kind !== "job" || !runs.some((r) => r.job === e.id));
   const knob = label || (typeof l.evidence.param === "string" ? humanName(l.evidence.param) : "value");
+  const builds = buildsUsing(g.members);
+  const conflict = lessonConflict(g.members);
   return (
-    <li className="space-y-2 rounded-lg border border-border bg-surface p-4">
+    <li className="space-y-2 rounded-lg border border-border bg-surface p-4" data-testid="lesson-card">
       <div className="flex flex-wrap items-center gap-1.5">
         <Badge tone={l.status === "promoted" ? "ok" : l.status === "candidate" ? "accent" : "neutral"}>{l.status}</Badge>
+        {conflict ? <Badge tone="warn">conflicting evidence</Badge> : null}
         {n > 1 ? <Badge tone="info">suggested by {n} runs</Badge> : null}
+        <Badge tone="neutral" className="tnum" data-testid="lesson-builds">
+          used in {builds} build{builds === 1 ? "" : "s"}
+        </Badge>
         {l.created_at ? <span className="text-[11.5px] text-subtle">{n > 1 ? "newest " : ""}{timeAgo(l.created_at)}</span> : null}
         {l.promoted_by && l.status !== "candidate" ? <span className="text-[11.5px] text-subtle">· by {l.promoted_by}</span> : null}
       </div>
-      <p className="text-[14px] leading-6 text-fg">{lessonText(l, label)}</p>
+      {conflict ? (
+        <p className="text-[14px] leading-6 text-fg">
+          The runs disagree on {knob}: {conflict.up} moved it up and {conflict.down} moved it down. This is not advice; a person should look at these runs before anything is promoted.
+        </p>
+      ) : (
+        <p className="text-[14px] leading-6 text-fg">{lessonText(l, label)}</p>
+      )}
       {runs.length ? (
         <div className="space-y-1" data-testid="knob-runs">
           <p className="text-[12px] text-muted">
             {knob} in each run, first build → final{runs.length < n ? ` (${runs.length} of ${n} runs record it)` : ""}:
           </p>
-          <ul className="space-y-0.5 font-mono text-[11.5px] leading-5 tnum">
+          <ul className="space-y-0.5 font-mono text-[11.5px] leading-6 tnum">
             {runs.map((r) => (
               <li key={r.id} className="flex flex-wrap items-baseline gap-x-2">
                 {r.page ? (
@@ -176,7 +188,10 @@ function FamilyGroups({ list, admin, label }: { list: Lesson[]; admin: boolean; 
       {families.map((f, i) => {
         const open = (i < OPEN_FAMILIES) !== toggled.has(f.scope);
         const showAll = all.has(f.scope);
-        const shown = showAll ? f.groups : f.groups.slice(0, PER_FAMILY);
+        // runs that pushed a knob both ways are folded apart under one note, never shown as advice
+        const advice = f.groups.filter((g) => !lessonConflict(g.members));
+        const conflicts = f.groups.filter((g) => lessonConflict(g.members));
+        const shown = showAll ? advice : advice.slice(0, PER_FAMILY);
         const id = `${label}-${f.scope}`;
         return (
           <section key={f.scope} aria-labelledby={id} className="space-y-2.5">
@@ -194,15 +209,29 @@ function FamilyGroups({ list, admin, label }: { list: Lesson[]; admin: boolean; 
             </div>
             {open ? (
               <div id={`${id}-cards`} className="space-y-2.5">
-                <ul className="grid grid-cols-1 gap-3 md:grid-cols-2">
-                  {shown.map((g) => (
-                    <LessonCard key={g.key} g={g} admin={admin} knobLabel={knobLabel} />
-                  ))}
-                </ul>
-                {f.groups.length > PER_FAMILY ? (
+                {shown.length ? (
+                  <ul className="grid grid-cols-1 gap-3 md:grid-cols-2">
+                    {shown.map((g) => (
+                      <LessonCard key={g.key} g={g} admin={admin} knobLabel={knobLabel} />
+                    ))}
+                  </ul>
+                ) : null}
+                {advice.length > PER_FAMILY ? (
                   <Button variant="ghost" size="sm" aria-expanded={showAll} onClick={() => flip(setAll, f.scope)}>
-                    {showAll ? "Show fewer" : `Show all ${f.groups.length}`}
+                    {showAll ? "Show fewer" : `Show all ${advice.length}`}
                   </Button>
+                ) : null}
+                {conflicts.length ? (
+                  <details className="rounded-lg border border-warn-border bg-warn-soft/40 px-3 py-2" data-testid="lesson-conflicts">
+                    <summary className="cursor-pointer text-[13px] font-medium select-none">
+                      Conflicting evidence: {conflicts.length} knob{conflicts.length === 1 ? "" : "s"} where runs moved the value in opposite directions (not advice)
+                    </summary>
+                    <ul className="mt-2.5 grid grid-cols-1 gap-3 md:grid-cols-2">
+                      {conflicts.map((g) => (
+                        <LessonCard key={g.key} g={g} admin={admin} knobLabel={knobLabel} />
+                      ))}
+                    </ul>
+                  </details>
                 ) : null}
               </div>
             ) : null}

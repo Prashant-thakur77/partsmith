@@ -1,7 +1,7 @@
 // Unit tests for the "Open in slicer" hand-off and the export-gate link helpers (node --test; no browser, no network).
 import assert from "node:assert/strict";
 import test from "node:test";
-import { exportLine } from "../src/lib/bypass.ts";
+import { exportLine, plainCheck, plainNote } from "../src/lib/bypass.ts";
 import { PRINTABLE_KINDS, withAck } from "../src/lib/ship.ts";
 import { SLICERS, absoluteUrl, slicerHandoff } from "../src/lib/slicers.ts";
 
@@ -57,4 +57,10 @@ test("the caught-lie export line comes from the gate decision", () => {
   assert.equal(held.title, "Export blocked");
   assert.match(held.sub, /acknowledg/);
   assert.equal(exportLine({ export: { ok: true, requires_ack: false, status: "verified", reason: "r" } }).title, "Export allowed");
+});
+
+test("lying-model report captions and check ids read in plain words", () => {
+  assert.equal(plainNote("top view: the model built by the lying brain vs the photo silhouette"), "top view: the part the lying model built vs the photo silhouette");
+  assert.equal(plainNote("top view: hatched = the end the brain claimed is broken off"), "top view: hatched = the end the model claimed is broken off");
+  assert.deepEqual(["hole_1.diameter", "bbox.x", "residual_top"].map(plainCheck), ["hole 1 diameter", "overall length", "top outline"]);
 });

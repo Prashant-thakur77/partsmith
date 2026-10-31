@@ -5,7 +5,8 @@
 
 export type CostCall = { provider: string; model: string; stage: string; mode: "live" | "mock" | "replay"; tokens_in: number; tokens_out: number; usd: number; ok: boolean };
 
-export type ModelCost = { model: string; provider: string; calls: number; failed: number; tokensIn: number; tokensOut: number; usd: number; live: boolean };
+/** One row per model and mode: the same model answered live and by its mock stand-in are two rows, each named. */
+export type ModelCost = { model: string; provider: string; mode: CostCall["mode"]; calls: number; failed: number; tokensIn: number; tokensOut: number; usd: number; live: boolean };
 
 export type JobCost = {
   usd: number;
@@ -33,8 +34,8 @@ export function jobCost(calls: readonly CostCall[], opts: { replay: boolean }): 
     tokensOut += c.tokens_out;
     failed += c.ok ? 0 : 1;
     liveCalls += c.mode === "live" ? 1 : 0;
-    const key = `${c.provider}\u0000${c.model}`;
-    const m = by.get(key) ?? { model: c.model, provider: c.provider, calls: 0, failed: 0, tokensIn: 0, tokensOut: 0, usd: 0, live: false };
+    const key = `${c.provider}\u0000${c.model}\u0000${c.mode}`;
+    const m = by.get(key) ?? { model: c.model, provider: c.provider, mode: c.mode, calls: 0, failed: 0, tokensIn: 0, tokensOut: 0, usd: 0, live: false };
     m.calls += 1;
     m.failed += c.ok ? 0 : 1;
     m.tokensIn += c.tokens_in;

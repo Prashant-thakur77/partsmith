@@ -2025,7 +2025,7 @@ class FixRun:
             v = out.verification
             st.label = (
                 f"{'Verified' if v.verified else v.status.replace('_', ' ')}: "
-                + format_views(v).split("; ")[0]
+                + "; ".join(f"{m.view}: IoU {m.iou:.3f}, Hausdorff {m.hausdorff_mm:.2f} mm" for m in v.views)
                 + f"; tests {sum(t.passed for t in v.tests)}/{len(v.tests)}"
             )
         res.cleanup()

@@ -16,6 +16,9 @@ import {
   lessonKey,
   median,
   parseJobFilter,
+  runsOnServer,
+  buildsUsing,
+  lessonConflict,
 } from "../src/lib/page-groups.ts";
 
 test("local origins are the ones a phone cannot open", () => {
@@ -76,7 +79,10 @@ test("the jobs summary and filters come from the list itself", () => {
   assert.deepEqual(s.source, { recorded: 2, server: 4 });
   assert.equal(s.gapN, 3, "only finished jobs with a gap count");
   assert.equal(s.medianMaxGapMm, 0.3);
-  assert.equal(jobsSummaryText(s), "2 of 6 verified · median max gap 0.30 mm (3 finished jobs)");
+  assert.deepEqual(s.server, { verified: 1, finished: 3 }, "made here, done or failed: the admin overview's set");
+  assert.equal(jobsSummaryText(s), "2 of 6 verified · median max gap 0.30 mm (3 finished jobs) · runs made here: 1 verified of 3 finished");
+  assert.deepEqual(runsOnServer({ jobs: 22, jobs_recorded: 3, jobs_listed: 25 }), { n: 25, recorded: 3 }, "home counts what /jobs lists");
+  assert.deepEqual(runsOnServer({ jobs: 4 }), { n: 4, recorded: 0 });
   assert.equal(jobsSummaryText(jobsSummary([job("failed", false, null)])), "0 of 1 verified");
   assert.deepEqual(parseJobFilter("verified", "nope"), { status: "verified", source: null });
   assert.deepEqual(parseJobFilter("bogus", "recorded"), { status: null, source: "recorded" });
@@ -115,4 +121,17 @@ test("feedback rounds prefer the verifier's verdicts over a pin's local gap", ()
     fb("p2", "r", 1, { before_mm: 2.85, after_mm: 0.25, verdict: { max_error_mm: 3.68 }, next_verdict: { max_error_mm: 1.15 } }),
   ]);
   assert.deepEqual(b.rounds, [{ round: 1, before_mm: 3.68, after_mm: 1.15 }]);
+});
+
+test("a knob card whose runs moved the value both ways is conflicting evidence, not advice", () => {
+  const run = (id, first, final) => ({ id, scope: "cover", rule: "r", status: "candidate", created_at: 0, evidence: { template: "battery_cover", param: "corner_radius", first, final }, links: [] });
+  assert.deepEqual(lessonConflict([run("a", 1, 1.9), run("b", 2, 1.2), run("c", 1, 1.5)]), { up: 2, down: 1 });
+  assert.equal(lessonConflict([run("a", 1, 1.9), run("c", 1, 1.5)]), null, "same direction agrees");
+  assert.equal(lessonConflict([run("a", 1, 1.9)]), null);
+});
+
+test("builds using a card count each build once across its wordings", () => {
+  assert.equal(buildsUsing([{ track: { used_in: 2, jobs: ["j1", "j2"] } }, { track: { used_in: 2, jobs: ["j2", "j3"] } }]), 3);
+  assert.equal(buildsUsing([{ track: { used_in: 0, jobs: [] } }, { track: null }]), 0);
+  assert.equal(buildsUsing([{ track: { used_in: 4 } }]), 4, "older API without ids");
 });

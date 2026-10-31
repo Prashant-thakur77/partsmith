@@ -37,10 +37,12 @@ export const status = {
   jobs: { total: 12, verified: 9 },
   cost: { usd_total: 0, usd_per_job_mean: 0, n_jobs: 12 },
   model_calls: [{ stage: "build", provider: "baseten", model: "meta-models/muse-spark-open-1026", mode: "mock", calls: 24, failed: 0, tokens_in: 0, tokens_out: 0, usd: 0, ms_mean: 3, open_weights: true }],
+  // calls inside the recorded runs this server serves (how they ran then): the judge ran on another model, live
+  model_calls_recorded: [{ stage: "judge", provider: "meta", model: "muse-spark-1.3", mode: "live", calls: 3, failed: 0, tokens_in: 900, tokens_out: 120, usd: 0.01, ms_mean: 2000, open_weights: false }],
   open_weights: { open_weights_only: false, stages_live_on_open_weights: [], calls_on_open_weights: 0, last_live_call_ts: {} },
 };
 
-export const stats = { parts: 14, verified: 11, synthetic: 9, real: 5, reference_object: 0, jobs: 12, grams_pla: 86.4 };
+export const stats = { parts: 14, verified: 11, synthetic: 9, real: 5, reference_object: 0, reference: 2, withdrawn: 0, jobs: 12, jobs_recorded: 3, jobs_listed: 15, grams_pla: 86.4 };
 
 const verification = {
   verified: true,
@@ -647,6 +649,8 @@ export function reviewDetail(id: string): Record<string, unknown> | null {
           note: "the clip face is the flat one",
           pins: [{ id: 1, u: 0.3, v: 0.4, note: "this corner was square", mat_mm: [102.5, 88.1], before_mm: 0.84, after_mm: 0.21 }],
           verdict: { status: "best_effort", max_error_mm: 0.83 },
+          // a live judge's blocking veto on this round: the round strip and the landing sheet show it with model and mode
+          judge: { ...judgeMock, model: "muse-spark-1.3", mode: "live", vetoes: [{ feature: "latch_hook", issue: "missing - the photo shows a hook lip on the latch arm", severity: "blocking" }] },
           child_job: "job_rev_2",
         }),
         round({ round: 2, job_id: "job_rev_2", verdict: { status: "best_effort", max_error_mm: 0.62 } }),

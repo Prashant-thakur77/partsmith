@@ -21,6 +21,9 @@ const REPLACEMENTS: [RegExp, string][] = [
   [/\bHD95\b/g, "95th-percentile outline gap"],
   [/\bHausdorff\b/g, "outline gap"],
   [/\bIoU\b/g, "overlap (IoU)"],
+  // older agent runs said "best"/"worse" for the keep rule's ranking; the rule compares shortfall, not max error
+  [/worse than the best committed model — code keeps the best/g, "not closer to passing than the best committed round (judged on how close every check is to passing, not on max error); code keeps that one"],
+  [/\bnow the best model\b/g, "now the closest to passing (judged on how close every check is to passing, not on max error)"],
 ];
 
 export function plainTerms(text: string): string {

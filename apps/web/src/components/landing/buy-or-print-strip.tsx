@@ -117,7 +117,7 @@ export function BuyOrPrintStrip() {
         <span className="text-fg">{title}</span>
         <Badge tone="mock">recorded run</Badge>
         <span>
-          · buy: {card.lookup?.label || "web lookup"} ({card.recorded ? `stored; the lookup ran ${card.lookup?.mode ?? card.mode} earlier` : card.lookup?.mode ?? card.mode})
+          · buy: {card.lookup?.label || "web lookup"} ({card.stored || card.recorded ? `stored; the lookup ran ${card.lookup?.mode ?? card.mode} earlier` : card.lookup?.mode ?? card.mode})
         </span>
         <span>· print: code&apos;s estimate from the model&apos;s volume</span>
       </p>

@@ -98,3 +98,54 @@ test("parts: a family with no parts gets no filter chip", async ({ page }) => {
   await expect(chips.getByRole("button", { name: /Brackets/ })).toBeVisible();
   await expect(chips.getByRole("button", { name: /Hinges/ })).toHaveCount(0);
 });
+
+test("models and judges: how a stage runs now sits beside the models seen in its logged calls", async ({ page }) => {
+  await setup(page);
+  await page.goto("/models");
+  await expect(page.getByText("Runs now", { exact: true }).first()).toBeVisible(); // header pill (the table column is the other)
+  await expect(page.getByTestId("stage-models").getByRole("columnheader", { name: "Runs now" })).toBeVisible();
+  const judge = page.getByTestId("stage-models").locator('tr[data-stage="judge"]');
+  await expect(judge).toContainText("muse-glimmer-30b-q4_k_m"); // set up now
+  await expect(judge.locator("td").nth(1)).toContainText("mock"); // runs now
+  await expect(judge).toContainText("muse-spark-1.3");
+  await expect(judge).toContainText("in recorded runs");
+  await expect(judge).toContainText("A logged call used a different model than the one set up now.");
+  await expect(page.getByTestId("stage-models").getByRole("columnheader", { name: /Seen in logged calls/ })).toBeVisible();
+  await page.goto("/judges"); // the fixture has six stages: all fit without "Show all"
+  await expect(page.getByTestId("stage-models").locator('tr[data-stage="judge"]')).toContainText("muse-spark-1.3");
+});
+
+test("admin: an open (dev) server says so in a warning banner", async ({ page }) => {
+  await setup(page);
+  await page.route("**/api/v1/status", (r) => r.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ ...status, admin: "open (dev)" }) }));
+  await page.goto("/admin");
+  await expect(page.getByTestId("admin-open-warning")).toContainText("Development mode: admin actions are open.");
+  await expect(page.getByTestId("admin-open-warning")).toContainText("PARTSMITH_ADMIN_TOKEN");
+});
+
+test("admin: a token server shows no dev-mode warning", async ({ page }) => {
+  await setup(page);
+  await page.goto("/admin");
+  await expect(page.getByRole("heading", { name: "Admin", level: 1 })).toBeVisible();
+  await expect(page.getByTestId("admin-open-warning")).toHaveCount(0);
+});
+
+test("how: the real-photo row claims only what the bench shows and links to Accuracy", async ({ page }) => {
+  await setup(page);
+  await page.goto("/how#compare");
+  const row = page.getByRole("row", { name: /Real millimetres from a plain photo/ });
+  const ours = row.getByRole("cell").last();
+  await expect(ours).toContainText("Partial");
+  await expect(ours).not.toContainText("Yes");
+  await expect(ours.getByRole("link", { name: "See Accuracy" })).toHaveAttribute("href", /^\/results/);
+});
+
+test("describe: the sentence stays on the questions and result screens", async ({ page }) => {
+  await setup(page);
+  await page.goto("/describe?id=d_261031_0000asks");
+  await expect(page.getByTestId("describe-you-asked")).toContainText("You asked");
+  await page.goto("/describe?id=d_261031_0000done");
+  await expect(page.getByTestId("describe-you-asked")).toBeVisible();
+  await expect(page.getByTestId("describe-how-made")).toContainText("How it was made");
+  await expect(page.getByTestId("describe-how-made")).toContainText("Photograph the real part");
+});

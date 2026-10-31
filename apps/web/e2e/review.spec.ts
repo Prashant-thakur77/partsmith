@@ -216,6 +216,10 @@ test.describe("functional", () => {
     await setup(page);
     await page.goto("/review?job=job_rev_2");
     await expect(page.getByRole("region", { name: "Should look like" })).toContainText("biggest gap 0.62 mm");
+    // the round strip says why round 1 stayed best effort: the judge's blocking veto, with its model and mode
+    const strip = page.getByRole("list", { name: "Rounds so far" });
+    await expect(strip).toContainText("judge blocked it: latch hook missing");
+    await expect(strip).toContainText("muse-spark-1.3 · live");
     const bar = page.getByRole("region", { name: "Your decision" });
     await expect(bar.getByRole("button", { name: /Accept anyway/ })).toBeVisible();
     await page.goto("/review?job=job_demo_1"); // verified: a plain Accept

@@ -275,35 +275,41 @@ class Registry:
         best = max((coverage(p, tokens, numbers) for p in parts), default=0.0)
         return page, len(parts), [coverage(p, tokens, numbers) for p in page], best
 
-    def families(self, *, include_reference: bool = True) -> list[dict[str, Any]]:
+    def families(
+        self, *, include_reference: bool = True, include_withdrawn: bool | None = None
+    ) -> list[dict[str, Any]]:
+        """Per-family counts. `include_reference=False` is the public view: reference objects and (unless
+        `include_withdrawn`) withdrawn parts are left out, the same set `GET /parts` lists."""
         with self.session() as s:
             stmt = select(PartRow.family, func.count(), func.sum(func.cast(PartRow.verified, Integer)))
             if not include_reference:
                 stmt = stmt.where(~PartRow.search_text.contains(ROLE_REFERENCE_TAG))
+            if not (include_reference if include_withdrawn is None else include_withdrawn):
+                stmt = stmt.where(PartRow.slug.not_in(select(WithdrawnRow.slug)))
             rows = s.execute(stmt.group_by(PartRow.family)).all()
         return [{"family": f, "count": int(c), "verified": int(v or 0)} for f, c, v in rows]
 
     def stats(self) -> dict[str, Any]:
+        """Public counters. `parts`, `verified`, `synthetic`, `real`, `reference_object` and `grams_pla` count the
+        same set `GET /parts` lists (functional parts, not withdrawn). Reference objects (bench-only: ID-1 card,
+        LEGO brick …) are counted apart in `reference`; withdrawn parts in `withdrawn`."""
         with self.session() as s:
-            total = s.scalar(select(func.count()).select_from(PartRow)) or 0
-            verified = s.scalar(select(func.count()).select_from(PartRow).where(PartRow.verified.is_(True))) or 0
-            by_origin = dict(s.execute(select(PartRow.origin, func.count()).group_by(PartRow.origin)).all())
-            records = list(s.scalars(select(PartRow.record)))
-            reference = (
-                s.scalar(
-                    select(func.count()).select_from(PartRow).where(PartRow.search_text.contains(ROLE_REFERENCE_TAG))
-                )
-                or 0
-            )
-        grams = sum((json.loads(r).get("facts") or {}).get("mass_g_pla", 0.0) for r in records)
+            rows = list(s.execute(select(PartRow.slug, PartRow.search_text, PartRow.verified, PartRow.origin,
+                                         PartRow.record)).all())  # fmt: skip
+            withdrawn = set(s.scalars(select(WithdrawnRow.slug)))
+        live = [r for r in rows if r[0] not in withdrawn]
+        public = [r for r in live if ROLE_REFERENCE_TAG not in (r[1] or "")]
+        origins = [r[3] for r in public]
+        grams = sum((json.loads(r[4]).get("facts") or {}).get("mass_g_pla", 0.0) or 0.0 for r in public)
         return {
-            "parts": int(total),
-            "verified": int(verified),
-            "synthetic": int(by_origin.get("synthetic", 0)),
-            "real": int(by_origin.get("real", 0)),
-            "reference_object": int(by_origin.get("reference_object", 0)),
+            "parts": len(public),
+            "verified": sum(1 for r in public if r[2]),
+            "synthetic": origins.count("synthetic"),
+            "real": origins.count("real"),
+            "reference_object": origins.count("reference_object"),
             "grams_pla": round(float(grams), 1),
-            "reference": int(reference),
+            "reference": len(live) - len(public),
+            "withdrawn": len(rows) - len(live),
         }
 
     # ---- thumbnails ------------------------------------------------------------------------------------------------

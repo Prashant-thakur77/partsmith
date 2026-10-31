@@ -1,6 +1,6 @@
 "use client";
 
-import { ShieldCheck } from "lucide-react";
+import { ShieldAlert, ShieldCheck } from "lucide-react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { AdminAccess, AdminLock, useAdmin } from "@/components/admin-access";
 import { Container, PageHeader } from "@/components/layout/page";
@@ -18,7 +18,7 @@ import { RulesTab } from "./rules-tab";
 /** The admin console: overview, registry moderation, taught rules, audit log and demand. Tab in `?tab=`. */
 export function AdminClient() {
   const caps = useCapabilities();
-  const { admin } = useAdmin();
+  const { admin, open } = useAdmin();
   const params = useSearchParams();
   const router = useRouter();
   const pathname = usePathname();
@@ -34,7 +34,16 @@ export function AdminClient() {
   return (
     <>
       <PageHeader compact title="Admin" description="Run the site from one place: how jobs go, what parts are listed, what reviews teach and who changed what." actions={<AdminLock />} />
-      <Container className="py-6">
+      <Container className="space-y-4 py-6">
+        {open ? (
+          <div role="alert" data-testid="admin-open-warning" className="flex items-start gap-2.5 rounded-lg border border-warn-border bg-warn-soft px-4 py-3 text-[13.5px] leading-5">
+            <ShieldAlert className="mt-0.5 size-4 shrink-0 text-warn" aria-hidden />
+            <p>
+              <span className="font-semibold">Development mode: admin actions are open.</span> Anyone who can reach this server can withdraw parts, change rules and publish. Set{" "}
+              <code className="font-mono text-[12.5px]">PARTSMITH_ADMIN_TOKEN</code> before going public.
+            </p>
+          </div>
+        ) : null}
         {!caps.ready ? (
           <Skeleton className="h-64" />
         ) : !available ? (

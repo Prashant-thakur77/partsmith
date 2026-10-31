@@ -43,12 +43,14 @@ test("workspace shows the agent log, focus, progress lines, citations and new ar
   await expect(log).toContainText("set_param");
   await expect(log).toContainText("length 38.00 → 40.10 mm");
   await log.getByRole("button", { name: "Show" }).click();
-  await expect(page.getByText(/Agent is looking at: hole_1/)).toBeVisible();
+  await expect(page.getByText(/The fixer is checking: hole_1/)).toBeVisible();
   await expect(page.getByRole("link", { name: /Source 1: Bracket datasheet/ }).first()).toBeAttached();
   await page.getByRole("tab", { name: "Residuals" }).click();
   await expect(page.getByText("Functional probes (advisory)")).toBeVisible();
   await expect(page.getByText("code gate: accepted")).toBeVisible();
   await expect(page.getByRole("region", { name: "Orbit preview" })).toBeVisible();
+  // the install card is labelled as an illustration (here a mock: no image model ran), never passed off as a photo
+  await expect(page.getByRole("region", { name: "Install card" })).toContainText("mock illustration (no image model ran)");
   await page.getByRole("button", { name: "Export" }).click();
   await expect(page.getByRole("menuitem", { name: /Everything \(\.zip\)/ })).toBeVisible();
   expect(realErrors(errors)).toEqual([]);

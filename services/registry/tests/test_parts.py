@@ -158,6 +158,8 @@ FREE_CODE = [  # the knobs of a free-code (extruded outline) program
         ("knob", "thoda ooncha karo", {"height": 16.5}),
         ("knob", "hole bada karo", {"bore_d": 6.2}),
         ("spacer", "2 mm lamba karo", {"height": 12.0}),  # a cylinder's length is its height
+        ("spacer", "2 mm thicker", {"height": 12.0}),  # no thickness knob: as thick as it is high (its MEASURE_MAP)
+        ("spacer", "thoda patla karo", {"height": 9.5}),
         ("l_bracket", "mota karo", {"thickness": 3.5}),
         ("clip", "chauda karo", {"width": 16.5}),
         ("clip", "make it wider", {"width": 16.5}),

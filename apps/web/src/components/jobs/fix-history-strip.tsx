@@ -26,13 +26,12 @@ function roundName(r: FixRound): string {
   return r.firstBuild && r.iter === 1 ? "First build" : `Round ${r.iter}`;
 }
 
-/** One plain sentence when the shipped round is not the last one, e.g. "The result is the first build (kept); the 1 later try scored worse and was discarded." */
+/** One plain sentence when the shipped round is not the last one, in the keep rule's words, e.g. "The result is round 5
+ * (kept); the 1 later try was not closer to passing by the keep rule and was discarded." */
 function keptNote(kept: FixRound, rounds: FixRound[]): string {
-  const later = rounds.filter((r) => r.iter > kept.iter);
-  const allWorse = later.every((r) => r.maxErrorMm != null && kept.maxErrorMm != null && r.maxErrorMm > kept.maxErrorMm);
-  const n = later.length;
-  const what = n === 1 ? "the 1 later try" : `the ${n} later tries`;
-  return `The result is ${roundName(kept) === "First build" ? "the first build" : roundName(kept).toLowerCase()} (kept); ${what} ${allWorse ? "scored worse and" : ""} ${n === 1 ? "was" : "were"} discarded.`.replace("  ", " ");
+  const n = rounds.filter((r) => r.iter > kept.iter).length;
+  const what = n === 1 ? "the 1 later try was" : `the ${n} later tries were`;
+  return `The result is ${roundName(kept) === "First build" ? "the first build" : roundName(kept).toLowerCase()} (kept); ${what} not closer to passing by the keep rule and ${n === 1 ? "was" : "were"} discarded.`;
 }
 
 /** ✓ / ✗ for a view's Hausdorff against the limit, with words for screen readers. */
@@ -126,12 +125,16 @@ export function FixHistoryStrip({ events, className }: { events: JobEvent[]; cla
                   {r.maxErrorMm != null ? `${fmtErr(r.maxErrorMm, s.limitMm ?? undefined)} mm` : "—"}
                   <span className="ml-1 font-sans text-[10.5px] text-subtle">max error</span>
                 </span>
-                {sizeSetsMaxError(r) ? <span className="text-[11px] leading-4 text-muted">from a measured size; outline gaps:</span> : null}
+                {sizeSetsMaxError(r) ? <span className="text-[11px] leading-4 text-muted">from a measured size{r.sizeSource ? ` (${r.sizeSource})` : ""}; outline gaps:</span> : null}
                 {r.views.length ? (
                   <span className="flex flex-wrap gap-x-2 gap-y-0.5 font-mono text-[11px] tnum">
                     {sizeSetsMaxError(r) ? null : <span className="font-sans text-subtle">outline gap</span>}
                     {r.views.map((w) => (
-                      <span key={w.view} className={w.withinLimit == null ? "text-muted" : w.withinLimit ? "text-ok" : "text-bad"}>
+                      <span
+                        key={w.view}
+                        className={w.withinLimit == null ? "text-muted" : w.withinLimit ? "text-ok" : "text-bad"}
+                        title={w.fromWorst ? "This round's verify line named only the other view; this is the round's worst outline gap, which was on this view." : undefined}
+                      >
                         {w.view} {w.hausdorffMm != null ? fmtNum(w.hausdorffMm) : "—"}
                         <LimitMark within={w.withinLimit} />
                       </span>

@@ -75,6 +75,37 @@ def test_reference_objects_are_hidden_by_default(client: TestClient) -> None:
     assert client.get("/api/v1/parts/reference-id1-card").status_code == 200  # still reachable directly
 
 
+def test_every_public_count_uses_the_parts_listing(client: TestClient, fake: FakeService) -> None:
+    """/stats, /families, /llms.txt and /prompt.txt count what GET /parts lists: no reference objects, no withdrawn
+    parts; reference objects are reported apart."""
+    add_part("spacer", "m3-spacer")
+    add_part("hook", "wall-hook", verified=False)
+    add_part("hook", "old-hook")
+    ref = make_part("battery_cover", "reference-id1-card")
+    ref.tags.append(ROLE_REFERENCE_TAG)
+    get_registry().upsert_part(ref)
+    get_registry().withdraw("old-hook", "duplicate", "admin")
+    listed = client.get("/api/v1/parts").json()
+    verified = client.get("/api/v1/parts?verified=true").json()["total"]
+    s = client.get("/api/v1/stats").json()
+    assert (
+        (s["parts"], s["verified"], s["reference"], s["withdrawn"]) == (listed["total"], verified, 1, 1) == (2, 1, 1, 1)
+    )
+    assert sum(f["count"] for f in client.get("/api/v1/families").json()) == listed["total"]
+    llms = client.get("/llms.txt").text
+    assert "Registry right now: 2 parts, 1 verified" in llms and "plus 1 bench reference object" in llms
+    assert "## Parts (2 of 2)" in llms
+    assert "Registry: 2 parts (1 verified); plus 1 bench reference object" in client.get("/prompt.txt").text
+
+
+def test_stats_job_counts_match_the_jobs_listing(client: TestClient, fake: FakeService) -> None:
+    _demo(client, fake)
+    s = client.get("/api/v1/stats").json()
+    listed = client.get("/api/v1/jobs?limit=500").json()
+    assert s["jobs_listed"] == len(listed) == s["jobs"] + s["jobs_recorded"]
+    assert s["jobs_recorded"] == sum(1 for j in listed if j["is_replay"])
+
+
 def test_bundle_embed_presets_card(client: TestClient) -> None:
     add_part("cable_clip", "desk-cable-clip")
     add_part("hook", "rough-hook", verified=False, max_error_mm=0.8)

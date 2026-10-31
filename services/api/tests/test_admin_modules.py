@@ -122,3 +122,28 @@ def test_disabled_feedback_is_not_put_into_prompts(tmp_path: Any, monkeypatch: p
     lines = FixRun.past_feedback(fake)
     assert len(lines) == 1 and "make it thicker" in lines[0]
     assert written["feedback_used.json"]["ids"] == ["r2/1/note2"]
+
+
+def test_cost_aggregate_keeps_recorded_runs_apart() -> None:
+    from services.admin import costs
+
+    def call(model: str, mode: str, usd: float) -> dict[str, Any]:
+        return {"stage": "judge", "provider": "meta", "model": model, "mode": mode, "usd": usd, "ms": 10, "ts": 1.0}
+
+    jobs = {
+        "here": SimpleNamespace(id="agg-here", finished=True, events=[]),
+        "rec": SimpleNamespace(id="agg-rec", finished=True, events=[]),
+    }
+    calls = {"agg-here": [call("muse-glimmer", "mock", 0.0)], "agg-rec": [call("muse-spark-1.3", "live", 0.01)]}
+    for j in jobs.values():
+        costs._call_cache[j.id] = calls[j.id]
+    summaries = [
+        SimpleNamespace(id="agg-here", is_replay=False, verified=True, cost_usd=0.0),
+        SimpleNamespace(id="agg-rec", is_replay=True, verified=True, cost_usd=0.01),
+    ]
+    mgr = SimpleNamespace(get=lambda jid: next(j for j in jobs.values() if j.id == jid))
+    here = costs.aggregate(summaries, mgr)
+    rec = costs.aggregate(summaries, mgr, recorded=True)
+    assert [(c["model"], c["mode"]) for c in here["model_calls"]] == [("muse-glimmer", "mock")]
+    assert [(c["model"], c["mode"]) for c in rec["model_calls"]] == [("muse-spark-1.3", "live")]
+    assert here["cost"]["usd_total"] == 0.0 and here["jobs"]["total"] == 1  # a played-back log is never spend here

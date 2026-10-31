@@ -6,13 +6,14 @@
  * Rounds decided by a script are labelled "scripted test review", never passed off as a person's review.
  */
 import { useQuery } from "@tanstack/react-query";
-import { ArrowRight, BadgeCheck, MessageSquareText } from "lucide-react";
+import { ArrowRight, BadgeCheck, Hourglass, MessageSquareText, ShieldAlert, XCircle } from "lucide-react";
 import Link from "next/link";
 import * as React from "react";
 import { review } from "@/lib/api-review";
+import type { FeedbackEntry, ReviewRound } from "@/lib/api-types";
 import { pickReviewRun } from "@/lib/figure-run";
 import { fmtNum, splitTitle } from "@/lib/format";
-import { DECISION_LABEL, KIND_LABEL, OUTCOME_LABEL, outcomeTone } from "@/lib/review";
+import { DECISION_LABEL, KIND_LABEL, OUTCOME_LABEL, blockingVeto, outcomeTone } from "@/lib/review";
 import { cn } from "@/lib/utils";
 import { Badge } from "../ui/badge";
 import { ErrorState } from "../ui/error-state";
@@ -21,9 +22,53 @@ import { CountUp } from "../ui/count-up";
 import { Skeleton } from "../ui/skeleton";
 import { useReplays } from "./use-figure-run";
 
+/** The chain's closing line: what code decided on the last round and what the review record says, in one tone that
+ * follows the review state (green only once a person accepted it). */
+function ClosingPill({ verified, status }: { verified: boolean; status: string }) {
+  const words = status.replaceAll("_", " ");
+  const head = verified ? "Code verified the last round" : "The last round is not verified by code";
+  if (status === "accepted")
+    return (
+      <p className="mt-6 inline-flex items-center gap-2 rounded-md border border-ok-border bg-ok-soft px-3 py-1.5 text-[13px] text-fg">
+        <BadgeCheck className="size-4 text-ok" aria-hidden /> {head}; a reviewer accepted it.
+      </p>
+    );
+  if (status === "rejected")
+    return (
+      <p className="mt-6 inline-flex items-center gap-2 rounded-md border border-bad-border bg-bad-soft px-3 py-1.5 text-[13px] text-fg">
+        <XCircle className="size-4 text-bad" aria-hidden /> {head}; a reviewer rejected it.
+      </p>
+    );
+  return (
+    <p className="mt-6 inline-flex items-center gap-2 rounded-md border border-border-strong bg-surface-2 px-3 py-1.5 text-[13px] text-fg">
+      <Hourglass className="size-4 text-muted" aria-hidden /> {head}; the review record says “{words}”: no one has signed it off yet.
+    </p>
+  );
+}
+
 function ByBadge({ by }: { by: string | null | undefined }) {
   if (!by) return null;
   return by === "person" ? <Badge tone="outline">a person</Badge> : <Badge tone="mock">scripted test review</Badge>;
+}
+
+/**
+ * The ledger's rule for the outcome ("fixed: the next round passed verification"), without the repeated label. When the
+ * number did not move but the next round passed, the chain's own judge records say why: a blocking veto on this round
+ * that the next round no longer had.
+ */
+function outcomeWhy(e: FeedbackEntry, rounds: readonly ReviewRound[]): string {
+  const why = e.outcome_why.replace(/^[a-z_ ]+:\s*/i, "");
+  const at = rounds.findIndex((r) => r.job_id === e.job_id);
+  const veto = at >= 0 ? blockingVeto(rounds[at]!.judge) : null;
+  const next = at >= 0 ? rounds[at + 1] : undefined;
+  const cleared = veto && next && next.verdict?.status === "verified" && !blockingVeto(next.judge);
+  const same = e.before_mm != null && e.after_mm != null && Math.abs(e.before_mm - e.after_mm) < 0.005;
+  if (cleared && same) return `${cap(why)}: the number did not move; the ${veto.text.replace(/^judge blocked it: /, "judge's block (")}) was cleared.`;
+  return `${cap(why)}.`;
+}
+
+function cap(s: string): string {
+  return s.charAt(0).toUpperCase() + s.slice(1);
 }
 
 export function SignOff() {
@@ -74,6 +119,7 @@ export function SignOff() {
           {rounds.map((r, i) => {
             const v = r.verdict;
             const ok = v?.status === "verified";
+            const veto = ok ? null : blockingVeto(r.judge);
             return (
               <li key={r.job_id} className="relative flex gap-4 md:flex-col md:gap-3 md:pr-6" data-reveal style={{ "--reveal-i": i } as React.CSSProperties}>
                 {/* connector */}
@@ -92,6 +138,14 @@ export function SignOff() {
                     {v?.max_error_mm != null ? <CountUp text={`${fmtNum(v.max_error_mm)} mm`} unitClassName="ml-0.5 text-[0.5em] tracking-normal text-muted" /> : "—"}
                   </div>
                   <div className="text-[12px] text-muted">{v ? v.status.replaceAll("_", " ") : "no verdict yet"}</div>
+                  {veto ? (
+                    <div className="max-w-xs space-y-0.5" title={veto.detail}>
+                      <p className="flex items-start gap-1 text-[12px] leading-4 text-bad">
+                        <ShieldAlert className="mt-px size-3.5 shrink-0" aria-hidden /> {veto.text}
+                      </p>
+                      <p className="font-mono text-[10.5px] text-subtle">{veto.by}</p>
+                    </div>
+                  ) : null}
                   <div className="flex flex-wrap items-center gap-1.5 pt-0.5">
                     {r.decision ? <Badge tone={r.decision === "accept" ? "ok" : r.decision === "reject" ? "bad" : "neutral"}>{DECISION_LABEL[r.decision] ?? r.decision}</Badge> : <Badge tone="outline">{i === rounds.length - 1 ? chain.data!.status.replaceAll("_", " ") : "—"}</Badge>}
                     <ByBadge by={r.by} />
@@ -102,11 +156,7 @@ export function SignOff() {
             );
           })}
         </ol>
-        {last?.verdict?.status === "verified" ? (
-          <p className="mt-6 inline-flex items-center gap-2 rounded-md border border-ok-border bg-ok-soft px-3 py-1.5 text-[13px] text-fg">
-            <BadgeCheck className="size-4 text-ok" aria-hidden /> Code verified the last round; the review record says “{chain.data!.status.replaceAll("_", " ")}”.
-          </p>
-        ) : null}
+        {last?.verdict ? <ClosingPill verified={last.verdict.status === "verified"} status={chain.data!.status} /> : null}
       </div>
 
       {entries.length ? (
@@ -123,9 +173,10 @@ export function SignOff() {
                   <ByBadge by={e.by} />
                 </div>
                 <p className="line-clamp-3 text-[13px] leading-5 text-fg">“{e.what}”</p>
+                {e.outcome_why ? <p className="text-[12px] leading-4 text-muted">{outcomeWhy(e, rounds)}</p> : null}
                 {e.before_mm != null && e.after_mm != null ? (
                   <p className="mt-auto font-mono text-[12px] text-muted tnum">
-                    gap there {fmtNum(e.before_mm)} → <span className={e.after_mm <= e.limit_mm ? "text-ok" : "text-fg"}>{fmtNum(e.after_mm)} mm</span> · limit {fmtNum(e.limit_mm)}
+                    {e.kind === "pin" ? "gap at the pin" : "max error"} {fmtNum(e.before_mm)} → <span className={e.after_mm <= e.limit_mm ? "text-ok" : "text-fg"}>{fmtNum(e.after_mm)} mm</span> · limit {fmtNum(e.limit_mm)}
                   </p>
                 ) : null}
               </li>

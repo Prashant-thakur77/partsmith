@@ -5,13 +5,15 @@ import * as React from "react";
 import { AlertTriangle, Check, KeyRound, Lock, MapPin, Unlock, X } from "lucide-react";
 import { useAdmin } from "@/components/admin-access";
 import { PipelineDiagram } from "@/components/models/pipeline-diagram";
+import { ModeWord, StageModelsTable } from "@/components/models/stage-models-table";
 import { Container, PageHeader, Section } from "@/components/layout/page";
 import { Badge } from "@/components/ui/badge";
 import { ErrorState } from "@/components/ui/error-state";
 import { Skeleton } from "@/components/ui/skeleton";
 import { api } from "@/lib/api";
-import type { ProviderStatus, Status } from "@/lib/api-types";
+import type { ProviderStatus } from "@/lib/api-types";
 import { fmtInt, fmtMs, fmtUsd, titleCase } from "@/lib/format";
+import { MODE_WORD } from "@/lib/stage-models";
 import { cn } from "@/lib/utils";
 
 function ProviderCard({ p }: { p: ProviderStatus }) {
@@ -75,19 +77,11 @@ function Warnings({ items }: { items: string[] }) {
   );
 }
 
-const MODE_WORD: Record<string, string> = { live: "live", replay: "recorded", mock: "mock" };
 const MODE_MEANS: [string, string][] = [
   ["live", "a real model call"],
   ["replay", "a saved model answer played back"],
   ["mock", "a deterministic stand-in, not model output"],
 ];
-
-/** How a stage ran, in one plain word (the only mode words on this page); live gets the accent, the others hatching. */
-function ModeWord({ mode }: { mode: string }) {
-  return (
-    <Badge tone={mode === "live" ? "accent" : "mock"}>{MODE_WORD[mode] ?? mode}</Badge>
-  );
-}
 
 /** The one legend for the mode words used everywhere on this page. */
 function ModeLegend() {
@@ -99,51 +93,6 @@ function ModeLegend() {
         </span>
       ))}
     </p>
-  );
-}
-
-/**
- * Public view: one row per stage and model. Rows with calls come from the server's model_call log (how those calls ran);
- * a stage with no logged calls shows the model and mode it would use now.
- */
-function StageTable({ s }: { s: Status }) {
-  const rows = s.providers.flatMap((p) => {
-    const calls = s.model_calls.filter((m) => m.stage === p.stage);
-    if (!calls.length) return [{ key: `${p.stage}-${p.role}`, role: p.role, stage: p.stage, model: p.model, open: p.open_weights, mode: p.mode, calls: 0, usd: null as number | null }];
-    return calls.map((m) => ({ key: `${p.stage}-${p.role}-${m.model}-${m.mode}`, role: p.role, stage: p.stage, model: m.model, open: m.open_weights, mode: m.mode, calls: m.calls, usd: m.usd as number | null }));
-  });
-  return (
-    <div tabIndex={0} role="region" aria-label="Models by stage" className="scrollbar-thin overflow-x-auto rounded-lg border border-border bg-surface">
-      <table className="w-full min-w-[560px] text-[13px]">
-        <thead className="bg-surface-2 text-left text-[11px] text-subtle">
-          <tr>
-            {["Stage", "Model", "Mode", "Calls", "Cost"].map((h, i) => (
-              <th key={h} scope="col" className={cn("px-3 py-2 font-medium whitespace-nowrap", i >= 3 && "text-right")}>
-                {h}
-              </th>
-            ))}
-          </tr>
-        </thead>
-        <tbody>
-          {rows.map((r) => (
-            <tr key={r.key} className="border-t border-border">
-              <th scope="row" className="px-3 py-2 text-left font-normal whitespace-nowrap">
-                {r.role} <span className="text-subtle">· {titleCase(r.stage)}</span>
-              </th>
-              <td className="px-3 py-2 font-mono text-[12px]">
-                {r.model}
-                {r.open ? <Badge tone="accent" className="ml-1.5 font-sans">open weights</Badge> : null}
-              </td>
-              <td className="px-3 py-2">
-                <ModeWord mode={r.mode} />
-              </td>
-              <td className="px-3 py-2 text-right font-mono tnum">{r.calls ? fmtInt(r.calls) : "—"}</td>
-              <td className="px-3 py-2 text-right font-mono tnum">{r.usd != null ? fmtUsd(r.usd) : "—"}</td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-    </div>
   );
 }
 
@@ -162,7 +111,7 @@ export function StatusClient() {
         actions={
           s ? (
             <div className="flex items-center gap-2 rounded-lg border border-border bg-surface px-3 py-2 text-[13px]">
-              <span className="text-muted">Right now</span>
+              <span className="text-muted">Runs now</span>
               <ModeWord mode={s.mode} />
               {h.data ? <span className="font-mono text-[12px] text-subtle">v{h.data.version}</span> : null}
             </div>
@@ -188,15 +137,15 @@ export function StatusClient() {
             </Section>
             <Section
               title="Providers by stage"
-              description="Each step of the pipeline, the model behind it, and the calls logged on this server. Mode is how those calls ran; a step with no calls shows how it would run now."
+              description="Each step of the pipeline: the model it is set up to use and how it runs now, beside the models actually seen in its logged calls and how each of those calls ran. Calls made on this server and calls inside the recorded runs it serves are listed apart; only the first are spend."
             >
               <ModeLegend />
-              <StageTable s={s} />
+              <StageModelsTable s={s} />
             </Section>
-            <Section title="Jobs and cost" description="Totals from the job log on this instance.">
+            <Section title="Jobs and cost" description="Totals from the jobs made on this server (the recorded runs it plays back are left out, so /jobs lists more).">
               <dl className="grid grid-cols-2 gap-px overflow-hidden rounded-xl border border-border bg-border md:grid-cols-4">
                 {[
-                  { k: "Jobs run", v: fmtInt(s.jobs.total) },
+                  { k: "Jobs run here", v: fmtInt(s.jobs.total), sub: "recorded runs not counted" },
                   { k: "Verified", v: fmtInt(s.jobs.verified) },
                   { k: "Model spend", v: fmtUsd(s.cost.usd_total) },
                   { k: "Mean per job", v: s.cost.usd_per_job_mean != null ? fmtUsd(s.cost.usd_per_job_mean) : "—", sub: `over ${fmtInt(s.cost.n_jobs)} jobs` },

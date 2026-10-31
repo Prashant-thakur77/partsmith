@@ -22,6 +22,9 @@ export type RoundView = {
   hausdorffMm: number | null;
   /** Hausdorff at or under the server's limit; null when the limit or the value is unknown. Not the full view rule. */
   withinLimit: boolean | null;
+  /** True when no line named this view's numbers: the round's overlays show the view existed, and the round's worst
+   * outline gap (`iteration.hausdorff_mm`, the largest over its views) was larger than every view that was named. */
+  fromWorst?: boolean;
 };
 
 export type RoundEdit = { param: string; from: number | null; to: number | null };
@@ -41,6 +44,9 @@ export type FixRound = {
   testsTotal: number | null;
   /** The keep rule's number for the round (`iteration.pass_shortfall`); null on older runs. */
   passShortfall: number | null;
+  /** When a measured size set the max error: that size as the residual line named it ("outline length"), from the
+   * round's `inspect_residuals` result; null when no such line was recorded. */
+  sizeSource: string | null;
   verdict: RoundVerdict;
   /** The verify stage label for this round, verbatim (empty when missing). */
   verdictText: string;
@@ -118,6 +124,8 @@ export function roundsFromEvents(events: readonly JobEvent[]): RoundsSummary {
   let latest: FixRound | null = null;
   // Overlays arrive before their round's iteration event (the orchestrator emits them first).
   const pendingOverlays: Record<number, RoundOverlay[]> = {};
+  // the first inspect_residuals result after each round (its "residuals:" lines name the measured sizes)
+  const residualText: Record<number, string> = {};
 
   for (const e of sorted) {
     switch (e.t) {
@@ -141,6 +149,7 @@ export function roundsFromEvents(events: readonly JobEvent[]): RoundsSummary {
           testsPassed: e.total_tests ? e.passed_tests : null,
           testsTotal: e.total_tests || null,
           passShortfall: e.pass_shortfall ?? null,
+          sizeSource: null,
           verdict: "unknown",
           verdictText: "",
           views: [],
@@ -168,6 +177,7 @@ export function roundsFromEvents(events: readonly JobEvent[]): RoundsSummary {
           const vs = parseViews(e.result);
           if (vs.length > latest.views.length) latest.views = vs.map((v) => ({ ...v, withinLimit: null }));
         }
+        if (e.name === "inspect_residuals") (residualText[latest.iter] ??= e.result);
         if (e.name === "set_params" && e.ok) {
           const m = /^committed round (\d+)/i.exec(e.result);
           const target = m ? byIter.get(Number(m[1])) : null;
@@ -191,11 +201,48 @@ export function roundsFromEvents(events: readonly JobEvent[]): RoundsSummary {
     r.verdict = executeFailed.has(r.iter) ? "failed" : v ? verdictFromLabel(v.label, v.status) : "unknown";
     r.maxErrorMm = metricMax.get(r.iter) ?? r.hausdorffMm;
     if (r.views.length === 0 && v) r.views = parseViews(v.label).map((x) => ({ ...x, withinLimit: null }));
+    fillWorstView(r);
     r.views = r.views.map((x) => ({ ...x, withinLimit: limitMm != null && x.hausdorffMm != null ? x.hausdorffMm <= limitMm : null }));
+    if (sizeSetsMaxError(r) && residualText[r.iter]) r.sizeSource = sizeFromResiduals(residualText[r.iter]!, r.maxErrorMm!);
   }
 
   const keptIter = final ? keptRound(rounds, doneCtx, doneMaxMm) : null;
   return { rounds, final, keptIter, limitMm, headline: headline(rounds, final, keptIter) };
+}
+
+/**
+ * Older runs wrote only the first view on the verify label, so a round whose worst outline gap was on another view
+ * listed "top 1.91" under a 3.71 mm max error. When the round's overlays name exactly one view the label left out and
+ * the round's worst gap is larger than every listed view, that gap belongs to the missing view: add it, marked.
+ */
+function fillWorstView(r: FixRound): void {
+  if (r.hausdorffMm == null || r.views.length === 0) return;
+  const listed = new Set(r.views.map((v) => v.view));
+  const missing = [...new Set(r.overlays.map((o) => o.view))].filter((v) => v !== "view" && !listed.has(v));
+  const top = Math.max(...r.views.map((v) => v.hausdorffMm ?? -Infinity));
+  if (missing.length === 1 && r.hausdorffMm > top + 0.005) r.views.push({ view: missing[0]!, iou: null, hausdorffMm: r.hausdorffMm, withinLimit: null, fromWorst: true });
+}
+
+/** The measured size whose residual equals the round's max error, from lines like
+ * "outline length: measured 49.83, model 54.84, Δ +5.02 mm (tol ±0.3) FAIL". */
+export function sizeFromResiduals(text: string, maxErrorMm: number): string | null {
+  for (const m of text.matchAll(/([a-z_0-9]+ [a-z_]+): measured [-\d.]+, model [-\d.]+, Δ ([-+]?[\d.]+) mm/gi)) {
+    if (Math.abs(Math.abs(Number(m[2])) - maxErrorMm) < 0.006) return m[1]!.replaceAll("_", " ");
+  }
+  return null;
+}
+
+/** One line under the outline-gap chart when a measured size, not the outline, set a round's max error, so the
+ * chart's number and the round's "max error" are each labelled: "First build: max error 5.02 mm came from a measured
+ * size (outline length); the chart plots the outline gap (4.52 mm)." Null when every max error is an outline gap. */
+export function chartSizeNote(rounds: readonly FixRound[]): string | null {
+  const off = rounds.filter((r) => sizeSetsMaxError(r) && r.hausdorffMm != null);
+  if (!off.length) return null;
+  const parts = off.map((r) => {
+    const name = r.firstBuild && r.iter === 1 ? "First build" : `Round ${r.iter}`;
+    return `${name}: max error ${r.maxErrorMm!.toFixed(2)} mm came from a measured size${r.sizeSource ? ` (${r.sizeSource})` : ""}; the chart plots its outline gap (${r.hausdorffMm!.toFixed(2)} mm)`;
+  });
+  return `${parts.join(". ")}.`;
 }
 
 /**
@@ -248,15 +295,19 @@ export function keepReason(rounds: readonly FixRound[], keptIter: number | null)
   const names = lower.map(nameOf);
   const plainRounds = names.every((n) => n.startsWith("round "));
   const others = lower.length === 1 ? `${nameOf(best)} had` : plainRounds ? `rounds ${listNames(lower.map((r) => String(r.iter)))} had` : `${listNames(names)} had`;
-  const lead = `Kept ${keptName} (${mm(keptErr)}) although ${others} a lower max error (lowest: ${nameOf(best)}, ${mm(best.maxErrorMm!)}).`;
-  if (kept.verdict === "verified" && best.verdict !== "verified") return `${lead} ${cap(keptName)} passed verification; ${nameOf(best)} did not.`;
-  const rule = "The keep rule picks the round closest to passing overall: every failing required test and view limit, each measured in multiples of its tolerance and summed.";
+  const lower1 = `${others} a lower max error (lowest: ${nameOf(best)}, ${mm(best.maxErrorMm!)})`;
+  if (kept.verdict === "verified" && best.verdict !== "verified")
+    return `Kept ${keptName} (${mm(keptErr)} max error) because it passed verification; ${lower1} but did not pass.`;
+  const lead =
+    `Kept ${keptName} (${mm(keptErr)} max error) because it came closest to passing overall, not because of its max error: ` +
+    `every failing required check counts by how far it is over its tolerance, and the smallest total wins.`;
+  const rivals = `${cap(lower1)} but ${lower.length === 1 ? "was" : "were"} further from passing by that measure.`;
   if (kept.passShortfall != null && best.passShortfall != null) {
-    return `${lead} ${rule} Shortfall ${kept.passShortfall.toFixed(2)} for ${keptName} vs ${best.passShortfall.toFixed(2)} for ${nameOf(best)}.`;
+    return `${lead} ${rivals} Shortfall ${kept.passShortfall.toFixed(2)} for ${keptName} vs ${best.passShortfall.toFixed(2)} for ${nameOf(best)}.`;
   }
   const tests =
     kept.testsTotal && best.testsTotal ? ` Tests passed: ${kept.testsPassed}/${kept.testsTotal} for ${keptName}, ${best.testsPassed}/${best.testsTotal} for ${nameOf(best)} (this run did not record the shortfall itself).` : "";
-  return `${lead} ${rule}${tests}`;
+  return `${lead} ${rivals}${tests}`;
 }
 
 function cap(s: string): string {

@@ -72,6 +72,21 @@ export const ProviderStatusSchema = z.object({
 });
 export type ProviderStatus = z.output<typeof ProviderStatusSchema>;
 
+export const ModelCallAggSchema = z.object({
+  stage: z.string(),
+  provider: z.string(),
+  model: z.string(),
+  mode: z.string(),
+  calls: z.int(),
+  failed: z._default(z.int(), 0),
+  tokens_in: z._default(z.int(), 0),
+  tokens_out: z._default(z.int(), 0),
+  usd: z._default(num, 0),
+  ms_mean: z.nullish(num),
+  open_weights: z._default(z.boolean(), false),
+});
+export type ModelCallAgg = z.output<typeof ModelCallAggSchema>;
+
 export const StatusSchema = z.object({
   mode: z.enum(["live", "mock", "replay", "mixed"]),
   /** "token" when the server requires an admin token for writes, "open (dev)" when it does not. */
@@ -80,21 +95,9 @@ export const StatusSchema = z.object({
   warnings: z._default(z.array(z.string()), []),
   jobs: z.object({ total: z.int(), verified: z.int() }),
   cost: z.object({ usd_total: num, usd_per_job_mean: z.nullable(num), n_jobs: z.int() }),
-  model_calls: z._default(z.array(
-      z.object({
-        stage: z.string(),
-        provider: z.string(),
-        model: z.string(),
-        mode: z.string(),
-        calls: z.int(),
-        failed: z._default(z.int(), 0),
-        tokens_in: z._default(z.int(), 0),
-        tokens_out: z._default(z.int(), 0),
-        usd: z._default(num, 0),
-        ms_mean: z.nullish(num),
-        open_weights: z._default(z.boolean(), false),
-      }),
-    ), []),
+  model_calls: z._default(z.array(ModelCallAggSchema), []),
+  /** the same aggregate over the recorded runs this server serves (how those logged calls ran), never counted as spend */
+  model_calls_recorded: z._default(z.array(ModelCallAggSchema), []),
   open_weights: z.nullish(z.object({
       open_weights_only: z.boolean(),
       stages_live_on_open_weights: z._default(z.array(z.string()), []),
@@ -812,7 +815,13 @@ export const StatsSchema = z.object({
   synthetic: z.int(),
   real: z.int(),
   reference_object: z._default(z.int(), 0),
+  /** bench reference objects, counted apart from `parts` (the set GET /parts lists) */
+  reference: z._default(z.int(), 0),
+  withdrawn: z._default(z.int(), 0),
+  /** runs made on this server; `jobs_recorded` = recorded runs it serves; `jobs_listed` = what GET /jobs lists */
   jobs: z.int(),
+  jobs_recorded: z._default(z.int(), 0),
+  jobs_listed: z.optional(z.int()),
   grams_pla: num,
 });
 export type Stats = z.output<typeof StatsSchema>;
@@ -1090,8 +1099,10 @@ export const BuyOrPrintSchema = z.looseObject({
   lookup: z.catch(z.nullish(BuyLookupSchema), null),
   created_at: z.catch(z._default(num, 0), 0),
   notes: tolerantArray(z.string()),
-  /** A stored card read back by a recorded run or a replaying server: the lookup ran earlier, nothing was searched now. */
+  /** This card's lookup was played back (its job is a recorded run, or the lookup's mode is "replay"). */
   recorded: z.catch(z._default(z.boolean(), false), false),
+  /** A stored card read back: the lookup ran earlier with its own mode, nothing was searched for this request. */
+  stored: z.catch(z._default(z.boolean(), false), false),
 });
 export type BuyOrPrint = z.output<typeof BuyOrPrintSchema>;
 
@@ -1360,7 +1371,8 @@ export const ReviewStatsSchema = z.object({
 export type ReviewStats = z.output<typeof ReviewStatsSchema>;
 
 /** How later reviews went for jobs that were given a promoted lesson (lessons list `track`). */
-export const LessonTrackSchema = z.object({ used_in: count, accepted: count, improved: count, rejected: count });
+/** `jobs`: the builds whose prompts carried the lesson (lessons_used.json); `used_in` counts them. */
+export const LessonTrackSchema = z.object({ used_in: count, jobs: z._default(z.array(z.string()), []), accepted: count, improved: count, rejected: count });
 export type LessonTrack = z.output<typeof LessonTrackSchema>;
 
 // ── product: playground, describe it, variants, print it (docs/API.md) ─────────

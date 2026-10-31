@@ -67,7 +67,7 @@ function Focus({ e, onShow }: { e: FocusEvent; onShow?: (e: FocusEvent) => void 
     <div className="flex items-center gap-2 py-1.5 text-[12px]">
       <Crosshair className="size-3.5 shrink-0 text-accent-text" aria-hidden />
       <span className="min-w-0 flex-1 text-muted">
-        Looking at <span className="font-medium text-fg">{e.feature || "a location"}</span>
+        Checking <span className="font-medium text-fg">{e.feature || "a location"}</span>
         {e.label ? <> — {e.label}</> : null}
         {e.at_mm ? <span className="ml-1 font-mono text-[11px] text-subtle tnum">({e.at_mm.map((v) => v.toFixed(1)).join(", ")}) mm</span> : null}
       </span>

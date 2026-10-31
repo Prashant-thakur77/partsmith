@@ -5,7 +5,8 @@ import { Container, PageHeader, Section } from "@/components/layout/page";
 import { MatFigureStatic } from "@/components/art/mat-figure";
 import { OrthoViews } from "@/components/art/ortho-views";
 import { Button } from "@/components/ui/button";
-import { COMPARE_COLUMNS, COMPARE_ROWS, type Cell } from "@/lib/compare";
+import { api } from "@/lib/api";
+import { COMPARE_COLUMNS, compareRows, type Cell, type CompareRow } from "@/lib/compare";
 import { cn } from "@/lib/utils";
 
 export const metadata: Metadata = {
@@ -64,7 +65,10 @@ const GLOSSARY: [string, string][] = [
   ["Synthetic", "A photo rendered by the computer from a known shape, so the true sizes are known exactly. Used for testing."],
 ];
 
-export default function HowPage() {
+export default async function HowPage() {
+  // our real-photo cell follows the bench (real-part sample count); unreadable bench → the cell claims nothing
+  const realN = await api.bench().then((b) => b.tables.real_ruler?.n ?? 0, () => null);
+  const rows = compareRows(realN);
   return (
     <>
       <PageHeader
@@ -133,7 +137,7 @@ export default function HowPage() {
         </Section>
 
         <Section id="compare" title="How it compares" description="Kinds of tools, not products. Individual tools vary; this is the general picture.">
-          <CompareTable />
+          <CompareTable rows={rows} />
         </Section>
 
         <Section id="words" title="Words used on this site">
@@ -167,11 +171,16 @@ function CompareCell({ cell, ours }: { cell: Cell; ours: boolean }) {
         {cell.label}
       </span>
       {cell.note ? <span className="mt-0.5 block text-[11.5px] leading-4 text-muted">{cell.note}</span> : null}
+      {cell.href ? (
+        <Link href={cell.href} className="mt-1 inline-block text-[11.5px] font-medium text-accent-text underline underline-offset-2">
+          {cell.link ?? "More"}
+        </Link>
+      ) : null}
     </td>
   );
 }
 
-function CompareTable() {
+function CompareTable({ rows }: { rows: CompareRow[] }) {
   const last = COMPARE_COLUMNS.length - 1;
   return (
     <div className="scrollbar-thin max-w-full overflow-x-auto rounded-lg border border-border bg-surface" role="region" aria-labelledby="compare-caption" tabIndex={0}>
@@ -192,7 +201,7 @@ function CompareTable() {
           </tr>
         </thead>
         <tbody>
-          {COMPARE_ROWS.map((r) => (
+          {rows.map((r) => (
             <tr key={r.feature} className="border-b border-border last:border-b-0">
               <th scope="row" className="px-3 py-2.5 align-top text-[13px] font-medium text-fg">
                 {r.feature}

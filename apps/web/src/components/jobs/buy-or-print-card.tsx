@@ -12,7 +12,7 @@ import { ExternalLink, Search } from "lucide-react";
 import * as React from "react";
 import { ApiError, api } from "@/lib/api";
 import type { BuyOrPrint } from "@/lib/api-types";
-import { cardCurrency, cardMode, citedOem, citedOffers, citedPlaces, cityParam, costIn, hostOf, lookupState, money, moneyLocale } from "@/lib/buy-or-print";
+import { cardBadge, cardCurrency, citedOem, citedOffers, citedPlaces, cityParam, costIn, hostOf, lookupState, money, moneyLocale } from "@/lib/buy-or-print";
 import { useCapabilities } from "@/lib/capabilities";
 import { fmtNum } from "@/lib/format";
 import { useT } from "@/lib/i18n";
@@ -23,6 +23,7 @@ import { ErrorState } from "../ui/error-state";
 import { Input, Label } from "../ui/input";
 import { ModeBadge, RunBadge } from "../ui/provenance";
 import { Spinner } from "../ui/spinner";
+import { Tooltip } from "../ui/tooltip";
 
 const PLACE_KIND: Record<string, string> = { print_shop: "print shop", repair_cafe: "repair café", maker_space: "maker space", other: "place" };
 
@@ -286,6 +287,25 @@ function CardBody({
   );
 }
 
+/** The card's own provenance (never the server's mode): a recorded run's card, a stored lookup, one that just ran,
+ * or no lookup at all. A stored card is never shown with the LIVE chip. */
+function CardProvenance({ card }: { card: BuyOrPrint }) {
+  const b = cardBadge(card);
+  if (b.kind === "recorded") return <RunBadge mode={b.mode} recorded finished />;
+  if (b.kind === "fresh") return <ModeBadge mode={b.mode} />;
+  const tip =
+    b.kind === "none"
+      ? "No lookup is stored for this card: the print side is computed from the mesh, and nothing was searched."
+      : `The lookup ran earlier (${b.mode === "live" ? "a real web search" : b.mode === "mock" ? "a mock, no web search" : b.mode}) and is read back now; nothing was searched for this page.`;
+  return (
+    <Tooltip content={tip}>
+      <Badge tone={b.kind === "stored" && b.mode === "live" ? "outline" : "mock"} tabIndex={0} className="cursor-help">
+        {b.kind === "none" ? "no lookup yet" : `${b.mode === "replay" ? "recorded" : b.mode} lookup · stored`}
+      </Badge>
+    </Tooltip>
+  );
+}
+
 function Shell({ id, card, children }: { id: string; card: BuyOrPrint; children: React.ReactNode }) {
   const { t } = useT();
   return (
@@ -294,8 +314,7 @@ function Shell({ id, card, children }: { id: string; card: BuyOrPrint; children:
         <h2 id={id} className="text-[14px] font-semibold tracking-tight">
           {t("bop.title")}
         </h2>
-        {/* a stored card read back (recorded run / replaying server) is never shown as LIVE */}
-        {card.recorded ? <RunBadge mode={cardMode(card)} recorded finished /> : <ModeBadge mode={cardMode(card)} />}
+        <CardProvenance card={card} />
       </div>
       {children}
     </section>

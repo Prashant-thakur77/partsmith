@@ -151,7 +151,7 @@ test("older APIs still parse: job detail without judge/review, partial track and
   const bad = JobDetailSchema.parse({ summary: { id: "j", kind: "fix", status: "done", created_at: 1, updated_at: 2 }, judge: 7, review: "x" });
   assert.equal(bad.judge, null);
   assert.equal(bad.review, null);
-  assert.deepEqual(LessonTrackSchema.parse({ used_in: 2 }), { used_in: 2, accepted: 0, improved: 0, rejected: 0 });
+  assert.deepEqual(LessonTrackSchema.parse({ used_in: 2 }), { used_in: 2, jobs: [], accepted: 0, improved: 0, rejected: 0 });
   const q = ReviewQueueSchema.parse({ items: [{ job_id: "a", status: "waiting" }, { nope: true }] });
   assert.equal(q.items.length, 1);
   assert.equal(q.items[0].round, 1);
@@ -174,4 +174,28 @@ test("zoomFrame shows only the part's box and keeps pins on the full photo", () 
   assert.equal(zoomFrame([0, 0, 0.95, 0.9], { w: 100, h: 100 }), null); // already most of the image
   assert.equal(zoomFrame(null, { w: 100, h: 100 }), null);
   assert.equal(zoomFrame([0.1, 0.1, 0.2, 0.2], null), null); // image size not known yet
+});
+
+test("a blocking judge veto reads as one short line with the judge's model and mode", async () => {
+  const { blockingVeto } = await import("../src/lib/review.ts");
+  const judge = JudgeSchema.parse({
+    model: "muse-spark-1.3",
+    mode: "live",
+    scores: [],
+    vetoes: [
+      { feature: "screw_hole", issue: "mirrored", severity: "minor" },
+      { feature: "hinge_knuckles", issue: "missing - photo shows two rolled cylindrical barrels on hinge edge, model shows only flat tabs", severity: "blocking" },
+    ],
+    notes: "",
+  });
+  const v = blockingVeto(judge);
+  assert.equal(v.text, "judge blocked it: hinge knuckles missing");
+  assert.equal(v.by, "muse-spark-1.3 · live");
+  assert.match(v.detail, /^photo shows two rolled cylindrical barrels/);
+  // minor vetoes never block; no judge, no line
+  assert.equal(blockingVeto(JudgeSchema.parse({ model: "m", mode: "live", scores: [], vetoes: [{ feature: "x", issue: "y", severity: "minor" }], notes: "" })), null);
+  assert.equal(blockingVeto(null), null);
+  // a recorded judge says so; a missing model is said, never guessed
+  assert.equal(blockingVeto(JudgeSchema.parse({ mode: "replay", scores: [], vetoes: [{ feature: "rib", issue: "rib missing", severity: "blocking" }] })).by, "recorded");
+  assert.equal(blockingVeto(JudgeSchema.parse({ scores: [], vetoes: [{ feature: "rib", issue: "rib missing", severity: "blocking" }] })).text, "judge blocked it: rib missing");
 });

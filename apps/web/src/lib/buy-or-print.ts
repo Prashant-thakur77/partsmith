@@ -97,6 +97,23 @@ export function cardMode(card: Pick<BuyOrPrint, "lookup" | "mode">): string {
   return card.lookup?.mode ?? card.mode ?? "mock";
 }
 
+/**
+ * The card's provenance chip, from the card's own flags only (never the server's mode or the job's other calls):
+ *  - "none": no lookup is stored, so there is no mode to show ("no lookup yet");
+ *  - "recorded": the lookup was played back (a recorded run's card) → "Recorded run · <mode> models";
+ *  - "stored": a lookup that ran earlier, read back now → "<mode> lookup · stored";
+ *  - "fresh": the lookup ran for this request → the LIVE / MOCK chip.
+ */
+export type CardBadge = { kind: "none" | "recorded" | "stored" | "fresh"; mode: string };
+
+export function cardBadge(card: Pick<BuyOrPrint, "lookup" | "mode" | "recorded" | "stored">): CardBadge {
+  if (!card.lookup) return { kind: "none", mode: card.mode ?? "mock" };
+  const mode = cardMode(card);
+  if (card.recorded) return { kind: "recorded", mode };
+  if (card.stored) return { kind: "stored", mode };
+  return { kind: "fresh", mode };
+}
+
 /** The currency the viewer most likely reads: INR for an Indian locale ("en-IN", "hi-IN"), else USD. */
 export function localeCurrency(locale: string | null | undefined): string {
   return /-IN\b/i.test(locale ?? "") || /^(hi|bn|ta|te|mr|gu|kn|ml|pa)\b/i.test(locale ?? "") ? "INR" : "USD";

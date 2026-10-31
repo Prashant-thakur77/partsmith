@@ -206,12 +206,13 @@ RELATIVE_WORDS: dict[str, tuple[str, int]] = {
     "deeper": ("depth", 1), "gehra": ("depth", 1), "gehri": ("depth", 1), "shallower": ("depth", -1),
 }  # fmt: skip
 # When no knob is named after the dimension, these knobs carry it (in order). A flat extruded part's height is its
-# thickness; a cylinder's length is its height; a round part's width is its diameter.
+# thickness; a cylinder's length is its height; a round part's width is its diameter; a part with no thickness knob but
+# a height (a spacer, a knob) is as thick as it is high — its template maps the photo's thickness to `height` too.
 DIMENSION_FALLBACKS: dict[str, tuple[str, ...]] = {
     "height": ("height", "thickness"),
     "length": ("length", "height"),
     "width": ("width", "diameter", "outer_d", "leaf_width"),
-    "thickness": ("thickness", "plate_thickness", "base_thickness"),
+    "thickness": ("thickness", "plate_thickness", "base_thickness", "height"),
     "depth": ("depth", "bore_depth"),
     "diameter": ("diameter", "outer_d"),
 }

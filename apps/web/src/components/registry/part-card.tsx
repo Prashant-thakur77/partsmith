@@ -7,7 +7,7 @@ import { cn } from "@/lib/utils";
 import { OriginBadge } from "../ui/provenance";
 import { PartStatusBadge } from "./part-status";
 
-export function PartThumb({ url, url2x, title, className }: { url?: string | null; url2x?: string | null; title: string; className?: string }) {
+export function PartThumb({ url, url2x, title, className, eager = false }: { url?: string | null; url2x?: string | null; title: string; className?: string; eager?: boolean }) {
   const src = artifactUrl(url);
   const src2 = artifactUrl(url2x);
   return (
@@ -18,7 +18,7 @@ export function PartThumb({ url, url2x, title, className }: { url?: string | nul
           src={src}
           srcSet={src2 ? `${src} 1x, ${src2} 2x` : undefined}
           alt={`Render of ${title}`}
-          loading="lazy"
+          loading={eager ? "eager" : "lazy"}
           decoding="async"
           className="absolute inset-0 size-full object-contain p-3"
         />
@@ -34,7 +34,7 @@ export function PartThumb({ url, url2x, title, className }: { url?: string | nul
   );
 }
 
-export function PartCard({ part, className }: { part: PartCardT; className?: string }) {
+export function PartCard({ part, className, eager = false }: { part: PartCardT; className?: string; eager?: boolean }) {
   return (
     <Link
       href={`/parts/${encodeURIComponent(part.slug)}`}
@@ -43,7 +43,7 @@ export function PartCard({ part, className }: { part: PartCardT; className?: str
         className,
       )}
     >
-      <PartThumb url={part.thumbnail_url} url2x={part.thumbnail_2x_url} title={part.title} className="border-b border-border" />
+      <PartThumb url={part.thumbnail_url} url2x={part.thumbnail_2x_url} title={part.title} className="border-b border-border" eager={eager} />
       <div className="flex flex-1 flex-col gap-2.5 p-3.5">
         <div className="flex items-start justify-between gap-2">
           <div className="min-w-0">

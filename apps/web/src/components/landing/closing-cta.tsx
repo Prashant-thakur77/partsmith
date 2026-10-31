@@ -22,6 +22,13 @@ function Corner({ className, id }: { className: string; id: number }) {
 export function ClosingCta({ sheet }: { sheet: { n: number; of: number } }) {
   const { fig } = useStoredRun("figure");
   const reveal = useReveal<HTMLElement>();
+  const cells = {
+    drawing: { k: "Drawing", v: "PartSmith" },
+    scale: { k: "Scale", v: "1:1" },
+    tolerance: { k: "Tolerance", v: fig?.limitMm != null ? `±${fmtNum(fig.limitMm)} mm` : "—" },
+    checked: { k: "Checked by", v: "code" },
+    sheet: { k: "Sheet", v: `${sheet.n} / ${sheet.of}` },
+  };
   return (
     <section aria-labelledby="cta-title" className="relative rounded-2xl border border-ink/60 bg-surface p-3 shadow-sm" {...reveal}>
       <Corner className="top-3 left-3" id={31} />
@@ -63,16 +70,12 @@ export function ClosingCta({ sheet }: { sheet: { n: number; of: number } }) {
           </div>
           <OrthoViews className="drop-shadow-sm" />
         </div>
-        <TitleBlock
-          className="mt-10 rounded-md"
-          cells={[
-            { k: "Drawing", v: "PartSmith" },
-            { k: "Scale", v: "1:1" },
-            { k: "Tolerance", v: fig?.limitMm != null ? `±${fmtNum(fig.limitMm)} mm` : "—" },
-            { k: "Checked by", v: "code" },
-            { k: "Sheet", v: `${sheet.n} / ${sheet.of}` },
-          ]}
-        />
+        {/* phones get two rows so no cell is cut off; wider screens one row */}
+        <div className="mt-10 sm:hidden">
+          <TitleBlock className="rounded-t-md" cells={[cells.drawing, cells.checked]} />
+          <TitleBlock className="-mt-px rounded-b-md" cells={[cells.scale, cells.tolerance, cells.sheet]} />
+        </div>
+        <TitleBlock className="mt-10 hidden rounded-md sm:grid" cells={[cells.drawing, cells.scale, cells.tolerance, cells.checked, cells.sheet]} />
       </div>
     </section>
   );

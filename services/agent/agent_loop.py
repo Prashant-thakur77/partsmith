@@ -396,7 +396,12 @@ class AgentSession:
         text = (
             f"committed round {run.iteration}: {change}; Hausdorff {_short(base.worst_hd)}→{_short(rnd.worst_hd)} mm, "
             f"{'verified by code' if rnd.verified else 'not verified'}; "
-            + ("now the best model" if improved else "worse than the best committed model — code keeps the best")
+            + (
+                "now the closest to passing (keep rule: shortfall, not max error)"
+                if improved
+                else "not closer to passing than the best committed round (keep rule: shortfall, not max error); "
+                "code keeps that one"
+            )
         )
         return tool_result(text, data={"improved": improved, "verified": rnd.verified})
 

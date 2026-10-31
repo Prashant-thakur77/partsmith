@@ -183,7 +183,7 @@ def lessons_out(scope: str | None = None, status: str | None = None) -> list[dic
     from services.review.store import lesson_tracks
 
     tracks = lesson_tracks()
-    empty = {"used_in": 0, "accepted": 0, "improved": 0, "rejected": 0}
+    empty = {"used_in": 0, "jobs": [], "accepted": 0, "improved": 0, "rejected": 0}
     return [
         dict(x, links=_lesson_links(x["evidence"]), track=tracks.get(x["id"], empty))
         for x in get_registry().lessons(scope, status)

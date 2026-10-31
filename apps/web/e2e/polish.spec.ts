@@ -87,6 +87,33 @@ test.describe("phone", () => {
   });
 });
 
+test.describe("phone (consistency pass)", () => {
+  test.beforeEach(({}, info) => test.skip(!phone(info.project.name), "phone layout checks run once"));
+
+  test("landing: every hero stat shows whole and the last sheet's title block is not cut off", async ({ page }) => {
+    const { errors } = await setup(page);
+    await page.goto("/");
+    const ticker = page.getByRole("list", { name: "Numbers from this server" });
+    await expect(ticker.getByRole("listitem").first()).toContainText("median size error");
+    const items = ticker.getByRole("listitem");
+    expect(await items.count()).toBeGreaterThan(1);
+    const vw = page.viewportSize()!.width;
+    const boxes = await items.evaluateAll((els) => els.map((e) => { const r = e.getBoundingClientRect(); const a = e.querySelector("a")!; return { left: r.left, right: r.right, cut: a.scrollWidth > a.clientWidth + 1 }; }));
+    for (const b of boxes) {
+      expect(b.left).toBeGreaterThanOrEqual(0);
+      expect(b.right).toBeLessThanOrEqual(vw);
+      expect(b.cut).toBe(false);
+    }
+    const cta = page.getByRole("region", { name: /Millions of people own a 3D printer/ });
+    await cta.scrollIntoViewIfNeeded();
+    const cut = await cta.locator("dl:visible dd, dl:visible dt").evaluateAll((els) => els.filter((e) => e.scrollWidth > e.clientWidth + 1).map((e) => e.textContent));
+    expect(cut, `cut off: ${cut.join(", ")}`).toEqual([]);
+    await expect(cta.locator("dl:visible").getByText("PartSmith")).toBeVisible();
+    await noSideways(page);
+    expect(realErrors(errors)).toEqual([]);
+  });
+});
+
 test.describe("desktop", () => {
   test.beforeEach(({}, info) => test.skip(!desktop(info.project.name), "functional flows run once"));
 
@@ -209,6 +236,66 @@ test.describe("desktop", () => {
     await ex.getByRole("link", { name: "Use this sentence" }).click();
     await expect(page.getByLabel("What do you need? Say the numbers you know.")).toHaveValue("A spacer 12 mm tall for an M3 screw, outer diameter 7 mm");
     await expectAccessible(page);
+    expect(realErrors(errors)).toEqual([]);
+  });
+
+  test("landing: the agents answer slot is held, so the tabs below never jump when the part card drops in", async ({ page }) => {
+    await trackShifts(page);
+    const { errors } = await setup(page);
+    await page.goto("/");
+    await page.waitForLoadState("networkidle");
+    const term = page.getByText("agent → partsmith (MCP)");
+    await term.scrollIntoViewIfNeeded();
+    await page.evaluate(() => ((window as unknown as { __cls: number }).__cls = 0));
+    const slot = page.getByTestId("agent-answer-slot");
+    await expect(slot.getByRole("link").first()).toBeVisible();
+    await expect(slot.locator('img[alt^="Render of"]')).toHaveAttribute("loading", "eager");
+    await page.waitForTimeout(600);
+    expect(await cls(page)).toBeLessThan(0.005);
+    expect(realErrors(errors)).toEqual([]);
+  });
+
+  test("lessons: runs that moved a knob both ways fold under conflicting evidence; each card says how many builds used it", async ({ page }) => {
+    const { errors } = await setup(page);
+    const NOW = Date.now() / 1000;
+    const run = (i: number, first: number, final: number, jobs: string[] = []) => ({
+      id: `l_c_${i}`,
+      scope: "knob",
+      rule: `knob: the first build set bore_d = ${first}, the verified loop moved it to ${final} — check bore_d against the measurement before building.`,
+      evidence: { template: "knob", param: "bore_d", first, final },
+      status: "candidate",
+      promoted_by: null,
+      created_at: NOW - i * 60,
+      links: [{ kind: "job", id: `job_c${i}`, url: "", page: `/jobs/job_c${i}` }],
+      track: { used_in: jobs.length, jobs, accepted: 0, improved: 0, rejected: 0 },
+    });
+    const list = [...lessonFixture, run(1, 6, 6.4), run(2, 6, 5.6), run(3, 6, 6.2)];
+    await page.route("**/api/v1/lessons", (r) => r.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify(list) }));
+    await page.goto("/lessons");
+    const fam = page.getByRole("region", { name: /^Knob/ });
+    const folded = fam.getByTestId("lesson-conflicts");
+    await expect(folded).toContainText("Conflicting evidence: 1 knob where runs moved the value in opposite directions (not advice)");
+    await folded.locator(":scope > summary").click();
+    const card = folded.getByTestId("lesson-card");
+    await expect(card).toContainText("conflicting evidence");
+    await expect(card).toContainText(/The runs disagree on Shaft bore diameter: 2 moved it up and 1 moved it down\. This is not advice/);
+    // the advice wording stays only inside the folded "Every wording" list, never as the card's lead sentence
+    await expect(card.locator(":scope > p").first()).not.toContainText("Check Shaft bore diameter");
+    await expect(card.getByTestId("lesson-builds")).toHaveText("used in 0 builds");
+    await expect(page.getByRole("region", { name: /^Bracket/ }).getByTestId("lesson-builds")).toHaveText("used in 3 builds");
+    await expect(page.getByRole("button", { name: "Promote" })).toHaveCount(0);
+    await expectAccessible(page);
+    expect(realErrors(errors)).toEqual([]);
+  });
+
+  test("review: the measurements table shows all six columns without sideways scrolling", async ({ page }) => {
+    const { errors } = await setup(page);
+    await page.goto("/review");
+    const table = page.getByRole("region", { name: "Feature residuals" }).first();
+    await table.scrollIntoViewIfNeeded();
+    await expect(table.getByRole("columnheader", { name: "Tol" })).toBeVisible();
+    expect(await table.evaluate((el) => el.scrollWidth - el.clientWidth)).toBeLessThanOrEqual(1);
+    await expect(page.getByTestId("overlay-note")).toContainText("where the part touches the mat");
     expect(realErrors(errors)).toEqual([]);
   });
 });

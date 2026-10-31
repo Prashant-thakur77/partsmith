@@ -300,7 +300,7 @@ export function valueItems({ partspec, measurements, verification, artifacts }: 
   const side = measurements.side;
   const height = asMeasured(side?.thickness);
   if (side && height) {
-    items.push(fromMeasured(height, { id: "dim.height", group: "dimension", label: "Height (side photo)", featureId: null, anchor: { type: "dim", axis: "z" } }, resFor("side", ["thickness"]), "side"));
+    items.push(fromMeasured(height, { id: "dim.height", group: "dimension", label: "Side photo, short side", featureId: null, anchor: { type: "dim", axis: "z" } }, resFor("side", ["thickness"]), "side"));
   }
 
   // feature sizes: every Measured field of every PartSpec feature

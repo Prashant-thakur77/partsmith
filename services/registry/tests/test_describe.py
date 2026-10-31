@@ -22,6 +22,45 @@ def test_mock_plan_quotes_the_words_it_used() -> None:
     assert D.mock_plan("something for my bicycle")["template"] == "none"
 
 
+@pytest.mark.parametrize(
+    ("text", "template", "param", "value"),
+    [
+        ("A knob for a 6 mm D-shaft, 35 mm diameter", "knob", "bore_d", 6.0),
+        ("knob 30 mm on a 6mm shaft", "knob", "bore_d", 6.0),
+        ("caster wheel, 50 mm, for an 8 mm axle", "caster_wheel", "bore_d", 8.0),
+        ("a 12 mm spacer for an M3", "spacer", "bore_d", 3.4),
+        ("a wall hook for an M4 (screw)", "hook", "hole_d", 4.5),
+    ],
+)
+def test_shaft_and_screw_sizes_fill_the_bore_or_hole_knob(text: str, template: str, param: str, value: float) -> None:
+    plan = D.mock_plan(text)
+    assert plan["template"] == template
+    by = {v["param"]: v for v in plan["values"]}
+    assert by[param]["value"] == value and by[param]["source"] == "user" and by[param]["quote"] in text
+    t, rows, _ = D.check_plan(plan, text)
+    assert t is not None and param not in [q["param"] for q in D.questions_for(t, rows)]  # never asked again
+
+
+def test_d_shaft_knob_asks_nothing_it_was_told() -> None:
+    text = "A knob for a 6 mm D-shaft, 35 mm diameter"
+    t, rows, _ = D.check_plan(D.mock_plan(text), text)
+    assert t is not None
+    by = {r["param"]: r for r in rows}
+    assert by["bore_d"]["value"] == 6.0 and "D-shaft" in by["bore_d"]["note"] and by["diameter"]["value"] == 35.0
+    assert D.questions_for(t, rows) == []
+
+
+def test_check_plan_reads_a_stated_shaft_the_plan_left_out() -> None:
+    text = "A knob for a 6 mm D-shaft, 35 mm diameter"
+    raw = {"template": "knob", "values": [{"param": "diameter", "value": 35, "source": "user",
+                                           "quote": "35 mm diameter", "note": ""}]}  # fmt: skip
+    t, rows, notes = D.check_plan(raw, text)
+    by = {r["param"]: r for r in rows}
+    assert by["bore_d"]["source"] == "user" and by["bore_d"]["value"] == 6.0
+    assert "read from your words by code" in by["bore_d"]["note"] and any("bore_d" in n for n in notes)
+    assert t is not None and D.questions_for(t, rows) == []
+
+
 def test_pick_template_prefers_longer_phrases() -> None:
     assert D.pick_template("cable clip for my desk").name == "cable_clip"
     assert D.pick_template("a retaining clip for a 3 mm panel").name == "clip"

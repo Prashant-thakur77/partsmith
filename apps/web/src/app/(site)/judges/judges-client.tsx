@@ -7,6 +7,7 @@ import dynamic from "next/dynamic";
 import * as React from "react";
 import { TraceTimeline } from "@/components/jobs/trace-timeline";
 import { ReplayCard } from "@/components/jobs/replay-card";
+import { StageModelsTable } from "@/components/models/stage-models-table";
 import { LieCaught, reportFileUrl } from "@/components/judges/lie-caught";
 import { Container, PageHeader, Section } from "@/components/layout/page";
 import { Badge } from "@/components/ui/badge";
@@ -14,7 +15,7 @@ import { Button } from "@/components/ui/button";
 import { Eyebrow } from "@/components/ui/card";
 import { EmptyState } from "@/components/ui/empty-state";
 import { ErrorState } from "@/components/ui/error-state";
-import { ModeBadge, OriginBadge, RunBadge } from "@/components/ui/provenance";
+import { OriginBadge, RunBadge } from "@/components/ui/provenance";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Slider } from "@/components/ui/slider";
 import { VerifiedBadge } from "@/components/ui/verified-badge";
@@ -70,6 +71,47 @@ function replayFrame(shown: readonly JobEvent[], all: readonly JobEvent[]): { sr
   return first ? { ...first, caption: "The input photo" } : null;
 }
 
+/** Every distinct picture a run will show, in order (warmed up front so playback never waits on a download). */
+function frameSources(events: readonly JobEvent[]): string[] {
+  const kinds = new Set(FRAMES.map((f) => f.kind));
+  const out: string[] = [];
+  for (const e of events) {
+    if (e.t !== "artifact" || !kinds.has(e.kind)) continue;
+    const src = artifactUrl(e.url);
+    if (src && !out.includes(src)) out.push(src);
+  }
+  return out;
+}
+
+/**
+ * The replay picture. The last loaded picture stays on screen while the next one downloads, so the panel is never an
+ * empty grey box: before playback it shows the run's input photo (eagerly, high priority), then swaps on load.
+ */
+function FramePicture({ src, alt }: { src: string; alt: string }) {
+  const [shown, setShown] = React.useState<{ src: string; alt: string } | null>(null);
+  const pending = shown?.src !== src;
+  return (
+    <div className="relative aspect-[16/9] overflow-hidden rounded-md border border-border bg-surface-2" data-testid="replay-frame">
+      {shown ? (
+        /* eslint-disable-next-line @next/next/no-img-element -- API blob from the stored run */
+        <img src={shown.src} alt={pending ? "" : shown.alt} aria-hidden={pending || undefined} className="absolute inset-0 size-full object-contain" decoding="async" />
+      ) : null}
+      {pending ? (
+        /* eslint-disable-next-line @next/next/no-img-element -- API blob from the stored run */
+        <img
+          key={src}
+          src={src}
+          alt={alt}
+          fetchPriority={shown ? "auto" : "high"}
+          onLoad={() => setShown({ src, alt })}
+          onError={() => setShown({ src, alt })}
+          className={cn("absolute inset-0 size-full object-contain", shown && "opacity-0")}
+        />
+      ) : null}
+    </div>
+  );
+}
+
 /** Plays a stored run back event by event (labelled replay). The Verified badge appears only at the end, from the stored verification. */
 function ReplayPlayer({ id }: { id: string }) {
   const job = useQuery({ queryKey: ["job", id], queryFn: () => api.job(id) });
@@ -86,6 +128,15 @@ function ReplayPlayer({ id }: { id: string }) {
   const takeOver = () => {
     auto.current = id;
   };
+
+  // warm every picture of the run as soon as its log arrives
+  React.useEffect(() => {
+    for (const src of frameSources(events)) {
+      const img = new Image();
+      img.decoding = "async";
+      img.src = src;
+    }
+  }, [events]);
 
   // while playing, keep the newest stage in view inside the trace box (its own scroll only, never the page's)
   React.useEffect(() => {
@@ -161,10 +212,7 @@ function ReplayPlayer({ id }: { id: string }) {
         <div className="space-y-4 border-b border-border p-4 md:border-r md:border-b-0">
           {frame ? (
             <figure className="space-y-1">
-              <div className="relative aspect-[16/9] overflow-hidden rounded-md border border-border bg-surface-2">
-                {/* eslint-disable-next-line @next/next/no-img-element -- API blob from the stored run */}
-                <img key={frame.src} src={frame.src} alt={frame.caption} className="size-full object-contain motion-safe:animate-fade-up" decoding="async" />
-              </div>
+              <FramePicture key={id} src={frame.src} alt={frame.caption} />
               <figcaption className="text-[11.5px] text-muted">{frame.caption}</figcaption>
             </figure>
           ) : null}
@@ -378,7 +426,7 @@ export function JudgesClient() {
         <Section
           id="lie-caught"
           title="A lying model, caught"
-          description="A scripted brain claims the part is verified. Code ignores the claim: the verifier measures the model against the photo and the export gate decides. Read from eval/reports/latest/bypass.json."
+          description="A scripted fake model claims the part is verified. Code ignores the claim: the verifier measures the model against the photo, and the download check decides whether it may ship. Read from eval/reports/latest/bypass.json."
         >
           {bench.isPending ? (
             <Skeleton className="h-96" />
@@ -389,42 +437,16 @@ export function JudgesClient() {
           )}
         </Section>
 
-        <Section title="Meta models in this build" description="Live from /status: what each stage runs and whether it is live or a labelled fallback.">
+        <Section title="Meta models in this build" description="From /status: the model each stage is set up to use and how it runs now, beside the models seen in its logged calls (made on this server, or inside the recorded runs above) and how each of those calls ran.">
           {status.isError ? (
             <ErrorState error={status.error} compact what="provider status" />
           ) : !status.data ? (
             <Skeleton className="h-40" />
           ) : (
-            <div tabIndex={0} role="region" aria-label="Models by stage" className="scrollbar-thin overflow-x-auto rounded-lg border border-border bg-surface">
-              <table className="w-full min-w-[560px] text-[13px]">
-                <thead className="bg-surface-2 text-left text-[11px] text-subtle">
-                  <tr>
-                    <th scope="col" className="px-3 py-2 font-medium">Stage</th>
-                    <th scope="col" className="px-3 py-2 font-medium">Model</th>
-                    <th scope="col" className="px-3 py-2 font-medium">Where</th>
-                    <th scope="col" className="px-3 py-2 font-medium">Mode</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {(allModels ? status.data.providers : status.data.providers.slice(0, MODEL_ROWS)).map((p) => (
-                    <tr key={`${p.stage}-${p.role}`} className="border-t border-border">
-                      <th scope="row" className="px-3 py-2 text-left font-normal">
-                        {p.role} <span className="text-subtle">· {p.stage}</span>
-                      </th>
-                      <td className="px-3 py-2 font-mono text-[12px]">{p.model}</td>
-                      <td className="px-3 py-2 text-muted">
-                        {p.where}
-                        {p.open_weights ? <Badge tone="accent" className="ml-1.5">open weights</Badge> : null}
-                      </td>
-                      <td className="px-3 py-2">
-                        <ModeBadge mode={p.mode} />
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+            <div className="space-y-2">
+              <StageModelsTable s={status.data} limit={allModels ? undefined : MODEL_ROWS} showCost={false} />
               {status.data.providers.length > MODEL_ROWS ? (
-                <div className="border-t border-border px-3 py-2">
+                <div className="px-1">
                   <Button variant="ghost" size="sm" aria-expanded={allModels} onClick={() => setAllModels((v) => !v)}>
                     {allModels ? "Show fewer stages" : `Show all ${status.data.providers.length} stages`}
                   </Button>

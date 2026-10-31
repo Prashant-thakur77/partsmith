@@ -1,6 +1,7 @@
 "use client";
 
 import { useQuery } from "@tanstack/react-query";
+import Link from "next/link";
 import * as React from "react";
 import { ExportGateNotice, useExportGate } from "@/components/export-gate";
 import { api, artifactUrl } from "@/lib/api";
@@ -27,6 +28,7 @@ export function JobPrintAndVariant({
   base,
   slug,
   family,
+  knobsHref,
   className,
 }: {
   jobId: string;
@@ -39,6 +41,8 @@ export function JobPrintAndVariant({
   slug: string | null;
   /** The part's family (load-bearing families get a material and load note). */
   family?: string | null;
+  /** Anchor of the knob panel on the page, linked from the empty "Make a variant" state. */
+  knobsHref?: string;
   className?: string;
 }) {
   const caps = useCapabilities();
@@ -76,8 +80,19 @@ export function JobPrintAndVariant({
           verified={!!verification?.verified}
           downloadUrl={(f) => (gate.open ? withAck(api.jobBakeDownloadUrl(jobId, values, f), acked) : undefined)}
           lockedNote="Acknowledge the export notice on the left first."
+          knobsHref={knobsHref}
         />
-        {!slug ? <p className="mt-3 text-[12px] text-subtle">Publish the job to save variants of it in the registry.</p> : null}
+        {!slug ? (
+          <p className="mt-3 text-[12px] text-subtle">Publish the job to save variants of it in the registry.</p>
+        ) : (
+          <p className="mt-3 text-[12px] text-subtle">
+            Published as{" "}
+            <Link href={`/parts/${encodeURIComponent(slug)}`} className="font-mono text-accent-text hover:underline">
+              {slug}
+            </Link>
+            : its page also takes a variant in plain words (“2 mm taller”).
+          </p>
+        )}
       </div>
     </div>
   );

@@ -24,3 +24,11 @@ test("alignment and per-view metric dumps go behind Details; findings stay with 
   assert.equal(details.length, 2);
   assert.equal(isDebugNote("Test failed: width (short side of the footprint) == 11.91 +/- 0.3 mm (model: 11.58)."), false);
 });
+
+test("older agent lines about the keep rule say what it compares: closeness to passing, not max error", () => {
+  assert.equal(
+    plainTerms("committed round 6: arm_width 12.00→11.00 mm; Hausdorff 4.70→4.62 mm, not verified; worse than the best committed model — code keeps the best"),
+    "committed round 6: arm_width 12.00→11.00 mm; outline gap 4.70→4.62 mm, not verified; not closer to passing than the best committed round (judged on how close every check is to passing, not on max error); code keeps that one",
+  );
+  assert.match(plainTerms("Hausdorff 4.43→4.70 mm, not verified; now the best model"), /now the closest to passing \(judged on how close every check is to passing, not on max error\)$/);
+});

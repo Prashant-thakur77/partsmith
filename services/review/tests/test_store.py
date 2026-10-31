@@ -208,8 +208,9 @@ def test_lesson_track_counts_jobs_and_later_reviews(svc: FakeService) -> None:
         j.write_json("lessons_used.json", {"family": "spacer", "lesson_ids": ["l_x"]})
     store.decide(a.id, "accept", svc=svc)
     store.decide(b.id, "reject", reason="no", svc=svc)
-    assert store.lesson_track("l_x") == {"used_in": 3, "accepted": 1, "improved": 0, "rejected": 1}
-    assert store.lesson_track("l_none") == {"used_in": 0, "accepted": 0, "improved": 0, "rejected": 0}
+    jobs = sorted({a.id, b.id, c.id})
+    assert store.lesson_track("l_x") == {"used_in": 3, "jobs": jobs, "accepted": 1, "improved": 0, "rejected": 1}
+    assert store.lesson_track("l_none") == {"used_in": 0, "jobs": [], "accepted": 0, "improved": 0, "rejected": 0}
     assert json.loads((store.reviews_dir() / f"{a.id}.json").read_text())["rounds"][0]["decision"] == "accept"
 
 

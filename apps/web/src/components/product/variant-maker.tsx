@@ -1,7 +1,7 @@
 "use client";
 
 import { useMutation } from "@tanstack/react-query";
-import { ArrowUpRight, Box, Download, GitFork, Layers } from "lucide-react";
+import { ArrowUpRight, Box, Download, GitFork, Layers, SlidersHorizontal } from "lucide-react";
 import Link from "next/link";
 import * as React from "react";
 import { useAdmin } from "@/components/admin-access";
@@ -36,6 +36,7 @@ export function VariantMaker({
   verified,
   downloadUrl,
   lockedNote,
+  knobsHref,
   className,
 }: {
   /** Registry part to save the variant under (null: the job is not published, so only downloads are offered). */
@@ -47,6 +48,8 @@ export function VariantMaker({
   /** File link at the current values; undefined while the export gate is locked. */
   downloadUrl: (format: "stl" | "3mf" | "step") => string | undefined;
   lockedNote?: string;
+  /** Where the knobs are on this page; the empty state links there and lists them. */
+  knobsHref?: string;
   className?: string;
 }) {
   const caps = useCapabilities();
@@ -68,7 +71,24 @@ export function VariantMaker({
         {changes.length ? <Badge tone="accent">{changes.length} knob{changes.length === 1 ? "" : "s"} changed</Badge> : null}
       </div>
       {!changes.length ? (
-        <p className="text-[13px] text-muted">Move any knob, then save the result as its own part or download it at those values.</p>
+        <div className="space-y-2">
+          <p className="text-[13px] text-muted">
+            No knob changed yet, so there is no variant to save. Move a knob, then save the result as its own part or download it at those values.
+          </p>
+          {knobsHref && params.length ? (
+            <>
+              <p className="text-[12px] text-subtle">
+                {params.length} knob{params.length === 1 ? "" : "s"} on this part: {params.slice(0, 6).map((p) => paramLabel(p.name, p.label).toLowerCase()).join(", ")}
+                {params.length > 6 ? ", …" : ""}
+              </p>
+              <Button asChild size="sm" variant="outline">
+                <a href={knobsHref}>
+                  <SlidersHorizontal aria-hidden /> Go to the knobs
+                </a>
+              </Button>
+            </>
+          ) : null}
+        </div>
       ) : (
         <>
           <ul className="flex flex-wrap gap-1.5" aria-label="Changed knobs">

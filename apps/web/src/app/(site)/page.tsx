@@ -141,7 +141,7 @@ export default async function HomePage() {
           of={OF}
           kicker="Honesty"
           title="A lying model, caught."
-          description="We told a model to lie about its work. The verifier measured anyway, and the export gate kept the part from shipping as verified."
+          description="We told a model to lie about its work. The verifier measured anyway, and the download check kept the part from shipping as verified."
           actions={
             <Button asChild variant="ghost" size="sm">
               <Link href="/judges">

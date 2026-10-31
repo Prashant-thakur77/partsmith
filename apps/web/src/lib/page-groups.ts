@@ -95,6 +95,29 @@ export function knobRuns(members: readonly LessonLike[]): KnobRun[] {
   return out;
 }
 
+/** Builds that carried any lesson of a card (union of each member's `track.jobs`; `used_in` when an older API sends no ids). */
+export function buildsUsing(members: readonly { track?: { used_in: number; jobs?: string[] } | null }[]): number {
+  const ids = new Set<string>();
+  let fallback = 0;
+  for (const m of members) {
+    const jobs = m.track?.jobs ?? [];
+    jobs.forEach((j) => ids.add(j));
+    if (!jobs.length) fallback = Math.max(fallback, m.track?.used_in ?? 0);
+  }
+  return Math.max(ids.size, fallback);
+}
+
+/**
+ * Runs behind one knob card that moved the knob in opposite directions (some up, some down): conflicting evidence, not
+ * advice. Null when they agree, or when fewer than two runs record a move.
+ */
+export function lessonConflict(members: readonly LessonLike[]): { up: number; down: number } | null {
+  const runs = knobRuns(members);
+  const up = runs.filter((r) => r.final > r.first).length;
+  const down = runs.filter((r) => r.final < r.first).length;
+  return up > 0 && down > 0 ? { up, down } : null;
+}
+
 /** "cable_clip" → "Cable Clip" (template and family names as people read them). */
 export function humanName(s: string): string {
   return s.replace(/[_-]+/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
@@ -175,25 +198,40 @@ export function median(values: readonly number[]): number | null {
   return v.length % 2 ? v[mid]! : (v[mid - 1]! + v[mid]!) / 2;
 }
 
-export type JobsSummary = { n: number; verified: number; bucket: Record<JobBucket, number>; source: Record<JobSource, number>; medianMaxGapMm: number | null; gapN: number };
+/** `server` = runs made on this server only, verified of finished (done or failed): the same set and rate as the admin overview. */
+export type JobsSummary = { n: number; verified: number; bucket: Record<JobBucket, number>; source: Record<JobSource, number>; medianMaxGapMm: number | null; gapN: number; server: { verified: number; finished: number } };
 
 /** Counts and the median max gap over finished jobs that report one (all from the list itself). */
 export function jobsSummary(list: readonly JobLike[]): JobsSummary {
   const bucket: Record<JobBucket, number> = { verified: 0, best_effort: 0, failed: 0, in_progress: 0 };
   const source: Record<JobSource, number> = { recorded: 0, server: 0 };
   const gaps: number[] = [];
+  const server = { verified: 0, finished: 0 };
   for (const j of list) {
-    bucket[jobBucket(j)] += 1;
+    const b = jobBucket(j);
+    bucket[b] += 1;
     source[jobSource(j)] += 1;
     if (j.status === "done" && j.max_error_mm != null && Number.isFinite(j.max_error_mm)) gaps.push(j.max_error_mm);
+    if (jobSource(j) === "server" && (j.status === "done" || j.status === "failed")) {
+      server.finished += 1;
+      if (b === "verified") server.verified += 1;
+    }
   }
-  return { n: list.length, verified: bucket.verified, bucket, source, medianMaxGapMm: median(gaps), gapN: gaps.length };
+  return { n: list.length, verified: bucket.verified, bucket, source, medianMaxGapMm: median(gaps), gapN: gaps.length, server };
 }
 
 export function jobsSummaryText(s: JobsSummary): string {
   const parts = [`${s.verified} of ${s.n} verified`];
   if (s.medianMaxGapMm != null) parts.push(`median max gap ${s.medianMaxGapMm.toFixed(2)} mm (${s.gapN} finished job${s.gapN === 1 ? "" : "s"})`);
+  // with recorded runs in the list, also give the made-here rate the admin overview shows
+  if (s.source.recorded > 0 && s.server.finished > 0) parts.push(`runs made here: ${s.server.verified} verified of ${s.server.finished} finished`);
   return parts.join(" · ");
+}
+
+/** The home page's run count: what `/jobs` lists (runs made here + recorded runs served), the recorded share named. */
+export function runsOnServer(stats: { jobs: number; jobs_recorded?: number; jobs_listed?: number | undefined }): { n: number; recorded: number } {
+  const recorded = stats.jobs_recorded ?? 0;
+  return { n: stats.jobs_listed ?? stats.jobs + recorded, recorded };
 }
 
 /** URL filter values; unknown values read as "all". */

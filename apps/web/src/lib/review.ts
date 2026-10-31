@@ -129,6 +129,22 @@ function scorecardBody(j: Judge | null | undefined, ran?: JudgeRun | null): stri
   return parts.length ? parts.join(" · ") : "no scores";
 }
 
+/** A blocking judge veto in plain words: "judge blocked it: hinge knuckles missing", plus who judged and how
+ * ("muse-spark-1.3 · live"). Taken from the judge record as stored; null when the judge raised no blocking veto. */
+export type VetoLine = { text: string; detail: string; by: string };
+
+export function blockingVeto(j: Judge | null | undefined): VetoLine | null {
+  const v = j?.vetoes.find((x) => x.severity === "blocking");
+  if (!v) return null;
+  const feature = v.feature.replaceAll("_", " ").trim();
+  // the judge writes "missing - photo shows …": the head is the short finding, the rest is its explanation
+  const [head = "", ...rest] = v.issue.split(/\s+[-–—:]\s+/);
+  const short = head.length > 48 ? `${head.slice(0, 47).trimEnd()}…` : head;
+  const what = short && !short.toLowerCase().startsWith(feature.toLowerCase()) ? `${feature} ${short}` : short || feature;
+  const by = [j?.model, j?.mode === "replay" ? "recorded" : j?.mode].filter(Boolean).join(" · ") || "judge model not recorded";
+  return { text: `judge blocked it: ${what}`, detail: rest.join(" - ") || v.issue, by };
+}
+
 export function scoreTone(score: number): "ok" | "warn" | "bad" {
   return score >= 4 ? "ok" : score === 3 ? "warn" : "bad";
 }

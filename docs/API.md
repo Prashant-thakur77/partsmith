@@ -60,6 +60,7 @@ Status = {"mode": "live"|"mock"|"replay"|"mixed", "admin": "token"|"open (dev)",
           "cost": {"usd_total": float, "usd_per_job_mean": float|null, "n_jobs": int},
           "budget": {"day","cap_usd": float|null,"spent_usd","remaining_usd": float|null,"calls","by_stage","source"},
           "model_calls": [{"stage","provider","model","mode","calls","failed","tokens_in","tokens_out","usd","ms_mean","open_weights"}],
+          "model_calls_recorded": [same shape, over the recorded runs this server serves; never counted as spend],
           "open_weights": {"open_weights_only": bool, "stages_live_on_open_weights": [str], "calls_on_open_weights": int,
                            "last_live_call_ts": {provider: float}}}
 ```
@@ -184,7 +185,10 @@ decision is unchanged). `MateFitResult = {"view": "mating", "capture": CaptureRe
 "text"}`. No mating photo: nothing runs and nothing changes.
 
 **Buy or print.** `BuyOrPrint = {"job_id", "slug", "title", "status" (copied from the verification, never changed),
-"prints": [PrintEstimate], "lookup": BuyLookup|null, "mode": "live"|"mock"|"replay", "created_at", "notes": [str]}`.
+"prints": [PrintEstimate], "lookup": BuyLookup|null, "mode": "live"|"mock"|"replay", "created_at", "notes": [str],
+"recorded": bool, "stored": bool}`. `recorded` is true only when this card's lookup was played back (its job is a recorded
+run, or the lookup's own mode is `replay`); `stored` is true when the answer is a stored lookup read back (a GET), with
+nothing searched for this request. Neither follows the server's provider mode, and a card without a lookup has both false.
 `PrintEstimate = {"material": "PLA"|"PETG", "volume_mm3", "grams", "print_minutes", "filament_cost": {currency: float},
 "price_per_kg": {currency: float}, "assumptions": [str]}` — code only: grams = solid volume × density (PLA 1.24,
 PETG 1.27 g/cm³; 100 % infill, an upper bound), minutes = the part-facts estimate, cost = grams × an assumed spool
@@ -271,7 +275,7 @@ adds beyond the broken end out of every comparison (like the completed region), 
 | PATCH | `/needs/{id}` | **admin**. `{"status": "open"\|"in_progress"\|"fulfilled"}` → `Request` |
 | GET | `/lessons?status=&scope=` | `[{"id","scope","rule","evidence","status": "candidate"\|"promoted"\|"rejected","promoted_by","created_at","links": [{"kind": "job"\|"part"\|"fit_report","id","url","page"}]}]` |
 | POST | `/lessons/{id}/promote`, `/lessons/{id}/reject` | **admin**. `{"by"?: str}` → the lesson. Only promoted lessons reach future builds |
-| GET | `/stats` | `{"parts": int, "verified": int, "synthetic": int, "real": int, "reference_object": int, "reference": int, "jobs": int, "grams_pla": float, "calls_total": int, "mcp_calls": int, "distinct_clients": int, "last_7d": {"calls","mcp_calls","distinct_clients"}, "usage": {… + "top_routes": [{"route","calls"}]}}` — computed from the DB |
+| GET | `/stats` | `{"parts": int, "verified": int, "synthetic": int, "real": int, "reference_object": int, "reference": int, "withdrawn": int, "jobs": int, "jobs_recorded": int, "jobs_listed": int, "grams_pla": float, "calls_total": int, "mcp_calls": int, "distinct_clients": int, "last_7d": {"calls","mcp_calls","distinct_clients"}, "usage": {… + "top_routes": [{"route","calls"}]}}` — computed from the DB. Part counts are the set `GET /parts` lists (no reference objects, no withdrawn parts; those are `reference` / `withdrawn`); `/families`, `/llms.txt` and `/prompt.txt` use the same set. `jobs` = runs made here, `jobs_recorded` = recorded runs served, `jobs_listed` = what `GET /jobs` lists |
 
 `PartCard = {"slug","title","family","status","origin","verified","max_error_mm","status_reason": str|null,"thumbnail_url","thumbnail_2x_url","params_count","topology_knobs": [str],"summary","bbox_mm": [x,y,z]|null}`.
 `status_reason` (also on part detail and `JobDetail`) is one short line naming the check that kept a best-effort
@@ -481,7 +485,8 @@ the notes; its `review_round.json` holds each pin in mat and part mm with code's
 `accept` records the sign-off, promotes the ticked rules (unticked stay candidates) and with `publish` publishes the
 part (best effort labelled "accepted by a person"; never `verified` unless the verifier said so). `reject` needs a
 reason. Errors: 404 `job_not_found`, 409 `review_busy` / `review_decided` / `not_finished`, 422 `review_empty` /
-`validation_error`. Job detail carries `judge` and `review` (`{"status","round","root_job"}`); lessons carry `track`.
+`validation_error`. Job detail carries `judge` and `review` (`{"status","round","root_job"}`); lessons carry `track`
+(`{"used_in","jobs": [job id],"accepted","improved","rejected"}`, `jobs` = the builds whose prompts carried it).
 Review state lives in `$PARTSMITH_HOME/reviews/` (never in committed replays). Chains recorded with the replays
 (`data/replays/_reviews/`) are shown read only; a new decision on one is saved locally. API decisions are `by: "person"`;
 `by: "test"` (scripts, the developer agent) cannot promote rules or publish and is left out of `stats`.

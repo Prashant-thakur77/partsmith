@@ -46,7 +46,7 @@ test("no-match banner only for a query that matched partly or not at all", () =>
 });
 
 test("comparison table: categories only, qualitative cells, one cell per column", async () => {
-  const { COMPARE_COLUMNS, COMPARE_ROWS, cellText } = await import("../src/lib/compare.ts");
+  const { COMPARE_COLUMNS, COMPARE_ROWS, cellText, compareRows } = await import("../src/lib/compare.ts");
   assert.equal(COMPARE_COLUMNS.length, 5);
   assert.equal(COMPARE_COLUMNS.at(-1), "PartSmith");
   for (const row of COMPARE_ROWS) {
@@ -60,11 +60,19 @@ test("comparison table: categories only, qualitative cells, one cell per column"
   }
   const words = JSON.stringify(COMPARE_ROWS) + COMPARE_COLUMNS.join(" ");
   // every capitalised word is a plain English word or one of ours: no product or company names slip in
-  const allowed = new Set(["Text", "CAD", "Photo", "Phone", "Model", "PartSmith", "Yes", "No", "Partial", "Usually", "Varies", "Free", "REST", "MCP", "CadQuery", "Real", "Editable", "Pass", "Learns", "Fit", "Agent", "Cost", "API"]);
+  const allowed = new Set(["Text", "CAD", "Photo", "Phone", "Model", "PartSmith", "Yes", "No", "Partial", "Usually", "Varies", "Free", "REST", "MCP", "CadQuery", "Real", "Editable", "Pass", "Learns", "Fit", "Agent", "Cost", "API", "Tested", "See", "Accuracy"]);
   for (const w of words.match(/\b[A-Z][A-Za-z]+\b/g) ?? []) assert.ok(allowed.has(w), `unexpected name-like word: ${w}`);
   assert.equal(cellText("PartSmith", { mark: "yes", label: "Yes", note: "n" }), "PartSmith: Yes — n");
-  const ours = COMPARE_ROWS.filter((r) => r.feature !== "Cost to use").map((r) => r.cells.at(-1).mark);
+  const ours = COMPARE_ROWS.filter((r) => r.feature !== "Cost to use" && !r.feature.startsWith("Real millimetres")).map((r) => r.cells.at(-1).mark);
   assert.ok(ours.every((m) => m === "yes"));
+  // the real-photo claim follows the bench: Yes only once real broken parts are benched
+  const real = (n) => compareRows(n)[0].cells.at(-1);
+  assert.equal(real(0).mark, "partial");
+  assert.match(real(0).note, /synthetic photos so far; real-part bench pending/);
+  assert.equal(real(0).href, "/results#real_ruler");
+  assert.equal(real(3).mark, "yes");
+  assert.equal(real(null).mark, "partial", "bench unreadable: claim nothing");
+  assert.doesNotMatch(real(null).note, /pending|real broken/);
 });
 
 test("job cost adds up the job's own model_call events", async () => {
@@ -87,6 +95,9 @@ test("job cost adds up the job's own model_call events", async () => {
   assert.match(jobCost([call("a", "mock", 0, 0, 0)], { replay: true }).note, /no spend/);
   assert.equal(jobCost([], { replay: false }).calls, 0);
   assert.match(jobCost([call("a", "live", 0.01, 1, 1), call("b", "mock", 0, 0, 0)], { replay: false }).note, /1 of 2 calls/);
+  // the same model answered live and by its mock stand-in: two rows, each with its mode (never two bare "a" rows)
+  const both = jobCost([call("img", "live", 0.01, 0, 0), call("img", "live", 0.01, 0, 0), call("img", "mock", 0, 0, 0)], { replay: false });
+  assert.deepEqual(both.perModel.map((m) => [m.model, m.mode, m.calls]), [["img", "live", 2], ["img", "mock", 1]]);
 });
 
 test("load notes: load-bearing families only, always with the safety warning", async () => {

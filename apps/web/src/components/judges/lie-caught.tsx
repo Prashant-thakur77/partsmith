@@ -4,7 +4,7 @@ import { Ban, Bot, ShieldCheck, TriangleAlert } from "lucide-react";
 import * as React from "react";
 import { apiUrl } from "@/lib/api";
 import type { BypassReport, CaughtLie } from "@/lib/api-types";
-import { exportLine } from "@/lib/bypass";
+import { exportLine, plainCheck, plainNote } from "@/lib/bypass";
 import { fmtNum } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import { Badge } from "../ui/badge";
@@ -60,21 +60,21 @@ function LieCard({ c }: { c: CaughtLie }) {
               {/* eslint-disable-next-line @next/next/no-img-element -- report file served by the API */}
               <img
                 src={reportFileUrl(c.overlay)}
-                alt={`Verifier overlay, ${c.overlay_note || "top view"}. Grey: model and photo agree; orange: model material the photo lacks; blue: photo material the model lacks. Maximum error ${err != null ? fmtNum(err) : "unknown"} millimetres against a ${fmtNum(lim)} millimetre limit.`}
+                alt={`Verifier overlay, ${plainNote(c.overlay_note || "top view")}. Grey: model and photo agree; orange: model material the photo lacks; blue: photo material the model lacks. Maximum error ${err != null ? fmtNum(err) : "unknown"} millimetres against a ${fmtNum(lim)} millimetre limit.`}
                 loading="lazy"
                 decoding="async"
                 width={c.overlay_px?.[0] ?? 960}
                 height={c.overlay_px?.[1] ?? 720}
                 className="h-auto w-full rounded-md border border-border bg-white"
               />
-              <figcaption className="text-[12px] text-muted">{c.overlay_note}</figcaption>
+              <figcaption className="text-[12px] text-muted">{plainNote(c.overlay_note)}</figcaption>
             </>
           ) : (
             <figcaption className="text-[12px] text-muted">No overlay image in this report.</figcaption>
           )}
           {c.verifier.failed_tests.length ? (
             <p className="text-[12px] text-muted">
-              Failed checks: <span className="font-mono text-fg">{c.verifier.failed_tests.join(", ")}</span>
+              Failed checks: <span className="text-fg">{c.verifier.failed_tests.map(plainCheck).join(", ")}</span>
             </p>
           ) : null}
         </figure>

@@ -263,12 +263,13 @@ _call_cache = admin_costs._call_cache  # shared with the admin overview (tests c
 
 @router.get("/status", summary="Which model runs where, provider health, job and cost aggregates", tags=["system"])
 def status() -> dict[str, Any]:
-    """Live proof for the provider table: per-stage provider/model/mode, warnings (missing keys → mock), and
-    aggregates computed from the `model_call` events of every job on this server."""
+    """Live proof for the provider table: per-stage provider/model/mode as configured now, warnings (missing keys →
+    mock), and aggregates computed from the `model_call` events of every job made on this server (`model_calls`).
+    `model_calls_recorded` aggregates the recorded runs it serves the same way, kept apart from spend."""
     rows = providers.status()
     try:
-        summaries = _svc().manager().list(100_000)
         mgr = _svc().manager()
+        summaries = mgr.list(100_000, include_replays=True)
     except ApiError:
         summaries, mgr = [], None
     totals = admin_costs.aggregate(summaries, mgr)
@@ -284,6 +285,8 @@ def status() -> dict[str, Any]:
         "cost": totals["cost"],
         "budget": providers.budget.snapshot(),
         "model_calls": calls,
+        # the same aggregate over the recorded runs this server serves (how those logged calls ran back then)
+        "model_calls_recorded": admin_costs.aggregate(summaries, mgr, recorded=True)["model_calls"],
         "open_weights": {
             "open_weights_only": os.environ.get("OPEN_WEIGHTS_ONLY", "0") == "1",
             "stages_live_on_open_weights": live_open,
@@ -1433,11 +1436,17 @@ def needs_status(need_id: str, body: NeedStatusRequest, _admin: None = Depends(r
 
 @router.get("/stats", summary="Counters computed from the database", tags=["registry"])
 def stats() -> dict[str, Any]:
+    """Part counters count the set `GET /parts` lists (reference objects in `reference`, withdrawn in `withdrawn`).
+    `jobs` = runs made on this server; `jobs_recorded` = recorded runs it serves (review rounds, the judge path);
+    `jobs_listed` = what `GET /jobs` lists (both, a run that is local and recorded once)."""
     s = get_registry().stats()
     try:
-        s["jobs"] = sum(1 for j in _svc().manager().list(100_000) if not j.is_replay)
+        listed = _svc().manager().list(100_000, include_replays=True)
+        s["jobs"] = sum(1 for j in listed if not j.is_replay)
+        s["jobs_recorded"] = sum(1 for j in listed if j.is_replay)
+        s["jobs_listed"] = len(listed)
     except ApiError:
-        s["jobs"] = 0
+        s["jobs"] = s["jobs_recorded"] = s["jobs_listed"] = 0
     s["usage"] = usage.summary()
     s.update({k: s["usage"][k] for k in ("calls_total", "mcp_calls", "distinct_clients", "last_7d")})
     return s

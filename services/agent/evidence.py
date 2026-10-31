@@ -744,8 +744,22 @@ def ship_decision(run: FixRun, verification: Any) -> dict[str, Any]:
 INSTALL_STEPS = (
     "Take out the broken part and clean the mounting spot",
     "Fit the printed replacement part in the same place",
-    "Check that it moves and holds like the original",
+    "Check that it sits flush and holds like the original",
 )
+# The last step names the movement only for families whose part moves in use (the web's MOVING_FAMILIES).
+_CHECK_STEP = {
+    "hinge": "Check that it swings freely and holds like the original",
+    "wheel": "Check that it turns freely like the original",
+    "gear": "Check that it turns and meshes like the original",
+    "knob": "Check that it turns and grips like the original",
+    "latch": "Check that it clicks shut and holds like the original",
+    "clip": "Check that it clicks in and holds like the original",
+}
+
+
+def install_steps(family: str | None) -> tuple[str, str, str]:
+    """The install card's three steps; the check step fits the part's family (a spacer does not "move")."""
+    return INSTALL_STEPS[0], INSTALL_STEPS[1], _CHECK_STEP.get(family or "", INSTALL_STEPS[2])
 
 
 def install_card(run: FixRun) -> bool:
@@ -758,15 +772,16 @@ def install_card(run: FixRun) -> bool:
 
     render = mask_png(b.out.views["top"].model_mask, (70, 140, 230))
     photo, _ = fit_png(run.photos["top"], 1536)
+    steps = install_steps(run.spec.family.value if run.spec else None)
     with providers.job_context(run.job.id, run.job.emit, ctx=run.job.ctx):
-        panels = fn(photo, render, list(INSTALL_STEPS))
+        panels = fn(photo, render, list(steps))
     n = 0
     for i, res in enumerate(panels, start=1):
         data = _get(res, "data", default=None)
         if isinstance(data, (bytes, bytearray)):
             mode = str(_get(res, "mode", default=""))
             run.artifact("install_card", bytes(data), ".png",
-                         f"install card {i}/{len(panels)}: {INSTALL_STEPS[i - 1] if i <= 3 else ''}"
+                         f"install card {i}/{len(panels)}: {steps[i - 1] if i <= 3 else ''}"
                          + (" (mock)" if mode == "mock" else ""))  # fmt: skip
             n += 1
     return n > 0
@@ -786,6 +801,7 @@ __all__ = [
     "feature_points",
     "hotspot_crops",
     "install_card",
+    "install_steps",
     "lookup_specs",
     "measure_points",
     "mirror_completion",

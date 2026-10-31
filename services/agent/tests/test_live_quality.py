@@ -391,3 +391,12 @@ def test_a_pointed_rim_over_a_hidden_bore_is_not_a_through_hole() -> None:
     assert evidence._rim_of_hidden_bore(run, _pointed(rim, at=(90.0, 152.9))) is False  # elsewhere: a missed hole
     top.notes = []
     assert evidence._rim_of_hidden_bore(run, _pointed(rim)) is False  # no hidden-bore flag: the usual merge applies
+
+
+def test_install_card_check_step_fits_the_family() -> None:
+    """A spacer does not "move": only families whose part moves in use get a movement check step."""
+    assert evidence.install_steps("spacer")[2] == "Check that it sits flush and holds like the original"
+    assert evidence.install_steps(None)[2] == "Check that it sits flush and holds like the original"
+    assert "swings" in evidence.install_steps("hinge")[2]
+    assert "turns" in evidence.install_steps("wheel")[2]
+    assert all("moves" not in s for f in ("spacer", "bracket", "hook", "cover") for s in evidence.install_steps(f))

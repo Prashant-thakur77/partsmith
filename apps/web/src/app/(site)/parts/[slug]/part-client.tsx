@@ -16,6 +16,7 @@ import dynamic from "next/dynamic";
 import { useCapabilities } from "@/lib/capabilities";
 import { shipState } from "@/lib/ship";
 import { isTestsSummaryReason, testsPhrase, verifiedScope } from "@/lib/evidence-notes";
+import { nearLimitNote, verdictBreakdown } from "@/lib/verdict-notes";
 
 // Below the first screen on phones and only useful after interaction: loaded after hydration.
 const ExportGateNotice = dynamic(() => import("@/components/export-gate").then((m) => m.ExportGateNotice), { ssr: false });
@@ -140,11 +141,33 @@ function FitFeedback({ slug, reports }: { slug: string; reports: number }) {
   );
 }
 
+/** Passed, failed and what decided the status, so "all part tests passed" next to a failing view is not a puzzle. */
+function VerdictBreakdownList({ b }: { b: NonNullable<ReturnType<typeof verdictBreakdown>> }) {
+  return (
+    <div className="space-y-1.5 rounded-md border border-border bg-surface-2 px-3 py-2 text-[12.5px] leading-5" data-testid="verdict-breakdown">
+      <p className="font-medium text-fg">{b.decided}</p>
+      {b.passed.length ? (
+        <p className="text-muted">
+          <span className="font-medium text-ok">Passed:</span> {b.passed.join("; ")}.
+        </p>
+      ) : null}
+      {b.failed.length ? (
+        <p className="text-muted">
+          <span className="font-medium text-bad">Failed:</span> {b.failed.join("; ")}.
+        </p>
+      ) : null}
+      {b.notGated.length ? <p className="text-subtle">Not counted: {b.notGated.join("; ")}.</p> : null}
+    </div>
+  );
+}
+
 function VerificationCard({ part }: { part: PartRecord }) {
   const v = part.verification;
   const phrase = testsPhrase(v?.tests ?? []);
   const reasons = (v?.reasons ?? []).filter((r) => !isTestsSummaryReason(r));
   const verUrl = artifactUrl(part.artifacts.verification);
+  const breakdown = verdictBreakdown(v);
+  const near = nearLimitNote(v);
   return (
     <Card>
       <CardHeader className="flex-row items-center justify-between gap-3">
@@ -175,6 +198,12 @@ function VerificationCard({ part }: { part: PartRecord }) {
               ))}
             </div>
             {part.status_reason ? <p className="text-[13px] text-fg">Why best effort: {part.status_reason}</p> : null}
+            {near ? (
+              <p role="note" className="rounded-md border border-warn-border bg-warn-soft px-2.5 py-1.5 text-[12.5px] text-fg" data-testid="near-limit">
+                {near}
+              </p>
+            ) : null}
+            {breakdown && !v.verified ? <VerdictBreakdownList b={breakdown} /> : null}
             {reasons.length ? (
               <ul className="list-disc space-y-0.5 pl-4 text-[12px] text-muted">
                 {reasons.slice(0, 4).map((r) => (
@@ -221,6 +250,13 @@ function VariantBox({ slug, onApply }: { slug: string; onApply: (p: Record<strin
             <Badge tone="neutral" className="font-mono tnum">confidence {fmtPct(v.data.confidence, 0)}</Badge>
             <ModeBadge mode={v.data.mode} hideLive />
           </div>
+          {v.data.mode !== "live" ? (
+            <p className="text-subtle" data-testid="variant-mode">
+              {v.data.mode === "mock"
+                ? "Mapped by the rule-based stand-in (mock): no model read your words; code matched them to the knobs."
+                : "A recorded model answer, played back."}
+            </p>
+          ) : null}
           {v.data.applied.map((a) => (
             <div key={a} className="flex gap-1.5">
               <Badge tone="ok">applied</Badge> <span className="text-muted">{a}</span>

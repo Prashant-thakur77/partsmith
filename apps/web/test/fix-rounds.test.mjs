@@ -3,7 +3,7 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import test from "node:test";
 import { EventSchema } from "../src/lib/api-types.ts";
-import { editsText, headline, keepReason, keptRound, parseViews, roundsFromEvents, sizeSetsMaxError, verdictFromLabel } from "../src/lib/fix-rounds.ts";
+import { chartSizeNote, editsText, headline, keepReason, keptRound, parseViews, roundsFromEvents, sizeFromResiduals, sizeSetsMaxError, verdictFromLabel } from "../src/lib/fix-rounds.ts";
 
 const REPLAYS = new URL("../../../data/replays/", import.meta.url);
 // replays are found by their demo sample (data/replays/seed_index.json), so a re-seed with new job ids keeps working
@@ -57,7 +57,10 @@ test("a job verified on its first build says so and runs no agent", () => {
   assert.equal(s.rounds.length, 1);
   assert.equal(s.rounds[0].verdict, "verified");
   assert.equal(s.headline, "Passed on the first build");
-  assert.equal(s.rounds[0].views.length, 1);
+  // the verify label named only the top view; the round's overlays show a side view too, and the round's worst outline
+  // gap (0.077 mm) is larger than the top's 0.06 mm, so that gap is the side view's, marked as taken from the worst
+  assert.deepEqual(s.rounds[0].views.map((v) => [v.view, !!v.fromWorst]), [["top", false], ["side", true]]);
+  assert.ok(Math.abs(s.rounds[0].views[1].hausdorffMm - 0.0775) < 1e-3);
 });
 
 test("a best-effort job keeps its final status honest", () => {
@@ -165,7 +168,9 @@ test("the kept round says why it beat rounds with a lower max error (older run: 
   const s = roundsFromEvents(hookEvents(null));
   assert.equal(s.keptIter, 5);
   const why = keepReason(s.rounds, s.keptIter);
-  assert.match(why, /^Kept round 5 \(4\.70 mm\) although rounds 2, 3, 4 and 6 had a lower max error \(lowest: round 2, 3\.22 mm\)\./);
+  // the keep rule leads, in the same words the agent log uses (shortfall, not max error)
+  assert.match(why, /^Kept round 5 \(4\.70 mm max error\) because it came closest to passing overall, not because of its max error/);
+  assert.match(why, /Rounds 2, 3, 4 and 6 had a lower max error \(lowest: round 2, 3\.22 mm\) but were further from passing by that measure\./);
   assert.match(why, /closest to passing overall/);
   assert.match(why, /Tests passed: 16\/17 for round 5, 14\/17 for round 2 \(this run did not record the shortfall itself\)\./);
 });
@@ -176,4 +181,30 @@ test("new runs quote the keep rule's own number for the kept round and the lowes
   assert.match(keepReason(s.rounds, s.keptIter), /Shortfall 12\.35 for round 5 vs 21\.40 for round 2\.$/);
   // nothing to explain when the kept round also has the lowest max error
   assert.equal(keepReason(s.rounds, 2), null);
+});
+
+test("an older verify label that named one view gets the other view from the round's worst gap and overlays", () => {
+  const events = [
+    ev("stage", 1, { stage: "verify", status: "ok", iter: 3, label: "best effort: top: IoU 0.934, Hausdorff 1.91 mm at (-20.6, -12.0); tests 14/17" }),
+    ev("artifact", 2, { kind: "residual_heatmap", sha: "a", iter: 3, url: "/api/v1/blobs/a.png", label: "round 3: residual_top" }),
+    ev("artifact", 3, { kind: "residual_heatmap", sha: "b", iter: 3, url: "/api/v1/blobs/b.png", label: "round 3: residual_side" }),
+    ev("iteration", 4, { iter: 3, strategy: "template", edits: [], hausdorff_mm: 3.714, passed_tests: 14, total_tests: 17 }),
+    ev("metric", 5, { iter: 3, name: "hausdorff_mm", value: 3.714, threshold: 0.5 }),
+  ];
+  const r = roundsFromEvents(events).rounds[0];
+  assert.deepEqual(r.views.map((v) => [v.view, v.hausdorffMm, v.withinLimit, !!v.fromWorst]), [["top", 1.91, false, false], ["side", 3.714, false, true]]);
+});
+
+test("a max error set by a measured size names that size, and the chart note labels both numbers", () => {
+  const events = [
+    ev("stage", 1, { stage: "verify", status: "ok", iter: 1, label: "best effort: top: IoU 0.797, Hausdorff 4.52 mm; side: IoU 0.806, Hausdorff 2.56 mm" }),
+    ev("iteration", 2, { iter: 1, strategy: "template", edits: [], analysis: "first build", hausdorff_mm: 4.519, passed_tests: 12, total_tests: 17 }),
+    ev("metric", 3, { iter: 1, name: "max_error_mm", value: 5.016 }),
+    ev("tool_call", 4, { stage: "fix", name: "inspect_residuals", args: {}, ok: true, result: "not verified\nresiduals:\nouter length: measured 1.00, model 1.10, Δ +0.10 mm (tol ±0.3) ok\noutline length: measured 49.83, model 54.84, Δ +5.02 mm (tol ±0.3) FAIL\nside thickness: measured 39.75, model 37.12, Δ -2.63 mm (tol ±0.3) FAIL" }),
+  ];
+  const s = roundsFromEvents(events);
+  assert.equal(s.rounds[0].sizeSource, "outline length");
+  assert.equal(chartSizeNote(s.rounds), "First build: max error 5.02 mm came from a measured size (outline length); the chart plots its outline gap (4.52 mm).");
+  assert.equal(sizeFromResiduals("hole_1 diameter: measured 3.91, model 4.41, Δ +0.50 mm (tol ±0.15) FAIL", 0.5), "hole 1 diameter");
+  assert.equal(chartSizeNote([]), null);
 });

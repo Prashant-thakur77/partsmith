@@ -33,7 +33,10 @@ test("every landing sheet renders with numbers read from the API", async ({ page
     await expect(page.getByRole("main").getByRole("link", { name, exact: true }).first()).toHaveAttribute("href", href);
   }
   const ticker = page.getByRole("list", { name: "Numbers from this server" });
-  await expect(ticker).toContainText("12"); // stats.jobs from the fixture
+  // the runs /jobs lists (stats.jobs_listed: 12 made here + 3 recorded), the recorded share named
+  await expect(ticker).toContainText("15");
+  await expect(ticker).toContainText("runs on this server");
+  await expect(ticker).toContainText("3 recorded");
   await expect(page.getByRole("img", { name: /^Fig\. 1, L-bracket measured on the screen mat: 40\.12 mm by 19\.94 mm.*max error 0\.31 mm against a 0\.50 mm limit\. Recorded run\.$/ })).toBeVisible();
   await revealAll(page);
   for (const title of SHEETS) await expect(page.getByRole("heading", { level: 2, name: title })).toBeVisible();
@@ -46,6 +49,9 @@ test("every landing sheet renders with numbers read from the API", async ({ page
   await expect(review.getByRole("list", { name: "Review rounds" }).getByRole("listitem")).toHaveCount(2);
   await expect(review.getByText("0.83 mm", { exact: true }).first()).toBeAttached();
   await expect(review.getByText("this corner was square").first()).toBeVisible();
+  // a judge veto is shown on its round, and the closing line follows the review state (waiting: not a green check)
+  await expect(review.getByText("judge blocked it: latch hook missing")).toBeVisible();
+  await expect(review.getByText(/no one has signed it off yet/)).toBeVisible();
   await expect(review.getByRole("link", { name: /review desk/ })).toHaveAttribute("href", "/review");
   await expect(review.getByRole("link", { name: "Feedback log" })).toHaveAttribute("href", "/review/log");
   // buy or print: a cited price with its link, and the print estimate

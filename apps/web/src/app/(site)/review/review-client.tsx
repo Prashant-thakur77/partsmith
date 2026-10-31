@@ -510,6 +510,11 @@ function ReviewDetailPanel({ jobId, item, admin }: { jobId: string; item: Review
             title="Photo"
             worst={d.images.worst}
           />
+          {d.images.overlay ? (
+            <p className="text-[12px] text-subtle" data-testid="overlay-note">
+              The blue outline is the model where the part touches the mat. On a tall part the top face looks shifted from it in this flattened photo (the camera sees it from an angle); that is not a fitting error.
+            </p>
+          ) : null}
           {earlier.length ? <p className="text-[12px] text-subtle">Grey pins are from earlier rounds, with the gap there before → after that round (mm, measured by code).</p> : null}
         </section>
         <section aria-label="Agent made" className="min-w-0 space-y-2">
@@ -546,7 +551,8 @@ function ReviewDetailPanel({ jobId, item, admin }: { jobId: string; item: Review
         />
       ) : null}
 
-      <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+      {/* side by side only from xl, with the measurements wider: its six columns clipped Tol / Pass at half width */}
+      <div className="grid grid-cols-1 gap-4 xl:grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)]">
         <MeasureCheck verification={job.data?.verification} />
         <JudgeScorecard judge={judge} ran={judgeRun} />
       </div>

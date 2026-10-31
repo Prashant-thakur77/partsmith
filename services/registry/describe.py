@@ -37,7 +37,8 @@ from services.common.paths import sub
 from services.geom_worker.program import closest_names
 from services.media.voice import snap_clamp
 from services.registry import examples
-from services.registry.parts import _CLAUSE, _count_param, map_variant
+from services.registry.parts import _CLAUSE, _count_param, _fit_param, _hole_param, map_variant
+from services.registry.store import METRIC_CLEARANCE_MM
 
 MAX_TEXT = 600
 MAX_QUESTIONS = 3
@@ -127,6 +128,47 @@ def clauses(text: str) -> list[str]:
     return out
 
 
+# "a 6 mm D-shaft", "on an 8mm axle", "for a 5 mm shaft": the size of what goes through the part's bore
+_SHAFT = re.compile(
+    r"(?:\b(?:for|on|onto|fits?|to fit)\s+(?:an?\s+|the\s+|my\s+)?)?(\d+(?:\.\d+)?)\s*(?:mm\s*)?"
+    r"(d[- ]?)?(shaft|axle|spindle|rod|dowel)s?\b",
+    re.I,
+)
+# "for an M3", "M4 screws", "takes an M3 bolt": a metric screw size → its clearance hole
+_SCREW_SIZE = re.compile(
+    r"(?:\b(?:for|takes|fits?)\s+(?:an?\s+|the\s+)?)?\bm\s?(\d+(?:\.\d)?)\b(?:\s*(?:screws?|bolts?))?", re.I
+)
+
+
+def stated_fits(piece: str, specs: Sequence[ParamSpec]) -> tuple[list[dict[str, Any]], str]:
+    """Shaft and screw sizes said in `piece` ("6 mm D-shaft", "8 mm shaft", "for an M3 (screw)"), mapped by code to the
+    bore / hole knob. Returns (values, the piece with those words taken out so other numbers map on their own)."""
+    out: list[dict[str, Any]] = []
+    rest = piece
+    m = _SHAFT.search(piece)
+    if m:
+        noun = m.group(3).lower()
+        p = _fit_param(specs, "shaft" if noun in ("spindle",) else noun)
+        if p is not None:
+            d = float(m.group(1))
+            dshaft = bool(m.group(2))
+            flat = any(q.name == "flat_depth" for q in specs)
+            note = f"fits a {d:g} mm {'D-' if dshaft else ''}{noun} (bore set to the stated size)"
+            if dshaft and flat:
+                note += "; the D flat is its own knob, flat depth"
+            out.append({"param": p.name, "value": d, "source": "user", "quote": piece, "note": note})
+            rest = (piece[: m.start()] + " " + piece[m.end() :]).strip()
+    m = _SCREW_SIZE.search(rest)
+    if m and m.group(1) in METRIC_CLEARANCE_MM:
+        p = _hole_param(specs)
+        if p is not None and all(v["param"] != p.name for v in out):
+            d = METRIC_CLEARANCE_MM[m.group(1)]
+            out.append({"param": p.name, "value": d, "source": "user", "quote": piece,
+                        "note": f"M{m.group(1)} clearance hole (ISO 273 medium, {d:g} mm)"})  # fmt: skip
+            rest = (rest[: m.start()] + " " + rest[m.end() :]).strip()
+    return out, " ".join(rest.split())
+
+
 def mock_plan(text: str) -> dict[str, Any]:
     """Deterministic `describe_plan` mock: picks the template by its words, then reads each clause with the variant
     mapper ("for a 6 mm cable", "M3 screw", "20 mm wide", "3 ribs") and quotes the clause it came from."""
@@ -139,12 +181,16 @@ def mock_plan(text: str) -> dict[str, Any]:
     words = [p for p in sorted(_phrases(t), key=len, reverse=True) if not re.search(r"\d", p)]
     values: dict[str, dict[str, Any]] = {}
     for piece in clauses(text):
-        cleaned = piece
+        fits, cleaned = stated_fits(piece, specs)  # before the name is cut out: a knob's own tags say "shaft"
         for p in words:  # "a cable clip for a 6 mm cable": the part's own name is not a dimension
             cleaned = re.sub(rf"(?<![a-z]){re.escape(p)}s?(?![a-z])", " ", cleaned, flags=re.I)
         cleaned = " ".join(cleaned.split())
-        edits, _, _ = map_variant(cleaned, specs, t.defaults)
+        for v in fits:
+            values[str(v["param"])] = {**v, "quote": piece}
+        edits, _, _ = map_variant(cleaned, specs, t.defaults) if re.search(r"\d", cleaned) else ([], [], 0.0)
         for e in edits:
+            if any(v["param"] == e["param"] for v in fits):
+                continue
             values[str(e["param"])] = {"param": e["param"], "value": float(e["to"]), "source": "user", "quote": piece,
                                        "note": str(e.get("reason", ""))}  # fmt: skip
         m = _SCREWS.search(piece)
@@ -248,6 +294,18 @@ def check_plan(raw: Mapping[str, Any], text: str) -> tuple[Template | None, list
                                   asked if was_clamped else None)  # fmt: skip
         if was_clamped:
             notes.append(f"{name}: {asked:g} is outside {spec.min:g}–{spec.max:g} {spec.unit}".rstrip())
+    # a shaft or screw size the person said but the plan left out is read from their words by code, never asked again
+    for piece in clauses(text):
+        for v in stated_fits(piece, t.params)[0]:
+            name = str(v["param"])
+            if name in chosen and chosen[name]["source"] == "user":
+                continue
+            spec = specs[name]
+            value, was_clamped = snap_clamp(float(v["value"]), spec)
+            chosen[name] = _value_row(spec, value, "user", " ".join(piece.split())[:160],
+                                      f"{v['note']}; read from your words by code",
+                                      float(v["value"]) if was_clamped else None)  # fmt: skip
+            notes.append(f"{name}: read from your words ({piece.strip()!r})")
     rows = [chosen.get(p.name) or _value_row(p, p.default, "default") for p in t.params]
     return t, rows, notes
 

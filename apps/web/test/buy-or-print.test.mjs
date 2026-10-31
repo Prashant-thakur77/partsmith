@@ -2,7 +2,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import { BuyOrPrintSchema } from "../src/lib/api-types.ts";
-import { cardCurrency, cardMode, citedOem, citedOffers, citedPlaces, cityParam, costEntries, costIn, hostOf, localeCurrency, lookupState, money, safeHref } from "../src/lib/buy-or-print.ts";
+import { cardBadge, cardCurrency, cardMode, citedOem, citedOffers, citedPlaces, cityParam, costEntries, costIn, hostOf, localeCurrency, lookupState, money, safeHref } from "../src/lib/buy-or-print.ts";
 
 const offer = (o = {}) => ({ seller: "Spares Co", price: 349, currency: "INR", url: "https://spares.example.in/p/1", quote: "Price: ₹349", title: "", availability: "", ...o });
 
@@ -78,6 +78,21 @@ test("lookup state and mode badge", () => {
   assert.equal(lookupState({ lookup: { mode: "replay", searched: false } }), "not_searched");
   assert.equal(cardMode({ lookup: null, mode: "mock" }), "mock");
   assert.equal(cardMode({ lookup: { mode: "live" }, mode: "mock" }), "live");
+});
+
+test("the provenance chip follows the card's own flags, never the server's mode", () => {
+  // no lookup stored: no mode to claim (a part page used to say "Recorded run · mock models" here)
+  assert.deepEqual(cardBadge({ lookup: null, mode: "mock", recorded: true, stored: false }), { kind: "none", mode: "mock" });
+  // a live job's stored lookup read back on a replaying server: stored, not a recorded run, never the LIVE chip
+  assert.deepEqual(cardBadge({ lookup: { mode: "live" }, mode: "live", recorded: false, stored: true }), { kind: "stored", mode: "live" });
+  // a recorded run's card: played back
+  assert.deepEqual(cardBadge({ lookup: { mode: "live" }, mode: "live", recorded: true, stored: true }), { kind: "recorded", mode: "live" });
+  // a lookup that ran for this request
+  assert.deepEqual(cardBadge({ lookup: { mode: "mock" }, mode: "mock", recorded: false, stored: false }), { kind: "fresh", mode: "mock" });
+  // older servers send neither flag: the schema defaults both to false
+  const parsed = BuyOrPrintSchema.parse({ title: "x", status: "verified", mode: "live", prints: [], lookup: null });
+  assert.equal(parsed.stored, false);
+  assert.equal(parsed.recorded, false);
 });
 
 test("the card schema drops malformed offers, places and estimates instead of failing the page", () => {

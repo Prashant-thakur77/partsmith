@@ -285,6 +285,7 @@ def test_health_status_openapi(client: TestClient, fake: FakeService) -> None:
     call = next(c for c in s["model_calls"] if c["provider"] == "baseten")
     assert call["calls"] == 1 and call["open_weights"] is True and call["ms_mean"] == 900
     assert s["open_weights"]["calls_on_open_weights"] == 1
+    assert isinstance(s["model_calls_recorded"], list)  # recorded runs' calls, kept apart from spend
     spec = client.get("/api/v1/openapi.json").json()
     assert spec["openapi"].startswith("3.")
     for path in ("/api/v1/parts/{slug}/bake", "/api/v1/jobs/{job_id}/events", "/api/v1/steer", "/api/v1/bench"):

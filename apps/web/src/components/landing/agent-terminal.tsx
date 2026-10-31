@@ -7,7 +7,7 @@
  */
 import { useQuery } from "@tanstack/react-query";
 import * as React from "react";
-import { api } from "@/lib/api";
+import { api, artifactUrl } from "@/lib/api";
 import { splitTitle } from "@/lib/format";
 import { useInView, usePrefersReducedMotion } from "@/lib/motion";
 import { PartCard } from "../registry/part-card";
@@ -35,6 +35,13 @@ export function AgentTerminal() {
   }, [seen, reduced, call.length, words]);
   const typed = n >= call.length;
   const hit = search.data?.items[0];
+  // warm the answer card's picture while the call is still typing, so the card never drops in blank
+  React.useEffect(() => {
+    const src = artifactUrl(hit?.thumbnail_url);
+    if (src) new Image().src = src;
+  }, [hit?.thumbnail_url]);
+  // the card's slot is held from the first paint while a verified answer is likely, so the tabs below never jump
+  const likely = newest.isPending || ((newest.data?.items.length ?? 0) > 0 && !(search.isSuccess && !hit));
   return (
     <div ref={ref} className="space-y-3">
       <div className="overflow-hidden rounded-xl border border-ink/70 bg-[var(--term-bg)] text-[var(--term-fg)] shadow-md">
@@ -72,15 +79,17 @@ export function AgentTerminal() {
           ) : null}
         </pre>
       </div>
-      {typed && hit ? (
-        <div className="motion-safe:animate-[drop-in_420ms_var(--ease-stamp)_both] sm:max-w-[280px]">
-          <PartCard part={hit} />
-        </div>
-      ) : typed && search.isSuccess ? (
-        <p className="flex flex-wrap items-center gap-2 text-[12.5px] text-muted motion-safe:animate-[drop-in_420ms_var(--ease-stamp)_both]">
-          <Badge tone="outline">real search</Badge> The registry on this server has no verified match yet, so the agent reports the need instead of inventing a part.
-        </p>
-      ) : null}
+      <div className={likely || (typed && hit) ? "min-h-[340px]" : undefined} data-testid="agent-answer-slot">
+        {typed && hit ? (
+          <div className="max-w-[280px] motion-safe:animate-[drop-in_420ms_var(--ease-stamp)_both]">
+            <PartCard part={hit} eager />
+          </div>
+        ) : typed && search.isSuccess ? (
+          <p className="flex flex-wrap items-center gap-2 text-[12.5px] text-muted motion-safe:animate-[drop-in_420ms_var(--ease-stamp)_both]">
+            <Badge tone="outline">real search</Badge> The registry on this server has no verified match yet, so the agent reports the need instead of inventing a part.
+          </p>
+        ) : null}
+      </div>
     </div>
   );
 }

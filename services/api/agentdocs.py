@@ -4,6 +4,7 @@ and the route table, so the numbers in them always match the database."""
 from __future__ import annotations
 
 import os
+from typing import Any
 
 from services.registry import parts as P
 from services.registry.store import Registry, get_registry
@@ -37,6 +38,12 @@ def base_url() -> str:
     return os.environ.get("PARTSMITH_PUBLIC_URL", "http://localhost:8000").rstrip("/")
 
 
+def _ref_note(stats: dict[str, Any]) -> str:
+    """The part counts are the set GET /parts lists; bench reference objects are named apart, never added in."""
+    n = int(stats.get("reference") or 0)
+    return f"; plus {n} bench reference object{'' if n == 1 else 's'} (role=reference)" if n else ""
+
+
 def llms_txt(reg: Registry | None = None, *, base: str | None = None) -> str:
     reg = reg or get_registry()
     stats = reg.stats()
@@ -50,7 +57,7 @@ def llms_txt(reg: Registry | None = None, *, base: str | None = None) -> str:
         "CadQuery program (STL/3MF/STEP). An open registry of parts that are programs, not meshes.",
         "",
         f"Registry right now: {stats['parts']} parts, {stats['verified']} verified "
-        f"({stats['real']} real, {stats['synthetic']} synthetic). Units: mm.",
+        f"({stats['real']} real, {stats['synthetic']} synthetic){_ref_note(stats)}. Units: mm.",
         "",
         "## Families",
         *[
@@ -106,7 +113,8 @@ def prompt_txt(reg: Registry | None = None, *, base: str | None = None) -> str:
         "\n".join(
             [
                 "You can use PartSmith to find, adapt and build 3D-printable replacement parts.",
-                f"Registry: {stats['parts']} parts ({stats['verified']} verified). API: {b}/api/v1 · MCP: {b}/mcp.",
+                f"Registry: {stats['parts']} parts ({stats['verified']} verified){_ref_note(stats)}. "
+                f"API: {b}/api/v1 · MCP: {b}/mcp.",
                 "",
                 "How to work:",
                 "1. Browse first: search_parts (or GET /api/v1/parts?q=...) with the object and its size, e.g. 'wall hook 66 mm'.",
