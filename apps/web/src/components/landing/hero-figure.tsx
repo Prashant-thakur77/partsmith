@@ -109,7 +109,7 @@ export function HeroFigure({ sheet }: { sheet: { n: number; of: number } }) {
               <LatchGlyph />
             ) : null}
             <text x={84} y={MAT_H - 34} className="font-mono" fontSize="10" letterSpacing="0.12em" fill="var(--fg-subtle)">
-              {state === "pending" ? "READING A RECORDED RUN…" : state === "ok" ? "TOP VIEW · MEASURED ON THE MAT" : "NO STORED RUN · GENERIC PART"}
+              {state === "pending" ? "READING A RECORDED RUN…" : state === "ok" ? (showModel ? "THE PROGRAM'S 3D MODEL · SAME RUN" : "TOP VIEW · MEASURED ON THE MAT") : "NO STORED RUN · GENERIC PART"}
             </text>
           </MatScreen>
         </svg>

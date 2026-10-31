@@ -49,7 +49,7 @@ export function compareRows(realBenchN: number | null | undefined): CompareRow[]
   },
   {
     feature: "Learns from your corrections",
-    cells: [partial("re-prompt in a chat"), no(), no(), no(), yes("review notes and fit reports become rules once a person approves them")],
+    cells: [partial("re-prompt in a chat"), no(), no(), no(), partial("built: review notes and fit reports become rules once a person approves them; none approved on this server yet")],
   },
   {
     feature: "Fit-test coupon",

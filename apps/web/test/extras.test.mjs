@@ -63,8 +63,10 @@ test("comparison table: categories only, qualitative cells, one cell per column"
   const allowed = new Set(["Text", "CAD", "Photo", "Phone", "Model", "PartSmith", "Yes", "No", "Partial", "Usually", "Varies", "Free", "REST", "MCP", "CadQuery", "Real", "Editable", "Pass", "Learns", "Fit", "Agent", "Cost", "API", "Tested", "See", "Accuracy"]);
   for (const w of words.match(/\b[A-Z][A-Za-z]+\b/g) ?? []) assert.ok(allowed.has(w), `unexpected name-like word: ${w}`);
   assert.equal(cellText("PartSmith", { mark: "yes", label: "Yes", note: "n" }), "PartSmith: Yes — n");
-  const ours = COMPARE_ROWS.filter((r) => r.feature !== "Cost to use" && !r.feature.startsWith("Real millimetres")).map((r) => r.cells.at(-1).mark);
+  // learning needs a person's approval, so it stays "Partial" until rules are approved on the server
+  const ours = COMPARE_ROWS.filter((r) => r.feature !== "Cost to use" && !r.feature.startsWith("Real millimetres") && r.feature !== "Learns from your corrections").map((r) => r.cells.at(-1).mark);
   assert.ok(ours.every((m) => m === "yes"));
+  assert.equal(COMPARE_ROWS.find((r) => r.feature === "Learns from your corrections").cells.at(-1).mark, "partial");
   // the real-photo claim follows the bench: Yes only once real broken parts are benched
   const real = (n) => compareRows(n)[0].cells.at(-1);
   assert.equal(real(0).mark, "partial");

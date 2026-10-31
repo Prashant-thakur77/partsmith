@@ -53,7 +53,7 @@ export function curateReplays(replays: readonly Replay[]): { featured: ReplayPic
   const reviewed = replays
     .filter((r) => reviewRound(r.title) != null)
     .sort((a, b) => Number(b.verified) - Number(a.verified) || reviewRound(b.title)! - reviewRound(a.title)!)[0];
-  take(reviewed, reviewed ? `A person sent it back; round ${reviewRound(reviewed.title)} of the review` : "");
+  take(reviewed, reviewed ? `Sent back in review (a scripted test review, not a person); round ${reviewRound(reviewed.title)}` : "");
 
   const nearMiss = replays
     .filter((r) => !r.verified && r.max_error_mm != null && r.iterations > 1 && reviewRound(r.title) == null && !used.has(r.id))
