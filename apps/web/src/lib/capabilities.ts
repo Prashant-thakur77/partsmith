@@ -29,6 +29,8 @@ function bodyFields(doc: OpenApi, op: Record<string, unknown> | undefined): Set<
   return out;
 }
 
+const noSubscribe = () => () => {};
+
 export function useCapabilities(): Capabilities {
   const q = useQuery({
     queryKey: ["openapi"],
@@ -40,7 +42,10 @@ export function useCapabilities(): Capabilities {
     staleTime: 5 * 60_000,
     retry: false,
   });
-  const doc = q.data;
+  // Until this component has hydrated, answer like the server did (no capabilities): the OpenAPI document can land in the
+  // query cache before a Suspense-delayed subtree hydrates, and lighting up controls then is a hydration mismatch (#418).
+  const hydrated = React.useSyncExternalStore(noSubscribe, () => true, () => false);
+  const doc = hydrated ? q.data : undefined;
   // Placeholder names do not matter (`/needs/{id}/vote` matches `/needs/{need_id}/vote`).
   const norm = (p: string) => p.replace(/\{[^}]*\}/g, "{}");
   const paths = React.useMemo(() => new Map(Object.entries(doc?.paths ?? {}).map(([k, v]) => [norm(k), v])), [doc]);

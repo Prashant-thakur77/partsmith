@@ -21,6 +21,7 @@ export const NAV = [
   { href: "/how", label: "How it works" },
   { href: "/review", label: "Review" },
   { href: "/agents", label: "For developers" },
+  { href: "/judges", label: "Judges" },
 ] as const;
 
 /** Parts waiting for a person's review, shown next to the nav link; only when this API serves the review queue. */
@@ -56,7 +57,7 @@ export function SiteHeader() {
                 href={n.href}
                 aria-current={active(n.href) ? "page" : undefined}
                 className={cn(
-                  "rounded-md px-2.5 py-1.5 text-[13px] font-medium text-muted transition-colors hover:text-fg",
+                  "press rounded-md px-2.5 py-1.5 text-[13px] font-medium text-muted hover:bg-surface-2 hover:text-fg",
                   active(n.href) && "text-fg",
                 )}
               >
@@ -109,7 +110,7 @@ export function SiteHeader() {
                   </Link>
                 ))}
               </nav>
-              <p className="mt-4 text-[13px] leading-5 text-subtle">Accuracy, models, the judge path and more are at the bottom of every page.</p>
+              <p className="mt-4 text-[13px] leading-5 text-subtle">Accuracy, models and more are at the bottom of every page.</p>
               <div className="mt-6 flex items-center justify-between">
                 <span className="text-[13px] text-muted">Theme</span>
                 <ThemeToggle />

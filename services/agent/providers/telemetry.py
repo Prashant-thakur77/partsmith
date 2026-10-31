@@ -17,6 +17,7 @@ from typing import Any
 
 from partsmith_schemas.events import ModelCallEvent, ThoughtEvent, ToolCallEvent
 
+from . import budget
 from .base import Usage
 from .config import Mode, log
 
@@ -81,6 +82,8 @@ def record_call(
     ok: bool = True,
     error: str | None = None,
 ) -> ModelCallEvent | None:
+    if mode == "live":
+        budget.add(usd, stage)
     if ok:
         with _tally_lock:
             row = _tally.setdefault((stage, provider, model, mode), [0, 0, 0])

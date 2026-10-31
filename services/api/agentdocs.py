@@ -9,7 +9,7 @@ from services.registry import parts as P
 from services.registry.store import Registry, get_registry
 
 MCP_TOOLS = [
-    ("search_parts", "search the registry (q, family, verified)"),
+    ("search_parts", "search the registry (q, family, verified); returns coverage 0-1 and match good|partial|none"),
     ("get_part", "a part's params, verification and printing facts"),
     ("get_variant", "plain words -> clamped params + confidence + a bake URL"),
     ("bake", "params -> STL/3MF/STEP/GLB/part.py URLs (cache hits are free)"),
@@ -24,7 +24,7 @@ MCP_TOOLS = [
 RULES = [
     "Search before you build: call search_parts first and reuse a verified part when one fits.",
     "Never rescale a part to force a fit. Change the knob that matters (hole_d, height, cable_d ...).",
-    "If nothing matches, say so plainly and call report_need. Do not substitute an unrelated part.",
+    "If nothing matches (match = none), say so plainly and call report_need. Do not substitute an unrelated part.",
     "Report which dimensions were measured, which were stated by the user and which were assumed.",
     "Quote verification numbers exactly as returned (max_error_mm, status). 'best_effort' is not 'verified'.",
     "Synthetic parts are labelled origin=synthetic: they were verified against rendered images, not a real photo.",
@@ -72,14 +72,16 @@ def llms_txt(reg: Registry | None = None, *, base: str | None = None) -> str:
     lines += [
         "",
         "## REST API (base " + b + "/api/v1, OpenAPI at /api/v1/openapi.json)",
-        "- GET /parts?q=&family=&verified=&sort=relevance|newest|error|title&cursor=&limit= — search",
+        "- GET /parts?q=&family=&verified=&sort=relevance|newest|error|title&cursor=&limit= — search (+ coverage, match, hint)",
         "- GET /parts/{slug} — record, params, verification, facts, artifact URLs",
         "- GET /parts/{slug}/params — typed knobs (name, default, min, max, step, unit, topology)",
+        "- GET /parts/{slug}/params.json — the knobs as a JSON-Schema document",
+        "- GET /parts/{slug}/verification.json — the stored verification record (max error, limit, views, residuals, tests)",
         "- GET /parts/{slug}/bake?<param>=<mm>&format=stl|3mf|step|glb|view|py[&download=1] — build files",
         "- GET /parts/{slug}/variant?want=<plain words> — params + applied + not_applied + confidence",
         "- GET /parts/{slug}/matching — parts that share an interface",
         "- GET /parts/{slug}/template.pdf?<params> — 1:1 paper template",
-        "- GET /families · GET /stats · POST /needs {query}",
+        "- GET /families · GET /stats · POST /needs {query} · GET /demand (open requests + searches with no close part)",
         "- POST /jobs/fix (multipart top, side?, mating?, intent, thickness_mm) · GET /jobs/{id} · GET /jobs/{id}/events (SSE)",
         "- POST /measure (multipart photo) · POST /verify {part, params, measurements}",
         "",

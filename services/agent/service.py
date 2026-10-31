@@ -341,6 +341,20 @@ def _review_of(job: Job) -> dict[str, Any] | None:
         return None
 
 
+def _hidden_dims_of(job: Job) -> list[dict[str, Any]]:
+    """Sizes the user stated because the photo cannot show them: the code's check once the verdict is in, else the
+    stated values (status "pending")."""
+    from services.agent import hidden_dims
+
+    done = job.read_json("hidden_dims.json")
+    if isinstance(done, dict) and isinstance(done.get("dims"), list):
+        return list(done["dims"])
+    dims = getattr(getattr(job, "input", None), "hidden_dims", None) or []
+    return [{"name": d.name, "label": hidden_dims.label(d.name), "value_mm": d.value_mm, "knob": None, "model_mm": None,
+             "tol_mm": None, "status": "pending", "note": "stated by the user; checked once the verdict is in"}
+            for d in dims]  # fmt: skip
+
+
 def detail_of(job: Job) -> dict[str, Any]:
     """JobDetail (docs/API.md) reduced from the event log + side files."""
     events = [e.model_dump(mode="json", exclude_none=True) for e in job.events]
@@ -364,6 +378,7 @@ def detail_of(job: Job) -> dict[str, Any]:
     q = job.pending_question()
     judge = job.read_json("judge.json")
     return {
+        "hidden_dims": _hidden_dims_of(job),
         "judge": judge if isinstance(judge, dict) else None,  # the judge's advisory scorecard (never the verdict)
         "review": _review_of(job),
         "summary": job.summary.model_dump(mode="json"),

@@ -1,0 +1,2766 @@
+{
+ "templates": [
+  {
+   "name": "battery_cover",
+   "family": "cover",
+   "title": "Battery compartment cover",
+   "summary": "Thin sliding/tilting battery door: tongues at one end tuck under the case lip, a cantilever snap latch at the other end clicks into the case. Grip grooves on the outer face.",
+   "tags": [
+    "battery cover",
+    "battery door",
+    "remote control",
+    "toy",
+    "lid",
+    "snap-fit"
+   ],
+   "params": [
+    {
+     "name": "length",
+     "default": 52.0,
+     "min": 26.0,
+     "max": 100.0,
+     "step": 0.1,
+     "unit": "mm",
+     "affects_fit": true,
+     "label": "Overall length including tongues",
+     "topology": false
+    },
+    {
+     "name": "width",
+     "default": 30.0,
+     "min": 16.0,
+     "max": 60.0,
+     "step": 0.1,
+     "unit": "mm",
+     "affects_fit": true,
+     "label": "Width",
+     "topology": false
+    },
+    {
+     "name": "thickness",
+     "default": 1.6,
+     "min": 1.0,
+     "max": 3.0,
+     "step": 0.05,
+     "unit": "mm",
+     "affects_fit": true,
+     "label": "Door thickness",
+     "topology": false
+    },
+    {
+     "name": "tongue_length",
+     "default": 3.0,
+     "min": 1.5,
+     "max": 6.0,
+     "step": 0.1,
+     "unit": "mm",
+     "affects_fit": true,
+     "label": "Tongue length",
+     "topology": false
+    },
+    {
+     "name": "tongue_width",
+     "default": 6.0,
+     "min": 3.0,
+     "max": 12.0,
+     "step": 0.1,
+     "unit": "mm",
+     "affects_fit": true,
+     "label": "Tongue width",
+     "topology": false
+    },
+    {
+     "name": "tongue_count",
+     "default": 2.0,
+     "min": 1.0,
+     "max": 3.0,
+     "step": 1.0,
+     "unit": "",
+     "affects_fit": true,
+     "label": "Hinge tongues",
+     "topology": true
+    },
+    {
+     "name": "latch_width",
+     "default": 10.0,
+     "min": 4.0,
+     "max": 30.0,
+     "step": 0.1,
+     "unit": "mm",
+     "affects_fit": true,
+     "label": "Latch width",
+     "topology": false
+    },
+    {
+     "name": "latch_height",
+     "default": 3.5,
+     "min": 2.0,
+     "max": 8.0,
+     "step": 0.1,
+     "unit": "mm",
+     "affects_fit": true,
+     "label": "Latch height above the inner face",
+     "topology": false
+    },
+    {
+     "name": "latch_overhang",
+     "default": 0.8,
+     "min": 0.4,
+     "max": 2.0,
+     "step": 0.05,
+     "unit": "mm",
+     "affects_fit": true,
+     "label": "Latch hook overhang",
+     "topology": false
+    },
+    {
+     "name": "groove_count",
+     "default": 5.0,
+     "min": 0.0,
+     "max": 12.0,
+     "step": 1.0,
+     "unit": "",
+     "affects_fit": false,
+     "label": "Grip grooves (outer face)",
+     "topology": true
+    },
+    {
+     "name": "corner_radius",
+     "default": 3.0,
+     "min": 0.0,
+     "max": 8.0,
+     "step": 0.1,
+     "unit": "mm",
+     "affects_fit": false,
+     "label": "Corner radius",
+     "topology": false
+    }
+   ],
+   "defaults": {
+    "length": 52.0,
+    "width": 30.0,
+    "thickness": 1.6,
+    "tongue_length": 3.0,
+    "tongue_width": 6.0,
+    "tongue_count": 2.0,
+    "latch_width": 10.0,
+    "latch_height": 3.5,
+    "latch_overhang": 0.8,
+    "groove_count": 5.0,
+    "corner_radius": 3.0
+   },
+   "presets": [
+    {
+     "id": "small-door",
+     "title": "Small door",
+     "note": "a shorter, narrower door",
+     "values": {
+      "length": 40.0,
+      "width": 24.0
+     }
+    },
+    {
+     "id": "large-door",
+     "title": "Large door",
+     "note": "longer and wider, three hinge tongues",
+     "values": {
+      "length": 70.0,
+      "width": 45.0,
+      "tongue_count": 3
+     }
+    },
+    {
+     "id": "thin-wall",
+     "title": "Thin wall",
+     "note": "the thinnest door the knob allows",
+     "values": {
+      "thickness": 1.0
+     }
+    }
+   ],
+   "topology_knobs": [
+    "tongue_count",
+    "groove_count"
+   ],
+   "thumbnail_url": "/api/v1/templates/battery_cover/thumbnail.png",
+   "thumbnail_2x_url": "/api/v1/templates/battery_cover/thumbnail.png?scale=2",
+   "coupon": false
+  },
+  {
+   "name": "cable_clip",
+   "family": "cable_clip",
+   "title": "Cable clip",
+   "summary": "Base strip with screw holes at the ends and C-shaped snap channels standing on it; each cable presses in through a slightly narrower opening at the top.",
+   "tags": [
+    "cable clip",
+    "cable holder",
+    "wire",
+    "organiser",
+    "desk",
+    "snap-fit"
+   ],
+   "params": [
+    {
+     "name": "length",
+     "default": 40.0,
+     "min": 24.0,
+     "max": 100.0,
+     "step": 0.1,
+     "unit": "mm",
+     "affects_fit": true,
+     "label": "Base length",
+     "topology": false
+    },
+    {
+     "name": "width",
+     "default": 10.0,
+     "min": 6.0,
+     "max": 30.0,
+     "step": 0.1,
+     "unit": "mm",
+     "affects_fit": true,
+     "label": "Clip width",
+     "topology": false
+    },
+    {
+     "name": "base_thickness",
+     "default": 2.0,
+     "min": 1.2,
+     "max": 5.0,
+     "step": 0.1,
+     "unit": "mm",
+     "affects_fit": true,
+     "label": "Base thickness",
+     "topology": false
+    },
+    {
+     "name": "cable_d",
+     "default": 6.0,
+     "min": 2.0,
+     "max": 16.0,
+     "step": 0.05,
+     "unit": "mm",
+     "affects_fit": true,
+     "label": "Cable diameter",
+     "topology": false
+    },
+    {
+     "name": "wall",
+     "default": 1.6,
+     "min": 1.0,
+     "max": 4.0,
+     "step": 0.05,
+     "unit": "mm",
+     "affects_fit": true,
+     "label": "Channel wall",
+     "topology": false
+    },
+    {
+     "name": "opening",
+     "default": 0.75,
+     "min": 0.5,
+     "max": 0.95,
+     "step": 0.01,
+     "unit": "",
+     "affects_fit": true,
+     "label": "Snap opening (fraction of the cable diameter)",
+     "topology": false
+    },
+    {
+     "name": "channel_count",
+     "default": 2.0,
+     "min": 1.0,
+     "max": 5.0,
+     "step": 1.0,
+     "unit": "",
+     "affects_fit": false,
+     "label": "Cable channels",
+     "topology": true
+    },
+    {
+     "name": "channel_gap",
+     "default": 1.0,
+     "min": 0.6,
+     "max": 15.0,
+     "step": 0.1,
+     "unit": "mm",
+     "affects_fit": false,
+     "label": "Gap between neighbouring channels",
+     "topology": false
+    },
+    {
+     "name": "hole_d",
+     "default": 3.5,
+     "min": 2.0,
+     "max": 6.0,
+     "step": 0.05,
+     "unit": "mm",
+     "affects_fit": true,
+     "label": "Screw hole diameter",
+     "topology": false
+    },
+    {
+     "name": "hole_count",
+     "default": 2.0,
+     "min": 0.0,
+     "max": 2.0,
+     "step": 1.0,
+     "unit": "",
+     "affects_fit": false,
+     "label": "Screw holes",
+     "topology": true
+    }
+   ],
+   "defaults": {
+    "length": 40.0,
+    "width": 10.0,
+    "base_thickness": 2.0,
+    "cable_d": 6.0,
+    "wall": 1.6,
+    "opening": 0.75,
+    "channel_count": 2.0,
+    "channel_gap": 1.0,
+    "hole_d": 3.5,
+    "hole_count": 2.0
+   },
+   "presets": [
+    {
+     "id": "m3",
+     "title": "M3 screw",
+     "note": "clearance hole for an M3 screw (ISO 273 medium, 3.4 mm)",
+     "values": {
+      "hole_d": 3.4
+     }
+    },
+    {
+     "id": "m4",
+     "title": "M4 screw",
+     "note": "clearance hole for an M4 screw (ISO 273 medium, 4.5 mm)",
+     "values": {
+      "hole_d": 4.5
+     }
+    },
+    {
+     "id": "three-thin",
+     "title": "Three thin cables",
+     "note": "three 4 mm cables on a longer base",
+     "values": {
+      "cable_d": 4.0,
+      "channel_count": 3,
+      "length": 50.0
+     }
+    }
+   ],
+   "topology_knobs": [
+    "channel_count",
+    "hole_count"
+   ],
+   "thumbnail_url": "/api/v1/templates/cable_clip/thumbnail.png",
+   "thumbnail_2x_url": "/api/v1/templates/cable_clip/thumbnail.png?scale=2",
+   "coupon": true
+  },
+  {
+   "name": "caster_wheel",
+   "family": "wheel",
+   "title": "Caster wheel",
+   "summary": "Solid caster wheel lying on its side face: rounded tread edges, an axle bore and lightening holes that leave spokes between the hub and the rim.",
+   "tags": [
+    "wheel",
+    "caster",
+    "castor",
+    "trolley",
+    "furniture",
+    "roller"
+   ],
+   "params": [
+    {
+     "name": "diameter",
+     "default": 50.0,
+     "min": 20.0,
+     "max": 120.0,
+     "step": 0.1,
+     "unit": "mm",
+     "affects_fit": true,
+     "label": "Wheel diameter",
+     "topology": false
+    },
+    {
+     "name": "tread_width",
+     "default": 18.0,
+     "min": 6.0,
+     "max": 50.0,
+     "step": 0.1,
+     "unit": "mm",
+     "affects_fit": true,
+     "label": "Tread width",
+     "topology": false
+    },
+    {
+     "name": "bore_d",
+     "default": 8.0,
+     "min": 3.0,
+     "max": 20.0,
+     "step": 0.05,
+     "unit": "mm",
+     "affects_fit": true,
+     "label": "Axle bore diameter",
+     "topology": false
+    },
+    {
+     "name": "hub_d",
+     "default": 18.0,
+     "min": 8.0,
+     "max": 40.0,
+     "step": 0.1,
+     "unit": "mm",
+     "affects_fit": false,
+     "label": "Hub diameter",
+     "topology": false
+    },
+    {
+     "name": "rim_thickness",
+     "default": 5.0,
+     "min": 2.0,
+     "max": 15.0,
+     "step": 0.1,
+     "unit": "mm",
+     "affects_fit": false,
+     "label": "Rim thickness",
+     "topology": false
+    },
+    {
+     "name": "spoke_count",
+     "default": 5.0,
+     "min": 0.0,
+     "max": 10.0,
+     "step": 1.0,
+     "unit": "",
+     "affects_fit": false,
+     "label": "Spokes (lightening holes)",
+     "topology": true
+    },
+    {
+     "name": "edge_fillet",
+     "default": 2.0,
+     "min": 0.0,
+     "max": 6.0,
+     "step": 0.1,
+     "unit": "mm",
+     "affects_fit": false,
+     "label": "Tread edge fillet",
+     "topology": false
+    }
+   ],
+   "defaults": {
+    "diameter": 50.0,
+    "tread_width": 18.0,
+    "bore_d": 8.0,
+    "hub_d": 18.0,
+    "rim_thickness": 5.0,
+    "spoke_count": 5.0,
+    "edge_fillet": 2.0
+   },
+   "presets": [
+    {
+     "id": "axle-8",
+     "title": "8 mm axle",
+     "note": "bore for an 8 mm axle",
+     "values": {
+      "bore_d": 8.0
+     }
+    },
+    {
+     "id": "small-30",
+     "title": "Small 30 mm wheel",
+     "note": "a small wheel on a 5 mm axle",
+     "values": {
+      "diameter": 30.0,
+      "tread_width": 12.0,
+      "bore_d": 5.0,
+      "hub_d": 12.0
+     }
+    },
+    {
+     "id": "wide-60",
+     "title": "Wide 60 mm wheel",
+     "note": "a larger, wider wheel",
+     "values": {
+      "diameter": 60.0,
+      "tread_width": 24.0
+     }
+    }
+   ],
+   "topology_knobs": [
+    "spoke_count"
+   ],
+   "thumbnail_url": "/api/v1/templates/caster_wheel/thumbnail.png",
+   "thumbnail_2x_url": "/api/v1/templates/caster_wheel/thumbnail.png?scale=2",
+   "coupon": true
+  },
+  {
+   "name": "clip",
+   "family": "clip",
+   "title": "Snap retaining clip",
+   "summary": "Flat screw-on plate with a cantilever snap hook at one end; the panel edge slides under the hook lip. Gusset ribs behind the hook arm stiffen it.",
+   "tags": [
+    "clip",
+    "snap-fit",
+    "panel",
+    "shelf",
+    "retainer",
+    "screw-on"
+   ],
+   "params": [
+    {
+     "name": "length",
+     "default": 36.0,
+     "min": 22.0,
+     "max": 80.0,
+     "step": 0.1,
+     "unit": "mm",
+     "affects_fit": true,
+     "label": "Plate length",
+     "topology": false
+    },
+    {
+     "name": "width",
+     "default": 16.0,
+     "min": 10.0,
+     "max": 40.0,
+     "step": 0.1,
+     "unit": "mm",
+     "affects_fit": true,
+     "label": "Plate width",
+     "topology": false
+    },
+    {
+     "name": "thickness",
+     "default": 2.5,
+     "min": 1.5,
+     "max": 6.0,
+     "step": 0.1,
+     "unit": "mm",
+     "affects_fit": true,
+     "label": "Plate thickness",
+     "topology": false
+    },
+    {
+     "name": "hole_d",
+     "default": 4.2,
+     "min": 2.5,
+     "max": 6.0,
+     "step": 0.05,
+     "unit": "mm",
+     "affects_fit": true,
+     "label": "Screw hole diameter",
+     "topology": false
+    },
+    {
+     "name": "arm_height",
+     "default": 8.0,
+     "min": 4.0,
+     "max": 20.0,
+     "step": 0.1,
+     "unit": "mm",
+     "affects_fit": true,
+     "label": "Hook arm height above the plate",
+     "topology": false
+    },
+    {
+     "name": "arm_thickness",
+     "default": 2.0,
+     "min": 1.2,
+     "max": 4.0,
+     "step": 0.1,
+     "unit": "mm",
+     "affects_fit": true,
+     "label": "Hook arm thickness",
+     "topology": false
+    },
+    {
+     "name": "hook_overhang",
+     "default": 1.2,
+     "min": 0.6,
+     "max": 3.0,
+     "step": 0.1,
+     "unit": "mm",
+     "affects_fit": true,
+     "label": "Snap hook overhang",
+     "topology": false
+    },
+    {
+     "name": "rib_count",
+     "default": 2.0,
+     "min": 0.0,
+     "max": 4.0,
+     "step": 1.0,
+     "unit": "",
+     "affects_fit": false,
+     "label": "Stiffening ribs behind the arm",
+     "topology": true
+    },
+    {
+     "name": "corner_radius",
+     "default": 2.0,
+     "min": 0.0,
+     "max": 6.0,
+     "step": 0.1,
+     "unit": "mm",
+     "affects_fit": false,
+     "label": "Plate corner radius",
+     "topology": false
+    }
+   ],
+   "defaults": {
+    "length": 36.0,
+    "width": 16.0,
+    "thickness": 2.5,
+    "hole_d": 4.2,
+    "arm_height": 8.0,
+    "arm_thickness": 2.0,
+    "hook_overhang": 1.2,
+    "rib_count": 2.0,
+    "corner_radius": 2.0
+   },
+   "presets": [
+    {
+     "id": "m3",
+     "title": "M3 screw",
+     "note": "clearance hole for an M3 screw (ISO 273 medium, 3.4 mm)",
+     "values": {
+      "hole_d": 3.4
+     }
+    },
+    {
+     "id": "m4",
+     "title": "M4 screw",
+     "note": "clearance hole for an M4 screw (ISO 273 medium, 4.5 mm)",
+     "values": {
+      "hole_d": 4.5
+     }
+    },
+    {
+     "id": "thin-wall",
+     "title": "Thin wall",
+     "note": "thinner plate and arm",
+     "values": {
+      "thickness": 1.6,
+      "arm_thickness": 1.4
+     }
+    }
+   ],
+   "topology_knobs": [
+    "rib_count"
+   ],
+   "thumbnail_url": "/api/v1/templates/clip/thumbnail.png",
+   "thumbnail_2x_url": "/api/v1/templates/clip/thumbnail.png?scale=2",
+   "coupon": true
+  },
+  {
+   "name": "cupboard_latch",
+   "family": "latch",
+   "title": "Cupboard turn-button latch",
+   "summary": "Turn button for cupboard doors and hatches: a stadium-shaped bar on a countersunk pivot screw. The catch end is relieved underneath so it reaches over the door; finger ridges on top.",
+   "tags": [
+    "latch",
+    "turn button",
+    "cupboard",
+    "cabinet",
+    "catch",
+    "door"
+   ],
+   "params": [
+    {
+     "name": "length",
+     "default": 45.0,
+     "min": 25.0,
+     "max": 90.0,
+     "step": 0.1,
+     "unit": "mm",
+     "affects_fit": true,
+     "label": "Length",
+     "topology": false
+    },
+    {
+     "name": "width",
+     "default": 14.0,
+     "min": 9.0,
+     "max": 30.0,
+     "step": 0.1,
+     "unit": "mm",
+     "affects_fit": true,
+     "label": "Width",
+     "topology": false
+    },
+    {
+     "name": "thickness",
+     "default": 6.0,
+     "min": 3.0,
+     "max": 12.0,
+     "step": 0.1,
+     "unit": "mm",
+     "affects_fit": true,
+     "label": "Thickness",
+     "topology": false
+    },
+    {
+     "name": "pivot_d",
+     "default": 4.2,
+     "min": 2.5,
+     "max": 6.0,
+     "step": 0.05,
+     "unit": "mm",
+     "affects_fit": true,
+     "label": "Pivot screw hole diameter",
+     "topology": false
+    },
+    {
+     "name": "pivot_offset",
+     "default": 8.0,
+     "min": 0.0,
+     "max": 25.0,
+     "step": 0.1,
+     "unit": "mm",
+     "affects_fit": true,
+     "label": "Pivot offset from centre",
+     "topology": false
+    },
+    {
+     "name": "step_depth",
+     "default": 2.5,
+     "min": 0.0,
+     "max": 6.0,
+     "step": 0.1,
+     "unit": "mm",
+     "affects_fit": true,
+     "label": "Underside relief at the catch end",
+     "topology": false
+    },
+    {
+     "name": "catch_length",
+     "default": 14.0,
+     "min": 5.0,
+     "max": 40.0,
+     "step": 0.1,
+     "unit": "mm",
+     "affects_fit": true,
+     "label": "Catch end length",
+     "topology": false
+    },
+    {
+     "name": "grip_count",
+     "default": 2.0,
+     "min": 0.0,
+     "max": 4.0,
+     "step": 1.0,
+     "unit": "",
+     "affects_fit": false,
+     "label": "Finger ridges",
+     "topology": true
+    },
+    {
+     "name": "edge_fillet",
+     "default": 0.8,
+     "min": 0.0,
+     "max": 2.0,
+     "step": 0.05,
+     "unit": "mm",
+     "affects_fit": false,
+     "label": "Top edge fillet",
+     "topology": false
+    }
+   ],
+   "defaults": {
+    "length": 45.0,
+    "width": 14.0,
+    "thickness": 6.0,
+    "pivot_d": 4.2,
+    "pivot_offset": 8.0,
+    "step_depth": 2.5,
+    "catch_length": 14.0,
+    "grip_count": 2.0,
+    "edge_fillet": 0.8
+   },
+   "presets": [
+    {
+     "id": "m3",
+     "title": "M3 screw",
+     "note": "clearance hole for an M3 screw (ISO 273 medium, 3.4 mm)",
+     "values": {
+      "pivot_d": 3.4
+     }
+    },
+    {
+     "id": "m4",
+     "title": "M4 screw",
+     "note": "clearance hole for an M4 screw (ISO 273 medium, 4.5 mm)",
+     "values": {
+      "pivot_d": 4.5
+     }
+    },
+    {
+     "id": "no-ridges",
+     "title": "No finger ridges",
+     "note": "a plain top",
+     "values": {
+      "grip_count": 0
+     }
+    }
+   ],
+   "topology_knobs": [
+    "grip_count"
+   ],
+   "thumbnail_url": "/api/v1/templates/cupboard_latch/thumbnail.png",
+   "thumbnail_2x_url": "/api/v1/templates/cupboard_latch/thumbnail.png?scale=2",
+   "coupon": true
+  },
+  {
+   "name": "hinge_leaf",
+   "family": "hinge",
+   "title": "Hinge leaf",
+   "summary": "Single butt-hinge leaf printed flat: countersunk screw holes in the leaf and knuckles with a pin hole along one long edge, leaving gaps for the matching leaf's knuckles.",
+   "tags": [
+    "hinge",
+    "hinge leaf",
+    "cabinet",
+    "box",
+    "door",
+    "knuckle"
+   ],
+   "params": [
+    {
+     "name": "length",
+     "default": 60.0,
+     "min": 24.0,
+     "max": 120.0,
+     "step": 0.1,
+     "unit": "mm",
+     "affects_fit": true,
+     "label": "Hinge length",
+     "topology": false
+    },
+    {
+     "name": "leaf_width",
+     "default": 25.0,
+     "min": 14.0,
+     "max": 60.0,
+     "step": 0.1,
+     "unit": "mm",
+     "affects_fit": true,
+     "label": "Leaf width including the knuckle",
+     "topology": false
+    },
+    {
+     "name": "thickness",
+     "default": 2.5,
+     "min": 1.5,
+     "max": 5.0,
+     "step": 0.1,
+     "unit": "mm",
+     "affects_fit": true,
+     "label": "Leaf thickness",
+     "topology": false
+    },
+    {
+     "name": "pin_d",
+     "default": 3.0,
+     "min": 1.5,
+     "max": 6.0,
+     "step": 0.05,
+     "unit": "mm",
+     "affects_fit": true,
+     "label": "Pin hole diameter",
+     "topology": false
+    },
+    {
+     "name": "knuckle_wall",
+     "default": 1.5,
+     "min": 1.0,
+     "max": 3.0,
+     "step": 0.05,
+     "unit": "mm",
+     "affects_fit": true,
+     "label": "Knuckle wall",
+     "topology": false
+    },
+    {
+     "name": "knuckle_count",
+     "default": 3.0,
+     "min": 1.0,
+     "max": 5.0,
+     "step": 1.0,
+     "unit": "",
+     "affects_fit": true,
+     "label": "Knuckles on this leaf",
+     "topology": true
+    },
+    {
+     "name": "knuckle_gap",
+     "default": 0.3,
+     "min": 0.1,
+     "max": 1.0,
+     "step": 0.05,
+     "unit": "mm",
+     "affects_fit": true,
+     "label": "Gap to the other leaf's knuckles",
+     "topology": false
+    },
+    {
+     "name": "knuckle_phase",
+     "default": 0.0,
+     "min": 0.0,
+     "max": 1.0,
+     "step": 1.0,
+     "unit": "",
+     "affects_fit": true,
+     "label": "Knuckles at the ends (0) or set in from the ends (1, the mating leaf)",
+     "topology": true
+    },
+    {
+     "name": "knuckle_offset",
+     "default": 0.0,
+     "min": -15.0,
+     "max": 15.0,
+     "step": 0.1,
+     "unit": "mm",
+     "affects_fit": true,
+     "label": "Knuckle pattern shift along the hinge axis",
+     "topology": false
+    },
+    {
+     "name": "knuckle_fill",
+     "default": 1.0,
+     "min": 0.4,
+     "max": 1.6,
+     "step": 0.05,
+     "unit": "",
+     "affects_fit": true,
+     "label": "Knuckle length (x the automatic segment length)",
+     "topology": false
+    },
+    {
+     "name": "hole_d",
+     "default": 3.5,
+     "min": 2.0,
+     "max": 6.0,
+     "step": 0.05,
+     "unit": "mm",
+     "affects_fit": true,
+     "label": "Screw hole diameter",
+     "topology": false
+    },
+    {
+     "name": "hole_count",
+     "default": 3.0,
+     "min": 1.0,
+     "max": 4.0,
+     "step": 1.0,
+     "unit": "",
+     "affects_fit": false,
+     "label": "Screw holes",
+     "topology": true
+    },
+    {
+     "name": "corner_radius",
+     "default": 3.0,
+     "min": 0.0,
+     "max": 8.0,
+     "step": 0.1,
+     "unit": "mm",
+     "affects_fit": false,
+     "label": "Free corner radius",
+     "topology": false
+    }
+   ],
+   "defaults": {
+    "length": 60.0,
+    "leaf_width": 25.0,
+    "thickness": 2.5,
+    "pin_d": 3.0,
+    "knuckle_wall": 1.5,
+    "knuckle_count": 3.0,
+    "knuckle_gap": 0.3,
+    "knuckle_phase": 0.0,
+    "knuckle_offset": 0.0,
+    "knuckle_fill": 1.0,
+    "hole_d": 3.5,
+    "hole_count": 3.0,
+    "corner_radius": 3.0
+   },
+   "presets": [
+    {
+     "id": "m3",
+     "title": "M3 screw",
+     "note": "clearance hole for an M3 screw (ISO 273 medium, 3.4 mm)",
+     "values": {
+      "hole_d": 3.4
+     }
+    },
+    {
+     "id": "m4",
+     "title": "M4 screw",
+     "note": "clearance hole for an M4 screw (ISO 273 medium, 4.5 mm)",
+     "values": {
+      "hole_d": 4.5
+     }
+    },
+    {
+     "id": "thin-wall",
+     "title": "Thin wall",
+     "note": "a thinner leaf",
+     "values": {
+      "thickness": 1.6
+     }
+    }
+   ],
+   "topology_knobs": [
+    "knuckle_count",
+    "knuckle_phase",
+    "hole_count"
+   ],
+   "thumbnail_url": "/api/v1/templates/hinge_leaf/thumbnail.png",
+   "thumbnail_2x_url": "/api/v1/templates/hinge_leaf/thumbnail.png?scale=2",
+   "coupon": true
+  },
+  {
+   "name": "hook",
+   "family": "hook",
+   "title": "Wall hook",
+   "summary": "Screw-on back plate with countersunk holes and a J-shaped arm: it leaves the wall, bends through a round and runs back up parallel to the wall, ending in a rounded tip.",
+   "tags": [
+    "hook",
+    "coat hook",
+    "towel",
+    "wall",
+    "hanger",
+    "screw-on"
+   ],
+   "params": [
+    {
+     "name": "length",
+     "default": 60.0,
+     "min": 36.0,
+     "max": 120.0,
+     "step": 0.1,
+     "unit": "mm",
+     "affects_fit": true,
+     "label": "Back plate length",
+     "topology": false
+    },
+    {
+     "name": "width",
+     "default": 22.0,
+     "min": 12.0,
+     "max": 50.0,
+     "step": 0.1,
+     "unit": "mm",
+     "affects_fit": true,
+     "label": "Back plate width",
+     "topology": false
+    },
+    {
+     "name": "plate_thickness",
+     "default": 4.0,
+     "min": 2.0,
+     "max": 8.0,
+     "step": 0.1,
+     "unit": "mm",
+     "affects_fit": true,
+     "label": "Back plate thickness",
+     "topology": false
+    },
+    {
+     "name": "hole_d",
+     "default": 4.0,
+     "min": 2.5,
+     "max": 6.0,
+     "step": 0.05,
+     "unit": "mm",
+     "affects_fit": true,
+     "label": "Screw hole diameter",
+     "topology": false
+    },
+    {
+     "name": "hole_count",
+     "default": 2.0,
+     "min": 1.0,
+     "max": 3.0,
+     "step": 1.0,
+     "unit": "",
+     "affects_fit": false,
+     "label": "Screw holes",
+     "topology": true
+    },
+    {
+     "name": "arm_width",
+     "default": 12.0,
+     "min": 6.0,
+     "max": 40.0,
+     "step": 0.1,
+     "unit": "mm",
+     "affects_fit": false,
+     "label": "Arm width",
+     "topology": false
+    },
+    {
+     "name": "arm_thickness",
+     "default": 5.0,
+     "min": 3.0,
+     "max": 10.0,
+     "step": 0.1,
+     "unit": "mm",
+     "affects_fit": false,
+     "label": "Arm thickness",
+     "topology": false
+    },
+    {
+     "name": "reach",
+     "default": 30.0,
+     "min": 14.0,
+     "max": 70.0,
+     "step": 0.1,
+     "unit": "mm",
+     "affects_fit": true,
+     "label": "Reach from the wall",
+     "topology": false
+    },
+    {
+     "name": "bend_radius",
+     "default": 8.0,
+     "min": 4.0,
+     "max": 20.0,
+     "step": 0.1,
+     "unit": "mm",
+     "affects_fit": false,
+     "label": "Bend radius (arm centreline)",
+     "topology": false
+    },
+    {
+     "name": "tip_length",
+     "default": 14.0,
+     "min": 3.0,
+     "max": 40.0,
+     "step": 0.1,
+     "unit": "mm",
+     "affects_fit": false,
+     "label": "Tip length past the bend",
+     "topology": false
+    },
+    {
+     "name": "corner_radius",
+     "default": 4.0,
+     "min": 0.0,
+     "max": 10.0,
+     "step": 0.1,
+     "unit": "mm",
+     "affects_fit": false,
+     "label": "Plate corner radius",
+     "topology": false
+    },
+    {
+     "name": "hole_shift",
+     "default": 0.0,
+     "min": -15.0,
+     "max": 15.0,
+     "step": 0.1,
+     "unit": "mm",
+     "affects_fit": true,
+     "label": "Hole row shift along the plate",
+     "topology": false
+    },
+    {
+     "name": "hole_y",
+     "default": 0.0,
+     "min": -15.0,
+     "max": 15.0,
+     "step": 0.1,
+     "unit": "mm",
+     "affects_fit": true,
+     "label": "Hole row offset across the plate",
+     "topology": false
+    },
+    {
+     "name": "hole_spread",
+     "default": 1.0,
+     "min": 0.3,
+     "max": 2.0,
+     "step": 0.05,
+     "unit": "",
+     "affects_fit": true,
+     "label": "Hole spacing (x the automatic spacing)",
+     "topology": false
+    }
+   ],
+   "defaults": {
+    "length": 60.0,
+    "width": 22.0,
+    "plate_thickness": 4.0,
+    "hole_d": 4.0,
+    "hole_count": 2.0,
+    "arm_width": 12.0,
+    "arm_thickness": 5.0,
+    "reach": 30.0,
+    "bend_radius": 8.0,
+    "tip_length": 14.0,
+    "corner_radius": 4.0,
+    "hole_shift": 0.0,
+    "hole_y": 0.0,
+    "hole_spread": 1.0
+   },
+   "presets": [
+    {
+     "id": "m4",
+     "title": "M4 screw",
+     "note": "clearance hole for an M4 screw (ISO 273 medium, 4.5 mm)",
+     "values": {
+      "hole_d": 4.5
+     }
+    },
+    {
+     "id": "m5",
+     "title": "M5 screw",
+     "note": "clearance hole for an M5 screw (ISO 273 medium, 5.5 mm)",
+     "values": {
+      "hole_d": 5.5
+     }
+    },
+    {
+     "id": "deep",
+     "title": "Deep towel hook",
+     "note": "a longer reach",
+     "values": {
+      "reach": 45.0
+     }
+    }
+   ],
+   "topology_knobs": [
+    "hole_count"
+   ],
+   "thumbnail_url": "/api/v1/templates/hook/thumbnail.png",
+   "thumbnail_2x_url": "/api/v1/templates/hook/thumbnail.png?scale=2",
+   "coupon": true
+  },
+  {
+   "name": "knob",
+   "family": "knob",
+   "title": "Knob with D-shaft bore",
+   "summary": "Round control knob with grip flutes and a filleted top. A blind D-shaped bore from the underside fits a flatted shaft (6 mm D-shaft by default).",
+   "tags": [
+    "knob",
+    "d-shaft",
+    "appliance",
+    "cooker",
+    "potentiometer",
+    "dial"
+   ],
+   "params": [
+    {
+     "name": "diameter",
+     "default": 30.0,
+     "min": 12.0,
+     "max": 70.0,
+     "step": 0.1,
+     "unit": "mm",
+     "affects_fit": true,
+     "label": "Knob diameter",
+     "topology": false
+    },
+    {
+     "name": "height",
+     "default": 16.0,
+     "min": 6.0,
+     "max": 40.0,
+     "step": 0.1,
+     "unit": "mm",
+     "affects_fit": true,
+     "label": "Knob height",
+     "topology": false
+    },
+    {
+     "name": "bore_d",
+     "default": 6.0,
+     "min": 3.0,
+     "max": 10.0,
+     "step": 0.05,
+     "unit": "mm",
+     "affects_fit": true,
+     "label": "Shaft bore diameter",
+     "topology": false
+    },
+    {
+     "name": "flat_depth",
+     "default": 1.5,
+     "min": 0.0,
+     "max": 3.0,
+     "step": 0.05,
+     "unit": "mm",
+     "affects_fit": true,
+     "label": "D-flat depth (0 = round bore)",
+     "topology": false
+    },
+    {
+     "name": "bore_depth",
+     "default": 12.0,
+     "min": 4.0,
+     "max": 35.0,
+     "step": 0.1,
+     "unit": "mm",
+     "affects_fit": true,
+     "label": "Bore depth",
+     "topology": false
+    },
+    {
+     "name": "grip_count",
+     "default": 18.0,
+     "min": 0.0,
+     "max": 48.0,
+     "step": 1.0,
+     "unit": "",
+     "affects_fit": false,
+     "label": "Grip flutes",
+     "topology": true
+    },
+    {
+     "name": "grip_depth",
+     "default": 0.8,
+     "min": 0.3,
+     "max": 2.0,
+     "step": 0.05,
+     "unit": "mm",
+     "affects_fit": false,
+     "label": "Flute depth",
+     "topology": false
+    },
+    {
+     "name": "top_fillet",
+     "default": 2.0,
+     "min": 0.0,
+     "max": 6.0,
+     "step": 0.1,
+     "unit": "mm",
+     "affects_fit": false,
+     "label": "Top edge fillet",
+     "topology": false
+    }
+   ],
+   "defaults": {
+    "diameter": 30.0,
+    "height": 16.0,
+    "bore_d": 6.0,
+    "flat_depth": 1.5,
+    "bore_depth": 12.0,
+    "grip_count": 18.0,
+    "grip_depth": 0.8,
+    "top_fillet": 2.0
+   },
+   "presets": [
+    {
+     "id": "d-shaft-6",
+     "title": "6 mm D-shaft",
+     "note": "bore for a 6 mm D-shaft with a 1.5 mm flat",
+     "values": {
+      "bore_d": 6.0,
+      "flat_depth": 1.5
+     }
+    },
+    {
+     "id": "round-4",
+     "title": "4 mm round shaft",
+     "note": "a round 4 mm bore, no flat",
+     "values": {
+      "bore_d": 4.0,
+      "flat_depth": 0.0
+     }
+    },
+    {
+     "id": "big-45",
+     "title": "Big 45 mm knob",
+     "note": "a larger grip",
+     "values": {
+      "diameter": 45.0,
+      "height": 20.0
+     }
+    }
+   ],
+   "topology_knobs": [
+    "grip_count"
+   ],
+   "thumbnail_url": "/api/v1/templates/knob/thumbnail.png",
+   "thumbnail_2x_url": "/api/v1/templates/knob/thumbnail.png?scale=2",
+   "coupon": true
+  },
+  {
+   "name": "l_bracket",
+   "family": "bracket",
+   "title": "L-bracket",
+   "summary": "Angle bracket: a base leg lying on the mounting face and an upright leg at one end, joined by a rounded inner bend. Screw holes in both legs; edge gussets stiffen the corner.",
+   "tags": [
+    "bracket",
+    "angle",
+    "shelf",
+    "corner",
+    "mounting",
+    "l-bracket"
+   ],
+   "params": [
+    {
+     "name": "length",
+     "default": 40.0,
+     "min": 18.0,
+     "max": 120.0,
+     "step": 0.1,
+     "unit": "mm",
+     "affects_fit": true,
+     "label": "Base leg length",
+     "topology": false
+    },
+    {
+     "name": "width",
+     "default": 20.0,
+     "min": 10.0,
+     "max": 60.0,
+     "step": 0.1,
+     "unit": "mm",
+     "affects_fit": true,
+     "label": "Bracket width",
+     "topology": false
+    },
+    {
+     "name": "height",
+     "default": 30.0,
+     "min": 12.0,
+     "max": 100.0,
+     "step": 0.1,
+     "unit": "mm",
+     "affects_fit": true,
+     "label": "Upright leg height",
+     "topology": false
+    },
+    {
+     "name": "thickness",
+     "default": 3.0,
+     "min": 1.6,
+     "max": 8.0,
+     "step": 0.1,
+     "unit": "mm",
+     "affects_fit": true,
+     "label": "Leg thickness",
+     "topology": false
+    },
+    {
+     "name": "hole_d",
+     "default": 4.5,
+     "min": 2.5,
+     "max": 7.0,
+     "step": 0.05,
+     "unit": "mm",
+     "affects_fit": true,
+     "label": "Screw hole diameter",
+     "topology": false
+    },
+    {
+     "name": "base_holes",
+     "default": 2.0,
+     "min": 1.0,
+     "max": 3.0,
+     "step": 1.0,
+     "unit": "",
+     "affects_fit": false,
+     "label": "Holes in the base leg",
+     "topology": true
+    },
+    {
+     "name": "wall_holes",
+     "default": 2.0,
+     "min": 0.0,
+     "max": 3.0,
+     "step": 1.0,
+     "unit": "",
+     "affects_fit": false,
+     "label": "Holes in the upright leg",
+     "topology": true
+    },
+    {
+     "name": "gusset_count",
+     "default": 2.0,
+     "min": 0.0,
+     "max": 2.0,
+     "step": 1.0,
+     "unit": "",
+     "affects_fit": false,
+     "label": "Edge gussets",
+     "topology": true
+    },
+    {
+     "name": "bend_radius",
+     "default": 2.0,
+     "min": 0.0,
+     "max": 6.0,
+     "step": 0.1,
+     "unit": "mm",
+     "affects_fit": false,
+     "label": "Inner bend radius",
+     "topology": false
+    },
+    {
+     "name": "corner_radius",
+     "default": 2.0,
+     "min": 0.0,
+     "max": 8.0,
+     "step": 0.1,
+     "unit": "mm",
+     "affects_fit": false,
+     "label": "Free corner radius",
+     "topology": false
+    }
+   ],
+   "defaults": {
+    "length": 40.0,
+    "width": 20.0,
+    "height": 30.0,
+    "thickness": 3.0,
+    "hole_d": 4.5,
+    "base_holes": 2.0,
+    "wall_holes": 2.0,
+    "gusset_count": 2.0,
+    "bend_radius": 2.0,
+    "corner_radius": 2.0
+   },
+   "presets": [
+    {
+     "id": "m3",
+     "title": "M3 screw",
+     "note": "clearance hole for an M3 screw (ISO 273 medium, 3.4 mm)",
+     "values": {
+      "hole_d": 3.4
+     }
+    },
+    {
+     "id": "m4",
+     "title": "M4 screw",
+     "note": "clearance hole for an M4 screw (ISO 273 medium, 4.5 mm)",
+     "values": {
+      "hole_d": 4.5
+     }
+    },
+    {
+     "id": "thin-wall",
+     "title": "Thin wall",
+     "note": "a lighter bracket",
+     "values": {
+      "thickness": 2.0
+     }
+    }
+   ],
+   "topology_knobs": [
+    "base_holes",
+    "wall_holes",
+    "gusset_count"
+   ],
+   "thumbnail_url": "/api/v1/templates/l_bracket/thumbnail.png",
+   "thumbnail_2x_url": "/api/v1/templates/l_bracket/thumbnail.png?scale=2",
+   "coupon": true
+  },
+  {
+   "name": "spacer",
+   "family": "spacer",
+   "title": "Spacer / standoff",
+   "summary": "Cylindrical spacer with a through bore for a screw (M3 clearance by default) and chamfered ends. Wrench flats (0 = round) stop it turning and change its cross-section.",
+   "tags": [
+    "spacer",
+    "standoff",
+    "bushing",
+    "washer",
+    "pcb",
+    "m3"
+   ],
+   "params": [
+    {
+     "name": "outer_d",
+     "default": 8.0,
+     "min": 4.0,
+     "max": 30.0,
+     "step": 0.05,
+     "unit": "mm",
+     "affects_fit": true,
+     "label": "Outer diameter",
+     "topology": false
+    },
+    {
+     "name": "height",
+     "default": 10.0,
+     "min": 2.0,
+     "max": 60.0,
+     "step": 0.1,
+     "unit": "mm",
+     "affects_fit": true,
+     "label": "Height",
+     "topology": false
+    },
+    {
+     "name": "bore_d",
+     "default": 3.4,
+     "min": 1.5,
+     "max": 20.0,
+     "step": 0.05,
+     "unit": "mm",
+     "affects_fit": true,
+     "label": "Bore diameter",
+     "topology": false
+    },
+    {
+     "name": "chamfer",
+     "default": 0.4,
+     "min": 0.0,
+     "max": 1.5,
+     "step": 0.05,
+     "unit": "mm",
+     "affects_fit": false,
+     "label": "End chamfer",
+     "topology": false
+    },
+    {
+     "name": "flat_count",
+     "default": 0.0,
+     "min": 0.0,
+     "max": 6.0,
+     "step": 1.0,
+     "unit": "",
+     "affects_fit": false,
+     "label": "Wrench flats",
+     "topology": true
+    },
+    {
+     "name": "flat_depth",
+     "default": 0.8,
+     "min": 0.2,
+     "max": 3.0,
+     "step": 0.05,
+     "unit": "mm",
+     "affects_fit": false,
+     "label": "Flat depth",
+     "topology": false
+    }
+   ],
+   "defaults": {
+    "outer_d": 8.0,
+    "height": 10.0,
+    "bore_d": 3.4,
+    "chamfer": 0.4,
+    "flat_count": 0.0,
+    "flat_depth": 0.8
+   },
+   "presets": [
+    {
+     "id": "m3",
+     "title": "M3 screw",
+     "note": "clearance hole for an M3 screw (ISO 273 medium, 3.4 mm)",
+     "values": {
+      "bore_d": 3.4,
+      "outer_d": 6.0
+     }
+    },
+    {
+     "id": "m4",
+     "title": "M4 screw",
+     "note": "clearance hole for an M4 screw (ISO 273 medium, 4.5 mm)",
+     "values": {
+      "bore_d": 4.5,
+      "outer_d": 8.0
+     }
+    },
+    {
+     "id": "washer",
+     "title": "Thin washer",
+     "note": "a 2 mm washer, the thinnest the knob allows",
+     "values": {
+      "height": 2.0,
+      "outer_d": 10.0
+     }
+    }
+   ],
+   "topology_knobs": [
+    "flat_count"
+   ],
+   "thumbnail_url": "/api/v1/templates/spacer/thumbnail.png",
+   "thumbnail_2x_url": "/api/v1/templates/spacer/thumbnail.png?scale=2",
+   "coupon": true
+  }
+ ],
+ "detail": {
+  "cable_clip": {
+   "name": "cable_clip",
+   "family": "cable_clip",
+   "title": "Cable clip",
+   "summary": "Base strip with screw holes at the ends and C-shaped snap channels standing on it; each cable presses in through a slightly narrower opening at the top.",
+   "tags": [
+    "cable clip",
+    "cable holder",
+    "wire",
+    "organiser",
+    "desk",
+    "snap-fit"
+   ],
+   "params": [
+    {
+     "name": "length",
+     "default": 40.0,
+     "min": 24.0,
+     "max": 100.0,
+     "step": 0.1,
+     "unit": "mm",
+     "affects_fit": true,
+     "label": "Base length",
+     "topology": false
+    },
+    {
+     "name": "width",
+     "default": 10.0,
+     "min": 6.0,
+     "max": 30.0,
+     "step": 0.1,
+     "unit": "mm",
+     "affects_fit": true,
+     "label": "Clip width",
+     "topology": false
+    },
+    {
+     "name": "base_thickness",
+     "default": 2.0,
+     "min": 1.2,
+     "max": 5.0,
+     "step": 0.1,
+     "unit": "mm",
+     "affects_fit": true,
+     "label": "Base thickness",
+     "topology": false
+    },
+    {
+     "name": "cable_d",
+     "default": 6.0,
+     "min": 2.0,
+     "max": 16.0,
+     "step": 0.05,
+     "unit": "mm",
+     "affects_fit": true,
+     "label": "Cable diameter",
+     "topology": false
+    },
+    {
+     "name": "wall",
+     "default": 1.6,
+     "min": 1.0,
+     "max": 4.0,
+     "step": 0.05,
+     "unit": "mm",
+     "affects_fit": true,
+     "label": "Channel wall",
+     "topology": false
+    },
+    {
+     "name": "opening",
+     "default": 0.75,
+     "min": 0.5,
+     "max": 0.95,
+     "step": 0.01,
+     "unit": "",
+     "affects_fit": true,
+     "label": "Snap opening (fraction of the cable diameter)",
+     "topology": false
+    },
+    {
+     "name": "channel_count",
+     "default": 2.0,
+     "min": 1.0,
+     "max": 5.0,
+     "step": 1.0,
+     "unit": "",
+     "affects_fit": false,
+     "label": "Cable channels",
+     "topology": true
+    },
+    {
+     "name": "channel_gap",
+     "default": 1.0,
+     "min": 0.6,
+     "max": 15.0,
+     "step": 0.1,
+     "unit": "mm",
+     "affects_fit": false,
+     "label": "Gap between neighbouring channels",
+     "topology": false
+    },
+    {
+     "name": "hole_d",
+     "default": 3.5,
+     "min": 2.0,
+     "max": 6.0,
+     "step": 0.05,
+     "unit": "mm",
+     "affects_fit": true,
+     "label": "Screw hole diameter",
+     "topology": false
+    },
+    {
+     "name": "hole_count",
+     "default": 2.0,
+     "min": 0.0,
+     "max": 2.0,
+     "step": 1.0,
+     "unit": "",
+     "affects_fit": false,
+     "label": "Screw holes",
+     "topology": true
+    }
+   ],
+   "defaults": {
+    "length": 40.0,
+    "width": 10.0,
+    "base_thickness": 2.0,
+    "cable_d": 6.0,
+    "wall": 1.6,
+    "opening": 0.75,
+    "channel_count": 2.0,
+    "channel_gap": 1.0,
+    "hole_d": 3.5,
+    "hole_count": 2.0
+   },
+   "presets": [
+    {
+     "id": "m3",
+     "title": "M3 screw",
+     "note": "clearance hole for an M3 screw (ISO 273 medium, 3.4 mm)",
+     "values": {
+      "hole_d": 3.4
+     }
+    },
+    {
+     "id": "m4",
+     "title": "M4 screw",
+     "note": "clearance hole for an M4 screw (ISO 273 medium, 4.5 mm)",
+     "values": {
+      "hole_d": 4.5
+     }
+    },
+    {
+     "id": "three-thin",
+     "title": "Three thin cables",
+     "note": "three 4 mm cables on a longer base",
+     "values": {
+      "cable_d": 4.0,
+      "channel_count": 3,
+      "length": 50.0
+     }
+    }
+   ],
+   "topology_knobs": [
+    "channel_count",
+    "hole_count"
+   ],
+   "thumbnail_url": "/api/v1/templates/cable_clip/thumbnail.png",
+   "thumbnail_2x_url": "/api/v1/templates/cable_clip/thumbnail.png?scale=2",
+   "coupon": true,
+   "code": "\"\"\"Screw-on cable clip: a base strip with snap-in C channels for one or more cables.\"\"\"\n\nimport math\n\nimport cadquery as cq\n\nFAMILY = \"cable_clip\"\nTITLE = \"Cable clip\"\nSUMMARY = (\n    \"Base strip with screw holes at the ends and C-shaped snap channels standing on it; each cable presses in \"\n    \"through a slightly narrower opening at the top.\"\n)\nTAGS = [\"cable clip\", \"cable holder\", \"wire\", \"organiser\", \"desk\", \"snap-fit\"]\n# Where each knob moves the outline (normalised model frame; see services/agent/templates/__init__.py).\nREGIONS = {\n    \"channel_count\": [(\"xz\", -0.8, 0.8, 0.3, 1.0, 0)],\n    \"channel_gap\": [(\"xz\", -0.8, 0.8, 0.3, 1.0, 0)],\n    \"cable_d\": [(\"xz\", -0.8, 0.8, 0.3, 1.0, 1)],\n    \"wall\": [(\"xz\", -0.8, 0.8, 0.3, 1.0, 1)],\n    \"opening\": [(\"xz\", -0.8, 0.8, 0.7, 1.0, -1)],\n}\nMEASURE_MAP = {\n    \"length\": \"length\",\n    \"width\": \"width\",\n    \"thickness\": \"base_thickness\",\n    \"hole_1.diameter\": \"hole_d\",\n    \"cable.diameter\": \"cable_d\",\n    \"side.thickness\": \"cable_d\",  # short side of the side photo's silhouette\n}\n\nPARAMS = {  # name: (default, min, max, step, unit, affects_fit, label)\n    \"length\": (40.0, 24.0, 100.0, 0.1, \"mm\", True, \"Base length\"),\n    \"width\": (10.0, 6.0, 30.0, 0.1, \"mm\", True, \"Clip width\"),\n    \"base_thickness\": (2.0, 1.2, 5.0, 0.1, \"mm\", True, \"Base thickness\"),\n    \"cable_d\": (6.0, 2.0, 16.0, 0.05, \"mm\", True, \"Cable diameter\"),\n    \"wall\": (1.6, 1.0, 4.0, 0.05, \"mm\", True, \"Channel wall\"),\n    \"opening\": (0.75, 0.5, 0.95, 0.01, \"\", True, \"Snap opening (fraction of the cable diameter)\"),\n    \"channel_count\": (2, 1, 5, 1, \"\", False, \"Cable channels\"),\n    \"channel_gap\": (1.0, 0.6, 15.0, 0.1, \"mm\", False, \"Gap between neighbouring channels\"),\n    \"hole_d\": (3.5, 2.0, 6.0, 0.05, \"mm\", True, \"Screw hole diameter\"),\n    \"hole_count\": (2, 0, 2, 1, \"\", False, \"Screw holes\"),\n}\n\n\nSCREW_TAB_MM = 9.0  # screw tab length: fixed, so the holes stay put when their size changes\n\n\ndef build(p: dict[str, float]) -> cq.Workplane:\n    length, width, t = p[\"length\"], p[\"width\"], p[\"base_thickness\"]\n    wall = p[\"wall\"]\n    holes = int(p[\"hole_count\"])\n    hole_d = min(p[\"hole_d\"], width - 2.4)\n    tab = SCREW_TAB_MM if holes > 0 else 1.0\n    n = int(p[\"channel_count\"])\n    region = length - 2 * tab\n    gap_c = p[\"channel_gap\"]\n    cable = max(min(p[\"cable_d\"], region / n - 2 * wall - gap_c), 1.0)\n    pitch = cable + 2 * wall + gap_c\n    ri, ro = cable / 2, cable / 2 + wall\n    zc = t + ri - 0.3  # the seat dips into the base, so the ring and the base overlap (no tangent faces)\n\n    base = cq.Workplane(\"XY\").rect(length, width).extrude(t)\n    r = min(1.5, width / 2 - 0.2)\n    base = base.edges(\"|Z\").fillet(r)\n    if holes > 0:\n        xs = [length / 2 - tab / 2, -length / 2 + tab / 2][:holes]\n        base = base.faces(\">Z\").workplane().pushPoints([(x, 0) for x in xs]).hole(hole_d)\n\n    xc = [(i - (n - 1) / 2) * pitch for i in range(n)]\n    rings = cq.Workplane(\"XZ\").pushPoints([(x, zc) for x in xc]).circle(ro).circle(ri).extrude(width / 2, both=True)\n    part = base.union(rings)\n    # Snap opening: a radial wedge, so the jaw tips keep the full wall thickness (a vertical cut leaves knife edges).\n    gap = min(p[\"opening\"] * cable, cable - 0.2)\n    sa = gap / 2 / ri\n    ca = math.sqrt(1 - sa * sa)\n    reach = ro + 2.0\n    for x in xc:\n        wedge = [(x, zc), (x + reach * sa / ca, zc + reach), (x - reach * sa / ca, zc + reach)]\n        part = part.cut(cq.Workplane(\"XZ\").polyline(wedge).close().extrude(width / 2 + 1, both=True))\n    return part\n\n\ndef interfaces(p: dict[str, float]) -> list[dict[str, str | float | list[float]]]:\n    \"\"\"Mating interfaces for the functional probes: the channel bore holds the cable.\"\"\"\n    length, t = p[\"length\"], p[\"base_thickness\"]\n    wall = p[\"wall\"]\n    holes = int(p[\"hole_count\"])\n    tab = SCREW_TAB_MM if holes > 0 else 1.0\n    n = int(p[\"channel_count\"])\n    gap_c = p[\"channel_gap\"]\n    cable = max(min(p[\"cable_d\"], (length - 2 * tab) / n - 2 * wall - gap_c), 1.0)\n    pitch = cable + 2 * wall + gap_c\n    x0 = -(n - 1) / 2 * pitch\n    return [\n        {\n            \"id\": \"cable_channel\", \"label\": \"cable channel\", \"mate_label\": \"cable\",\n            \"at\": [x0, 0.0, t + cable / 2 - 0.3], \"axis\": [1.0, 0.0, 0.0],\n            \"mates\": [2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 10.0, 12.0, 14.0, 16.0],\n        }\n    ]  # fmt: skip\n\n\nresult = build({k: v[0] for k, v in PARAMS.items()})\n",
+   "code_sha": "9ce73360b59174402aa751c7d6fc631c048fcc70875d17db82b99aa4b42d0b33",
+   "measure_map": {
+    "length": "length",
+    "width": "width",
+    "thickness": "base_thickness",
+    "hole_1.diameter": "hole_d",
+    "cable.diameter": "cable_d",
+    "side.thickness": "cable_d"
+   }
+  }
+ },
+ "print_plan": {
+  "orientation": "-Z: mounting face (Z=0) on the bed, as modelled",
+  "supports_needed": false,
+  "material": "PLA",
+  "nozzle_mm": 0.4,
+  "layer_mm": 0.2,
+  "walls": 4,
+  "infill_percent": 40,
+  "bbox_mm": [
+   40.0,
+   10.0,
+   7.74261400772428
+  ],
+  "estimates": [
+   {
+    "material": "PLA",
+    "volume_mm3": 1127.8,
+    "grams": 1.4,
+    "print_minutes": 4.9,
+    "filament_cost": {
+     "INR": 1.68,
+     "USD": 0.03
+    },
+    "price_per_kg": {
+     "INR": 1200.0,
+     "USD": 20.0
+    },
+    "assumptions": [
+     "grams: solid-volume mass at 100 % infill (volume x density: PLA 1.24, PETG 1.27 g/cm^3); a real print weighs less",
+     "minutes: rough estimate: (volume / 8 mm^3/s + layers x 4 s) / 60, 0.2 mm layers, 100 % infill",
+     "filament cost: grams x an assumed 1 kg spool price (INR 1200/kg, USD 20/kg); not a quote, and no shop margin or electricity"
+    ]
+   },
+   {
+    "material": "PETG",
+    "volume_mm3": 1127.8,
+    "grams": 1.43,
+    "print_minutes": 4.9,
+    "filament_cost": {
+     "INR": 2.01,
+     "USD": 0.03
+    },
+    "price_per_kg": {
+     "INR": 1400.0,
+     "USD": 22.0
+    },
+    "assumptions": [
+     "grams: solid-volume mass at 100 % infill (volume x density: PLA 1.24, PETG 1.27 g/cm^3); a real print weighs less",
+     "minutes: rough estimate: (volume / 8 mm^3/s + layers x 4 s) / 60, 0.2 mm layers, 100 % infill",
+     "filament cost: grams x an assumed 1 kg spool price (INR 1400/kg, USD 22/kg); not a quote, and no shop margin or electricity"
+    ]
+   }
+  ],
+  "notes": {
+   "orientation": "axis-aligned orientation with the least overhang area",
+   "supports_needed": "faces steeper than 45 deg overhang, off the bed, over 4 mm^2 in the recommended orientation",
+   "settings": "suggested slicer settings for a small functional part (the same defaults as the repair card): starting points, not measurements",
+   "grams": "solid-volume mass at 100 % infill (volume x density: PLA 1.24, PETG 1.27 g/cm^3); a real print weighs less",
+   "minutes": "rough estimate: (volume / 8 mm^3/s + layers x 4 s) / 60, 0.2 mm layers, 100 % infill"
+  }
+ },
+ "facts": {
+  "bbox_mm": [
+   40.0,
+   10.0,
+   7.74261400772428
+  ],
+  "volume_mm3": 1127.8292255560211,
+  "mass_g_pla": 1.4,
+  "mass_g_petg": 1.43,
+  "print_minutes_est": 4.9,
+  "supports_needed": false,
+  "orientation": "-Z: mounting face (Z=0) on the bed, as modelled"
+ },
+ "ship_reason": "A family template at the values you chose: nothing compared it with a photo of a real part. Print the fit-test coupon or a test piece before relying on it.",
+ "describe": {
+  "done": {
+   "id": "d_261031_0000done",
+   "text": "a cable clip for a 6 mm cable, screws down with one M3 screw, 20 mm wide, 45 mm long",
+   "status": "done",
+   "created_at": 1793100000.0,
+   "updated_at": 1793100000.0,
+   "template": "cable_clip",
+   "family": "cable_clip",
+   "title": "Cable clip",
+   "summary": "Base strip with screw holes at the ends and C-shaped snap channels standing on it; each cable presses in through a slightly narrower opening at the top.",
+   "params": [
+    {
+     "name": "length",
+     "default": 40.0,
+     "min": 24.0,
+     "max": 100.0,
+     "step": 0.1,
+     "unit": "mm",
+     "affects_fit": true,
+     "label": "Base length",
+     "topology": false
+    },
+    {
+     "name": "width",
+     "default": 10.0,
+     "min": 6.0,
+     "max": 30.0,
+     "step": 0.1,
+     "unit": "mm",
+     "affects_fit": true,
+     "label": "Clip width",
+     "topology": false
+    },
+    {
+     "name": "base_thickness",
+     "default": 2.0,
+     "min": 1.2,
+     "max": 5.0,
+     "step": 0.1,
+     "unit": "mm",
+     "affects_fit": true,
+     "label": "Base thickness",
+     "topology": false
+    },
+    {
+     "name": "cable_d",
+     "default": 6.0,
+     "min": 2.0,
+     "max": 16.0,
+     "step": 0.05,
+     "unit": "mm",
+     "affects_fit": true,
+     "label": "Cable diameter",
+     "topology": false
+    },
+    {
+     "name": "wall",
+     "default": 1.6,
+     "min": 1.0,
+     "max": 4.0,
+     "step": 0.05,
+     "unit": "mm",
+     "affects_fit": true,
+     "label": "Channel wall",
+     "topology": false
+    },
+    {
+     "name": "opening",
+     "default": 0.75,
+     "min": 0.5,
+     "max": 0.95,
+     "step": 0.01,
+     "unit": "",
+     "affects_fit": true,
+     "label": "Snap opening (fraction of the cable diameter)",
+     "topology": false
+    },
+    {
+     "name": "channel_count",
+     "default": 2.0,
+     "min": 1.0,
+     "max": 5.0,
+     "step": 1.0,
+     "unit": "",
+     "affects_fit": false,
+     "label": "Cable channels",
+     "topology": true
+    },
+    {
+     "name": "channel_gap",
+     "default": 1.0,
+     "min": 0.6,
+     "max": 15.0,
+     "step": 0.1,
+     "unit": "mm",
+     "affects_fit": false,
+     "label": "Gap between neighbouring channels",
+     "topology": false
+    },
+    {
+     "name": "hole_d",
+     "default": 3.5,
+     "min": 2.0,
+     "max": 6.0,
+     "step": 0.05,
+     "unit": "mm",
+     "affects_fit": true,
+     "label": "Screw hole diameter",
+     "topology": false
+    },
+    {
+     "name": "hole_count",
+     "default": 2.0,
+     "min": 0.0,
+     "max": 2.0,
+     "step": 1.0,
+     "unit": "",
+     "affects_fit": false,
+     "label": "Screw holes",
+     "topology": true
+    }
+   ],
+   "values": [
+    {
+     "param": "length",
+     "label": "Base length",
+     "unit": "mm",
+     "value": 45.0,
+     "default": 40.0,
+     "source": "user",
+     "quote": "45 mm long",
+     "note": "\"45 mm long\"",
+     "asked": null
+    },
+    {
+     "param": "width",
+     "label": "Clip width",
+     "unit": "mm",
+     "value": 20.0,
+     "default": 10.0,
+     "source": "user",
+     "quote": "20 mm wide",
+     "note": "\"20 mm wide\"",
+     "asked": null
+    },
+    {
+     "param": "base_thickness",
+     "label": "Base thickness",
+     "unit": "mm",
+     "value": 2.0,
+     "default": 2.0,
+     "source": "default",
+     "quote": "",
+     "note": "",
+     "asked": null
+    },
+    {
+     "param": "cable_d",
+     "label": "Cable diameter",
+     "unit": "mm",
+     "value": 6.0,
+     "default": 6.0,
+     "source": "user",
+     "quote": "for a 6 mm cable",
+     "note": "fits a 6 mm cable (set to the stated size)",
+     "asked": null
+    },
+    {
+     "param": "wall",
+     "label": "Channel wall",
+     "unit": "mm",
+     "value": 1.6,
+     "default": 1.6,
+     "source": "default",
+     "quote": "",
+     "note": "",
+     "asked": null
+    },
+    {
+     "param": "opening",
+     "label": "Snap opening (fraction of the cable diameter)",
+     "unit": "",
+     "value": 0.75,
+     "default": 0.75,
+     "source": "default",
+     "quote": "",
+     "note": "",
+     "asked": null
+    },
+    {
+     "param": "channel_count",
+     "label": "Cable channels",
+     "unit": "",
+     "value": 2.0,
+     "default": 2.0,
+     "source": "default",
+     "quote": "",
+     "note": "",
+     "asked": null
+    },
+    {
+     "param": "channel_gap",
+     "label": "Gap between neighbouring channels",
+     "unit": "mm",
+     "value": 1.0,
+     "default": 1.0,
+     "source": "default",
+     "quote": "",
+     "note": "",
+     "asked": null
+    },
+    {
+     "param": "hole_d",
+     "label": "Screw hole diameter",
+     "unit": "mm",
+     "value": 3.4,
+     "default": 3.5,
+     "source": "user",
+     "quote": "one M3 screw",
+     "note": "M3 clearance hole (ISO 273 medium, 3.4 mm)",
+     "asked": null
+    },
+    {
+     "param": "hole_count",
+     "label": "Screw holes",
+     "unit": "",
+     "value": 1.0,
+     "default": 2.0,
+     "source": "user",
+     "quote": "one M3 screw",
+     "note": "1 screw hole",
+     "asked": null
+    }
+   ],
+   "questions": [],
+   "answers": {},
+   "plan_notes": [],
+   "planner": {
+    "provider": "mock",
+    "model": "muse-spark-1.3",
+    "mode": "mock",
+    "prompt": "describe_plan.v1"
+   },
+   "checks": {
+    "status": "matches",
+    "label": "Matches your numbers",
+    "items": [
+     {
+      "param": "length",
+      "label": "Base length",
+      "unit": "mm",
+      "stated": 45.0,
+      "quote": "45 mm long",
+      "set": 45.0,
+      "measured": 45.0,
+      "tol": 0.1,
+      "method": "length of the baked model (bounding box, X)",
+      "status": "met",
+      "note": ""
+     },
+     {
+      "param": "width",
+      "label": "Clip width",
+      "unit": "mm",
+      "stated": 20.0,
+      "quote": "20 mm wide",
+      "set": 20.0,
+      "measured": 20.0,
+      "tol": 0.1,
+      "method": "width of the baked model (bounding box, Y)",
+      "status": "met",
+      "note": ""
+     },
+     {
+      "param": "cable_d",
+      "label": "Cable diameter",
+      "unit": "mm",
+      "stated": 6.0,
+      "quote": "for a 6 mm cable",
+      "set": 6.0,
+      "measured": 6.0,
+      "tol": 0.1,
+      "method": "measured across the cable on the baked model",
+      "status": "met",
+      "note": ""
+     },
+     {
+      "param": "hole_d",
+      "label": "Screw hole diameter",
+      "unit": "mm",
+      "stated": 3.4,
+      "quote": "one M3 screw",
+      "set": 3.4,
+      "measured": 3.4,
+      "tol": 0.1,
+      "method": "diameter of the nearest round hole on the baked model",
+      "status": "met",
+      "note": ""
+     },
+     {
+      "param": "hole_count",
+      "label": "Screw holes",
+      "unit": "",
+      "stated": 1.0,
+      "quote": "one M3 screw",
+      "set": 1.0,
+      "measured": 1.0,
+      "tol": 0.0,
+      "method": "round 3.4 mm holes counted on the baked model",
+      "status": "met",
+      "note": ""
+     }
+    ],
+    "met": 5,
+    "measured": 5,
+    "knob_only": 0,
+    "failed": 0,
+    "tolerance": "\u00b1max(0.1 mm, the knob's step)",
+    "note": "Code compared the baked model with the numbers you gave. No photo was involved: this is not verification against a real part."
+   },
+   "bake": {
+    "cache_key": "10cfd5a88cfd4444640b1e98acf6ac6f1fe76e01b7fbd77568385b5ff293598d",
+    "params": {
+     "length": 45.0,
+     "width": 20.0,
+     "base_thickness": 2.0,
+     "cable_d": 6.0,
+     "wall": 1.6,
+     "opening": 0.75,
+     "channel_count": 2,
+     "channel_gap": 1.0,
+     "hole_d": 3.4,
+     "hole_count": 1
+    },
+    "clamped": {},
+    "ms": 1521,
+    "cache_hit": false,
+    "facts": {
+     "bbox_mm": [
+      45.0,
+      20.0,
+      7.74261400772428
+     ],
+     "volume_mm3": 2518.3318986460904,
+     "mass_g_pla": 3.12,
+     "mass_g_petg": 3.2,
+     "print_minutes_est": 7.8,
+     "supports_needed": false,
+     "orientation": "-Z: mounting face (Z=0) on the bed, as modelled"
+    },
+    "view_url": "/api/v1/files/view-describe.json"
+   },
+   "downloads": {
+    "stl": "/api/v1/templates/cable_clip/bake?base_thickness=2&cable_d=6&channel_count=2&channel_gap=1&hole_count=1&hole_d=3.4&length=45&opening=0.75&wall=1.6&width=20&format=stl&download=1",
+    "3mf": "/api/v1/templates/cable_clip/bake?base_thickness=2&cable_d=6&channel_count=2&channel_gap=1&hole_count=1&hole_d=3.4&length=45&opening=0.75&wall=1.6&width=20&format=3mf&download=1",
+    "step": "/api/v1/templates/cable_clip/bake?base_thickness=2&cable_d=6&channel_count=2&channel_gap=1&hole_count=1&hole_d=3.4&length=45&opening=0.75&wall=1.6&width=20&format=step&download=1",
+    "py": "/api/v1/templates/cable_clip/bake?base_thickness=2&cable_d=6&channel_count=2&channel_gap=1&hole_count=1&hole_d=3.4&length=45&opening=0.75&wall=1.6&width=20&format=py&download=1",
+    "coupon": "/api/v1/templates/cable_clip/coupon.stl?base_thickness=2&cable_d=6&channel_count=2&channel_gap=1&hole_count=1&hole_d=3.4&length=45&opening=0.75&wall=1.6&width=20"
+   },
+   "print_plan": {
+    "orientation": "-Z: mounting face (Z=0) on the bed, as modelled",
+    "supports_needed": false,
+    "material": "PLA",
+    "nozzle_mm": 0.4,
+    "layer_mm": 0.2,
+    "walls": 4,
+    "infill_percent": 40,
+    "bbox_mm": [
+     45.0,
+     20.0,
+     7.74261400772428
+    ],
+    "estimates": [
+     {
+      "material": "PLA",
+      "volume_mm3": 2518.3,
+      "grams": 3.12,
+      "print_minutes": 7.8,
+      "filament_cost": {
+       "INR": 3.75,
+       "USD": 0.06
+      },
+      "price_per_kg": {
+       "INR": 1200.0,
+       "USD": 20.0
+      },
+      "assumptions": [
+       "grams: solid-volume mass at 100 % infill (volume x density: PLA 1.24, PETG 1.27 g/cm^3); a real print weighs less",
+       "minutes: rough estimate: (volume / 8 mm^3/s + layers x 4 s) / 60, 0.2 mm layers, 100 % infill",
+       "filament cost: grams x an assumed 1 kg spool price (INR 1200/kg, USD 20/kg); not a quote, and no shop margin or electricity"
+      ]
+     },
+     {
+      "material": "PETG",
+      "volume_mm3": 2518.3,
+      "grams": 3.2,
+      "print_minutes": 7.8,
+      "filament_cost": {
+       "INR": 4.48,
+       "USD": 0.07
+      },
+      "price_per_kg": {
+       "INR": 1400.0,
+       "USD": 22.0
+      },
+      "assumptions": [
+       "grams: solid-volume mass at 100 % infill (volume x density: PLA 1.24, PETG 1.27 g/cm^3); a real print weighs less",
+       "minutes: rough estimate: (volume / 8 mm^3/s + layers x 4 s) / 60, 0.2 mm layers, 100 % infill",
+       "filament cost: grams x an assumed 1 kg spool price (INR 1400/kg, USD 22/kg); not a quote, and no shop margin or electricity"
+      ]
+     }
+    ],
+    "notes": {
+     "orientation": "axis-aligned orientation with the least overhang area",
+     "supports_needed": "faces steeper than 45 deg overhang, off the bed, over 4 mm^2 in the recommended orientation",
+     "settings": "suggested slicer settings for a small functional part (the same defaults as the repair card): starting points, not measurements",
+     "grams": "solid-volume mass at 100 % infill (volume x density: PLA 1.24, PETG 1.27 g/cm^3); a real print weighs less",
+     "minutes": "rough estimate: (volume / 8 mm^3/s + layers x 4 s) / 60, 0.2 mm layers, 100 % infill"
+    }
+   },
+   "coupon": true,
+   "no_fit": null,
+   "events": [
+    {
+     "job": "d_261031_ddb69a68",
+     "seq": 0,
+     "ts": 1793100000.0,
+     "ctx": "",
+     "t": "model_call",
+     "provider": "mock",
+     "model": "muse-spark-1.3",
+     "stage": "describe_plan",
+     "mode": "mock",
+     "tokens_in": 0,
+     "tokens_out": 0,
+     "ms": 4,
+     "usd": 0.0,
+     "ok": true,
+     "error": null
+    }
+   ],
+   "label": "Made from your description: no photo of a real part was involved, so this is not verified. Add a photo on /fix to check it against the real part.",
+   "ship": {
+    "status": "best_effort",
+    "reason": "A family template at the values you chose: nothing compared it with a photo of a real part. Print the fit-test coupon or a test piece before relying on it.",
+    "needs_ack": true,
+    "source": "registry.gate (template bake)"
+   }
+  },
+  "asks": {
+   "id": "d_261031_0000asks",
+   "text": "a cable clip for a 6 mm cable, 20 mm wide",
+   "status": "needs_answers",
+   "created_at": 1793100000.0,
+   "updated_at": 1793100000.0,
+   "template": "cable_clip",
+   "family": "cable_clip",
+   "title": "Cable clip",
+   "summary": "Base strip with screw holes at the ends and C-shaped snap channels standing on it; each cable presses in through a slightly narrower opening at the top.",
+   "params": [
+    {
+     "name": "length",
+     "default": 40.0,
+     "min": 24.0,
+     "max": 100.0,
+     "step": 0.1,
+     "unit": "mm",
+     "affects_fit": true,
+     "label": "Base length",
+     "topology": false
+    },
+    {
+     "name": "width",
+     "default": 10.0,
+     "min": 6.0,
+     "max": 30.0,
+     "step": 0.1,
+     "unit": "mm",
+     "affects_fit": true,
+     "label": "Clip width",
+     "topology": false
+    },
+    {
+     "name": "base_thickness",
+     "default": 2.0,
+     "min": 1.2,
+     "max": 5.0,
+     "step": 0.1,
+     "unit": "mm",
+     "affects_fit": true,
+     "label": "Base thickness",
+     "topology": false
+    },
+    {
+     "name": "cable_d",
+     "default": 6.0,
+     "min": 2.0,
+     "max": 16.0,
+     "step": 0.05,
+     "unit": "mm",
+     "affects_fit": true,
+     "label": "Cable diameter",
+     "topology": false
+    },
+    {
+     "name": "wall",
+     "default": 1.6,
+     "min": 1.0,
+     "max": 4.0,
+     "step": 0.05,
+     "unit": "mm",
+     "affects_fit": true,
+     "label": "Channel wall",
+     "topology": false
+    },
+    {
+     "name": "opening",
+     "default": 0.75,
+     "min": 0.5,
+     "max": 0.95,
+     "step": 0.01,
+     "unit": "",
+     "affects_fit": true,
+     "label": "Snap opening (fraction of the cable diameter)",
+     "topology": false
+    },
+    {
+     "name": "channel_count",
+     "default": 2.0,
+     "min": 1.0,
+     "max": 5.0,
+     "step": 1.0,
+     "unit": "",
+     "affects_fit": false,
+     "label": "Cable channels",
+     "topology": true
+    },
+    {
+     "name": "channel_gap",
+     "default": 1.0,
+     "min": 0.6,
+     "max": 15.0,
+     "step": 0.1,
+     "unit": "mm",
+     "affects_fit": false,
+     "label": "Gap between neighbouring channels",
+     "topology": false
+    },
+    {
+     "name": "hole_d",
+     "default": 3.5,
+     "min": 2.0,
+     "max": 6.0,
+     "step": 0.05,
+     "unit": "mm",
+     "affects_fit": true,
+     "label": "Screw hole diameter",
+     "topology": false
+    },
+    {
+     "name": "hole_count",
+     "default": 2.0,
+     "min": 0.0,
+     "max": 2.0,
+     "step": 1.0,
+     "unit": "",
+     "affects_fit": false,
+     "label": "Screw holes",
+     "topology": true
+    }
+   ],
+   "values": [
+    {
+     "param": "length",
+     "label": "Base length",
+     "unit": "mm",
+     "value": 40.0,
+     "default": 40.0,
+     "source": "default",
+     "quote": "",
+     "note": "",
+     "asked": null
+    },
+    {
+     "param": "width",
+     "label": "Clip width",
+     "unit": "mm",
+     "value": 20.0,
+     "default": 10.0,
+     "source": "user",
+     "quote": "20 mm wide",
+     "note": "\"20 mm wide\"",
+     "asked": null
+    },
+    {
+     "param": "base_thickness",
+     "label": "Base thickness",
+     "unit": "mm",
+     "value": 2.0,
+     "default": 2.0,
+     "source": "default",
+     "quote": "",
+     "note": "",
+     "asked": null
+    },
+    {
+     "param": "cable_d",
+     "label": "Cable diameter",
+     "unit": "mm",
+     "value": 6.0,
+     "default": 6.0,
+     "source": "user",
+     "quote": "for a 6 mm cable",
+     "note": "fits a 6 mm cable (set to the stated size)",
+     "asked": null
+    },
+    {
+     "param": "wall",
+     "label": "Channel wall",
+     "unit": "mm",
+     "value": 1.6,
+     "default": 1.6,
+     "source": "default",
+     "quote": "",
+     "note": "",
+     "asked": null
+    },
+    {
+     "param": "opening",
+     "label": "Snap opening (fraction of the cable diameter)",
+     "unit": "",
+     "value": 0.75,
+     "default": 0.75,
+     "source": "default",
+     "quote": "",
+     "note": "",
+     "asked": null
+    },
+    {
+     "param": "channel_count",
+     "label": "Cable channels",
+     "unit": "",
+     "value": 2.0,
+     "default": 2.0,
+     "source": "default",
+     "quote": "",
+     "note": "",
+     "asked": null
+    },
+    {
+     "param": "channel_gap",
+     "label": "Gap between neighbouring channels",
+     "unit": "mm",
+     "value": 1.0,
+     "default": 1.0,
+     "source": "default",
+     "quote": "",
+     "note": "",
+     "asked": null
+    },
+    {
+     "param": "hole_d",
+     "label": "Screw hole diameter",
+     "unit": "mm",
+     "value": 3.5,
+     "default": 3.5,
+     "source": "default",
+     "quote": "",
+     "note": "",
+     "asked": null
+    },
+    {
+     "param": "hole_count",
+     "label": "Screw holes",
+     "unit": "",
+     "value": 2.0,
+     "default": 2.0,
+     "source": "default",
+     "quote": "",
+     "note": "",
+     "asked": null
+    }
+   ],
+   "questions": [
+    {
+     "id": "length",
+     "param": "length",
+     "label": "Base length",
+     "unit": "mm",
+     "min": 24.0,
+     "max": 100.0,
+     "step": 0.1,
+     "default": 40.0,
+     "prompt": "Base length (mm)? Leave it empty to use the template default, 40 mm"
+    },
+    {
+     "id": "hole_d",
+     "param": "hole_d",
+     "label": "Screw hole diameter",
+     "unit": "mm",
+     "min": 2.0,
+     "max": 6.0,
+     "step": 0.05,
+     "default": 3.5,
+     "prompt": "Screw hole diameter (mm)? Leave it empty to use the template default, 3.5 mm"
+    }
+   ],
+   "answers": {},
+   "plan_notes": [],
+   "planner": {
+    "provider": "mock",
+    "model": "muse-spark-1.3",
+    "mode": "mock",
+    "prompt": "describe_plan.v1"
+   },
+   "checks": null,
+   "bake": null,
+   "downloads": null,
+   "print_plan": null,
+   "coupon": false,
+   "no_fit": null,
+   "events": [
+    {
+     "job": "d_261031_090bc748",
+     "seq": 0,
+     "ts": 1793100000.0,
+     "ctx": "",
+     "t": "model_call",
+     "provider": "mock",
+     "model": "muse-spark-1.3",
+     "stage": "describe_plan",
+     "mode": "mock",
+     "tokens_in": 0,
+     "tokens_out": 0,
+     "ms": 0,
+     "usd": 0.0,
+     "ok": true,
+     "error": null
+    }
+   ],
+   "label": "Made from your description: no photo of a real part was involved, so this is not verified. Add a photo on /fix to check it against the real part."
+  },
+  "no_fit": {
+   "id": "d_261031_000nofit",
+   "text": "a gear with 20 teeth",
+   "status": "no_fit",
+   "created_at": 1793100000.0,
+   "updated_at": 1793100000.0,
+   "template": null,
+   "family": null,
+   "title": "",
+   "summary": "",
+   "params": [],
+   "values": [],
+   "questions": [],
+   "answers": {},
+   "plan_notes": [],
+   "planner": {
+    "provider": "mock",
+    "model": "muse-spark-1.3",
+    "mode": "mock",
+    "prompt": "describe_plan.v1"
+   },
+   "checks": null,
+   "bake": null,
+   "downloads": null,
+   "print_plan": null,
+   "coupon": false,
+   "no_fit": {
+    "reason": "none of the family templates matches these words",
+    "templates": [
+     "Battery compartment cover",
+     "Cable clip",
+     "Caster wheel",
+     "Snap retaining clip",
+     "Cupboard turn-button latch",
+     "Hinge leaf",
+     "Wall hook",
+     "Knob with D-shaft bore",
+     "L-bracket",
+     "Spacer / standoff"
+    ],
+    "next": [
+     {
+      "href": "/fix",
+      "label": "Photograph the part on the mat instead"
+     },
+     {
+      "href": "/requests",
+      "label": "Ask for this part on the requests board"
+     }
+    ]
+   },
+   "events": [
+    {
+     "job": "d_261031_0491c757",
+     "seq": 0,
+     "ts": 1793100000.0,
+     "ctx": "",
+     "t": "model_call",
+     "provider": "mock",
+     "model": "muse-spark-1.3",
+     "stage": "describe_plan",
+     "mode": "mock",
+     "tokens_in": 0,
+     "tokens_out": 0,
+     "ms": 0,
+     "usd": 0.0,
+     "ok": true,
+     "error": null
+    }
+   ],
+   "label": "Made from your description: no photo of a real part was involved, so this is not verified. Add a photo on /fix to check it against the real part."
+  }
+ }
+}

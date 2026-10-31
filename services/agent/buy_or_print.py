@@ -56,6 +56,39 @@ def print_estimates(facts: PartFacts) -> list[PrintEstimate]:
     return out
 
 
+PRINT_SETTINGS_NOTE = (
+    "suggested slicer settings for a small functional part (the same defaults as the repair card): starting points, "
+    "not measurements"
+)
+
+
+def print_plan(facts: PartFacts) -> dict[str, Any]:
+    """ "Print it" settings from the part facts (pure): the recommended orientation and whether supports are needed
+    come from the mesh (services/geom_worker/bake.py); layer, walls, infill and nozzle are the repair card's suggested
+    defaults; grams, minutes and filament cost are `print_estimates` (100 % infill: upper bounds)."""
+    from services.media.repair_card import PrintSettings
+
+    ps = PrintSettings()
+    return {
+        "orientation": facts.orientation,
+        "supports_needed": facts.supports_needed,
+        "material": ps.material,
+        "nozzle_mm": ps.nozzle_mm,
+        "layer_mm": ps.layer_height_mm,
+        "walls": ps.walls,
+        "infill_percent": ps.infill_percent,
+        "bbox_mm": list(facts.bbox_mm),
+        "estimates": [e.model_dump(mode="json") for e in print_estimates(facts)],
+        "notes": {
+            "orientation": FACT_NOTES["orientation"],
+            "supports_needed": FACT_NOTES["supports_needed"],
+            "settings": PRINT_SETTINGS_NOTE,
+            "grams": FACT_NOTES["mass"],
+            "minutes": FACT_NOTES["print_minutes_est"],
+        },
+    }
+
+
 def lookup_query(title: str, family: str | None, intent: str) -> str:
     """What to search for: the part's title and family, plus the user's own words when they name a product."""
     parts = [title.strip() or "replacement plastic part"]

@@ -28,9 +28,9 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Spinner } from "@/components/ui/spinner";
 import { toast } from "@/components/ui/toast";
 import { Switch } from "@/components/ui/toggle";
-import { api } from "@/lib/api";
+import { api, request } from "@/lib/api";
 import { REVIEW, review, type DecisionBody } from "@/lib/api-review";
-import type { ArtifactEvent, ReviewQueueItem, ReviewVerdict } from "@/lib/api-types";
+import { ReviewQueueSchema, type ArtifactEvent, type ReviewQueueItem, type ReviewVerdict } from "@/lib/api-types";
 import { useCapabilities } from "@/lib/capabilities";
 import { fmtUsd, timeAgo, titleCase } from "@/lib/format";
 import {
@@ -589,6 +589,57 @@ function ReviewDetailPanel({ jobId, item, admin }: { jobId: string; item: Review
   );
 }
 
+type QueueFilter = { family: string; status: string; by: string };
+const NO_FILTER: QueueFilter = { family: "", status: "", by: "" };
+
+/** Whether this API's `GET /review/queue` takes the filter parameters (read from its OpenAPI document). */
+function useQueueFilterSupport(): boolean {
+  const qc = useQueryClient();
+  const caps = useCapabilities();
+  if (!caps.ready) return false;
+  const doc = qc.getQueryData<{ paths?: Record<string, { get?: { parameters?: { name?: string }[] } }> }>(["openapi"]);
+  return !!doc?.paths?.[`/api/v1${REVIEW.queue}`]?.get?.parameters?.some((p) => p.name === "family");
+}
+
+function QueueFilters({ value, onChange, families, withBy }: { value: QueueFilter; onChange: (f: QueueFilter) => void; families: string[]; withBy: boolean }) {
+  const cls = "h-8 w-full rounded-md border border-border-strong bg-surface px-2 text-[12.5px] text-fg";
+  return (
+    <div className={`grid gap-2 ${withBy ? "grid-cols-3" : "grid-cols-2"}`} role="group" aria-label="Filter the queue">
+      <label className="min-w-0 space-y-0.5 text-[11.5px] text-muted">
+        <span className="block">Kind</span>
+        <select className={cls} value={value.family} onChange={(e) => onChange({ ...value, family: e.target.value })}>
+          <option value="">All</option>
+          {families.map((f) => (
+            <option key={f} value={f}>
+              {titleCase(f)}
+            </option>
+          ))}
+        </select>
+      </label>
+      <label className="min-w-0 space-y-0.5 text-[11.5px] text-muted">
+        <span className="block">Status</span>
+        <select className={cls} value={value.status} onChange={(e) => onChange({ ...value, status: e.target.value })}>
+          <option value="">All</option>
+          <option value="waiting">Waiting</option>
+          <option value="improving">Being fixed</option>
+          <option value="accepted">Accepted</option>
+          <option value="rejected">Rejected</option>
+        </select>
+      </label>
+      {withBy ? (
+        <label className="min-w-0 space-y-0.5 text-[11.5px] text-muted">
+          <span className="block">Decided by</span>
+          <select className={cls} value={value.by} onChange={(e) => onChange({ ...value, by: e.target.value })}>
+            <option value="">Anyone</option>
+            <option value="person">A person</option>
+            <option value="test">A test</option>
+          </select>
+        </label>
+      ) : null}
+    </div>
+  );
+}
+
 export function ReviewClient() {
   const caps = useCapabilities();
   const { admin } = useAdmin();
@@ -596,13 +647,28 @@ export function ReviewClient() {
   const pathname = usePathname();
   const wanted = useSearchParams().get("job");
   const available = caps.has("get", REVIEW.queue);
+  const [filter, setFilter] = React.useState<QueueFilter>(NO_FILTER);
+  const serverFilters = useQueueFilterSupport();
+  const sent = serverFilters ? filter : NO_FILTER;
   const queue = useQuery({
-    queryKey: ["review", "queue"],
-    queryFn: () => review.queue(true),
+    queryKey: ["review", "queue", sent],
+    queryFn: () =>
+      serverFilters && (sent.family || sent.status || sent.by)
+        ? request(ReviewQueueSchema, REVIEW.queue, { query: { include_replays: 1, family: sent.family || undefined, status: sent.status || undefined, by: sent.by || undefined } })
+        : review.queue(true),
     enabled: available,
     refetchInterval: (q) => (q.state.data?.items.some((i) => i.status === "improving") ? 5000 : false),
   });
-  const items = React.useMemo(() => sortQueue(queue.data?.items ?? []), [queue.data]);
+  const [families, setFamilies] = React.useState<string[]>([]);
+  React.useEffect(() => {
+    const seen = (queue.data?.items ?? []).map((i) => i.family).filter((f): f is string => !!f);
+    if (seen.length) setFamilies((prev) => [...new Set([...prev, ...seen])].sort());
+  }, [queue.data]);
+  // An older API ignores the filter parameters: family and status are then applied here (both are in every item).
+  const items = React.useMemo(
+    () => sortQueue((queue.data?.items ?? []).filter((i) => (!filter.family || i.family === filter.family) && (!filter.status || i.status === filter.status))),
+    [queue.data, filter.family, filter.status],
+  );
   const [selId, setSelId] = React.useState<string | null>(wanted);
   const selItem = selId ? (items.find((i) => i.job_id === selId) ?? items.find((i) => i.root_job === selId)) : items[0];
   const currentId = selItem?.job_id ?? selId ?? null;
@@ -662,13 +728,14 @@ export function ReviewClient() {
               <Skeleton className="h-64" />
             ) : queue.isError ? (
               <ErrorState error={queue.error} what="the review queue" onRetry={() => void queue.refetch()} />
-            ) : !items.length && !selId ? (
+            ) : !items.length && !selId && filter === NO_FILTER ? (
               <EmptyState icon={ClipboardCheck} title="Nothing to review">
                 Finished fix jobs appear here.
               </EmptyState>
             ) : (
               <div className="grid grid-cols-1 gap-4 lg:grid-cols-[320px_minmax(0,1fr)]">
                 <div className="min-w-0 space-y-2 lg:sticky lg:top-24 lg:self-start">
+                  <QueueFilters value={filter} onChange={setFilter} families={families} withBy={serverFilters} />
                   {items.length ? <QueueList items={items} selected={currentId} onSelect={select} /> : <EmptyState compact title="Nothing in the queue" />}
                   <AdminLock />
                 </div>

@@ -13,6 +13,7 @@ from typing import Annotated, Any, Literal
 from fastapi import APIRouter, Depends, File, Query, UploadFile
 from pydantic import BaseModel, Field
 
+from services.admin import audit
 from services.api.auth import require_admin
 from services.api.common import API, _svc, publish_job
 from services.api.errors import ApiError
@@ -64,9 +65,20 @@ class DecisionRequest(BaseModel):
 
 @router.get("/queue", summary="Finished fix jobs waiting for a person's review (latest round of each chain)")
 def review_queue(
-    include_replays: bool = True, limit: Annotated[int, Query(ge=1, le=200)] = 50
+    include_replays: bool = True,
+    limit: Annotated[int, Query(ge=1, le=200)] = 50,
+    family: str | None = None,
+    status: Literal["waiting", "improving", "accepted", "rejected"] | None = None,
+    by: Annotated[Literal["person", "test"] | None, Query(description="Who made the chain's latest decision")] = None,
+    older_than_h: Annotated[
+        float | None, Query(ge=0, le=24 * 365, description="Last change at least this long ago")
+    ] = None,
 ) -> dict[str, list[dict[str, Any]]]:
-    return {"items": store.queue(limit, include_replays, svc=_svc())}
+    return {
+        "items": store.queue(
+            limit, include_replays, svc=_svc(), family=family, status=status, by=by, older_than_h=older_than_h
+        )
+    }
 
 
 @router.get("/stats", summary="Judge vs person: agreement counts and Cohen's kappa, computed from the reviews")
@@ -124,7 +136,7 @@ def review_decide(job_id: str, body: DecisionRequest, _admin: None = Depends(req
     """Send it to the chain's latest round. Improve needs a pin or a note; reject needs a reason. Returns the chain
     (`state`), the reviewer round started (`child_job`) and the published part (`part_slug`)."""
     with _mapped():
-        return store.decide(
+        out = store.decide(
             job_id,
             body.action,
             pins=[p.model_dump(exclude_none=True) for p in body.pins],
@@ -137,3 +149,13 @@ def review_decide(job_id: str, body: DecisionRequest, _admin: None = Depends(req
             why=body.why,
             svc=_svc(),
         )
+    last: dict[str, Any] = next((r for r in out["state"]["rounds"] if r["job_id"] == job_id), {})
+    audit.record(
+        f"review.{body.action}",
+        job_id,
+        actor=str(last.get("by") or "person"),
+        after={"status": out["state"]["status"], "child_job": out.get("child_job"), "part_slug": out.get("part_slug")},
+        note=body.reason or body.note or None,
+        numbers={"pins": len(body.pins), "max_error_mm": (last.get("verdict") or {}).get("max_error_mm")},
+    )
+    return out

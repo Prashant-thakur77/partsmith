@@ -17,8 +17,11 @@ import { ValueSourcesPanel } from "@/components/jobs/value-sources-panel";
 import { JobStatusBadge } from "@/components/jobs/job-badges";
 import { FitPresets } from "@/components/jobs/fit-presets";
 import { ImpactPanel } from "@/components/jobs/impact-panel";
+import { CostCard } from "@/components/jobs/cost-card";
+import { HiddenDimsCard } from "@/components/jobs/hidden-dims-card";
 import { ProgressLines } from "@/components/jobs/progress-lines";
 import { JobExtras } from "@/components/jobs/job-extras";
+import { JobPrintAndVariant } from "@/components/product/job-print-variant";
 import { MateFitCard } from "@/components/jobs/mate-fit-card";
 import { PhotoPanel, imagesByView } from "@/components/jobs/photo-panel";
 import { QuestionPanel } from "@/components/jobs/question-panel";
@@ -587,6 +590,7 @@ export function WorkspaceClient({ id }: { id: string }) {
           <div className="overflow-hidden rounded-lg border border-border bg-surface">
             <PhotoPanel views={views} focusLabel={focusPoint?.label} className="h-[360px] sm:h-[420px] xl:h-[520px]" />
           </div>
+          <HiddenDimsCard rows={d.hidden_dims} />
         </div>
 
         {/* right: convergence + trace */}
@@ -606,6 +610,7 @@ export function WorkspaceClient({ id }: { id: string }) {
           </div>
           {d.judge ? <JudgeScorecard judge={d.judge} /> : null}
           <ImpactPanel jobId={id} finished={!!done} />
+          <CostCard calls={s.modelCalls} replay={replay} />
           <div className="rounded-lg border border-border bg-surface">
             <Tabs defaultValue={s.agent.length ? "agent" : "trace"}>
               <TabsList className="px-3" aria-label="Job details">
@@ -769,6 +774,20 @@ export function WorkspaceClient({ id }: { id: string }) {
             ) : null}
           </div>
         </div>
+        {done && (doneStatus === "verified" || doneStatus === "best_effort") && d.params.length ? (
+          <JobPrintAndVariant
+            className="xl:order-5 xl:col-span-3"
+            jobId={id}
+            title={heading.title}
+            verification={verification}
+            artifacts={artifacts}
+            params={d.params}
+            values={values ?? d.values}
+            base={d.values}
+            slug={slug}
+            family={d.partspec?.family}
+          />
+        ) : null}
         <JobExtras artifactEvents={artifactEvents} rectified={views.top?.rectified ?? views.top?.photo} />
       </div>
     </I18nRegion>

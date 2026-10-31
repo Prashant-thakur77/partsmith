@@ -202,4 +202,19 @@ Seven workstreams in flight: providers, verifier, synth/eval, API/registry, metr
   decision bar takes a pasted screenshot and a "why it matters". New `/review/log`: every send-back and rejection with
   what, why, a close-up of the pin and what code measured next; a person's fixed feedback (with its reason) is given to
   later jobs of that family and each entry shows how those jobs' reviews went. `/mcp` answers a browser at once.
+- **Admin console (Oct 31):** `/admin` with Overview (pass rate, rounds to verify, max-error median/p90, send-back
+  reasons with people and tests apart, queue, parts, requests, cost by stage and model, today's spend against the cap),
+  Parts (publish checks computed by code, withdraw / put back with a reason), Rules (taught rules and fed-back feedback
+  with the jobs that used them, switch off / on), Audit (append-only log of every admin write) and Demand. `/review`
+  queue filters (kind, status, decided by). Footer link only.
+- **Quick wins (Oct 31):** search `coverage` + `match` (good / partial / none) with a hint on `/parts` and MCP
+  `search_parts`; missed searches logged without client data and listed by `GET /demand`; `/parts/{slug}/verification.json`
+  and `/params.json` (Data tab on the part page); downloads named `partsmith-<slug>-<changed knobs>.<ext>`; a category
+  comparison on `/how`; a per-job Cost card from the job's own `model_call` events; "Sizes the photo can't see" on /fix
+  (user-stated, used by the builder, checked against the program, never verified); material and load notes for hinge,
+  bracket, latch, clip and hook parts.
+- **Hardening (Oct 31):** daily spend cap for live model calls (`PARTSMITH_DAILY_USD_CAP`, shown on `/status` and the admin
+  overview); intermittent hydration error #418 fixed site-wide; `/jobs` rows show the measured photo cropped to the part
+  (`/jobs/{id}/thumbnail.jpg`) and the max gap; `/models` opens with the photo → part pipeline coloured by model; withdrawn
+  parts say so on their page.
 - **Next:** real photos, a dozen honest reviews on `/review`, Modal login and deploy go-ahead from Prashant; the final video with real-world shots.

@@ -7,10 +7,17 @@ async function show3d(p: import("@playwright/test").Page) {
   await expect(p.locator("canvas").first()).toBeVisible();
 }
 
+/** Scroll through the page so every section has revealed (and lazy parts mounted), then back to the top. */
+async function revealAll(p: import("@playwright/test").Page) {
+  const h = await p.evaluate(() => document.documentElement.scrollHeight);
+  for (let y = 0; y < h; y += 600) await p.evaluate((y) => window.scrollTo(0, y), y);
+  await p.evaluate(() => window.scrollTo(0, 0));
+}
+
 type PageCase = { name: string; path: string; ready: (p: import("@playwright/test").Page) => Promise<void>; full?: boolean; opts?: Parameters<typeof setup>[1] & { admin?: boolean } };
 
 const PAGES: PageCase[] = [
-  { name: "home", path: "/", ready: async (p) => { await expect(p.getByRole("heading", { level: 1 })).toBeVisible(); await expect(p.getByText("verified parts").first()).toBeVisible(); await show3d(p); } },
+  { name: "home", path: "/", ready: async (p) => { await expect(p.getByRole("heading", { level: 1 })).toBeVisible(); await expect(p.getByRole("img", { name: /^Fig\. 1, L-bracket/ })).toBeVisible(); await revealAll(p); } },
   { name: "fix", path: "/fix", ready: async (p) => { await expect(p.getByRole("heading", { name: "From photo to verified part" })).toBeVisible(); } },
   { name: "calibrate", path: "/calibrate", ready: async (p) => { await expect(p.getByRole("slider", { name: "Card width on screen" })).toBeVisible(); } },
   { name: "mat", path: "/mat", full: false, ready: async (p) => { await expect(p.getByRole("img", { name: /1:1 scale/ })).toBeVisible(); } },

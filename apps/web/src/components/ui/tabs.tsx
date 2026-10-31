@@ -98,7 +98,7 @@ export function TabsTrigger({ value, className, children, disabled }: { value: s
       value={value}
       disabled={disabled}
       className={cn(
-        "relative -mb-px inline-flex h-9 shrink-0 items-center gap-1.5 border-b-2 border-transparent px-2.5 text-[13px] font-medium text-muted transition-colors hover:text-fg data-[state=active]:border-accent data-[state=active]:text-fg [&_svg]:size-3.5",
+        "relative -mb-px inline-flex h-9 shrink-0 items-center gap-1.5 border-b-2 border-transparent px-2.5 text-[13px] font-medium text-muted transition-[color,background-color,border-color,transform] duration-[var(--dur-hover)] ease-[var(--ease-out)] active:scale-[0.97] hover:text-fg data-[state=active]:border-accent data-[state=active]:text-fg [&_svg]:size-3.5",
         className,
       )}
     >
@@ -130,7 +130,7 @@ export function SegmentTrigger({ value, className, children }: { value: string; 
     <Trigger
       value={value}
       className={cn(
-        "inline-flex h-7 items-center gap-1.5 rounded-[5px] px-2.5 text-[12px] font-medium text-muted transition-colors hover:text-fg data-[state=active]:bg-surface data-[state=active]:text-fg data-[state=active]:shadow-sm [&_svg]:size-3.5",
+        "inline-flex h-7 items-center gap-1.5 rounded-[5px] px-2.5 text-[12px] font-medium text-muted transition-[color,background-color,border-color,transform] duration-[var(--dur-hover)] ease-[var(--ease-out)] active:scale-[0.97] hover:text-fg data-[state=active]:bg-surface data-[state=active]:text-fg data-[state=active]:shadow-sm [&_svg]:size-3.5",
         className,
       )}
     >

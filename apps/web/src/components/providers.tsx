@@ -3,9 +3,11 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import * as React from "react";
 import { ApiError, ApiOfflineError } from "@/lib/api";
+import { useMotionReady } from "@/lib/motion";
 import { Toaster } from "./ui/toast";
 
 export function Providers({ children }: { children: React.ReactNode }) {
+  useMotionReady();
   const [client] = React.useState(
     () =>
       new QueryClient({

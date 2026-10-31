@@ -294,6 +294,8 @@ With no keys every model stage runs as a deterministic mock, and the app says so
 | `/fix` | Upload photos or a clip (or scan the QR on your phone), narrate the clip, tap holes or the broken edge, describe the part in English or Hinglish |
 | `/jobs/{id}` | Live workspace: photos, 3D model, error per view, the agent's thoughts and tool calls, knobs, live Hindi/English voice edits, a buy-or-print card, exports with "open in slicer", and a fit-test coupon that learns your printer's clearance |
 | `/jobs/{id}/fit` | 1:1 screen fit check |
+| `/describe` | No part in hand: type or say what it is with your numbers; a template part is built and every number you gave is measured on the model ("Matches your numbers", never "verified") |
+| `/playground` | Every family template as an example with presets: drag knobs, watch the CadQuery program change, share the link, download at your values |
 | `/parts` | The registry: verified parametric parts with knobs, fit presets per printer and material, share cards |
 | `/requests` | Parts people need that nobody has made yet; vote on them |
 | `/factory` | Muse Wonder plans part families; a human approves before anything is published |

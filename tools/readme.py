@@ -76,9 +76,11 @@ USES: tuple[Use, ...] = (
         "Understand stage: family, features, broken region, unknowns (strict PartSpec JSON), and the pixel it saw each "
         "hole or slot at, which SAM 3.1 then cuts and code measures. Watches and listens to a narrated walk-around clip "
         "and points at the features it hears about (frame and pixel), kept only if they land on the part. Turns a "
-        "reviewer's notes into family rules the person ticks before they are kept, and judges when Glimmer is not deployed",
+        "reviewer's notes into family rules the person ticks before they are kept, judges when Glimmer is not deployed, "
+        "and turns a typed or spoken description with numbers into one template part whose numbers code then measures",
         (
             ("services/agent/orchestrator.py", r'self\.call\("understand"'),
+            ("services/registry/describe.py", r'providers\.complete\("describe_plan"'),
             ("services/review/rules.py", r'providers\.complete\("review_rules"'),
             ("services/agent/evidence.py", r"def feature_points"),
             ("services/agent/evidence.py", r"providers\.narrate_video\("),

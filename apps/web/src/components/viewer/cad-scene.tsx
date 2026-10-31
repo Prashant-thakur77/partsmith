@@ -39,6 +39,8 @@ export type CadSceneProps = {
   /** Values tinted by source; clicking a callout selects it (the list beside the viewer is the keyboard route). */
   sourceMarks?: SceneSourceMark[] | null;
   onSelectSource?: (id: string) => void;
+  /** Hide the axes gizmo (figure-style embeds). */
+  hideGizmo?: boolean;
 };
 
 const AXIS_INDEX = { x: 0, y: 1, z: 2 } as const;
@@ -420,9 +422,11 @@ function SceneContent(props: CadSceneProps) {
       ) : null}
       {props.focus ? <FocusFly focus={props.focus} radius={radius} color={colors.measure} /> : null}
       <Fitter data={data} ortho={ortho} nonce={fitNonce} />
-      <GizmoHelper alignment="bottom-left" margin={[52, 52]}>
-        <GizmoViewport axisColors={["#e5484d", "#30a46c", "#3e63dd"]} labelColor="#ffffff" axisHeadScale={0.9} />
-      </GizmoHelper>
+      {props.hideGizmo ? null : (
+        <GizmoHelper alignment="bottom-left" margin={[52, 52]}>
+          <GizmoViewport axisColors={["#e5484d", "#30a46c", "#3e63dd"]} labelColor="#ffffff" axisHeadScale={0.9} />
+        </GizmoHelper>
+      )}
     </>
   );
 }

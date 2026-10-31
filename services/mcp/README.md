@@ -15,7 +15,7 @@ Absolute URLs in tool results use `PARTSMITH_PUBLIC_URL` (default `http://localh
 
 | Tool | Writes? | What it does |
 |---|---|---|
-| `search_parts(q, family?, verified?, limit?)` | no | Search; numbers in `q` prefer parts with a matching dimension. `coverage: "none"` = nothing matched. Bench reference objects are not listed |
+| `search_parts(q, family?, verified?, limit?)` | no | Search; numbers in `q` prefer parts with a matching dimension. Returns `coverage` (0–1, share of the query's words and numbers matched) and `match` good / partial / none with a `hint`; `match: "none"` = nothing close. Bench reference objects are not listed |
 | `get_part(slug)` | no | Knobs (min/max/step/unit/topology), verification, provenance (origin), printing facts, download URLs, `ship` (export-gate decision) |
 | `get_variant(slug, want)` | no | Plain words → clamped params, `applied`, `not_applied`, `confidence`, `bake_url` |
 | `bake(slug, params?, formats?, inline_stl_path?, ack?)` | no | STL/3MF/STEP/GLB/view/py URLs (content-addressed cache); `stl_path` over stdio. Export gate: best-effort parts need `ack=true` after you tell the user the reason; failed parts are refused |

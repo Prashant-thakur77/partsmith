@@ -26,7 +26,8 @@ export function ModeBanner({ className, wide = false }: { className?: string; wi
   if (s.mode === "mock") {
     return (
       <Bar wide={wide} className={className} icon={Bot} tone="mock">
-        <strong className="font-semibold">Mock mode:</strong> no API keys — results are deterministic mocks, not model output.{" "}
+        <strong className="font-semibold">Mock mode:</strong> <span className="sm:hidden">mocks, not model output.</span>
+        <span className="hidden sm:inline">no API keys — results are deterministic mocks, not model output.</span>{" "}
         <Link href="/models" className="underline underline-offset-2 hover:text-fg">
           Provider status
         </Link>
@@ -36,7 +37,8 @@ export function ModeBanner({ className, wide = false }: { className?: string; wi
   if (s.mode === "replay") {
     return (
       <Bar wide={wide} className={className} icon={History} tone="mock">
-        <strong className="font-semibold">Replay mode:</strong> model responses are recorded runs played back, not live calls.{" "}
+        <strong className="font-semibold">Replay mode:</strong> <span className="sm:hidden">recorded runs, not live calls.</span>
+        <span className="hidden sm:inline">model responses are recorded runs played back, not live calls.</span>{" "}
         <Link href="/models" className="underline underline-offset-2 hover:text-fg">
           Provider status
         </Link>
@@ -71,14 +73,14 @@ function Bar({
     <div
       role="status"
       className={cn(
-        "border-b border-border text-[12.5px] leading-5 text-muted",
+        "border-b border-border text-[12px] leading-4 text-muted sm:text-[12.5px] sm:leading-5",
         tone === "mock" ? "bg-surface-2 bg-hatch" : "bg-surface-2",
         className,
       )}
     >
-      <div className={cn("mx-auto flex items-start", wide ? "max-w-none" : "max-w-[1200px]", " gap-2 px-4 py-2 sm:items-center sm:px-6")}>
-        <Icon className="mt-0.5 size-3.5 shrink-0 sm:mt-0" aria-hidden />
-        <p className="min-w-0">{children}</p>
+      <div className={cn("mx-auto flex", wide ? "max-w-none" : "max-w-[1200px]", " items-center gap-2 px-4 py-1.5 sm:px-6 sm:py-2")}>
+        <Icon className="size-3.5 shrink-0" aria-hidden />
+        <p className="line-clamp-2 min-w-0 sm:line-clamp-none">{children}</p>
       </div>
     </div>
   );

@@ -16,6 +16,14 @@ ProviderMode = Literal["live", "mock", "replay"]
 JobPurpose = Literal["repair", "reference_check"]
 
 
+class HiddenDim(Strict):
+    """A size the photo cannot show (inner bore Ø, socket depth …), stated by the user: name + millimetres. Never
+    observed, so never part of `verified`; see services/agent/hidden_dims.py."""
+
+    name: str = Field(min_length=1, max_length=40)  # a named kind ("bore_d", "socket_depth" …) or the user's words
+    value_mm: float = Field(gt=0, le=2000)
+
+
 class JobInput(Strict):
     kind: JobKind = "fix"
     intent: str = ""
@@ -36,6 +44,9 @@ class JobInput(Strict):
     # starts from that job's model). 0 / None for every other job.
     parent_job: str | None = None
     review_round: int = 0
+    # Sizes the photo cannot show, stated by the user (at most 4): used by the builder, checked against the program
+    # where a knob holds them, never part of `verified`.
+    hidden_dims: list[HiddenDim] = Field(default_factory=list, max_length=4)
 
 
 class JobSummary(Strict):

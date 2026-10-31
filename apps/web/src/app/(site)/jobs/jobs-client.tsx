@@ -4,6 +4,7 @@ import { useQuery } from "@tanstack/react-query";
 import { ArrowRight, Inbox } from "lucide-react";
 import Link from "next/link";
 import { JobStatusBadge } from "@/components/jobs/job-badges";
+import { JobThumb } from "@/components/jobs/job-thumb";
 import { Container, PageHeader } from "@/components/layout/page";
 import { Button } from "@/components/ui/button";
 import { EmptyState } from "@/components/ui/empty-state";
@@ -11,7 +12,7 @@ import { ErrorState } from "@/components/ui/error-state";
 import { ModeBadge, OriginBadge, RunBadge } from "@/components/ui/provenance";
 import { Skeleton } from "@/components/ui/skeleton";
 import { api } from "@/lib/api";
-import { fmtUsd, timeAgo, splitTitle } from "@/lib/format";
+import { fmtMm, fmtUsd, timeAgo, splitTitle } from "@/lib/format";
 
 export function JobsClient() {
   const q = useQuery({ queryKey: ["jobs"], queryFn: () => api.jobs(50), refetchInterval: 10_000 });
@@ -57,6 +58,7 @@ export function JobsClient() {
             {q.data.map((j) => (
               <li key={j.id}>
                 <Link href={`/jobs/${encodeURIComponent(j.id)}`} className="group flex items-center gap-4 px-4 py-3 hover:bg-surface-2">
+                  <JobThumb id={j.id} />
                   <div className="min-w-0 flex-1 space-y-1">
                     <div className="truncate text-[14px] font-medium">{splitTitle(j.title || j.id).title}</div>
                     <div className="flex flex-wrap items-center gap-1.5 text-[12px] text-subtle">
@@ -67,6 +69,12 @@ export function JobsClient() {
                       <span className="font-mono tnum">{j.iterations} iter</span>
                       <span aria-hidden>·</span>
                       <span className="font-mono tnum">{fmtUsd(j.cost_usd)}</span>
+                      {j.max_error_mm != null ? (
+                        <>
+                          <span aria-hidden>·</span>
+                          <span className="font-mono tnum">max gap {fmtMm(j.max_error_mm)}</span>
+                        </>
+                      ) : null}
                     </div>
                   </div>
                   <div className="hidden flex-wrap items-center justify-end gap-1.5 sm:flex">

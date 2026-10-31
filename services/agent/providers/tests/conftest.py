@@ -34,6 +34,7 @@ ENV_VARS = (
     "SAM3_OPEN_URL",
     "SAM3_OPEN_API_KEY",
     "HF_TOKEN",
+    "PARTSMITH_DAILY_USD_CAP",
 )
 
 

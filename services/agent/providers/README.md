@@ -13,6 +13,7 @@ Adding a key to `.env` switches the stages that use it to live, with no code cha
 | `PROVIDER_RECORD=1` | save every successful live call (agent loops: every turn) for replay |
 | `OPEN_WEIGHTS_ONLY=1` | route every stage to open-weight models; stages with none run as mocks |
 | `PROVIDER_FALLBACK_TO_MOCK=1` | when every live provider fails, answer with a labelled mock instead of raising |
+| `PARTSMITH_DAILY_USD_CAP=5` | daily spend cap (UTC day) for live calls: once reached, live calls raise `BudgetExceeded` with a clear message until midnight UTC; spend is kept in `$PARTSMITH_HOME/spend/` (`budget.py`) |
 | `PROVIDER_MAX_RETRIES`, `PROVIDER_TIMEOUT_S` | retries on 429/5xx/timeouts (default 3), request timeout (default 180 s) |
 
 ## Stage routing (`routing.py`, first route with a key wins)
@@ -25,6 +26,7 @@ Adding a key to `.env` switches the stages that use it to live, with no code cha
 | `judge`, `capture_triage` | Judge, Capture triage | Glimmer 30B: llama.cpp on Modal → Together | same |
 | `voice_map`, `variant` | Voice editor, Variant mapper | muse-spark-1.3 | Spark Open chain |
 | `steer_plan` | Factory planner | muse-wonder-1.0 | Spark Open chain |
+| `describe_plan` | Describer (words + numbers → one template part) | muse-spark-1.3 | Spark Open chain |
 | `spec_lookup` | Spec finder | muse-wonder-1.0 + `web_search` | mock |
 | `segment` | Segmenter (text prompt) | sam-3.1 → SAM 3 on Modal | SAM 3 on Modal |
 | `mate_points` | Mate pointer (where it fits: points, never sizes) | muse-spark-1.3 | Glimmer chain |

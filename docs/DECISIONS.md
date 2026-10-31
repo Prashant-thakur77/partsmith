@@ -381,3 +381,86 @@ screen on larger screens; when the code has not passed a part, Improve is the pr
 photos (GPS removed), stored as blobs and sent to the fixer after the pin crops, named in its notes as references for
 shape, not for sizes. The same pass made a browser GET on `/mcp` answer at once with how to connect instead of
 holding the request open.
+
+**2026-10-31 — Describe it: words become a template part, and code checks every number the person gave.** People
+without the broken part in hand can still say what they need ("a cable clip for a 6 mm cable, one M3 screw, 20 mm
+wide"). The `describe_plan` stage (Muse Spark 1.3, a deterministic labelled mock without a key) only *proposes* a family
+template and knob values, each tagged "user" with the quoted words or "inferred". Code checks the plan the same way as
+Steer (real templates only, closest knob names, clamp + snap) and downgrades a "user" value whose quote is not in the
+text. It asks for missing fit-critical numbers instead of guessing (answers reuse the stored plan: no second model
+call). After the sandbox bake the model is *measured* (bounding box, plate thickness, round holes, interface gaps) and
+compared with each stated number, because a template can quietly limit a size (the cable clip shrinks its channel on a
+short base). The result is labelled "Matches your numbers", never "verified": no photo was involved. When no template
+fits, it says so and points to /fix and the requests board; it never free-writes CAD from words.
+
+**2026-10-31 — The playground bakes templates directly, and template files are best effort at the export gate.** Every
+family template is already a complete part program, so the playground needs no registry records: it bakes the
+template's code through the same sandbox and content-addressed cache, with 2–3 named presets per template defined in
+code (tested to lie inside the PARAMS ranges, and baked by a slow test). Nothing compared a template bake with a real
+part, so its printable files (and its `/bakes/...` links, via a `template:<name>` owner) go through the gate as best
+effort: the reason is shown and the person ticks an acknowledgement; part.py and the fit-test coupon stay open.
+
+**2026-10-31 — A saved variant never inherits its parent's photo check.** `POST /parts/{slug}/variants` (admin, like
+every publish) bakes the parent's program at the new values in the sandbox and publishes it through the dedupe
+(`forked_from` = the parent). Its record is best effort — "a variant of a verified part, not itself checked against a
+photo" — with every changed knob listed as unchecked, so downloads need the acknowledgement until it is re-verified
+with a photo. Anonymous users get the same files at those values through the parent's gated bake route.
+
+**2026-10-31 — "Print it" shows only numbers the backend computed.** One panel on job pages, Describe results and the
+playground: STL/3MF, orientation and supports from the mesh, the repair card's suggested layer/walls/infill (labelled
+suggestions), grams and minutes from `print_estimates` (100 % infill upper bounds, with how they are computed), the
+fit-test coupon, and print shops near a city from the existing cited `buy_lookup` (`POST /print-shops`, cached per
+title + city for a day so a reload never pays twice; a place only shows with its source link).
+
+**2026-10-31 — The landing page is a drawing set, and every number on it is read from a stored run.** The art direction
+is an inspection drawing on a lit screen: warm drafting paper with ink lines in light mode, blueprint navy in dark mode
+(tokens in `globals.css`: `--ink`, `--dim` cyan for dimensions, `--stamp` orange only for measured / verified things,
+`--paper-grid`, `--screen`, `--marker`). The figures are small inline SVG components (`components/art/*`): the mat with
+fiducial markers, the measured outline with dimension lines, the verifier's overlay with a 3× detail, the loop ring, a
+parametric callout drawing and a third-angle sheet. Their numbers come from props: the hero picks a stored run from
+`/replays` alone (`lib/figure-run.ts`: the verified end of a review chain, else the run fixed over most rounds) and
+reads outline, sizes, holes, worst point, limit, rounds and program lines from its job detail; it is always labelled
+"recorded run", so the hero is never empty even with an empty registry. Count-ups animate *to* the API's own formatted
+text and land on it exactly (`lib/count-up.ts`, tested). One motion system (`lib/motion.ts`, `--dur-*` / `--ease-*`):
+reveal-on-scroll, line drawing only when on screen, a 200 ms page fade; with reduced motion every figure shows its final
+state, nothing counts or autoplays, and the demo's ghost cursor never runs. Content is hidden for a reveal only after
+hydration (`data-js`), so nothing stays invisible without JavaScript.
+
+**2026-10-31 — One admin console, with an append-only audit log, visible publish criteria and an off switch for taught
+rules.** `/admin` (web) over `/api/v1/admin/*` (token only, reads included). The overview reuses the `/status` cost
+aggregation (moved to `services/admin/costs.py`) instead of a second copy, and keeps a person's send-back reasons apart
+from test reviews. Every admin write appends one JSON line to `$PARTSMITH_HOME/audit.jsonl` (who, what, before, after,
+note, numbers); a file is simpler than a table, survives a database reset and is easy to read by hand; a failed write
+never fails the action. Moderation does not delete: a `withdrawn` table (slug, reason, by, at) takes a part out of every
+public search (`role` given) while internal callers (dedupe, lineage, passport ids) still see it, so a re-publish of the
+same part cannot create a duplicate; its link keeps working and says it was withdrawn. The publish criteria are
+computed, not stored. A taught rule is switched off in `$PARTSMITH_HOME/disabled_rules.json` rather than by changing the
+lesson's status, so the same switch covers promoted lessons and fixed feedback entries (which have no row of their own),
+and switching back on restores exactly what was there; the orchestrator filters on it before a rule reaches a prompt.
+
+**2026-10-31 — Search says how well it matched, and missed searches become the build list.** A registry search that
+always returns *something* lets an agent substitute an unrelated part. So every search with a query carries a
+`coverage` per result and for the page: the share of the query's words and numbers the part matches (words by prefix,
+plural "s" ignored, filler dropped; numbers within max(10 %, 0.5 mm) of a default dimension). Plain counting was chosen
+over a relevance score because it reads directly ("matches 2 of your 3 words and sizes") and needs no tuning or
+training data; the thresholds (good ≥ 0.75, partial ≥ 0.5) are stated choices, not fitted. `match: "none"` comes with a
+hint that points at /describe and /fix, and MCP `search_parts` returns the same fields. Demand is a JSON-lines file
+(`search_log.jsonl`: query, total, best coverage, time — no IP, user agent or client id) rather than a table: it is
+append-only, survives a database reset and is trivially inspected. `GET /demand` groups it by normalised query and
+keeps the groups whose best coverage stayed below 0.5; search-as-you-type prefixes followed within 30 s by a longer
+query are dropped as half-typed. Downloads are named `partsmith-<slug>-<changed knobs>.<ext>` (one rule in Python and a
+mirror in TypeScript, tested against the same cases) so two variants never overwrite each other on disk. Sizes the photo
+cannot show (`hidden_dims` on /fix) are user-stated: they reach the builder as numbers and lock the knob that holds
+them, are checked against the program only, and never count towards `verified`.
+
+**2026-10-31 — A daily spend cap at the provider layer, and hydration that cannot race the data.** Anonymous `/describe`
+and `/jobs/fix` reach paid models, and the per-IP write limit does not bound the bill. `PARTSMITH_DAILY_USD_CAP` is
+checked once before every live call (the shared route chain and each agent turn) and every live call's cost is added
+where `model_call` is recorded, so no capability can bypass it. Over the cap the call raises `BudgetExceeded` instead of
+falling back to a mock: a silent mock in a live job would look like a real answer. Spend is a small file per UTC day under
+`$PARTSMITH_HOME/spend/`, so a restart does not reset it; `/status` and the admin overview show it. Separately, pages
+threw React hydration error #418 on some loads: when cached JavaScript hydrated before the page's payload had streamed,
+React finished `<main>` empty and discarded the server HTML. A `<Suspense>` boundary around the page content in the site
+layout makes React wait there instead. Feature detection (`useCapabilities`) answers "nothing yet" until its component
+has hydrated, because the OpenAPI document could land in the query cache before a delayed subtree hydrated and light up
+controls the server never drew.

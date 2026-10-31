@@ -32,8 +32,8 @@ export function curlSnippet(slug: string, params: Record<string, number>, origin
   return `# part record (knobs, verification, provenance)
 curl "${origin}/api/v1/parts/${slug}"
 
-# bake this variant and download the STL
-curl -o ${slug}.stl "${origin}/api/v1/parts/${slug}/bake?${qs}${qs ? "&" : ""}format=stl&download=1"
+# bake this variant and download the STL (-OJ keeps the server's name: partsmith-<slug>-<changed knobs>.stl)
+curl -OJ "${origin}/api/v1/parts/${slug}/bake?${qs}${qs ? "&" : ""}format=stl&download=1"
 
 # plain-words variant (the server clamps to the knob ranges)
 curl "${origin}/api/v1/parts/${slug}/variant?want=2+mm+thicker"`;
@@ -87,4 +87,13 @@ export function mcpConfigs(origin: string): { id: string; label: string; path: s
       ),
     },
   ];
+}
+
+/** Copyable lines for a part's data documents (verification record and typed knobs as JSON). */
+export function dataSnippet(slug: string, origin: string): string {
+  return `# the stored verification record: max error, limit, per-view and per-feature numbers, verifier version
+curl "${origin}/api/v1/parts/${slug}/verification.json"
+
+# the knobs as a JSON-Schema document: type, unit, default, min, max, step
+curl "${origin}/api/v1/parts/${slug}/params.json"`;
 }

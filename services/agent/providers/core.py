@@ -9,7 +9,7 @@ from collections.abc import Callable, Iterable
 from dataclasses import dataclass, replace
 from typing import Any
 
-from . import chat, health, meta, mocks, pricing, replay, retry, sam_open
+from . import budget, chat, health, meta, mocks, pricing, replay, retry, sam_open
 from .base import (
     Completion,
     ImageResult,
@@ -61,6 +61,7 @@ def _run_chain[T](
     stage: str, res: Resolution, s: Settings, attempt: Callable[[Route], Outcome[T]]
 ) -> tuple[Outcome[T], Route, int] | None:
     """Try each live route in order. Emits one event per route tried. Returns None if every route failed."""
+    budget.check(stage)
     errors: list[str] = []
     failures: list[ProviderError] = []
     text = res.spec.kind in ("complete", "agent")

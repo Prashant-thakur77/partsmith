@@ -63,6 +63,7 @@ from .partspec import (
 )
 from .registry import (
     BakeResult,
+    HiddenDim,
     JobInput,
     JobKind,
     JobStatus,
@@ -134,6 +135,7 @@ __all__ = [
     "FitClass",
     "FocusEvent",
     "GroundTruthSource",
+    "HiddenDim",
     "Hole",
     "IterationEvent",
     "JobInput",

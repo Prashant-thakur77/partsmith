@@ -17,6 +17,9 @@ const lb = templates["l-bracket"]!;
 const cc = templates["cable-clip"]!;
 
 const A = "/api/v1/files";
+/** Playground / Describe it fixtures, generated from the real code (generate.py product: mock planner, real bakes). */
+type ProductFx = { templates: Record<string, unknown>[]; detail: Record<string, Record<string, unknown>>; print_plan: Record<string, unknown>; facts: Record<string, unknown>; ship_reason: string; describe: Record<"done" | "asks" | "no_fit", Record<string, unknown>> };
+export const product = JSON.parse(readFileSync(join(GEN, "product.json"), "utf8")) as ProductFx;
 const NOW = 1_793_100_000;
 
 export const status = {
@@ -291,7 +294,10 @@ export const openapi = {
   paths: Object.fromEntries(
     (
       [
-        ["/jobs/fix", "post", ["top", "side", "mating", "orbit", "narration", "city", "intent", "mat_kind", "thickness_mm", "family_hint", "screen_px_per_mm", "points"]],
+        ["/jobs/fix", "post", ["top", "side", "mating", "orbit", "narration", "city", "intent", "mat_kind", "thickness_mm", "family_hint", "screen_px_per_mm", "points", "hidden_dims"]],
+        ["/demand", "get"],
+        ["/parts/{slug}/verification.json", "get"],
+        ["/parts/{slug}/params.json", "get"],
         ["/presets", "get"],
         ["/parts/{slug}/presets", "get"],
         ["/parts/{slug}/bundle.zip", "get"],
@@ -302,10 +308,143 @@ export const openapi = {
         ["/review/queue", "get"],
         ["/review/stats", "get"],
         ["/review/feedback", "get"],
+        ["/templates", "get"],
+        ["/templates/{name}/bake", "get"],
+        ["/describe", "post"],
+        ["/parts/{slug}/variants", "post"],
+        ["/jobs/{job_id}/print-plan", "get"],
+        ["/parts/{slug}/print-plan", "get"],
+        ["/print-shops", "post"],
       ] as [string, string, string[]?][]
     ).map(([p, m, f]) => [`/api/v1${p}`, { [m]: op(f) }]),
   ),
 };
+
+// ── admin console mocks (admin.spec.ts) — TEST DATA ─────────────────────────────
+const ADMIN_PATHS: [string, string][] = [
+  ["/admin/overview", "get"],
+  ["/admin/audit", "get"],
+  ["/admin/parts", "get"],
+  ["/admin/parts/{slug}/unpublish", "post"],
+  ["/admin/parts/{slug}/republish", "post"],
+  ["/admin/rules", "get"],
+  ["/admin/rules/{rule_id}/disable", "post"],
+  ["/admin/rules/{rule_id}/enable", "post"],
+  ["/needs", "get"],
+];
+for (const [p, m] of ADMIN_PATHS) (openapi.paths as Record<string, Record<string, unknown>>)[`/api/v1${p}`] = { [m]: {} };
+const adminSrc = "e2e fixture (test data)";
+export const adminOverview = {
+  generated_at: NOW,
+  mode: "mock",
+  jobs: { total: 6, finished: 5, verified: 4, pass_rate: 0.8, n: 5, replays_excluded: 3, source: adminSrc },
+  rounds_to_verify: { buckets: [{ rounds: 1, count: 2 }, { rounds: 2, count: 1 }, { rounds: 4, count: 1 }], median: 1.5, n: 4, source: adminSrc },
+  max_error: { median_mm: 0.31, p90_mm: 0.62, n: 5, source: adminSrc },
+  send_back: { person: { n: 3, top: [{ reason: "hole too far from the edge", count: 2 }, { reason: "clip too thin", count: 1 }] }, test: { n: 1, top: [{ reason: "wrong part photographed", count: 1 }] }, source: adminSrc },
+  review: { waiting: 2, improving: 0, accepted: 1, rejected: 0, waiting_replays: 0, n: 3, source: adminSrc },
+  registry: { published: 4, withdrawn: 1, reference: 1, n: 6, source: adminSrc },
+  needs: { open: 1, in_progress: 1, fulfilled: 0, n: 2, source: adminSrc },
+  cost: {
+    usd_total: 0.0417,
+    usd_per_job_mean: 0.00695,
+    n_jobs: 6,
+    by_stage: [{ stage: "build", calls: 9, usd: 0.03 }, { stage: "judge", calls: 4, usd: 0.0117 }],
+    by_model: [{ provider: "baseten", model: "muse-spark-open-1026", calls: 9, usd: 0.03, modes: ["live"] }],
+    source: adminSrc,
+  },
+  budget: { day: "2026-10-31", cap_usd: 5, spent_usd: 1.25, remaining_usd: 3.75, calls: 13, by_stage: { build: 1 }, source: adminSrc },
+};
+const crit = (ok: boolean | null, key: string, label: string, value: unknown) => ({ key, label, ok, value, source: adminSrc });
+export const adminParts = {
+  items: [
+    { slug: "l-bracket", title: "L-bracket", family: "bracket", status: "verified", origin: "synthetic", reference: false, created_at: NOW - 9000, met: 4, checked: 5, withdrawn: null,
+      criteria: [crit(true, "verified", "Verified by code", "verified"), crit(true, "max_error", "Max error within the limit", { max_error_mm: 0.31, limit_mm: 0.5 }), crit(false, "accepted_by_person", "Accepted by a person", null), crit(true, "has_params", "Has knobs", 8), crit(true, "licence", "Has a licence", "CC-BY-4.0")] },
+    { slug: "cupboard-latch", title: "Cupboard latch", family: "latch", status: "best_effort", origin: "real", reference: false, created_at: NOW - 8000, met: 3, checked: 5, withdrawn: { reason: "duplicate of l-bracket", by: "admin token", at: NOW - 600 },
+      criteria: [crit(false, "verified", "Verified by code", "best_effort"), crit(false, "max_error", "Max error within the limit", { max_error_mm: 0.83, limit_mm: 0.5 }), crit(true, "accepted_by_person", "Accepted by a person", { job_id: "job_rev_2" }), crit(true, "has_params", "Has knobs", 7), crit(true, "licence", "Has a licence", "CC-BY-4.0")] },
+  ],
+  n: 2,
+  withdrawn: 1,
+  source: adminSrc,
+};
+export const adminRules = {
+  items: [
+    { id: "l_1", kind: "rule", family: "bracket", text: "Start hole_d 0.3 mm above the measured diameter for FDM prints.", why: "", by: "reviewer", created_at: NOW - 7200, origin_job: "job_demo_1", used_in: ["job_demo_1", "job_rev_2"], track: { used_in: 2, accepted: 1, improved: 1, rejected: 0 }, disabled: null },
+    { id: "job_rev_1/1/pin1", kind: "feedback", family: "latch", text: "hole too far from the edge", why: "the screw would miss", by: "person", created_at: NOW - 5000, origin_job: "job_rev_1", used_in: [], track: { used_in: 0, accepted: 0, improved: 0, rejected: 0 }, disabled: { reason: "made fits worse", by: "admin token", at: NOW - 100 } },
+  ],
+  n: 2,
+  disabled: 1,
+  source: adminSrc,
+};
+export const adminAudit = {
+  items: [
+    { id: "a_2", at: NOW - 100, action: "rule.disable", target: "job_rev_1/1/pin1", actor: "admin token", before: { disabled: null }, after: { disabled: { reason: "made fits worse" } }, note: "made fits worse", numbers: { used_in_jobs: 0 } },
+    { id: "a_1", at: NOW - 600, action: "part.unpublish", target: "cupboard-latch", actor: "admin token", before: { withdrawn: null }, after: { withdrawn: { reason: "duplicate of l-bracket" } }, note: "duplicate of l-bracket", numbers: null },
+  ],
+  total: 2,
+  actions: ["part.unpublish", "rule.disable"],
+  source: adminSrc,
+};
+
+/** Admin console routes; undefined for anything else. */
+export function adminMock(path: string, method: string, body: string | null, search: URLSearchParams): { status: number; body: unknown } | undefined {
+  if (path === "/admin/overview") return { status: 200, body: adminOverview };
+  if (path === "/admin/parts") return { status: 200, body: adminParts };
+  if (path === "/admin/rules") return { status: 200, body: adminRules };
+  if (path === "/admin/audit") {
+    const action = search.get("action");
+    const items = adminAudit.items.filter((i) => !action || i.action === action);
+    return { status: 200, body: { ...adminAudit, items, total: items.length } };
+  }
+  const mod = path.match(/^\/admin\/parts\/([^/]+)\/(unpublish|republish)$/);
+  if (mod && method === "POST") {
+    const reason = String((JSON.parse(body ?? "{}") as { reason?: string }).reason ?? "");
+    return { status: 200, body: { slug: decodeURIComponent(mod[1]!), withdrawn: mod[2] === "unpublish" ? { reason, by: "admin token", at: NOW } : null } };
+  }
+  const rule = path.match(/^\/admin\/rules\/(.+)\/(disable|enable)$/);
+  if (rule && method === "POST") {
+    const id = decodeURIComponent(rule[1]!);
+    const r = adminRules.items.find((x) => x.id === id);
+    if (!r) return { status: 404, body: { error: { code: "rule_not_found", message: `no taught rule ${id}` } } };
+    const reason = String((JSON.parse(body ?? "{}") as { reason?: string }).reason ?? "");
+    return { status: 200, body: { ...r, disabled: rule[2] === "disable" ? { reason, by: "admin token", at: NOW } : null } };
+  }
+  return undefined;
+}
+// ── end admin console mocks ──────────────────────────────────────────────────────
+
+// ── quick-wins mocks (extras.spec.ts): search coverage, demand, part data as JSON — TEST DATA ──────────────────
+/** Coverage fields for a mocked search: "good" when the title holds the query, a fixed "partial" for queries with
+ * "99" in them (the L-bracket with a size it does not have), "none" when nothing matched. */
+export function searchCoverage(q: string | null, items: typeof partCards): { items: (typeof partCards[number] & { coverage?: number })[]; coverage: number | null; match: string; hint: string | null } {
+  if (!q) return { items, coverage: null, match: "all", hint: null };
+  if (!items.length) return { items, coverage: 0, match: "none", hint: "No close match — describe it at /describe or fix from a photo at /fix (or request it at /requests)." };
+  if (/99/.test(q)) return { items: items.map((i) => ({ ...i, coverage: 0.5 })), coverage: 0.5, match: "partial", hint: "Only a partial match — the closest parts miss some of your words or sizes. Check the sizes, or describe it at /describe or fix from a photo at /fix." };
+  return { items: items.map((i) => ({ ...i, coverage: 1 })), coverage: 1, match: "good", hint: null };
+}
+
+export const demand = {
+  needs: [{ id: "need_1", query: "Dishwasher rack wheel 22 mm", votes: 5, status: "open", created_at: NOW - 3600, photo_url: null }],
+  missed_searches: [{ q: "zeppelin gondola", count: 3, best_coverage: 0, last_at: "2026-10-31T09:00:00+00:00" }],
+  miss_below: 0.5,
+};
+
+/** Quick-wins routes; undefined for anything else. */
+export function extrasMock(path: string, search: URLSearchParams): { status: number; body: unknown } | undefined {
+  if (path === "/demand") return { status: 200, body: demand };
+  if (path === "/parts" && search.get("q") && /99/.test(search.get("q")!)) {
+    const items = partCards.filter((p) => p.title.toLowerCase().includes(search.get("q")!.split(" ")[0]!.toLowerCase()));
+    return { status: 200, body: { ...searchCoverage(search.get("q"), items), next_cursor: null, total: items.length } };
+  }
+  const m = path.match(/^\/parts\/([^/]+)\/(verification|params)\.json$/);
+  if (!m) return undefined;
+  const rec = partRecord(decodeURIComponent(m[1]!));
+  if (m[2] === "verification") {
+    return { status: 200, body: { slug: rec.slug, title: rec.title, version: rec.version, code_sha: rec.code_sha, verified: rec.verified, status: rec.verification.status, max_error_mm: rec.verification.max_error_mm, limit_mm: 0.5, iou_limit: 0.97, views: rec.verification.views, residuals: rec.verification.residuals, tests: rec.verification.tests, unchecked: [], reasons: rec.verification.reasons, origin: rec.origin, verifier_version: "test", versions: {}, published_at: "2026-10-31T07:00:00+00:00", verification: rec.verification } };
+  }
+  const props = Object.fromEntries((rec.params as { name: string; min: number; max: number; step: number; unit: string; label: string; topology?: boolean; affects_fit?: boolean }[]).map((p) => [p.name, { type: p.topology ? "integer" : "number", unit: p.unit || null, default: (rec.defaults as Record<string, number>)[p.name], minimum: p.min, maximum: p.max, step: p.step, description: p.label || p.name, affects_fit: p.affects_fit ?? true, topology: !!p.topology }]));
+  return { status: 200, body: { $schema: "https://json-schema.org/draft/2020-12/schema", title: `${rec.title} — knobs`, type: "object", slug: rec.slug, properties: props, additionalProperties: false } };
+}
+// ── end quick-wins mocks ─────────────────────────────────────────────────────────────────────────────────────────
 
 export const pausedDetail = {
   ...jobDetail,
@@ -326,7 +465,38 @@ export const pausedEvents = [
 
 export const replays = [
   { id: "job_replay_1", title: "L-bracket (synthetic sample)", origin: "synthetic", provider_mode: "mock", verified: true, max_error_mm: 0.31, iterations: 3 },
+  // the last round of a review chain (reviewDetail below holds both rounds)
+  { id: "job_rev_2", title: "Cupboard latch (synthetic, clean) · review round 2", origin: "synthetic", provider_mode: "mock", verified: false, max_error_mm: 0.62, iterations: 2 },
 ];
+
+/** The buy-or-print card for a job (GET /jobs/{id}/buy-or-print): a cited offer from a reserved example domain, and the print estimate. */
+export const buyOrPrint = {
+  job_id: "job_replay_1",
+  slug: null,
+  title: "L-bracket",
+  status: "verified",
+  mode: "mock",
+  prints: [
+    { material: "PLA", volume_mm3: 5120.4, grams: 6.35, print_minutes: 38, filament_cost: { INR: 7.62, USD: 0.13 }, price_per_kg: { INR: 1200, USD: 20 }, assumptions: ["grams: solid-volume mass (fixture)"] },
+  ],
+  lookup: {
+    query: "L-bracket",
+    city: null,
+    oem: { name: "Bracket, L", number: "LB-40", url: "https://example.com/parts/lb-40", quote: "Bracket, L (LB-40)" },
+    offers: [{ seller: "Example Parts", price: 4.5, currency: "USD", url: "https://example.com/parts/lb-40", quote: "$4.50", title: "Bracket, L", availability: "In stock" }],
+    places: [],
+    dropped: [],
+    searched: true,
+    queries: 2,
+    mode: "mock",
+    provider: "meta",
+    model: "muse-wonder-1.0",
+    usd: 0,
+    label: "web search with citations (fixture)",
+  },
+  created_at: NOW - 500,
+  notes: [],
+};
 
 const pendingTable = (gt: string) => ({ n: 0, ground_truth: gt, ci: null, columns: [], rows: [], headline: { median_abs_err_mm: null }, status: "pending", note: "not run yet" });
 
@@ -527,7 +697,7 @@ export const reviewStats = { n: 4, agree: 3, both_ok: 2, both_not: 1, judge_ok_p
 
 const json = (route: Route, body: unknown, status = 200) => route.fulfill({ status, contentType: "application/json", body: JSON.stringify(body) });
 
-export type MockOptions = { offline?: boolean; emptyRegistry?: boolean; noBench?: boolean; contrastFail?: boolean; liveFitCheck?: boolean };
+export type MockOptions = { noProduct?: boolean; offline?: boolean; emptyRegistry?: boolean; noBench?: boolean; contrastFail?: boolean; liveFitCheck?: boolean };
 
 export const captureContrastFail = {
   passed: false,
@@ -557,6 +727,10 @@ export async function mockApi(page: Page, opts: MockOptions = {}): Promise<strin
       return route.fulfill({ status: 200, contentType: "application/octet-stream", body: "fixture" });
     }
     if (path === "/openapi.json") return json(route, openapi);
+    const admin = path.startsWith("/admin/") ? adminMock(path, method, route.request().postData(), url.searchParams) : undefined;
+    if (admin) return json(route, admin.body, admin.status);
+    const extra = extrasMock(path, url.searchParams);
+    if (extra) return json(route, extra.body, extra.status);
     if (path === "/presets") return json(route, presets);
     if (path === "/lessons") return json(route, lessons);
     if (path === "/batches" && method === "GET") return json(route, [{ id: batch.id, name: batch.name, created_at: batch.created_at, customers: 1, jobs: 1 }]);
@@ -594,6 +768,55 @@ export async function mockApi(page: Page, opts: MockOptions = {}): Promise<strin
       }
       return json(route, detail);
     }
+    if (opts.noProduct && /^\/(templates|describe|print-shops)/.test(path)) return json(route, { error: { code: "not_found", message: path } }, 404);
+    if (path === "/templates") return json(route, product.templates);
+    const tpl = path.match(/^\/templates\/([a-z_]+)(\/[a-z.]+)?$/);
+    if (tpl) {
+      const name = tpl[1]!;
+      const card = product.templates.find((c) => c.name === name);
+      if (!card) return json(route, { error: { code: "template_not_found", message: `no template ${name}`, closest_matches: ["cable_clip"] } }, 404);
+      if (!tpl[2]) return json(route, { ...card, code: (product.detail.cable_clip as { code: string }).code, code_sha: "x", measure_map: {} });
+      if (tpl[2] === "/thumbnail.png") return route.fulfill({ status: 200, contentType: "image/png", body: readFileSync(join(GEN, "thumb.png")) });
+      if (tpl[2] === "/coupon.stl") return route.fulfill({ status: 200, contentType: "model/stl", body: "solid coupon" });
+      if (tpl[2] === "/bake") {
+        const params: Record<string, number> = {};
+        url.searchParams.forEach((v, k) => {
+          if (!["format", "download", "ack"].includes(k)) params[k] = Number(v);
+        });
+        return json(route, {
+          ...bakeResult(name, params, url.searchParams.has("hit")),
+          artifacts: { view: `${A}/view-cable-clip.json` },
+          facts: product.facts,
+          print_plan: product.print_plan,
+          downloads: {},
+          ship: { status: "best_effort", reason: product.ship_reason, needs_ack: true, source: "registry.gate (template bake)" },
+        });
+      }
+    }
+    if (path === "/describe" && method === "POST") {
+      const text = String((JSON.parse(route.request().postData() ?? "{}") as { text?: string }).text ?? "");
+      const which = /gear/i.test(text) ? "no_fit" : /long|M3/i.test(text) ? "done" : "asks";
+      return json(route, { ...product.describe[which], text });
+    }
+    const dsc = path.match(/^\/describe\/([^/]+)(\/answers)?$/);
+    if (dsc) {
+      const rec = Object.values(product.describe).find((r) => r.id === dsc[1]);
+      if (!rec) return json(route, { error: { code: "describe_not_found", message: `no description ${dsc[1]}` } }, 404);
+      if (dsc[2]) return json(route, { ...product.describe.done, id: rec.id, text: rec.text });
+      return json(route, rec);
+    }
+    if (path === "/print-shops" && method === "POST")
+      return json(route, { query: "Cable clip", city: "Pune", oem: null, offers: [], places: [], dropped: [], searched: false, queries: 0, mode: "mock", provider: "", model: "", usd: 0, label: "MOCK lookup: no web search ran", cached: false });
+    const pp = path.match(/^\/(jobs|parts)\/([^/]+)\/print-plan$/);
+    if (pp) return json(route, { print_plan: product.print_plan, ship: { status: "verified", reason: "verified", needs_ack: false, source: "verifier.ship" } });
+    const sv = path.match(/^\/parts\/([^/]+)\/variants$/);
+    if (sv && method === "POST") {
+      const body = JSON.parse(route.request().postData() ?? "{}") as { params?: Record<string, number> };
+      const base = partRecord(decodeURIComponent(sv[1]!));
+      const slug = `${base.slug}-variant`;
+      const changed = Object.entries(body.params ?? {}).map(([param, to]) => ({ param, from: base.defaults[param] ?? 0, to }));
+      return json(route, { slug, action: "renamed", version: 1, requested_slug: base.slug, duplicate_of: null, part: { ...base, slug, status: "best_effort" }, changed, label: "A variant of a verified part (l-bracket v2) at new knob values; not itself checked against a photo." });
+    }
     if (path === "/health") return json(route, { ok: true, version: "0.1.0" });
     if (path === "/status") return json(route, status);
     if (path === "/stats") return json(route, stats);
@@ -603,14 +826,14 @@ export async function mockApi(page: Page, opts: MockOptions = {}): Promise<strin
       return json(route, index.map((m) => JSON.parse(readFileSync(join(MATS, `${m.mat_id}.json`), "utf8"))));
     }
     if (path === "/parts") {
-      if (opts.emptyRegistry) return json(route, { items: [], next_cursor: null, total: 0 });
+      if (opts.emptyRegistry) return json(route, { ...searchCoverage(url.searchParams.get("q"), []), next_cursor: null, total: 0 });
       const q = url.searchParams.get("q");
       const fam = url.searchParams.get("family");
       let items = partCards;
       if (q) items = items.filter((p) => p.title.toLowerCase().includes(q.toLowerCase()));
       if (fam) items = items.filter((p) => p.family === fam);
       if (url.searchParams.get("verified") === "true") items = items.filter((p) => p.status === "verified");
-      return json(route, { items, next_cursor: null, total: items.length });
+      return json(route, { ...searchCoverage(q, items), next_cursor: null, total: items.length });
     }
     const part = path.match(/^\/parts\/([^/]+)(\/[a-z.]+)?$/);
     if (part) {
@@ -680,6 +903,7 @@ export async function mockApi(page: Page, opts: MockOptions = {}): Promise<strin
           return json(route, { error: { code: "needs_ack", message: "hole_1 is 0.8 mm off its measured position. Print the fit-test coupon first." } }, 409);
         return json(route, partRecord("l-bracket"));
       }
+      if (sub === "/buy-or-print") return json(route, { ...buyOrPrint, job_id: id });
       if (sub === "/cancel") return json(route, { ...pausedDetail.summary, status: "cancelled" });
       if (sub === "/answer") return json(route, { ...pausedDetail.summary, status: "running" });
       if (sub === "/edit")

@@ -9,15 +9,24 @@ test.beforeEach(({}, info) => {
   test.skip(info.project.name !== "desktop-light", "functional flows run once");
 });
 
-test("landing knob drag re-bakes through the API and shows bake status", async ({ page }) => {
+test("landing knob drag re-bakes the recorded run, then a registry part, through the API", async ({ page }) => {
   const { log, errors } = await setup(page);
   await page.goto("/");
-  const knob = page.getByRole("slider", { name: "Base leg length" });
+  await page.locator("#program").scrollIntoViewIfNeeded();
+  // first tab: the recorded run the drawings come from, re-baked through its job
+  await expect(page.getByRole("tab", { name: /recorded run/ })).toHaveAttribute("aria-selected", "true");
+  let knob = page.getByRole("slider", { name: "Base leg length" });
   await knob.focus();
   await page.keyboard.press("ArrowRight");
   await page.keyboard.press("ArrowRight");
-  await expect.poll(() => log.some((l) => l.startsWith("GET /parts/l-bracket/bake") && l.includes("length=40.2"))).toBeTruthy();
+  await expect.poll(() => log.some((l) => l.startsWith("GET /jobs/job_replay_1/bake") && l.includes("length=40.2"))).toBeTruthy();
   await expect(page.getByText(/baked · 640 ms/)).toBeVisible();
+  // a registry part re-bakes through /parts/{slug}/bake
+  await page.getByRole("tab", { name: "L-bracket", exact: true }).click();
+  knob = page.getByRole("slider", { name: "Base leg length" });
+  await knob.focus();
+  await page.keyboard.press("ArrowRight");
+  await expect.poll(() => log.some((l) => l.startsWith("GET /parts/l-bracket/bake") && l.includes("length=40.1"))).toBeTruthy();
   expect(realErrors(errors)).toEqual([]);
 });
 
@@ -39,7 +48,7 @@ test("workspace streams events, ends verified and exposes exports", async ({ pag
   await page.goto("/jobs/job_demo_1");
   await expect(page.getByRole("status", { name: /Verified, max error 0\.31/ })).toBeVisible();
   await page.getByRole("tab", { name: "Residuals" }).click();
-  const firstRow = page.locator("table").first().locator("tbody tr").first();
+  const firstRow = page.getByRole("table", { name: /Feature residuals/ }).locator("tbody tr").first();
   await expect(firstRow).toContainText("hole_1");
   await expect(firstRow).toContainText("0.19");
   await page.getByRole("button", { name: "Export" }).click();

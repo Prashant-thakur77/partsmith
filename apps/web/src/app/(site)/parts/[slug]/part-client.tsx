@@ -22,6 +22,8 @@ const FitPresets = dynamic(() => import("@/components/jobs/fit-presets").then((m
 const CouponFit = dynamic(() => import("@/components/jobs/coupon-fit").then((m) => m.CouponFit), { ssr: false });
 import { ShareButtons } from "@/components/registry/share-buttons";
 import { PartBuyOrPrintCard } from "@/components/jobs/buy-or-print-card";
+import { VariantMaker } from "@/components/product/variant-maker";
+import { LoadNoteBox } from "@/components/product/load-note";
 import { UncheckedList } from "@/components/jobs/evidence-notes";
 import { PartStatusBadge } from "@/components/registry/part-status";
 import { Badge } from "@/components/ui/badge";
@@ -43,7 +45,9 @@ import type { PartFacts, PartRecord } from "@/lib/api-types";
 import { couponFeatures, noteCouponDownload } from "@/lib/coupon-fit";
 import { fmtDate, fmtNum, fmtPct, shortSha, titleCase } from "@/lib/format";
 import { useDebounced } from "@/lib/hooks";
-import { agentPrompt, curlSnippet, mcpCallSnippet, pythonSnippet } from "@/lib/snippets";
+import { agentPrompt, curlSnippet, dataSnippet, mcpCallSnippet, pythonSnippet } from "@/lib/snippets";
+import { EXTRAS, extrasApi } from "@/lib/api-extras";
+import { FORMAT_EXT, downloadName } from "@/lib/download-name";
 import { useOrigin } from "@/lib/use-origin";
 
 function useInitialParams(): Record<string, number> {
@@ -286,6 +290,8 @@ export function PartClient({ slug, withDetails = true }: { slug: string; withDet
   const dl = (format: "stl" | "3mf" | "step" | "py" | "glb") =>
     api.bakeDownloadUrl(slug, values, format, ship === "best_effort" && gateAck);
   const glb = live.changed ? dl("glb") : (artifactUrl(part.artifacts.glb) ?? dl("glb"));
+  const fileName = (format: "stl" | "3mf" | "step" | "py") =>
+    downloadName(slug, FORMAT_EXT[format] ?? `.${format}`, values, part.defaults, part.params.map((p) => p.name));
 
   return (
     <>
@@ -300,6 +306,12 @@ export function PartClient({ slug, withDetails = true }: { slug: string; withDet
               {titleCase(part.family)}
             </Link>
           </nav>
+          {part.withdrawn ? (
+            <p role="status" className="rounded-md border border-warn-border bg-warn-soft px-3 py-2 text-[13px]">
+              <strong className="font-semibold">Withdrawn from search.</strong> An admin took this part out of the registry: “{part.withdrawn.reason}”.
+              The page and files stay up for anyone who already has the link.
+            </p>
+          ) : null}
           <div className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
             <div className="space-y-2">
               <h1 className="text-[26px] leading-tight font-semibold tracking-[-0.025em] sm:text-[30px]">{part.title}</h1>
@@ -322,7 +334,7 @@ export function PartClient({ slug, withDetails = true }: { slug: string; withDet
               <ShareButtons title={part.title} verified={!!part.verification?.verified} />
               {gate.open ? (
                 <Button asChild variant="primary" size="sm">
-                  <a href={dl("stl")} download>
+                  <a href={dl("stl")} download={fileName("stl")}>
                     <Download aria-hidden /> Download STL
                   </a>
                 </Button>
@@ -365,6 +377,19 @@ export function PartClient({ slug, withDetails = true }: { slug: string; withDet
                 <VariantBox slug={slug} onApply={(p) => live.setValues({ ...values, ...p })} />
               </CardContent>
             </Card>
+            <Card id="make-variant">
+              <CardContent className="pt-4">
+                <VariantMaker
+                  slug={slug}
+                  params={part.params}
+                  values={values}
+                  base={part.defaults}
+                  verified={!!part.verification?.verified}
+                  downloadUrl={(f) => (gate.open ? dl(f) : undefined)}
+                  lockedNote={ship === "blocked" ? "This part failed its check, so nothing downloads." : "Acknowledge the notice under Downloads first."}
+                />
+              </CardContent>
+            </Card>
           </div>
         </div>
 
@@ -399,7 +424,7 @@ export function PartClient({ slug, withDetails = true }: { slug: string; withDet
                   href={gate.open ? dl(d.f) : undefined}
                   aria-disabled={!gate.open || undefined}
                   tabIndex={gate.open ? undefined : -1}
-                  download
+                  download={fileName(d.f)}
                   className="flex items-center gap-3 rounded-md border border-border px-3 py-2 text-[13px] transition-colors hover:border-border-strong hover:bg-surface-2"
                 >
                   <d.icon className="size-4 text-muted" aria-hidden />
@@ -460,6 +485,8 @@ export function PartClient({ slug, withDetails = true }: { slug: string; withDet
           </Card>
         </div>
 
+        <LoadNoteBox family={part.family} headingLevel="h2" className="max-w-2xl" />
+
         <PartBuyOrPrintCard slug={slug} className="max-w-2xl" />
 
         <Section id="use" title="Use it" description="Same part, same knobs — from Python, a shell, an MCP client or your coding agent.">
@@ -470,6 +497,7 @@ export function PartClient({ slug, withDetails = true }: { slug: string; withDet
               <TabsTrigger value="mcp">MCP</TabsTrigger>
               <TabsTrigger value="agent">Agent prompt</TabsTrigger>
               <TabsTrigger value="embed">Embed</TabsTrigger>
+              {caps.has("get", EXTRAS.verificationJson) || caps.has("get", EXTRAS.paramsJson) ? <TabsTrigger value="data">Data</TabsTrigger> : null}
             </TabsList>
             <TabsContent value="python">
               <CodeBlock title="python" code={pythonSnippet(slug, values, origin)} />
@@ -483,6 +511,28 @@ export function PartClient({ slug, withDetails = true }: { slug: string; withDet
             <TabsContent value="agent">
               <CodeBlock title="paste into your agent" wrap code={agentPrompt(slug, part.title, origin)} />
             </TabsContent>
+            {caps.has("get", EXTRAS.verificationJson) || caps.has("get", EXTRAS.paramsJson) ? (
+              <TabsContent value="data" className="space-y-3">
+                <p className="text-[13px] text-muted">The numbers behind this page as plain JSON, straight from the stored record.</p>
+                <div className="flex flex-wrap gap-2" aria-label="Part data files">
+                  {caps.has("get", EXTRAS.verificationJson) && part.verification ? (
+                    <Button asChild variant="outline" size="sm">
+                      <a href={extrasApi.verificationJsonUrl(slug)} target="_blank" rel="noopener noreferrer">
+                        <FileJson aria-hidden /> verification.json
+                      </a>
+                    </Button>
+                  ) : null}
+                  {caps.has("get", EXTRAS.paramsJson) ? (
+                    <Button asChild variant="outline" size="sm">
+                      <a href={extrasApi.paramsJsonUrl(slug)} target="_blank" rel="noopener noreferrer">
+                        <FileJson aria-hidden /> params.json
+                      </a>
+                    </Button>
+                  ) : null}
+                </div>
+                <CodeBlock title="shell" code={dataSnippet(slug, origin)} />
+              </TabsContent>
+            ) : null}
             <TabsContent value="embed">
               <CodeBlock
                 title="HTML"

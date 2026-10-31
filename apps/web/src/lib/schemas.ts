@@ -233,6 +233,11 @@ export interface FocusEvent {
   iter?: number | null;
 }
 
+export interface HiddenDim {
+  name: string;
+  value_mm: number;
+}
+
 export interface Hole {
   id: string;
   center_mm: [number, number];
@@ -274,6 +279,7 @@ export interface JobInput {
   purpose?: "repair" | "reference_check";
   parent_job?: string | null;
   review_round?: number;
+  hidden_dims?: Array<HiddenDim>;
 }
 
 export interface JobSummary {

@@ -276,6 +276,7 @@ def unchecked_values(
     tests: Sequence[PartTest],
     views: Sequence[str],
     stated: Mapping[str, Measured] | None = None,
+    stated_knobs: Mapping[str, tuple[float, str]] | None = None,
 ) -> list[UncheckedValue]:
     """Every dimension knob of the program that no blocking test compared with a measured or user-stated value.
 
@@ -286,6 +287,9 @@ def unchecked_values(
     ``stated`` (measured quantity -> the user's value): a dimension the photo cannot show, which the user stated (the
     original length of a broken part). Its knob is listed with source ``user_stated`` while the model holds that
     value: stated, not observed, so still not verified.
+
+    ``stated_knobs`` (knob -> (the user's value, what they stated)): a hidden size the user typed (inner bore Ø,
+    socket depth) that this knob holds. Listed with source ``user_stated`` while the model holds that value.
     """
     p0 = {t.id for t in tests if t.priority == "P0"}
     checked = set()
@@ -301,6 +305,22 @@ def unchecked_values(
             continue
         value = round(float(values.get(p.name, p.default)), 4)
         m = said.get(p.name)
+        hidden = (stated_knobs or {}).get(p.name)
+        if m is None and hidden is not None and abs(value - hidden[0]) <= max(BBOX_TOL_MM, p.step / 2.0):
+            out.append(
+                UncheckedValue(
+                    param=p.name,
+                    label=p.label,
+                    value=value,
+                    unit=p.unit,
+                    source=Source.user_stated,
+                    note=(
+                        f"stated by the user: {hidden[1]}; the photo cannot show it, so this value is not verified "
+                        "and not in the max error"
+                    ),
+                )
+            )
+            continue
         if m is not None and abs(value - m.value) <= BBOX_TOL_MM:
             out.append(
                 UncheckedValue(

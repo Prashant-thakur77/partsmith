@@ -12,7 +12,9 @@ import Link from "next/link";
 import * as React from "react";
 import { api, artifactUrl } from "@/lib/api";
 import type { JobDetail } from "@/lib/api-types";
+import { pickLoopRun } from "@/lib/figure-run";
 import { fmtNum } from "@/lib/format";
+import { usePrefersReducedMotion } from "@/lib/motion";
 import { summarizeEvents } from "@/lib/job-events";
 import { cn } from "@/lib/utils";
 import { Badge } from "../ui/badge";
@@ -21,21 +23,9 @@ import { OriginBadge, RunBadge } from "../ui/provenance";
 type Frame = { key: string; caption: string };
 const FRAME_MS = 2600;
 
-function usePrefersReducedMotion(): boolean {
-  return React.useSyncExternalStore(
-    (cb) => {
-      const m = window.matchMedia("(prefers-reduced-motion: reduce)");
-      m.addEventListener("change", cb);
-      return () => m.removeEventListener("change", cb);
-    },
-    () => window.matchMedia("(prefers-reduced-motion: reduce)").matches,
-    () => true,
-  );
-}
-
-function useReplay() {
+function useReplay(id?: string | null) {
   const list = useQuery({ queryKey: ["replays"], queryFn: api.replays, staleTime: 300_000 });
-  const pick = list.data?.find((r) => r.verified && r.iterations > 1) ?? list.data?.find((r) => r.verified) ?? null;
+  const pick = (id ? list.data?.find((r) => r.id === id) : null) ?? (list.data ? pickLoopRun(list.data) : null);
   const detail = useQuery({ queryKey: ["job", pick?.id], queryFn: () => api.job(pick!.id), enabled: !!pick, staleTime: 300_000 });
   return { list, pick, detail };
 }
@@ -98,9 +88,9 @@ function frames(d: JobDetail) {
   return { list, photo, mask, render, points, fitOverlay, fitPassed, verification: d.verification };
 }
 
-export function ReplayLoop() {
+export function ReplayLoop({ id, onStep }: { id?: string | null; onStep?: (frame: string, chartStep: number) => void } = {}) {
   const reduced = usePrefersReducedMotion();
-  const { list, pick, detail } = useReplay();
+  const { list, pick, detail } = useReplay(id);
   const [i, setI] = React.useState(0);
   const [step, setStep] = React.useState(0);
   const [paused, setPaused] = React.useState(false);
@@ -121,6 +111,9 @@ export function ReplayLoop() {
     if (reduced && n) setI(n - 1);
   }, [reduced, n]);
   const cur = f?.list[i]?.key;
+  React.useEffect(() => {
+    if (cur) onStep?.(cur, step);
+  }, [cur, step, onStep]);
   // The chart frame reveals one iteration per tick; other frames hold for one tick.
   React.useEffect(() => {
     if (!auto || !f || !n) return;

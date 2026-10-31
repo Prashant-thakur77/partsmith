@@ -23,6 +23,7 @@ test("mock fixtures satisfy the same Zod contract as the live API", ({}, info) =
     ["lessons", z.array(R2.LessonSchema), F.lessons],
     ["batch", R2.BatchSchema, F.batch],
     ["needs", z.array(S.NeedSchema), F.needs],
+    ["buy or print", S.BuyOrPrintSchema, F.buyOrPrint],
   ];
   for (const [name, schema, data] of cases) {
     const r = schema.safeParse(data);

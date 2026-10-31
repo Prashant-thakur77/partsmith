@@ -185,6 +185,8 @@ export type FixJobInput = {
   narration?: File | null;
   /** Optional city for nearby print shops on the buy-or-print card. */
   city?: string | null;
+  /** Sizes the photo cannot show (inner bore Ø, socket depth …), stated by the user; sent only when the server accepts them. */
+  hiddenDims?: { name: string; value_mm: number }[] | null;
 };
 
 export type BakeFormat = "stl" | "3mf" | "step" | "glb" | "view" | "py";
@@ -222,6 +224,7 @@ export const api = {
     if (points) fd.set("points", points);
     if (input.narration) fd.set("narration", input.narration);
     if (input.city) fd.set("city", input.city);
+    if (input.hiddenDims?.length) fd.set("hidden_dims", JSON.stringify(input.hiddenDims));
     return request(JobSummarySchema, "/jobs/fix", { method: "POST", body: fd });
   },
   demoSamples: () => request(z.array(DemoSampleSchema), "/jobs/demo/samples"),

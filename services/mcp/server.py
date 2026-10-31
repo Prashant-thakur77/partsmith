@@ -26,9 +26,9 @@ from pydantic import Field
 from services.api import agentdocs
 from services.geom_worker.bake import BakeError
 from services.geom_worker.program import ProgramError, UnknownParamError
-from services.registry import gate
+from services.registry import demand, gate
 from services.registry import parts as P
-from services.registry.store import get_registry
+from services.registry.store import get_registry, match_hint, match_label
 
 READ_ONLY = ToolAnnotations(readOnlyHint=True, destructiveHint=False, idempotentHint=True, openWorldHint=False)
 WRITES = ToolAnnotations(readOnlyHint=False, destructiveHint=False, idempotentHint=False, openWorldHint=False)
@@ -123,11 +123,21 @@ def build_server(*, allow_paths: bool = False, read_only: bool | None = None) ->
         limit: Annotated[int, Field(ge=1, le=50)] = 10,
     ) -> dict[str, Any]:
         """Search the PartSmith registry. Numbers in the query boost parts with a matching default dimension.
-        Example: search_parts(q="caster wheel 50 mm"). Returns {items: [card], total, coverage}. coverage="none"
-        means nothing matched: say so and offer report_need instead of substituting an unrelated part."""
-        items, total = get_registry().search(q, family=family, verified=verified, limit=limit, role="part")
-        coverage = "none" if not items else ("good" if total >= 1 and q else "browse")
-        return {"items": [_card(p) for p in items], "total": total, "coverage": coverage}
+        Example: search_parts(q="caster wheel 50 mm"). Returns {items: [card + coverage], total, coverage, match,
+        hint}. `coverage` (0-1) is the share of your words and numbers the best part matches (numbers within
+        max(10 %, 0.5 mm) of a part dimension); `match` is good | partial | none ("all" for an empty query).
+        match="none" means nothing close exists: say so and offer report_need instead of substituting an unrelated
+        part; "partial" means check the sizes before using it."""
+        items, total, covs, best = get_registry().search_scored(
+            q, family=family, verified=verified, limit=limit, role="part"
+        )
+        match = match_label(best)
+        if best is not None:
+            demand.log_search(q, total, best)
+        cards = [_card(p) for p in items]
+        for card, cov in zip(cards, covs, strict=False):
+            card["coverage"] = cov
+        return {"items": cards, "total": total, "coverage": best, "match": match, "hint": match_hint(match)}
 
     @server.tool(annotations=READ_ONLY)
     def get_part(slug: Annotated[str, Field(description="Part slug from search_parts")]) -> dict[str, Any]:

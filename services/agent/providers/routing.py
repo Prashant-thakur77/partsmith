@@ -15,6 +15,7 @@
 | voice_map        | Voice editor     | muse-spark-1.3                                                             | Spark Open                         |
 | variant          | Variant mapper   | muse-spark-1.3                                                             | Spark Open                         |
 | steer_plan       | Factory planner  | muse-wonder-1.0                                                            | Spark Open                         |
+| describe_plan    | Describer        | muse-spark-1.3 (words + numbers → one template part, each value sourced)   | Spark Open                         |
 | segment          | Segmenter        | sam-3.1 (Meta API) → SAM 3 open weights on Modal                           | SAM 3 open weights on Modal        |
 | segment_points   | Feature cutter   | sam-3.1 point/box prompts                                                  | none → deterministic mock          |
 | segment_video    | Orbit tracker    | sam-3.1 video (Files API) → SAM 3.1 multiplex on Modal                     | SAM 3.1 multiplex on Modal         |
@@ -143,6 +144,7 @@ STAGES: dict[str, StageSpec] = {
         StageSpec("voice_map", "Voice editor", "complete", (SPARK_13,), SPARK_OPEN_CHAIN, "low"),
         StageSpec("variant", "Variant mapper", "complete", (SPARK_13,), SPARK_OPEN_CHAIN, "low"),
         StageSpec("steer_plan", "Factory planner", "complete", (WONDER,), SPARK_OPEN_CHAIN, "medium"),
+        StageSpec("describe_plan", "Describer", "complete", (SPARK_13,), SPARK_OPEN_CHAIN, "low"),
         StageSpec("segment", "Segmenter", "segment", (SAM_31, SAM_3_OPEN), (SAM_3_OPEN,)),
         StageSpec("segment_points", "Feature cutter", "segment", (SAM_31,), ()),
         StageSpec("segment_video", "Orbit tracker", "video", (SAM_31, SAM_3_OPEN), (SAM_3_OPEN,)),

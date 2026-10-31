@@ -110,5 +110,54 @@ def main() -> None:
     print(f"wrote fixtures to {OUT}")
 
 
+def product() -> None:
+    """Playground / Describe it fixtures from the real code (mock planner, real sandbox bakes), under a throwaway
+    $PARTSMITH_HOME. `uv run python apps/web/e2e/fixtures/generate.py product` writes only these."""
+    import os
+    import sys
+    import tempfile
+
+    os.environ["PARTSMITH_HOME"] = tempfile.mkdtemp(prefix="ps-fixtures-")
+    os.environ["PROVIDER_MODE"] = "mock"
+    from services.agent.buy_or_print import print_plan
+    from services.agent.templates import get_template
+    from services.registry import describe, examples
+
+    def scrub(rec: dict) -> dict:  # stable ids/times in fixtures; view URLs point at the fixture file route
+        rec = json.loads(json.dumps(rec))
+        rec["created_at"] = rec["updated_at"] = 1_793_100_000.0
+        for e in rec.get("events", []):
+            e["ts"] = 1_793_100_000.0
+        if rec.get("bake"):
+            rec["bake"]["view_url"] = "/api/v1/files/view-describe.json"
+        return rec
+
+    done = describe.start("a cable clip for a 6 mm cable, screws down with one M3 screw, 20 mm wide, 45 mm long")
+    t = get_template("cable_clip")
+    (OUT / "view-describe.json").write_text(json.dumps(view_json(shape(cable_clip, {**t.defaults, **done["bake"]["params"]})), separators=(",", ":")))
+    asks = describe.start("a cable clip for a 6 mm cable, 20 mm wide")
+    nofit = describe.start("a gear with 20 teeth")
+    bake = examples.bake_template("cable_clip", {}, ("view",))
+    out = {
+        "templates": examples.all_cards(),
+        "detail": {"cable_clip": examples.template_detail(t)},
+        "print_plan": print_plan(bake.facts) if bake.facts else None,
+        "facts": bake.facts.model_dump(mode="json") if bake.facts else None,
+        "ship_reason": examples.TEMPLATE_SHIP_REASON,
+        "describe": {"done": scrub(done), "asks": scrub(asks), "no_fit": scrub(nofit)},
+    }
+    out["describe"]["done"]["id"] = "d_261031_0000done"
+    out["describe"]["asks"]["id"] = "d_261031_0000asks"
+    out["describe"]["no_fit"]["id"] = "d_261031_000nofit"
+    (OUT / "product.json").write_text(json.dumps(out, indent=1))
+    print(f"wrote product fixtures to {OUT}", file=sys.stderr)
+
+
 if __name__ == "__main__":
-    main()
+    import sys
+
+    if sys.argv[1:] == ["product"]:
+        product()
+    else:
+        main()
+        product()

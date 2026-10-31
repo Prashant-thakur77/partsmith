@@ -25,7 +25,7 @@ from urllib.parse import urlencode
 from fastapi import APIRouter, Body, Depends, FastAPI, File, Form, Query, Request, UploadFile, WebSocket
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, JSONResponse, PlainTextResponse, Response, StreamingResponse
-from partsmith_schemas import ArtifactEvent, JobInput, Measurements, MetricEvent, Need, PartRecord
+from partsmith_schemas import ArtifactEvent, HiddenDim, JobInput, Measurements, MetricEvent, Need, PartRecord
 from partsmith_schemas.partspec import Family
 from partsmith_schemas.registry import BakeResult, VariantResult
 from partsmith_schemas.verification import ParamSpec
@@ -33,8 +33,10 @@ from pydantic import BaseModel, Field
 from starlette.routing import Route, WebSocketRoute
 from starlette.types import Receive, Scope, Send
 
+from services.admin import audit
+from services.admin import costs as admin_costs
 from services.agent import providers
-from services.api import agentdocs, auth, review_routes, round3, usage, voice_live
+from services.api import admin_routes, agentdocs, auth, job_thumbs, product, review_routes, round3, usage, voice_live
 from services.api import passport as passport_api
 from services.api.auth import require_admin
 from services.api.common import (
@@ -56,16 +58,18 @@ from services.api.common import (
     publish_job,
 )
 from services.api.errors import ApiError, install
+from services.api.extras import router as extras_router
 from services.api.round2 import apply_job_preset, apply_preset, embed_router, job_knobs
 from services.api.round2 import router as round2_router
 from services.api.uploads import check_audio, check_video, clean_image, parse_points
 from services.common import blobs
 from services.common.paths import REPO_ROOT
 from services.geom_worker import bake as geom_bake
-from services.registry import fit_learning, gate, impact, presets, steer
+from services.registry import demand, fit_learning, gate, impact, presets, steer
 from services.registry import parts as P
 from services.registry import passport as passport_ids
-from services.registry.store import get_registry
+from services.registry.filenames import download_name
+from services.registry.store import get_registry, match_hint, match_label
 
 VERSION = "0.1.0"
 FOLLOW_MAX_S = 1800.0
@@ -245,84 +249,31 @@ def health() -> Health:
     return Health(ok=True, version=VERSION)
 
 
-_call_cache: dict[str, list[dict[str, Any]]] = {}
-
-
-def _model_calls(job: Any) -> list[dict[str, Any]]:
-    """model_call events of a job (cached once the job is finished)."""
-    if job.id in _call_cache:
-        return _call_cache[job.id]
-    calls = [e.model_dump() for e in job.events if e.t == "model_call"]
-    if job.finished:
-        _call_cache[job.id] = calls
-    return calls
+_call_cache = admin_costs._call_cache  # shared with the admin overview (tests clear it between runs)
 
 
 @router.get("/status", summary="Which model runs where, provider health, job and cost aggregates", tags=["system"])
 def status() -> dict[str, Any]:
     """Live proof for the provider table: per-stage provider/model/mode, warnings (missing keys → mock), and
     aggregates computed from the `model_call` events of every job on this server."""
-    from services.agent.providers.routing import ENDPOINTS
-
     rows = providers.status()
-    jobs_total = jobs_verified = 0
-    costs: list[float] = []
-    agg: dict[tuple[str, str, str, str], dict[str, Any]] = {}
-    last_live: dict[str, float] = {}
     try:
         summaries = _svc().manager().list(100_000)
         mgr = _svc().manager()
     except ApiError:
         summaries, mgr = [], None
-    for s in summaries:
-        if s.is_replay:
-            continue
-        jobs_total += 1
-        jobs_verified += int(s.verified)
-        costs.append(float(s.cost_usd))
-        job = mgr.get(s.id) if mgr is not None else None
-        for c in _model_calls(job) if job is not None else []:
-            key = (c["stage"], c["provider"], c["model"], c["mode"])
-            a = agg.setdefault(
-                key,
-                {
-                    "stage": c["stage"],
-                    "provider": c["provider"],
-                    "model": c["model"],
-                    "mode": c["mode"],
-                    "calls": 0,
-                    "failed": 0,
-                    "tokens_in": 0,
-                    "tokens_out": 0,
-                    "usd": 0.0,
-                    "ms_total": 0,
-                },
-            )
-            a["calls"] += 1
-            a["failed"] += int(not c.get("ok", True))
-            a["tokens_in"] += c.get("tokens_in", 0)
-            a["tokens_out"] += c.get("tokens_out", 0)
-            a["usd"] = round(a["usd"] + c.get("usd", 0.0), 6)
-            a["ms_total"] += c.get("ms", 0)
-            if c["mode"] == "live":
-                last_live[c["provider"]] = max(last_live.get(c["provider"], 0.0), c.get("ts", 0.0))
-    calls = sorted(agg.values(), key=lambda a: (a["stage"], -a["calls"]))
-    for a in calls:
-        a["ms_mean"] = round(a.pop("ms_total") / a["calls"]) if a["calls"] else None
-        ep = ENDPOINTS.get(a["provider"])
-        a["open_weights"] = bool(ep and ep.open_weights)
+    totals = admin_costs.aggregate(summaries, mgr)
+    calls = totals["model_calls"]
+    last_live = totals["last_live_call_ts"]
     live_open = sorted({r["stage"] for r in rows if r["open_weights"] and r["mode"] == "live"})
     return {
         "mode": providers.overall_mode(),
         "admin": auth.mode(),
         "providers": rows,
         "warnings": providers.warnings(),
-        "jobs": {"total": jobs_total, "verified": jobs_verified},
-        "cost": {
-            "usd_total": round(sum(costs), 6),
-            "usd_per_job_mean": round(sum(costs) / len(costs), 6) if costs else None,
-            "n_jobs": len(costs),
-        },
+        "jobs": totals["jobs"],
+        "cost": totals["cost"],
+        "budget": providers.budget.snapshot(),
         "model_calls": calls,
         "open_weights": {
             "open_weights_only": os.environ.get("OPEN_WEIGHTS_ONLY", "0") == "1",
@@ -436,6 +387,8 @@ def _owner_decisions(owners: list[str], sha: str | None) -> tuple[list[gate.Ship
             part = get_registry().get_part(ident)
             if part is not None:
                 decisions.append(gate.decide_part(part))
+        elif kind == "template":
+            decisions.append(product.template_decision())
         elif kind == "job":
             job = _svc().manager().get(ident)
             if job is None:
@@ -524,8 +477,33 @@ def baked_file(cache_key: str, name: str, ack: bool = False) -> FileResponse:
     if name in PRINTABLE_BAKE_NAMES:
         owners = blobs.owners(cache_key) or [f"part:{s}" for s in _parts_for_bake(path.parent / "manifest.json")]
         _gate_printable(owners, None, ack)
-        return _file(path, fmt, name, cache=GATED_CACHE)
+        return _file(path, fmt, _bake_download_name(path, fmt, owners), cache=GATED_CACHE)
     return _file(path, fmt, name)
+
+
+def _bake_download_name(path: Any, fmt: str, owners: list[str]) -> str:
+    """`partsmith-<slug>-<changed knobs>.<ext>` for a baked file, from its manifest's values and the owner's defaults
+    (a registry part or a template); a job's bake is `partsmith-job-<id>.<ext>`."""
+    ext = EXTENSIONS.get(fmt, path.suffix)
+    try:
+        values = {k: float(v) for k, v in json.loads((path.parent / "manifest.json").read_text())["params"].items()}
+    except (OSError, ValueError, KeyError, TypeError, AttributeError):
+        values = {}
+    for owner in owners:
+        kind, _, ref = owner.partition(":")
+        if kind == "part" and (part := get_registry().get_part(ref)) is not None:
+            return download_name(ref, ext, values, part.defaults, [p.name for p in part.params])
+        if kind == "template":
+            from services.agent.templates import get_template
+
+            try:
+                specs = get_template(ref).params
+            except KeyError:  # an unknown template name: try the next owner
+                continue
+            return download_name(ref, ext, values, {sp.name: sp.default for sp in specs}, [sp.name for sp in specs])
+        if kind == "job":
+            return download_name(f"job-{ref}", ext)
+    return download_name("part", ext, values)
 
 
 # ------------------------------------------------------------------------------------------------- jobs
@@ -559,6 +537,15 @@ def jobs_fix(
     city: Annotated[
         str | None, Form(max_length=80, description="Optional city for nearby print shops on the buy-or-print card")
     ] = None,
+    hidden_dims: Annotated[
+        str | None,
+        Form(
+            description='Optional sizes the photo cannot show, as JSON: [{"name": "bore_d" | "socket_depth" | '
+            '"hole_d" | "wall" | "cable_d" | your own words, "value_mm": 8.0}] (at most 4). User-stated: the builder '
+            "uses them, code checks them against the program where a knob holds them; never part of verified",
+            max_length=2000,
+        ),
+    ] = None,
 ) -> dict[str, Any]:
     """Photos are validated (decode, size, type) and GPS metadata is removed before anything is stored."""
     photos: dict[str, bytes] = {}
@@ -583,10 +570,28 @@ def jobs_fix(
         family_hint=family_hint,
         screen_px_per_mm=screen_px_per_mm,
         city=(city or "").strip() or None,
+        hidden_dims=_hidden_dims(hidden_dims),
     )
     extra = {"points": taps} if taps else {}
     job = _service_call(_svc().start_fix_job, photos, job_input, conflict="invalid_request", **extra)
     return dict(job.summary.model_dump(mode="json"))
+
+
+def _hidden_dims(raw: str | None) -> list[HiddenDim]:
+    """Parse the `hidden_dims` form field (422 `invalid_hidden_dims` with the reason when it does not read)."""
+    if not raw or not raw.strip():
+        return []
+    try:
+        data = json.loads(raw)
+        if not isinstance(data, list):
+            raise ValueError("expected a JSON list")
+        if len(data) > 4:
+            raise ValueError("at most 4 sizes")
+        return [HiddenDim.model_validate(d) for d in data]
+    except (ValueError, TypeError) as exc:
+        raise ApiError(
+            422, "invalid_hidden_dims", f'hidden_dims: JSON list of {{"name", "value_mm" > 0}} ({str(exc)[:160]})'
+        ) from exc
 
 
 class DemoRequest(BaseModel):
@@ -942,7 +947,9 @@ def job_bake(
         path = _resolve_artifact(data["artifacts"].get(fmt, ""))
         if path is None:
             raise ApiError(404, "artifact_not_found", f"no {fmt} file for this bake", sorted(data["artifacts"]))
-        resp = _file(path, fmt, f"{job_id}{EXTENSIONS[fmt]}")
+        specs, base = job_knobs(job_id)
+        name = download_name(f"job-{job_id}", EXTENSIONS[fmt], data.get("params") or {}, base, [p.name for p in specs])
+        resp = _file(path, fmt, name)
         resp.headers.update(passport_api.mark_header(mark))
         return resp
     return data
@@ -1100,23 +1107,37 @@ def parts_search(
     ] = "part",
 ) -> dict[str, Any]:
     """`sort`: relevance (default) | newest | error (smallest max error first) | title. `cursor` is opaque.
-    Reference objects (ID-1 card, LEGO brick …) are bench-only and hidden unless `role=reference` or `role=all`."""
+    Reference objects (ID-1 card, LEGO brick …) are bench-only and hidden unless `role=reference` or `role=all`.
+    With a query, each item carries `coverage` (0–1: share of the query's words and numbers it matches, numbers within
+    max(10 %, 0.5 mm)), and the page carries the best `coverage`, `match` (good | partial | none) and a plain `hint`
+    when nothing matches well; without one, `match` is "all" and `coverage` null. Non-empty searches are logged
+    (query text, total, best coverage, time — no client data) for `GET /demand`."""
     reg = get_registry()
     start = int(cursor) if cursor and cursor.isdigit() else 0
-    items, total = reg.search(q, family=family, verified=verified, origin=origin, sort=sort, cursor=start, limit=limit,
-                              role=None if role == "all" else role)  # fmt: skip
+    items, total, covs, best = reg.search_scored(q, family=family, verified=verified, origin=origin, sort=sort,
+                                                 cursor=start, limit=limit, role=None if role == "all" else role)  # fmt: skip
     thumbs = reg.thumbnails()
     nxt = start + len(items)
+    match = match_label(best)
+    if best is not None and start == 0:
+        demand.log_search(q, total, best)  # first page only: "Load more" is the same search
+    cards = [P.part_card(p, reg, thumbs) for p in items]
+    for card, cov in zip(cards, covs, strict=False):
+        card["coverage"] = cov
     return {
-        "items": [P.part_card(p, reg, thumbs) for p in items],
+        "items": cards,
         "next_cursor": str(nxt) if nxt < total else None,
         "total": total,
+        "coverage": best,
+        "match": match,
+        "hint": match_hint(match),
     }
 
 
 @router.get("/parts/{slug}", summary="Part record + artifact URLs + lineage", tags=["registry"])
 def part_get(slug: str) -> dict[str, Any]:
-    return P.part_detail(P.require_part(slug))
+    """`withdrawn` = {reason, by, at} when an admin took the part out of search (null otherwise)."""
+    return {**P.part_detail(P.require_part(slug)), "withdrawn": get_registry().withdrawal(slug)}
 
 
 @router.get("/parts/{slug}/params", summary="Typed knobs", tags=["registry"])
@@ -1171,7 +1192,8 @@ def part_bake(
         path = out.files.get(fmt)
         if path is None:
             raise ApiError(404, "artifact_not_found", f"no {fmt} file in this bake", sorted(out.files))
-        resp = _file(path, fmt, f"{slug}{EXTENSIONS[fmt]}")
+        name = download_name(slug, EXTENSIONS[fmt], out.params, part.defaults, [p.name for p in part.params])
+        resp = _file(path, fmt, name)
         resp.headers.update(passport_api.mark_header(mark))
         return resp
     res = out.to_bake_result(slug, lambda fmt, p: P.bake_url(out.cache_key, p.name)).model_dump(mode="json")
@@ -1381,10 +1403,16 @@ class NeedStatusRequest(BaseModel):
 
 @router.patch("/needs/{need_id}", summary="Set a request's status (admin)", tags=["requests"])
 def needs_status(need_id: str, body: NeedStatusRequest, _admin: None = Depends(require_admin)) -> dict[str, Any]:
+    reg = get_registry()
+    before = reg.get_need(need_id)
     try:
-        return _need_out(get_registry().set_need_status(need_id, body.status))
+        out = _need_out(reg.set_need_status(need_id, body.status))
     except KeyError as exc:
         raise ApiError(404, "need_not_found", f"no request {need_id!r}") from exc
+    audit.record(
+        "need.status", need_id, before={"status": before.status if before else None}, after={"status": body.status}
+    )
+    return out
 
 
 @router.get("/stats", summary="Counters computed from the database", tags=["registry"])
@@ -1583,8 +1611,12 @@ def prompt_txt(request: Request) -> PlainTextResponse:
 app.include_router(router)
 app.include_router(round2_router)
 app.include_router(round3.router)
+app.include_router(job_thumbs.router)
+app.include_router(product.router)
+app.include_router(extras_router)
 app.include_router(passport_api.router)
 app.include_router(review_routes.router)
+app.include_router(admin_routes.router)
 app.include_router(embed_router)
 app.add_api_route("/llms.txt", llms_txt, methods=["GET"], include_in_schema=False)
 app.add_api_route("/prompt.txt", prompt_txt, methods=["GET"], include_in_schema=False)

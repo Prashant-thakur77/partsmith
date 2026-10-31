@@ -31,7 +31,7 @@ from collections.abc import Callable, Sequence
 from dataclasses import dataclass, field
 from typing import Any, Protocol
 
-from . import chat, health, meta, mocks, pricing, replay, retry, sam_parse
+from . import budget, chat, health, meta, mocks, pricing, replay, retry, sam_parse
 from .base import ModelRequest, ProviderError, Usage
 from .clients import field as get
 from .config import Mode, settings, warn_once
@@ -463,6 +463,13 @@ def run_agent(
     while turn < max_turns:
         turn += 1
         t0 = time.monotonic()
+        if driver.mode == "live":
+            try:
+                budget.check(stage)
+            except budget.BudgetExceeded as exc:
+                if not calls:
+                    raise
+                return result("error", error=str(exc))
         try:
             decision = driver.next(history)
         except Exception as exc:

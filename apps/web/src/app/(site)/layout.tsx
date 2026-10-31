@@ -1,4 +1,5 @@
 import { HydrationBoundary } from "@tanstack/react-query";
+import { Suspense } from "react";
 import { SiteFooter } from "@/components/shell/site-footer";
 import { SiteHeader } from "@/components/shell/site-header";
 import { prefetchShell } from "@/lib/server-prefetch";
@@ -17,7 +18,9 @@ export default async function SiteLayout({ children }: { children: React.ReactNo
         <SiteHeader />
         {/* min height keeps the footer below the fold while client data loads (no layout shift) */}
         <main id="main" className="min-h-[calc(100dvh-3.5rem)] flex-1">
-          {children}
+          {/* A boundary around the page: when cached JS hydrates before the page's payload has streamed in, React waits here
+              instead of finishing <main> empty and throwing away the server HTML (hydration error #418). */}
+          <Suspense>{children}</Suspense>
         </main>
         <SiteFooter />
       </div>

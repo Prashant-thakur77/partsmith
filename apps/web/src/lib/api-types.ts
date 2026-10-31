@@ -529,6 +529,19 @@ export type JobSummary = z.output<typeof JobSummarySchema>;
 export const PassportLinkSchema = z.object({ id: z.string(), url: z.string(), qr_svg_url: z.string(), qr_png_url: z.string() });
 export type PassportLink = z.output<typeof PassportLinkSchema>;
 
+/** A size the user stated because the photo cannot show it, and how code checked it (services/agent/hidden_dims.py). */
+export const HiddenDimRowSchema = z.object({
+  name: z.string(),
+  label: z.string(),
+  value_mm: num,
+  knob: z.nullish(z.string()),
+  model_mm: z.nullish(num),
+  tol_mm: z.nullish(num),
+  status: z.enum(["checked", "mismatch", "used_not_checked", "pending"]),
+  note: z._default(z.string(), ""),
+});
+export type HiddenDimRow = z.output<typeof HiddenDimRowSchema>;
+
 export const JobDetailSchema = z.object({
   passport: z.optional(PassportLinkSchema),
   summary: JobSummarySchema,
@@ -544,6 +557,7 @@ export const JobDetailSchema = z.object({
   /** Newer APIs only; an older API leaves these out and a malformed value reads as absent. */
   judge: z.catch(z.nullish(JudgeSchema), null),
   review: z.catch(z.nullish(ReviewRefSchema), null),
+  hidden_dims: tolerantArray(HiddenDimRowSchema),
 });
 export type JobDetail = z.output<typeof JobDetailSchema>;
 
@@ -705,6 +719,8 @@ export const PartRecordSchema = z.object({
   verified: z.optional(z.boolean()),
   ship: z.optional(ShipDecisionSchema),
   passport: z.optional(PassportLinkSchema),
+  /** Set when an admin took the part out of search ({reason, by, at}); the page still opens by its link. */
+  withdrawn: z.nullish(z.object({ reason: z.string(), by: z._default(z.string(), ""), at: num })),
 });
 export type PartRecord = z.output<typeof PartRecordSchema>;
 
@@ -1331,3 +1347,161 @@ export type ReviewStats = z.output<typeof ReviewStatsSchema>;
 /** How later reviews went for jobs that were given a promoted lesson (lessons list `track`). */
 export const LessonTrackSchema = z.object({ used_in: count, accepted: count, improved: count, rejected: count });
 export type LessonTrack = z.output<typeof LessonTrackSchema>;
+
+// ── product: playground, describe it, variants, print it (docs/API.md) ─────────
+const strDefault = (v = "") => z._default(z.string(), v);
+
+
+export const PrintPlanSchema = z.object({
+  orientation: z.string(),
+  supports_needed: z.boolean(),
+  material: z.string(),
+  nozzle_mm: num,
+  layer_mm: num,
+  walls: z.int(),
+  infill_percent: num,
+  bbox_mm: z.array(num),
+  estimates: z._default(z.array(PrintEstimateSchema), []),
+  notes: z._default(z.record(z.string(), z.string()), {}),
+});
+export type PrintPlan = z.output<typeof PrintPlanSchema>;
+
+
+
+export const TemplatePresetSchema = z.object({ id: z.string(), title: z.string(), note: strDefault(), values: z.record(z.string(), num) });
+export type TemplatePreset = z.output<typeof TemplatePresetSchema>;
+
+export const TemplateCardSchema = z.object({
+  name: z.string(),
+  family: z.string(),
+  title: z.string(),
+  summary: strDefault(),
+  tags: z._default(z.array(z.string()), []),
+  params: z.array(ParamSpecSchema),
+  defaults: z.record(z.string(), num),
+  presets: z._default(z.array(TemplatePresetSchema), []),
+  topology_knobs: z._default(z.array(z.string()), []),
+  thumbnail_url: z.string(),
+  thumbnail_2x_url: z.string(),
+  coupon: z._default(z.boolean(), false),
+});
+export type TemplateCard = z.output<typeof TemplateCardSchema>;
+
+export const TemplateDetailSchema = z.extend(TemplateCardSchema, {
+  code: z.string(),
+  code_sha: strDefault(),
+  measure_map: z._default(z.record(z.string(), z.string()), {}),
+});
+export type TemplateDetail = z.output<typeof TemplateDetailSchema>;
+
+export const TemplateBakeSchema = z.extend(BakeResultSchema, {
+  print_plan: z.nullish(PrintPlanSchema),
+  downloads: z._default(z.record(z.string(), z.string()), {}),
+  ship: z.nullish(ShipDecisionSchema),
+});
+export type TemplateBake = z.output<typeof TemplateBakeSchema>;
+
+export const DescribeValueSchema = z.object({
+  param: z.string(),
+  label: strDefault(),
+  unit: z._default(z.enum(["mm", "deg", ""]), "mm"),
+  value: num,
+  default: num,
+  source: z.enum(["user", "answer", "default", "inferred"]),
+  quote: strDefault(),
+  note: strDefault(),
+  asked: z.nullish(num),
+});
+export type DescribeValue = z.output<typeof DescribeValueSchema>;
+
+export const DescribeQuestionSchema = z.object({
+  id: z.string(),
+  param: z.string(),
+  label: strDefault(),
+  unit: z._default(z.enum(["mm", "deg", ""]), "mm"),
+  min: num,
+  max: num,
+  step: num,
+  default: num,
+  prompt: z.string(),
+});
+export type DescribeQuestion = z.output<typeof DescribeQuestionSchema>;
+
+export const CheckItemSchema = z.object({
+  param: z.string(),
+  label: strDefault(),
+  unit: z._default(z.enum(["mm", "deg", ""]), "mm"),
+  stated: num,
+  quote: strDefault(),
+  set: num,
+  measured: z.nullish(num),
+  tol: num,
+  method: strDefault(),
+  status: z.enum(["met", "not_met", "clamped", "knob_only"]),
+  note: strDefault(),
+});
+export type CheckItem = z.output<typeof CheckItemSchema>;
+
+export const NumberChecksSchema = z.object({
+  status: z.enum(["matches", "partial", "none"]),
+  label: z.string(),
+  items: z.array(CheckItemSchema),
+  met: z._default(z.int(), 0),
+  measured: z._default(z.int(), 0),
+  knob_only: z._default(z.int(), 0),
+  failed: z._default(z.int(), 0),
+  tolerance: strDefault(),
+  note: strDefault(),
+});
+export type NumberChecks = z.output<typeof NumberChecksSchema>;
+
+export const DescribeRecordSchema = z.object({
+  id: z.string(),
+  text: z.string(),
+  status: z.enum(["planning", "needs_answers", "done", "no_fit", "failed"]),
+  created_at: num,
+  template: z.nullish(z.string()),
+  family: z.nullish(z.string()),
+  title: strDefault(),
+  summary: strDefault(),
+  params: z._default(z.array(ParamSpecSchema), []),
+  values: z._default(z.array(DescribeValueSchema), []),
+  questions: z._default(z.array(DescribeQuestionSchema), []),
+  plan_notes: z._default(z.array(z.string()), []),
+  planner: z.nullish(z.object({ provider: strDefault(), model: strDefault(), mode: z.string(), prompt: strDefault() })),
+  checks: z.nullish(NumberChecksSchema),
+  bake: z.nullish(
+    z.object({
+      cache_key: z.string(),
+      params: z.record(z.string(), num),
+      clamped: z._default(z.record(z.string(), num), {}),
+      facts: z.nullish(PartFactsSchema),
+      view_url: z.string(),
+    }),
+  ),
+  downloads: z.nullish(z.record(z.string(), z.string())),
+  print_plan: z.nullish(PrintPlanSchema),
+  ship: z.nullish(ShipDecisionSchema),
+  coupon: z._default(z.boolean(), false),
+  no_fit: z.nullish(z.object({ reason: z.string(), templates: z._default(z.array(z.string()), []), next: z._default(z.array(z.object({ href: z.string(), label: z.string() })), []) })),
+  error: z.nullish(z.string()),
+  label: strDefault(),
+});
+export type DescribeRecord = z.output<typeof DescribeRecordSchema>;
+
+export const VariantSavedSchema = z.object({
+  slug: z.string(),
+  action: z.string(),
+  version: z.int(),
+  part: PartRecordSchema,
+  changed: z._default(z.array(z.object({ param: z.string(), from: num, to: num })), []),
+  label: strDefault(),
+});
+export type VariantSaved = z.output<typeof VariantSavedSchema>;
+
+export const PrintPlanResultSchema = z.object({ print_plan: PrintPlanSchema, ship: ShipDecisionSchema });
+export type PrintPlanResult = z.output<typeof PrintPlanResultSchema>;
+
+export const PrintShopsSchema = z.extend(BuyLookupSchema, { cached: z._default(z.boolean(), false) });
+export type PrintShops = z.output<typeof PrintShopsSchema>;
+

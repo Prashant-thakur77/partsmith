@@ -9,8 +9,9 @@ PartSmith parts are parametric CadQuery programs with typed knobs (millimetres),
 an origin label (`real` = verified against a photo of a real part, `synthetic` = verified against rendered images).
 
 ## Workflow
-1. **Search first.** `search_parts(q="<object> <size> mm")`. If `coverage` is `none`, tell the user nothing matched and
-   offer `report_need(query=...)`. Never substitute an unrelated part.
+1. **Search first.** `search_parts(q="<object> <size> mm")`. If `match` is `none`, tell the user nothing matched and
+   offer `report_need(query=...)`; if it is `partial`, say which words or sizes the best part misses (`coverage` is the
+   share it matches, 0–1). Never substitute an unrelated part.
 2. **Read the part.** `get_part(slug)` — check the knob ranges, `verification.status` and `max_error_mm`, and `facts`
    (bbox, grams of PLA, supports, orientation).
 3. **Adapt with words.** `get_variant(slug, want="M4 hole, 2 mm taller")`. Report `applied` and `not_applied` back to the

@@ -127,6 +127,16 @@ class UsageRow(Base):
     n: Mapped[int] = mapped_column(Integer, default=0)
 
 
+class WithdrawnRow(Base):
+    """A part an admin took out of search (admin console moderation). The record stays reachable by slug."""
+
+    __tablename__ = "withdrawn"
+    slug: Mapped[str] = mapped_column(String(120), primary_key=True)
+    reason: Mapped[str] = mapped_column(Text)
+    by: Mapped[str] = mapped_column(String(64))
+    at: Mapped[float] = mapped_column(Float)
+
+
 ROLE_REFERENCE_TAG = "role:reference"  # reference objects (ID-1 card, LEGO brick ...): bench-only, hidden from /parts
 
 
@@ -196,13 +206,34 @@ class Registry:
         cursor: int = 0,
         limit: int = 24,
         role: str | None = None,
+        include_withdrawn: bool | None = None,
     ) -> tuple[list[PartRecord], int]:
         """Token search over title/family/tags/summary with numeric boosting ("cooler wheel 32 mm" prefers Ø≈32 parts).
-        `role`: None = everything, "part" = functional parts only, "reference" = reference objects only."""
-        tokens = [
-            t for t in re.findall(r"[a-z]+", q.lower()) if len(t) > 1 and t not in {"mm", "for", "the", "and", "with"}
-        ]
-        numbers = [float(n) for n in re.findall(r"\d+(?:\.\d+)?", q)]
+        `role`: None = everything, "part" = functional parts only, "reference" = reference objects only.
+        Withdrawn parts are left out of public searches (any `role`) unless `include_withdrawn`; the default
+        `role=None` (internal callers: dedupe, lineage, passport ids) still sees them."""
+        parts, total, _, _ = self.search_scored(
+            q, family=family, verified=verified, origin=origin, sort=sort, cursor=cursor, limit=limit, role=role,
+            include_withdrawn=include_withdrawn,
+        )  # fmt: skip
+        return parts, total
+
+    def search_scored(
+        self,
+        q: str = "",
+        *,
+        family: str | None = None,
+        verified: bool | None = None,
+        origin: str | None = None,
+        sort: str = "relevance",
+        cursor: int = 0,
+        limit: int = 24,
+        role: str | None = None,
+        include_withdrawn: bool | None = None,
+    ) -> tuple[list[PartRecord], int, list[float], float | None]:
+        """`search` plus coverage: (page, total, coverage of each part on the page, best coverage over every candidate).
+        Coverage is None (and the list empty) when the query has no words or numbers to match."""
+        tokens, numbers = query_terms(q)
         with self.session() as s:
             stmt = select(PartRow)
             if family:
@@ -215,8 +246,10 @@ class Registry:
                 stmt = stmt.where(PartRow.search_text.contains(ROLE_REFERENCE_TAG))
             elif role == "part":
                 stmt = stmt.where(~PartRow.search_text.contains(ROLE_REFERENCE_TAG))
+            if not (role is None if include_withdrawn is None else include_withdrawn):
+                stmt = stmt.where(PartRow.slug.not_in(select(WithdrawnRow.slug)))
             if tokens:
-                stmt = stmt.where(or_(*[PartRow.search_text.contains(t) for t in tokens]))
+                stmt = stmt.where(or_(*[PartRow.search_text.contains(_stem(t)) for t in tokens]))
             rows = list(s.scalars(stmt))
         parts = [PartRecord.model_validate_json(r.record) for r in rows]
         if sort == "newest":
@@ -231,7 +264,11 @@ class Registry:
             parts.sort(key=lambda p: p.title.lower())
         else:
             parts.sort(key=lambda p: _score(p, tokens, numbers), reverse=True)
-        return parts[cursor : cursor + limit], len(parts)
+        page = parts[cursor : cursor + limit]
+        if not tokens and not numbers:
+            return page, len(parts), [], None
+        best = max((coverage(p, tokens, numbers) for p in parts), default=0.0)
+        return page, len(parts), [coverage(p, tokens, numbers) for p in page], best
 
     def families(self, *, include_reference: bool = True) -> list[dict[str, Any]]:
         with self.session() as s:
@@ -265,6 +302,34 @@ class Registry:
         }
 
     # ---- thumbnails ------------------------------------------------------------------------------------------------
+    # ---- moderation (admin console) ----------------------------------------------------------------------------------
+    def withdraw(self, slug: str, reason: str, by: str) -> dict[str, Any]:
+        """Take a part out of search; it stays reachable by slug. KeyError for an unknown slug."""
+        with self._lock, self.session() as s:
+            if s.get(PartRow, slug) is None:
+                raise KeyError(slug)
+            row = WithdrawnRow(slug=slug, reason=reason, by=by, at=time.time())
+            s.merge(row)
+            return {"reason": row.reason, "by": row.by, "at": row.at}
+
+    def restore(self, slug: str) -> bool:
+        """Put a withdrawn part back in search. Returns whether it was withdrawn."""
+        with self._lock, self.session() as s:
+            row = s.get(WithdrawnRow, slug)
+            if row is None:
+                return False
+            s.delete(row)
+            return True
+
+    def withdrawal(self, slug: str) -> dict[str, Any] | None:
+        with self.session() as s:
+            r = s.get(WithdrawnRow, slug)
+            return {"reason": r.reason, "by": r.by, "at": r.at} if r else None
+
+    def withdrawn(self) -> dict[str, dict[str, Any]]:
+        with self.session() as s:
+            return {r.slug: {"reason": r.reason, "by": r.by, "at": r.at} for r in s.scalars(select(WithdrawnRow))}
+
     def set_thumbnail(self, slug: str, *, code_sha: str, params_sha: str, key_1x: str, key_2x: str) -> None:
         """Remember the blob keys of a part's rendered thumbnail (1x and 2x) and what they were rendered from."""
         row = ThumbRow(
@@ -479,6 +544,74 @@ class Registry:
                 }
                 for r in rows
             ]
+
+
+QUERY_STOPWORDS = frozenset(
+    {"mm", "for", "the", "and", "with", "my", "of", "to", "in", "on", "an", "part", "parts", "replacement", "new",
+     "broken", "need", "spare"}
+)  # fmt: skip
+MATCH_GOOD = 0.75  # share of the query's words and numbers a part must match to be a good match
+MATCH_PARTIAL = 0.5  # below this nothing really matches (the search goes on the missed-search list)
+NUMBER_TOL_REL = 0.1  # a number in the query matches a part dimension within 10 % ...
+NUMBER_TOL_MM = 0.5  # ... or within half a millimetre, whichever is larger
+
+
+def query_terms(q: str) -> tuple[list[str], list[float]]:
+    """Words (two letters or more, filler words dropped) and numbers of a search query."""
+    tokens = [t for t in re.findall(r"[a-z]+", q.lower()) if len(t) > 1 and t not in QUERY_STOPWORDS]
+    numbers = [float(n) for n in re.findall(r"\d+(?:\.\d+)?", q)]
+    return tokens, numbers
+
+
+def _stem(word: str) -> str:
+    return word[:-1] if len(word) > 3 and word.endswith("s") and not word.endswith("ss") else word
+
+
+def _word_hit(token: str, words: set[str]) -> bool:
+    t = _stem(token)
+    return any(w == t or w.startswith(t) or _stem(w) == t for w in words)
+
+
+def number_hit(n: float, dims: list[float]) -> bool:
+    """A query number matches a part dimension within max(10 %, 0.5 mm)."""
+    tol = max(NUMBER_TOL_MM, NUMBER_TOL_REL * abs(n))
+    return any(abs(d - n) <= tol for d in dims)
+
+
+def coverage(p: PartRecord, tokens: list[str], numbers: list[float]) -> float:
+    """Share (0..1) of the query's words and numbers this part matches: a word must start a word of the part's title,
+    family, tags, summary or slug (plural "s" ignored); a number must lie within max(10 %, 0.5 mm) of one of the part's
+    default dimensions or a number written in its title or tags. 0.0 for an empty query."""
+    terms = len(tokens) + len(numbers)
+    if not terms:
+        return 0.0
+    text = " ".join([p.title, p.family.value.replace("_", " "), " ".join(p.tags), p.summary, p.slug.replace("-", " ")])
+    words = set(re.findall(r"[a-z]+", text.lower()))
+    dims = [float(v) for v in p.defaults.values() if v > 0]
+    dims += [float(n) for n in re.findall(r"\d+(?:\.\d+)?", " ".join([p.title, " ".join(p.tags)]))]
+    hits = sum(1 for t in tokens if _word_hit(t, words)) + sum(1 for n in numbers if number_hit(n, dims))
+    return round(hits / terms, 3)
+
+
+def match_label(best: float | None) -> str:
+    """'all' (no query), 'good', 'partial' or 'none' from the best coverage of a search."""
+    if best is None:
+        return "all"
+    if best >= MATCH_GOOD:
+        return "good"
+    return "partial" if best >= MATCH_PARTIAL else "none"
+
+
+def match_hint(match: str) -> str | None:
+    """Plain words for an agent or a person when the registry has no close match."""
+    if match == "none":
+        return "No close match — describe it at /describe or fix from a photo at /fix (or request it at /requests)."
+    if match == "partial":
+        return (
+            "Only a partial match — the closest parts miss some of your words or sizes. Check the sizes, or describe "
+            "it at /describe or fix from a photo at /fix."
+        )
+    return None
 
 
 def _score(p: PartRecord, tokens: list[str], numbers: list[float]) -> float:

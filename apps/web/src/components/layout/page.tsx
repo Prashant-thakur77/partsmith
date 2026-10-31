@@ -1,5 +1,6 @@
 import * as React from "react";
 import { cn } from "@/lib/utils";
+import { Reveal } from "./reveal";
 
 export function Container({ className, ...props }: React.HTMLAttributes<HTMLDivElement>) {
   return <div className={cn("mx-auto w-full max-w-[1200px] px-4 sm:px-6", className)} {...props} />;
@@ -56,7 +57,7 @@ export function Section({
   return (
     <section id={id} className={cn("min-w-0 space-y-5", className)} aria-labelledby={id && title ? `${id}-title` : undefined}>
       {title || actions ? (
-        <div className="flex flex-wrap items-end justify-between gap-3">
+        <Reveal className="flex flex-wrap items-end justify-between gap-3">
           <div className="space-y-1">
             {title ? (
               <h2 id={id ? `${id}-title` : undefined} className="text-lg font-semibold tracking-tight text-fg">
@@ -66,7 +67,7 @@ export function Section({
             {description ? <p className="max-w-2xl text-[14px] leading-6 text-muted">{description}</p> : null}
           </div>
           {actions ? <div className="flex flex-wrap gap-2">{actions}</div> : null}
-        </div>
+        </Reveal>
       ) : null}
       {children}
     </section>

@@ -6,6 +6,8 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import * as React from "react";
 import { MATE_TAP_KINDS, PhotoSlot, type SlotValue, type TapPoint } from "@/components/fix/photo-slot";
+import { HiddenDimsField } from "@/components/fix/hidden-dims-field";
+import { hiddenDimsPayload, type HiddenRow } from "@/lib/hidden-dims";
 import { VideoSlot } from "@/components/fix/video-slot";
 import { VoiceNoteSlot } from "@/components/fix/voice-note-slot";
 import { useCapabilities } from "@/lib/capabilities";
@@ -81,6 +83,7 @@ export function FixClient() {
   const [matingPoints, setMatingPoints] = React.useState<TapPoint[]>([]);
   const [voiceNote, setVoiceNote] = React.useState<File | null>(null);
   const [city, setCity] = React.useState("");
+  const [hiddenRows, setHiddenRows] = React.useState<HiddenRow[]>([]);
   const [more, setMore] = React.useState(false);
   // "It broke in a new place" on a passport page links here with the family and an intent prefilled.
   React.useEffect(() => {
@@ -94,6 +97,9 @@ export function FixClient() {
   const canPoints = fixFields.has("points");
   const canNarrate = canOrbit && fixFields.has("narration");
   const canCity = fixFields.has("city");
+  const canHidden = fixFields.has("hidden_dims");
+  const hidden = hiddenDimsPayload(canHidden ? hiddenRows : []);
+  const hiddenBad = Object.keys(hidden.problems).length > 0;
   // The voice note travels with the walk-around clip; without a clip the server has nothing to narrate.
   const sendNote = canNarrate && !!orbit && !!voiceNote;
   const noteProblem = sendNote ? voiceNoteProblem(voiceNote!.type, voiceNote!.size) : null;
@@ -114,15 +120,16 @@ export function FixClient() {
         matingPoints: canPoints ? (matingPoints as TapPoint<MateTapKind>[]) : null,
         narration: sendNote ? voiceNote : null,
         city: canCity ? cityParam(city) : null,
+        hiddenDims: canHidden ? hidden.dims : null,
       }),
     onSuccess: (job) => router.push(`/jobs/${encodeURIComponent(job.id)}`),
   });
 
   const thicknessBad = thickness.trim() !== "" && !(Number(thickness) > 0 && Number(thickness) < 200);
   const topBlocked = top?.info.checks.some((c) => c.level === "fail") ?? false;
-  const canStart = !!top && !topBlocked && !thicknessBad && !noteProblem && !start.isPending;
+  const canStart = !!top && !topBlocked && !thicknessBad && !hiddenBad && !noteProblem && !start.isPending;
   // when the button is off, say why right next to it
-  const whyNot = start.isPending ? null : !top ? t("fix.whyNoTop") : topBlocked ? t("fix.whyBlocked") : thicknessBad ? t("fix.whyThickness") : noteProblem;
+  const whyNot = start.isPending ? null : !top ? t("fix.whyNoTop") : topBlocked ? t("fix.whyBlocked") : thicknessBad ? t("fix.whyThickness") : hiddenBad ? "Check the sizes the photo can't see." : noteProblem;
   const extras = [side, mating, orbit, sendNote ? voiceNote : null].filter(Boolean).length;
   const refusal = start.error instanceof ApiError ? uploadRefusal(start.error.status, start.error.message) : null;
 
@@ -336,6 +343,7 @@ export function FixClient() {
                 </Select>
                 <p className="text-[12px] text-subtle">Only a hint — the model can disagree.</p>
               </div>
+              {canHidden ? <HiddenDimsField rows={hiddenRows} onChange={setHiddenRows} problems={hidden.problems} /> : null}
               {canCity ? (
                 <div className="space-y-1.5 sm:col-span-2">
                   <Label htmlFor="city">{t("fix.city")}</Label>

@@ -4,6 +4,7 @@ import { useQuery } from "@tanstack/react-query";
 import * as React from "react";
 import { AlertTriangle, Check, KeyRound, Lock, MapPin, Unlock, X } from "lucide-react";
 import { useAdmin } from "@/components/admin-access";
+import { PipelineDiagram } from "@/components/models/pipeline-diagram";
 import { Container, PageHeader, Section } from "@/components/layout/page";
 import { Badge } from "@/components/ui/badge";
 import { ErrorState } from "@/components/ui/error-state";
@@ -162,6 +163,12 @@ export function StatusClient() {
           </div>
         ) : (
           <>
+            <Section
+              title="From photo to part"
+              description="The fix pipeline, step by step. Each model step shows the model that runs it on this server right now and how it runs; dashed steps are plain code or a person."
+            >
+              <PipelineDiagram providers={s.providers} />
+            </Section>
             <Section
               title="Providers by stage"
               description="Each step of the pipeline, the model behind it, and the calls logged on this server. Mode is how those calls ran; a step with no calls shows how it would run now (recorded = answers played back from saved runs)."

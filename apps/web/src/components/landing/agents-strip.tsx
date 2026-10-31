@@ -2,15 +2,17 @@
 
 import { ArrowRight, Bot, FileText, Plug } from "lucide-react";
 import Link from "next/link";
+import * as React from "react";
 import { useOrigin } from "@/lib/use-origin";
 import { CodeBlock } from "../ui/code-block";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "../ui/tabs";
+import { AgentTerminal } from "./agent-terminal";
 
 export function AgentsStrip() {
   const origin = useOrigin();
   return (
     <div className="grid grid-cols-1 gap-6 rounded-xl border border-border bg-surface p-5 sm:p-6 lg:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)]">
-      <div className="space-y-4">
+      <div className="space-y-4" data-reveal>
         <div className="inline-flex size-9 items-center justify-center rounded-lg border border-border bg-surface-2">
           <Bot className="size-4" aria-hidden />
         </div>
@@ -34,7 +36,10 @@ export function AgentsStrip() {
           Agent setup guide <ArrowRight className="size-3.5" aria-hidden />
         </Link>
       </div>
-      <Tabs defaultValue="rest" className="min-w-0">
+      <div className="min-w-0" data-reveal style={{ "--reveal-i": 1 } as React.CSSProperties}>
+        <AgentTerminal />
+      </div>
+      <Tabs defaultValue="rest" className="min-w-0 lg:col-span-2">
         <TabsList>
           <TabsTrigger value="rest">REST</TabsTrigger>
           <TabsTrigger value="mcp">MCP</TabsTrigger>

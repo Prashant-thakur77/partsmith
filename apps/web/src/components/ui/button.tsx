@@ -4,13 +4,13 @@ import * as React from "react";
 import { cn } from "@/lib/utils";
 
 export const buttonVariants = cva(
-  "inline-flex shrink-0 items-center justify-center gap-2 whitespace-nowrap rounded-md font-medium transition-[background-color,border-color,color,box-shadow,transform] duration-150 select-none disabled:pointer-events-none disabled:opacity-50 active:translate-y-px [&_svg]:pointer-events-none [&_svg]:shrink-0",
+  "inline-flex shrink-0 items-center justify-center gap-2 whitespace-nowrap rounded-md font-medium transition-[background-color,border-color,color,box-shadow,transform,opacity] duration-[var(--dur-hover)] ease-[var(--ease-out)] select-none disabled:pointer-events-none disabled:opacity-50 active:translate-y-px active:scale-[0.985] [&_svg]:pointer-events-none [&_svg]:shrink-0",
   {
     variants: {
       variant: {
-        primary: "bg-accent text-accent-fg shadow-sm hover:bg-accent-hover",
+        primary: "bg-accent text-accent-fg shadow-sm hover:bg-accent-hover hover:shadow-md",
         solid: "bg-inverse text-inverse-fg shadow-sm hover:opacity-90",
-        outline: "border border-border-strong bg-surface text-fg shadow-sm hover:bg-surface-2",
+        outline: "border border-border-strong bg-surface text-fg shadow-sm hover:border-ink/50 hover:bg-surface-2",
         ghost: "text-fg hover:bg-surface-2",
         subtle: "bg-surface-2 text-fg hover:bg-surface-3",
         danger: "bg-bad text-white hover:opacity-90",

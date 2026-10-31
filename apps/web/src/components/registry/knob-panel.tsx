@@ -1,6 +1,7 @@
 "use client";
 
 import { RotateCcw, Zap } from "lucide-react";
+import type * as React from "react";
 import type { BakeResult, ParamSpec } from "@/lib/api-types";
 import { fmtMs } from "@/lib/format";
 import { cn } from "@/lib/utils";
@@ -22,6 +23,7 @@ export function KnobPanel({
   dense = false,
   disabled = false,
   columns = 1,
+  tags,
 }: {
   params: ParamSpec[];
   values: Record<string, number>;
@@ -34,6 +36,8 @@ export function KnobPanel({
   dense?: boolean;
   disabled?: boolean;
   columns?: 1 | 2;
+  /** Optional line under a knob (e.g. where its value came from), by knob name. */
+  tags?: Record<string, React.ReactNode>;
 }) {
   const ordered = [...params].sort((a, b) => Number(b.topology) - Number(a.topology));
   const anyChanged = params.some((p) => Math.abs((values[p.name] ?? p.default) - p.default) > p.step / 2);
@@ -71,17 +75,27 @@ export function KnobPanel({
         <p className="text-[13px] text-muted">This program has no knobs.</p>
       ) : (
         <div className={cn("grid grid-cols-1", dense ? "gap-4" : "gap-5", columns === 2 && "gap-x-8 md:grid-cols-2")}>
-          {ordered.map((p) => (
-            <Knob
-              key={p.name}
-              spec={p}
-              value={values[p.name] ?? p.default}
-              clamped={bake ? p.name in bake.clamped : false}
-              disabled={disabled}
-              compact={dense || columns === 2}
-              onChange={(v) => onChange({ ...values, [p.name]: v })}
-            />
-          ))}
+          {ordered.map((p) => {
+            const knob = (
+              <Knob
+                key={p.name}
+                spec={p}
+                value={values[p.name] ?? p.default}
+                clamped={bake ? p.name in bake.clamped : false}
+                disabled={disabled}
+                compact={dense || columns === 2}
+                onChange={(v) => onChange({ ...values, [p.name]: v })}
+              />
+            );
+            return tags?.[p.name] ? (
+              <div key={p.name} className="space-y-1.5" data-knob={p.name}>
+                {knob}
+                <div className="text-[11.5px] text-muted">{tags[p.name]}</div>
+              </div>
+            ) : (
+              knob
+            );
+          })}
         </div>
       )}
     </div>

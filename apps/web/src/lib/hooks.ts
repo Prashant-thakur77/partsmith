@@ -3,6 +3,7 @@
 import { useQuery, keepPreviousData } from "@tanstack/react-query";
 import * as React from "react";
 import { api } from "./api";
+import { usePrefersReducedMotion } from "./motion";
 
 export function useDebounced<T>(value: T, ms: number): T {
   const [v, setV] = React.useState(value);
@@ -64,9 +65,7 @@ export function useMediaQuery(query: string): boolean {
   );
 }
 
-export function usePrefersReducedMotion(): boolean {
-  return useMediaQuery("(prefers-reduced-motion: reduce)");
-}
+export { usePrefersReducedMotion } from "./motion";
 
 /** Animate a number towards `target` (used when residuals count down). Respects reduced motion. */
 export function useCountTo(target: number | null | undefined, ms = 700): number | null {

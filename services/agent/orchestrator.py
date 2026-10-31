@@ -28,6 +28,7 @@ import numpy as np
 from partsmith_schemas import (
     ArtifactEvent,
     DoneEvent,
+    HiddenDim,
     IterationEvent,
     JudgeScore,
     JudgeVeto,
@@ -46,7 +47,7 @@ from partsmith_schemas.partspec import SlotFeature, ThroughHole, Unknown
 from partsmith_schemas.verification import MateFitResult, Verification
 from pydantic import ValidationError
 
-from services.agent import guards, lessons, mock_brain, prompt_loader, providers, stated
+from services.agent import guards, hidden_dims, lessons, mock_brain, prompt_loader, providers, stated
 from services.agent.jobs import Job, JobCancelled, QuestionTimeout, Runner, context_hash
 from services.agent.providers import Completion, ModelRequest, ProviderError
 from services.agent.templates import Template, get_template, knobs_at, list_templates
@@ -359,6 +360,16 @@ class Round:
     def min_iou(self) -> float | None:
         v = self.verification
         return min((m.iou for m in v.views), default=None) if v else None
+
+
+def _disabled_rules() -> set[str]:
+    """Taught rules an admin switched off (lesson ids and feedback-log ids); empty when the switch file is unreadable."""
+    try:
+        from services.admin.rules import disabled_ids
+
+        return disabled_ids()
+    except Exception:
+        return set()
 
 
 def make_runner(options: RunOptions | None = None) -> Runner:
@@ -1563,9 +1574,15 @@ class FixRun:
                 else f"Length {sv.value_mm:g} ± {sv.sigma_mm:g} mm, stated by the user (not measured)"
             )
 
+    def hidden_dims(self) -> list[HiddenDim]:
+        """Sizes the photo cannot show that the user typed with the request (JobInput.hidden_dims)."""
+        ji = getattr(getattr(self, "job", None), "input", None)
+        return list(getattr(ji, "hidden_dims", None) or [])
+
     def apply_stated(self, code: str, values: dict[str, float]) -> dict[str, float]:
         """The knobs a user-stated dimension fixes, set to that value (snapped to the knob's step and range)."""
-        if not self.stated:
+        dims = self.hidden_dims()
+        if not self.stated and not dims:
             return values
         try:
             specs = {p.name: p for p in parse_params(code)}
@@ -1577,6 +1594,11 @@ class FixRun:
             knob = mmap.get(key)
             if knob is not None and knob in specs and knob in out:
                 out[knob] = guards.snap(m.value, specs[knob])
+        # Sizes the photo cannot show, typed by the user: the knob that holds each one is set and locked.
+        for knob, (value, why) in hidden_dims.knob_values(dims, list(specs.values())).items():
+            if knob in out and knob not in self.locked:
+                out[knob] = guards.snap(value, specs[knob])
+                self.locked[knob] = why
         return out
 
     # ---- 4. plan ------------------------------------------------------------------------------------------------------------
@@ -1798,6 +1820,8 @@ class FixRun:
             rows = lessons.promoted_lessons(self._registry(), self.spec.family.value)
         except Exception:
             return []
+        off = _disabled_rules()
+        rows = [r for r in rows if r["id"] not in off]  # switched off on /admin: no longer taught
         new = [r["id"] for r in rows if r["id"] not in self.lessons_used]
         if new:
             self.lessons_used += new
@@ -1818,6 +1842,8 @@ class FixRun:
             got = ledger.for_prompt(self.spec.family.value, exclude_roots=roots)
         except Exception:
             return []
+        off = _disabled_rules()
+        got = [e for e in got if str(e["id"]) not in off]
         new = [str(e["id"]) for e in got if str(e["id"]) not in self.feedback_used]
         if new:
             self.feedback_used += new
@@ -1844,6 +1870,9 @@ class FixRun:
             partspec=self.spec.model_dump_json(exclude_none=True),
             template_source=tpl.code if tpl else "(none)",
         )
+        hidden = hidden_dims.prompt_block(self.hidden_dims(), tpl.params if tpl else ())
+        if hidden:
+            user = f"{user}\n\n{hidden}"
         error: str | None = feedback[1] if feedback else None
         last_code = feedback[0] if feedback else ""
         for attempt in range(BUILD_RETRIES + 1):
@@ -2593,8 +2622,16 @@ class FixRun:
             return v
         mmap = template_measure_map(b.code, self.template)
         views = [m.view for m in v.views]
-        unchecked = unchecked_values(specs, b.values, mmap, v.tests, views, stated=self.stated)
-        return v.model_copy(update={"unchecked": unchecked})
+        dims = self.hidden_dims()
+        held = hidden_dims.knob_values(dims, specs)
+        unchecked = unchecked_values(specs, b.values, mmap, v.tests, views, stated=self.stated, stated_knobs=held)
+        update: dict[str, Any] = {"unchecked": unchecked}
+        if dims:
+            rows = hidden_dims.check(dims, specs, b.values)
+            self.job.write_json("hidden_dims.json", {"dims": rows})
+            lines = hidden_dims.reason_lines(rows)
+            update["reasons"] = [r for r in v.reasons if r not in lines] + lines
+        return v.model_copy(update=update)
 
     def final_verification(self) -> Verification | None:
         """The verdict: the best round's verification, re-run with the judge's vetoes when there are any."""

@@ -12,7 +12,7 @@ test("header: at most six items, the Fix a part button always in view, the rest 
   if (wide) {
     const main = page.getByRole("navigation", { name: "Main" });
     const labels = (await main.getByRole("link").allInnerTexts()).map((t) => t.replace(/\s*\d+(\s+waiting)?\s*$/, "").trim());
-    expect(labels).toEqual(["Parts", "How it works", "Review", "For developers"]);
+    expect(labels).toEqual(["Parts", "How it works", "Review", "For developers", "Judges"]);
     expect(labels.length + 1).toBeLessThanOrEqual(6); // + the Fix a part button
     await expect(main.getByRole("link", { name: "For developers" })).toHaveAttribute("href", "/agents");
   } else {
@@ -20,6 +20,7 @@ test("header: at most six items, the Fix a part button always in view, the rest 
     const mobile = page.getByRole("navigation", { name: "Mobile" });
     await expect(mobile.getByRole("link", { name: "How it works" })).toBeVisible();
     await expect(mobile.getByRole("link", { name: "For developers" })).toBeVisible();
+    await expect(mobile.getByRole("link", { name: "Judges" })).toHaveAttribute("href", "/judges");
     await page.keyboard.press("Escape");
   }
   const footer = page.getByRole("contentinfo");

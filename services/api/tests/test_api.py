@@ -629,7 +629,7 @@ def test_part_bake_cache_download_and_errors(client: TestClient) -> None:
     assert f.status_code == 200 and f.headers["content-type"].startswith("application/json") and f.json()["mesh"]
     d = client.get("/api/v1/parts/m3-spacer/bake?format=step&download=1")
     assert d.status_code == 200 and b"ISO-10303-21" in d.content[:200]
-    assert 'filename="m3-spacer.step"' in d.headers["content-disposition"]
+    assert 'filename="partsmith-m3-spacer.step"' in d.headers["content-disposition"]
     py = client.get("/api/v1/parts/m3-spacer/bake?format=py&download=1&height=20")
     assert '"height": (20.0' in py.text
     e = _err(client.get("/api/v1/parts/m3-spacer/bake?heigth=3"), 422, "unknown_param")
@@ -787,6 +787,18 @@ def test_every_documented_route_exists() -> None:
         ("POST", "/api/v1/jobs/{job_id}/fit-check"),
         ("GET", "/api/v1/jobs/{job_id}/run.jsonl"),
         ("GET", "/api/v1/jobs/{job_id}/bake"),
+        ("GET", "/api/v1/jobs/{job_id}/thumbnail.jpg"),
+        ("GET", "/api/v1/demand"),
+        ("GET", "/api/v1/parts/{slug}/verification.json"),
+        ("GET", "/api/v1/parts/{slug}/params.json"),
+        ("GET", "/api/v1/admin/overview"),
+        ("GET", "/api/v1/admin/audit"),
+        ("GET", "/api/v1/admin/parts"),
+        ("POST", "/api/v1/admin/parts/{slug}/unpublish"),
+        ("POST", "/api/v1/admin/parts/{slug}/republish"),
+        ("GET", "/api/v1/admin/rules"),
+        ("POST", "/api/v1/admin/rules/{rule_id}/disable"),
+        ("POST", "/api/v1/admin/rules/{rule_id}/enable"),
         ("POST", "/api/v1/jobs/{job_id}/publish"),
         ("POST", "/api/v1/jobs/{job_id}/cancel"),
         ("POST", "/api/v1/transcribe"),

@@ -6,6 +6,8 @@ const COLS = [
     title: "Product",
     links: [
       { href: "/fix", label: "Fix a part" },
+      { href: "/describe", label: "Describe a part" },
+      { href: "/playground", label: "Playground" },
       { href: "/parts", label: "Parts" },
       { href: "/requests", label: "Request a part" },
       { href: "/jobs/demo", label: "Try a sample" },
@@ -29,6 +31,7 @@ const COLS = [
       { href: "/factory", label: "Make a part family" },
       { href: "/shop", label: "Repair shops" },
       { href: "/jobs", label: "All jobs" },
+      { href: "/admin", label: "Admin" },
     ],
   },
   {

@@ -1,8 +1,12 @@
-import { ArrowRight } from "lucide-react";
+import { ArrowRight, Check, Minus, X } from "lucide-react";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { Container, PageHeader, Section } from "@/components/layout/page";
+import { MatFigureStatic } from "@/components/art/mat-figure";
+import { OrthoViews } from "@/components/art/ortho-views";
 import { Button } from "@/components/ui/button";
+import { COMPARE_COLUMNS, COMPARE_ROWS, type Cell } from "@/lib/compare";
+import { cn } from "@/lib/utils";
 
 export const metadata: Metadata = {
   title: "How it works",
@@ -82,6 +86,7 @@ export default function HowPage() {
       />
       <Container className="space-y-16 py-12">
         <Section id="steps" title="The five steps">
+          <div className="grid gap-10 lg:grid-cols-[minmax(0,1fr)_minmax(0,0.8fr)] lg:gap-14">
           <ol className="relative space-y-0">
             {STEPS.map((s, i) => (
               <li key={s.title} className="grid grid-cols-[2.25rem_minmax(0,1fr)] gap-x-4 pb-8 last:pb-0">
@@ -106,6 +111,17 @@ export default function HowPage() {
               </li>
             ))}
           </ol>
+          <div className="space-y-8 lg:sticky lg:top-24 lg:self-start">
+            <figure className="space-y-2">
+              <MatFigureStatic title="The screen mat: fiducial markers in the corners and along the top, a broken part lying in the middle" />
+              <figcaption className="font-mono text-[11px] leading-4 text-subtle">Fig. A · the part on the screen mat (picture, no measurements).</figcaption>
+            </figure>
+            <figure className="space-y-2">
+              <OrthoViews />
+              <figcaption className="font-mono text-[11px] leading-4 text-subtle">Fig. B · what the program describes: every view of the part, drawn by the agent and checked by code.</figcaption>
+            </figure>
+          </div>
+          </div>
         </Section>
 
         <Section id="rule" title="The model proposes, code decides">
@@ -114,6 +130,10 @@ export default function HowPage() {
             ordinary code that measures the model against your photo, and every number you see on this site comes from that code
             or from saved test reports, never from the AI&apos;s own claims.
           </p>
+        </Section>
+
+        <Section id="compare" title="How it compares" description="Kinds of tools, not products. Individual tools vary; this is the general picture.">
+          <CompareTable />
         </Section>
 
         <Section id="words" title="Words used on this site">
@@ -128,5 +148,62 @@ export default function HowPage() {
         </Section>
       </Container>
     </>
+  );
+}
+
+const MARK_ICON = { yes: Check, no: X, partial: Minus } as const;
+
+function CompareCell({ cell, ours }: { cell: Cell; ours: boolean }) {
+  const Icon = cell.mark === "text" ? null : MARK_ICON[cell.mark];
+  return (
+    <td className={cn("px-3 py-2.5 align-top", ours && "bg-accent-soft/40")}>
+      <span
+        className={cn(
+          "inline-flex items-center gap-1 text-[13px] font-medium",
+          cell.mark === "yes" ? "text-ok" : cell.mark === "no" ? "text-subtle" : cell.mark === "partial" ? "text-warn" : "text-fg",
+        )}
+      >
+        {Icon ? <Icon className="size-3.5 shrink-0" aria-hidden /> : null}
+        {cell.label}
+      </span>
+      {cell.note ? <span className="mt-0.5 block text-[11.5px] leading-4 text-muted">{cell.note}</span> : null}
+    </td>
+  );
+}
+
+function CompareTable() {
+  const last = COMPARE_COLUMNS.length - 1;
+  return (
+    <div className="scrollbar-thin max-w-full overflow-x-auto rounded-lg border border-border bg-surface" role="region" aria-labelledby="compare-caption" tabIndex={0}>
+      <table className="w-full min-w-[760px] border-collapse text-left">
+        <caption id="compare-caption" className="px-3 pt-3 pb-1 text-left text-[12px] text-subtle">
+          What each kind of tool gives you for replacing a broken part. Yes, No or Partial, with a short note.
+        </caption>
+        <thead>
+          <tr className="border-b border-border">
+            <th scope="col" className="w-[22%] px-3 py-2 text-[12px] font-medium text-subtle">
+              Feature
+            </th>
+            {COMPARE_COLUMNS.map((c, i) => (
+              <th key={c} scope="col" className={cn("px-3 py-2 text-[12px] font-semibold", i === last ? "bg-accent-soft/40 text-fg" : "text-muted")}>
+                {c}
+              </th>
+            ))}
+          </tr>
+        </thead>
+        <tbody>
+          {COMPARE_ROWS.map((r) => (
+            <tr key={r.feature} className="border-b border-border last:border-b-0">
+              <th scope="row" className="px-3 py-2.5 align-top text-[13px] font-medium text-fg">
+                {r.feature}
+              </th>
+              {r.cells.map((cell, i) => (
+                <CompareCell key={COMPARE_COLUMNS[i]} cell={cell} ours={i === last} />
+              ))}
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
   );
 }

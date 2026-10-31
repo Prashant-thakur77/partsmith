@@ -25,7 +25,7 @@ OPEN_WEIGHTS_ONLY=1 routes every stage to open-weight models. Routing table: `ro
 
 from __future__ import annotations
 
-from . import chat, clients, config, health, mocks, telemetry
+from . import budget, chat, clients, config, health, mocks, telemetry
 from .agent import AgentResult, ToolResult, ToolSpec, run_agent
 from .base import (
     Completion,
@@ -37,6 +37,7 @@ from .base import (
     Transcript,
     Usage,
 )
+from .budget import BudgetExceeded
 from .buy import BuyResult, buy_lookup
 from .config import Mode, reset_warnings
 from .core import (
@@ -75,6 +76,7 @@ def reset_state() -> None:
 __all__ = [
     "STAGES",
     "AgentResult",
+    "BudgetExceeded",
     "BuyResult",
     "Completion",
     "FrameMask",
@@ -92,6 +94,7 @@ __all__ = [
     "Transcript",
     "Usage",
     "VoiceEvent",
+    "budget",
     "buy_lookup",
     "clear_mocks",
     "complete",

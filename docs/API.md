@@ -25,7 +25,8 @@ named something that does not exist (slug, parameter, mat, sample, job, format, 
 `too_small`, `too_large`, `empty_upload`, `unsupported_media_type`, `not_printable`, `rate_limited`,
 `agent_unavailable`, `not_implemented`, `internal_error`, `admin_required`, `needs_ack`, `not_shippable`,
 `unknown_preset`, `need_not_found`, `lesson_not_found`, `batch_not_found`, `no_measurements`, `busy`, `bad_frame`,
-`provider_error`, `passport_not_found`.
+`provider_error`, `passport_not_found`, `template_not_found`, `no_coupon`, `describe_not_found`, `no_change`,
+`rule_not_found`, `not_withdrawn`, `not_disabled`.
 
 **Export gate** (`services/registry/gate.py` over `services.verifier.ship.can_ship`): job publish, job-part downloads
 (`/jobs/{id}/bake?download=1`), published-part downloads (`/parts/{slug}/bake?download=1`), both for any format but
@@ -57,11 +58,14 @@ wav/webm/ogg/mp3/m4a/aac/flac, ≤ 15 MB.
 Status = {"mode": "live"|"mock"|"replay"|"mixed", "admin": "token"|"open (dev)", "providers": [ProviderStatus], "warnings": [str],
           "jobs": {"total": int, "verified": int},
           "cost": {"usd_total": float, "usd_per_job_mean": float|null, "n_jobs": int},
+          "budget": {"day","cap_usd": float|null,"spent_usd","remaining_usd": float|null,"calls","by_stage","source"},
           "model_calls": [{"stage","provider","model","mode","calls","failed","tokens_in","tokens_out","usd","ms_mean","open_weights"}],
           "open_weights": {"open_weights_only": bool, "stages_live_on_open_weights": [str], "calls_on_open_weights": int,
                            "last_live_call_ts": {provider: float}}}
 ```
-Job and cost aggregates are computed from the `model_call` events of every (non-replay) job on the server.
+Job and cost aggregates are computed from the `model_call` events of every (non-replay) job on the server
+(`services/admin/costs.py`, shared with `GET /admin/overview`). `budget` is today's live spend against
+`PARTSMITH_DAILY_USD_CAP` (`cap_usd: null` = no cap).
 `ProviderStatus = {"stage": str, "role": str, "provider": str, "model": str, "mode": "live"|"mock"|"replay", "key_env": str|null, "key_present": bool, "open_weights": bool, "where": str, "note": str}`
 (e.g. `{"stage":"build","role":"Builder","provider":"baseten","model":"meta-models/muse-spark-open-1026","mode":"mock","key_env":"BASETEN_API_KEY","key_present":false,"open_weights":true,"where":"Baseten","note":"BASETEN_API_KEY missing → deterministic mock"}`)
 
@@ -87,11 +91,12 @@ Screen calibration (ID-1 card 85.60 × 53.98 mm) happens in the browser and is s
 ## Jobs
 | Method | Path | Body / Returns |
 |---|---|---|
-| POST | `/jobs/fix` | multipart: `top` (file, required), `side`, `mating` (files, optional), `orbit` (optional 5–10 s walk-around clip, MP4/MOV/WebM ≤ 60 MB), `narration` (optional voice note about the clip, audio ≤ 15 MB, sent with `orbit`), `city` (optional, for nearby print shops on the buy-or-print card), `intent`, `mat_kind` (`screen`\|`paper`), `thickness_mm`, `family_hint`, `screen_px_per_mm`, `points` (optional JSON, see below) → `JobSummary` |
+| POST | `/jobs/fix` | multipart: `top` (file, required), `side`, `mating` (files, optional), `orbit` (optional 5–10 s walk-around clip, MP4/MOV/WebM ≤ 60 MB), `narration` (optional voice note about the clip, audio ≤ 15 MB, sent with `orbit`), `city` (optional, for nearby print shops on the buy-or-print card), `intent`, `mat_kind` (`screen`\|`paper`), `thickness_mm`, `family_hint`, `screen_px_per_mm`, `points` (optional JSON, see below), `hidden_dims` (optional JSON `[{"name", "value_mm"}]`, at most 4: sizes the photo cannot show, see "Sizes the photo can't see"; bad JSON → `422 invalid_hidden_dims`) → `JobSummary` |
 | GET | `/jobs/demo/samples` | `[{"id": str, "title": str, "family_hint": str\|null, "kind": "template"\|"reference_object"}]` — bundled **synthetic** samples |
 | POST | `/jobs/demo` | `{"sample": str}` → `JobSummary` — runs a bundled **synthetic** sample (labelled synthetic everywhere); unknown ids → `404 sample_not_found` + closest |
 | GET | `/jobs?limit=&include_replays=&kind=` | `[JobSummary]` (newest first) |
-| GET | `/jobs/{id}` | `JobDetail = {"passport": PassportLink, "summary": JobSummary, "events": [Event], "partspec": PartSpec\|null, "measurements": {view: Measurements}, "verification": Verification\|null, "code": str\|null, "params": [ParamSpec], "values": {name: float}, "artifacts": {kind: url}, "question": QuestionEvent\|null}` |
+| GET | `/jobs/{id}` | `JobDetail = {"passport": PassportLink, "summary": JobSummary, "events": [Event], "partspec": PartSpec\|null, "measurements": {view: Measurements}, "verification": Verification\|null, "code": str\|null, "params": [ParamSpec], "values": {name: float}, "artifacts": {kind: url}, "question": QuestionEvent\|null, "hidden_dims": [HiddenDimCheck]}` |
+| GET | `/jobs/{id}/thumbnail.jpg` | the job's rectified top photo cropped to the part, ≤ 240 px JPEG, cached per photo; `404 no_photo` when the job has no measured photo |
 | GET | `/jobs/{id}/events` | **SSE**: one `data: <Event JSON>` per event (`id:` = seq). Agentic fix rounds add `thought` (`{"stage","model","text","iter","mode"}`), `tool_call` (`{"stage","name","args","result","ok","ms","iter","mode"}`) and `focus` (`{"feature","view","at_mm","label","iter"}`, a location code picked from the verifier's worst residual) events; `iter` on `thought`/`tool_call` is the agent's turn within its session, on `focus` the fix round; `mode` is `live`\|`replay`\|`mock`, and a mock run's thoughts come from the deterministic policy (`model: "mock fix agent"`, text ending "(deterministic mock)"). A job that verifies on its first build runs no agent and has none of them. Replays all past events first, then live ones. Ends after `done` — unless `?follow=1`: then the stream stays open (up to 30 min, keep-alives every 15 s) and delivers events appended after `done`, such as a fit check uploaded from a phone. `?from_seq=` (or the `Last-Event-ID` header) resumes. Events keep their original `ts` (the replay player paces on ts gaps). A `: keep-alive` comment is sent after 15 s without events; the stream starts with `retry: 3000`. Headers: `Cache-Control: no-cache, no-transform`, `X-Accel-Buffering: no` |
 | POST | `/jobs/{id}/answer` | `{"id": str, "value": str\|float, "via": "text"\|"voice"}` → `JobSummary` (resumes a paused job; `409 no_pending_question` otherwise) |
 | POST | `/jobs/{id}/edit` | JSON `{"text": str}` or multipart `audio` (+ optional `text`) → `{"transcript": str, "edits": [{"param","from","to","reason"}], "not_understood": [str], "confidence": float, "mode": str, "bake": BakeResult}` (voice/text edit; clamped to PARAMS) |
@@ -192,6 +197,18 @@ quote or has no ISO currency, and places when no city was given; each drop is li
 shown without its link. Mock: no seller and no price (`label` "MOCK — no web search ran"). A fix job builds its card
 after packaging (stage `package`, label "Buy or print: …"); it never blocks or changes verification.
 
+### Sizes the photo can't see
+`hidden_dims` on `POST /jobs/fix`: up to 4 `{"name", "value_mm"}`. `name` is a named kind — `bore_d` (inner bore Ø),
+`socket_depth`, `hole_d`, `wall`, `cable_d` (cable / rod Ø it holds) — or the user's own words. The values are
+user-stated, never measured: the builder's prompt lists them as numbers the program must use; when the program has a
+knob for that kind (e.g. `bore_d`, `pin_d`, `pivot_d`, `hole_d` for an inner bore), code sets the knob to the value and
+locks it for the fix rounds. After the verdict `hidden_dims.json` (and `JobDetail.hidden_dims`) holds one
+`HiddenDimCheck = {"name","label","value_mm","knob","model_mm","tol_mm","status","note"}` per size: `checked` (the
+final knob equals the stated value within half a knob step, at least 0.05 mm — checked against the program, not the
+photo), `mismatch`, or `used_not_checked` (no knob holds it, or it is outside the knob's range); `pending` before the
+verdict. A held size is listed in `verification.unchecked` with source `user_stated`, and each size adds one line to
+`verification.reasons`. None of them ever counts towards `verified` or the max error.
+
 ## Measure / verify (stateless)
 | Method | Path | Body / Returns |
 |---|---|---|
@@ -228,9 +245,11 @@ adds beyond the broken end out of every comparison (like the completed region), 
 ## Registry
 | Method | Path | Returns |
 |---|---|---|
-| GET | `/parts?q=&family=&verified=&origin=&sort=&cursor=&limit=&role=` | `{"items": [PartCard], "next_cursor": str\|null, "total": int}`; `role` = `part` (default: functional parts) \| `reference` (bench reference objects, tag `role:reference`) \| `all`; `sort` = `relevance` (default) \| `newest` \| `error` (smallest max error first) \| `title`; `limit` ≤ 100; `cursor` is opaque |
+| GET | `/parts?q=&family=&verified=&origin=&sort=&cursor=&limit=&role=` | `{"items": [PartCard + {"coverage"}], "next_cursor": str\|null, "total": int, "coverage": float\|null, "match": "good"\|"partial"\|"none"\|"all", "hint": str\|null}` (see "Search coverage and demand"); `role` = `part` (default: functional parts) \| `reference` (bench reference objects, tag `role:reference`) \| `all`; `sort` = `relevance` (default) \| `newest` \| `error` (smallest max error first) \| `title`; `limit` ≤ 100; `cursor` is opaque |
 | GET | `/parts/{slug}` | part detail (below) |
 | GET | `/parts/{slug}/params` | `[ParamSpec]` |
+| GET | `/parts/{slug}/params.json` | the knobs as a JSON-Schema document: `{"$schema", "$id", "title", "type": "object", "slug", "version", "code_sha", "units", "properties": {knob: {"type": "number"\|"integer", "unit": "mm"\|"deg"\|null, "default", "minimum", "maximum", "step", "description", "affects_fit", "topology"}}, "additionalProperties": false, "bake": url}` (`integer` = a knob that changes topology) |
+| GET | `/parts/{slug}/verification.json` | the stored verification record as one document: `{"slug","title","version","code_sha","verified","status","max_error_mm","limit_mm","iou_limit","views": [ViewMetrics],"residuals": [FeatureResidual],"tests": [PartTest],"unchecked": [UncheckedValue],"reasons","origin","verifier_version","versions","published_at": ISO,"verification": Verification}`; `404 no_verification` when the part has none |
 | GET | `/parts/{slug}/bake?<param>=<value>&format=stl\|3mf\|step\|glb\|view\|py` | `BakeResult` + `facts_notes` (or the file with `&download=1`). `format` may repeat or be comma-separated (default `stl,step,view`; `formats=` also accepted). Out-of-range values are clamped and listed in `clamped`; unknown knobs → `422 unknown_param` + closest. Identical requests are cache hits (`cache_hit: true`). `preset=<id>` applies a fit preset after the knob values (`"preset": {"id","title","delta_mm","changes","source","label","reports","preset_delta_mm"}` in the result); `fit_session=<device id>` uses that device's learned coupon clearance. `&download=1` goes through the export gate like `bundle.zip`: verified downloads, best effort answers `409 needs_ack` until `&ack=1`, failed answers `409 not_shippable`; `format=view` and `format=glb` stay open (the embed and AR viewers' previews). `passport=1` debosses the part's passport id (see "Repair passport") |
 | GET | `/parts/{slug}/presets` | `{"slug", "fit_knobs": [str], "presets": [{"id","title","material","process","nozzle_mm","delta_mm","note","changes": [{"param","from","to","delta_mm"}]}], "note"}` |
 | GET | `/presets` | the 7 fit presets: `pla-fdm-0.4` (+0.20 mm), `petg-fdm-0.4` (+0.25), `abs-fdm-0.4` (+0.30), `pla-fdm-0.6` (+0.30), `petg-fdm-0.6` (+0.35), `abs-fdm-0.6` (+0.40), `resin-sla` (+0.10). A preset adds its clearance only to `affects_fit` mm knobs that are internal fits (hole, bore, pivot, pin, cable, gap, clearance, slot); outer dimensions never change. Documented starting points, not measurements |
@@ -246,6 +265,7 @@ adds beyond the broken end out of every comparison (like the completed region), 
 | GET | `/families` | `[{"family": str, "title": str, "count": int, "verified": int}]` (template families with no parts yet are listed with count 0) |
 | POST | `/needs` | JSON `{"query": str}` or multipart `query` + optional `photo` → `Request = Need + {"photo_url": str\|null, "counted": bool}`. Asking for an existing request (same words, any case) votes for it, once per client |
 | GET | `/needs?limit=&status=` | `[Request]` (most votes first; `status` = `open`\|`in_progress`\|`fulfilled`) |
+| GET | `/demand?needs=&missed=` | `{"needs": [Request] (open, most votes first, ≤ 20), "missed_searches": [{"q", "count", "best_coverage", "last_at": ISO}] (≤ 50, most asked first), "miss_below": 0.5}` — public |
 | POST | `/needs/{id}/vote` | → `Request` with `counted` (one vote per client fingerprint) |
 | PATCH | `/needs/{id}` | **admin**. `{"status": "open"\|"in_progress"\|"fulfilled"}` → `Request` |
 | GET | `/lessons?status=&scope=` | `[{"id","scope","rule","evidence","status": "candidate"\|"promoted"\|"rejected","promoted_by","created_at","links": [{"kind": "job"\|"part"\|"fit_report","id","url","page"}]}]` |
@@ -253,6 +273,23 @@ adds beyond the broken end out of every comparison (like the completed region), 
 | GET | `/stats` | `{"parts": int, "verified": int, "synthetic": int, "real": int, "reference_object": int, "reference": int, "jobs": int, "grams_pla": float, "calls_total": int, "mcp_calls": int, "distinct_clients": int, "last_7d": {"calls","mcp_calls","distinct_clients"}, "usage": {… + "top_routes": [{"route","calls"}]}}` — computed from the DB |
 
 `PartCard = {"slug","title","family","status","origin","verified","max_error_mm","thumbnail_url","thumbnail_2x_url","params_count","topology_knobs": [str],"summary","bbox_mm": [x,y,z]|null}`
+
+**Search coverage and demand.** With a query, each search result carries `coverage` (0–1): the share of the query's
+words and numbers the part matches. A word matches when it starts a word of the part's title, family, tags, summary or
+slug (a plural "s" is ignored; filler words like "for", "the", "replacement" are dropped); a number matches when it lies
+within max(10 %, 0.5 mm) of one of the part's default dimensions or a number in its title or tags. The page's
+`coverage` is the best over every candidate, `match` is `good` (≥ 0.75), `partial` (≥ 0.5) or `none`, and `hint` says
+what to do when nothing matches well ("No close match — describe it at /describe or fix from a photo at /fix …").
+Without a query `match` is `"all"` and `coverage`/`hint` are null. MCP `search_parts` returns the same fields.
+Every non-empty search (REST first page and MCP) appends `{"q", "total", "best_coverage", "at"}` to
+`$PARTSMITH_HOME/search_log.jsonl` — no IP, user agent or client id. `GET /demand` groups that log by normalised query
+(lowercase words and numbers) and lists the groups whose best coverage stayed below 0.5; a query that a later one
+within 30 s extends ("cab" → "cable clip") counts as half-typed and is skipped.
+
+**Download names.** Printable downloads (`/parts/{slug}/bake?download=1`, `/bakes/{key}/{file}`, job and template
+bakes) answer `Content-Disposition: attachment; filename="partsmith-<slug>-<knobs that differ from the defaults>.<ext>"`,
+e.g. `partsmith-desk-cable-clip-cable8.stl`: safe ASCII, at most 80 characters (knobs that do not fit become
+`-plusN`); a job's files are `partsmith-job-<id>-….<ext>`.
 
 Part detail = `PartRecord` + `{"artifacts": {"stl","step","3mf","glb","view","py": url}, "lineage": [Lineage], "thumbnail_url", "thumbnail_2x_url", "facts_notes": {fact: how it is computed}, "fit_reports": [...], "origin": DataOrigin, "verified": bool, "ship": {"status": "verified"|"best_effort"|"blocked", "reason": str, "needs_ack": bool, "source": str}, "passport": PassportLink}`.
 `ship` is the export gate's decision for the part (the same one job publish and `bundle.zip` use; plain-words `reason`).
@@ -341,10 +378,67 @@ executes the template at the planned parameters and verifies it against its **ow
 SYNTHETIC self-check, not a photo. `approve` publishes to the registry (origin `synthetic`); `send_back` applies the note as a
 plain-words change through the variant guard and rebuilds the lane; `reject` drops it.
 
+## Playground (family templates)
+Every family template is a part program with typed knobs; the playground bakes the template's own code (sandbox, shared
+content-addressed bake cache) without a registry record. `services/registry/examples.py`.
+
+| Method | Path | Returns |
+|---|---|---|
+| GET | `/templates` | `[TemplateCard]` — all 10 templates |
+| GET | `/templates/{name}` | `TemplateCard + {"code": part.py, "code_sha", "measure_map"}`; unknown → `404 template_not_found` + closest |
+| GET | `/templates/{name}/thumbnail.png?scale=1\|2` | isometric PNG at the defaults (rendered once per program version) |
+| GET | `/templates/{name}/bake?<param>=<value>&format=&download=&ack=` | `BakeResult` (`part_slug` = the template name) + `facts_notes`, `print_plan` (below), `downloads` (file URLs at these values) and `ship`. Clamping, `unknown_param` and caching as for part bakes. **Export gate:** nothing compared a template bake with a real part, so printable files (`stl`, `3mf`, `step`, also by their `/bakes/<key>/<file>` link) are best effort: `409 needs_ack` with the plain-words reason until `ack=1`; `view`, `glb` and `py` stay open |
+| GET | `/templates/{name}/coupon.stl?<params>` | fit-test coupon STL for the template's screw hole / pivot / bore at these values (−0.2, 0, +0.2 mm); `404 no_coupon` when it has none. Not gated: it is the recommended first print |
+
+`TemplateCard = {"name","family","title","summary","tags","params": [ParamSpec],"defaults","presets": [{"id","title","note","values": {knob: number}}],"topology_knobs","thumbnail_url","thumbnail_2x_url","coupon": bool}`.
+Presets (2–3 per template, e.g. "M3 screw" = ISO 273 medium clearance 3.4 mm) are defined in `examples.PRESETS`; a
+test checks every preset names real knobs inside their PARAMS ranges, and a slow test bakes each one.
+
+`PrintPlan = {"orientation","supports_needed","material","nozzle_mm","layer_mm","walls","infill_percent","bbox_mm","estimates": [PrintEstimate],"notes": {field: how it is computed}}`:
+orientation and supports come from the mesh (`geom_worker/bake.py` part facts); layer/walls/infill/nozzle are the repair
+card's suggested defaults (labelled suggestions); grams/minutes/cost are `buy_or_print.print_estimates` (100 % infill,
+upper bounds). Also: `GET /jobs/{id}/print-plan` and `GET /parts/{slug}/print-plan?<params>` → `{"print_plan", "ship"}`
+(`409 no_program` when a job has no program).
+
+## Describe it
+| Method | Path | Body / Returns |
+|---|---|---|
+| POST | `/describe` | `{"text": str (3..600)}` → `DescribeRecord`. Anonymous; the write rate limit applies. Synchronous (one model call + one sandbox bake + one measurement run) |
+| GET | `/describe/{id}` | `DescribeRecord`; unknown → `404 describe_not_found` |
+| POST | `/describe/{id}/answers` | `{"answers": {knob: number \| null}}` (null keeps the default) → `DescribeRecord`. Uses the stored plan: no second model call. `409 no_pending_question` when the record is not waiting or a knob was not asked |
+| POST | `/print-shops` | `{"city": str, "title": str}` → `BuyLookup + {"cached": bool}`: the `buy_lookup` stage with a city, cited places/offers only (a labelled mock without a key). The same (title, city) within 24 h returns the stored answer; the model call is a `model_call` event on the stored lookup (`$PARTSMITH_HOME/print_shops/`) |
+
+```
+DescribeRecord = {"id": "d_<yymmdd>_<hex8>", "text", "status": "needs_answers"|"done"|"no_fit"|"failed", "created_at",
+  "template", "family", "title", "summary", "params": [ParamSpec],
+  "values": [{"param","label","unit","value","default","source": "user"|"answer"|"default"|"inferred","quote","note","asked": number|null}],
+  "questions": [{"id","param","label","unit","min","max","step","default","prompt"}],
+  "plan_notes": [str], "planner": {"provider","model","mode","prompt"},
+  "checks": {"status": "matches"|"partial"|"none", "label", "items": [{"param","label","unit","stated","quote","set",
+             "measured": number|null,"tol","method","status": "met"|"not_met"|"clamped"|"knob_only","note"}],
+             "met","measured","knob_only","failed","tolerance","note"},
+  "bake": {"cache_key","params","clamped","ms","cache_hit","facts","view_url"}, "downloads": {fmt: url},
+  "print_plan": PrintPlan, "ship": {...}, "coupon": bool,
+  "no_fit": {"reason","templates": [str],"next": [{"href","label"}]}, "events": [model_call], "label", "error"?}
+```
+The `describe_plan` stage (Muse Spark 1.3; deterministic labelled mock) proposes a template and values with sources.
+Code decides: unknown template → closest name when clear, else `no_fit` (never free-written CAD); knob names mapped to
+the closest real knob or dropped; values clamped and snapped (`asked` keeps a value that was outside the range); a
+"user" value whose `quote` is not in the text is downgraded to "inferred". Missing fit-critical numbers (the main length,
+screw hole / pivot / bore / cable / pin size; at most 3) become `questions`. After the bake, every number the person
+gave is compared with the **baked model's own measurement** (bounding box, plate thickness, round holes, declared
+interface gaps) within ±max(0.1 mm, the knob's step): all met → `"Matches your numbers"`. Never "verified": no photo
+was involved, and the files go through the template export gate above.
+
+## Variants
+| Method | Path | Body / Returns |
+|---|---|---|
+| POST | `/parts/{slug}/variants` | **admin**. `{"params": {knob: number}, "title"?: str}` → `PublishOutcome + {"part": part detail, "changed": [{"param","from","to"}], "label"}`. The program is baked in the sandbox first; it is published through the dedupe (`renamed` with a suffix from the changed knobs, `forked_from` = the parent). Its verification is `best_effort` with the reason "A variant of a verified part (…) at new knob values; not itself checked against a photo", and each changed knob is in `verification.unchecked`; so its downloads need `ack=1` until it is re-verified with a photo. Same values as the parent → `409 no_change` |
+
 ## Review (human in the loop)
 | Method | Path | Body / Returns |
 |---|---|---|
-| GET | `/review/queue?include_replays=&limit=` | `{"items": [QueueItem]}`: waiting first, then running reviewer rounds, then decided chains |
+| GET | `/review/queue?include_replays=&limit=&family=&status=&by=&older_than_h=` | `{"items": [QueueItem]}`: waiting first, then running reviewer rounds, then decided chains. Optional exact filters: `family`, `status` (`waiting`\|`improving`\|`accepted`\|`rejected`), `by` (`person`\|`test`: who made the chain's latest decision; undecided chains have `by: null`), `older_than_h` (last change at least that many hours ago) |
 | GET | `/review/{job_id}` | `ReviewDetail` for the chain `job_id` belongs to |
 | GET | `/review/stats` | `{"n","agree","both_ok","both_not","judge_ok_person_not","judge_not_person_ok","kappa": float\|null,"reviewers","tests_excluded"}` |
 | GET | `/review/feedback?family=&outcome=&by=` | The feedback log: `{"items": [FeedbackEntry], "counts": {outcome: n}, "families": [str]}` |
@@ -354,7 +448,8 @@ plain-words change through the variant guard and rebuilds the lane; `reject` dro
 
 ```
 QueueItem = {"job_id", "root_job", "round", "title", "family", "status": "waiting"|"improving"|"accepted"|"rejected",
-  "verdict": {"status","max_error_mm","verified"}, "judge": Judge|null, "cost_usd", "chain_cost_usd", "is_replay", "updated_at"}
+  "verdict": {"status","max_error_mm","verified"}, "judge": Judge|null, "cost_usd", "chain_cost_usd", "is_replay", "updated_at",
+  "by": "person"|"test"|null}
 ReviewDetail = {"root_job", "status", "family", "updated_at", "images": {"rectified","overlay","focus": [u0,v0,u1,v1]|null},
   "rounds": [{"round","job_id","job_status","title","decision": "accept"|"improve"|"reject"|null,"by": "person"|"test"|null,"at","note","reason",
               "pins": [{"id","u","v","note","mat_mm","before_mm","after_mm"}],"verdict","judge","child_job","cost_usd",
@@ -377,6 +472,46 @@ reason. Errors: 404 `job_not_found`, 409 `review_busy` / `review_decided` / `not
 Review state lives in `$PARTSMITH_HOME/reviews/` (never in committed replays). Chains recorded with the replays
 (`data/replays/_reviews/`) are shown read only; a new decision on one is saved locally. API decisions are `by: "person"`;
 `by: "test"` (scripts, the developer agent) cannot promote rules or publish and is left out of `stats`.
+
+## Admin console (all admin)
+Everything under `/admin` needs the admin token (`401 admin_required`), reads included. Every number is computed by
+`services/admin` from stored data and every block carries its `n` and a `source`. Writes take `{"reason": str}`
+(1–500 characters, `422 validation_error` when empty) and are written to the audit log.
+
+| Method | Path | Body / Returns |
+|---|---|---|
+| GET | `/admin/overview` | `Overview` (below) |
+| GET | `/admin/audit?limit=&action=&target=` | `{"items": [AuditEntry], "total", "actions": [str], "source"}`, newest first. `action` and `target` are exact; `action=rule.*` is a prefix |
+| GET | `/admin/parts` | `{"items": [{"slug","title","family","status","origin","reference","created_at","criteria": [Criterion],"met","checked","withdrawn": Withdrawal\|null}], "n", "withdrawn", "source"}` |
+| POST | `/admin/parts/{slug}/unpublish` | `{"reason"}` → `{"slug","withdrawn": Withdrawal}`. 404 `part_not_found` |
+| POST | `/admin/parts/{slug}/republish` | `{"reason"}` → `{"slug","withdrawn": null}`. 409 `not_withdrawn` |
+| GET | `/admin/rules` | `{"items": [TaughtRule], "n", "disabled", "source"}` |
+| POST | `/admin/rules/{rule_id}/disable` | `{"reason"}` → `TaughtRule`. 404 `rule_not_found`. A feedback id contains `/`; send it URL-encoded (`%2F`) |
+| POST | `/admin/rules/{rule_id}/enable` | `{"reason"}` → `TaughtRule`. 409 `not_disabled` |
+
+```
+Overview = {"generated_at", "mode",
+  "jobs": {"total","finished","verified","pass_rate": float|null,"n","replays_excluded","source"},   // non-replay fix jobs; pass rate = verified / finished
+  "rounds_to_verify": {"buckets": [{"rounds","count"}],"median","n","source"},
+  "max_error": {"median_mm","p90_mm","n","source"},                       // nearest-rank percentiles over finished jobs
+  "send_back": {"person": {"n","top": [{"reason","count"}]}, "test": {...}, "source"},   // test reviews never count as people
+  "review": {"waiting","improving","accepted","rejected","waiting_replays","n","source"},
+  "registry": {"published","withdrawn","reference","n","source"},
+  "needs": {"open","in_progress","fulfilled","n","source"},
+  "cost": {"usd_total","usd_per_job_mean","n_jobs","by_stage": [{"stage","calls","usd"}],"by_model": [{"provider","model","calls","usd","modes"}],"model_calls","source"},
+  "budget": {"day","cap_usd","spent_usd","remaining_usd","calls","by_stage","source"}}
+AuditEntry = {"id","at","action","target","actor": "admin token"|"person"|"test","before","after","note","numbers"}
+Criterion = {"key": "verified"|"max_error"|"accepted_by_person"|"has_params"|"licence","label","ok": bool|null,"value","source"}
+Withdrawal = {"reason","by","at"}
+TaughtRule = {"id","kind": "rule"|"feedback","family","text","why","by","created_at","origin_job","used_in": [job id],
+  "track": {"used_in","accepted","improved","rejected"},"disabled": Withdrawal|null}
+```
+Audit actions: `review.accept|improve|reject` (actor = the decision's `by`), `lesson.promoted|rejected`, `need.status`,
+`part.variant`, `part.unpublish|republish`, `rule.disable|enable`. The log is `$PARTSMITH_HOME/audit.jsonl`, append only.
+A withdrawn part leaves `/parts` (any `role` but `all`), MCP `search_parts`, matching and llms.txt; `GET /parts/{slug}`
+still answers, with `"withdrawn": Withdrawal` (null for a listed part). Taught rules are the promoted lessons and a
+person's feedback that code measured as fixed (what new jobs of the family are given); a disabled one stays listed but
+is no longer put into builder or fixer prompts, nor recorded in `lessons_used.json` / `feedback_used.json`.
 
 ## Repair-shop batches (all admin)
 | Method | Path | Body / Returns |

@@ -15,6 +15,7 @@ from partsmith_schemas import PartFacts, PartRecord
 from partsmith_schemas.verification import ParamSpec
 from pydantic import BaseModel, Field
 
+from services.admin import audit
 from services.agent import providers
 from services.api.auth import require_admin
 from services.api.common import API, _job, _query_params, _service_call, _svc
@@ -206,12 +207,16 @@ class LessonDecision(BaseModel):
 
 def _decide_lesson(lid: str, status: str, by: str) -> dict[str, Any]:
     reg = get_registry()
+    before = (reg.lesson(lid) or {}).get("status")
     try:
         reg.set_lesson_status(lid, status, by)
     except KeyError as exc:
         ids = [x["id"] for x in reg.lessons()]
         raise ApiError(404, "lesson_not_found", f"no lesson {lid!r}", difflib.get_close_matches(lid, ids)) from exc
     lesson = reg.lesson(lid) or {}
+    audit.record(
+        f"lesson.{status}", lid, actor=audit.ADMIN, before={"status": before}, after={"status": status}, note=by
+    )
     return dict(lesson, links=_lesson_links(lesson.get("evidence") or {}))
 
 

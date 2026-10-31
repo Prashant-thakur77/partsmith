@@ -89,6 +89,7 @@ export function CadViewer({
   poster2x,
   focus,
   sources,
+  minimal = false,
 }: {
   viewUrl: string | null | undefined;
   className?: string;
@@ -105,6 +106,8 @@ export function CadViewer({
   focus?: { at: [number, number, number]; key: string; label?: string } | null;
   /** "Colour by source": values drawn on the model, tinted by where they came from. Omit to hide the toggle. */
   sources?: { marks: SceneSourceMark[]; on: boolean; onToggle: (on: boolean) => void; onSelect: (id: string) => void } | null;
+  /** Figure-style: no grid, axes gizmo or size badge, transparent background (implies no toolbar). */
+  minimal?: boolean;
 }) {
   const boxRef = React.useRef<HTMLDivElement>(null);
   const [armed, setArmed] = React.useState(false);
@@ -153,7 +156,7 @@ export function CadViewer({
   React.useEffect(() => setGl(webglAvailable()), []);
   const [ortho, setOrtho] = React.useState(true);
   const [edges, setEdges] = React.useState(true);
-  const [grid, setGrid] = React.useState(true);
+  const [grid, setGrid] = React.useState(!minimal);
   const [section, setSection] = React.useState<SectionState>({ enabled: false, axis: "z", t: 0.5, flip: false });
   const [measuring, setMeasuring] = React.useState(false);
   const [points, setPoints] = React.useState<THREE.Vector3[]>([]);
@@ -186,7 +189,7 @@ export function CadViewer({
       ref={boxRef}
       role="group"
       aria-label={label}
-      className={cn("relative isolate overflow-hidden bg-[var(--viewer-bg)] bg-dots", className)}
+      className={cn("relative isolate overflow-hidden", minimal ? "bg-transparent" : "bg-[var(--viewer-bg)] bg-dots", className)}
     >
       {data && colors && gl && !lost ? (
         <SceneBoundary fallback={fallback}>
@@ -206,6 +209,7 @@ export function CadViewer({
               focus={focus ? { at: focus.at, key: focus.key } : null}
               sourceMarks={sources?.on ? sources.marks : null}
               onSelectSource={sources?.onSelect}
+              hideGizmo={minimal}
             />
           </div>
         </SceneBoundary>
@@ -257,7 +261,7 @@ export function CadViewer({
         </div>
       ) : null}
 
-      {dims ? (
+      {dims && !minimal ? (
         <div className="pointer-events-none absolute right-3 bottom-3 z-10 rounded-md border border-border bg-surface/90 px-2 py-1 font-mono text-[11px] text-muted tnum shadow-sm backdrop-blur">
           {fmtNum(dims[0]!, 1)} × {fmtNum(dims[1]!, 1)} × {fmtNum(dims[2]!, 1)} mm
         </div>
@@ -277,7 +281,7 @@ export function CadViewer({
         </div>
       ) : null}
 
-      {toolbar && data ? (
+      {toolbar && !minimal && data ? (
         <div className="absolute top-3 right-3 z-10 flex flex-col items-end gap-2">
           <div
             role="toolbar"

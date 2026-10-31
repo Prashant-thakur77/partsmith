@@ -309,8 +309,28 @@ def _locate(mgr: Any, job_id: str) -> tuple[Any, str]:
 # ------------------------------------------------------------------------------------------------- reads
 
 
-def queue(limit: int = 50, include_replays: bool = True, *, svc: Any = None) -> list[dict[str, Any]]:
-    """One item per chain (its latest round): open chains (waiting, improving) first, then decided ones, newest first."""
+def _last_by(state: Mapping[str, Any]) -> str | None:
+    """Who made the chain's latest decision ("person" / "test"), or None when nobody decided yet."""
+    for r in reversed(state["rounds"]):
+        if r.get("decision"):
+            return str(r.get("by", "person"))
+    return None
+
+
+def queue(
+    limit: int = 50,
+    include_replays: bool = True,
+    *,
+    svc: Any = None,
+    family: str | None = None,
+    status: str | None = None,
+    by: str | None = None,
+    older_than_h: float | None = None,
+) -> list[dict[str, Any]]:
+    """One item per chain (its latest round): open chains (waiting, improving) first, then decided ones, newest first.
+    Optional exact filters: `family`, `status`, `by` (who made the latest decision) and `older_than_h` (last change
+    at least that many hours ago)."""
+    want_status = status  # `status` is reused for each chain's status below
     mgr = _svc(svc).manager()
     items: list[dict[str, Any]] = []
     seen: set[str] = set()
@@ -342,8 +362,18 @@ def queue(limit: int = 50, include_replays: bool = True, *, svc: Any = None) -> 
                     (lj or job).summary.is_replay
                 ),  # the latest round's job: a live round of a replay is live
                 "updated_at": _updated(mgr, state),
+                "by": _last_by(state),
             }
         )
+    cutoff = time.time() - older_than_h * 3600 if older_than_h is not None else None
+    items = [
+        i
+        for i in items
+        if (family is None or i["family"] == family)
+        and (want_status is None or i["status"] == want_status)
+        and (by is None or i["by"] == by)
+        and (cutoff is None or float(i["updated_at"]) <= cutoff)
+    ]
     open_ = sorted((i for i in items if i["status"] in ("waiting", "improving")), key=lambda i: -i["updated_at"])
     done = sorted((i for i in items if i["status"] not in ("waiting", "improving")), key=lambda i: -i["updated_at"])
     return (open_ + done)[:limit]

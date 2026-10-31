@@ -1464,6 +1464,30 @@
       "title": "FocusEvent",
       "type": "object"
     },
+    "HiddenDim": {
+      "additionalProperties": false,
+      "description": "A size the photo cannot show (inner bore \u00d8, socket depth \u2026), stated by the user: name + millimetres. Never\nobserved, so never part of `verified`; see services/agent/hidden_dims.py.",
+      "properties": {
+        "name": {
+          "maxLength": 40,
+          "minLength": 1,
+          "title": "Name",
+          "type": "string"
+        },
+        "value_mm": {
+          "exclusiveMinimum": 0,
+          "maximum": 2000,
+          "title": "Value Mm",
+          "type": "number"
+        }
+      },
+      "required": [
+        "name",
+        "value_mm"
+      ],
+      "title": "HiddenDim",
+      "type": "object"
+    },
     "Hole": {
       "additionalProperties": false,
       "properties": {
@@ -1755,6 +1779,14 @@
           "default": 0,
           "title": "Review Round",
           "type": "integer"
+        },
+        "hidden_dims": {
+          "items": {
+            "$ref": "#/$defs/HiddenDim"
+          },
+          "maxItems": 4,
+          "title": "Hidden Dims",
+          "type": "array"
         }
       },
       "title": "JobInput",

@@ -84,6 +84,24 @@ export function LessonsClient() {
   const promoted = q.data?.filter((l) => l.status === "promoted") ?? [];
   const candidates = q.data?.filter((l) => l.status === "candidate") ?? [];
   const rejected = q.data?.filter((l) => l.status === "rejected") ?? [];
+  const promotedSection = (
+    <Section key="promoted" title={`Promoted (${promoted.length})`} description="Fed to the builder on new runs in their scope.">
+      {promoted.length ? (
+        <ul className="grid grid-cols-1 gap-3 md:grid-cols-2">{promoted.map((l) => <LessonCard key={l.id} l={l} admin={admin} />)}</ul>
+      ) : (
+        <EmptyState compact icon={BookOpenCheck} title="None promoted yet" />
+      )}
+    </Section>
+  );
+  const candidatesSection = (
+    <Section key="candidates" title={`Candidates (${candidates.length})`} description="Suggested by a run; waiting for a person to promote or reject.">
+      {candidates.length ? (
+        <ul className="grid grid-cols-1 gap-3 md:grid-cols-2">{candidates.map((l) => <LessonCard key={l.id} l={l} admin={admin} />)}</ul>
+      ) : (
+        <EmptyState compact icon={Lightbulb} title="No candidates right now" />
+      )}
+    </Section>
+  );
   return (
     <>
       <PageHeader
@@ -104,20 +122,8 @@ export function LessonsClient() {
           <ErrorState error={q.error} what="lessons" onRetry={() => void q.refetch()} />
         ) : (
           <>
-            <Section title={`Promoted (${promoted.length})`} description="Fed to the builder on new runs in their scope.">
-              {promoted.length ? (
-                <ul className="grid grid-cols-1 gap-3 md:grid-cols-2">{promoted.map((l) => <LessonCard key={l.id} l={l} admin={admin} />)}</ul>
-              ) : (
-                <EmptyState compact icon={BookOpenCheck} title="None promoted yet" />
-              )}
-            </Section>
-            <Section title={`Candidates (${candidates.length})`} description="Suggested by a run; waiting for a person to promote or reject.">
-              {candidates.length ? (
-                <ul className="grid grid-cols-1 gap-3 md:grid-cols-2">{candidates.map((l) => <LessonCard key={l.id} l={l} admin={admin} />)}</ul>
-              ) : (
-                <EmptyState compact icon={Lightbulb} title="No candidates right now" />
-              )}
-            </Section>
+            {/* Work waiting for a person leads while nothing is promoted yet. */}
+            {promoted.length ? [promotedSection, candidatesSection] : [candidatesSection, promotedSection]}
             {rejected.length ? (
               <Section title={`Rejected (${rejected.length})`} description="Kept for the record; never used.">
                 <ul className="grid grid-cols-1 gap-3 md:grid-cols-2">{rejected.map((l) => <LessonCard key={l.id} l={l} admin={admin} />)}</ul>

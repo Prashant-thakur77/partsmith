@@ -9,7 +9,7 @@ const ReplayLoop = dynamic(() => import("./replay-loop").then((m) => m.ReplayLoo
 });
 
 /** Mounts the replay loop only when it scrolls near the viewport, so it never weighs on the first paint. */
-export function ReplayLoopLazy() {
+export function ReplayLoopLazy(props: { id?: string | null; onStep?: (frame: string, chartStep: number) => void }) {
   const ref = React.useRef<HTMLDivElement>(null);
   const [show, setShow] = React.useState(false);
   React.useEffect(() => {
@@ -19,5 +19,5 @@ export function ReplayLoopLazy() {
     io.observe(el);
     return () => io.disconnect();
   }, [show]);
-  return <div ref={ref}>{show ? <ReplayLoop /> : <div className="aspect-[16/10] rounded-xl border border-border bg-surface-2 sm:aspect-[16/7]" />}</div>;
+  return <div ref={ref}>{show ? <ReplayLoop {...props} /> : <div className="aspect-[16/10] rounded-xl border border-border bg-surface-2 sm:aspect-[16/7]" />}</div>;
 }

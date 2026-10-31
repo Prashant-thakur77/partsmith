@@ -1,7 +1,7 @@
 "use client";
 
 import { useInfiniteQuery, useMutation, useQuery } from "@tanstack/react-query";
-import { Boxes, Megaphone, Search, X } from "lucide-react";
+import { Boxes, Camera, Megaphone, Search, SearchX, Sparkles, X } from "lucide-react";
 import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import * as React from "react";
@@ -15,8 +15,10 @@ import { Spinner } from "@/components/ui/spinner";
 import { toast } from "@/components/ui/toast";
 import { Switch } from "@/components/ui/toggle";
 import { api, type PartsQuery } from "@/lib/api";
+import { extrasApi } from "@/lib/api-extras";
 import { fmtInt } from "@/lib/format";
 import { useDebounced } from "@/lib/hooks";
+import { matchBanner, type MatchBanner } from "@/lib/search-match";
 import { cn } from "@/lib/utils";
 
 const SORTS: { v: NonNullable<PartsQuery["sort"]>; label: string }[] = [
@@ -54,12 +56,14 @@ export function PartsClient() {
   const families = useQuery({ queryKey: ["families"], queryFn: api.families });
   const list = useInfiniteQuery({
     queryKey: ["parts", { q: dq, family, verified, sort }],
-    queryFn: ({ pageParam }) => api.parts({ q: dq || undefined, family: family || undefined, verified, sort, cursor: pageParam, limit: 24 }),
+    queryFn: ({ pageParam }) => extrasApi.parts({ q: dq || undefined, family: family || undefined, verified, sort, cursor: pageParam, limit: 24 }),
     initialPageParam: null as string | null,
     getNextPageParam: (last) => last.next_cursor,
   });
   const items = list.data?.pages.flatMap((p) => p.items) ?? [];
   const total = list.data?.pages[0]?.total;
+  const first = list.data?.pages[0];
+  const banner = first ? matchBanner(first.match, first.coverage, first.hint, dq) : null;
 
   const need = useMutation({
     mutationFn: (query: string) => api.createNeed(query),
@@ -170,10 +174,33 @@ export function PartsClient() {
               ) : null
             }
           >
-            PartSmith never substitutes an unrelated part. Ask for it and it goes on the build list — or fix your own and publish it.
+            PartSmith never substitutes an unrelated part. Ask for it and it goes on the build list —{" "}
+            {dq ? (
+              <>
+                <Link href={`/describe?q=${encodeURIComponent(dq)}`} className="text-accent-text underline underline-offset-2">
+                  describe it
+                </Link>{" "}
+                or{" "}
+                <Link href="/fix" className="text-accent-text underline underline-offset-2">
+                  fix it from a photo
+                </Link>
+                .
+              </>
+            ) : (
+              "or fix your own and publish it."
+            )}
           </EmptyState>
         ) : (
           <>
+            {banner ? (
+              <NoMatchBanner
+                banner={banner}
+                query={dq}
+                onRequest={() => need.mutate(dq)}
+                requesting={need.isPending}
+                requested={need.isSuccess}
+              />
+            ) : null}
             <h2 className="sr-only">Results</h2>
             <div className="grid grid-cols-2 gap-3 sm:gap-4 md:grid-cols-3 lg:grid-cols-4">
               {items.map((p) => (
@@ -191,6 +218,44 @@ export function PartsClient() {
         )}
       </Container>
     </>
+  );
+}
+
+/** Shown above the results when the API says the best part matches only part of the query (or none of it). */
+function NoMatchBanner({ banner, query, onRequest, requesting, requested }: { banner: MatchBanner; query: string; onRequest: () => void; requesting: boolean; requested: boolean }) {
+  return (
+    <div
+      role="status"
+      data-testid="search-match-banner"
+      className={cn("space-y-2.5 rounded-lg border p-3 text-[13px]", banner.tone === "warn" ? "border-warn-border bg-warn-soft" : "border-border bg-surface-2")}
+    >
+      <div className="flex items-start gap-2">
+        <SearchX className={cn("mt-0.5 size-4 shrink-0", banner.tone === "warn" ? "text-warn" : "text-muted")} aria-hidden />
+        <div className="space-y-0.5">
+          <p className="font-medium text-fg">
+            {banner.title}
+            {banner.coveragePct !== null ? <span className="ml-1.5 font-mono text-[11.5px] font-normal text-muted tnum">best part matches {banner.coveragePct} % of your words and sizes</span> : null}
+          </p>
+          {banner.hint ? <p className="text-muted">{banner.hint}</p> : null}
+        </div>
+      </div>
+      <div className="flex flex-wrap gap-2 pl-6">
+        <Button asChild variant="outline" size="sm">
+          <Link href={`/describe?q=${encodeURIComponent(query)}`}>
+            <Sparkles aria-hidden /> Describe it
+          </Link>
+        </Button>
+        <Button asChild variant="outline" size="sm">
+          <Link href="/fix">
+            <Camera aria-hidden /> Fix from a photo
+          </Link>
+        </Button>
+        <Button variant="ghost" size="sm" onClick={onRequest} disabled={requesting || requested}>
+          {requesting ? <Spinner label="Sending" /> : <Megaphone aria-hidden />}
+          {requested ? "Requested" : "Request it"}
+        </Button>
+      </div>
+    </div>
   );
 }
 

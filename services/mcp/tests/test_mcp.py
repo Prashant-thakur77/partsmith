@@ -58,7 +58,15 @@ def test_registry_tools(srv: Any) -> None:
     add_part("clip", "shelf-clip", params={"hole_d": 3.5})
     found = _call(srv, "search_parts", {"q": "cable clip 6 mm"})
     assert found["items"][0]["slug"] == "desk-cable-clip" and found["items"][0]["url"].startswith("http")
-    assert _call(srv, "search_parts", {"q": "zeppelin"})["coverage"] == "none"
+    assert found["match"] in ("good", "partial") and 0.5 <= found["coverage"] <= 1.0
+    assert found["items"][0]["coverage"] == found["coverage"]
+    none = _call(srv, "search_parts", {"q": "zeppelin"})
+    assert none["match"] == "none" and none["coverage"] == 0.0 and "/describe" in none["hint"]
+    browse = _call(srv, "search_parts", {})
+    assert browse["match"] == "all" and browse["coverage"] is None and browse["hint"] is None
+    from services.registry import demand
+
+    assert [m["q"] for m in demand.missed_searches()] == ["zeppelin"]  # agent searches count as demand too
     part = _call(srv, "get_part", {"slug": "desk-cable-clip"})
     assert "code" not in part and part["artifacts"]["stl"].startswith("http://localhost:8000/api/v1/parts/")
     v = _call(srv, "get_variant", {"slug": "desk-cable-clip", "want": "for an 8 mm cable, 3 channels"})
