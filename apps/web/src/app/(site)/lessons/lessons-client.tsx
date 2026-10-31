@@ -14,7 +14,8 @@ import { Button } from "@/components/ui/button";
 import { decideLesson, lessons, R2, type Lesson } from "@/lib/api-r2";
 import { useCapabilities } from "@/lib/capabilities";
 import { timeAgo, titleCase } from "@/lib/format";
-import { groupLessons, groupLinks, knobMoves, type LessonGroup } from "@/lib/page-groups";
+import { PRODUCT, productApi } from "@/lib/api-product";
+import { groupLessons, groupLinks, humanName, knobRuns, lessonText, type LessonGroup } from "@/lib/page-groups";
 import { trackText } from "@/lib/review";
 
 /** Evidence worth a line under the rule; a knob lesson's template, knob and values are already in its wording. */
@@ -23,7 +24,15 @@ function evidenceFacts(ev: Record<string, unknown>): string[] {
   return Object.entries(ev)
     .filter(([k, v]) => !skip.has(k) && (typeof v === "number" || typeof v === "string" || typeof v === "boolean"))
     .slice(0, 6)
-    .map(([k, v]) => `${k.replaceAll("_", " ")}: ${typeof v === "number" ? (Number.isInteger(v) ? String(v) : v.toFixed(2)) : String(v)}`);
+    .map(([k, v]) => `${k.replaceAll("_", " ").replace(/ mm$/, "")}: ${typeof v === "number" ? (Number.isInteger(v) ? String(v) : v.toFixed(2)) + (k.endsWith("_mm") ? " mm" : "") : typeof v === "boolean" ? (v ? "yes" : "no") : String(v).replaceAll("_", " ")}`);
+}
+
+/** Knob labels from each template's PARAMS ("cable_clip.hole_d" → "Hole diameter"), when this server lists templates. */
+function useKnobLabels(): (template: unknown, param: unknown) => string | undefined {
+  const caps = useCapabilities();
+  const t = useQuery({ queryKey: ["templates"], queryFn: productApi.templates, enabled: caps.has("get", PRODUCT.templates), staleTime: 300_000, retry: false });
+  const map = React.useMemo(() => new Map((t.data ?? []).flatMap((c) => c.params.filter((p) => p.label).map((p) => [`${c.name}.${p.name}`, p.label] as const))), [t.data]);
+  return (template, param) => (typeof template === "string" && typeof param === "string" ? map.get(`${template}.${param}`) : undefined);
 }
 
 function Decide({ l }: { l: Lesson }) {
@@ -50,14 +59,17 @@ function Decide({ l }: { l: Lesson }) {
 const MAX_LINKS = 6;
 
 /** One card per group of lessons that say the same thing; the newest wording leads, the others fold away. */
-function LessonCard({ g, admin }: { g: LessonGroup<Lesson>; admin: boolean }) {
+function LessonCard({ g, admin, knobLabel }: { g: LessonGroup<Lesson>; admin: boolean; knobLabel: (template: unknown, param: unknown) => string | undefined }) {
   const l = g.lead;
+  const label = knobLabel(l.evidence.template, l.evidence.param);
   const n = g.members.length;
   const facts = evidenceFacts(l.evidence);
   const track = trackText(l.track);
   const used = (l.track?.used_in ?? 0) > 0 || l.status === "promoted";
-  const links = groupLinks(g.members);
-  const moves = n > 1 ? knobMoves(g.members) : [];
+  const runs = n > 1 ? knobRuns(g.members) : [];
+  // a run listed with its values above is not listed again as an evidence link
+  const links = groupLinks(g.members).filter((e) => e.kind !== "job" || !runs.some((r) => r.job === e.id));
+  const knob = label || (typeof l.evidence.param === "string" ? humanName(l.evidence.param) : "value");
   return (
     <li className="space-y-2 rounded-lg border border-border bg-surface p-4">
       <div className="flex flex-wrap items-center gap-1.5">
@@ -66,11 +78,33 @@ function LessonCard({ g, admin }: { g: LessonGroup<Lesson>; admin: boolean }) {
         {l.created_at ? <span className="text-[11.5px] text-subtle">{n > 1 ? "newest " : ""}{timeAgo(l.created_at)}</span> : null}
         {l.promoted_by && l.status !== "candidate" ? <span className="text-[11.5px] text-subtle">· by {l.promoted_by}</span> : null}
       </div>
-      <p className="text-[14px] leading-6 text-fg">{l.rule}</p>
-      {moves.length ? (
-        <p className="font-mono text-[11.5px] leading-5 text-muted tnum">
-          {String(l.evidence.param ?? "value")}, first build → final: {moves.join(" · ")}
-        </p>
+      <p className="text-[14px] leading-6 text-fg">{lessonText(l, label)}</p>
+      {runs.length ? (
+        <div className="space-y-1" data-testid="knob-runs">
+          <p className="text-[12px] text-muted">
+            {knob} in each run, first build → final{runs.length < n ? ` (${runs.length} of ${n} runs record it)` : ""}:
+          </p>
+          <ul className="space-y-0.5 font-mono text-[11.5px] leading-5 tnum">
+            {runs.map((r) => (
+              <li key={r.id} className="flex flex-wrap items-baseline gap-x-2">
+                {r.page ? (
+                  <Link href={r.page} className="text-accent-text hover:underline">
+                    {r.job}
+                  </Link>
+                ) : (
+                  <span className="text-muted">{r.job ?? r.id}</span>
+                )}
+                <span className="text-fg">
+                  {String(Number(r.first.toFixed(2)))} → {String(Number(r.final.toFixed(2)))}
+                </span>
+                <span className="text-subtle">
+                  {r.verified === true ? "verified" : r.verified === false ? "best effort" : ""}
+                  {r.maxErrorMm != null ? ` · max gap ${r.maxErrorMm.toFixed(2)} mm` : ""}
+                </span>
+              </li>
+            ))}
+          </ul>
+        </div>
       ) : facts.length ? (
         <p className="font-mono text-[11.5px] leading-5 text-muted tnum">{facts.join(" · ")}</p>
       ) : null}
@@ -103,7 +137,7 @@ function LessonCard({ g, admin }: { g: LessonGroup<Lesson>; admin: boolean }) {
           <ul className="mt-2 space-y-2 border-l border-border pl-3">
             {g.members.map((m) => (
               <li key={m.id} className="space-y-1">
-                <p className="leading-5 text-muted">{m.rule}</p>
+                <p className="leading-5 text-muted">{lessonText(m, label)}</p>
                 <p className="text-[11.5px] text-subtle">
                   <span className="font-mono">{m.id}</span>
                   {m.created_at ? ` · ${timeAgo(m.created_at)}` : ""}
@@ -127,6 +161,7 @@ const OPEN_FAMILIES = 3;
  */
 function FamilyGroups({ list, admin, label }: { list: Lesson[]; admin: boolean; label: string }) {
   const families = React.useMemo(() => groupLessons(list), [list]);
+  const knobLabel = useKnobLabels();
   const [toggled, setToggled] = React.useState<Set<string>>(() => new Set());
   const [all, setAll] = React.useState<Set<string>>(() => new Set());
   const flip = (set: React.Dispatch<React.SetStateAction<Set<string>>>, k: string) =>
@@ -161,7 +196,7 @@ function FamilyGroups({ list, admin, label }: { list: Lesson[]; admin: boolean; 
               <div id={`${id}-cards`} className="space-y-2.5">
                 <ul className="grid grid-cols-1 gap-3 md:grid-cols-2">
                   {shown.map((g) => (
-                    <LessonCard key={g.key} g={g} admin={admin} />
+                    <LessonCard key={g.key} g={g} admin={admin} knobLabel={knobLabel} />
                   ))}
                 </ul>
                 {f.groups.length > PER_FAMILY ? (

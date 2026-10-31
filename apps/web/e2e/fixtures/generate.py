@@ -137,6 +137,7 @@ def product() -> None:
     (OUT / "view-describe.json").write_text(json.dumps(view_json(shape(cable_clip, {**t.defaults, **done["bake"]["params"]})), separators=(",", ":")))
     asks = describe.start("a cable clip for a 6 mm cable, 20 mm wide")
     nofit = describe.start("a gear with 20 teeth")
+    example = describe.example()
     bake = examples.bake_template("cable_clip", {}, ("view",))
     out = {
         "templates": examples.all_cards(),
@@ -144,7 +145,7 @@ def product() -> None:
         "print_plan": print_plan(bake.facts) if bake.facts else None,
         "facts": bake.facts.model_dump(mode="json") if bake.facts else None,
         "ship_reason": examples.TEMPLATE_SHIP_REASON,
-        "describe": {"done": scrub(done), "asks": scrub(asks), "no_fit": scrub(nofit)},
+        "describe": {"done": scrub(done), "asks": scrub(asks), "no_fit": scrub(nofit), "example": scrub(example)},
     }
     out["describe"]["done"]["id"] = "d_261031_0000done"
     out["describe"]["asks"]["id"] = "d_261031_0000asks"

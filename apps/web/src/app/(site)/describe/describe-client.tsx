@@ -365,62 +365,84 @@ function NoFit({ rec }: { rec: DescribeRecord }) {
   );
 }
 
-const EXAMPLE_TEMPLATE = "spacer";
-const EXAMPLE_TEXT = EXAMPLES[1]!;
-const EXAMPLE_KNOBS = 6;
-
 /**
- * Fills the empty result area before anything is described: the part program an example sentence would use, with its
- * thumbnail and knobs at their defaults (from /templates). Labelled as a preview: nothing here was built from your text.
+ * Fills the empty result area before anything is described: the server's stored example result (`GET
+ * /describe/example`) — one sentence through the real plan check, sandbox bake and number checks, planned by the
+ * labelled mock instead of a model. Every value, tag and measurement on it comes from that record.
  */
 function DescribeExample() {
-  const templates = useQuery({ queryKey: ["templates"], queryFn: productApi.templates, staleTime: 300_000 });
-  const t = templates.data?.find((x) => x.name === EXAMPLE_TEMPLATE) ?? templates.data?.[0];
-  if (templates.isError || (templates.data && !t)) return null;
+  const caps = useCapabilities();
+  const on = caps.has("get", PRODUCT.describeExample);
+  const ex = useQuery({ queryKey: ["describe", "example"], queryFn: productApi.describeExample, enabled: on, staleTime: Infinity, retry: false });
+  if (caps.ready && !on) return null;
+  if (ex.isError || (ex.data && ex.data.status !== "done")) return null;
+  const r = ex.data;
+  const said = r?.values.filter((v) => v.source === "user" || v.source === "answer") ?? [];
+  const rest = r?.values.filter((v) => v.source !== "user" && v.source !== "answer") ?? [];
+  const fmtVal = (v: DescribeRecord["values"][number]) => `${fmtNum(v.value, 2).replace(/\.?0+$/, "")}${v.unit ? ` ${v.unit === "deg" ? "°" : v.unit}` : ""}`;
   return (
-    <ExamplePreview title="What a result looks like" kind="template at its defaults · not built from your text">
-      {!t ? (
+    <ExamplePreview title="Example result" kind={r?.planner?.mode === "mock" ? "run on this server · mock planner, no model call" : "run on this server"}>
+      {!r ? (
         <Skeleton className="h-48" />
       ) : (
-        <div className="grid grid-cols-1 gap-4 md:grid-cols-[220px_minmax(0,1fr)]">
-          <div className="flex aspect-square items-center justify-center overflow-hidden rounded-lg border border-border bg-[var(--viewer-bg)]">
-            {/* eslint-disable-next-line @next/next/no-img-element -- template thumbnail rendered by the API */}
-            <img src={artifactUrl(t.thumbnail_url)} alt={`${t.title} at its default values`} className="size-full object-contain p-3" loading="lazy" decoding="async" />
+        <div className="space-y-4" data-testid="describe-example">
+          <p className="text-[13px] text-muted">
+            The sentence: <span className="text-fg italic">“{r.text}”</span>
+          </p>
+          <div className="flex flex-wrap items-center gap-1.5">
+            <span className="text-[15px] font-semibold">{r.title || r.template}</span>
+            {r.checks ? <Badge tone={r.checks.status === "matches" ? "ok" : r.checks.status === "partial" ? "warn" : "neutral"}>{r.checks.label}</Badge> : null}
+            <Badge tone="outline">not verified: no photo</Badge>
+            {r.planner ? <ModeBadge mode={r.planner.mode} hideLive /> : null}
+            <Badge tone="neutral" className="font-mono">
+              {r.template}.py · {said.length} of {r.values.length} values from the sentence
+            </Badge>
           </div>
-          <div className="min-w-0 space-y-3">
-            <p className="text-[13px] text-muted">
-              You write: <span className="text-fg italic">“{EXAMPLE_TEXT}”</span>
-            </p>
-            <div className="space-y-1">
-              <div className="flex flex-wrap items-center gap-1.5">
-                <span className="text-[15px] font-semibold">{t.title}</span>
-                <Badge tone="outline">not verified: no photo</Badge>
-                <Badge tone="neutral" className="font-mono">
-                  {t.name}.py
-                </Badge>
-              </div>
-              <p className="text-[12.5px] text-muted">
-                A model picks this part program and sets its knobs from your numbers. Each knob is tagged: <Badge tone="ok">you said</Badge> for your numbers,{" "}
-                <Badge tone="neutral">default</Badge> for the rest. Code then measures every number you gave on the built model.
-              </p>
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+            <div className="min-w-0 space-y-1.5">
+              <h3 className="text-[12px] font-medium tracking-wide text-subtle uppercase">From the sentence, checked on the built model</h3>
+              <ul className="space-y-1 text-[12.5px]">
+                {said.map((v) => {
+                  const c = r.checks?.items.find((i) => i.param === v.param);
+                  return (
+                    <li key={v.param} className="flex min-w-0 flex-wrap items-baseline justify-between gap-x-3 gap-y-0.5 border-b border-border py-1">
+                      <span className="min-w-0">
+                        <Badge tone={TAG_TONE[valueTag(v, undefined, 0)]}>{valueTag(v, undefined, 0)}</Badge> <span className="text-muted">“{v.quote}”</span>
+                      </span>
+                      <span className="shrink-0 font-mono tnum">
+                        {v.label || v.param} {fmtVal(v)}
+                        {c?.measured != null ? (
+                          <span className="text-subtle">
+                            {" "}
+                            · measured {fmtNum(c.measured, 2)} {c.unit}
+                          </span>
+                        ) : null}
+                      </span>
+                    </li>
+                  );
+                })}
+              </ul>
             </div>
-            <dl className="grid grid-cols-1 gap-x-4 gap-y-1 text-[12.5px] sm:grid-cols-2">
-              {t.params.slice(0, EXAMPLE_KNOBS).map((p) => (
-                <div key={p.name} className="flex min-w-0 items-baseline justify-between gap-2 border-b border-border py-1">
-                  <dt className="truncate text-muted">{p.label || p.name}</dt>
-                  <dd className="shrink-0 font-mono tnum">
-                    {fmtNum(p.default, p.step >= 1 ? 0 : p.step >= 0.1 ? 1 : 2)}
-                    {p.unit ? ` ${p.unit === "deg" ? "°" : p.unit}` : ""} <span className="text-[11px] text-subtle">default</span>
-                  </dd>
-                </div>
-              ))}
-            </dl>
-            <Button asChild variant="outline" size="sm">
-              <Link href={`/describe?q=${encodeURIComponent(EXAMPLE_TEXT)}`} scroll={false}>
-                Use this sentence <ArrowRight aria-hidden />
-              </Link>
-            </Button>
+            <div className="min-w-0 space-y-1.5">
+              <h3 className="text-[12px] font-medium tracking-wide text-subtle uppercase">Not in the sentence: template defaults</h3>
+              <dl className="space-y-1 text-[12.5px]">
+                {rest.map((v) => (
+                  <div key={v.param} className="flex min-w-0 items-baseline justify-between gap-2 border-b border-border py-1">
+                    <dt className="truncate text-muted">{v.label || v.param}</dt>
+                    <dd className="shrink-0 font-mono tnum">
+                      {fmtVal(v)} <Badge tone={TAG_TONE[valueTag(v, undefined, 0)]}>{valueTag(v, undefined, 0)}</Badge>
+                    </dd>
+                  </div>
+                ))}
+              </dl>
+            </div>
           </div>
+          {r.label ? <p className="text-[11.5px] text-subtle">{r.label}</p> : null}
+          <Button asChild variant="outline" size="sm">
+            <Link href={`/describe?q=${encodeURIComponent(r.text)}`} scroll={false}>
+              Use this sentence <ArrowRight aria-hidden />
+            </Link>
+          </Button>
         </div>
       )}
     </ExamplePreview>

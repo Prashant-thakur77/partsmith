@@ -2761,6 +2761,320 @@
     }
    ],
    "label": "Made from your description: no photo of a real part was involved, so this is not verified. Add a photo on /fix to check it against the real part."
+  },
+  "example": {
+   "id": "example",
+   "text": "A spacer 12 mm tall for an M3 screw, outer diameter 7 mm",
+   "status": "done",
+   "created_at": 1793100000.0,
+   "updated_at": 1793100000.0,
+   "template": "spacer",
+   "family": "spacer",
+   "title": "Spacer / standoff",
+   "summary": "Cylindrical spacer with a through bore for a screw (M3 clearance by default) and chamfered ends. Wrench flats (0 = round) stop it turning and change its cross-section.",
+   "params": [
+    {
+     "name": "outer_d",
+     "default": 8.0,
+     "min": 4.0,
+     "max": 30.0,
+     "step": 0.05,
+     "unit": "mm",
+     "affects_fit": true,
+     "label": "Outer diameter",
+     "topology": false
+    },
+    {
+     "name": "height",
+     "default": 10.0,
+     "min": 2.0,
+     "max": 60.0,
+     "step": 0.1,
+     "unit": "mm",
+     "affects_fit": true,
+     "label": "Height",
+     "topology": false
+    },
+    {
+     "name": "bore_d",
+     "default": 3.4,
+     "min": 1.5,
+     "max": 20.0,
+     "step": 0.05,
+     "unit": "mm",
+     "affects_fit": true,
+     "label": "Bore diameter",
+     "topology": false
+    },
+    {
+     "name": "chamfer",
+     "default": 0.4,
+     "min": 0.0,
+     "max": 1.5,
+     "step": 0.05,
+     "unit": "mm",
+     "affects_fit": false,
+     "label": "End chamfer",
+     "topology": false
+    },
+    {
+     "name": "flat_count",
+     "default": 0.0,
+     "min": 0.0,
+     "max": 6.0,
+     "step": 1.0,
+     "unit": "",
+     "affects_fit": false,
+     "label": "Wrench flats",
+     "topology": true
+    },
+    {
+     "name": "flat_depth",
+     "default": 0.8,
+     "min": 0.2,
+     "max": 3.0,
+     "step": 0.05,
+     "unit": "mm",
+     "affects_fit": false,
+     "label": "Flat depth",
+     "topology": false
+    }
+   ],
+   "values": [
+    {
+     "param": "outer_d",
+     "label": "Outer diameter",
+     "unit": "mm",
+     "value": 7.0,
+     "default": 8.0,
+     "source": "user",
+     "quote": "outer diameter 7 mm",
+     "note": "\"outer diameter 7 mm\"",
+     "asked": null
+    },
+    {
+     "param": "height",
+     "label": "Height",
+     "unit": "mm",
+     "value": 12.0,
+     "default": 10.0,
+     "source": "user",
+     "quote": "A spacer 12 mm tall",
+     "note": "\"A 12 mm tall\"",
+     "asked": null
+    },
+    {
+     "param": "bore_d",
+     "label": "Bore diameter",
+     "unit": "mm",
+     "value": 3.4,
+     "default": 3.4,
+     "source": "user",
+     "quote": "for an M3 screw",
+     "note": "M3 clearance hole (ISO 273 medium, 3.4 mm)",
+     "asked": null
+    },
+    {
+     "param": "chamfer",
+     "label": "End chamfer",
+     "unit": "mm",
+     "value": 0.4,
+     "default": 0.4,
+     "source": "default",
+     "quote": "",
+     "note": "",
+     "asked": null
+    },
+    {
+     "param": "flat_count",
+     "label": "Wrench flats",
+     "unit": "",
+     "value": 0.0,
+     "default": 0.0,
+     "source": "default",
+     "quote": "",
+     "note": "",
+     "asked": null
+    },
+    {
+     "param": "flat_depth",
+     "label": "Flat depth",
+     "unit": "mm",
+     "value": 0.8,
+     "default": 0.8,
+     "source": "default",
+     "quote": "",
+     "note": "",
+     "asked": null
+    }
+   ],
+   "questions": [],
+   "answers": {},
+   "plan_notes": [],
+   "planner": {
+    "provider": "mock",
+    "model": "describe_plan mock",
+    "mode": "mock",
+    "prompt": ""
+   },
+   "checks": {
+    "status": "matches",
+    "label": "Matches your numbers",
+    "items": [
+     {
+      "param": "outer_d",
+      "label": "Outer diameter",
+      "unit": "mm",
+      "stated": 7.0,
+      "quote": "outer diameter 7 mm",
+      "set": 7.0,
+      "measured": 7.0,
+      "tol": 0.1,
+      "method": "outside diameter of the baked model (bounding box)",
+      "status": "met",
+      "note": ""
+     },
+     {
+      "param": "height",
+      "label": "Height",
+      "unit": "mm",
+      "stated": 12.0,
+      "quote": "A spacer 12 mm tall",
+      "set": 12.0,
+      "measured": 12.0,
+      "tol": 0.1,
+      "method": "material thickness of the baked model (most common)",
+      "status": "met",
+      "note": ""
+     },
+     {
+      "param": "bore_d",
+      "label": "Bore diameter",
+      "unit": "mm",
+      "stated": 3.4,
+      "quote": "for an M3 screw",
+      "set": 3.4,
+      "measured": 3.4,
+      "tol": 0.1,
+      "method": "diameter of the nearest round hole on the baked model",
+      "status": "met",
+      "note": ""
+     }
+    ],
+    "met": 3,
+    "measured": 3,
+    "knob_only": 0,
+    "failed": 0,
+    "tolerance": "\u00b1max(0.1 mm, the knob's step)",
+    "note": "Code compared the baked model with the numbers you gave. No photo was involved: this is not verification against a real part."
+   },
+   "bake": {
+    "cache_key": "ee1d736ed274c4b2a56b9363ec17e5c9f8153cff9e6f33df0abe91a15d2e7736",
+    "params": {
+     "outer_d": 7.0,
+     "height": 12.0,
+     "bore_d": 3.4,
+     "chamfer": 0.4,
+     "flat_count": 0,
+     "flat_depth": 0.8
+    },
+    "clamped": {},
+    "ms": 1614,
+    "cache_hit": false,
+    "facts": {
+     "bbox_mm": [
+      7.0,
+      6.997824274005715,
+      12.0
+     ],
+     "volume_mm3": 347.63607667563207,
+     "mass_g_pla": 0.43,
+     "mass_g_petg": 0.44,
+     "print_minutes_est": 4.7,
+     "supports_needed": false,
+     "orientation": "-Z: mounting face (Z=0) on the bed, as modelled"
+    },
+    "view_url": "/api/v1/files/view-describe.json"
+   },
+   "downloads": {
+    "stl": "/api/v1/templates/spacer/bake?bore_d=3.4&chamfer=0.4&flat_count=0&flat_depth=0.8&height=12&outer_d=7&format=stl&download=1",
+    "3mf": "/api/v1/templates/spacer/bake?bore_d=3.4&chamfer=0.4&flat_count=0&flat_depth=0.8&height=12&outer_d=7&format=3mf&download=1",
+    "step": "/api/v1/templates/spacer/bake?bore_d=3.4&chamfer=0.4&flat_count=0&flat_depth=0.8&height=12&outer_d=7&format=step&download=1",
+    "py": "/api/v1/templates/spacer/bake?bore_d=3.4&chamfer=0.4&flat_count=0&flat_depth=0.8&height=12&outer_d=7&format=py&download=1",
+    "coupon": "/api/v1/templates/spacer/coupon.stl?bore_d=3.4&chamfer=0.4&flat_count=0&flat_depth=0.8&height=12&outer_d=7"
+   },
+   "print_plan": {
+    "orientation": "-Z: mounting face (Z=0) on the bed, as modelled",
+    "supports_needed": false,
+    "material": "PLA",
+    "nozzle_mm": 0.4,
+    "layer_mm": 0.2,
+    "walls": 4,
+    "infill_percent": 40,
+    "bbox_mm": [
+     7.0,
+     6.997824274005715,
+     12.0
+    ],
+    "estimates": [
+     {
+      "material": "PLA",
+      "volume_mm3": 347.6,
+      "grams": 0.43,
+      "print_minutes": 4.7,
+      "filament_cost": {
+       "INR": 0.52,
+       "USD": 0.01
+      },
+      "price_per_kg": {
+       "INR": 1200.0,
+       "USD": 20.0
+      },
+      "assumptions": [
+       "grams: solid-volume mass at 100 % infill (volume x density: PLA 1.24, PETG 1.27 g/cm^3); a real print weighs less",
+       "minutes: rough estimate: (volume / 8 mm^3/s + layers x 4 s) / 60, 0.2 mm layers, 100 % infill",
+       "filament cost: grams x an assumed 1 kg spool price (INR 1200/kg, USD 20/kg); not a quote, and no shop margin or electricity"
+      ]
+     },
+     {
+      "material": "PETG",
+      "volume_mm3": 347.6,
+      "grams": 0.44,
+      "print_minutes": 4.7,
+      "filament_cost": {
+       "INR": 0.62,
+       "USD": 0.01
+      },
+      "price_per_kg": {
+       "INR": 1400.0,
+       "USD": 22.0
+      },
+      "assumptions": [
+       "grams: solid-volume mass at 100 % infill (volume x density: PLA 1.24, PETG 1.27 g/cm^3); a real print weighs less",
+       "minutes: rough estimate: (volume / 8 mm^3/s + layers x 4 s) / 60, 0.2 mm layers, 100 % infill",
+       "filament cost: grams x an assumed 1 kg spool price (INR 1400/kg, USD 22/kg); not a quote, and no shop margin or electricity"
+      ]
+     }
+    ],
+    "notes": {
+     "orientation": "axis-aligned orientation with the least overhang area",
+     "supports_needed": "faces steeper than 45 deg overhang, off the bed, over 4 mm^2 in the recommended orientation",
+     "settings": "suggested slicer settings for a small functional part (the same defaults as the repair card): starting points, not measurements",
+     "grams": "solid-volume mass at 100 % infill (volume x density: PLA 1.24, PETG 1.27 g/cm^3); a real print weighs less",
+     "minutes": "rough estimate: (volume / 8 mm^3/s + layers x 4 s) / 60, 0.2 mm layers, 100 % infill"
+    }
+   },
+   "coupon": true,
+   "no_fit": null,
+   "events": [],
+   "label": "Example result: this sentence run through the describe pipeline on this server with the deterministic mock planner (no model call). Code checked the plan, built the part in the sandbox and measured it. Made from your description: no photo of a real part was involved, so this is not verified. Add a photo on /fix to check it against the real part.",
+   "example": true,
+   "ship": {
+    "status": "best_effort",
+    "reason": "A family template at the values you chose: nothing compared it with a photo of a real part. Print the fit-test coupon or a test piece before relying on it.",
+    "needs_ack": true,
+    "source": "registry.gate (template bake)"
+   }
   }
  }
 }

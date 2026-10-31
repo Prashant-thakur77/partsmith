@@ -214,7 +214,7 @@ export function PrintItPanel({
           </span>
         </a>
       ) : null}
-      <LoadNoteBox family={family} />
+      <LoadNoteBox family={family} planOrientation={plan?.orientation} />
       {caps.has("post", "/print-shops") ? <Shops title={title} /> : null}
     </section>
   );

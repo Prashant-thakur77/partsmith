@@ -34,6 +34,22 @@ def classify(before_mm: float | None, after_mm: float | None, limit_mm: float, *
     return "better" if after_mm < before_mm else "not_fixed"
 
 
+def explain(outcome: str, before_mm: float | None, limit_mm: float, *, passed_next: bool = False) -> str:
+    """The outcome in words, with the rule that set it (shown next to the label, so "fixed" never needs guessing)."""
+    if outcome == "fixed":
+        if passed_next:
+            return "fixed: the next round passed verification"
+        if before_mm is not None and before_mm <= limit_mm:
+            return f"fixed: the gap is within the {limit_mm:.2f} mm limit (it already was before this round)"
+        return f"fixed: the gap is now within the {limit_mm:.2f} mm limit"
+    return {
+        "better": f"better: the gap shrank but is still over the {limit_mm:.2f} mm limit",
+        "not_fixed": "not fixed: the gap did not shrink",
+        "waiting": "waiting: the next round has not finished",
+        "not_measured": "not measured: no gap to compare here",
+    }.get(outcome, "")
+
+
 def _limit(job: Any) -> float:
     v = job.read_json("verification.json") if job is not None else None
     t = (v or {}).get("thresholds") or {}
@@ -95,11 +111,14 @@ def _entries(
                         "outcome": classify(b, a, limit, next_done=child_done),
                     }
                 )
+                items[-1]["outcome_why"] = explain(items[-1]["outcome"], b, limit)
             b = verdict.get("max_error_mm") if isinstance(verdict, Mapping) else None
             a = nxt.get("max_error_mm") if child_done and nxt else None
             general = classify(b, a, limit, next_done=child_done)
-            if child_done and nxt and nxt.get("verified"):
+            passed = bool(child_done and nxt and nxt.get("verified"))
+            if passed:
                 general = "fixed"  # the next round passed the verifier as a whole
+            general_why = explain(general, b, limit, passed_next=passed)
             if rnd.get("note"):
                 items.append(
                     {
@@ -109,12 +128,13 @@ def _entries(
                         "before_mm": b,
                         "after_mm": a,
                         "outcome": general,
+                        "outcome_why": general_why,
                     }
                 )
             for url in [blobs.url(str(k)) for k in rnd.get("attachments") or [] if store._blob_ok(str(k))]:
                 items.append(
                     {"kind": "picture", "what": "a reference picture", "picture": url, "where": None, "before_mm": b,
-                     "after_mm": a, "outcome": general}
+                     "after_mm": a, "outcome": general, "outcome_why": general_why}
                 )  # fmt: skip
         elif action == "reject":
             items.append({"kind": "reject", "what": rnd.get("reason", ""), "where": None, "outcome": "rejected"})

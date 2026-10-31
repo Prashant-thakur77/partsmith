@@ -86,3 +86,36 @@ def test_old_titles_say_synthetic_once() -> None:
     )
     assert say_synthetic_once("Hook (synthetic sample)") == "Hook (synthetic sample)"  # the only mention stays
     assert say_synthetic_once("Battery cover (synthetic, paper)") == "Battery cover (synthetic, paper)"
+
+
+def test_list_shows_a_recorded_run_once_and_replay_only_runs_labelled(tmp_path, monkeypatch):
+    """A run that is both local and recorded lists once (local wins); a run that exists only as a recording (a review
+    round) is listed too, marked is_replay, so "every job on this instance" really is every job it can open."""
+    from services.agent import jobs
+
+    monkeypatch.setattr(jobs, "REPLAYS_DIR", tmp_path / "replays")
+    m = JobManager(root=tmp_path / "runs")
+    try:
+        both = m.create("fix", JobInput(intent="local and recorded"))
+        only = m.create("fix", JobInput(intent="recorded only"))
+
+        def finish(j):
+            j.emit(DoneEvent(job="", verified=False, status="best_effort"))
+
+        for j in (both, only):
+            m.run_sync(j, finish)
+            jobs.export_replay(j)
+        import shutil
+
+        shutil.rmtree(only.dir)
+        fresh = JobManager(root=tmp_path / "runs")
+        try:
+            listed = fresh.list(50, include_replays=True)
+            assert sorted(s.id for s in listed) == sorted([both.id, only.id])
+            by = {s.id: s for s in listed}
+            assert not by[both.id].is_replay and by[only.id].is_replay
+            assert [s.id for s in fresh.list(50)] == [both.id]
+        finally:
+            fresh.shutdown()
+    finally:
+        m.shutdown()

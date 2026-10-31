@@ -280,7 +280,11 @@ class JobManager:
         if include_replays and REPLAYS_DIR.exists():
             dirs += [d for d in REPLAYS_DIR.iterdir() if (d / "run.jsonl").exists()]
         out: list[JobSummary] = []
-        for d in dirs:
+        seen: set[str] = set()
+        for d in dirs:  # a run copied to the replays folder keeps its id: list it once (the local run wins, as in get)
+            if d.name in seen:
+                continue
+            seen.add(d.name)
             job = self.get(d.name)
             if job is not None:
                 out.append(job.summary)

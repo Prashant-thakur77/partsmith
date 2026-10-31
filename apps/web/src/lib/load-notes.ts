@@ -59,3 +59,16 @@ export function loadNote(family: string | null | undefined): LoadNote | null {
   const rule = LOAD_RULES[family];
   return rule ? { family, ...rule, warning: SAFETY_WARNING } : null;
 }
+
+/**
+ * "Which way up" with one source of truth: when a print plan computed an orientation from the mesh, that is the
+ * orientation (the slicer numbers next to it assume it) and the family's strength advice is stated as advice that
+ * defers to it, so "mounting face on the bed" and "print it on its side" never read as two instructions. Without a
+ * plan, the strength advice alone.
+ */
+export function orientationAdvice(note: Pick<LoadNote, "orientation">, planOrientation?: string | null): string {
+  const computed = (planOrientation ?? "").replace(/^[+-][XYZ]:\s*/, "").trim();
+  if (!computed) return note.orientation;
+  const advice = note.orientation.charAt(0).toLowerCase() + note.orientation.slice(1);
+  return `Computed print orientation: ${computed} (picked from the mesh for supports and overhangs). For strength, ${advice} If that is not the computed orientation, re-slice: the supports, time and grams shown assume the computed one.`;
+}

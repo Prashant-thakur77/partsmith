@@ -111,7 +111,7 @@ export default async function HomePage() {
           n={n("how")}
           of={OF}
           kicker="How it works"
-          title="Five sheets, from a photo to a checked part."
+          title="Five steps, from a photo to a checked part."
           description="One recorded run, step by step: the photo, the outline, the sizes, the program and the check."
           actions={
             <Button asChild variant="ghost" size="sm">

@@ -1,3 +1,4 @@
 # Reviewed false positives: a feature-name comparison and a content-addressed bake cache key in a test fixture.
 services/registry/describe.py:generic-api-key:331
 apps/web/e2e/fixtures/generated/product.json:generic-api-key:2272
+apps/web/e2e/fixtures/generated/product.json:generic-api-key:2972

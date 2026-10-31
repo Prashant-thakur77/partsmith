@@ -66,6 +66,9 @@ def test_fix_job_reaches_verified_and_replays(jobs: dict[str, Any], sid: str) ->
     assert all(e.ctx for e in job.events if e.t in ("iteration", "metric", "artifact"))
     iters = [e for e in job.events if e.t == "iteration"]
     assert [e.iter for e in iters] == list(range(1, len(iters) + 1))
+    # the keep rule's number travels with each round: 0 for the verified round, never negative
+    assert all(e.pass_shortfall is not None and e.pass_shortfall >= 0 for e in iters if e.hausdorff_mm is not None)
+    assert min(e.pass_shortfall for e in iters if e.pass_shortfall is not None) == 0.0
     # the verified result matches the hidden ground truth (only this test reads it)
     spec = SAMPLES[sid]
     values = job.read_json("values.json")

@@ -8,7 +8,6 @@ import { PipelineDiagram } from "@/components/models/pipeline-diagram";
 import { Container, PageHeader, Section } from "@/components/layout/page";
 import { Badge } from "@/components/ui/badge";
 import { ErrorState } from "@/components/ui/error-state";
-import { ModeBadge } from "@/components/ui/provenance";
 import { Skeleton } from "@/components/ui/skeleton";
 import { api } from "@/lib/api";
 import type { ProviderStatus, Status } from "@/lib/api-types";
@@ -23,7 +22,7 @@ function ProviderCard({ p }: { p: ProviderStatus }) {
           <div className="text-[11px] font-medium uppercase tracking-[0.08em] text-subtle">{titleCase(p.stage)}</div>
           <div className="text-[14px] font-semibold">{p.role}</div>
         </div>
-        <ModeBadge mode={p.mode} />
+        <ModeWord mode={p.mode} />
       </div>
       <div className="min-w-0 space-y-1">
         <div className="truncate font-mono text-[12.5px] text-fg" title={p.model}>
@@ -77,11 +76,29 @@ function Warnings({ items }: { items: string[] }) {
 }
 
 const MODE_WORD: Record<string, string> = { live: "live", replay: "recorded", mock: "mock" };
+const MODE_MEANS: [string, string][] = [
+  ["live", "a real model call"],
+  ["replay", "a saved model answer played back"],
+  ["mock", "a deterministic stand-in, not model output"],
+];
 
-/** How a stage ran, in one plain word; live gets the accent, recorded and mock the hatched label. */
+/** How a stage ran, in one plain word (the only mode words on this page); live gets the accent, the others hatching. */
 function ModeWord({ mode }: { mode: string }) {
   return (
     <Badge tone={mode === "live" ? "accent" : "mock"}>{MODE_WORD[mode] ?? mode}</Badge>
+  );
+}
+
+/** The one legend for the mode words used everywhere on this page. */
+function ModeLegend() {
+  return (
+    <p className="flex flex-wrap items-center gap-x-4 gap-y-1.5 text-[12px] text-muted" data-testid="mode-legend">
+      {MODE_MEANS.map(([m, means]) => (
+        <span key={m} className="inline-flex items-center gap-1.5">
+          <ModeWord mode={m} /> {means}
+        </span>
+      ))}
+    </p>
   );
 }
 
@@ -171,8 +188,9 @@ export function StatusClient() {
             </Section>
             <Section
               title="Providers by stage"
-              description="Each step of the pipeline, the model behind it, and the calls logged on this server. Mode is how those calls ran; a step with no calls shows how it would run now (recorded = answers played back from saved runs)."
+              description="Each step of the pipeline, the model behind it, and the calls logged on this server. Mode is how those calls ran; a step with no calls shows how it would run now."
             >
+              <ModeLegend />
               <StageTable s={s} />
             </Section>
             <Section title="Jobs and cost" description="Totals from the job log on this instance.">
@@ -197,15 +215,15 @@ export function StatusClient() {
                   <Badge tone={s.open_weights.open_weights_only ? "ok" : "neutral"}>
                     {s.open_weights.open_weights_only ? "open-weights-only mode" : "mixed providers"}
                   </Badge>
-                  <span className="text-muted">
-                    <span className="font-mono text-fg tnum">{fmtInt(s.open_weights.calls_on_open_weights)}</span> calls on open weights
-                  </span>
-                  <span className="text-muted">
-                    · live stages:{" "}
+                  <span className="text-muted" data-testid="open-weights-line">
+                    <span className="font-mono text-fg tnum">{fmtInt(s.open_weights.calls_on_open_weights)}</span> model call
+                    {s.open_weights.calls_on_open_weights === 1 ? "" : "s"} in this server&apos;s job log ran live on open-weight models.{" "}
                     {s.open_weights.stages_live_on_open_weights.length ? (
-                      <span className="font-mono text-fg">{s.open_weights.stages_live_on_open_weights.join(", ")}</span>
+                      <>
+                        Set to use them live right now: <span className="font-mono text-fg">{s.open_weights.stages_live_on_open_weights.join(", ")}</span>.
+                      </>
                     ) : (
-                      "none yet"
+                      <>No stage is set to use them live right now{s.mode !== "live" ? ` (this server answers in ${MODE_WORD[s.mode] ?? s.mode} mode)` : ""}.</>
                     )}
                   </span>
                 </div>
@@ -242,8 +260,8 @@ export function StatusClient() {
                                 {m.model}
                                 {m.open_weights ? <Badge tone="accent" className="ml-1.5 font-sans">open</Badge> : null}
                               </td>
-                              <td className="px-3 py-2">
-                                <ModeBadge mode={m.mode} />
+                              <td className="px-3 py-2 font-sans">
+                                <ModeWord mode={m.mode} />
                               </td>
                               <td className="px-3 py-2 text-right">{fmtInt(m.calls)}</td>
                               <td className={cn("px-3 py-2 text-right", m.failed > 0 && "text-bad")}>{fmtInt(m.failed)}</td>

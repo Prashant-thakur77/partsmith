@@ -11,8 +11,8 @@ import { CircleCheck, CircleDashed, CircleX, ImageOff, TriangleAlert } from "luc
 import * as React from "react";
 import { artifactUrl } from "@/lib/api";
 import type { JobEvent } from "@/lib/api-types";
-import { editsText, roundsFromEvents, sizeSetsMaxError, type FixRound, type RoundVerdict } from "@/lib/fix-rounds";
-import { fmtNum } from "@/lib/format";
+import { editsText, keepReason, roundsFromEvents, sizeSetsMaxError, type FixRound, type RoundVerdict } from "@/lib/fix-rounds";
+import { fmtErr, fmtNum } from "@/lib/format";
 import { cn } from "@/lib/utils";
 
 const VERDICT: Record<RoundVerdict, { word: string; icon: typeof CircleCheck; tile: string; text: string }> = {
@@ -48,12 +48,16 @@ function LimitMark({ within }: { within: boolean | null }) {
 
 export function FixHistoryStrip({ events, className }: { events: JobEvent[]; className?: string }) {
   const s = React.useMemo(() => roundsFromEvents(events), [events]);
-  const [sel, setSel] = React.useState<number | null>(null);
+  // undefined = not touched yet: a finished job opens on the kept round, so its overlay shows without a click
+  const [picked, setSel] = React.useState<number | null | undefined>(undefined);
   const titleId = React.useId();
   const panelId = React.useId();
   if (!s.rounds.length) return null;
+  const sel = picked === undefined ? s.keptIter : picked;
   const selected = s.rounds.find((r) => r.iter === sel) ?? null;
   const kept = s.rounds.find((r) => r.iter === s.keptIter) ?? null;
+  const why = keepReason(s.rounds, s.keptIter);
+  const later = kept && kept.iter !== s.rounds.at(-1)!.iter ? keptNote(kept, s.rounds) : "";
   return (
     <section aria-labelledby={titleId} className={cn("min-w-0 max-w-full rounded-lg border border-border bg-surface p-3", className)}>
       <div className="mb-2 flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1">
@@ -65,6 +69,17 @@ export function FixHistoryStrip({ events, className }: { events: JobEvent[]; cla
           {s.limitMm != null ? <span className="ml-2 font-mono text-[11px] font-normal text-subtle tnum">limit {fmtNum(s.limitMm)} mm</span> : null}
         </p>
       </div>
+      {why || later ? (
+        <p className="mb-2 rounded-md border border-border bg-surface-2 px-2.5 py-1.5 text-[12px] leading-5 text-muted" data-testid="keep-reason">
+          {why ? (
+            <>
+              <span className="font-medium text-fg">Why this round is kept: </span>
+              {why}{" "}
+            </>
+          ) : null}
+          {later}
+        </p>
+      ) : null}
       <ol className="scrollbar-thin relative flex gap-2 overflow-x-auto pb-1" aria-label="Build rounds, oldest first">
         {s.rounds.map((r, i) => {
           const v = VERDICT[r.verdict];
@@ -108,7 +123,7 @@ export function FixHistoryStrip({ events, className }: { events: JobEvent[]; cla
                   <span className="text-[11px] font-medium text-muted">{worse ? "tried, worse, discarded" : "tried, discarded"}</span>
                 ) : null}
                 <span className="font-mono text-[13px] text-fg tnum">
-                  {r.maxErrorMm != null ? `${fmtNum(r.maxErrorMm)} mm` : "—"}
+                  {r.maxErrorMm != null ? `${fmtErr(r.maxErrorMm, s.limitMm ?? undefined)} mm` : "—"}
                   <span className="ml-1 font-sans text-[10.5px] text-subtle">max error</span>
                 </span>
                 {sizeSetsMaxError(r) ? <span className="text-[11px] leading-4 text-muted">from a measured size; outline gaps:</span> : null}
@@ -135,8 +150,7 @@ export function FixHistoryStrip({ events, className }: { events: JobEvent[]; cla
       <div id={panelId} role="region" aria-live="polite" aria-label="Selected round">
         {selected ? <RoundDetail r={selected} limit={s.limitMm} /> : (
           <p className="mt-1 text-[11.5px] text-subtle">
-            {kept && kept.iter !== s.rounds.at(-1)!.iter ? `${keptNote(kept, s.rounds)} ` : ""}
-            Select a round to see its overlay. Max error is the worst of the outline gaps and the measured sizes; per view: the biggest outline gap (Hausdorff) against the limit (✓ within, ✗ over); the verdict also needs the overlap (IoU) and the part tests.
+            Select a round to see its overlay. Max error is the worst of the outline gaps and the measured sizes; per view: the largest outline gap against the limit (✓ within, ✗ over); the verdict also needs the overlap with the photo and the required tests.
           </p>
         )}
       </div>
@@ -157,7 +171,7 @@ function RoundDetail({ r, limit }: { r: FixRound; limit: number | null }) {
             tests {r.testsPassed}/{r.testsTotal}
           </span>
         ) : null}
-        {r.iou != null ? <span className="font-mono tnum">min IoU {fmtNum(r.iou, 3)}</span> : null}
+        {r.iou != null ? <span className="font-mono tnum">min overlap {fmtNum(r.iou, 3)}</span> : null}
         <span>
           <span className="text-subtle">Changed: </span>
           {editsText(r)}
@@ -167,10 +181,10 @@ function RoundDetail({ r, limit }: { r: FixRound; limit: number | null }) {
         <ul className="flex flex-wrap gap-x-4 gap-y-0.5 font-mono text-[11.5px] tnum" aria-label="Per view">
           {r.views.map((v) => (
             <li key={v.view}>
-              {v.view}: Hausdorff {v.hausdorffMm != null ? `${fmtNum(v.hausdorffMm)} mm` : "—"}
+              {v.view}: outline gap {v.hausdorffMm != null ? `${fmtNum(v.hausdorffMm)} mm` : "—"}
               {v.withinLimit != null && limit != null ? (v.withinLimit ? ` ≤ ${fmtNum(limit)} mm` : ` > ${fmtNum(limit)} mm`) : ""}
               <LimitMark within={v.withinLimit} />
-              {v.iou != null ? ` · IoU ${fmtNum(v.iou, 3)}` : ""}
+              {v.iou != null ? ` · overlap ${fmtNum(v.iou, 3)}` : ""}
             </li>
           ))}
         </ul>

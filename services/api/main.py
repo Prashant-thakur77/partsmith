@@ -134,7 +134,16 @@ class McpMount:
             )
             await resp(scope, receive, send)
             return
-        await self.inner(scope, receive, send)
+        # absolute URLs in tool results use this request's public base, by the same rule as REST (public_base)
+        from services.mcp import server as mcp_server
+
+        req = Request(scope)
+        base = public_base(req)
+        tokens = mcp_server.set_request_base(base, base if req.headers.get("x-forwarded-host") else None)
+        try:
+            await self.inner(scope, receive, send)
+        finally:
+            mcp_server.reset_request_base(tokens)
 
 
 mcp_mount = McpMount()
@@ -617,12 +626,19 @@ def jobs_demo(body: DemoRequest) -> dict[str, Any]:
     return dict(job.summary.model_dump(mode="json"))
 
 
-@router.get("/jobs", summary="Recent jobs", tags=["jobs"])
+@router.get("/jobs", summary="Every job this server can open, newest first", tags=["jobs"])
 def jobs_list(
     limit: Annotated[int, Query(ge=1, le=500)] = 50,
-    include_replays: bool = False,
+    include_replays: Annotated[
+        bool,
+        Query(
+            description="Also list the recorded runs this server serves (each has is_replay: true); false hides them"
+        ),
+    ] = True,
     kind: str | None = None,
 ) -> list[dict[str, Any]]:
+    """Recorded runs (review rounds, the judge path) open at `/jobs/{id}` like any other job, so they are listed by
+    default, labelled `is_replay`; a run that is both local and recorded is listed once."""
     out = _svc().manager().list(limit if kind is None else 500, include_replays=include_replays)
     items = [s.model_dump(mode="json") for s in out if kind is None or s.kind == kind]
     return items[:limit]

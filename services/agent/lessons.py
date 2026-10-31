@@ -53,12 +53,23 @@ def extract_candidates(
         ]
         if not edits:
             continue
+        ended = (
+            "a run that passed verification"
+            if verified
+            else "a run that ended best effort"
+            + (
+                f" (max gap {max_error_mm:.2f} mm), so the final value is not confirmed"
+                if max_error_mm is not None
+                else ""
+            )
+        )
         out.append(
             LessonCandidate(
                 scope=family,
                 rule=(
-                    f"{template or family}: the first build set {name} = {first:g}, the verified loop moved it to "
-                    f"{final:g} ({final - first:+.2f}) — check {name} against the measurement before building."
+                    f"{template or family}: the first build set {name} = {first:g}; the fix loop moved it to "
+                    f"{final:g} ({final - first:+.2f}) in {ended} — check {name} against the measurement before "
+                    "building."
                 ),
                 evidence={**base, "param": name, "first": first, "final": final, "n_edits": len(edits)},
             )

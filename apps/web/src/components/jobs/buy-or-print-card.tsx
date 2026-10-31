@@ -12,7 +12,7 @@ import { ExternalLink, Search } from "lucide-react";
 import * as React from "react";
 import { ApiError, api } from "@/lib/api";
 import type { BuyOrPrint } from "@/lib/api-types";
-import { cardMode, citedOem, citedOffers, citedPlaces, cityParam, costEntries, hostOf, lookupState, money } from "@/lib/buy-or-print";
+import { cardCurrency, cardMode, citedOem, citedOffers, citedPlaces, cityParam, costIn, hostOf, lookupState, money, moneyLocale } from "@/lib/buy-or-print";
 import { useCapabilities } from "@/lib/capabilities";
 import { fmtNum } from "@/lib/format";
 import { useT } from "@/lib/i18n";
@@ -21,7 +21,7 @@ import { Badge } from "../ui/badge";
 import { Button } from "../ui/button";
 import { ErrorState } from "../ui/error-state";
 import { Input, Label } from "../ui/input";
-import { ModeBadge } from "../ui/provenance";
+import { ModeBadge, RunBadge } from "../ui/provenance";
 import { Spinner } from "../ui/spinner";
 
 const PLACE_KIND: Record<string, string> = { print_shop: "print shop", repair_cafe: "repair café", maker_space: "maker space", other: "place" };
@@ -77,7 +77,12 @@ function CardBody({
   // the MOCK badge and the "no web search ran" line already say it: drop the backend's own mock notes
   const notes = state === "mock" ? card.notes.filter((n) => !/^MOCK\b/.test(n)) : card.notes;
   const lookup = card.lookup ?? null;
-  const offers = citedOffers(lookup);
+  // one currency per card (the offers' price source, else the viewer's locale): ₹ and $ never share a card
+  const currency = cardCurrency(card, typeof navigator === "undefined" ? null : navigator.language);
+  const fmt = (amount: number, cur: string) => money(amount, cur, moneyLocale(cur));
+  const cited = citedOffers(lookup);
+  const offers = cited.filter((o) => o.currency === currency);
+  const otherOffers = cited.filter((o) => o.currency !== currency);
   const places = citedPlaces(lookup);
   const oem = citedOem(lookup);
   const dropped = lookup?.dropped ?? [];
@@ -105,12 +110,7 @@ function CardBody({
                   <dd className="text-right font-mono tnum">
                     <span>{fmtNum(p.grams, p.grams < 10 ? 2 : 1)} g</span>
                     {p.print_minutes != null ? <span className="text-muted"> · {fmtNum(p.print_minutes, 0)} min</span> : null}
-                    {costEntries(p).map((c) => (
-                      <span key={c.currency} className="text-muted">
-                        {" "}
-                        · {money(c.amount, c.currency)}
-                      </span>
-                    ))}
+                    {costIn(p, currency) != null ? <span className="text-muted"> · {fmt(costIn(p, currency)!, currency)}</span> : null}
                   </dd>
                 </div>
               ))}
@@ -163,7 +163,7 @@ function CardBody({
                       <span className="truncate">{o.seller}</span>
                       <ExternalLink className="size-3 shrink-0" aria-hidden />
                     </span>
-                    <span className="shrink-0 font-mono text-fg tnum">{money(o.price, o.currency)}</span>
+                    <span className="shrink-0 font-mono text-fg tnum">{fmt(o.price, o.currency)}</span>
                     <span className="sr-only">{t("bop.opens")}</span>
                   </a>
                   {o.title || o.availability ? (
@@ -173,7 +173,7 @@ function CardBody({
                 </li>
               ))}
             </ul>
-          ) : state === "mock" ? (
+          ) : otherOffers.length ? null : state === "mock" ? (
             <p className="text-[12px] text-muted">{t("bop.mock")}</p>
           ) : state === "not_searched" ? (
             <p className="text-[12px] text-muted">{t("bop.notSearched")}</p>
@@ -182,6 +182,22 @@ function CardBody({
           ) : (
             <p className="text-[12px] text-muted">{t("bop.noLookup")}</p>
           )}
+
+          {otherOffers.length ? (
+            <details className="text-[12px] text-muted">
+              <summary className="cursor-pointer rounded-sm select-none">
+                {otherOffers.length === 1 ? "1 cited offer" : `${otherOffers.length} cited offers`} priced in another currency (not converted)
+              </summary>
+              <ul className="mt-1 space-y-1">
+                {otherOffers.map((o) => (
+                  <li key={`${o.href}|${o.price}|${o.currency}`} className="flex items-baseline justify-between gap-2">
+                    <SourceLink href={o.href} label={o.seller} />
+                    <span className="shrink-0 font-mono tnum">{fmt(o.price, o.currency)}</span>
+                  </li>
+                ))}
+              </ul>
+            </details>
+          ) : null}
 
           {state === "none" && onLookup ? (
             <form
@@ -278,7 +294,8 @@ function Shell({ id, card, children }: { id: string; card: BuyOrPrint; children:
         <h2 id={id} className="text-[14px] font-semibold tracking-tight">
           {t("bop.title")}
         </h2>
-        <ModeBadge mode={cardMode(card)} />
+        {/* a stored card read back (recorded run / replaying server) is never shown as LIVE */}
+        {card.recorded ? <RunBadge mode={cardMode(card)} recorded finished /> : <ModeBadge mode={cardMode(card)} />}
       </div>
       {children}
     </section>

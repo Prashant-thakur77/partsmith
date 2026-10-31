@@ -1,7 +1,7 @@
 "use client";
 
 /**
- * "Five sheets": the pipeline as a scroll story. On wide screens the figure stays put on the left and changes as each
+ * "Five steps" (one landing sheet): the pipeline as a scroll story. On wide screens the figure stays put on the left and changes as each
  * step scrolls past on the right; on phones each step carries its own figure. The photo, outline, dimensions, program
  * lines and the verifier's gap all come from one stored run (labelled); the mat and the sweep are pictures only.
  */
@@ -9,7 +9,7 @@ import * as React from "react";
 import { artifactUrl } from "@/lib/api";
 import { fmtNum } from "@/lib/format";
 import { knobLines, measuredValue, measureLinks, type FigureData } from "@/lib/figure-run";
-import { useCountUp, usePrefersReducedMotion } from "@/lib/motion";
+import { useCountUp, useInView, usePrefersReducedMotion } from "@/lib/motion";
 import { cn } from "@/lib/utils";
 import { LatchGlyph, MAT_H, MAT_W, MatScreen, PartOnMat } from "../art/mat-figure";
 import { useSvgId } from "../art/primitives";
@@ -47,9 +47,9 @@ const STEPS: { key: Key; title: string; body: string }[] = [
   },
 ];
 
-function Frame({ children, caption, className }: { children: React.ReactNode; caption: React.ReactNode; className?: string }) {
+function Frame({ children, caption, className, panelRef }: { children: React.ReactNode; caption: React.ReactNode; className?: string; panelRef?: React.Ref<HTMLElement> }) {
   return (
-    <figure className={cn("space-y-2", className)}>
+    <figure ref={panelRef} className={cn("space-y-2", className)}>
       {children}
       <figcaption className="font-mono text-[11px] leading-4 text-subtle">{caption}</figcaption>
     </figure>
@@ -89,13 +89,24 @@ function PhotoPanel({ fig, active }: { fig: FigureData | null; active: boolean }
   );
 }
 
-function MmPanel({ fig, active }: { fig: FigureData | null; active: boolean }) {
+/**
+ * Phones show each step's own figure inline, so it starts when the figure itself is on screen (not when the step's
+ * text crosses the middle); on screen at load it shows its finished state at once.
+ */
+function usePanelStart(active: boolean, self: boolean): { ref: React.RefObject<HTMLElement | null>; go: boolean; instant: boolean } {
+  const { ref, seen, atMount } = useInView<HTMLElement>({ threshold: 0.3 });
+  return { ref, go: self ? seen || active : active, instant: self && atMount };
+}
+
+function MmPanel({ fig, active, self = false }: { fig: FigureData | null; active: boolean; self?: boolean }) {
   const uid = useSvgId("s3");
-  const len = useCountUp(fig?.lengthMm != null ? `${fmtNum(fig.lengthMm)} mm` : null, active);
-  const wid = useCountUp(fig?.widthMm != null ? `${fmtNum(fig.widthMm)} mm` : null, active);
-  const hole = useCountUp(fig?.holes[0] ? `Ø ${fmtNum(fig.holes[0].diameterMm)} mm` : null, active);
+  const { ref, go, instant } = usePanelStart(active, self);
+  active = go;
+  const len = useCountUp(fig?.lengthMm != null ? `${fmtNum(fig.lengthMm)} mm` : null, active, undefined, instant);
+  const wid = useCountUp(fig?.widthMm != null ? `${fmtNum(fig.widthMm)} mm` : null, active, undefined, instant);
+  const hole = useCountUp(fig?.holes[0] ? `Ø ${fmtNum(fig.holes[0].diameterMm)} mm` : null, active, undefined, instant);
   return (
-    <Frame caption={fig ? "Fig. 4 · the measured outline and sizes from the recorded run (code, from pixels on the mat)." : "Fig. 4 · loading…"}>
+    <Frame panelRef={ref} caption={fig ? "Fig. 4 · the measured outline and sizes from the recorded run (code, from pixels on the mat)." : "Fig. 4 · loading…"}>
       <svg viewBox={`0 0 ${MAT_W} ${MAT_H}`} className="h-auto w-full" role="img" aria-label={fig ? `Measured outline: ${fig.lengthMm != null ? fmtNum(fig.lengthMm) : "—"} by ${fig.widthMm != null ? fmtNum(fig.widthMm) : "—"} millimetres.` : "Loading the measured outline."}>
         <MatScreen uid={uid}>{fig && fig.outline.length > 2 ? <PartOnMat uid={uid} part={fig} labels={{ length: len, width: wid, hole }} drawn={active} dims={active} /> : null}</MatScreen>
       </svg>
@@ -103,8 +114,10 @@ function MmPanel({ fig, active }: { fig: FigureData | null; active: boolean }) {
   );
 }
 
-function CodePanel({ fig, active }: { fig: FigureData | null; active: boolean }) {
-  const reduced = usePrefersReducedMotion();
+function CodePanel({ fig, active, self = false }: { fig: FigureData | null; active: boolean; self?: boolean }) {
+  const { ref, go, instant } = usePanelStart(active, self);
+  active = go;
+  const reduced = usePrefersReducedMotion() || instant;
   const names = React.useMemo(() => fig?.params.map((p) => p.name) ?? [], [fig]);
   const lines = React.useMemo(() => knobLines(fig?.code ?? null, names, 9), [fig, names]);
   const links = React.useMemo(() => (fig ? measureLinks(fig.code).map((l) => ({ ...l, mm: measuredValue(fig, l.measure) })).filter((l) => l.mm != null).slice(0, 3) : []), [fig]);
@@ -118,7 +131,7 @@ function CodePanel({ fig, active }: { fig: FigureData | null; active: boolean })
   }, [active, reduced, lines.length]);
   const linked = new Set(links.map((l) => l.knob));
   return (
-    <Frame caption={fig ? "Fig. 5 · lines from the recorded run's part program; each measured size sets the knob it names." : "Fig. 5 · loading…"}>
+    <Frame panelRef={ref} caption={fig ? "Fig. 5 · lines from the recorded run's part program; each measured size sets the knob it names." : "Fig. 5 · loading…"}>
       <div className="overflow-hidden rounded-[14px] border border-ink/70 bg-surface">
         <div className="flex items-center justify-between border-b border-border px-3 py-1.5 font-mono text-[10.5px] text-subtle">
           <span>part.py</span>
@@ -169,11 +182,11 @@ function VerifyPanel({ fig, active }: { fig: FigureData | null; active: boolean 
   );
 }
 
-function Panel({ k, fig, active }: { k: Key; fig: FigureData | null; active: boolean }) {
+function Panel({ k, fig, active, self = false }: { k: Key; fig: FigureData | null; active: boolean; self?: boolean }) {
   if (k === "mat") return <MatPanel active={active} />;
   if (k === "photo") return <PhotoPanel fig={fig} active={active} />;
-  if (k === "mm") return <MmPanel fig={fig} active={active} />;
-  if (k === "code") return <CodePanel fig={fig} active={active} />;
+  if (k === "mm") return <MmPanel fig={fig} active={active} self={self} />;
+  if (k === "code") return <CodePanel fig={fig} active={active} self={self} />;
   return <VerifyPanel fig={fig} active={active} />;
 }
 
@@ -242,12 +255,12 @@ export function FiveSheets() {
             className="flex flex-col justify-center gap-5 lg:min-h-[68vh]"
           >
             <div className="lg:hidden">
-              <Panel k={s.key} fig={fig} active={seen.has(i)} />
+              <Panel k={s.key} fig={fig} active={seen.has(i)} self />
             </div>
             <div className="space-y-3 lg:max-w-md">
               <div className={cn("flex items-center gap-3 font-mono text-[11px] tracking-[0.14em] uppercase transition-colors duration-[var(--dur-state)]", i === active ? "text-accent-text" : "text-accent-text lg:text-subtle")}>
                 <span className="flex size-7 items-center justify-center rounded-full border border-current/40 text-[11px] tnum">{i + 1}</span>
-                Sheet {i + 1} of {STEPS.length}
+                Step {i + 1} of {STEPS.length}
               </div>
               <h3 className={cn("text-[22px] leading-tight font-semibold tracking-[-0.02em] transition-colors duration-[var(--dur-state)] sm:text-[26px]", i === active ? "text-fg" : "text-fg lg:text-muted")}>{s.title}</h3>
               <p className={cn("text-[15px] leading-7 transition-colors duration-[var(--dur-state)]", i === active ? "text-muted" : "text-muted lg:text-subtle")}>{s.body}</p>

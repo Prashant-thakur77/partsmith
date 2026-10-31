@@ -82,6 +82,9 @@ def test_overview_counts_come_from_jobs_reviews_registry_and_events(client: Test
     o = client.get("/api/v1/admin/overview", headers=ADMIN).json()
     assert o["jobs"] == {**o["jobs"], "total": 3, "finished": 3, "verified": 2, "n": 3}
     assert o["jobs"]["pass_rate"] == pytest.approx(2 / 3, abs=1e-3)
+    # stored replays are counted from the listing the review queue reads, so the two blocks agree
+    replays = [x for x in svc.manager().list(100_000, include_replays=True) if x.is_replay]
+    assert o["jobs"]["replays_excluded"] == len(replays)
     assert o["rounds_to_verify"]["buckets"] == [{"rounds": 1, "count": 1}, {"rounds": 3, "count": 1}]
     assert o["max_error"]["n"] == 3 and o["max_error"]["median_mm"] == 0.4 and o["max_error"]["p90_mm"] == 0.9
     assert o["send_back"]["person"]["top"] == [{"reason": "Wrong hole", "count": 1}]

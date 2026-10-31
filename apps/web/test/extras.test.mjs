@@ -103,6 +103,16 @@ test("load notes: load-bearing families only, always with the safety warning", a
   assert.deepEqual(Object.keys(LOAD_RULES).sort(), ["bracket", "clip", "hinge", "hook", "latch"]);
 });
 
+test("load notes defer to the print plan's computed orientation (one source for which way up)", async () => {
+  const { loadNote, orientationAdvice } = await import("../src/lib/load-notes.ts");
+  const hook = loadNote("hook");
+  assert.equal(orientationAdvice(hook, null), hook.orientation);
+  const text = orientationAdvice(hook, "-Z: mounting face (Z=0) on the bed, as modelled");
+  assert.match(text, /^Computed print orientation: mounting face \(Z=0\) on the bed, as modelled \(picked from the mesh/);
+  assert.match(text, /For strength, print it lying on its side/);
+  assert.match(text, /assume the computed one\.$/);
+});
+
 test("hidden sizes from the /fix form: blank rows dropped, bad numbers named, other needs a name", async () => {
   const { HIDDEN_KINDS, MAX_HIDDEN, hiddenDimsPayload, hiddenStatusText } = await import("../src/lib/hidden-dims.ts");
   assert.deepEqual(HIDDEN_KINDS.map((k) => k.name), ["bore_d", "socket_depth", "hole_d", "wall", "cable_d"]);

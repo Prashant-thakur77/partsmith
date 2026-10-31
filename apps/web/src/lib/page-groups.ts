@@ -72,15 +72,59 @@ export function groupLessons<L extends LessonLike>(list: readonly L[]): LessonFa
     .sort((a, b) => b.lessons - a.lessons || a.scope.localeCompare(b.scope));
 }
 
-/** "1 → 1.9" (first build → final value) for each member that records a knob move (from its evidence), newest first. */
-export function knobMoves(members: readonly LessonLike[]): string[] {
-  const out: string[] = [];
+/** One run behind a knob lesson: the knob's first-build and final value, and how that run ended (from its evidence). */
+export type KnobRun = { id: string; job: string | null; page: string | null; first: number; final: number; verified: boolean | null; maxErrorMm: number | null };
+
+/** The runs behind a knob lesson card, one row per member that records a first → final move, newest first. */
+export function knobRuns(members: readonly LessonLike[]): KnobRun[] {
+  const out: KnobRun[] = [];
   for (const m of members) {
-    const a = m.evidence.first;
-    const b = m.evidence.final;
-    if (typeof a === "number" && typeof b === "number") out.push(`${trim(a)} → ${trim(b)}`);
+    const { first, final, verified, max_error_mm: gap, job_id } = m.evidence;
+    if (typeof first !== "number" || typeof final !== "number") continue;
+    const link = m.links.find((l) => l.kind === "job");
+    out.push({
+      id: m.id,
+      job: str(job_id) ?? link?.id ?? null,
+      page: link?.page || null,
+      first,
+      final,
+      verified: typeof verified === "boolean" ? verified : null,
+      maxErrorMm: typeof gap === "number" ? gap : null,
+    });
   }
   return out;
+}
+
+/** "cable_clip" → "Cable Clip" (template and family names as people read them). */
+export function humanName(s: string): string {
+  return s.replace(/[_-]+/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
+}
+
+/** How a run ended, in words that follow its status: never "verified" for a best-effort run. */
+export function runEnding(r: Pick<KnobRun, "verified" | "maxErrorMm">): string {
+  const gap = r.maxErrorMm != null ? ` (max gap ${r.maxErrorMm.toFixed(2)} mm)` : "";
+  if (r.verified === true) return `a run that passed verification${gap}`;
+  if (r.verified === false) return `a run that ended best effort${gap}, so the final value is not confirmed`;
+  return "one run";
+}
+
+/**
+ * A lesson's wording for the page. A knob lesson that code wrote ("…: the first build set <knob> = …") is re-said from
+ * its evidence (template and knob by their names, the move, and how that run actually ended), so a stored sentence that
+ * called a best-effort run "verified" never shows. Other lessons (a person's wording) keep their text, with a leading
+ * snake_case template name made readable.
+ */
+export function lessonText(l: Pick<LessonLike, "rule" | "evidence">, knobLabel?: string): string {
+  const { template, param, first, final } = l.evidence;
+  const codeWritten = /the first build set /.test(l.rule);
+  if (codeWritten && typeof param === "string" && typeof first === "number" && typeof final === "number") {
+    const [run] = knobRuns([{ id: "", scope: "", rule: "", status: "", created_at: 0, evidence: l.evidence, links: [] }]);
+    const knob = knobLabel || humanName(param);
+    const d = final - first;
+    const who = str(template) ? `${humanName(str(template)!)}: ` : "";
+    return `${who}the first build set ${knob} = ${trim(first)}; the fix loop moved it to ${trim(final)} (${d >= 0 ? "+" : "−"}${Math.abs(d).toFixed(2)}) in ${runEnding(run!)}. Check ${knob} against the measurement before building.`;
+  }
+  return l.rule.replace(/^([a-z0-9]+(?:_[a-z0-9]+)+):/, (_, n: string) => `${humanName(n)}:`);
 }
 
 const trim = (v: number) => String(Number(v.toFixed(2)));

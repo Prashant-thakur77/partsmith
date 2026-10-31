@@ -74,6 +74,17 @@ test.describe("phone", () => {
     await noSideways(page);
     expect(realErrors(errors)).toEqual([]);
   });
+
+  test("landing: the part.py figure fills in once the figure itself is on screen; inner steps are Steps, not Sheets", async ({ page }) => {
+    const { errors } = await setup(page);
+    await page.goto("/");
+    const code = page.locator("figure:visible", { hasText: "Fig. 5 · lines from" });
+    await code.scrollIntoViewIfNeeded();
+    await expect(code.locator("pre > div").first()).toHaveCSS("opacity", "1");
+    await expect(page.getByText("Step 4 of 5")).toBeVisible();
+    await expect(page.getByText(/^Sheet \d of 5$/)).toHaveCount(0);
+    expect(realErrors(errors)).toEqual([]);
+  });
 });
 
 test.describe("desktop", () => {
@@ -92,7 +103,7 @@ test.describe("desktop", () => {
     const dup = (i: number, final: number) => ({
       id: `l_dup_${i}`,
       scope: "cover",
-      rule: `battery_cover: corner_radius moved to ${final}`,
+      rule: `battery_cover: the first build set corner_radius = 1, the verified loop moved it to ${final} — check corner_radius against the measurement before building.`,
       evidence: { template: "battery_cover", param: "corner_radius", first: 1, final },
       status: "candidate",
       promoted_by: null,
@@ -107,7 +118,10 @@ test.describe("desktop", () => {
     const cover = page.getByRole("region", { name: /^Cover/ });
     await expect(cover.getByRole("heading", { name: /6 cards from 8 suggestions/ })).toBeVisible();
     const card = cover.getByRole("listitem").filter({ hasText: "suggested by 3 runs" });
-    await expect(card).toContainText("corner_radius, first build → final: 1 → 1.9 · 1 → 2.4 · 1 → 2.1");
+    // per-run values, each labelled with its run, instead of a chain; names read as words
+    await expect(card.getByTestId("knob-runs")).toContainText("Corner radius in each run, first build → final:");
+    await expect(card.getByTestId("knob-runs").getByRole("listitem")).toHaveText([/^job_1\s*1 → 1\.9$/, /^job_2\s*1 → 2\.4$/, /^job_3\s*1 → 2\.1$/]);
+    await expect(card).toContainText("Battery Cover: the first build set Corner radius = 1; the fix loop moved it to 1.9 (+0.90) in one run.");
     const cards = cover.locator("ul").first().locator(":scope > li");
     await expect(cards).toHaveCount(3);
     await cover.getByRole("button", { name: "Show all 6" }).click();
@@ -124,6 +138,10 @@ test.describe("desktop", () => {
     const { errors } = await setup(page);
     await page.goto("/jobs");
     await expect(page.getByTestId("jobs-summary")).toContainText("1 of 2 verified · median max gap 0.31 mm (1 finished job)");
+    await expect(page.getByTestId("jobs-set-note")).toContainText("This counts jobs run or recorded on this server.");
+    // one compact meta line per row; the max gap of a finished job is in its status chip only
+    const row = page.getByTestId("job-row").first();
+    await expect(row.getByTestId("job-meta")).not.toContainText("max gap");
     await page.getByRole("group", { name: "Filter by result" }).getByRole("button", { name: /Verified/ }).click();
     await expect(page).toHaveURL(/status=verified/);
     await expect(page.getByRole("list", { name: "Jobs" }).getByRole("listitem")).toHaveCount(1);
@@ -182,12 +200,12 @@ test.describe("desktop", () => {
     expect(realErrors(errors)).toEqual([]);
   });
 
-  test("describe: the empty result area shows a labelled template preview that fills the form", async ({ page }) => {
+  test("describe: the empty result area shows the server's labelled example result that fills the form", async ({ page }) => {
     const { errors } = await setup(page);
     await page.goto("/describe");
-    const ex = page.getByRole("region", { name: "What a result looks like" });
-    await expect(ex).toContainText("template at its defaults · not built from your text");
-    await expect(ex.getByRole("img")).toBeVisible();
+    const ex = page.getByRole("region", { name: "Example result" });
+    await expect(ex).toContainText("run on this server · mock planner, no model call");
+    await expect(ex).toContainText("Example result: this sentence run through the describe pipeline");
     await ex.getByRole("link", { name: "Use this sentence" }).click();
     await expect(page.getByLabel("What do you need? Say the numbers you know.")).toHaveValue("A spacer 12 mm tall for an M3 screw, outer diameter 7 mm");
     await expectAccessible(page);

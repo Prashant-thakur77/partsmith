@@ -3,6 +3,8 @@
 import { ArrowRight, Bot, FileText, Plug } from "lucide-react";
 import Link from "next/link";
 import * as React from "react";
+import { searchVariantBakeSnippet } from "@/lib/snippets";
+import { useExampleSlug } from "@/lib/use-example-slug";
 import { useOrigin } from "@/lib/use-origin";
 import { CodeBlock } from "../ui/code-block";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "../ui/tabs";
@@ -10,6 +12,7 @@ import { AgentTerminal } from "./agent-terminal";
 
 export function AgentsStrip() {
   const origin = useOrigin();
+  const slug = useExampleSlug("wall hook", "hook");
   return (
     <div className="grid grid-cols-1 gap-6 rounded-xl border border-border bg-surface p-5 sm:p-6 lg:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)]">
       <div className="space-y-4" data-reveal>
@@ -49,7 +52,7 @@ export function AgentsStrip() {
           <CodeBlock
             title="shell"
             wrap
-            code={`# find a part, then bake a variant as STL\ncurl "${origin}/api/v1/parts?q=wall+hook&verified=true"\ncurl "${origin}/api/v1/parts/<slug>/variant?want=40+mm+reach"\ncurl -o part.stl "${origin}/api/v1/parts/<slug>/bake?format=stl&download=1"`}
+            code={`# find a part, then bake a variant as STL\n${searchVariantBakeSnippet(origin, slug, { q: "wall hook", family: "hook", want: "40 mm reach", out: "part.stl" })}`}
           />
         </TabsContent>
         <TabsContent value="mcp">

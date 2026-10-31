@@ -6,7 +6,7 @@ import Link from "next/link";
 import * as React from "react";
 import { api, artifactUrl } from "@/lib/api";
 import type { ArtifactEvent, Replay } from "@/lib/api-types";
-import { fmtNum, splitTitle } from "@/lib/format";
+import { fmtErr, splitTitle } from "@/lib/format";
 import { replayTitle, replayVerdict } from "@/lib/replays";
 import { cn } from "@/lib/utils";
 import { Badge } from "../ui/badge";
@@ -70,7 +70,7 @@ export function ReplayCard({
         <div className="mt-auto flex flex-wrap gap-1.5">
           <Badge tone={TONE[word]}>{word}</Badge>
           <Badge tone="neutral" className="font-mono tnum">
-            {r.iterations} {r.iterations === 1 ? "round" : "rounds"} · {r.max_error_mm != null ? `${fmtNum(r.max_error_mm)} mm` : "—"}
+            {r.iterations} {r.iterations === 1 ? "round" : "rounds"} · {r.max_error_mm != null ? `${fmtErr(r.max_error_mm)} mm` : "—"}
           </Badge>
           <RunBadge mode={r.provider_mode} recorded plain />
           <OriginBadge origin={r.origin} hideReal plain />

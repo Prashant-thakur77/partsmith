@@ -37,18 +37,24 @@ function inViewport(el: Element, threshold: number): boolean {
 }
 
 /**
- * Flag an element once it scrolls into view (threshold 0.2, once). Returns a ref and whether it has been seen. Elements
- * already on screen when the page hydrates count as seen before the first paint, so nothing flickers.
+ * Flag an element once it scrolls into view (threshold 0.2, once). Returns a ref, whether it has been seen, and
+ * `atMount`: it was already on screen when the page hydrated (counted as seen before the first paint, so nothing
+ * flickers; counters use it to show their final value at once instead of animating from zero).
  */
 export function useInView<T extends Element>(opts: { threshold?: number; rootMargin?: string; once?: boolean } = {}) {
   const { threshold = 0.2, rootMargin = "0px", once = true } = opts;
   const ref = React.useRef<T>(null);
   const [seen, setSeen] = React.useState(false);
+  const [atMount, setAtMount] = React.useState(false);
+  const first = React.useRef(true);
   React.useLayoutEffect(() => {
     const el = ref.current;
     if (!el) return;
+    const wasFirst = first.current;
+    first.current = false;
     if (inViewport(el, threshold)) {
       setSeen(true);
+      if (wasFirst) setAtMount(true);
       if (once) return;
     }
     if (typeof IntersectionObserver === "undefined") {
@@ -67,7 +73,7 @@ export function useInView<T extends Element>(opts: { threshold?: number; rootMar
     io.observe(el);
     return () => io.disconnect();
   }, [threshold, rootMargin, once]);
-  return { ref, seen };
+  return { ref, seen, atMount };
 }
 
 /**
@@ -99,10 +105,12 @@ export function useReveal<T extends HTMLElement>(threshold = 0.2) {
 
 /**
  * Count up once to `text` (an already formatted real value such as "0.10 mm" or "17/17") over `ms`, starting when
- * `start` turns true. Server HTML (and no-JS) prints the final text; once hydrated an off-screen counter rests at zero
- * until it is seen. Under reduced motion it never animates. Pair it with an sr-only copy of the final text (CountUp does).
+ * `start` turns true. Until then it prints the final text (server HTML, no-JS and an off-screen counter alike), so a
+ * wrong number is only ever on screen during the short count itself. `skip` (e.g. already on screen when the page
+ * loaded) shows the final text without counting. Under reduced motion it never animates. Pair it with an sr-only copy
+ * of the final text (CountUp does).
  */
-export function useCountUp(text: string | null | undefined, start: boolean, ms = 700): string | null {
+export function useCountUp(text: string | null | undefined, start: boolean, ms = 500, skip = false): string | null {
   const reduced = usePrefersReducedMotion();
   const [out, setOut] = React.useState<string | null>(text ?? null);
   const done = React.useRef<string | null>(null);
@@ -111,12 +119,9 @@ export function useCountUp(text: string | null | undefined, start: boolean, ms =
       setOut(null);
       return;
     }
-    if (reduced || done.current === text) {
+    if (reduced || skip || done.current === text || !start) {
+      if (skip) done.current = text;
       setOut(text);
-      return;
-    }
-    if (!start) {
-      setOut(countText(text, 0));
       return;
     }
     let raf = 0;
@@ -129,6 +134,6 @@ export function useCountUp(text: string | null | undefined, start: boolean, ms =
     };
     raf = requestAnimationFrame(tick);
     return () => cancelAnimationFrame(raf);
-  }, [text, start, ms, reduced]);
+  }, [text, start, ms, reduced, skip]);
   return out;
 }

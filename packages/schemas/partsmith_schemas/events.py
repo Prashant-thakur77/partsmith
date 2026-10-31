@@ -126,6 +126,11 @@ class IterationEvent(_Ev):
     iou: float | None = None
     passed_tests: int = 0
     total_tests: int = 0
+    # How far this round is from passing, the orchestrator's keep rule (Round.rank): the sum over every failing
+    # required test and view limit of its overshoot in multiples of its tolerance (0 = nothing over). The kept round
+    # is the one with the smallest value (a verified round always wins), not the one with the smallest max error.
+    # None on older runs and when the program did not run.
+    pass_shortfall: float | None = None
 
 
 class ThoughtEvent(_Ev):

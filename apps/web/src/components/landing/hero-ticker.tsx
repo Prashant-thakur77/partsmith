@@ -11,7 +11,7 @@ import * as React from "react";
 import { api } from "@/lib/api";
 import type { BenchReport, Stats } from "@/lib/api-types";
 import { benchHeadline, benchVerified } from "@/lib/bench";
-import { fmtInt } from "@/lib/format";
+import { ERROR_LIMIT_MM, fmtInt } from "@/lib/format";
 import { CountUp } from "../ui/count-up";
 
 type Item = { k: string; v: string; note?: string; href: string };
@@ -22,7 +22,8 @@ export function tickerItems(stats?: Stats | null, bench?: BenchReport | null): I
   const head = syn ? benchHeadline(syn) : null;
   if (syn && head && /median/.test(head.gt)) out.push({ k: "median size error", v: head.value, note: `n = ${head.n} · synthetic`, href: "/results#synthetic" });
   const ver = benchVerified(syn);
-  if (ver) out.push({ k: "passed verification", v: `${ver.passed}/${ver.n}`, note: "same synthetic cases", href: "/results#synthetic" });
+  // the strict rate: a case counts only when every check is inside the limit (the server's own jobs are on /jobs)
+  if (ver) out.push({ k: "passed verification", v: `${ver.passed}/${ver.n}`, note: `strict: every check ≤ ${ERROR_LIMIT_MM} mm · same cases`, href: "/results#synthetic" });
   if (stats) out.push({ k: stats.jobs === 1 ? "run stored on this server" : "runs stored on this server", v: fmtInt(stats.jobs), href: "/jobs" });
   const by = bench?.evidence?.bypass;
   if (by) out.push({ k: "lying-model attacks blocked", v: `${by.blocked}/${by.attempts}`, note: "scripted", href: "/judges" });
@@ -40,7 +41,8 @@ export function HeroTicker({ stats: initialStats, bench: initialBench }: { stats
         <span className={live ? "size-1.5 rounded-full bg-ok motion-safe:animate-[pulse-dot_1.6s_ease-in-out_3]" : "size-1.5 rounded-full bg-border-strong"} aria-hidden />
         <span className="sr-only sm:not-sr-only">{live ? "This server" : "Connecting"}</span>
       </span>
-      <ul className="no-scrollbar flex min-w-0 items-stretch overflow-x-auto" aria-label="Numbers from this server">
+      {/* phones scroll the first two sideways; wider screens wrap, so no item is ever cut off */}
+      <ul className="no-scrollbar flex min-w-0 items-stretch overflow-x-auto sm:flex-wrap sm:overflow-visible" aria-label="Numbers from this server">
         {items.length === 0 ? (
           <li className="px-3 py-2 text-subtle">reading /stats and /bench…</li>
         ) : (

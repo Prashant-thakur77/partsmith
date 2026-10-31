@@ -3,7 +3,8 @@
 import { AlertTriangle, BadgeCheck, CircleDashed, XOctagon } from "lucide-react";
 import * as React from "react";
 import type { Verification } from "@/lib/api-types";
-import { fmtNum } from "@/lib/format";
+import { testsPhrase } from "@/lib/evidence-notes";
+import { ERROR_LIMIT_MM, fmtErr, fmtNum } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import { Tooltip } from "./tooltip";
 
@@ -31,8 +32,8 @@ export function VerifiedBadge({
   }, [status]);
 
   const err = verification?.max_error_mm;
+  const lim = verification?.thresholds.hausdorff_mm ?? ERROR_LIMIT_MM;
   const tests = verification?.tests ?? [];
-  const passed = tests.filter((t) => t.passed).length;
 
   const look = {
     verified: { icon: BadgeCheck, text: "Verified", cls: "border-ok-border bg-ok-soft text-ok" },
@@ -54,9 +55,9 @@ export function VerifiedBadge({
         {verification.verified ? "Code verified this model against the photo." : "The verifier did not pass this model."}
       </div>
       <div className="font-mono tnum">
-        max error {err != null ? `${fmtNum(err)} mm` : "—"} · limit {fmtNum(verification.thresholds.hausdorff_mm)} mm
+        max error {err != null ? `${fmtErr(err, lim)} mm` : "—"} · limit {fmtNum(verification.thresholds.hausdorff_mm)} mm
       </div>
-      {tests.length ? <div className="font-mono tnum">{passed}/{tests.length} part tests passed</div> : null}
+      {tests.length ? <div>{testsPhrase(tests)}</div> : null}
       {verification.reasons.slice(0, 3).map((r) => (
         <div key={r} className="opacity-80">
           · {r}
@@ -72,7 +73,7 @@ export function VerifiedBadge({
       <span
         tabIndex={0}
         role="status"
-        aria-label={`${look.text}${err != null ? `, max error ${fmtNum(err)} millimetres` : ""}`}
+        aria-label={`${look.text}${err != null ? `, max error ${fmtErr(err, lim)} millimetres` : ""}`}
         className={cn(
           "inline-flex shrink-0 cursor-help items-center rounded-md border font-semibold whitespace-nowrap select-none",
           look.cls,
@@ -85,7 +86,7 @@ export function VerifiedBadge({
         <Icon aria-hidden />
         {look.text}
         {err != null && status !== "pending" && status !== "none" ? (
-          <span className="font-mono font-medium tnum">· {fmtNum(err)} mm</span>
+          <span className="font-mono font-medium tnum">· {fmtErr(err, lim)} mm</span>
         ) : null}
       </span>
     </Tooltip>

@@ -147,8 +147,9 @@ export function verifiedScope(
 }
 
 /**
- * One plain phrase for the part tests: "all 10 required part tests passed, plus 4 extra checks (4 passed)". Required
- * (P0) tests decide the verdict; extra (P1) checks are informational. Null without tests.
+ * One plain phrase for the part tests: "all 10 required part tests passed, plus 4 advisory checks (all passed)", or
+ * "all 12 required part tests passed · 2 advisory checks over (…)". Required (P0) tests decide the verdict; advisory
+ * (P1) checks are informational, so a verified part never reads as "12/14 tests". Null without tests.
  */
 export function testsPhrase(tests: readonly { passed: boolean; priority?: "P0" | "P1" }[]): string | null {
   if (!tests.length) return null;
@@ -163,8 +164,9 @@ export function testsPhrase(tests: readonly { passed: boolean; priority?: "P0" |
         : `all ${req.length} required part tests passed`
       : `${reqOk} of ${req.length} required part tests passed`;
   if (!extra.length) return head;
-  const extraOk = extra.filter((t) => t.passed).length;
-  return `${head}, plus ${extra.length} extra check${extra.length === 1 ? "" : "s"} (${extraOk} passed)`;
+  const over = extra.length - extra.filter((t) => t.passed).length;
+  if (over) return `${head} · ${over} advisory check${over === 1 ? "" : "s"} over (advisory checks never decide the verdict)`;
+  return `${head}, plus ${extra.length} advisory check${extra.length === 1 ? "" : "s"} (all passed)`;
 }
 
 /** The verifier's own "Verified: all N P0 tests pass …" summary line, which `testsPhrase` already says in plain words. */

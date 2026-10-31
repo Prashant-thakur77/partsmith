@@ -163,6 +163,15 @@ def describe_start(body: DescribeRequest) -> dict[str, Any]:
         raise ApiError(422, "validation_error", str(exc)) from exc
 
 
+@router.get("/describe/example", summary="The example sentence's result, planned by the labelled mock (no model call)",
+            tags=["describe"])  # fmt: skip
+def describe_example() -> dict[str, Any]:
+    """What `/describe` shows before you type: `describe.EXAMPLE_TEXT` through the real check, sandbox bake and
+    number checks, with the deterministic mock planner instead of a model (`planner.mode: "mock"`, `example: true`).
+    Not stored as a description; computed once per process."""
+    return describe.public(describe.example())
+
+
 @router.get("/describe/{rid}", summary="A stored description: plan, values with sources, checks, files",
             tags=["describe"])  # fmt: skip
 def describe_get(rid: str) -> dict[str, Any]:

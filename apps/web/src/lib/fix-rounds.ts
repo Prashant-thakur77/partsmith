@@ -39,6 +39,8 @@ export type FixRound = {
   iou: number | null;
   testsPassed: number | null;
   testsTotal: number | null;
+  /** The keep rule's number for the round (`iteration.pass_shortfall`); null on older runs. */
+  passShortfall: number | null;
   verdict: RoundVerdict;
   /** The verify stage label for this round, verbatim (empty when missing). */
   verdictText: string;
@@ -138,6 +140,7 @@ export function roundsFromEvents(events: readonly JobEvent[]): RoundsSummary {
           iou: e.iou ?? null,
           testsPassed: e.total_tests ? e.passed_tests : null,
           testsTotal: e.total_tests || null,
+          passShortfall: e.pass_shortfall ?? null,
           verdict: "unknown",
           verdictText: "",
           views: [],
@@ -215,6 +218,49 @@ export function keptRound(rounds: readonly FixRound[], doneCtx: string, doneMaxM
     if (byErr.length) return byErr.at(-1)!.iter;
   }
   return pool.at(-1)!.iter;
+}
+
+function nameOf(r: Pick<FixRound, "iter" | "firstBuild">): string {
+  return r.firstBuild && r.iter === 1 ? "the first build" : `round ${r.iter}`;
+}
+
+function listNames(names: string[]): string {
+  return names.length <= 1 ? (names[0] ?? "") : `${names.slice(0, -1).join(", ")} and ${names.at(-1)}`;
+}
+
+/**
+ * Why the kept round was kept when another round had a lower max error, from the job's own data. The orchestrator
+ * keeps the round closest to passing overall (Round.rank: a verified round first, then the smallest summed overshoot
+ * of the failing required tests and view limits, each in multiples of its tolerance), not the lowest max error. New
+ * runs carry that number on each round (`passShortfall`) and it is quoted; older runs did not record it, so the line
+ * states the rule and quotes the test counts as context, never as the reason. Null when no round beat the kept one on
+ * max error.
+ */
+export function keepReason(rounds: readonly FixRound[], keptIter: number | null): string | null {
+  const kept = rounds.find((r) => r.iter === keptIter);
+  const keptErr = kept?.maxErrorMm;
+  if (!kept || keptErr == null) return null;
+  const lower = rounds.filter((r) => r.iter !== kept.iter && r.maxErrorMm != null && r.maxErrorMm < keptErr - 0.005);
+  if (!lower.length) return null;
+  const best = lower.reduce((a, b) => (b.maxErrorMm! < a.maxErrorMm! ? b : a));
+  const mm = (v: number) => `${v.toFixed(2)} mm`;
+  const keptName = nameOf(kept);
+  const names = lower.map(nameOf);
+  const plainRounds = names.every((n) => n.startsWith("round "));
+  const others = lower.length === 1 ? `${nameOf(best)} had` : plainRounds ? `rounds ${listNames(lower.map((r) => String(r.iter)))} had` : `${listNames(names)} had`;
+  const lead = `Kept ${keptName} (${mm(keptErr)}) although ${others} a lower max error (lowest: ${nameOf(best)}, ${mm(best.maxErrorMm!)}).`;
+  if (kept.verdict === "verified" && best.verdict !== "verified") return `${lead} ${cap(keptName)} passed verification; ${nameOf(best)} did not.`;
+  const rule = "The keep rule picks the round closest to passing overall: every failing required test and view limit, each measured in multiples of its tolerance and summed.";
+  if (kept.passShortfall != null && best.passShortfall != null) {
+    return `${lead} ${rule} Shortfall ${kept.passShortfall.toFixed(2)} for ${keptName} vs ${best.passShortfall.toFixed(2)} for ${nameOf(best)}.`;
+  }
+  const tests =
+    kept.testsTotal && best.testsTotal ? ` Tests passed: ${kept.testsPassed}/${kept.testsTotal} for ${keptName}, ${best.testsPassed}/${best.testsTotal} for ${nameOf(best)} (this run did not record the shortfall itself).` : "";
+  return `${lead} ${rule}${tests}`;
+}
+
+function cap(s: string): string {
+  return s.charAt(0).toUpperCase() + s.slice(1);
 }
 
 export function headline(rounds: FixRound[], final: RoundsSummary["final"], keptIter: number | null = null): string {

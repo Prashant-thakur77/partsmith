@@ -141,7 +141,8 @@ test("verified scope counts knobs a test checked, only for a verified record tha
 test("the tests phrase separates required tests from extra checks", () => {
   const p0 = (passed) => ({ passed, priority: "P0" });
   const p1 = (passed) => ({ passed, priority: "P1" });
-  assert.equal(testsPhrase([...Array(10)].map(() => p0(true)).concat([p1(true), p1(true), p1(false), p1(true)])), "all 10 required part tests passed, plus 4 extra checks (3 passed)");
+  assert.equal(testsPhrase([...Array(10)].map(() => p0(true)).concat([p1(true), p1(true), p1(false), p1(true)])), "all 10 required part tests passed · 1 advisory check over (advisory checks never decide the verdict)");
+  assert.equal(testsPhrase([p0(true), p1(true), p1(true)]), "the required part test passed, plus 2 advisory checks (all passed)");
   assert.equal(testsPhrase([p0(true), p0(false)]), "1 of 2 required part tests passed");
   assert.equal(testsPhrase([p0(true)]), "the required part test passed");
   assert.equal(testsPhrase([]), null);

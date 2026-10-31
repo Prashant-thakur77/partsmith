@@ -57,10 +57,17 @@ export function OverviewTab() {
     <div className="space-y-4">
       <p className="flex flex-wrap items-center gap-2 text-[12px] text-muted">
         {o.mode !== "live" ? <Badge tone="mock">Providers: {o.mode}</Badge> : <Badge tone="ok">Providers: live</Badge>}
-        <span>Counted {timeAgo(o.generated_at)}. Replays are left out ({o.jobs.replays_excluded}).</span>
+        <span>
+          Counted {timeAgo(o.generated_at)}. Job numbers leave out the {o.jobs.replays_excluded} recorded run{o.jobs.replays_excluded === 1 ? "" : "s"} (replays); the review queue lists them, counted apart.
+        </span>
       </p>
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
-        <Stat label="Pass rate" value={pct(o.jobs.pass_rate)} sub={`${o.jobs.verified} verified of ${o.jobs.finished} finished · ${o.jobs.total} fix jobs`} source={o.jobs.source} />
+        <Stat
+          label="Pass rate"
+          value={pct(o.jobs.pass_rate)}
+          sub={`${o.jobs.verified} verified of ${o.jobs.finished} finished · ${o.jobs.total} fix jobs. Counts jobs run on this server, not the bench's fixed test photos on /results.`}
+          source={o.jobs.source}
+        />
         <Stat
           label="Max error, median"
           value={o.max_error.median_mm == null ? "—" : fmtMm(o.max_error.median_mm)}
@@ -70,7 +77,7 @@ export function OverviewTab() {
         <Stat
           label="Waiting for review"
           value={o.review.waiting}
-          sub={`${o.review.improving} in a reviewer round · ${o.review.accepted} accepted · ${o.review.rejected} rejected · ${o.review.waiting_replays} waiting are replays`}
+          sub={`${o.review.improving} in a reviewer round · ${o.review.accepted} accepted · ${o.review.rejected} rejected · ${o.review.waiting_replays} of the waiting are recorded runs (replays)`}
           source={o.review.source}
         />
         <Stat label="Parts in search" value={o.registry.published} sub={`${o.registry.withdrawn} withdrawn · ${o.registry.reference} reference objects · ${o.registry.n} records`} source={o.registry.source} />

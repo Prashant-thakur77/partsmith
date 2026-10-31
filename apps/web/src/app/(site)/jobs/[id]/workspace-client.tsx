@@ -46,13 +46,14 @@ import { ApiError, api, artifactUrl } from "@/lib/api";
 import { couponFeatures } from "@/lib/coupon-fit";
 import type { ArtifactEvent, BakeResult, JobDetail, JobEvent, Measured, Measurements, PartTest } from "@/lib/api-types";
 import { isNarrated } from "@/lib/evidence-notes";
+import { plainTerms, splitNotes } from "@/lib/plain-terms";
 import { runModes } from "@/lib/job-cost";
 import { fmtNum, fmtUsd, paramLabel, splitTitle } from "@/lib/format";
 import { useBake, useCountTo, useJobBake } from "@/lib/hooks";
 import { STAGE_LABELS, summarizeEvents, useJobEvents, type EventSummary, type StreamState } from "@/lib/job-events";
 import { VOTE_ENABLED, VoteBanner } from "@/components/vote-banner";
 import { I18nRegion, LangToggle, useT } from "@/lib/i18n";
-import { roundLabel } from "@/lib/review";
+import { judgeRunFromEvents, roundLabel } from "@/lib/review";
 import { cn } from "@/lib/utils";
 import { valueItems, valueText, type ValueItem } from "@/lib/value-sources";
 import type { SceneSourceMark } from "@/components/viewer/cad-scene";
@@ -92,9 +93,12 @@ function mergeEvents(a: JobEvent[], b: JobEvent[]): JobEvent[] {
   return [...m.values()].sort((x, y) => x.seq - y.seq);
 }
 
-function announce(s: EventSummary): string {
+/** The live-region line. When finished it quotes the shipped (kept) result's max error, the same number as the badge:
+ * the `done` summary, else the verification record; never the last round's, which may be a discarded try. */
+function announce(s: EventSummary, finalErrMm: number | null): string {
   if (s.done) {
-    const err = s.convergence.at(-1)?.hausdorff_mm;
+    const fromDone = s.done.summary?.max_error_mm;
+    const err = typeof fromDone === "number" ? fromDone : finalErrMm;
     return `Job finished: ${s.done.status.replace("_", " ")}${err != null ? `, max error ${fmtNum(err)} millimetres` : ""}.`;
   }
   if (s.question) return `Paused with a question: ${s.question.text}`;
@@ -190,6 +194,32 @@ function MeasurementsCard({
           </Row>
         ))}
       </dl>
+    </div>
+  );
+}
+
+/** The verifier's notes: findings first, in plain words; alignment and per-view metric dumps behind "Details". */
+function VerifierNotes({ reasons, className, label }: { reasons: string[]; className?: string; label?: string }) {
+  const { findings, details } = splitNotes(reasons);
+  return (
+    <div className={cn("space-y-1", className)}>
+      {findings.length ? (
+        <ul className="list-disc space-y-0.5 pl-4 text-muted" aria-label={label}>
+          {findings.map((r) => (
+            <li key={r}>{plainTerms(r)}</li>
+          ))}
+        </ul>
+      ) : null}
+      {details.length ? (
+        <details className="text-muted">
+          <summary className="cursor-pointer text-[12px] text-subtle hover:text-fg">Details ({details.length})</summary>
+          <ul className="mt-1 list-disc space-y-0.5 pl-4 text-[12px]">
+            {details.map((r) => (
+              <li key={r}>{plainTerms(r)}</li>
+            ))}
+          </ul>
+        </details>
+      ) : null}
     </div>
   );
 }
@@ -350,6 +380,8 @@ export function WorkspaceClient({ id }: { id: string }) {
   const s = React.useMemo(() => summarizeEvents(events), [events]);
   // the round the finished job shipped: not always the last one (a later, worse try is discarded)
   const keptIter = React.useMemo(() => roundsFromEvents(events).keptIter, [events]);
+  // how the judge ran (live / mock), from its own model_call events: shown even when no scorecard was saved
+  const judgeRun = React.useMemo(() => judgeRunFromEvents(events), [events]);
   const d: JobDetail | undefined = detail.data;
 
   // Pull the authoritative detail (verification, params, artifacts) whenever the stream reaches a milestone.
@@ -409,10 +441,11 @@ export function WorkspaceClient({ id }: { id: string }) {
   const threshold = verification?.thresholds.hausdorff_mm ?? s.metrics.findLast((m) => m.threshold != null)?.threshold ?? null;
   const counting = useCountTo(lastIterErr);
   const [liveMsg, setLiveMsg] = React.useState("");
+  const finalErrMm = verification?.max_error_mm ?? d?.summary.max_error_mm ?? null;
   React.useEffect(() => {
-    const t = window.setTimeout(() => setLiveMsg(announce(s)), 400);
+    const t = window.setTimeout(() => setLiveMsg(announce(s, finalErrMm)), 400);
     return () => window.clearTimeout(t);
-  }, [s]);
+  }, [s, finalErrMm]);
 
   if (detail.isError) {
     return (
@@ -539,27 +572,21 @@ export function WorkspaceClient({ id }: { id: string }) {
               </div>
               {d.partspec?.refusal ? <p className="text-muted">{d.partspec.refusal}</p> : null}
               {doneStatus === "best_effort" && d.status_reason ? <p className="text-fg">Why: {d.status_reason}.</p> : null}
-              {verification?.reasons.length ? (
-                <ul className="list-disc space-y-0.5 pl-4 text-muted">
-                  {verification.reasons.map((r) => (
-                    <li key={r}>{r}</li>
-                  ))}
-                </ul>
-              ) : null}
+              {verification?.reasons.length ? <VerifierNotes reasons={verification.reasons} /> : null}
             </div>
           </div>
-        </div>
-      ) : null}
-
-      {verification?.unchecked.length ? (
-        <div className="px-4 pt-4 sm:px-6">
-          <UncheckedList items={verification.unchecked} />
         </div>
       ) : null}
 
       <div className="min-w-0 px-4 pt-4 empty:hidden sm:px-6">
         <FixHistoryStrip events={events} />
       </div>
+
+      {verification?.unchecked.length ? (
+        <div className="px-4 pt-4 sm:px-6">
+          <UncheckedList items={verification.unchecked} collapsible />
+        </div>
+      ) : null}
 
       <div className="grid grid-cols-1 gap-4 px-4 pt-4 sm:px-6 xl:grid-cols-[minmax(0,1fr)_minmax(0,1.3fr)_380px]">
         {/* centre: viewer (first on small screens) */}
@@ -610,7 +637,7 @@ export function WorkspaceClient({ id }: { id: string }) {
             <ConvergenceChart data={s.convergence} threshold={threshold} keptIter={keptIter} />
             <ProgressLines lines={s.progress} className="mt-3 border-t border-border pt-3" />
           </div>
-          {d.judge ? <JudgeScorecard judge={d.judge} /> : null}
+          {d.judge || judgeRun ? <JudgeScorecard judge={d.judge} ran={judgeRun} /> : null}
           <ImpactPanel jobId={id} finished={!!done} />
           <CostCard calls={s.modelCalls} replay={replay} />
           <div className="rounded-lg border border-border bg-surface">
@@ -666,24 +693,18 @@ export function WorkspaceClient({ id }: { id: string }) {
                       </p>
                     </div>
                   ) : null}
-                  {verification?.reasons.length ? (
-                    <ul className="list-disc space-y-0.5 pl-4 text-[12px] text-muted" aria-label="Verifier notes">
-                      {verification.reasons.map((r) => (
-                        <li key={r}>{r}</li>
-                      ))}
-                    </ul>
-                  ) : null}
+                  {verification?.reasons.length ? <VerifierNotes reasons={verification.reasons} className="text-[12px]" label="Verifier notes" /> : null}
                   {verification?.views.length ? (
                     <div className="space-y-1.5">
-                      <Eyebrow>Silhouette metrics</Eyebrow>
+                      <Eyebrow>Outline match per view</Eyebrow>
                       <table className="w-full font-mono text-[12px] tnum">
-                        <caption className="sr-only">Silhouette comparison per view, millimetres</caption>
+                        <caption className="sr-only">Outline match per view: overlap with the photo, largest and average outline gap in millimetres</caption>
                         <thead>
                           <tr className="text-left text-[11px] text-subtle">
                             <th scope="col" className="py-1 font-sans font-medium">View</th>
-                            <th scope="col" className="py-1 text-right font-sans font-medium">IoU</th>
-                            <th scope="col" className="py-1 text-right font-sans font-medium">Hausdorff</th>
-                            <th scope="col" className="py-1 text-right font-sans font-medium">Mean</th>
+                            <th scope="col" className="py-1 text-right font-sans font-medium">Overlap (IoU)</th>
+                            <th scope="col" className="py-1 text-right font-sans font-medium">Largest gap</th>
+                            <th scope="col" className="py-1 text-right font-sans font-medium">Average gap</th>
                           </tr>
                         </thead>
                         <tbody>

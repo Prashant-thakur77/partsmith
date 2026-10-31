@@ -96,3 +96,34 @@ export function lookupState(card: Pick<BuyOrPrint, "lookup"> | null | undefined)
 export function cardMode(card: Pick<BuyOrPrint, "lookup" | "mode">): string {
   return card.lookup?.mode ?? card.mode ?? "mock";
 }
+
+/** The currency the viewer most likely reads: INR for an Indian locale ("en-IN", "hi-IN"), else USD. */
+export function localeCurrency(locale: string | null | undefined): string {
+  return /-IN\b/i.test(locale ?? "") || /^(hi|bn|ta|te|mr|gu|kn|ml|pa)\b/i.test(locale ?? "") ? "INR" : "USD";
+}
+
+/**
+ * One currency for a whole card, so ₹ and $ never sit side by side: the currency most cited offers are priced in (the
+ * price source), else the viewer's locale currency when the filament estimate has it, else the estimate's first
+ * currency. Money is never converted here.
+ */
+export function cardCurrency(card: Pick<BuyOrPrint, "lookup" | "prints"> | null | undefined, locale?: string | null): string {
+  const counts = new Map<string, number>();
+  for (const o of citedOffers(card?.lookup)) counts.set(o.currency, (counts.get(o.currency) ?? 0) + 1);
+  if (counts.size) return [...counts.entries()].sort((a, b) => b[1] - a[1])[0]![0];
+  const want = localeCurrency(locale);
+  const have = new Set((card?.prints ?? []).flatMap((p) => costEntries(p).map((c) => c.currency)));
+  if (have.has(want) || !have.size) return want;
+  return costEntries(card!.prints.find((p) => costEntries(p).length)!)[0]!.currency;
+}
+
+/** The filament cost in the card's currency only (null when the estimate has none in it). */
+export function costIn(p: Pick<PrintEstimate, "filament_cost">, currency: string): number | null {
+  const a = p.filament_cost[currency];
+  return typeof a === "number" && Number.isFinite(a) ? a : null;
+}
+
+/** The locale to format a currency in: Indian grouping for INR, US for the rest. */
+export function moneyLocale(currency: string): string {
+  return currency === "INR" ? "en-IN" : "en-US";
+}

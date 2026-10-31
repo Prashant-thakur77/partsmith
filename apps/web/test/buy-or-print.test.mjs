@@ -2,7 +2,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import { BuyOrPrintSchema } from "../src/lib/api-types.ts";
-import { cardMode, citedOem, citedOffers, citedPlaces, cityParam, costEntries, hostOf, lookupState, money, safeHref } from "../src/lib/buy-or-print.ts";
+import { cardCurrency, cardMode, citedOem, citedOffers, citedPlaces, cityParam, costEntries, costIn, hostOf, localeCurrency, lookupState, money, safeHref } from "../src/lib/buy-or-print.ts";
 
 const offer = (o = {}) => ({ seller: "Spares Co", price: 349, currency: "INR", url: "https://spares.example.in/p/1", quote: "Price: ₹349", title: "", availability: "", ...o });
 
@@ -112,4 +112,17 @@ test("the card schema drops malformed offers, places and estimates instead of fa
   assert.equal(r2.success, true);
   assert.equal(r2.data.lookup, null);
   assert.equal(r2.data.prints.length, 1);
+});
+
+test("one currency per card: the cited offers' currency, else the viewer's locale; never converted", () => {
+  const prints = [{ material: "PLA", grams: 2, filament_cost: { INR: 2.4, USD: 0.03 }, assumptions: [] }];
+  const offer = (currency) => ({ seller: "S", price: 10, currency, url: "https://s.example.com", quote: "" });
+  const card = (offers) => BuyOrPrintSchema.parse({ prints, lookup: offers ? { offers } : null });
+  assert.equal(cardCurrency(card([offer("usd"), offer("USD"), offer("INR")]), "en-IN"), "USD"); // the price source wins
+  assert.equal(cardCurrency(card(null), "en-IN"), "INR");
+  assert.equal(cardCurrency(card(null), "en-US"), "USD");
+  assert.equal(cardCurrency(BuyOrPrintSchema.parse({ prints: [{ ...prints[0], filament_cost: { EUR: 0.03 } }] }), "en-US"), "EUR");
+  assert.equal(localeCurrency("hi"), "INR");
+  assert.equal(costIn(prints[0], "USD"), 0.03);
+  assert.equal(costIn(prints[0], "EUR"), null);
 });

@@ -49,7 +49,10 @@ test.describe("functional", () => {
     await page.goto("/admin");
     const panel = page.getByRole("tabpanel");
     await expect(panel.getByText("80.0%")).toBeVisible();
-    await expect(panel.getByText("4 verified of 5 finished · 6 fix jobs")).toBeVisible();
+    await expect(panel.getByText("4 verified of 5 finished · 6 fix jobs. Counts jobs run on this server, not the bench's fixed test photos on /results.")).toBeVisible();
+    // one word for recorded runs in both blocks
+    await expect(panel.getByText(/Job numbers leave out the 3 recorded runs \(replays\); the review queue lists them, counted apart\./)).toBeVisible();
+    await expect(panel.getByText(/0 of the waiting are recorded runs \(replays\)/)).toBeVisible();
     await expect(panel.getByText("p90 0.62 mm · n = 5")).toBeVisible();
     await expect(panel.getByText("Providers: mock")).toBeVisible();
     await expect(panel.getByRole("meter", { name: "Spent against the daily cap" })).toHaveAttribute("aria-valuenow", "25");

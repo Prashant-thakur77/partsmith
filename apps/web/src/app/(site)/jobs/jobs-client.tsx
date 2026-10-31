@@ -14,7 +14,7 @@ import { ErrorState } from "@/components/ui/error-state";
 import { ModeBadge, OriginBadge, RunBadge } from "@/components/ui/provenance";
 import { Skeleton } from "@/components/ui/skeleton";
 import { api } from "@/lib/api";
-import { fmtMm, fmtUsd, timeAgo, splitTitle } from "@/lib/format";
+import { fmtErr, fmtUsd, timeAgo, splitTitle } from "@/lib/format";
 import { filterJobs, JOB_BUCKETS, jobsSummary, jobsSummaryText, parseJobFilter, type JobsSummary } from "@/lib/page-groups";
 import { cn } from "@/lib/utils";
 
@@ -112,6 +112,13 @@ export function JobsClient() {
                 {jobsSummaryText(summary)}
                 <span className="ml-2 text-[12px] font-normal text-subtle">from the {summary.n} newest jobs listed below</span>
               </p>
+              <p className="text-[12px] text-muted" data-testid="jobs-set-note">
+                This counts jobs run or recorded on this server. The pass rate on the home page counts a different, fixed set of test photos:{" "}
+                <Link href="/results#synthetic" className="text-accent-text underline underline-offset-2">
+                  see Accuracy
+                </Link>
+                .
+              </p>
               <JobFilters s={summary} status={f.status} source={f.source} set={set} />
             </div>
           ) : null}
@@ -123,40 +130,43 @@ export function JobsClient() {
             </EmptyState>
           ) : (
           <ul className="divide-y divide-border overflow-hidden rounded-lg border border-border bg-surface" aria-label="Jobs">
-            {shown.map((j) => (
-              <li key={j.id}>
-                <Link href={`/jobs/${encodeURIComponent(j.id)}`} className="group flex items-center gap-4 px-4 py-3 hover:bg-surface-2">
-                  <JobThumb id={j.id} />
-                  <div className="min-w-0 flex-1 space-y-1">
-                    <div className="truncate text-[14px] font-medium">{splitTitle(j.title || j.id).title}</div>
-                    <div className="flex flex-wrap items-center gap-1.5 text-[12px] text-subtle">
-                      <span className="font-mono">{j.id}</span>
-                      <span aria-hidden>·</span>
-                      <span>{timeAgo(j.created_at)}</span>
-                      <span aria-hidden>·</span>
-                      <span className="font-mono tnum">{j.iterations} iter</span>
-                      <span aria-hidden>·</span>
-                      <span className="font-mono tnum">{fmtUsd(j.cost_usd)}</span>
-                      {j.max_error_mm != null ? (
-                        <>
-                          <span aria-hidden>·</span>
-                          <span className="font-mono tnum">max gap {fmtMm(j.max_error_mm)}</span>
-                        </>
-                      ) : null}
+            {shown.map((j) => {
+              const recorded = j.is_replay || j.origin === "replay";
+              // The status chip already carries the max gap for finished jobs; the meta line shows it only otherwise.
+              const gap = j.status !== "done" && j.max_error_mm != null ? `max gap ${fmtErr(j.max_error_mm)} mm` : null;
+              const when = `${timeAgo(j.created_at)} · ${j.iterations} iter`;
+              // Phones drop the provenance chips, so the same facts lead the meta line in words.
+              const tags = [recorded ? "recorded" : null, j.origin !== "replay" && j.origin !== "real" ? j.origin.replace(/_/g, " ") : null, j.provider_mode === "mock" ? "mock models" : null]
+                .filter(Boolean)
+                .join(" · ");
+              return (
+                <li key={j.id}>
+                  <Link href={`/jobs/${encodeURIComponent(j.id)}`} className="group flex items-center gap-3 px-3 py-3 hover:bg-surface-2 sm:gap-4 sm:px-4" data-testid="job-row">
+                    <JobThumb id={j.id} className="self-start sm:self-center" />
+                    <div className="min-w-0 flex-1 space-y-1">
+                      <div className="line-clamp-2 text-[14px] leading-snug font-medium sm:line-clamp-1">{splitTitle(j.title || j.id).title}</div>
+                      {/* phones: provenance words, age and rounds; wider screens add the id and the cost */}
+                      <div className="truncate text-[12px] text-subtle tnum sm:font-mono sm:text-[11.5px]" data-testid="job-meta">
+                        <span className="hidden sm:inline">{j.id} · </span>
+                        {tags ? <span className="sm:hidden">{tags} · </span> : null}
+                        {when}
+                        <span className="hidden sm:inline"> · {fmtUsd(j.cost_usd)}</span>
+                        {gap ? ` · ${gap}` : null}
+                      </div>
+                      <div className="pt-0.5 sm:hidden">
+                        <JobStatusBadge job={j} />
+                      </div>
                     </div>
-                  </div>
-                  <div className="hidden flex-wrap items-center justify-end gap-1.5 sm:flex">
-                    {j.origin !== "replay" ? <OriginBadge origin={j.origin} hideReal /> : null}
-                    {j.is_replay || j.origin === "replay" ? <RunBadge mode={j.provider_mode} recorded /> : <ModeBadge mode={j.provider_mode} hideLive />}
-                    <JobStatusBadge job={j} />
-                  </div>
-                  <div className="sm:hidden">
-                    <JobStatusBadge job={j} />
-                  </div>
-                  <ArrowRight className="size-4 shrink-0 text-subtle group-hover:text-fg" aria-hidden />
-                </Link>
-              </li>
-            ))}
+                    <div className="hidden shrink-0 flex-wrap items-center justify-end gap-1.5 sm:flex">
+                      {j.origin !== "replay" ? <OriginBadge origin={j.origin} hideReal plain /> : null}
+                      {recorded ? <RunBadge mode={j.provider_mode} recorded plain /> : <ModeBadge mode={j.provider_mode} hideLive />}
+                      <JobStatusBadge job={j} />
+                    </div>
+                    <ArrowRight className="size-4 shrink-0 text-subtle group-hover:text-fg" aria-hidden />
+                  </Link>
+                </li>
+              );
+            })}
           </ul>
           )}
           </>

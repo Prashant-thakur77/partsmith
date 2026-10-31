@@ -75,7 +75,10 @@ export function PhotoSlot({
       onChange({ file, info });
       measure.reset();
       onGate?.(null);
-      if (gate && info.checks.every((c) => c.level !== "fail")) measure.mutate(file);
+      if (gate && info.checks.every((c) => c.level !== "fail")) {
+        void import("./capture-report"); // load the report view while the server checks, so it lands in one step
+        measure.mutate(file);
+      }
     } finally {
       setBusy(false);
     }
@@ -183,7 +186,10 @@ export function PhotoSlot({
               })}
             </ul>
             {gate ? (
-              measure.isPending ? (
+              // the server's report (status line + one row per check) replaces this block: its space is held from
+              // the moment the check starts, so the steps below do not jump when it arrives
+              <div className={cn(measure.isPending || measure.data ? "min-h-[27rem] sm:min-h-[15.5rem]" : undefined)} data-testid="capture-gate-slot">
+              {measure.isPending ? (
                 <div className="flex items-center gap-2 text-[12px] text-muted" role="status">
                   <Spinner className="size-3.5" label="Checking" /> Server capture gate: finding markers, checking blur, tilt and glare…
                 </div>
@@ -193,7 +199,8 @@ export function PhotoSlot({
                 </React.Suspense>
               ) : measure.error ? (
                 <ErrorState error={measure.error} compact what="the capture check" onRetry={() => measure.mutate(value.file)} className="py-4" />
-              ) : null
+              ) : null}
+              </div>
             ) : (
               <p className="text-[12px] text-subtle">Checked by the server when the job starts.</p>
             )}

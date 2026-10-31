@@ -97,3 +97,23 @@ curl "${origin}/api/v1/parts/${slug}/verification.json"
 # the knobs as a JSON-Schema document: type, unit, default, min, max, step
 curl "${origin}/api/v1/parts/${slug}/params.json"`;
 }
+
+/**
+ * Search → variant → bake as three copy-paste lines. With a `slug` found in this server's registry the lines name it;
+ * without one the first line stores the top search hit in $SLUG (needs jq), so nothing ever holds a "<slug>"
+ * placeholder that would 404 when pasted.
+ */
+export function searchVariantBakeSnippet(
+  origin: string,
+  slug: string | null,
+  o: { q: string; family: string; want: string; bake?: string; out: string },
+): string {
+  const search = `${origin}/api/v1/parts?q=${encodeURIComponent(o.q).replace(/%20/g, "+")}&family=${o.family}&verified=true&limit=1`;
+  const s = slug ?? "$SLUG";
+  const want = encodeURIComponent(o.want).replace(/%20/g, "+").replace(/%2C/g, ",");
+  return [
+    slug ? `curl "${search}"` : `SLUG=$(curl -s "${search}" | jq -r '.items[0].slug')`,
+    `curl "${origin}/api/v1/parts/${s}/variant?want=${want}"`,
+    `curl -o ${o.out} "${origin}/api/v1/parts/${s}/bake?${o.bake ? `${o.bake}&` : ""}format=stl&download=1"`,
+  ].join("\n");
+}

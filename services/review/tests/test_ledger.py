@@ -34,6 +34,17 @@ def test_classify_reads_the_measured_change() -> None:
     assert ledger.classify(0.84, None, 0.5, next_done=False) == "waiting"
 
 
+def test_the_outcome_says_which_rule_set_it() -> None:
+    assert ledger.explain("fixed", 0.38, 0.5, passed_next=True) == "fixed: the next round passed verification"
+    assert (
+        ledger.explain("fixed", 0.38, 0.5)
+        == "fixed: the gap is within the 0.50 mm limit (it already was before this round)"
+    )
+    assert ledger.explain("fixed", 0.84, 0.5) == "fixed: the gap is now within the 0.50 mm limit"
+    assert ledger.explain("better", 1.8, 0.5).startswith("better: the gap shrank")
+    assert ledger.explain("rejected", None, 0.5) == ""
+
+
 def test_every_piece_of_feedback_is_logged_with_its_reason_and_result(svc: FakeService) -> None:
     a = finish(svc.new_job(), "best_effort")
     out = store.decide(
@@ -57,6 +68,8 @@ def test_every_piece_of_feedback_is_logged_with_its_reason_and_result(svc: FakeS
     assert (pin["before_mm"], pin["after_mm"], pin["outcome"]) == (0.84, 0.21, "fixed")
     assert pin["where"]["pin"] == 1 and pin["by"] == "person" and pin["family"] == "spacer"
     assert items["note"]["outcome"] == "fixed"  # the next round passed the verifier
+    assert items["note"]["outcome_why"] == "fixed: the next round passed verification"
+    assert pin["outcome_why"] == "fixed: the gap is now within the 0.50 mm limit"
     assert items["accept"]["why"] == "matches the rail clip now" and items["accept"]["outcome"] == "accepted"
     assert items["reject"]["what"] == "wrong part photographed" and items["reject"]["by"] == "test"
     assert ledger.feedback(by="test", svc=svc)["counts"] == {"rejected": 1}

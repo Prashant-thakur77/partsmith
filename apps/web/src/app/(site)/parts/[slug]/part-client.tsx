@@ -44,7 +44,7 @@ import { CadViewer } from "@/components/viewer/cad-viewer";
 import { api, artifactUrl } from "@/lib/api";
 import type { PartFacts, PartRecord } from "@/lib/api-types";
 import { couponFeatures, noteCouponDownload } from "@/lib/coupon-fit";
-import { fmtDate, fmtNum, fmtPct, shortSha, titleCase } from "@/lib/format";
+import { fmtDate, fmtErr, fmtNum, fmtPct, shortSha, titleCase } from "@/lib/format";
 import { useDebounced } from "@/lib/hooks";
 import { agentPrompt, curlSnippet, dataSnippet, mcpCallSnippet, pythonSnippet } from "@/lib/snippets";
 import { EXTRAS, extrasApi } from "@/lib/api-extras";
@@ -156,7 +156,7 @@ function VerificationCard({ part }: { part: PartRecord }) {
           <>
             <p className="text-[13px] leading-6 text-muted">
               {v.verified ? "Verified" : v.status === "best_effort" ? "Best effort" : "Failed"} at{" "}
-              <span className="font-mono text-fg tnum">{v.max_error_mm != null ? `${fmtNum(v.max_error_mm)} mm` : "—"}</span> max error vs the
+              <span className="font-mono text-fg tnum">{v.max_error_mm != null ? `${fmtErr(v.max_error_mm, v.thresholds.hausdorff_mm)} mm` : "—"}</span> max error vs the
               photo (limit <span className="font-mono tnum">{fmtNum(v.thresholds.hausdorff_mm)} mm</span>)
               {phrase ? <> · {phrase}</> : null}
               {part.created_at ? <> · built {fmtDate(part.created_at)}</> : null}
@@ -488,7 +488,7 @@ export function PartClient({ slug, withDetails = true }: { slug: string; withDet
           </Card>
         </div>
 
-        <LoadNoteBox family={part.family} headingLevel="h2" className="max-w-2xl" />
+        <LoadNoteBox family={part.family} planOrientation={part.facts?.orientation} headingLevel="h2" className="max-w-2xl" />
 
         <PartBuyOrPrintCard slug={slug} className="max-w-2xl" />
 

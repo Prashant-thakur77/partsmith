@@ -3,7 +3,7 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import test from "node:test";
 import { EventSchema } from "../src/lib/api-types.ts";
-import { editsText, headline, keptRound, parseViews, roundsFromEvents, sizeSetsMaxError, verdictFromLabel } from "../src/lib/fix-rounds.ts";
+import { editsText, headline, keepReason, keptRound, parseViews, roundsFromEvents, sizeSetsMaxError, verdictFromLabel } from "../src/lib/fix-rounds.ts";
 
 const REPLAYS = new URL("../../../data/replays/", import.meta.url);
 // replays are found by their demo sample (data/replays/seed_index.json), so a re-seed with new job ids keeps working
@@ -138,4 +138,42 @@ test("a round's max error can come from a measured size, larger than every outli
   assert.equal(sizeSetsMaxError({ maxErrorMm: 0.17, hausdorffMm: 0.168, views }), false);
   assert.equal(sizeSetsMaxError({ maxErrorMm: null, hausdorffMm: 0.168, views }), false);
   assert.equal(sizeSetsMaxError({ maxErrorMm: 0.3, hausdorffMm: null, views: [] }), false);
+});
+
+// Wall-hook shape (numbers from the recorded run j_261029_5e9d54d1): round 5 kept at 4.70 mm over round 2 at 3.22 mm.
+function hookEvents(shortfall) {
+  const rows = [
+    [1, 5.016, 12],
+    [2, 3.224, 14],
+    [3, 3.714, 14],
+    [4, 4.428, 15],
+    [5, 4.696, 16],
+    [6, 4.622, 16],
+  ];
+  const out = [];
+  let seq = 0;
+  for (const [iter, err, passed] of rows) {
+    out.push(ev("stage", seq++, { stage: "verify", status: "ok", iter, label: "best effort: top: IoU 0.9, Hausdorff 1.0 mm" }));
+    out.push(ev("iteration", seq++, { iter, strategy: "template", edits: [], ctx: `c${iter}`, hausdorff_mm: err, passed_tests: passed, total_tests: 17, ...(shortfall ? { pass_shortfall: shortfall[iter - 1] } : {}) }));
+    out.push(ev("metric", seq++, { iter, name: "max_error_mm", value: err }));
+  }
+  out.push(ev("done", seq++, { verified: false, status: "best_effort", summary: { max_error_mm: 4.696 }, ctx: "c5" }));
+  return out;
+}
+
+test("the kept round says why it beat rounds with a lower max error (older run: rule + test counts as context)", () => {
+  const s = roundsFromEvents(hookEvents(null));
+  assert.equal(s.keptIter, 5);
+  const why = keepReason(s.rounds, s.keptIter);
+  assert.match(why, /^Kept round 5 \(4\.70 mm\) although rounds 2, 3, 4 and 6 had a lower max error \(lowest: round 2, 3\.22 mm\)\./);
+  assert.match(why, /closest to passing overall/);
+  assert.match(why, /Tests passed: 16\/17 for round 5, 14\/17 for round 2 \(this run did not record the shortfall itself\)\./);
+});
+
+test("new runs quote the keep rule's own number for the kept round and the lowest-error rival", () => {
+  const s = roundsFromEvents(hookEvents([30.1, 21.4, 19.9, 17.2, 12.35, 12.6]));
+  assert.equal(s.rounds[4].passShortfall, 12.35);
+  assert.match(keepReason(s.rounds, s.keptIter), /Shortfall 12\.35 for round 5 vs 21\.40 for round 2\.$/);
+  // nothing to explain when the kept round also has the lowest max error
+  assert.equal(keepReason(s.rounds, 2), null);
 });

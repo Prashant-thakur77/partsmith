@@ -1,6 +1,7 @@
 "use client";
 
 import { useQuery } from "@tanstack/react-query";
+import Link from "next/link";
 import * as React from "react";
 import { ChevronRight, FlaskConical, GitCommit, Hourglass, ImageOff } from "lucide-react";
 import { Container, PageHeader, Section } from "@/components/layout/page";
@@ -11,11 +12,21 @@ import { ModeBadge } from "@/components/ui/provenance";
 import { Skeleton } from "@/components/ui/skeleton";
 import { api, ApiError, artifactUrl } from "@/lib/api";
 import type { BenchTable } from "@/lib/api-types";
-import { BENCH_TABLES, EXTRA_TITLES, benchHeadline, benchSentence, cellText, columnLabel, configLabel, gtLabel, KEY_COLUMNS, plainBench } from "@/lib/bench";
+import { BENCH_TABLES, EXTRA_TITLES, benchCell, benchHeadline, benchSentence, benchVerified, caseLabel, cellText, columnLabel, configLabel, gtLabel, KEY_COLUMNS, plainBench, splitCaseTitle } from "@/lib/bench";
+import { PRODUCT, productApi } from "@/lib/api-product";
+import { useCapabilities } from "@/lib/capabilities";
 import { titleCase } from "@/lib/format";
 import { cn } from "@/lib/utils";
 
+/** Template name → title ("hook" → "Wall hook") for naming bench cases, when this server lists templates. */
+function useTemplateTitles(): Record<string, string> {
+  const caps = useCapabilities();
+  const q = useQuery({ queryKey: ["templates"], queryFn: productApi.templates, enabled: caps.has("get", PRODUCT.templates), staleTime: 300_000, retry: false });
+  return React.useMemo(() => Object.fromEntries((q.data ?? []).map((t) => [t.name, t.title])), [q.data]);
+}
+
 function TableView({ t, only, label }: { t: BenchTable; only?: readonly string[]; label?: string }) {
+  const titles = useTemplateTitles();
   const rows = t.rows ?? [];
   const all = t.columns ?? (rows[0] ? Object.keys(rows[0]) : []);
   const cols = only ? all.filter((c) => only.includes(c)) : all;
@@ -39,8 +50,13 @@ function TableView({ t, only, label }: { t: BenchTable; only?: readonly string[]
                 <td key={c} className={j === 0 ? "px-3 py-2 font-sans whitespace-nowrap" : "px-3 py-2 whitespace-nowrap"}>
                   {c === "config" && typeof r[c] === "string" ? (
                     <span title={`${r[c]}${typeof r.description === "string" ? `: ${r.description}` : ""}`}>{configLabel(r[c])}</span>
+                  ) : c === "case" && typeof r[c] === "string" ? (
+                    <span className="flex flex-col">
+                      <span>{caseLabel(r[c], titles)}</span>
+                      <span className="font-mono text-[10.5px] text-subtle">{r[c]}</span>
+                    </span>
                   ) : (
-                    cellText(r[c])
+                    benchCell(c, r[c], r)
                   )}
                 </td>
               ))}
@@ -94,6 +110,8 @@ function FallbackImg({ src, alt, className }: { src: string; alt: string; classN
 
 export function BenchClient() {
   const q = useQuery({ queryKey: ["bench"], queryFn: api.bench, retry: false });
+  const titles = useTemplateTitles();
+  const synPassed = benchVerified(q.data?.tables.synthetic);
   const missing = (q.isError && q.error instanceof ApiError && q.error.status === 404) || q.data?.status === "pending";
   const r = q.data;
   const known = new Set<string>(BENCH_TABLES.map((t) => t.key));
@@ -162,6 +180,15 @@ export function BenchClient() {
                       </div>
                     ) : null}
                     {benchSentence(key, table) ? <p className="max-w-3xl text-[15px] leading-6 text-fg">{benchSentence(key, table)}</p> : null}
+                    {key === "synthetic" && synPassed ? (
+                      <p className="max-w-3xl text-[13px] leading-5 text-muted" data-testid="pass-rate-note">
+                        This {synPassed.passed}/{synPassed.n} is the strict pass rate on this fixed set of rendered test photos: a case passes only when every check is within 0.5 mm. It is the number on the home page. The verified count on{" "}
+                        <Link href="/jobs" className="text-accent-text underline underline-offset-2">
+                          Recent jobs
+                        </Link>{" "}
+                        counts a different set — every job run or recorded on this server — so the two differ.
+                      </p>
+                    ) : null}
                     <Tables t={table} />
                     {table.note ? (
                       <p className="rounded-md border border-warn-border bg-warn-soft px-3 py-2 text-[12.5px] leading-5 text-fg">{plainBench(table.note)}</p>
@@ -184,11 +211,13 @@ export function BenchClient() {
                 <ul className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
                   {r.failures.map((f, i) => {
                     const img = artifactUrl(f.overlay_url);
+                    const { id: caseId, rest } = splitCaseTitle(f.title);
+                    const name = caseLabel(caseId, titles);
                     return (
                       <li key={i} className="overflow-hidden rounded-lg border border-border bg-surface">
                         <div className="relative aspect-[4/3] border-b border-border bg-surface-2">
                           {img ? (
-                            <FallbackImg src={img} alt={`Failure: ${plainBench(f.title)}`} className="absolute inset-0 size-full object-contain" />
+                            <FallbackImg src={img} alt={`Failure: ${name}`} className="absolute inset-0 size-full object-contain" />
                           ) : (
                             <div className="absolute inset-0 flex flex-col items-center justify-center gap-1.5 px-4 text-center text-[12px] text-subtle">
                               <ImageOff className="size-5" aria-hidden />
@@ -197,8 +226,13 @@ export function BenchClient() {
                           )}
                         </div>
                         <div className="space-y-1 p-3 text-[12.5px]">
-                          <div className="font-medium">{plainBench(f.title)}</div>
+                          <div className="font-medium">{name}</div>
                           <p className="text-muted">{f.reason}</p>
+                          {name !== caseId || rest ? (
+                            <p className="font-mono text-[10.5px] text-subtle [overflow-wrap:anywhere]">
+                              {[name !== caseId ? caseId : null, rest ? plainBench(rest) : null].filter(Boolean).join(" · ")}
+                            </p>
+                          ) : null}
                         </div>
                       </li>
                     );

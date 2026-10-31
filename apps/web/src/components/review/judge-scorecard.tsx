@@ -3,7 +3,7 @@ import { Badge } from "@/components/ui/badge";
 import { Eyebrow } from "@/components/ui/card";
 import { ModeBadge } from "@/components/ui/provenance";
 import type { Judge } from "@/lib/api-types";
-import { CRITERIA, scoreTone } from "@/lib/review";
+import { CRITERIA, judgeModeLine, scoreTone, type JudgeRun } from "@/lib/review";
 import { cn } from "@/lib/utils";
 
 const BAR: Record<"ok" | "warn" | "bad", string> = { ok: "bg-ok", warn: "bg-warn", bad: "bg-bad" };
@@ -20,28 +20,41 @@ function ScoreBar({ score }: { score: number }) {
 }
 
 /** The judge's 1–5 scorecard and vetoes. Advice only: pass/fail is the verifier's, shown elsewhere. */
-export function JudgeScorecard({ judge, className }: { judge: Judge | null | undefined; className?: string }) {
+export function JudgeScorecard({ judge, ran, className }: { judge: Judge | null | undefined; ran?: JudgeRun | null; className?: string }) {
   const by = new Map((judge?.scores ?? []).map((s) => [s.criterion, s]));
+  const modeLine = judgeModeLine(judge, ran);
+  const mode = judge?.mode ?? ran?.mode ?? null;
+  const model = judge?.model ?? ran?.model ?? null;
   return (
     <section className={cn("space-y-3 rounded-lg border border-border bg-surface p-4", className)} aria-label="Judge scorecard">
       <div className="flex flex-wrap items-center justify-between gap-2">
         <Eyebrow className="flex items-center gap-1.5">
           <Gavel className="size-3.5" aria-hidden /> Judge scorecard
         </Eyebrow>
-        {judge ? (
+        {mode || model ? (
           <span className="flex flex-wrap items-center gap-1.5">
-            {judge.model ? (
+            {model && mode !== "mock" ? (
               <Badge tone="neutral" className="font-mono">
-                {judge.model}
+                {model}
               </Badge>
             ) : null}
-            {judge.mode ? <ModeBadge mode={judge.mode} /> : null}
+            {mode ? <ModeBadge mode={mode} /> : null}
           </span>
         ) : null}
       </div>
+      {modeLine ? (
+        <p className="text-[12.5px] font-medium text-fg" data-testid="judge-mode">
+          {modeLine}
+          {mode === "mock" ? <span className="font-normal text-muted"> — fixed rules on what code measured; no model looked at the photo or the render.</span> : null}
+        </p>
+      ) : null}
       <p className="text-[12px] leading-5 text-subtle">Advice from the judge. Pass/fail comes from the measurements.</p>
       {!judge ? (
-        <p className="text-[13px] text-muted">No scorecard for this job. The judge did not run or was not reachable.</p>
+        <p className="text-[13px] text-muted">
+          {ran
+            ? "No scorecard was saved for this job (this run recorded vetoes only); any veto the judge raised is in the verifier's record."
+            : "No scorecard for this job. The judge did not run or was not reachable."}
+        </p>
       ) : (
         <>
           {judge.scores.length ? (

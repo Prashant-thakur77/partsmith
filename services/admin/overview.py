@@ -66,8 +66,10 @@ def overview(svc: Any) -> dict[str, Any]:
     try:
         mgr = svc.manager()
         summaries = list(mgr.list(100_000))
+        # stored replays are not in the plain job list: count them from the same listing the review queue sees
+        replays = sum(1 for s in mgr.list(100_000, include_replays=True) if s.is_replay)
     except Exception:
-        mgr, summaries = None, []
+        mgr, summaries, replays = None, [], 0
     live = [s for s in summaries if not s.is_replay]
     fix = [s for s in live if s.kind == "fix"]
     finished = [s for s in fix if s.status in ("done", "failed")]
@@ -117,7 +119,7 @@ def overview(svc: Any) -> dict[str, Any]:
             "verified": len(verified),
             "pass_rate": round(len(verified) / len(finished), 4) if finished else None,
             "n": len(finished),
-            "replays_excluded": sum(1 for s in summaries if s.is_replay),
+            "replays_excluded": replays,
             "source": JOBS_SOURCE + "; pass rate = verified / finished (done or failed)",
         },
         "rounds_to_verify": {

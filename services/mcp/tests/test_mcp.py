@@ -164,3 +164,28 @@ def test_round2_tools_gate_verify_lessons(monkeypatch: pytest.MonkeyPatch, srv: 
     reg.set_lesson_status(lid, "promoted", "test")
     got = _call(srv, "get_lessons", {})["lessons"]
     assert got[0]["id"] == lid and got[0]["links"][0]["id"] == "j_1"
+
+
+def test_search_accepts_query_as_an_alias_and_refuses_two_different_searches(srv: Any) -> None:
+    add_part("cable_clip", "desk-cable-clip")
+    add_part("spacer", "m3-spacer")
+    by_q = _call(srv, "search_parts", {"q": "cable clip"})
+    by_query = _call(srv, "search_parts", {"query": "cable clip"})
+    assert [i["slug"] for i in by_query["items"]] == [i["slug"] for i in by_q["items"]]
+    assert by_query["match"] == by_q["match"] != "all"  # not the browse-everything answer
+    with pytest.raises(ToolError, match="alias"):
+        asyncio.run(srv.call_tool("search_parts", {"q": "cable clip", "query": "spacer"}))
+
+
+def test_absolute_urls_use_the_request_base_when_one_is_set(srv: Any, monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.delenv("PARTSMITH_WEB_URL", raising=False)
+    add_part("spacer", "m3-spacer")
+    tokens = S.set_request_base("https://parts.example/", "https://parts.example")
+    try:
+        card = _call(srv, "search_parts", {"q": "spacer"})["items"][0]
+    finally:
+        S.reset_request_base(tokens)
+    assert card["url"] == "https://parts.example/api/v1/parts/m3-spacer"
+    assert card["page"] == "https://parts.example/parts/m3-spacer"
+    after = _call(srv, "search_parts", {"q": "spacer"})["items"][0]  # stdio / no request: the configured default
+    assert after["url"].startswith("http://localhost:8000/") and after["page"].startswith("http://localhost:3000/")

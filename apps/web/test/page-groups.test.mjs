@@ -11,7 +11,8 @@ import {
   jobBucket,
   jobsSummary,
   jobsSummaryText,
-  knobMoves,
+  knobRuns,
+  lessonText,
   lessonKey,
   median,
   parseJobFilter,
@@ -41,9 +42,20 @@ test("lessons on the same template knob or with the same text share one card, ne
   assert.equal(fams[0].groups[2].lead.id, "e");
   assert.deepEqual(knob.members.map((m) => m.id), ["b", "a"]);
   assert.equal(knob.lead.id, "b");
-  assert.deepEqual(knobMoves(knob.members), ["1 → 2.4", "1 → 1.9"]);
+  assert.deepEqual(knobRuns(knob.members).map((r) => [r.job, r.first, r.final]), [["j_b", 1, 2.4], ["j_a", 1, 1.9]]);
   assert.deepEqual(words.members.map((m) => m.id), ["d", "c"]);
   assert.deepEqual(groupLinks(words.members).map((l) => l.id), ["j_c", "j_d"], "links are not repeated");
+});
+
+test("a knob lesson is worded from its evidence and follows how its run ended", () => {
+  const ev = { template: "cable_clip", param: "hole_d", first: 6, final: 6.7, verified: false, max_error_mm: 4.8 };
+  const best = lessonText({ rule: "cable_clip: the first build set hole_d = 6, the verified loop moved it to 6.7", evidence: ev }, "Hole diameter");
+  assert.equal(best, "Cable Clip: the first build set Hole diameter = 6; the fix loop moved it to 6.7 (+0.70) in a run that ended best effort (max gap 4.80 mm), so the final value is not confirmed. Check Hole diameter against the measurement before building.");
+  assert.doesNotMatch(best, /verified/);
+  const person = "Start hole_d 0.3 mm above the measured diameter for FDM prints.";
+  assert.equal(lessonText({ rule: person, evidence: ev }), person, "a person's wording is never rewritten");
+  assert.match(lessonText({ rule: "cable_clip: the first build set hole_d = 6, …", evidence: { ...ev, verified: true, max_error_mm: 0.31, final: 5.5 } }), /^Cable Clip: the first build set Hole D = 6; .* \(−0\.50\) in a run that passed verification \(max gap 0\.31 mm\)\./);
+  assert.equal(lessonText({ rule: "battery_cover: strategy switched (x).", evidence: {} }), "Battery Cover: strategy switched (x).");
 });
 
 const job = (status, verified, max_error_mm, over = {}) => ({ status, verified, max_error_mm, is_replay: false, origin: "synthetic", ...over });

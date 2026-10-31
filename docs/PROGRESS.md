@@ -227,4 +227,7 @@ Seven workstreams in flight: providers, verifier, synth/eval, API/registry, metr
   /judges autoplays the replay with its photos; empty Labs pages, /describe and /shop show labelled examples; /jobs has a
   summary and URL filters; /review/log groups feedback by part with before → after gaps; phones see a shaded model
   picture on /review (`GET /jobs/{id}/model.png`).
+- **Reviewer fixes, round 2 (Oct 31):** phone-sized /jobs rows, a real (mock-planned) /describe example, honest lesson
+  wording, counts instead of rates on /results, each pass rate says which set it counts, MCP links on the request's base.
+- **Verdict truth on job pages (Nov 1):** "Why" leads with the failing check that sets the headline max error ("+N more" for the rest); the history strip says why the kept round beat lower-error rounds (keep rule's own number on new runs, `pass_shortfall`); 3 decimals within 0.01 mm of the limit; advisory checks never read as failed tests; judge panels say "mock (rule-based)"; one currency per buy card, stored cards marked recorded; the load note defers to the computed orientation; `/jobs` lists recorded review rounds (deduped).
 - **Next:** real photos, a dozen honest reviews on `/review`, Modal login and deploy go-ahead from Prashant; the final video with real-world shots.

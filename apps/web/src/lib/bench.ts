@@ -194,3 +194,76 @@ export function benchSentence(key: string, t: BenchTable): string | null {
   if (v != null) tail.push(`${v} of ${n} passed the code's check`);
   return `${parts[0]}${tail.length ? `; ${tail.join(", and ")}` : ""}.`;
 }
+
+// ── rates and case names in words ─────────────────────────────────────────────
+/** Columns whose values are shares of the row's cases (0–1), shown as counts: "2/12 (17%)". */
+export function isRateColumn(col: string): boolean {
+  return /(^|_)rate$/.test(col) || /^pass@[0-9.]+$/.test(col);
+}
+
+const pctText = (v: number) => `${Math.round(v * 100)}%`;
+
+/** A share as "passed/n (pct)" when the row's n is known, else "pct". The count is the share × n, rounded. */
+export function rateText(v: number, n?: number | null): string {
+  if (typeof n === "number" && n > 0) return `${Math.round(v * n)}/${n} (${pctText(v)})`;
+  return pctText(v);
+}
+
+/** A "[0.05, 0.45]" range in its column's unit: a share range as "5–45%", a length range as "0.22–1.20 mm". */
+export function rangeText(col: string, v: string): string | null {
+  const m = /^\[\s*(-?[0-9.]+)\s*,\s*(-?[0-9.]+)\s*\]$/.exec(v);
+  if (!m) return null;
+  const [a, b] = [Number(m[1]), Number(m[2])];
+  if (/^mean_ci95$/.test(col)) return `${a.toFixed(2)}–${b.toFixed(2)} mm`;
+  return `${Math.round(a * 100)}–${Math.round(b * 100)}%`;
+}
+
+/** A table cell in words: shares as counts of the row's cases, 95 % ranges in their unit, everything else as before. */
+export function benchCell(col: string, v: unknown, row: Record<string, unknown>): string {
+  const n = typeof row.n === "number" ? row.n : null;
+  if (typeof v === "number" && isRateColumn(col) && v >= 0 && v <= 1) return rateText(v, n);
+  if (typeof v === "string" && /ci95$/.test(col)) return rangeText(col, v) ?? v;
+  return cellText(v);
+}
+
+const CONDITION: Record<string, string> = {
+  clean: "clean photo",
+  tilt: "tilted photo",
+  blur: "blurred photo",
+  glare: "glare",
+  moire: "moiré on the screen mat",
+  "low-light": "low light",
+  "white-part": "white part",
+  paper: "printed paper mat",
+  "dark-stage": "dark stage",
+  "white-on-light": "white part on a light stage",
+};
+const SET: Record<string, string> = { syn: "rendered test photo", ref: "standard object", ctl: "intact part", rt: "should be turned away" };
+
+/**
+ * A bench case id in words: "syn-hook-tilt-s656341" → "Wall hook · tilted photo", "rt-hand-in-frame" → "Hand in
+ * frame". Part names come from `titles` (template name → title, from /templates) when known; the id itself stays
+ * on the page beside the label.
+ */
+export function caseLabel(id: string, titles: Record<string, string> = {}): string {
+  const m = /^(syn|ref|ctl|rt)-(.+?)(?:-s\d+)?$/.exec(id.trim());
+  if (!m) return id;
+  const [, set, rest] = m as unknown as [string, string, string];
+  const cond = Object.keys(CONDITION)
+    .sort((a, b) => b.length - a.length)
+    .find((c) => rest === c || rest.endsWith(`-${c}`));
+  const part = cond ? rest.slice(0, rest.length - cond.length).replace(/-$/, "") : rest;
+  const human = (s: string) => {
+    const w = s.split("-").map((t) => (t.length <= 2 && set !== "rt" ? t.toUpperCase() : t));
+    const out = w.join(" ");
+    return out.charAt(0).toUpperCase() + out.slice(1);
+  };
+  const name = part ? (titles[part.replace(/-/g, "_")] ?? human(part)) : SET[set];
+  return [name, cond ? CONDITION[cond] : null].filter(Boolean).join(" · ");
+}
+
+/** A failure-gallery title ("<case id> · PS (synthetic, held_out)") split into the case id and the rest. */
+export function splitCaseTitle(title: string): { id: string; rest: string } {
+  const i = title.indexOf(" · ");
+  return i < 0 ? { id: title.trim(), rest: "" } : { id: title.slice(0, i).trim(), rest: title.slice(i + 3).trim() };
+}

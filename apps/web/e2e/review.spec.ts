@@ -70,6 +70,7 @@ test.describe("functional", () => {
     await expect(page.getByRole("navigation", { name: "Main" }).getByRole("link", { name: /Review/ })).toContainText("2");
     const card = page.getByRole("region", { name: "Judge scorecard" });
     await expect(card).toContainText("Advice from the judge. Pass/fail comes from the measurements.");
+    await expect(card).toContainText("judge: mock (rule-based)");
     await expect(card).toContainText("Fit for use");
     await expect(card.getByRole("img", { name: "4 out of 5" })).toBeVisible();
     // the earlier round's pin is drawn grey with the server's before → after numbers
@@ -284,12 +285,16 @@ test.describe("feedback log", () => {
     await expect(first.getByRole("group", { name: /Gap before and after each round/ })).toContainText("0.84 mm");
     await expect(first.getByRole("group", { name: /Gap before and after each round/ })).toContainText("0.21 mm");
     await expect(first).toContainText("fixed");
+    // the label carries the ledger's reason for it
+    await expect(first.getByTestId("outcome-why")).toHaveText("· the gap is now within the 0.50 mm limit");
     await expect(first).toContainText("Given to 2 later jobs · their reviews: 1 accepted, 1 sent back, 0 rejected");
     await expect(first.getByRole("img", { name: "Close-up of pin 1 on the photo" })).toBeVisible();
     const second = blocks.nth(1);
     // a mixed log keeps the per-row label; reasons are never invented
     await expect(second).toContainText("test review, not a person");
-    await expect(second).toContainText("no reason given");
+    // no reason was given, and the block header does not lead with that
+    await expect(second).not.toContainText("with a reason");
+    await expect(second).not.toContainText("no reason given");
     await expect(page.getByRole("note").filter({ hasText: "Every entry below is a test review" })).toHaveCount(0);
     await expect(page.getByText("2 pieces of feedback · 1 fixed · 1 rejected")).toBeVisible();
     await page.getByLabel("Result").selectOption("rejected");

@@ -4,6 +4,7 @@ import { Brain, ChevronDown, Crosshair, Wrench } from "lucide-react";
 import * as React from "react";
 import type { FocusEvent, ModelCallEvent, ThoughtEvent, ToolCallEvent } from "@/lib/api-types";
 import { fmtMs } from "@/lib/format";
+import { plainTerms } from "@/lib/plain-terms";
 import { cn } from "@/lib/utils";
 import { Badge } from "../ui/badge";
 import { ModeBadge } from "../ui/provenance";
@@ -55,7 +56,7 @@ function ToolCall({ e }: { e: ToolCallEvent }) {
           <span className="font-mono text-[11px] text-subtle tnum">{fmtMs(e.ms)}</span>
           {!e.ok ? <Badge tone="bad">error</Badge> : null}
         </div>
-        {e.result ? <p className="mt-0.5 line-clamp-3 text-muted">→ {e.result}</p> : null}
+        {e.result ? <p className="mt-0.5 line-clamp-3 text-muted">→ {plainTerms(e.result)}</p> : null}
       </div>
     </div>
   );

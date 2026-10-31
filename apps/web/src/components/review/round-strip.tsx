@@ -1,5 +1,6 @@
 import { Check, CornerUpLeft, Hourglass, X } from "lucide-react";
 import type { ReviewRound } from "@/lib/api-types";
+import { fmtErr } from "@/lib/format";
 import { verdictTone } from "@/lib/review";
 import { cn } from "@/lib/utils";
 
@@ -26,7 +27,7 @@ export function RoundStrip({ rounds, className }: { rounds: ReviewRound[]; class
               <div className="font-medium">Round {r.round}</div>
               <div className={cn("font-mono tnum", TONE_TEXT[verdictTone(v)])}>
                 {v?.status === "verified" ? "verified · " : ""}
-                {v?.max_error_mm != null ? `${v.max_error_mm.toFixed(2)} mm` : "no number"}
+                {v?.max_error_mm != null ? `${fmtErr(v.max_error_mm)} mm` : "no number"}
               </div>
               <div className="flex items-center gap-1 text-[11px] text-subtle">
                 <Icon className="size-3" aria-hidden />

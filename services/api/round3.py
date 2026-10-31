@@ -12,6 +12,7 @@ from pydantic import BaseModel, Field
 
 from services.agent import buy_or_print as bop
 from services.agent import mating
+from services.agent.providers.config import settings as provider_settings
 from services.api.common import API, _job
 from services.api.errors import ApiError
 from services.registry import fit_learning, presets
@@ -30,6 +31,11 @@ def _card_json(card: BuyOrPrint) -> dict[str, Any]:
     return card.model_dump(mode="json")
 
 
+def _replaying(job: Any) -> bool:
+    """A stored card is a recording when the job is a recorded run or the server answers in replay mode."""
+    return bool(getattr(job.summary, "is_replay", False)) or provider_settings().mode == "replay"
+
+
 @router.get("/jobs/{job_id}/buy-or-print", tags=["jobs"])
 def job_buy_or_print(job_id: str) -> dict[str, Any]:
     """The job's buy-or-print card. A job without a stored card gets the print side now (no lookup: a GET never
@@ -37,7 +43,7 @@ def job_buy_or_print(job_id: str) -> dict[str, Any]:
     job = _job(job_id)
     card = bop.stored_card(job)
     if card is not None:
-        return _card_json(card)
+        return _card_json(card.model_copy(update={"recorded": _replaying(job)}))
     if not job.read_text("part.py"):
         raise ApiError(409, "no_program", "the job has no part program yet, so there is nothing to price")
     ver = job.read_json("verification.json") or {}
@@ -69,6 +75,7 @@ def part_buy_or_print(slug: str) -> dict[str, Any]:
     part = P.require_part(slug)
     st = part.verification.status if part.verification is not None else "unknown"
     lookup = None
+    recorded = False
     notes: list[str] = []
     jid = part.provenance.job_id
     if jid:
@@ -78,10 +85,11 @@ def part_buy_or_print(slug: str) -> dict[str, Any]:
             src = None
         stored = bop.stored_card(src) if src is not None else None
         lookup = stored.lookup if stored is not None else None
+        recorded = stored is not None and src is not None and _replaying(src)
     if lookup is None:
         notes.append("no stored lookup for this part: open its job's card to look up the original")
     card = bop.build_card(title=part.title, status=st, facts=part.facts, lookup=lookup, slug=part.slug, notes=notes)
-    return _card_json(card)
+    return _card_json(card.model_copy(update={"recorded": recorded}))
 
 
 @router.get("/jobs/{job_id}/mate-fit", tags=["jobs"])

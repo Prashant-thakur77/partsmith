@@ -508,37 +508,72 @@ def _fail(rec: dict[str, Any], exc: BaseException) -> dict[str, Any]:
     return rec
 
 
-def start(text: str) -> dict[str, Any]:
-    """Plan, check, then either ask for missing numbers, say no template fits, or bake and check. Synchronous."""
-    text = " ".join(text.split())[:MAX_TEXT]
-    if len(text) < 3:
-        raise ValueError("describe the part in a few words, with its numbers")
-    rid = "d_" + time.strftime("%y%m%d") + "_" + secrets.token_hex(4)
-    rec: dict[str, Any] = {
+def _record(rid: str, text: str) -> dict[str, Any]:
+    return {
         "id": rid, "text": text, "status": "planning", "created_at": time.time(), "updated_at": time.time(),
         "template": None, "family": None, "title": "", "summary": "", "params": [], "values": [], "questions": [],
         "answers": {}, "plan_notes": [], "planner": None, "checks": None, "bake": None, "downloads": None,
         "print_plan": None, "coupon": False, "no_fit": None, "events": [], "label": NOT_PHOTO,
     }  # fmt: skip
+
+
+def _check_and_build(rec: dict[str, Any], raw: Mapping[str, Any]) -> None:
+    t, rows, notes = check_plan(raw, rec["text"])
+    rec["plan_notes"] = notes
+    if t is None:
+        _no_fit(rec, str(raw.get("no_fit_reason", "")))
+        return
+    rec.update(template=t.name, family=t.family.value, title=str(raw.get("title") or t.title)[:120],
+               summary=t.summary, params=[p.model_dump(mode="json") for p in t.params], values=rows)  # fmt: skip
+    rec["questions"] = questions_for(t, rows)
+    if rec["questions"]:
+        rec["status"] = "needs_answers"
+    else:
+        build(rec)
+
+
+def start(text: str) -> dict[str, Any]:
+    """Plan, check, then either ask for missing numbers, say no template fits, or bake and check. Synchronous."""
+    text = " ".join(text.split())[:MAX_TEXT]
+    if len(text) < 3:
+        raise ValueError("describe the part in a few words, with its numbers")
+    rec = _record("d_" + time.strftime("%y%m%d") + "_" + secrets.token_hex(4), text)
     try:
-        raw = _plan(rec)
-        t, rows, notes = check_plan(raw, text)
-        rec["plan_notes"] = notes
-        if t is None:
-            _no_fit(rec, str(raw.get("no_fit_reason", "")))
-        else:
-            rec.update(template=t.name, family=t.family.value, title=str(raw.get("title") or t.title)[:120],
-                       summary=t.summary, params=[p.model_dump(mode="json") for p in t.params], values=rows)  # fmt: skip
-            rec["questions"] = questions_for(t, rows)
-            if rec["questions"]:
-                rec["status"] = "needs_answers"
-            else:
-                build(rec)
+        _check_and_build(rec, _plan(rec))
     except Exception as exc:  # a failed plan or bake is a record state, never a 500
         _fail(rec, exc)
     with _lock:
         save(rec)
     return rec
+
+
+EXAMPLE_TEXT = "A spacer 12 mm tall for an M3 screw, outer diameter 7 mm"
+EXAMPLE_LABEL = (
+    "Example result: this sentence run through the describe pipeline on this server with the deterministic mock "
+    "planner (no model call). Code checked the plan, built the part in the sandbox and measured it."
+)
+_examples: dict[str, dict[str, Any]] = {}
+
+
+def example(text: str = EXAMPLE_TEXT) -> dict[str, Any]:
+    """The example sentence through the same check, bake and measure steps as `start()`, planned by the
+    deterministic mock (no model call, no `model_call` event, not stored as a description). Computed once per
+    process; the record says `example: true` and its planner mode is "mock"."""
+    with _lock:
+        hit = _examples.get(text)
+        if hit is not None:
+            return hit
+        rec = _record("example", text)
+        rec["example"] = True
+        rec["label"] = f"{EXAMPLE_LABEL} {NOT_PHOTO}"
+        rec["planner"] = {"provider": "mock", "model": "describe_plan mock", "mode": "mock", "prompt": ""}
+        try:
+            _check_and_build(rec, mock_plan(text))
+        except Exception as exc:
+            _fail(rec, exc)
+            return rec  # not cached: the next request tries again
+        _examples[text] = rec
+        return rec
 
 
 def answer(rid: str, answers: Mapping[str, float | None]) -> dict[str, Any]:
@@ -572,9 +607,11 @@ def public(rec: Mapping[str, Any]) -> dict[str, Any]:
 
 __all__ = [
     "DESCRIBE_SCHEMA",
+    "EXAMPLE_TEXT",
     "NOT_PHOTO",
     "answer",
     "check_plan",
+    "example",
     "get",
     "measure_knob",
     "mock_plan",

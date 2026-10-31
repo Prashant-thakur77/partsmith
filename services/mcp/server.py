@@ -10,6 +10,7 @@ from __future__ import annotations
 
 import base64
 import binascii
+import contextvars
 import importlib
 import os
 from pathlib import Path
@@ -42,12 +43,32 @@ INSTRUCTIONS = (
 )
 
 
+# The base of the HTTP request being served (set by the `/mcp` mount from the same rule REST uses for its absolute
+# links: forwarded host, else PARTSMITH_PUBLIC_URL, else the request's own origin). Unset over stdio.
+_API_BASE: contextvars.ContextVar[str | None] = contextvars.ContextVar("partsmith_mcp_api_base", default=None)
+_WEB_BASE: contextvars.ContextVar[str | None] = contextvars.ContextVar("partsmith_mcp_web_base", default=None)
+
+
+def set_request_base(api_base: str | None, web_base: str | None = None) -> tuple[Any, Any]:
+    """Use this request's public base for absolute URLs (API links) and, when the call came through the web app,
+    for page links. Returns tokens for `reset_request_base`."""
+    return _API_BASE.set(api_base.rstrip("/") if api_base else None), _WEB_BASE.set(
+        web_base.rstrip("/") if web_base else None
+    )
+
+
+def reset_request_base(tokens: tuple[Any, Any]) -> None:
+    _API_BASE.reset(tokens[0])
+    _WEB_BASE.reset(tokens[1])
+
+
 def _abs(url: str) -> str:
-    return agentdocs.base_url() + url if url.startswith("/") else url
+    return (_API_BASE.get() or agentdocs.base_url()) + url if url.startswith("/") else url
 
 
 def _web(path: str) -> str:
-    return os.environ.get("PARTSMITH_WEB_URL", "http://localhost:3000").rstrip("/") + path
+    env = os.environ.get("PARTSMITH_WEB_URL", "").strip()
+    return (env or _WEB_BASE.get() or "http://localhost:3000").rstrip("/") + path
 
 
 def _svc() -> Any:
@@ -121,6 +142,7 @@ def build_server(*, allow_paths: bool = False, read_only: bool | None = None) ->
         family: Annotated[str | None, Field(description="Family filter, e.g. knob, hook, cable_clip, wheel")] = None,
         verified: Annotated[bool | None, Field(description="Only verified (true) or only unverified (false)")] = None,
         limit: Annotated[int, Field(ge=1, le=50)] = 10,
+        query: Annotated[str | None, Field(description="Same as q (accepted because report_need uses `query`)")] = None,
     ) -> dict[str, Any]:
         """Search the PartSmith registry. Numbers in the query boost parts with a matching default dimension.
         Example: search_parts(q="caster wheel 62 mm"). Returns {items: [card + coverage], total, coverage, match,
@@ -128,6 +150,9 @@ def build_server(*, allow_paths: bool = False, read_only: bool | None = None) ->
         max(10 %, 0.5 mm) of a part dimension); `match` is good | partial | none ("all" for an empty query).
         match="none" means nothing close exists: say so and offer report_need instead of substituting an unrelated
         part; "partial" means check the sizes before using it."""
+        if query is not None and q and query.strip() != q.strip():
+            raise ToolError("send the search words once: q and query differ (query is an alias of q)")
+        q = q or (query or "")
         items, total, covs, best = get_registry().search_scored(
             q, family=family, verified=verified, limit=limit, role="part"
         )

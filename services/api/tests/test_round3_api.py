@@ -80,8 +80,20 @@ def test_job_card_print_side_then_cited_lookup(client: TestClient, fake: FakeSer
     job = fake.mgr.get(jid)
     assert job is not None and any(e.t == "model_call" and e.stage == "buy_lookup" for e in job.events)
     # GET now returns the stored card; the verification file is untouched
-    assert client.get(f"/api/v1/jobs/{jid}/buy-or-print").json()["lookup"]["offers"][0]["seller"] == "Shop"
+    stored = client.get(f"/api/v1/jobs/{jid}/buy-or-print").json()
+    assert stored["lookup"]["offers"][0]["seller"] == "Shop" and stored["recorded"] is False
     assert job.read_json("verification.json")["status"] == "verified"
+
+
+def test_stored_card_is_marked_recorded_when_the_server_replays(
+    client: TestClient, fake: FakeService, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """A server in PROVIDER_MODE=replay reads stored cards back: they say recorded, so the web never shows LIVE."""
+    jid = _job(client, fake)
+    mocks.register_mock("buy_lookup", lambda req: {"answer": ANSWER, "sources": SOURCES})
+    assert client.post(f"/api/v1/jobs/{jid}/buy-or-print", json={}).json()["recorded"] is False  # ran just now
+    monkeypatch.setenv("PROVIDER_MODE", "replay")
+    assert client.get(f"/api/v1/jobs/{jid}/buy-or-print").json()["recorded"] is True
 
 
 def test_job_card_errors(client: TestClient, fake: FakeService) -> None:

@@ -1,11 +1,11 @@
 import { AlertTriangle, BadgeCheck, CircleDashed, Clock, HelpCircle, Loader2, XOctagon } from "lucide-react";
 import type { JobSummary } from "@/lib/api-types";
-import { fmtNum } from "@/lib/format";
+import { fmtErr } from "@/lib/format";
 import { Badge } from "../ui/badge";
 
 /** Job state chip. "Verified" only when the job summary says the verifier passed it. */
 export function JobStatusBadge({ job }: { job: Pick<JobSummary, "status" | "verified" | "max_error_mm"> }) {
-  const err = job.max_error_mm != null ? <span className="font-mono tnum">· {fmtNum(job.max_error_mm)} mm</span> : null;
+  const err = job.max_error_mm != null ? <span className="font-mono tnum">· {fmtErr(job.max_error_mm)} mm</span> : null;
   switch (job.status) {
     case "queued":
       return (

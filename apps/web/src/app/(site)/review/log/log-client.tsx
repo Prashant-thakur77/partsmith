@@ -71,6 +71,11 @@ function Entry({ e, testBadge }: { e: FeedbackEntry; testBadge: boolean }) {
               gap {e.before_mm!.toFixed(2)} → {e.after_mm!.toFixed(2)} mm <span className="text-subtle">(limit {e.limit_mm.toFixed(2)})</span>
             </span>
           ) : null}
+          {e.outcome_why ? (
+            <span className="text-muted" data-testid="outcome-why">
+              · {e.outcome_why.replace(/^[^:]+:\s*/, "")}
+            </span>
+          ) : null}
           {testBadge && e.by !== "person" ? <Badge tone="mock">test review, not a person</Badge> : null}
         </div>
         <p className="text-[14px] leading-snug">
@@ -155,7 +160,7 @@ function Block({ b, testBadges }: { b: FeedbackBlock<FeedbackEntry>; testBadges:
           <span>
             {b.rounds.length} round{b.rounds.length === 1 ? "" : "s"} · {b.entries.length} piece{b.entries.length === 1 ? "" : "s"} of feedback
           </span>
-          <span>{reasons ? `${reasons} with a reason` : "no reason given"}</span>
+          {reasons ? <span>{`${reasons} with a reason`}</span> : null}
         </p>
       </div>
       <GapTrack rounds={b.rounds} limit={b.limit_mm} />

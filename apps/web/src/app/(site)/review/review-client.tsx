@@ -40,6 +40,7 @@ import {
   decisionBody,
   reviewersLabel,
   roundLabel,
+  judgeRunFromEvents,
   scorecardSummary,
   sortQueue,
   verdictText,
@@ -335,6 +336,7 @@ function ReviewDetailPanel({ jobId, item, admin }: { jobId: string; item: Review
   const canAct = admin && !!cur && !cur.decision && status === "waiting";
   const verdict = cur?.verdict ?? item?.verdict;
   const judge = cur?.judge ?? item?.judge ?? job.data?.judge;
+  const judgeRun = React.useMemo(() => judgeRunFromEvents(job.data?.events), [job.data?.events]);
   const title = item?.title || job.data?.summary.title || jobId;
   const isReplay = item?.is_replay ?? job.data?.summary.is_replay ?? false;
   const family = item?.family || job.data?.partspec?.family || "";
@@ -460,7 +462,7 @@ function ReviewDetailPanel({ jobId, item, admin }: { jobId: string; item: Review
           </div>
           <div className="space-y-0.5">
             <dt className="text-[11px] text-subtle">Judge</dt>
-            <dd className="font-mono text-[12px]">{scorecardSummary(judge)}</dd>
+            <dd className="font-mono text-[12px]">{scorecardSummary(judge, judgeRun)}</dd>
           </div>
           <div className="space-y-0.5">
             <dt className="text-[11px] text-subtle">Cost</dt>
@@ -546,7 +548,7 @@ function ReviewDetailPanel({ jobId, item, admin }: { jobId: string; item: Review
 
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
         <MeasureCheck verification={job.data?.verification} />
-        <JudgeScorecard judge={judge} />
+        <JudgeScorecard judge={judge} ran={judgeRun} />
       </div>
 
       <details className="group rounded-lg border border-border bg-surface">

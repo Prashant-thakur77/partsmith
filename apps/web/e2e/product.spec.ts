@@ -33,6 +33,13 @@ test("describe: form, result and no-fit render, accessible, no console errors", 
   await page.goto("/describe");
   await expect(page.getByRole("heading", { name: "Describe it, with your numbers", level: 1 })).toBeVisible();
   await expect(page.getByLabel("What do you need? Say the numbers you know.")).toBeVisible();
+  // the example is the server's stored result for its own sentence: the numbers it says are tagged "you said"
+  const ex = page.getByTestId("describe-example");
+  await expect(ex).toContainText("A spacer 12 mm tall for an M3 screw, outer diameter 7 mm");
+  await expect(ex.getByText("you said", { exact: true })).toHaveCount(3);
+  await expect(ex).toContainText("Height 12 mm");
+  await expect(ex).toContainText("Matches your numbers");
+  await expect(page.getByText("run on this server · mock planner, no model call")).toBeVisible();
   await noSideScroll(page);
   await shot(page, info, "describe");
   await expectAccessible(page);
@@ -140,7 +147,9 @@ test.describe("functional", () => {
     await page.goto("/jobs/job_demo_1");
     const panel = page.getByRole("region", { name: "Print it" });
     await expect(panel.getByText("Layer · walls · infill")).toBeVisible();
-    await expect(panel.getByText("Orientation")).toBeVisible();
+    await expect(panel.getByText("Orientation", { exact: true })).toBeVisible();
+    // the load note defers to the computed orientation instead of giving a second instruction
+    await expect(panel.getByTestId("load-note")).toContainText("Computed print orientation:");
     await expect(page.getByRole("heading", { name: "Make a variant" })).toBeVisible();
   });
 

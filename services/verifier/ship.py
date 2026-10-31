@@ -67,7 +67,12 @@ def _inconsistencies(v: Verification) -> list[str]:
 
 
 def worst_problem(v: Verification) -> str:
-    """The single most important reason a part is best effort, in plain words."""
+    """The single most important reason a part is best effort, in plain words. When the check that sets the headline
+    max error failed, that check is named (so the number and the reason agree); otherwise the biggest failing residual,
+    the first failed required test, the worst view, in that order."""
+    head = _headline_failure(v, digits=1)
+    if head is not None:
+        return head
     bad = [r for r in v.residuals if not r.passed]
     if bad:
         return _residual_phrase(max(bad, key=lambda r: abs(r.delta_mm) - r.tol_mm), "the outline", 1)
@@ -85,6 +90,30 @@ def worst_problem(v: Verification) -> str:
     if v.reasons:
         return str(v.reasons[0])
     return "the model does not match the measurements within tolerance"
+
+
+# Two numbers "are" the headline when they agree to this many mm (max_error_mm is copied from one of them).
+_HEADLINE_EPS_MM = 1e-6
+
+
+def _view_phrase(view: str, hausdorff_mm: float, limit_mm: float, digits: int = 2) -> str:
+    return f"the {view} outline is off by up to {hausdorff_mm:.{digits}f} mm (limit {limit_mm:.2f} mm)"
+
+
+def _headline_failure(v: Verification, digits: int = 2) -> str | None:
+    """The failing check whose value IS the record's max error (the number shown as the headline), in plain words;
+    None when the max error comes from a check that passed (or there is none). `max_error_mm` is the worst of the
+    views' outline gaps (Hausdorff) and the measured-size residuals (verify.py), so one of those set it."""
+    top = v.max_error_mm
+    if top is None:
+        return None
+    for vm in v.views:
+        if abs(vm.hausdorff_mm - top) <= _HEADLINE_EPS_MM and vm.hausdorff_mm > v.thresholds.hausdorff_mm:
+            return _view_phrase(vm.view, vm.hausdorff_mm, v.thresholds.hausdorff_mm, digits)
+    for r in v.residuals:
+        if abs(abs(r.delta_mm) - top) <= _HEADLINE_EPS_MM and not r.passed:
+            return f"{_residual_phrase(r, 'the outline', digits)} (allowed ±{r.tol_mm:.2f} mm)"
+    return None
 
 
 def _residual_phrase(r: FeatureResidual, outline: str, digits: int) -> str:
@@ -111,9 +140,18 @@ _VIEW_GATE = re.compile(
 )
 
 
+# Plain words for the verifier's metric names (the record keeps the technical line in `reasons`).
+_PLAIN_GATE = {
+    "IoU": "overlap (IoU)",
+    "mean contour distance": "average edge gap",
+    "Hausdorff": "largest outline gap",
+    "HD95": "95th-percentile outline gap",
+}
+
+
 def failing_view_gates(v: Verification) -> list[str]:
     """The gated view numbers that missed their limit, read from the verifier's own view lines (those ending
-    "- fails"), e.g. "the side view's mean contour distance is 0.20 mm (needs <= 0.15 mm)"."""
+    "- fails"), in plain words, e.g. "the side view's average edge gap is 0.20 mm (needs ≤ 0.15 mm)"."""
     out: list[str] = []
     for line in v.reasons:
         if not line.rstrip().endswith("- fails") or " view" not in line:
@@ -124,37 +162,78 @@ def failing_view_gates(v: Verification) -> list[str]:
             if (val > lim) if m["op"] == "<=" else (val < lim):
                 unit = " mm" if m["unit"] else ""
                 op = "≤" if m["op"] == "<=" else "≥"
-                out.append(f"the {view} view's {m['name']} is {m['val']}{unit} (needs {op} {m['lim']}{unit})")
+                name = _PLAIN_GATE.get(m["name"], m["name"])
+                out.append(f"the {view} view's {name} is {m['val']}{unit} (needs {op} {m['lim']}{unit})")
+    return out
+
+
+# Test ids whose failure is the same problem as a failed residual (verify.py writes both for one dimension).
+_TEST_RESIDUAL = {"bbox.x": ("outline", "length"), "bbox.y": ("outline", "width"), "thickness": ("plate", "thickness")}
+
+
+def _test_is_residual(test_id: str, bad: list[FeatureResidual]) -> bool:
+    feat, _, qty = test_id.partition(".")
+    target = _TEST_RESIDUAL.get(test_id) or (feat, qty)
+    for r in bad:
+        if r.feature_id != target[0]:
+            continue
+        if r.quantity == target[1] or (target[1] == "center" and r.quantity.startswith("center")):
+            return True
+    return False
+
+
+def failing_checks(v: Verification) -> list[str]:
+    """Every check that kept a best-effort record from passing, one plain line each, headline first: the failing check
+    whose value is the record's max error (so the reason explains the number next to it), then judge vetoes, failed
+    residuals (biggest overshoot first; a hole's x and y count once), failed required tests that are not already a
+    residual, views over the outline-gap limit, then views failing only their overlap / average-edge-gap limit."""
+    out: list[str] = []
+    head = _headline_failure(v)
+    if head is not None:
+        out.append(head)
+
+    def add(line: str) -> None:
+        if line not in out:
+            out.append(line)
+
+    for x in v.vetoes:
+        if x.severity == "blocking":
+            add(f"the judge flagged {x.feature}: {x.issue}"[:140])
+    bad = sorted((r for r in v.residuals if not r.passed), key=lambda r: abs(r.delta_mm) - r.tol_mm, reverse=True)
+    seen_centres: set[str] = set()
+    for r in bad:
+        if r.quantity in ("center_x", "center_y"):
+            if r.feature_id in seen_centres:
+                continue
+            seen_centres.add(r.feature_id)
+        add(f"{_residual_phrase(r, 'the outline', 2)} (allowed ±{r.tol_mm:.2f} mm)")
+    for t in v.tests:
+        if t.priority == "P0" and not t.passed and not _test_is_residual(t.id, bad):
+            name = re.split(r":| ==| \(", t.description, maxsplit=1)[0].strip() or t.id
+            add(f"part test failed: {name}")
+    off = sorted((vm for vm in v.views if vm.hausdorff_mm > v.thresholds.hausdorff_mm),
+                 key=lambda m: m.hausdorff_mm, reverse=True)  # fmt: skip
+    for vm in off:
+        add(_view_phrase(vm.view, vm.hausdorff_mm, v.thresholds.hausdorff_mm))
+    off_views = {vm.view for vm in off}
+    for g in failing_view_gates(v):
+        if not any(g.startswith(f"the {name} view") for name in off_views):
+            add(g)
     return out
 
 
 def short_reason(v: Verification | None) -> str | None:
     """One short line saying which check kept a best-effort part from passing, built only from its verification
-    record (failed residual, part test, view limit or judge veto). None unless the record is best effort."""
+    record. The first check named is the one that sets the headline max error when that check failed (a 4.70 mm
+    outline gap is never explained by a 0.89 mm hole offset), then "(+N more)" for the other failing checks.
+    None unless the record is best effort."""
     if v is None or v.verified or v.status != "best_effort":
         return None
-    blocking = [x for x in v.vetoes if x.severity == "blocking"]
-    if blocking:
-        return f"the judge flagged {blocking[0].feature}: {blocking[0].issue}"[:140]
-    bad = [r for r in v.residuals if not r.passed]
-    if bad:
-        r = max(bad, key=lambda r: abs(r.delta_mm) - r.tol_mm)
-        return f"{_residual_phrase(r, 'the outline', 2)} (allowed ±{r.tol_mm:.2f} mm)"
-    failed = [t for t in v.tests if t.priority == "P0" and not t.passed]
-    if failed:
-        name = re.split(r":| ==| \(", failed[0].description, maxsplit=1)[0].strip() or failed[0].id
-        more = f" (+{len(failed) - 1} more)" if len(failed) > 1 else ""
-        return f"part test failed: {name}{more}"
-    off = [vm for vm in v.views if vm.hausdorff_mm > v.thresholds.hausdorff_mm]
-    if off:
-        vm = max(off, key=lambda m: m.hausdorff_mm)
-        return (
-            f"the {vm.view} outline is off by up to {vm.hausdorff_mm:.2f} mm (limit {v.thresholds.hausdorff_mm:.2f} mm)"
-        )
-    gates = failing_view_gates(v)
-    if gates:
-        return gates[0]
-    return worst_problem(v)
+    checks = failing_checks(v)
+    if not checks:
+        return worst_problem(v)
+    more = f" (+{len(checks) - 1} more)" if len(checks) > 1 else ""
+    return checks[0] + more
 
 
 FIT_TEST_PREFIX = "fit.mate."  # services/verifier/mate_fit.py: "fits where it goes" (P1, informational)

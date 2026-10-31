@@ -10,6 +10,7 @@ import {
   nudge,
   pinOutcome,
   reviewersLabel,
+  judgeRunFromEvents,
   scorecardSummary,
   sortQueue,
   trackText,
@@ -66,8 +67,16 @@ test("scorecard summary lists the four criteria in order and counts vetoes; malf
     notes: "",
   });
   assert.equal(j.scores.length, 4);
-  assert.equal(scorecardSummary(j), "outline 4 · features 3 · printability 5 · fit 4 · 1 blocking veto · 1 minor veto");
+  assert.equal(scorecardSummary(j), "mock (rule-based) · outline 4 · features 3 · printability 5 · fit 4 · 1 blocking veto · 1 minor veto");
   assert.equal(scorecardSummary(null), "no scorecard");
+  assert.equal(scorecardSummary(null, { mode: "mock", model: "muse-glimmer" }), "mock (rule-based) · no scorecard saved");
+  assert.equal(scorecardSummary(JudgeSchema.parse({ mode: "mock" })), "mock (rule-based) · no scores");
+  const events = [
+    EventSchema.parse({ job: "j", seq: 1, ts: 1, t: "model_call", stage: "judge", model: "muse-glimmer", mode: "mock", provider: "mock" }),
+    EventSchema.parse({ job: "j", seq: 2, ts: 2, t: "model_call", stage: "build", model: "muse-spark-1.3", mode: "live", provider: "meta" }),
+  ];
+  assert.deepEqual(judgeRunFromEvents(events), { mode: "mock", model: "muse-glimmer" });
+  assert.equal(judgeRunFromEvents([]), null);
   assert.equal(scorecardSummary(JudgeSchema.parse({ scores: "bad" })), "no scores");
 });
 
@@ -127,6 +136,9 @@ test("agent rows group the job's model calls by stage and model, in run order", 
 test("verdict text and lesson track text come straight from the API values", () => {
   assert.equal(verdictText({ status: "best_effort", max_error_mm: 0.834 }), "best effort · 0.83 mm");
   assert.equal(verdictText(null), "no verdict yet");
+  // at the limit the third decimal shows which side it is on
+  assert.equal(verdictText({ status: "verified", max_error_mm: 0.4958 }), "verified · 0.496 mm");
+  assert.equal(verdictText({ status: "best_effort", max_error_mm: 0.4985 }), "best effort · 0.499 mm");
   assert.equal(trackText(null), null);
   assert.equal(trackText({ used_in: 0, accepted: 0, improved: 0, rejected: 0 }), "Not used in a job yet");
   assert.equal(trackText({ used_in: 3, accepted: 1, improved: 1, rejected: 0 }), "Used in 3 jobs · later reviews: 1 accepted, 1 sent back, 0 rejected");

@@ -11,7 +11,7 @@ import { ArrowUpRight, Printer, ShoppingCart } from "lucide-react";
 import * as React from "react";
 import { api } from "@/lib/api";
 import { decimalsOf } from "@/lib/count-up";
-import { citedOem, citedOffers, costEntries, hostOf, lookupState, money } from "@/lib/buy-or-print";
+import { cardCurrency, citedOem, citedOffers, costIn, hostOf, lookupState, money, moneyLocale } from "@/lib/buy-or-print";
 import { fmtNum, splitTitle } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import { Badge } from "../ui/badge";
@@ -33,11 +33,16 @@ export function BuyOrPrintStrip() {
   const { pick, fig, replays } = useStoredRun("figure");
   const q = useQuery({ queryKey: ["buy-or-print", pick?.id], queryFn: () => api.jobBuyOrPrint(pick!.id), enabled: !!pick, retry: false, staleTime: 300_000 });
   const card = q.data;
-  const offers = citedOffers(card?.lookup).sort((a, b) => a.price - b.price);
+  // one currency on the whole strip (the offers' price source, else the viewer's locale): never ₹ next to $
+  const currency = cardCurrency(card, typeof navigator === "undefined" ? null : navigator.language);
+  const fmt = (amount: number) => money(amount, currency, moneyLocale(currency));
+  const offers = citedOffers(card?.lookup)
+    .filter((o) => o.currency === currency)
+    .sort((a, b) => a.price - b.price);
   const best = offers[0];
   const oem = citedOem(card?.lookup);
   const pla = card?.prints.find((p) => p.material.toUpperCase() === "PLA") ?? card?.prints[0];
-  const costs = pla ? costEntries(pla) : [];
+  const cost = pla ? costIn(pla, currency) : null;
   const state = lookupState(card);
   const title = card?.title || (fig ? splitTitle(fig.title).title : "");
 
@@ -59,7 +64,7 @@ export function BuyOrPrintStrip() {
           </div>
           {best ? (
             <>
-              <Big text={money(best.price, best.currency)} />
+              <Big text={fmt(best.price)} />
               <p className="text-[13.5px] leading-6 text-muted">
                 Cheapest of {offers.length} cited {offers.length === 1 ? "offer" : "offers"}
                 {best.availability ? <> · {best.availability.toLowerCase()}</> : null}
@@ -100,7 +105,7 @@ export function BuyOrPrintStrip() {
                 {pla.print_minutes != null ? <Big text={fmtNum(pla.print_minutes, decimalsOf(String(pla.print_minutes)))} unit="min" /> : null}
               </div>
               <p className="text-[13.5px] leading-6 text-muted">
-                Filament {costs.length ? costs.slice(0, 2).map((c) => money(c.amount, c.currency)).join(" / ") : "cost not estimated"} at an assumed spool price. Solid volume, so a real print weighs less; the assumptions are on the run&apos;s page.
+                Filament {cost != null ? fmt(cost) : "cost not estimated"} at an assumed spool price. Solid volume, so a real print weighs less; the assumptions are on the run&apos;s page.
               </p>
             </>
           ) : (
@@ -111,7 +116,9 @@ export function BuyOrPrintStrip() {
       <p className="flex flex-wrap items-center gap-x-2 gap-y-1 font-mono text-[11px] leading-4 text-subtle">
         <span className="text-fg">{title}</span>
         <Badge tone="mock">recorded run</Badge>
-        <span>· buy: {card.lookup?.label || "web lookup"} ({card.lookup?.mode ?? card.mode})</span>
+        <span>
+          · buy: {card.lookup?.label || "web lookup"} ({card.recorded ? `stored; the lookup ran ${card.lookup?.mode ?? card.mode} earlier` : card.lookup?.mode ?? card.mode})
+        </span>
         <span>· print: code&apos;s estimate from the model&apos;s volume</span>
       </p>
     </div>

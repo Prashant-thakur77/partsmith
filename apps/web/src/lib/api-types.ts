@@ -431,6 +431,8 @@ export const IterationEventSchema = z.object({
   iou: z.nullish(num),
   passed_tests: z._default(z.int(), 0),
   total_tests: z._default(z.int(), 0),
+  /** The keep rule's number for this round (summed overshoot of failing required tests and view limits, in multiples of their tolerance); null on older runs. */
+  pass_shortfall: z.nullish(num),
 });
 export const LogEventSchema = z.object({
   ...ev,
@@ -1088,6 +1090,8 @@ export const BuyOrPrintSchema = z.looseObject({
   lookup: z.catch(z.nullish(BuyLookupSchema), null),
   created_at: z.catch(z._default(num, 0), 0),
   notes: tolerantArray(z.string()),
+  /** A stored card read back by a recorded run or a replaying server: the lookup ran earlier, nothing was searched now. */
+  recorded: z.catch(z._default(z.boolean(), false), false),
 });
 export type BuyOrPrint = z.output<typeof BuyOrPrintSchema>;
 
@@ -1324,6 +1328,8 @@ export const FeedbackEntrySchema = z.object({
   after_mm: nullableNum,
   limit_mm: z.catch(z._default(num, 0.5), 0.5),
   outcome: z.catch(FeedbackOutcomeSchema, "not_measured"),
+  /** The ledger's words for the rule behind `outcome` ("fixed: the next round passed verification"). */
+  outcome_why: z.catch(z._default(z.string(), ""), ""),
   next_job: z.catch(z.nullish(z.string()), null),
   /** The verifier's verdict on the round that was reviewed and on the round it started (worst gap of each model). */
   verdict: z.catch(z.nullish(ReviewVerdictSchema), null),
@@ -1495,6 +1501,8 @@ export const DescribeRecordSchema = z.object({
   no_fit: z.nullish(z.object({ reason: z.string(), templates: z._default(z.array(z.string()), []), next: z._default(z.array(z.object({ href: z.string(), label: z.string() })), []) })),
   error: z.nullish(z.string()),
   label: strDefault(),
+  /** `GET /describe/example`: the example sentence run with the labelled mock planner, not a stored description. */
+  example: z._default(z.boolean(), false),
 });
 export type DescribeRecord = z.output<typeof DescribeRecordSchema>;
 

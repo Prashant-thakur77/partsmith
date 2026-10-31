@@ -51,20 +51,60 @@ export function BoundNote({ bound, className }: { bound: readonly [number, numbe
 }
 
 /** Knobs no test compared with a photo: shown next to the verdict, labelled inferred and not verified. */
-export function UncheckedList({ items, className, as: H = "h2" }: { items: UncheckedValue[]; className?: string; as?: "h2" | "h3" | "h4" }) {
+export function UncheckedList({
+  items,
+  className,
+  as: H = "h2",
+  collapsible = false,
+}: {
+  items: UncheckedValue[];
+  className?: string;
+  as?: "h2" | "h3" | "h4";
+  /** Start closed behind a "Not checked against a photo (N)" disclosure (the job page: the verdict comes first). */
+  collapsible?: boolean;
+}) {
   const { t } = useT();
   const id = React.useId();
   if (!items.length) return null;
+  const head = (
+    <span className="flex flex-wrap items-center gap-2">
+      <CircleSlash className="size-4 shrink-0 text-warn" aria-hidden />
+      <H id={id} className="font-medium text-fg">
+        {t("ver.unchecked")}
+      </H>
+      <span className="font-mono text-[11px] text-subtle tnum">({items.length})</span>
+    </span>
+  );
+  const body = (
+    <>
+      <p className="text-[12px] text-muted">{t("ver.uncheckedHint")}</p>
+      <UncheckedRows items={items} />
+    </>
+  );
+  if (collapsible) {
+    return (
+      <details aria-labelledby={id} className={cn("group rounded-lg border border-border bg-surface-2 px-4 py-2.5 text-[12.5px]", className)}>
+        <summary className="cursor-pointer list-none [&::-webkit-details-marker]:hidden">
+          <span className="flex items-center gap-2">
+            {head}
+            <span aria-hidden className="ml-auto text-[11px] text-subtle group-open:hidden">show</span>
+            <span aria-hidden className="ml-auto hidden text-[11px] text-subtle group-open:inline">hide</span>
+          </span>
+        </summary>
+        <div className="mt-1.5 space-y-1.5">{body}</div>
+      </details>
+    );
+  }
   return (
     <section role="note" aria-labelledby={id} className={cn("space-y-1.5 rounded-lg border border-border bg-surface-2 px-4 py-3 text-[12.5px]", className)}>
-      <div className="flex flex-wrap items-center gap-2">
-        <CircleSlash className="size-4 shrink-0 text-warn" aria-hidden />
-        <H id={id} className="font-medium text-fg">
-          {t("ver.unchecked")}
-        </H>
-        <span className="font-mono text-[11px] text-subtle tnum">{items.length}</span>
-      </div>
-      <p className="text-[12px] text-muted">{t("ver.uncheckedHint")}</p>
+      {head}
+      {body}
+    </section>
+  );
+}
+
+function UncheckedRows({ items }: { items: UncheckedValue[] }) {
+  return (
       <ul className="space-y-1">
         {items.map((u) => {
           const why = u.note ? uncheckedReason(u.note) : "";
@@ -92,7 +132,6 @@ export function UncheckedList({ items, className, as: H = "h2" }: { items: Unche
           );
         })}
       </ul>
-    </section>
   );
 }
 

@@ -10,6 +10,7 @@ from fastapi.testclient import TestClient
 
 from services.api import main as M
 from services.api.tests.test_api import FakeService, _err, _wait_done, fake  # noqa: F401
+from services.registry import describe
 from services.registry.store import get_registry
 from services.registry.tests.fixtures import add_part
 
@@ -89,6 +90,21 @@ def test_describe_matches_your_numbers(client: TestClient) -> None:
     assert [e["stage"] for e in d["events"]] == ["describe_plan"]
     assert client.get(f"{API}/describe/{d['id']}").json()["checks"]["status"] == "matches"
     _err(client.get(f"{API}/describe/d_000000_00000000"), 404, "describe_not_found")
+
+
+def test_describe_example_runs_the_pipeline_with_the_mock_planner(client: TestClient) -> None:
+    r = client.get(f"{API}/describe/example")
+    assert r.status_code == 200, r.text
+    d = r.json()
+    assert d["example"] is True and d["id"] == "example" and d["planner"]["mode"] == "mock" and d["events"] == []
+    assert d["text"] == describe.EXAMPLE_TEXT and d["status"] == "done" and d["template"] == "spacer"
+    by = {v["param"]: v for v in d["values"]}
+    assert by["height"]["source"] == "user" and by["height"]["value"] == 12
+    assert by["outer_d"]["source"] == "user" and by["outer_d"]["value"] == 7
+    assert by["bore_d"]["source"] == "user" and by["chamfer"]["source"] == "default"
+    assert d["checks"]["status"] == "matches" and "Example result" in d["label"] and "not verified" in d["label"]
+    assert client.get(f"{API}/describe/example").json() == d  # computed once
+    assert "example" not in describe.recent(50)  # not stored as a description
 
 
 def test_describe_asks_then_answers_without_a_second_call(client: TestClient) -> None:

@@ -14,6 +14,11 @@ export const CRITERIA: readonly { id: JudgeCriterion; label: string }[] = [
 ];
 
 const mm = (v: number) => v.toFixed(2);
+/** Same rule as format.ts `fmtErr` (this file stays import-free for node --test): 3 decimals within 0.01 mm of the 0.5 mm limit. */
+const errMm = (v: number) => {
+  const d = Math.abs(v - 0.5) < 0.01 ? 3 : 2;
+  return v.toLocaleString("en-US", { minimumFractionDigits: d, maximumFractionDigits: d });
+};
 
 // ── pins ──────────────────────────────────────────────────────────────────────
 /** The rendered image box on screen (what `getBoundingClientRect()` returns for the <img>). */
@@ -81,7 +86,7 @@ export function pinOutcome(p: Pick<ReviewPin, "before_mm" | "after_mm">): string
 export function verdictText(v: ReviewVerdict | null | undefined): string {
   if (!v) return "no verdict yet";
   const status = v.status.replaceAll("_", " ");
-  return v.max_error_mm != null ? `${status} · ${mm(v.max_error_mm)} mm` : status;
+  return v.max_error_mm != null ? `${status} · ${errMm(v.max_error_mm)} mm` : status;
 }
 
 export function verdictTone(v: ReviewVerdict | null | undefined): "ok" | "warn" | "bad" | "neutral" {
@@ -90,8 +95,31 @@ export function verdictTone(v: ReviewVerdict | null | undefined): "ok" | "warn" 
 }
 
 /** One line for a scorecard: "outline 4 · features 3 · printability 5 · fit 4 · 1 blocking veto". */
-export function scorecardSummary(j: Judge | null | undefined): string {
-  if (!j) return "no scorecard";
+/** How the judge stage ran on a job, from its own `model_call` events (the last judge call); null when it did not run. */
+export type JudgeRun = { mode: string; model: string };
+
+export function judgeRunFromEvents(events: readonly JobEvent[] | null | undefined): JudgeRun | null {
+  let out: JudgeRun | null = null;
+  for (const e of events ?? []) if (e.t === "model_call" && e.stage === "judge") out = { mode: e.mode, model: e.model };
+  return out;
+}
+
+/** "judge: mock (rule-based)" when the judge was the deterministic stand-in (no model looked at the part), else "". */
+export function judgeModeLine(j: Judge | null | undefined, ran?: JudgeRun | null): string {
+  const mode = j?.mode ?? ran?.mode;
+  return mode === "mock" ? "judge: mock (rule-based)" : mode === "replay" ? "judge: recorded run (replay)" : "";
+}
+
+/** The one-line scorecard ("outline 4 · features 3 · …"), led by "mock (rule-based)" when no model judged; callers
+ * label it "Judge" / "judge:". */
+export function scorecardSummary(j: Judge | null | undefined, ran?: JudgeRun | null): string {
+  const line = judgeModeLine(j, ran).replace(/^judge: /, "");
+  const body = scorecardBody(j, ran);
+  return line ? `${line} · ${body}` : body;
+}
+
+function scorecardBody(j: Judge | null | undefined, ran?: JudgeRun | null): string {
+  if (!j) return ran ? "no scorecard saved" : "no scorecard";
   const by = new Map(j.scores.map((s) => [s.criterion, s.score]));
   const parts = CRITERIA.filter((c) => by.has(c.id)).map((c) => `${c.id} ${by.get(c.id)}`);
   const blocking = j.vetoes.filter((v) => v.severity === "blocking").length;

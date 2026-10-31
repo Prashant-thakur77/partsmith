@@ -11,6 +11,7 @@ import Link from "next/link";
 import { api } from "@/lib/api";
 import type { BenchReport } from "@/lib/api-types";
 import { benchHeadline, benchVerified, gtLabel } from "@/lib/bench";
+import { ERROR_LIMIT_MM } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import { CountUp } from "../ui/count-up";
 import { Skeleton } from "../ui/skeleton";
@@ -29,7 +30,7 @@ export function proofCells(b: BenchReport | undefined): Cell[] {
       source: t && head ? `bench · ${t.n} ${noun} · ground truth: ${gtLabel(t.ground_truth)}` : `bench · ${noun}`,
       href: `/results#${key}`,
       pending: t?.status === "pending" || !head ? "not run yet" : undefined,
-      passed: ver ? `${ver.passed} of ${ver.n} passed verification (all checks within limits)` : undefined,
+      passed: ver ? `${ver.passed} of ${ver.n} passed verification (strict: every check ≤ ${ERROR_LIMIT_MM} mm)` : undefined,
     };
   };
   const by = b?.evidence?.bypass;

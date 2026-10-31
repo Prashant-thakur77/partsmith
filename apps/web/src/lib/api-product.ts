@@ -13,6 +13,7 @@ export const PRODUCT = {
   templates: "/templates",
   templateBake: "/templates/{name}/bake",
   describe: "/describe",
+  describeExample: "/describe/example",
   variants: "/parts/{slug}/variants",
   jobPrintPlan: "/jobs/{id}/print-plan",
   partPrintPlan: "/parts/{slug}/print-plan",
@@ -32,6 +33,7 @@ export const productApi = {
     apiUrl(`/templates/${enc(name)}/bake`, { ...params, format, download: 1, ack: format === "py" ? undefined : 1 }),
   templateCouponUrl: (name: string, params: Record<string, number>) => apiUrl(`/templates/${enc(name)}/coupon.stl`, params),
   describe: (text: string) => request(DescribeRecordSchema, "/describe", json({ text })),
+  describeExample: () => request(DescribeRecordSchema, "/describe/example"),
   describeGet: (id: string) => request(DescribeRecordSchema, `/describe/${enc(id)}`),
   describeAnswer: (id: string, answers: Record<string, number | null>) => request(DescribeRecordSchema, `/describe/${enc(id)}/answers`, json({ answers })),
   saveVariant: (slug: string, params: Record<string, number>, title?: string) =>

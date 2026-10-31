@@ -94,8 +94,8 @@ Screen calibration (ID-1 card 85.60 × 53.98 mm) happens in the browser and is s
 | POST | `/jobs/fix` | multipart: `top` (file, required), `side`, `mating` (files, optional), `orbit` (optional 5–10 s walk-around clip, MP4/MOV/WebM ≤ 60 MB), `narration` (optional voice note about the clip, audio ≤ 15 MB, sent with `orbit`), `city` (optional, for nearby print shops on the buy-or-print card), `intent`, `mat_kind` (`screen`\|`paper`), `thickness_mm`, `family_hint`, `screen_px_per_mm`, `points` (optional JSON, see below), `hidden_dims` (optional JSON `[{"name", "value_mm"}]`, at most 4: sizes the photo cannot show, see "Sizes the photo can't see"; bad JSON → `422 invalid_hidden_dims`) → `JobSummary` |
 | GET | `/jobs/demo/samples` | `[{"id": str, "title": str, "family_hint": str\|null, "kind": "template"\|"reference_object"}]` — bundled **synthetic** samples |
 | POST | `/jobs/demo` | `{"sample": str}` → `JobSummary` — runs a bundled **synthetic** sample (labelled synthetic everywhere); unknown ids → `404 sample_not_found` + closest |
-| GET | `/jobs?limit=&include_replays=&kind=` | `[JobSummary]` (newest first) |
-| GET | `/jobs/{id}` | `JobDetail = {"passport": PassportLink, "summary": JobSummary, "events": [Event], "partspec": PartSpec\|null, "measurements": {view: Measurements}, "verification": Verification\|null, "code": str\|null, "params": [ParamSpec], "values": {name: float}, "artifacts": {kind: url}, "question": QuestionEvent\|null, "hidden_dims": [HiddenDimCheck], "status_reason": str\|null}` (see `PartCard`) |
+| GET | `/jobs?limit=&include_replays=&kind=` | `[JobSummary]` (newest first): every job this server can open, recorded runs included by default (`is_replay: true`, e.g. review rounds); `include_replays=false` hides them; a run that is both local and recorded is listed once |
+| GET | `/jobs/{id}` | `JobDetail = {"passport": PassportLink, "summary": JobSummary, "events": [Event], "partspec": PartSpec\|null, "measurements": {view: Measurements}, "verification": Verification\|null, "code": str\|null, "params": [ParamSpec], "values": {name: float}, "artifacts": {kind: url}, "question": QuestionEvent\|null, "hidden_dims": [HiddenDimCheck], "status_reason": str\|null}` (see `PartCard`). `status_reason` names first the failing check whose value is the headline `max_error_mm`, then "(+N more)" for the other failing checks. `iteration` events carry `pass_shortfall` (the keep rule's number: summed overshoot of failing required tests and view limits in multiples of their tolerance; the kept round has the smallest, a verified round always wins; null on older runs) |
 | GET | `/jobs/{id}/thumbnail.jpg` | the job's rectified top photo cropped to the part, ≤ 240 px JPEG, cached per photo; `404 no_photo` when the job has no measured photo |
 | GET | `/jobs/{id}/model.png` | a shaded picture of the job's latest STL (480 px PNG, cached per model; the phone poster before "View in 3D"); picture only, nothing is measured from it; `404 no_model` when no model was built |
 | GET | `/jobs/{id}/events` | **SSE**: one `data: <Event JSON>` per event (`id:` = seq). Agentic fix rounds add `thought` (`{"stage","model","text","iter","mode"}`), `tool_call` (`{"stage","name","args","result","ok","ms","iter","mode"}`) and `focus` (`{"feature","view","at_mm","label","iter"}`, a location code picked from the verifier's worst residual) events; `iter` on `thought`/`tool_call` is the agent's turn within its session, on `focus` the fix round; `mode` is `live`\|`replay`\|`mock`, and a mock run's thoughts come from the deterministic policy (`model: "mock fix agent"`, text ending "(deterministic mock)"). A job that verifies on its first build runs no agent and has none of them. Replays all past events first, then live ones. Ends after `done` — unless `?follow=1`: then the stream stays open (up to 30 min, keep-alives every 15 s) and delivers events appended after `done`, such as a fit check uploaded from a phone. `?from_seq=` (or the `Last-Event-ID` header) resumes. Events keep their original `ts` (the replay player paces on ts gaps). A `: keep-alive` comment is sent after 15 s without events; the stream starts with `retry: 3000`. Headers: `Cache-Control: no-cache, no-transform`, `X-Accel-Buffering: no` |
@@ -290,7 +290,8 @@ bore, pivot and pin diameters: it fits from a self-tapping pilot (0.8 × size) u
 hole + 0.6 mm (M3: 2.4–4.0 mm), or when the size is written in the part's text. The page's
 `coverage` is the best over every candidate, `match` is `good` (≥ 0.75), `partial` (≥ 0.5) or `none`, and `hint` says
 what to do when nothing matches well ("No close match — describe it at /describe or fix from a photo at /fix …").
-Without a query `match` is `"all"` and `coverage`/`hint` are null. MCP `search_parts` returns the same fields.
+Without a query `match` is `"all"` and `coverage`/`hint` are null. MCP `search_parts` returns the same fields; it also
+accepts `query` as an alias of `q` (both given and different → a tool error, never a silent browse-all).
 Every non-empty search (REST first page and MCP) appends `{"q", "total", "best_coverage", "at"}` to
 `$PARTSMITH_HOME/search_log.jsonl` — no IP, user agent or client id. `GET /demand` groups that log by normalised query
 (lowercase words and numbers) and lists the groups whose best coverage stayed below 0.5; a query that a later one
@@ -414,6 +415,7 @@ upper bounds). Also: `GET /jobs/{id}/print-plan` and `GET /parts/{slug}/print-pl
 | Method | Path | Body / Returns |
 |---|---|---|
 | POST | `/describe` | `{"text": str (3..600)}` → `DescribeRecord`. Anonymous; the write rate limit applies. Synchronous (one model call + one sandbox bake + one measurement run) |
+| GET | `/describe/example` | `DescribeRecord` for the example sentence (`describe.EXAMPLE_TEXT`) through the real plan check, sandbox bake and number checks, planned by the deterministic mock (no model call, no events): `id: "example"`, `example: true`, `planner.mode: "mock"`. Not stored as a description; computed once per process |
 | GET | `/describe/{id}` | `DescribeRecord`; unknown → `404 describe_not_found` |
 | POST | `/describe/{id}/answers` | `{"answers": {knob: number \| null}}` (null keeps the default) → `DescribeRecord`. Uses the stored plan: no second model call. `409 no_pending_question` when the record is not waiting or a knob was not asked |
 | POST | `/print-shops` | `{"city": str, "title": str}` → `BuyLookup + {"cached": bool}`: the `buy_lookup` stage with a city, cited places/offers only (a labelled mock without a key). The same (title, city) within 24 h returns the stored answer; the model call is a `model_call` event on the stored lookup (`$PARTSMITH_HOME/print_shops/`) |
@@ -466,8 +468,9 @@ ReviewDetail = {"root_job", "status", "family", "updated_at", "images": {"rectif
               "is_replay","rules","part_slug","lesson_ids"}]}
 FeedbackEntry = {"id","root_job","job_id","round","family","title","kind": "pin"|"note"|"picture"|"reject"|"accept",
   "what","why","by","at","photo","picture","where": {"pin","u","v"}|null,"before_mm","after_mm","limit_mm",
-  "outcome": "fixed"|"better"|"not_fixed"|"waiting"|"not_measured"|"rejected"|"accepted","next_job",
-  "used_in": {"jobs","accepted","improved","rejected"}}
+  "outcome": "fixed"|"better"|"not_fixed"|"waiting"|"not_measured"|"rejected"|"accepted",
+  "outcome_why": str,   // the rule behind outcome, e.g. "fixed: the next round passed verification" ("" for accept/reject)
+  "next_job", "used_in": {"jobs","accepted","improved","rejected"}}
 Judge = {"model","mode","scores": [{"criterion": "outline"|"features"|"printability"|"fit","score": 1..5,"reason"}],
   "vetoes": [{"feature","issue","severity"}], "notes"}
 ```
@@ -501,7 +504,7 @@ Everything under `/admin` needs the admin token (`401 admin_required`), reads in
 
 ```
 Overview = {"generated_at", "mode",
-  "jobs": {"total","finished","verified","pass_rate": float|null,"n","replays_excluded","source"},   // non-replay fix jobs; pass rate = verified / finished
+  "jobs": {"total","finished","verified","pass_rate": float|null,"n","replays_excluded","source"},   // non-replay fix jobs; pass rate = verified / finished; replays_excluded = stored recorded runs (the ones the review queue lists)
   "rounds_to_verify": {"buckets": [{"rounds","count"}],"median","n","source"},
   "max_error": {"median_mm","p90_mm","n","source"},                       // nearest-rank percentiles over finished jobs
   "send_back": {"person": {"n","top": [{"reason","count"}]}, "test": {...}, "source"},   // test reviews never count as people
@@ -570,4 +573,6 @@ by slug and with `role=reference`.
   `PARTSMITH_PUBLIC_URL`, else the request's own origin.
 - MCP over streamable HTTP at **`/mcp`** on the same app (stateless, JSON responses; DNS-rebinding protection allows
   localhost, extend with `PARTSMITH_MCP_ALLOWED_HOSTS`). stdio: `uv run python -m services.mcp --stdio`. Tools and client
-  configs: `services/mcp/README.md`.
+  configs: `services/mcp/README.md`. Absolute URLs in tool results follow the same rule as the REST documents above
+  (forwarded host, else `PARTSMITH_PUBLIC_URL`, else the request's origin); page links use `PARTSMITH_WEB_URL` when set,
+  else the forwarded host. Over stdio there is no request: `PARTSMITH_PUBLIC_URL` / `PARTSMITH_WEB_URL` or the dev ports.

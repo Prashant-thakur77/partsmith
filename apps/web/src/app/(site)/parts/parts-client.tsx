@@ -111,7 +111,8 @@ export function PartsClient() {
             <Chip active={!family} onClick={() => setParam({ family: null })}>
               All
             </Chip>
-            {families.data?.map((f) => (
+            {/* a family with no parts yet has nothing to filter to (kept only while it is the active filter) */}
+            {families.data?.filter((f) => f.count > 0 || family === f.family).map((f) => (
               <Chip key={f.family} active={family === f.family} onClick={() => setParam({ family: family === f.family ? null : f.family })}>
                 {f.title}
                 <span className="font-mono text-[11px] tnum">{f.verified}/{f.count}</span>

@@ -57,7 +57,8 @@ export function ValueSourcesPanel({
       </div>
       {tinted ? <SourceLegend counts={counts} /> : null}
 
-      <div className="grid gap-3 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
+      {/* list over detail until the column is wide enough for both (the viewer column is ~550 px at 1440) */}
+      <div className="grid gap-3 2xl:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
         <div className="scrollbar-thin max-h-[300px] space-y-3 overflow-y-auto pr-1">
           {GROUPS.map(({ group, title }) => {
             const rows = items.filter((i) => i.group === group);
@@ -83,7 +84,7 @@ export function ValueSourcesPanel({
                           )}
                           style={tinted ? { ...c.style, borderLeftColor: "currentColor", borderLeftStyle: SOURCE_STYLES[i.kind].dash === "solid" ? "solid" : SOURCE_STYLES[i.kind].dash } : undefined}
                         >
-                          <span className="min-w-0 flex-1 truncate text-fg">{i.label}</span>
+                          <span className="min-w-[7rem] flex-1 break-words text-fg">{i.label}</span>
                           <span className="shrink-0 font-mono text-[12px] text-fg tnum">{valueText(i)}</span>
                           <SourceTag kind={i.kind} tinted={tinted} className="shrink-0" />
                           {i.unchecked ? (

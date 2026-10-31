@@ -6,12 +6,14 @@ import { Badge } from "@/components/ui/badge";
 import { CodeBlock } from "@/components/ui/code-block";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { AGENT_RULES, MCP_TOOLS, REST_GROUPS } from "@/lib/agent-docs";
-import { mcpConfigs, mcpUrl } from "@/lib/snippets";
+import { mcpConfigs, mcpUrl, searchVariantBakeSnippet } from "@/lib/snippets";
+import { useExampleSlug } from "@/lib/use-example-slug";
 import { useOrigin } from "@/lib/use-origin";
 
 export function AgentsClient() {
   const origin = useOrigin();
   const configs = mcpConfigs(origin);
+  const slug = useExampleSlug("M3 standoff", "spacer");
   return (
     <>
       <PageHeader
@@ -91,7 +93,7 @@ export function AgentsClient() {
             ))}
             <CodeBlock
               title="example"
-              code={`curl "${origin}/api/v1/parts?q=M3+standoff&verified=true"\ncurl "${origin}/api/v1/parts/<slug>/variant?want=12+mm+tall,+for+an+M4+screw"\ncurl -o spacer.stl "${origin}/api/v1/parts/<slug>/bake?height=12&bore_d=4.5&format=stl&download=1"`}
+              code={searchVariantBakeSnippet(origin, slug, { q: "M3 standoff", family: "spacer", want: "12 mm tall, for an M4 screw", bake: "height=12&bore_d=4.5", out: "spacer.stl" })}
             />
           </div>
         </Section>

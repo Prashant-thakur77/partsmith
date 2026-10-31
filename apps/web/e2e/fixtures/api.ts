@@ -18,7 +18,7 @@ const cc = templates["cable-clip"]!;
 
 const A = "/api/v1/files";
 /** Playground / Describe it fixtures, generated from the real code (generate.py product: mock planner, real bakes). */
-type ProductFx = { templates: Record<string, unknown>[]; detail: Record<string, Record<string, unknown>>; print_plan: Record<string, unknown>; facts: Record<string, unknown>; ship_reason: string; describe: Record<"done" | "asks" | "no_fit", Record<string, unknown>> };
+type ProductFx = { templates: Record<string, unknown>[]; detail: Record<string, Record<string, unknown>>; print_plan: Record<string, unknown>; facts: Record<string, unknown>; ship_reason: string; describe: Record<"done" | "asks" | "no_fit" | "example", Record<string, unknown>> };
 export const product = JSON.parse(readFileSync(join(GEN, "product.json"), "utf8")) as ProductFx;
 const NOW = 1_793_100_000;
 
@@ -261,8 +261,20 @@ export const bestEffortEvents = jobEvents.map((e) =>
 
 export const bestEffortDetail = {
   ...jobDetail,
+  judge: null, // an older run: the judge ran (mock, see its model_call event) but saved no scorecard
   summary: { ...jobSummary, id: "job_best", verified: false, max_error_mm: 0.83, part_slug: null, title: "Cupboard latch" },
-  verification: { ...verification, verified: false, status: "best_effort", max_error_mm: 0.83, views: [{ ...verification.views[0]!, hausdorff_mm: 0.83 }] },
+  verification: {
+    ...verification,
+    verified: false,
+    status: "best_effort",
+    max_error_mm: 0.83,
+    views: [{ ...verification.views[0]!, hausdorff_mm: 0.83 }],
+    reasons: [
+      "top: refined in the photo frame by -0.15 deg, (-3.93, -2.12) mm on the mat",
+      "top view (photo frame): IoU 0.947 (needs >= 0.97), Hausdorff 0.83 mm (needs <= 0.5 mm) (worst at x=-20.0, y=-11.9 mm) - fails",
+    ],
+    unchecked: [{ param: "arm_width", label: "Arm width", value: 12, unit: "mm", source: "inferred", note: "not measured: from the program" }],
+  },
   status_reason: "the top outline is off by up to 0.83 mm (limit 0.50 mm)",
   artifacts: { ...jobDetail.artifacts, coupon: `${A}/coupon.stl` },
 };
@@ -317,6 +329,7 @@ export const openapi = {
         ["/templates", "get"],
         ["/templates/{name}/bake", "get"],
         ["/describe", "post"],
+        ["/describe/example", "get"],
         ["/parts/{slug}/variants", "post"],
         ["/jobs/{job_id}/print-plan", "get"],
         ["/jobs/{job_id}/model.png", "get"],
@@ -673,6 +686,7 @@ export const feedbackLog = [
     after_mm: 0.21,
     limit_mm: 0.5,
     outcome: "fixed",
+    outcome_why: "fixed: the gap is now within the 0.50 mm limit",
     next_job: "job_rev_2",
     used_in: { jobs: 2, accepted: 1, improved: 1, rejected: 0 },
   },
@@ -806,6 +820,7 @@ export async function mockApi(page: Page, opts: MockOptions = {}): Promise<strin
       const which = /gear/i.test(text) ? "no_fit" : /long|M3/i.test(text) ? "done" : "asks";
       return json(route, { ...product.describe[which], text });
     }
+    if (path === "/describe/example") return json(route, product.describe.example);
     const dsc = path.match(/^\/describe\/([^/]+)(\/answers)?$/);
     if (dsc) {
       const rec = Object.values(product.describe).find((r) => r.id === dsc[1]);

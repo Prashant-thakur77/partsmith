@@ -86,5 +86,8 @@ class BuyOrPrint(Strict):
     prints: list[PrintEstimate] = Field(default_factory=list)
     lookup: BuyLookup | None = None
     mode: ProviderMode = "mock"  # the lookup's mode ("mock" when no lookup ran)
+    # True when this answer is a stored card read back (a recorded run, or a server in PROVIDER_MODE=replay): the
+    # lookup ran earlier with `mode`, nothing was searched for this request. The web shows "recorded", never "live".
+    recorded: bool = False
     created_at: float = 0.0
     notes: list[str] = Field(default_factory=list)

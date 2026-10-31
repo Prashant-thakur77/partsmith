@@ -14,7 +14,7 @@ async function revealAll(page: Page) {
 
 const SHEETS = [
   "Measured, not claimed.",
-  "Five sheets, from a photo to a checked part.",
+  "Five steps, from a photo to a checked part.",
   "Watch it fix itself.",
   "A lying model, caught.",
   "Every part is a program.",

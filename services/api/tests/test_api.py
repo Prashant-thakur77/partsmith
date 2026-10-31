@@ -761,6 +761,17 @@ def test_mcp_over_http(fake: FakeService) -> None:
         }
         res = c.post("/mcp", json=call, headers=h2).json()["result"]
         assert "m3-spacer" in json.dumps(res)
+        # absolute URLs follow the request's public base, as REST links do (never a hard-coded localhost:8000)
+        card = res["structuredContent"]["items"][0]
+        assert card["url"] == "http://testserver/api/v1/parts/m3-spacer", card["url"]
+        fwd = {**h2, "X-Forwarded-Host": "parts.example", "X-Forwarded-Proto": "https"}
+        card = c.post("/mcp", json=call, headers=fwd).json()["result"]["structuredContent"]["items"][0]
+        assert card["url"] == "https://parts.example/api/v1/parts/m3-spacer"
+        assert card["page"] == "https://parts.example/parts/m3-spacer"
+        # `query` is accepted as an alias of `q`: it filters instead of silently returning everything
+        alias = {**call, "params": {"name": "search_parts", "arguments": {"query": "zeppelin"}}}
+        got = c.post("/mcp", json=alias, headers=h2).json()["result"]["structuredContent"]
+        assert got["match"] == "none" and got["items"] == []
 
 
 def test_every_documented_route_exists() -> None:

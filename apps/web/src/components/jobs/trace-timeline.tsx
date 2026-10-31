@@ -74,7 +74,7 @@ function IterationCard({ it, threshold, defaultOpen }: { it: IterationEvent; thr
       {open ? (
         <div className="space-y-2 border-t border-border px-3 py-2.5">
           {it.analysis ? <p className="text-[12px] leading-5 text-muted">{it.analysis}</p> : null}
-          {it.iou != null ? <p className="font-mono text-[11px] text-subtle tnum">IoU {fmtNum(it.iou, 4)}</p> : null}
+          {it.iou != null ? <p className="font-mono text-[11px] text-subtle tnum">overlap (IoU) {fmtNum(it.iou, 4)}</p> : null}
           {it.edits.length ? (
             <ul className="space-y-0.5 font-mono text-[11px] text-muted">
               {it.edits.slice(0, 8).map((e, i) => (

@@ -5,6 +5,17 @@ export function fmtNum(v: number, decimals = 2): string {
   return v.toLocaleString("en-US", { minimumFractionDigits: decimals, maximumFractionDigits: decimals });
 }
 
+/** The verifier's outline-gap pass limit (services: HAUSDORFF_PASS_MM); records carry their own in `thresholds`. */
+export const ERROR_LIMIT_MM = 0.5;
+
+/**
+ * A max error next to its limit: 2 decimals, or 3 when it sits within 0.01 mm of the limit, so 0.4958 (verified) and
+ * 0.4985 (best effort, another check failed) never both read "0.50". Number only; add " mm" yourself.
+ */
+export function fmtErr(v: number, limitMm: number = ERROR_LIMIT_MM): string {
+  return fmtNum(v, Number.isFinite(v) && Math.abs(v - limitMm) < 0.01 ? 3 : 2);
+}
+
 export function fmtMm(v: number | null | undefined, decimals = 2): string {
   if (v === null || v === undefined || !Number.isFinite(v)) return "—";
   return `${fmtNum(v, decimals)} mm`;

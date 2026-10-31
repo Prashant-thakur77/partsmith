@@ -2072,6 +2072,7 @@ class FixRun:
             iou=iou,
             passed_tests=passed,
             total_tests=total,
+            pass_shortfall=rnd.rank[1] if math.isfinite(rnd.rank[1]) else None,
         )
         self.job.emit(ev)
         self.iter_events.append(ev.model_dump(mode="json"))

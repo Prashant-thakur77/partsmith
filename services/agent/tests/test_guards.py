@@ -92,6 +92,26 @@ def test_lesson_candidates_only_from_measured_changes():
     )
     assert len(c) == 1 and c[0].scope == "cover" and "corner_radius" in c[0].rule
     assert c[0].evidence["origin"] == "synthetic"
+    assert "a run that passed verification" in c[0].rule
+
+
+def test_lesson_wording_follows_the_job_status():
+    its = [{"iter": 2, "edits": [{"param": "corner_radius", "from": 3.0, "to": 4.2}]}]
+    c = lessons.extract_candidates(
+        job_id="j",
+        family="cover",
+        template="battery_cover",
+        first_values={"corner_radius": 3.0},
+        final_values={"corner_radius": 4.2},
+        iterations=its,
+        verified=False,
+        strategy_switches=[],
+        max_error_mm=4.8,
+        origin="synthetic",
+    )
+    knob = next(x for x in c if x.evidence.get("param") == "corner_radius")
+    assert "verified" not in knob.rule and "best effort (max gap 4.80 mm)" in knob.rule
+    assert "not confirmed" in knob.rule
 
 
 def test_rescale_backed_by_each_measured_residual_is_allowed():
