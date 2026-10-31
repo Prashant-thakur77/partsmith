@@ -26,6 +26,7 @@ const PAGES: PageCase[] = [
   { name: "workspace", path: "/jobs/job_demo_1", ready: async (p) => { await expect(p.getByRole("status", { name: /Verified/ })).toBeVisible(); await show3d(p); } },
   { name: "workspace-paused", path: "/jobs/job_paused", ready: async (p) => { await expect(p.getByText("How deep is the D-shaft hole?")).toBeVisible(); } },
   { name: "fit", path: "/jobs/job_demo_1/fit", full: false, ready: async (p) => { await expect(p.getByText("Lay the part exactly on the pink outline")).toBeVisible(); } },
+  { name: "fit-example", path: "/jobs/job_demo_1/fit?example=1", ready: async (p) => { await expect(p.getByTestId("fit-example-note")).toContainText("Example — calibrate your screen to check your real part."); await expect(p.getByRole("img", { name: /^Example: the model outline/ })).toBeVisible(); } },
   { name: "parts", path: "/parts", ready: async (p) => { await expect(p.getByRole("link", { name: /L-bracket/ }).first()).toBeVisible(); } },
   { name: "part", path: "/parts/l-bracket", ready: async (p) => { await expect(p.getByRole("heading", { name: "L-bracket", level: 1 })).toBeVisible(); await show3d(p); } },
   { name: "factory", path: "/factory?id=steer_1", ready: async (p) => { await expect(p.getByRole("list", { name: /Review queue \(read-only\)/ })).toBeVisible(); } },

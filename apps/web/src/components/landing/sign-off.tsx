@@ -12,6 +12,12 @@ import * as React from "react";
 import { review } from "@/lib/api-review";
 import type { FeedbackEntry, ReviewRound } from "@/lib/api-types";
 import { pickReviewRun } from "@/lib/figure-run";
+
+/** "· review round 4" → 4 rounds in the chain (0 when the title names none). */
+function roundOf(title: string | undefined): number {
+  const m = /review round (\d+)/i.exec(title ?? "");
+  return m ? Number(m[1]) : 0;
+}
 import { fmtNum, splitTitle } from "@/lib/format";
 import { DECISION_LABEL, KIND_LABEL, OUTCOME_LABEL, blockingVeto, outcomeTone } from "@/lib/review";
 import { cn } from "@/lib/utils";
@@ -67,6 +73,39 @@ function outcomeWhy(e: FeedbackEntry, rounds: readonly ReviewRound[]): string {
   return `${cap(why)}.`;
 }
 
+/**
+ * The loading state, shaped like the loaded section (the round count is known from the stored run's title before its
+ * review record arrives): the same card, one placeholder per round at the rounds' usual height, the closing line, the
+ * feedback-log cards and the real buttons. On a phone the rounds stack, so a 288 px placeholder grew by ~1200 px on
+ * load and pushed the next sheets down mid-scroll (CLS); this keeps the swap within a few lines.
+ */
+function SignOffSkeleton({ rounds, actions }: { rounds: number; actions: React.ReactNode }) {
+  return (
+    <div className="space-y-6" role="status" aria-busy="true" aria-label="Loading the recorded review">
+      <div className="rounded-xl border border-border bg-surface p-5 sm:p-6">
+        <Skeleton className="mb-5 h-12 w-2/3 sm:h-5" />
+        <ol className="grid gap-5 md:grid-flow-col md:auto-cols-fr md:gap-6">
+          {Array.from({ length: rounds }, (_, i) => (
+            <li key={i}>
+              <Skeleton className="h-[146px] md:h-[300px] lg:h-[256px]" />
+            </li>
+          ))}
+        </ol>
+        <Skeleton className="mt-6 h-[53px] w-3/4 md:h-[34px]" />
+      </div>
+      <div className="space-y-3">
+        <Skeleton className="h-5 w-48" />
+        <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
+          {[0, 1, 2].map((i) => (
+            <Skeleton key={i} className="h-[175px] md:h-[270px] lg:h-[210px]" />
+          ))}
+        </div>
+      </div>
+      {actions}
+    </div>
+  );
+}
+
 function cap(s: string): string {
   return s.charAt(0).toUpperCase() + s.slice(1);
 }
@@ -96,7 +135,9 @@ export function SignOff() {
   );
 
   if (replays.isError) return <ErrorState error={replays.error} compact what="the recorded review" onRetry={() => void replays.refetch()} />;
-  if (replays.isPending || (pick && chain.isPending)) return <Skeleton className="h-72" />;
+  // wait for the feedback log too, so its cards never pop in after the chain (one swap, at the skeleton's height)
+  if (replays.isPending || (pick && chain.isPending) || (pick && !chain.isError && chain.data?.rounds.length && log.isPending))
+    return <SignOffSkeleton rounds={Math.max(1, roundOf(pick?.title))} actions={actions} />;
   if (!pick || chain.isError || !rounds.length)
     return (
       <div className="space-y-4">

@@ -3,7 +3,7 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import test from "node:test";
 import { EventSchema } from "../src/lib/api-types.ts";
-import { chartSizeNote, editsText, headline, keepReason, keptRound, parseViews, roundsFromEvents, sizeFromResiduals, sizeSetsMaxError, verdictFromLabel } from "../src/lib/fix-rounds.ts";
+import { chartSizeNote, editsText, headline, keepLine, keepReason, keptRound, parseViews, roundsFromEvents, sizeFromResiduals, sizeSetsMaxError, verdictFromLabel } from "../src/lib/fix-rounds.ts";
 
 const REPLAYS = new URL("../../../data/replays/", import.meta.url);
 // replays are found by their demo sample (data/replays/seed_index.json), so a re-seed with new job ids keeps working
@@ -181,6 +181,15 @@ test("new runs quote the keep rule's own number for the kept round and the lowes
   assert.match(keepReason(s.rounds, s.keptIter), /Shortfall 12\.35 for round 5 vs 21\.40 for round 2\.$/);
   // nothing to explain when the kept round also has the lowest max error
   assert.equal(keepReason(s.rounds, 2), null);
+});
+
+test("the job page leads with one line; the full keep rule is the fold under it", () => {
+  const old = roundsFromEvents(hookEvents(null));
+  assert.equal(keepLine(old.rounds, old.keptIter), "Kept round 5: closest to passing — 16 of 17 tests vs 14 of 17 in round 2.");
+  const fresh = roundsFromEvents(hookEvents([30.1, 21.4, 19.9, 17.2, 12.35, 12.6]));
+  assert.equal(keepLine(fresh.rounds, fresh.keptIter), "Kept round 5: closest to passing — shortfall 12.35 vs 21.40 in round 2.");
+  assert.equal(keepLine(fresh.rounds, 2), null); // nothing to explain, same as keepReason
+  for (const s of [old, fresh]) assert.ok(keepLine(s.rounds, s.keptIter).length < keepReason(s.rounds, s.keptIter).length / 2);
 });
 
 test("an older verify label that named one view gets the other view from the round's worst gap and overlays", () => {

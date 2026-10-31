@@ -273,6 +273,11 @@ def _panel_mock(photo_png: bytes, render_png: bytes, k: int, n: int, step: str) 
     return buf.getvalue()
 
 
+# Code draws the same title strip on every panel (services/agent/evidence.py); a banner the model draws itself comes
+# and goes between panels.
+NO_TEXT = "Draw no text, captions, titles, banners or step numbers in the image."
+
+
 def install_card(photo_png: bytes, render_png: bytes, steps: Sequence[str]) -> list[ImageResult]:
     """One anchored panel per step (≤ 6): the replacement part installed in the user's own scene."""
     steps = [s.strip() for s in steps if s.strip()]
@@ -286,10 +291,11 @@ def install_card(photo_png: bytes, render_png: bytes, steps: Sequence[str]) -> l
             prompt = (
                 f"Panel 1 of {n} of a photoreal installation guide. The first image is the user's photo of where the part "
                 "goes; the second image is a render of the 3D-printed replacement part. Show this step in the same scene "
-                f"and camera angle as the first image, with the replacement part exactly as rendered. Step: {step}"
+                f"and camera angle as the first image, with the replacement part exactly as rendered. Step: {step}. "
+                f"{NO_TEXT}"
             )
         else:
-            prompt = f"Panel {k + 1} of {n}. Keep the same scene, camera, lighting and part. Step: {step}"
+            prompt = f"Panel {k + 1} of {n}. Keep the same scene, camera, lighting and part. Step: {step}. {NO_TEXT}"
         request = {"photo": sha256(photo_png), "render": sha256(render_png), "steps": steps[: k + 1]}
         digest = replay.request_hash("install_card", "image", request)
         prev_id = previous

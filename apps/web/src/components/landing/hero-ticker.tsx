@@ -3,7 +3,7 @@
 /**
  * A mono readout above the hero headline, built only from API numbers: the synthetic bench's median size error and,
  * beside it, how many of the same cases passed verification (both `/bench`, labelled synthetic, with n), the runs
- * listed on /jobs (`/stats`: made here + recorded, the recorded share named) and the lying-model attacks code blocked (bench evidence). An item is left out
+ * listed on /jobs (`/stats`: listed = made here + recorded, both named) and the lying-model attacks code blocked (bench evidence). An item is left out
  * while its source is missing — never a placeholder number.
  */
 import { useQuery } from "@tanstack/react-query";
@@ -12,16 +12,16 @@ import { api } from "@/lib/api";
 import type { BenchReport, Stats } from "@/lib/api-types";
 import { benchHeadline, benchVerified } from "@/lib/bench";
 import { ERROR_LIMIT_MM, fmtInt } from "@/lib/format";
-import { runsOnServer } from "@/lib/page-groups";
+import { RUN_WORDS, runCounts, runSplitText } from "@/lib/page-groups";
 import { cn } from "@/lib/utils";
 import { CountUp } from "../ui/count-up";
 
 type Item = { k: string; v: string; note?: string; href: string };
 
-/** The same count `/jobs` lists: runs made here plus the recorded runs this server serves, the recorded share named. */
+/** The same count `/jobs` lists, in the shared words: runs listed = made here + recorded. */
 function runsItem(stats: Stats): Item {
-  const { n, recorded } = runsOnServer(stats);
-  return { k: n === 1 ? "run on this server" : "runs on this server", v: fmtInt(n), note: recorded > 0 ? `${recorded} recorded` : undefined, href: "/jobs" };
+  const c = runCounts(stats);
+  return { k: `${c.listed === 1 ? "run" : "runs"} ${RUN_WORDS.listed}`, v: fmtInt(c.listed), note: runSplitText(c), href: "/jobs" };
 }
 
 export function tickerItems(stats?: Stats | null, bench?: BenchReport | null): Item[] {

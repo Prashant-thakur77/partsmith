@@ -32,3 +32,26 @@ test("older agent lines about the keep rule say what it compares: closeness to p
   );
   assert.match(plainTerms("Hausdorff 4.43→4.70 mm, not verified; now the best model"), /now the closest to passing \(judged on how close every check is to passing, not on max error\)$/);
 });
+
+test("a best-effort reason's first failing check, in a few words for a card chip", async () => {
+  const { failingCheckWord } = await import("../src/lib/plain-terms.ts");
+  assert.equal(failingCheckWord("the side view's average edge gap is 0.20 mm (needs ≤ 0.15 mm)"), "side outline");
+  assert.equal(failingCheckWord("the top outline is off by up to 1.11 mm (limit 0.50 mm) (+1 more)"), "top outline");
+  assert.equal(failingCheckWord("the outline length is 0.38 mm too long (allowed ±0.30 mm)"), "outline length");
+  assert.equal(failingCheckWord("hole_1 is 0.31 mm too large (allowed ±0.20 mm)"), "hole 1");
+  assert.equal(failingCheckWord("hole_1 is 0.40 mm off its measured position (allowed ±0.30 mm)"), "hole 1 position");
+  assert.equal(failingCheckWord("the judge flagged the hook tip: missing"), "judge flag");
+  assert.equal(failingCheckWord("part test failed: wall thickness"), "part test");
+  assert.equal(failingCheckWord("something else entirely"), null);
+  assert.equal(failingCheckWord(null), null);
+});
+
+test("cards lead with the failing check only when best effort sits inside the size limit", async () => {
+  const { insideLimitCheckWord } = await import("../src/lib/plain-terms.ts");
+  const why = "the side view's average edge gap is 0.20 mm (needs ≤ 0.15 mm)";
+  assert.equal(insideLimitCheckWord("best_effort", 0.498, why, 0.5), "side outline");
+  assert.equal(insideLimitCheckWord("best_effort", 0.63, "the side outline is off by up to 0.63 mm (limit 0.50 mm)", 0.5), null, "over the limit: the mm already explain it");
+  assert.equal(insideLimitCheckWord("verified", 0.3, why, 0.5), null);
+  assert.equal(insideLimitCheckWord("best_effort", null, why, 0.5), null);
+  assert.equal(insideLimitCheckWord("best_effort", 0.4, null, 0.5), null);
+});

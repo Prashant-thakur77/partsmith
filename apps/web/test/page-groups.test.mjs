@@ -16,7 +16,13 @@ import {
   lessonKey,
   median,
   parseJobFilter,
-  runsOnServer,
+  passRateText,
+  groupJobAttempts,
+  groupQueueAttempts,
+  moreAttemptsText,
+  RUN_WORDS,
+  runCounts,
+  runSplitText,
   buildsUsing,
   lessonConflict,
 } from "../src/lib/page-groups.ts";
@@ -80,16 +86,54 @@ test("the jobs summary and filters come from the list itself", () => {
   assert.equal(s.gapN, 3, "only finished jobs with a gap count");
   assert.equal(s.medianMaxGapMm, 0.3);
   assert.deepEqual(s.server, { verified: 1, finished: 3 }, "made here, done or failed: the admin overview's set");
-  assert.equal(jobsSummaryText(s), "2 of 6 verified · median max gap 0.30 mm (3 finished jobs) · runs made here: 1 verified of 3 finished");
-  assert.deepEqual(runsOnServer({ jobs: 22, jobs_recorded: 3, jobs_listed: 25 }), { n: 25, recorded: 3 }, "home counts what /jobs lists");
-  assert.deepEqual(runsOnServer({ jobs: 4 }), { n: 4, recorded: 0 });
-  assert.equal(jobsSummaryText(jobsSummary([job("failed", false, null)])), "0 of 1 verified");
+  assert.equal(jobsSummaryText(s), "2 of 6 listed verified · median max gap 0.30 mm (3 with a measured gap) · made here: 1 verified of 3 finished (done or failed)");
+  assert.equal(jobsSummaryText(jobsSummary([job("failed", false, null)])), "0 of 1 listed verified");
   assert.deepEqual(parseJobFilter("verified", "nope"), { status: "verified", source: null });
   assert.deepEqual(parseJobFilter("bogus", "recorded"), { status: null, source: "recorded" });
   assert.equal(filterJobs(list, { status: "verified", source: "server" }).length, 1);
   assert.equal(filterJobs(list, { status: null, source: "recorded" }).length, 2);
   assert.equal(median([3, 1, 2, 4]), 2.5);
   assert.equal(median([]), null);
+});
+
+test("one vocabulary for run counts: listed = made here + recorded, finished = done or failed", () => {
+  const c = runCounts({ jobs: 22, jobs_recorded: 3, jobs_listed: 25 });
+  assert.deepEqual(c, { listed: 25, madeHere: 22, recorded: 3 }, "home counts what /jobs lists");
+  assert.equal(c.listed, c.madeHere + c.recorded);
+  assert.deepEqual(runCounts({ jobs: 4 }), { listed: 4, madeHere: 4, recorded: 0 });
+  assert.equal(runSplitText(c), "22 made here · 3 recorded");
+  assert.equal(runSplitText({ madeHere: 4, recorded: 0 }), "4 made here");
+  assert.equal(passRateText(6, 22), "6 verified of 22 finished (done or failed)");
+  assert.equal(RUN_WORDS.finished, "finished (done or failed)");
+  // the /jobs chips count the same sets the home strip names
+  const list = [job("done", true, 0.3), job("failed", false, null), job("done", false, 1, { is_replay: true })];
+  const s = jobsSummary(list);
+  assert.deepEqual({ madeHere: s.source.server, recorded: s.source.recorded, listed: s.n }, { madeHere: 2, recorded: 1, listed: 3 });
+  // "finished" never means "done only": the measured-gap count is named apart
+  assert.doesNotMatch(jobsSummaryText(s).replace(/finished \(done or failed\)/g, ""), /finished/);
+});
+
+test("same-title runs fold under the best attempt; running jobs and different states never fold", () => {
+  const latch = "Cupboard turn-button latch — broken (synthetic, paper)";
+  const list = [
+    job("done", false, 4.32, { id: "a", title: latch }),
+    job("done", true, 0.08, { id: "b", title: "Spacer" }),
+    job("done", false, 8.57, { id: "c", title: latch }),
+    job("running", false, null, { id: "d", title: latch }),
+    job("done", false, 20.35, { id: "e", title: latch }),
+    job("done", false, 0.5, { id: "f", title: latch, is_replay: true }),
+  ];
+  const g = groupJobAttempts(list);
+  assert.deepEqual(g.map((x) => [x.lead.id, x.others.map((o) => o.id)]), [["a", ["c", "e"]], ["b", []], ["d", []], ["f", []]], "best first, list order kept; running and recorded runs keep their own row");
+  assert.equal(g.reduce((n, x) => n + 1 + x.others.length, 0), list.length, "no run is dropped");
+  // a verified attempt leads even when an unverified one has a smaller gap
+  const v = groupJobAttempts([job("done", false, 0.2, { id: "x", title: "T" }), job("done", true, 0.4, { id: "y", title: "T" }), job("failed", false, null, { id: "z", title: "T" })]);
+  assert.deepEqual([v[0].lead.id, v[0].others.map((o) => o.id)], ["y", ["x", "z"]]);
+  assert.equal(moreAttemptsText(2), "+2 more attempts");
+  assert.equal(moreAttemptsText(1), "+1 more attempt");
+  const q = (job_id, status, gap, title = latch) => ({ job_id, title, status, verdict: { status: "best_effort", max_error_mm: gap } });
+  const qg = groupQueueAttempts([q("1", "waiting", 8.57), q("2", "waiting", 4.32), q("3", "accepted", 0.1), q("4", "waiting", 20.35)]);
+  assert.deepEqual(qg.map((x) => [x.lead.job_id, x.others.map((o) => o.job_id)]), [["2", ["1", "4"]], ["3", []]], "a waiting item never hides behind a decided one");
 });
 
 const fb = (id, root, round, over = {}) => ({ id, root_job: root, round, title: `Latch · review round ${round}`, family: "latch", by: "test", before_mm: null, after_mm: null, limit_mm: 0.5, at: round, ...over });

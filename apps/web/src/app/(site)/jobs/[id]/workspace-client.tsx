@@ -15,6 +15,7 @@ import { chartSizeNote, roundsFromEvents } from "@/lib/fix-rounds";
 import { SourceSwatch, sourceColor } from "@/components/jobs/source-key";
 import { ValueSourcesPanel } from "@/components/jobs/value-sources-panel";
 import { JobStatusBadge } from "@/components/jobs/job-badges";
+import { FitCheckCard } from "@/components/jobs/fit-check-card";
 import { FitPresets } from "@/components/jobs/fit-presets";
 import { ImpactPanel } from "@/components/jobs/impact-panel";
 import { CostCard } from "@/components/jobs/cost-card";
@@ -649,6 +650,7 @@ export function WorkspaceClient({ id }: { id: string }) {
           <div className="overflow-hidden rounded-lg border border-border bg-surface">
             <PhotoPanel views={views} focusLabel={focusPoint?.label} className="h-[360px] sm:h-[420px] xl:h-[520px]" />
           </div>
+          {artifacts.view ? <FitCheckCard jobId={id} /> : null}
           <HiddenDimsCard rows={d.hidden_dims} />
         </div>
 

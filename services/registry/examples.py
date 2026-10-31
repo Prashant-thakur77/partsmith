@@ -183,11 +183,12 @@ def bake_template(
 
 
 def thumbnail_path(name: str, scale: int = 1) -> Path:
-    """Isometric PNG of the template at its defaults (rendered once per program version, then cached on disk)."""
+    """Isometric PNG of the template at its defaults (rendered once per program version and renderer, then cached on
+    disk)."""
     from services.registry import thumbs
 
     t = get_template(name)
-    key = hashlib.sha256(f"{t.code_sha}|{TEMPLATE_VERSION}".encode()).hexdigest()[:24]
+    key = hashlib.sha256(f"{t.code_sha}|{TEMPLATE_VERSION}|{thumbs.RENDER_TAG}".encode()).hexdigest()[:24]
     d = sub("template_thumbs")
     p1, p2 = d / f"{name}-{key}.png", d / f"{name}-{key}@2x.png"
     if not (p1.exists() and p2.exists()):

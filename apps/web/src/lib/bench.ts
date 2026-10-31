@@ -87,9 +87,9 @@ export const COLUMN_LABEL: Record<string, string> = {
   mean_ci95: "Mean, 95 % range",
   p90_mm: "90 % of sizes within (mm)",
   p95_err_mm: "95 % of sizes within (mm)",
-  "pass@0.3": "Passed 0.3 mm",
-  "pass@0.5": "Passed 0.5 mm",
-  "pass@0.5_ci95": "Passed 0.5 mm, 95 % range",
+  "pass@0.3": "All sizes within 0.3 mm of truth",
+  "pass@0.5": "All sizes within 0.5 mm of truth",
+  "pass@0.5_ci95": "All sizes within 0.5 mm, 95 % range",
   verified_rate: "Verified",
   verified_ci95: "Verified, 95 % range",
   verified_but_off: "Verified, yet a size over 0.5 mm off",
@@ -110,7 +110,7 @@ export const COLUMN_LABEL: Record<string, string> = {
 export function columnLabel(id: string): string {
   if (COLUMN_LABEL[id]) return COLUMN_LABEL[id];
   const pass = /^pass@([0-9.]+)$/.exec(id);
-  if (pass) return `Passed ${pass[1]} mm`;
+  if (pass) return `All sizes within ${pass[1]} mm of truth`;
   return id.replace(/_mm$/, " (mm)").replace(/_/g, " ");
 }
 
@@ -142,6 +142,17 @@ export function plainBench(text: string): string {
     .replace(/\bPS\b/g, "PartSmith (full pipeline)")
     .replace(/\bheld_out\b/g, "held-out")
     .replace(/\breference_objects\b/g, "reference objects");
+}
+
+/**
+ * Why "All sizes within 0.5 mm of truth" and "Verified" can differ in one row: the first compares the model's sizes
+ * with the true part; "Verified" is the code's own check, which also needs the outline and the part tests to pass.
+ * Null when the table has neither column.
+ */
+export function passVsVerifiedNote(columns: readonly string[]): string | null {
+  const pass = columns.find((c) => /^pass@[0-9.]+$/.test(c));
+  if (!pass || !columns.includes("verified_rate")) return null;
+  return `“${columnLabel(pass)}” compares every measured size of the model with the true part. “Verified” is the code's own pass: it also needs the outline to match the photo and the part tests to pass, so a case can have every size right and still not be verified.`;
 }
 
 /** The columns worth showing before "Show the full table" (those the table has). */

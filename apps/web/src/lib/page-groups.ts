@@ -198,10 +198,37 @@ export function median(values: readonly number[]): number | null {
   return v.length % 2 ? v[mid]! : (v[mid - 1]! + v[mid]!) / 2;
 }
 
-/** `server` = runs made on this server only, verified of finished (done or failed): the same set and rate as the admin overview. */
+// ── one vocabulary for run counts ─────────────────────────────────────────────
+/**
+ * The words every page uses for run counts (home strip, /jobs, /admin), each naming one fixed set:
+ * - listed: every run `GET /jobs` lists = made here + recorded (`/stats.jobs_listed`)
+ * - made here: runs this server ran (`/stats.jobs`; the admin overview's jobs)
+ * - recorded: stored runs it serves as replays (`/stats.jobs_recorded`)
+ * - finished: a made-here run that ended, done or failed (the pass rate is verified / finished, as on /admin)
+ * - measured: a listed run that ended done with a max gap (the set the median gap is over)
+ */
+export const RUN_WORDS = {
+  listed: "listed",
+  madeHere: "made here",
+  recorded: "recorded",
+  finished: "finished (done or failed)",
+  measured: "with a measured gap",
+} as const;
+
+/** "6 verified of 22 finished (done or failed)": the made-here pass rate in the shared words (home, /jobs, /admin). */
+export function passRateText(verified: number, finished: number): string {
+  return `${verified} verified of ${finished} ${RUN_WORDS.finished}`;
+}
+
+/** "22 made here · 3 recorded" (the recorded part only when there are any). */
+export function runSplitText(c: { madeHere: number; recorded: number }): string {
+  return c.recorded > 0 ? `${c.madeHere} ${RUN_WORDS.madeHere} · ${c.recorded} ${RUN_WORDS.recorded}` : `${c.madeHere} ${RUN_WORDS.madeHere}`;
+}
+
+/** `server` = runs made here that finished (done or failed) and how many verified: the same set and rate as /admin. */
 export type JobsSummary = { n: number; verified: number; bucket: Record<JobBucket, number>; source: Record<JobSource, number>; medianMaxGapMm: number | null; gapN: number; server: { verified: number; finished: number } };
 
-/** Counts and the median max gap over finished jobs that report one (all from the list itself). */
+/** Counts and the median max gap over the jobs that ended done with a max gap (all from the list itself). */
 export function jobsSummary(list: readonly JobLike[]): JobsSummary {
   const bucket: Record<JobBucket, number> = { verified: 0, best_effort: 0, failed: 0, in_progress: 0 };
   const source: Record<JobSource, number> = { recorded: 0, server: 0 };
@@ -220,18 +247,22 @@ export function jobsSummary(list: readonly JobLike[]): JobsSummary {
   return { n: list.length, verified: bucket.verified, bucket, source, medianMaxGapMm: median(gaps), gapN: gaps.length, server };
 }
 
+/**
+ * The /jobs headline in the shared words: "8 of 25 listed verified · median max gap 0.60 mm (24 with a measured gap) ·
+ * made here: 6 verified of 22 finished (done or failed)". "Finished" only ever means done or failed.
+ */
 export function jobsSummaryText(s: JobsSummary): string {
-  const parts = [`${s.verified} of ${s.n} verified`];
-  if (s.medianMaxGapMm != null) parts.push(`median max gap ${s.medianMaxGapMm.toFixed(2)} mm (${s.gapN} finished job${s.gapN === 1 ? "" : "s"})`);
+  const parts = [`${s.verified} of ${s.n} ${RUN_WORDS.listed} verified`];
+  if (s.medianMaxGapMm != null) parts.push(`median max gap ${s.medianMaxGapMm.toFixed(2)} mm (${s.gapN} ${RUN_WORDS.measured})`);
   // with recorded runs in the list, also give the made-here rate the admin overview shows
-  if (s.source.recorded > 0 && s.server.finished > 0) parts.push(`runs made here: ${s.server.verified} verified of ${s.server.finished} finished`);
+  if (s.source.recorded > 0 && s.server.finished > 0) parts.push(`${RUN_WORDS.madeHere}: ${passRateText(s.server.verified, s.server.finished)}`);
   return parts.join(" · ");
 }
 
-/** The home page's run count: what `/jobs` lists (runs made here + recorded runs served), the recorded share named. */
-export function runsOnServer(stats: { jobs: number; jobs_recorded?: number; jobs_listed?: number | undefined }): { n: number; recorded: number } {
+/** Run counts from `/stats` in the shared sets: listed (what `/jobs` lists) = made here + recorded. */
+export function runCounts(stats: { jobs: number; jobs_recorded?: number; jobs_listed?: number | undefined }): { listed: number; madeHere: number; recorded: number } {
   const recorded = stats.jobs_recorded ?? 0;
-  return { n: stats.jobs_listed ?? stats.jobs + recorded, recorded };
+  return { listed: stats.jobs_listed ?? stats.jobs + recorded, madeHere: stats.jobs, recorded };
 }
 
 /** URL filter values; unknown values read as "all". */
@@ -244,6 +275,64 @@ export function parseJobFilter(status: string | null, source: string | null): { 
 
 export function filterJobs<J extends JobLike>(list: readonly J[], f: { status: JobBucket | null; source: JobSource | null }): J[] {
   return list.filter((j) => (!f.status || jobBucket(j) === f.status) && (!f.source || jobSource(j) === f.source));
+}
+
+// ── repeated attempts ─────────────────────────────────────────────────────────
+/** One list row: the best attempt of a title, and the other attempts behind "+N more attempts" (best first). */
+export type AttemptGroup<T> = { key: string; lead: T; others: T[] };
+
+/**
+ * Folds runs that share a key (the same title) into one row led by the best attempt (`better` < 0 when a is better);
+ * groups keep the list's order (where their first member was). A key of null never folds. Display only: every count
+ * on the page still counts each run.
+ */
+export function groupAttempts<T>(list: readonly T[], key: (t: T) => string | null, better: (a: T, b: T) => number): AttemptGroup<T>[] {
+  const order: string[] = [];
+  const by = new Map<string, T[]>();
+  list.forEach((t, i) => {
+    const k = key(t) ?? `\u0000${i}`;
+    const g = by.get(k);
+    if (g) g.push(t);
+    else {
+      by.set(k, [t]);
+      order.push(k);
+    }
+  });
+  return order.map((k) => {
+    const sorted = [...by.get(k)!].sort(better);
+    return { key: k, lead: sorted[0]!, others: sorted.slice(1) };
+  });
+}
+
+/** Lower is better: verified, then the smaller max gap (none last). Ties keep the list's own order (newest first). */
+function attemptRank(verified: boolean, gap: number | null | undefined): [number, number] {
+  return [verified ? 0 : 1, gap != null && Number.isFinite(gap) ? gap : Number.POSITIVE_INFINITY];
+}
+function byRank(a: [number, number], b: [number, number]): number {
+  return a[0] - b[0] || a[1] - b[1];
+}
+
+/** /jobs rows: finished runs with the same title fold together; a run still going always keeps its own row. */
+export function groupJobAttempts<J extends JobLike & Pick<JobSummary, "title" | "id">>(list: readonly J[]): AttemptGroup<J>[] {
+  return groupAttempts(
+    list,
+    (j) => (jobBucket(j) === "in_progress" || !j.title ? null : `${jobSource(j)}|${j.title.trim()}`),
+    (a, b) => byRank(attemptRank(a.status === "done" && a.verified, a.max_error_mm), attemptRank(b.status === "done" && b.verified, b.max_error_mm)),
+  );
+}
+
+/** Review queue rows: items with the same title and the same review state fold together (a waiting item never hides behind a decided one). */
+export function groupQueueAttempts<Q extends { title: string; status: string; job_id: string; verdict?: { status: string; max_error_mm?: number | null } | null }>(list: readonly Q[]): AttemptGroup<Q>[] {
+  return groupAttempts(
+    list,
+    (q) => (q.title ? `${q.status}|${q.title.trim()}` : null),
+    (a, b) => byRank(attemptRank(a.verdict?.status === "verified", a.verdict?.max_error_mm), attemptRank(b.verdict?.status === "verified", b.verdict?.max_error_mm)),
+  );
+}
+
+/** "+2 more attempts" */
+export function moreAttemptsText(n: number): string {
+  return `+${n} more attempt${n === 1 ? "" : "s"}`;
 }
 
 // ── feedback log ──────────────────────────────────────────────────────────────

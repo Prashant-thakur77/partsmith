@@ -63,7 +63,9 @@ function Body({ viewer, side }: { viewer: React.ReactNode; side: React.ReactNode
   );
 }
 
-const sideCls = "scrollbar-thin relative flex min-h-0 flex-col gap-4 border-t border-border p-4 md:overflow-y-auto md:border-t-0 md:border-l";
+// phones stack the side under the viewer: a floor at the recorded run's knob list height, so loading → loaded (and the
+// placeholder in program-section) never moves the page; desktop has the fixed 456 px row
+const sideCls = "scrollbar-thin relative flex min-h-[540px] flex-col gap-4 border-t border-border p-4 md:min-h-0 md:overflow-y-auto md:border-t-0 md:border-l";
 
 function KnobSkeleton() {
   return (

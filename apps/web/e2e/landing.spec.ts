@@ -33,10 +33,10 @@ test("every landing sheet renders with numbers read from the API", async ({ page
     await expect(page.getByRole("main").getByRole("link", { name, exact: true }).first()).toHaveAttribute("href", href);
   }
   const ticker = page.getByRole("list", { name: "Numbers from this server" });
-  // the runs /jobs lists (stats.jobs_listed: 12 made here + 3 recorded), the recorded share named
+  // the runs /jobs lists (stats.jobs_listed: 12 made here + 3 recorded), in the words /jobs and /admin use
   await expect(ticker).toContainText("15");
-  await expect(ticker).toContainText("runs on this server");
-  await expect(ticker).toContainText("3 recorded");
+  await expect(ticker).toContainText("runs listed");
+  await expect(ticker).toContainText("12 made here · 3 recorded");
   await expect(page.getByRole("img", { name: /^Fig\. 1, L-bracket measured on the screen mat: 40\.12 mm by 19\.94 mm.*max error 0\.31 mm against a 0\.50 mm limit\. Recorded run\.$/ })).toBeVisible();
   await revealAll(page);
   for (const title of SHEETS) await expect(page.getByRole("heading", { level: 2, name: title })).toBeVisible();

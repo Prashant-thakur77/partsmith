@@ -12,7 +12,7 @@ import { ModeBadge } from "@/components/ui/provenance";
 import { Skeleton } from "@/components/ui/skeleton";
 import { api, ApiError, artifactUrl } from "@/lib/api";
 import type { BenchTable } from "@/lib/api-types";
-import { BENCH_TABLES, EXTRA_TITLES, benchCell, benchHeadline, benchSentence, benchVerified, caseLabel, cellText, columnLabel, configLabel, gtLabel, KEY_COLUMNS, plainBench, splitCaseTitle } from "@/lib/bench";
+import { BENCH_TABLES, EXTRA_TITLES, benchCell, benchHeadline, benchSentence, benchVerified, caseLabel, passVsVerifiedNote, cellText, columnLabel, configLabel, gtLabel, KEY_COLUMNS, plainBench, splitCaseTitle } from "@/lib/bench";
 import { PRODUCT, productApi } from "@/lib/api-product";
 import { useCapabilities } from "@/lib/capabilities";
 import { titleCase } from "@/lib/format";
@@ -73,8 +73,14 @@ function Tables({ t }: { t: BenchTable }) {
   const all = t.columns ?? (t.rows?.[0] ? Object.keys(t.rows[0]) : []);
   const key = all.filter((c) => KEY_COLUMNS.includes(c));
   const compact = key.length >= 3 && key.length < all.length;
+  const note = passVsVerifiedNote(all);
   return (
     <>
+      {note ? (
+        <p className="max-w-3xl text-[12.5px] leading-5 text-muted" data-testid="pass-vs-verified">
+          {note}
+        </p>
+      ) : null}
       {compact ? <TableView t={t} only={KEY_COLUMNS} label={`${t.title ?? "Bench table"} (key columns)`} /> : null}
       {compact || (t.rows?.length ?? 0) > 3 ? (
         <details className="group rounded-lg">

@@ -65,8 +65,9 @@ test.describe("phone", () => {
     await page.goto("/");
     const tagline = page.locator("p", { hasText: /^Photo/ }).first();
     // every arrow sits on the same line as the word after it
-    const pairs = await tagline.locator("span.whitespace-nowrap").evaluateAll((els) => els.map((e) => e.getClientRects().length));
-    expect(pairs).toEqual([1, 1, 1]);
+    await expect
+      .poll(() => tagline.locator("span.whitespace-nowrap").evaluateAll((els) => els.map((e) => e.getClientRects().length)))
+      .toEqual([1, 1, 1]);
     const fig = page.locator("figure").first();
     await expect(fig.getByText("Fig. 1 · part").first()).toBeVisible();
     const cut = await fig.locator("dl:visible dd, dl:visible dt").evaluateAll((els) => els.filter((e) => e.scrollWidth > e.clientWidth + 1).map((e) => e.textContent));
@@ -164,8 +165,8 @@ test.describe("desktop", () => {
   test("jobs: a summary computed from the list and filters kept in the URL", async ({ page }) => {
     const { errors } = await setup(page);
     await page.goto("/jobs");
-    await expect(page.getByTestId("jobs-summary")).toContainText("1 of 2 verified · median max gap 0.31 mm (1 finished job)");
-    await expect(page.getByTestId("jobs-set-note")).toContainText("This counts jobs run or recorded on this server.");
+    await expect(page.getByTestId("jobs-summary")).toContainText("1 of 2 listed verified · median max gap 0.31 mm (1 with a measured gap)");
+    await expect(page.getByTestId("jobs-set-note")).toContainText("Listed = made here + recorded; finished = done or failed.");
     // one compact meta line per row; the max gap of a finished job is in its status chip only
     const row = page.getByTestId("job-row").first();
     await expect(row.getByTestId("job-meta")).not.toContainText("max gap");

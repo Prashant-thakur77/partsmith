@@ -173,6 +173,8 @@ class AgentSession:
         return self.run.best
 
     def rounds_left(self) -> int:
+        if self.run.stalled():  # the shortfall stood still for STALL_ROUNDS commits: no more rounds
+            return 0
         return max(0, self.round_limit - self.run.iteration)
 
     def specs(self) -> list[ParamSpec]:
@@ -213,8 +215,11 @@ class AgentSession:
         failing = [t.description for t in v.tests if not t.passed and t.priority == "P0"]
         if spots:
             self.focus(spots[0], f"worst {spots[0]['view']} residual {spots[0]['hausdorff_mm']:.2f} mm")
+        stalled = self.run.stalled()
         text = (
-            f"{'VERIFIED' if v.verified else 'not verified'} · {self.rounds_left()} round(s) left\n"
+            f"{'VERIFIED' if v.verified else 'not verified'} · {self.rounds_left()} round(s) left"
+            + (f" (stopped: no progress for {guards.STALL_ROUNDS} rounds; call submit)" if stalled else "")
+            + "\n"
             f"{format_views(v)}{format_spots(spots)}\nresiduals:\n{format_residuals(v)}"
             + (f"\nfailing P0 tests: {'; '.join(failing)}" if failing else "")
             + format_gate_failures(v, rnd.out.view_gates if rnd.out else None)
@@ -228,6 +233,7 @@ class AgentSession:
                 "rank0": rnd.rank[0],
                 "excess": rnd.rank[1],
                 "rounds_left": self.rounds_left(),
+                "stalled": stalled,
                 "worst_view": spots[0]["view"] if spots else "top",
             },
         )
@@ -353,6 +359,8 @@ class AgentSession:
         from services.agent.orchestrator import _r, residual_keys
 
         run = self.run
+        if run.stalled():
+            return tool_result(f"nothing committed: stopped: no progress for {guards.STALL_ROUNDS} rounds; call submit")
         if self.rounds_left() <= 0:
             return tool_result("no rounds left (the round cap is fixed); call submit")
         stop = self.run.over_budget()
@@ -376,6 +384,7 @@ class AgentSession:
                 + (" · verified" if rnd.verified else "")
             )
         improved = rnd.better_than(base)
+        run.note_progress(base)
         run.history.append(
             {
                 "iter": run.iteration,
@@ -402,8 +411,14 @@ class AgentSession:
                 else "not closer to passing than the best committed round (keep rule: shortfall, not max error); "
                 "code keeps that one"
             )
+            + (
+                f"; stopped: no progress for {guards.STALL_ROUNDS} rounds — no more rounds, call submit"
+                if run.stalled()
+                else ""
+            )
         )
-        return tool_result(text, data={"improved": improved, "verified": rnd.verified})
+        run.stop_if_stalled()  # logs the stop line once
+        return tool_result(text, data={"improved": improved, "verified": rnd.verified, "stalled": run.stalled()})
 
     def tool_ask_human(self, args: dict[str, Any]) -> Any:
         self.asked += 1
@@ -578,6 +593,11 @@ class MockAgent:
         while True:
             if d.get("verified"):
                 yield self.act("submit", {"reason": "the committed model passes every check"}, "Everything passes.")
+                return
+            if d.get("stalled"):
+                yield self.act(
+                    "submit", {"reason": "no progress for two rounds"}, "Two rounds without getting closer; stopping."
+                )
                 return
             if int(d.get("rounds_left", 0)) <= 0 or "ctx" not in d:
                 yield self.act("submit", {"reason": "rounds used up"}, "No rounds left.")

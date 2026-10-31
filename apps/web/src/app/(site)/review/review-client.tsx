@@ -47,6 +47,7 @@ import {
   verdictTone,
   type DraftPin,
 } from "@/lib/review";
+import { groupQueueAttempts, moreAttemptsText, type AttemptGroup } from "@/lib/page-groups";
 import { cn } from "@/lib/utils";
 
 const CadViewer = dynamic(() => import("@/components/viewer/cad-viewer").then((m) => m.CadViewer), {
@@ -86,7 +87,43 @@ function StatsStrip() {
   );
 }
 
-function QueueList({ items, selected, onSelect }: { items: ReviewQueueItem[]; selected: string | null; onSelect: (id: string) => void }) {
+function QueueOption({ q, on, onSelect, more, nested }: { q: ReviewQueueItem; on: boolean; onSelect: (id: string) => void; more?: number; nested?: boolean }) {
+  return (
+    <li
+      id={`rq-${q.job_id}`}
+      role="option"
+      aria-selected={on}
+      onClick={() => onSelect(q.job_id)}
+      className={cn("flex cursor-pointer gap-3 px-3 py-3", nested && "bg-surface-2/40 pl-6", on ? "bg-accent-soft" : "hover:bg-surface-2")}
+    >
+      <span className={cn("w-0.5 shrink-0 rounded-full", on ? "bg-accent" : "bg-transparent")} aria-hidden />
+      <div className="min-w-0 flex-1 space-y-1.5">
+        <div className="truncate text-[14px] font-medium">{q.title || q.job_id}</div>
+        <div className="flex flex-wrap items-center gap-1">
+          <Badge tone={STATUS_TONE[q.status] ?? "neutral"}>{STATUS_TEXT[q.status] ?? q.status}</Badge>
+          <Badge tone="outline">{roundLabel(q.round)}</Badge>
+          <Badge tone={verdictTone(q.verdict)} className="font-mono tnum">
+            {verdictText(q.verdict)}
+          </Badge>
+          {q.judge?.mode && q.judge.mode !== "live" ? <Badge tone="mock">judge {q.judge.mode}</Badge> : null}
+          {q.is_replay ? <Badge tone="mock">replay</Badge> : null}
+          <span className="font-mono text-[11.5px] text-muted tnum">{fmtUsd(q.cost_usd)}</span>
+        </div>
+        {more ? (
+          <div className="text-[12px] text-muted" data-testid="queue-more">
+            {moreAttemptsText(more)} at the same part{on ? ", listed below" : " · select to list them"}
+          </div>
+        ) : null}
+      </div>
+    </li>
+  );
+}
+
+/**
+ * The queue, with same-title items in the same state folded under their best attempt; a group lists its other
+ * attempts while one of its items is selected (j/k walks the rows that are showing).
+ */
+function QueueList({ groups, selected, onSelect }: { groups: AttemptGroup<ReviewQueueItem>[]; selected: string | null; onSelect: (id: string) => void }) {
   return (
     <ul
       className="max-h-[340px] divide-y divide-border overflow-y-auto rounded-lg border border-border bg-surface lg:max-h-[calc(100dvh-160px)]"
@@ -95,32 +132,13 @@ function QueueList({ items, selected, onSelect }: { items: ReviewQueueItem[]; se
       aria-label="Review queue (j/k to move)"
       aria-activedescendant={selected ? `rq-${selected}` : undefined}
     >
-      {items.map((q) => {
-        const on = q.job_id === selected;
+      {groups.map((g) => {
+        const open = g.lead.job_id === selected || g.others.some((o) => o.job_id === selected);
         return (
-          <li
-            key={q.job_id}
-            id={`rq-${q.job_id}`}
-            role="option"
-            aria-selected={on}
-            onClick={() => onSelect(q.job_id)}
-            className={cn("flex cursor-pointer gap-3 px-3 py-3", on ? "bg-accent-soft" : "hover:bg-surface-2")}
-          >
-            <span className={cn("w-0.5 shrink-0 rounded-full", on ? "bg-accent" : "bg-transparent")} aria-hidden />
-            <div className="min-w-0 flex-1 space-y-1.5">
-              <div className="truncate text-[14px] font-medium">{q.title || q.job_id}</div>
-              <div className="flex flex-wrap items-center gap-1">
-                <Badge tone={STATUS_TONE[q.status] ?? "neutral"}>{STATUS_TEXT[q.status] ?? q.status}</Badge>
-                <Badge tone="outline">{roundLabel(q.round)}</Badge>
-                <Badge tone={verdictTone(q.verdict)} className="font-mono tnum">
-                  {verdictText(q.verdict)}
-                </Badge>
-                {q.judge?.mode && q.judge.mode !== "live" ? <Badge tone="mock">judge {q.judge.mode}</Badge> : null}
-                {q.is_replay ? <Badge tone="mock">replay</Badge> : null}
-                <span className="font-mono text-[11.5px] text-muted tnum">{fmtUsd(q.cost_usd)}</span>
-              </div>
-            </div>
-          </li>
+          <React.Fragment key={g.lead.job_id}>
+            <QueueOption q={g.lead} on={g.lead.job_id === selected} onSelect={onSelect} more={g.others.length} />
+            {open ? g.others.map((o) => <QueueOption key={o.job_id} q={o} on={o.job_id === selected} onSelect={onSelect} nested />) : null}
+          </React.Fragment>
         );
       })}
     </ul>
@@ -494,6 +512,30 @@ function ReviewDetailPanel({ jobId, item, admin }: { jobId: string; item: Review
         ) : null}
       </div>
 
+      {canAct ? (
+        <DecisionBar
+          pins={pins.length}
+          note={note}
+          onNote={(v) => {
+            setNote(v);
+            setHint(null);
+          }}
+          why={why}
+          onWhy={setWhy}
+          noteRef={noteRef}
+          attachments={attachments}
+          onAddImages={addImages}
+          onRemoveAttachment={removeAttachment}
+          onAccept={() => setAcceptOpen(true)}
+          onImprove={improve}
+          onReject={() => setRejectOpen(true)}
+          pending={decide.isPending ? (decide.variables?.action ?? null) : null}
+          hint={hint}
+          nextRound={(cur?.round ?? 1) + 1}
+          verified={verdict?.status === "verified"}
+        />
+      ) : null}
+
       {/* the question a reviewer answers: does what was made match what it should be? */}
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
         <section aria-label="Should look like" className="min-w-0 space-y-2">
@@ -527,29 +569,6 @@ function ReviewDetailPanel({ jobId, item, admin }: { jobId: string; item: Review
         </section>
       </div>
 
-      {canAct ? (
-        <DecisionBar
-          pins={pins.length}
-          note={note}
-          onNote={(v) => {
-            setNote(v);
-            setHint(null);
-          }}
-          why={why}
-          onWhy={setWhy}
-          noteRef={noteRef}
-          attachments={attachments}
-          onAddImages={addImages}
-          onRemoveAttachment={removeAttachment}
-          onAccept={() => setAcceptOpen(true)}
-          onImprove={improve}
-          onReject={() => setRejectOpen(true)}
-          pending={decide.isPending ? (decide.variables?.action ?? null) : null}
-          hint={hint}
-          nextRound={(cur?.round ?? 1) + 1}
-          verified={verdict?.status === "verified"}
-        />
-      ) : null}
 
       {/* side by side only from xl, with the measurements wider: its six columns clipped Tol / Pass at half width */}
       <div className="grid grid-cols-1 gap-4 xl:grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)]">
@@ -681,8 +700,14 @@ export function ReviewClient() {
     [queue.data, filter.family, filter.status],
   );
   const [selId, setSelId] = React.useState<string | null>(wanted);
-  const selItem = selId ? (items.find((i) => i.job_id === selId) ?? items.find((i) => i.root_job === selId)) : items[0];
+  const groups = React.useMemo(() => groupQueueAttempts(items), [items]);
+  const selItem = selId ? (items.find((i) => i.job_id === selId) ?? items.find((i) => i.root_job === selId)) : (groups[0]?.lead ?? items[0]);
   const currentId = selItem?.job_id ?? selId ?? null;
+  // the rows showing: each group's lead, and the other attempts of the group that holds the selected item
+  const visible = React.useMemo(
+    () => groups.flatMap((g) => (g.lead.job_id === currentId || g.others.some((o) => o.job_id === currentId) ? [g.lead, ...g.others] : [g.lead])),
+    [groups, currentId],
+  );
 
   const select = React.useCallback(
     (id: string) => {
@@ -696,12 +721,12 @@ export function ReviewClient() {
   const onKey = React.useRef<(e: KeyboardEvent) => void>(() => {});
   React.useEffect(() => {
     onKey.current = (e) => {
-      if (ignoreKey(e) || !items.length) return;
+      if (ignoreKey(e) || !visible.length) return;
       const k = e.key.toLowerCase();
       if (k !== "j" && k !== "k") return;
       e.preventDefault();
-      const i = Math.max(0, items.findIndex((x) => x.job_id === currentId));
-      const next = items[k === "j" ? Math.min(items.length - 1, i + 1) : Math.max(0, i - 1)];
+      const i = Math.max(0, visible.findIndex((x) => x.job_id === currentId));
+      const next = visible[k === "j" ? Math.min(visible.length - 1, i + 1) : Math.max(0, i - 1)];
       if (next && next.job_id !== currentId) select(next.job_id);
     };
   });
@@ -747,7 +772,7 @@ export function ReviewClient() {
               <div className="grid grid-cols-1 gap-4 lg:grid-cols-[320px_minmax(0,1fr)]">
                 <div className="min-w-0 space-y-2 lg:sticky lg:top-24 lg:self-start">
                   <QueueFilters value={filter} onChange={setFilter} families={families} withBy={serverFilters} />
-                  {items.length ? <QueueList items={items} selected={currentId} onSelect={select} /> : <EmptyState compact title="Nothing in the queue" />}
+                  {items.length ? <QueueList groups={groups} selected={currentId} onSelect={select} /> : <EmptyState compact title="Nothing in the queue" />}
                   <AdminLock />
                 </div>
                 <div id="review-detail" className="min-w-0 scroll-mt-20">

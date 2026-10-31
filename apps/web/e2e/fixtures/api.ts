@@ -531,10 +531,10 @@ export const bench = {
       n: 40,
       ground_truth: "synthetic_exact",
       ci: "95 % bootstrap",
-      columns: ["family", "n", "median_abs_err_mm", "p95_err_mm", "verified_rate"],
+      columns: ["family", "n", "median_abs_err_mm", "p95_err_mm", "pass@0.5", "verified_rate"],
       rows: [
-        { family: "bracket", n: 10, median_abs_err_mm: 0.11, p95_err_mm: 0.32, verified_rate: 0.9 },
-        { family: "clip", n: 10, median_abs_err_mm: 0.14, p95_err_mm: 0.41, verified_rate: 0.8 },
+        { family: "bracket", n: 10, median_abs_err_mm: 0.11, p95_err_mm: 0.32, "pass@0.5": 1, verified_rate: 0.9 },
+        { family: "clip", n: 10, median_abs_err_mm: 0.14, p95_err_mm: 0.41, "pass@0.5": 0.9, verified_rate: 0.8 },
       ],
       headline: { median_abs_err_mm: 0.12, verified_rate: 0.85, n: 40 },
       status: "ok",

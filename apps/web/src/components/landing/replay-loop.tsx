@@ -88,6 +88,17 @@ function frames(d: JobDetail) {
   return { list, photo, mask, render, points, fitOverlay, fitPassed, verification: d.verification };
 }
 
+/** The player's frame while it loads: header bar (two lines on a phone), picture box and caption row, as loaded. */
+function ReplayPlaceholder() {
+  return (
+    <div aria-busy="true" aria-label="Loading replay" role="status">
+      <div className="h-[73px] border-b border-border sm:h-[45px]" />
+      <div className="aspect-[16/10] animate-pulse bg-surface-2 sm:aspect-[16/7]" />
+      <div className="h-14" />
+    </div>
+  );
+}
+
 export function ReplayLoop({ id, onStep }: { id?: string | null; onStep?: (frame: string, chartStep: number) => void } = {}) {
   const reduced = usePrefersReducedMotion();
   const { list, pick, detail } = useReplay(id);
@@ -135,7 +146,8 @@ export function ReplayLoop({ id, onStep }: { id?: string | null; onStep?: (frame
   );
   if (list.isError || detail.isError || (list.data && !pick))
     return shell(<p className="flex aspect-[16/10] items-center justify-center p-6 text-center text-[13px] text-muted sm:aspect-[16/7]">No stored replay is available on this server.</p>);
-  if (!f || !pick) return shell(<div className="aspect-[16/10] animate-pulse bg-surface-2 sm:aspect-[16/7]" aria-busy="true" aria-label="Loading replay" />);
+  // loading: the loaded player's header bar, picture and caption row at their heights, so the swap never moves the page
+  if (!f || !pick) return shell(<ReplayPlaceholder />);
 
   const v = f.verification;
   const chartUpTo = reduced || cur !== "chart" ? f.points.length : Math.max(1, step);

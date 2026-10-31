@@ -617,10 +617,24 @@ def matching(slug: str, *, limit: int = 12, reg: Registry | None = None) -> list
 # ------------------------------------------------------------------------------------------------- cards, facts, thumbs
 
 
+def _thumb_sha(part: PartRecord) -> str:
+    """What a stored thumbnail was rendered from besides the code: the defaults and the renderer's tag."""
+    from services.registry.thumbs import RENDER_TAG
+
+    return f"{params_sha(part.defaults)}:{RENDER_TAG}"
+
+
+def _thumb_current(t: Mapping[str, Any] | None) -> bool:
+    """A stored thumbnail made by the current renderer (older ones are re-rendered by the lazy route)."""
+    from services.registry.thumbs import RENDER_TAG
+
+    return bool(t) and str(t["params_sha"]).endswith(f":{RENDER_TAG}")  # type: ignore[index]
+
+
 def thumbnail_urls(slug: str, reg: Registry | None = None) -> tuple[str, str]:
-    """(1x, 2x) thumbnail URLs: stored blobs when rendered, else the lazy render route."""
+    """(1x, 2x) thumbnail URLs: stored blobs when rendered by the current renderer, else the lazy render route."""
     t = (reg or get_registry()).thumbnail(slug)
-    if t:
+    if t and _thumb_current(t):
         return blobs.url(t["key_1x"]), blobs.url(t["key_2x"])
     return f"{API}/parts/{slug}/thumbnail.png", f"{API}/parts/{slug}/thumbnail.png?scale=2"
 
@@ -632,8 +646,9 @@ def part_card(
     v = part.verification
     if thumbs is not None:
         t = thumbs.get(part.slug)
-        thumb = blobs.url(t["key_1x"]) if t else f"{API}/parts/{part.slug}/thumbnail.png"
-        thumb2 = blobs.url(t["key_2x"]) if t else f"{API}/parts/{part.slug}/thumbnail.png?scale=2"
+        ok = _thumb_current(t)
+        thumb = blobs.url(t["key_1x"]) if t and ok else f"{API}/parts/{part.slug}/thumbnail.png"
+        thumb2 = blobs.url(t["key_2x"]) if t and ok else f"{API}/parts/{part.slug}/thumbnail.png?scale=2"
     else:
         thumb, thumb2 = thumbnail_urls(part.slug, reg)
     return {
@@ -655,10 +670,18 @@ def part_card(
 
 
 def facts(part: PartRecord, *, pool: WarmPool | None = None) -> PartFacts | None:
-    """Printing facts at the defaults (stored on the record, else computed from a bake)."""
-    if part.facts is not None:
-        return part.facts
-    return bake_output(part, {}, ("stl",), pool=pool).facts
+    """Printing facts at the defaults (stored on the record, else computed from a bake). Stored facts that say supports
+    are needed are re-derived from the bake (a cache hit refreshes from the cached STL): the supports rules have only
+    ever been relaxed (`FACTS_RULE`), so a stored "needed" can be out of date. The record is not rewritten."""
+    f = part.facts
+    if f is None:
+        return bake_output(part, {}, ("stl",), pool=pool).facts
+    if not f.supports_needed:
+        return f
+    try:
+        return bake_output(part, {}, ("stl",), pool=pool).facts or f
+    except Exception:  # a failed bake leaves the stored facts as they were
+        return f
 
 
 def ensure_thumbnail(
@@ -668,7 +691,7 @@ def ensure_thumbnail(
     from services.registry import thumbs
 
     reg = reg or get_registry()
-    psha = params_sha(part.defaults)
+    psha = _thumb_sha(part)
     t = reg.thumbnail(part.slug)
     fresh = bool(t) and not force and t["code_sha"] == part.code_sha and t["params_sha"] == psha  # type: ignore[index]
     if t and fresh and blobs.exists(t["key_1x"]) and blobs.exists(t["key_2x"]):
@@ -748,6 +771,9 @@ def part_detail(part: PartRecord, reg: Registry | None = None) -> dict[str, Any]
     d["lineage"] = lineage(part, reg)
     d["thumbnail_url"] = t1
     d["thumbnail_2x_url"] = t2
+    fresh = facts(part) if part.facts is not None else None
+    if fresh is not None:
+        d["facts"] = fresh.model_dump(mode="json")
     d["facts_notes"] = dict(geom_bake.FACT_NOTES)
     d["fit_reports"] = reg.fit_reports(part.slug)
     d["origin"] = part.provenance.origin.value

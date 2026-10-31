@@ -1,7 +1,7 @@
 "use client";
 
 import { useMutation, useQuery } from "@tanstack/react-query";
-import { BadgeCheck, Camera, Smartphone, Upload, X, XOctagon } from "lucide-react";
+import { ArrowLeft, BadgeCheck, Camera, Eye, Ruler, Smartphone, Upload, X, XOctagon } from "lucide-react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import * as React from "react";
@@ -13,6 +13,7 @@ import { useMatChoice } from "@/components/mat/use-mat-layout";
 import { Button } from "@/components/ui/button";
 import { ErrorState } from "@/components/ui/error-state";
 import { Mm } from "@/components/ui/mm";
+import { Skeleton } from "@/components/ui/skeleton";
 import { Spinner } from "@/components/ui/spinner";
 import { api, artifactUrl } from "@/lib/api";
 import type { FitCheckResult, FitOutline } from "@/lib/api-types";
@@ -248,6 +249,88 @@ function PhoneUpload({ id, matId }: { id: string; matId: string }) {
   );
 }
 
+/** The mat whose frame the example outline is read in (any mat works: only the outline's own shape is drawn). */
+const EXAMPLE_MAT = "screen-m";
+
+/** The box an outline drawing needs: the outline, holes and dimension lines, plus room for a side legend on small parts. */
+function outlineBounds(o: FitOutline): { x: number; y: number; w: number; h: number } {
+  const xs = [...o.outline_mm.map((p) => p[0]), ...o.dims.flatMap((d) => [d.from_mm[0], d.to_mm[0]]), ...o.holes.flatMap((h) => [h.center_mm[0] - h.diameter_mm / 2, h.center_mm[0] + h.diameter_mm / 2])];
+  const ys = [...o.outline_mm.map((p) => p[1]), ...o.dims.flatMap((d) => [d.from_mm[1], d.to_mm[1]]), ...o.holes.flatMap((h) => [h.center_mm[1] - h.diameter_mm / 2, h.center_mm[1] + h.diameter_mm / 2])];
+  const ox = o.outline_mm.map((p) => p[0]);
+  const oy = o.outline_mm.map((p) => p[1]);
+  const small = Math.max(Math.max(...ox) - Math.min(...ox), Math.max(...oy) - Math.min(...oy)) < 30;
+  const x = Math.min(...xs) - 6;
+  const y = Math.min(...ys) - 6;
+  return { x, y, w: Math.max(...xs) + (small ? 34 : 6) - x, h: Math.max(...ys) + 6 - y };
+}
+
+/**
+ * A labelled example of the fit check, never a measurement: this job's own model outline drawn at nominal 1:1 (CSS
+ * millimetres; the screen is not calibrated, so true size is not promised), and what the real check does with a photo.
+ * Shown at `?example=1` and linked from the calibration gate, so the check can be seen before calibrating.
+ */
+function FitExample({ id }: { id: string }) {
+  const outline = useQuery({ queryKey: ["fit-outline", id, EXAMPLE_MAT], queryFn: () => api.fitOutline(id, EXAMPLE_MAT), retry: false });
+  const job = `/jobs/${encodeURIComponent(id)}`;
+  const o = outline.data;
+  const b = o ? outlineBounds(o) : null;
+  return (
+    <div className="min-h-dvh bg-bg text-fg">
+      <div className="mx-auto max-w-3xl space-y-5 px-4 py-6 sm:px-8 sm:py-10">
+        <Link href={job} className="inline-flex items-center gap-1 text-[13px] text-muted hover:text-fg">
+          <ArrowLeft className="size-3.5" aria-hidden /> Back to the job
+        </Link>
+        <div className="space-y-1.5">
+          <div className="text-[12px] font-medium tracking-[0.08em] text-accent-text uppercase">Screen fit check · example</div>
+          <h1 className="text-2xl font-semibold tracking-tight">What the fit check looks like</h1>
+        </div>
+        <p role="note" className="rounded-md border border-warn-border bg-warn-soft px-3 py-2 text-[13px] leading-5 text-fg" data-testid="fit-example-note">
+          <span className="font-medium">Example — calibrate your screen to check your real part.</span> Nothing on this page is measured. The drawing is this
+          job&apos;s model outline at nominal 1:1 (CSS millimetres); an uncalibrated screen can draw it larger or smaller than true size.
+        </p>
+        <figure className="space-y-2">
+          <div className="scrollbar-thin overflow-x-auto rounded-lg border border-border bg-[#f4f4f2] p-3" tabIndex={0} role="region" aria-label="Example outline drawing">
+            {outline.isPending ? (
+              <Skeleton className="h-40" />
+            ) : outline.isError ? (
+              <ErrorState error={outline.error} compact what="this job's model outline" onRetry={() => void outline.refetch()} />
+            ) : o && b ? (
+              <svg
+                viewBox={`${b.x} ${b.y} ${b.w} ${b.h}`}
+                style={{ width: `${b.w}mm`, height: `${b.h}mm` }}
+                className="block max-w-none"
+                role="img"
+                aria-label={`Example: the model outline with ${o.holes.length} hole${o.holes.length === 1 ? "" : "s"} and its sizes ${o.dims.map((d) => d.label).join(", ")}, drawn at nominal 1:1. Not a measurement.`}
+              >
+                <OutlineSvg o={o} />
+              </svg>
+            ) : null}
+          </div>
+          <figcaption className="text-[12px] leading-5 text-muted">
+            Example drawing: the outline, holes and sizes come from this job&apos;s model (the numbers are the model&apos;s, not a measurement of your part).
+          </figcaption>
+        </figure>
+        <ol className="list-decimal space-y-1.5 pl-5 text-[14px] leading-6">
+          <li>Calibrate this screen once with any bank or ID card (about 30 seconds).</li>
+          <li>Open the fit check: the screen mat shows this outline at true size.</li>
+          <li>Lay the real or printed part exactly on the pink outline and photograph straight down.</li>
+          <li>Code measures the photo: largest gap and average gap in millimetres, the overlap (IoU), and an overlay picture. Pass or fail comes from those numbers.</li>
+        </ol>
+        <div className="flex flex-wrap gap-2">
+          <Button asChild variant="primary">
+            <Link href={`/calibrate?next=${encodeURIComponent(`${job}/fit`)}`}>
+              <Ruler aria-hidden /> Calibrate and check my part
+            </Link>
+          </Button>
+          <Button asChild variant="outline">
+            <Link href={`${job}/fit`}>Open the fit check</Link>
+          </Button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export function FitClient({ id }: { id: string }) {
   return (
     <I18nRegion>
@@ -261,8 +344,22 @@ function FitInner({ id }: { id: string }) {
   const phone = sp.get("phone") === "1";
   const mat = sp.get("mat");
   if (phone && mat) return <PhoneUpload id={id} matId={mat} />;
+  if (sp.get("example") === "1") return <FitExample id={id} />;
   return (
-    <StageShell exitHref={`/jobs/${encodeURIComponent(id)}`} title="Screen fit check" calibrateNext={`/jobs/${encodeURIComponent(id)}/fit`} tips={false}>
+    <StageShell
+      exitHref={`/jobs/${encodeURIComponent(id)}`}
+      title="Screen fit check"
+      calibrateNext={`/jobs/${encodeURIComponent(id)}/fit`}
+      tips={false}
+      gateExtra={
+        <p className="border-t border-border pt-3 text-[13px] text-muted">
+          <Link href={`/jobs/${encodeURIComponent(id)}/fit?example=1`} className="inline-flex items-center gap-1 font-medium text-accent-text hover:underline">
+            <Eye className="size-3.5" aria-hidden /> See a labelled example first
+          </Link>{" "}
+          — this job&apos;s outline, not a measurement.
+        </p>
+      }
+    >
       {(cal, stage) => <FitStage id={id} cal={cal} stage={stage} />}
     </StageShell>
   );

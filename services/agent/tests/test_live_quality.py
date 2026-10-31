@@ -400,3 +400,29 @@ def test_install_card_check_step_fits_the_family() -> None:
     assert "swings" in evidence.install_steps("hinge")[2]
     assert "turns" in evidence.install_steps("wheel")[2]
     assert all("moves" not in s for f in ("spacer", "bracket", "hook", "cover") for s in evidence.install_steps(f))
+
+
+def test_every_install_card_panel_gets_the_same_code_drawn_title_strip() -> None:
+    """The live card's third panel came back without the banner the model drew on the first two: code draws the strip
+    on every panel, above the picture (nothing in it is covered)."""
+    import io as _io
+
+    import numpy as np
+    from PIL import Image
+
+    photo = Image.new("RGB", (1200, 900), (140, 150, 160))
+    buf = _io.BytesIO()
+    photo.save(buf, format="PNG")
+    out = []
+    for i, step in enumerate(evidence.install_steps("hook"), start=1):
+        out.append(
+            Image.open(_io.BytesIO(evidence.titled_panel(buf.getvalue(), f"Step {i} of 3: {step}"))).convert("RGB")
+        )
+    heights = {im.height for im in out}
+    assert len(heights) == 1 and heights.pop() > 900  # one strip height for all panels, added above the 900 px picture
+    strip = out[0].height - 900
+    for im in out:
+        assert im.getpixel((2, 2)) == evidence.BANNER_RGB  # the strip is there on every panel
+        assert im.getpixel((600, strip + 450)) == (140, 150, 160)  # the picture below is untouched
+        px = np.asarray(im.crop((0, 0, im.width, strip)))
+        assert (px == 255).all(axis=2).any()  # white title text

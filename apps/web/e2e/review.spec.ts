@@ -17,7 +17,7 @@ async function photoBox(page: Page) {
   const img = page.getByRole("img", { name: /Rectified top photo/ });
   await expect(img).toBeVisible();
   await expect.poll(() => img.evaluate((el: HTMLImageElement) => el.complete && el.naturalWidth > 0)).toBe(true);
-  await img.evaluate((el) => el.scrollIntoView({ block: "center" })); // clear of the decision bar pinned to the bottom
+  await img.evaluate((el) => el.scrollIntoView({ block: "center" })); // centred: clear of the decision bar that sticks under the header
   let last = "";
   await expect
     .poll(async () => {

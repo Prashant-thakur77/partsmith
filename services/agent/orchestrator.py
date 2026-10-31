@@ -79,6 +79,7 @@ HIDDEN_HOLE_RE = re.compile(r"possible hidden hole near mat \(([-\d.]+), ([-\d.]
 NOTE_KEYS = ("hidden hole", "taller than", "clearly above the stated", "not a round vertical hole")
 BUILD_RETRIES = 2  # inner retries when the program does not compile / run
 NO_IMPROVE_SWITCH = 3  # rounds without real progress before switching strategy
+STALL_ROUNDS = guards.STALL_ROUNDS
 PROGRESS_EPS = 0.1  # rank units: a round must cut the pass-rule violation by this much to count as progress
 IMPROVE_EPS_MM = 0.005
 IMPROVE_EPS = 0.01  # rank units (multiples of a tolerance)
@@ -695,6 +696,10 @@ class FixRun:
         self.review_pins: list[dict[str, Any]] = []
         self.lessons_used: list[str] = []
         self.feedback_used: list[str] = []  # feedback-log entries this job's prompts carried (feedback_used.json)
+        # Fix rounds in a row that did not get closer to passing (keep rule), and the stop line once they stalled.
+        self.stall = 0
+        self.stopped: str | None = None
+        self._pins: tuple[Round, dict[str, guards.Pin]] | None = None
 
     # ---- events ------------------------------------------------------------------------------------------------------
     def stage_event(self, stage: StageName, status: str, label: str, ms: int | None = None) -> None:
@@ -2252,8 +2257,45 @@ class FixRun:
         said = self.reviewer_text(rnd, numeric=numeric)
         return out + ("\n" + said if said else "")
 
+    def pinned(self, base: Round) -> dict[str, guards.Pin]:
+        """Knobs a fixer may not move out of tolerance on `base` (`guards.pinned_knobs`): their measured size already
+        passes and neither a failing residual nor the worst spot of a failing view (template regions) points at them.
+        A reviewer job is exempt: the person's notes are the evidence there."""
+        if self.opts.review is not None or base.verification is None:
+            return {}
+        if self._pins is not None and self._pins[0] is base:
+            return self._pins[1]
+        tpl = self.template if base.strategy == "template" else None
+        pointed: set[str] = set()
+        if tpl is not None:
+            for spot in self.worst_spots(base):
+                pointed.update(knobs_at(tpl, str(spot["plane"]), *spot["norm"]))
+        pins = guards.pinned_knobs(base.verification.residuals, template_measure_map(base.code, tpl), pointed=pointed)
+        self._pins = (base, pins)
+        return pins
+
+    def note_progress(self, before: Round | None) -> None:
+        """After a fix round: reset the stall count when the round became the closest to passing (keep rule), else
+        count one more round without progress."""
+        self.stall = 0 if self.best is not before else self.stall + 1
+
+    def stalled(self) -> bool:
+        return self.stall >= STALL_ROUNDS
+
+    def stop_if_stalled(self) -> bool:
+        """True (and the stop line logged once) when the last STALL_ROUNDS fix rounds left the shortfall unchanged."""
+        if not self.stalled():
+            return False
+        if self.stopped is None:
+            b = self.best
+            kept = f"; round {b.iter} stays the closest to passing (shortfall {b.rank[1]:.2f})" if b is not None else ""
+            self.stopped = f"stopped: no progress for {STALL_ROUNDS} rounds{kept}"
+            self.log(self.stopped, "warn")
+        return True
+
     def guard(self, base: Round, edits: Sequence[Mapping[str, Any]]) -> guards.GuardResult:
-        """The guards for edits proposed against `base` (unknown names, ranges, step caps, no whole-outline rescale)."""
+        """The guards for edits proposed against `base` (unknown names, ranges, step caps, no whole-outline rescale,
+        knobs pinned by a passing measured size)."""
         specs = parse_params(base.code)
         mmap = template_measure_map(base.code, self.template if base.strategy == "template" else None)
         outline_params = [p for k, p in mmap.items() if k in guards.OUTLINE_KEYS]
@@ -2269,6 +2311,7 @@ class FixRun:
             outline_params=outline_params,
             residual_deltas={k: sum(v) / len(v) for k, v in backing.items()},
             locked=self.locked,
+            pinned=self.pinned(base),
         )
 
     def fix_round(self, *, reviewer: bool = False) -> bool:
@@ -2320,6 +2363,7 @@ class FixRun:
                     "max_error_after": before,
                 }
             )
+            self.note_progress(base)
             return False
         rnd = self.evaluate(new_code, new_values, base.strategy, edits, analysis, prev=base)
         improved = rnd.better_than(base)
@@ -2336,6 +2380,7 @@ class FixRun:
                 "residuals_after": residual_keys(rnd.verification),
             }
         )
+        self.note_progress(base)
         return rnd.rank[0] < base.rank[0] or rnd.rank[1] < base.rank[1] - PROGRESS_EPS
 
     def photo_limited(self) -> list[str]:
@@ -2392,6 +2437,12 @@ class FixRun:
             agent_loop.AgentSession(self, self.max_iters - reserve).drive()
             if self.best.verified or self.iteration >= self.max_iters:
                 break
+            if self.stalled():
+                if self.can_switch_to_free_code():
+                    self.switch_strategy()  # a different approach starts its own count
+                    continue
+                self.stop_if_stalled()
+                break
             if self.best is not before and self.best.better_than(before) and self.iteration < self.max_iters - reserve:
                 continue  # the session made progress and stopped early: a fresh session looks again
             strategy = self.strategy
@@ -2411,10 +2462,14 @@ class FixRun:
             self.check_alive()
             improved = self.fix_round()
             no_improve = 0 if improved else no_improve + 1
-            if no_improve >= self.switch_after() and not self.best.verified and self.iteration < limit:
+            if self.best.verified or self.iteration >= limit:
+                continue
+            if no_improve >= self.switch_after() or (self.stalled() and self.can_switch_to_free_code()):
                 no_improve = 0
                 if not self.switch_strategy():
                     break
+            if self.stop_if_stalled():
+                break
 
     def switch_after(self) -> int:
         """Rounds without progress before leaving the template: one more when the template still has knobs for the
@@ -2475,6 +2530,15 @@ class FixRun:
             return None
         return tpl if tpl.family == self.spec.family else None
 
+    def can_switch_to_free_code(self) -> bool:
+        """True when switch_strategy would really leave the template for free code (not broken, not taller than the
+        plate)."""
+        return (
+            self.strategy == "template"
+            and not (self.spec is not None and self.spec.broken_region is not None)
+            and not self.side_taller_than_plate()
+        )
+
     def switch_strategy(self) -> bool:
         """template → free code → ask the human. Returns False when the loop should stop."""
         cur = self.strategy
@@ -2492,7 +2556,8 @@ class FixRun:
             return True
         if cur == "template":
             self.switches.append("template → free_code")
-            self.log("three rounds without progress: switching from the template to free code")
+            self.log("the template rounds stopped getting closer to passing: switching from the template to free code")
+            self.stall = 0
             self.build_round("free_code", iter_label="strategy switch: free code from the measured outline")
             return True
         if cur == "free_code" and self.best is None and self.opts.templates and self.spec is not None:
@@ -2504,6 +2569,7 @@ class FixRun:
                 self.switches.append("free_code → template")
                 self.log(f"free code produced no valid solid; switching to the {fallback.name} template")
                 self.template = fallback
+                self.stall = 0
                 self.build_round("template", iter_label=f"strategy switch: the {fallback.name} template")
                 return True
         if cur == "free_code":
@@ -2520,7 +2586,10 @@ class FixRun:
                     choices=["accept best effort", "keep trying"],
                 )
             )
-            return str(ans) == "keep trying"
+            if str(ans) != "keep trying":
+                return False
+            self.stall = 0  # the person asked for more rounds
+            return True
         return False
 
     # ---- 9. judge ---------------------------------------------------------------------------------------------------------------

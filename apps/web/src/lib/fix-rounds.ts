@@ -284,12 +284,9 @@ function listNames(names: string[]): string {
  * max error.
  */
 export function keepReason(rounds: readonly FixRound[], keptIter: number | null): string | null {
-  const kept = rounds.find((r) => r.iter === keptIter);
-  const keptErr = kept?.maxErrorMm;
-  if (!kept || keptErr == null) return null;
-  const lower = rounds.filter((r) => r.iter !== kept.iter && r.maxErrorMm != null && r.maxErrorMm < keptErr - 0.005);
-  if (!lower.length) return null;
-  const best = lower.reduce((a, b) => (b.maxErrorMm! < a.maxErrorMm! ? b : a));
+  const rv = keepRivals(rounds, keptIter);
+  if (!rv) return null;
+  const { kept, keptErr, lower, best } = rv;
   const mm = (v: number) => `${v.toFixed(2)} mm`;
   const keptName = nameOf(kept);
   const names = lower.map(nameOf);
@@ -308,6 +305,37 @@ export function keepReason(rounds: readonly FixRound[], keptIter: number | null)
   const tests =
     kept.testsTotal && best.testsTotal ? ` Tests passed: ${kept.testsPassed}/${kept.testsTotal} for ${keptName}, ${best.testsPassed}/${best.testsTotal} for ${nameOf(best)} (this run did not record the shortfall itself).` : "";
   return `${lead} ${rivals}${tests}`;
+}
+
+/** The kept round, the rounds with a lower max error and the lowest of them; null when no round beat the kept one on
+ * max error (nothing to explain). */
+function keepRivals(rounds: readonly FixRound[], keptIter: number | null): { kept: FixRound; keptErr: number; lower: FixRound[]; best: FixRound } | null {
+  const kept = rounds.find((r) => r.iter === keptIter);
+  const keptErr = kept?.maxErrorMm;
+  if (!kept || keptErr == null) return null;
+  const lower = rounds.filter((r) => r.iter !== kept.iter && r.maxErrorMm != null && r.maxErrorMm < keptErr - 0.005);
+  if (!lower.length) return null;
+  const best = lower.reduce((a, b) => (b.maxErrorMm! < a.maxErrorMm! ? b : a));
+  return { kept, keptErr, lower, best };
+}
+
+/**
+ * The one-line version of `keepReason` for the job page ("Kept round 5: closest to passing — 16 of 17 tests vs 14 of
+ * 17 in round 2"); the full rule goes in a fold under it. Quotes the keep rule's own number when the run recorded it,
+ * else the test counts of the kept round and the lowest-error rival. Null when `keepReason` is null.
+ */
+export function keepLine(rounds: readonly FixRound[], keptIter: number | null): string | null {
+  const rv = keepRivals(rounds, keptIter);
+  if (!rv) return null;
+  const { kept, best } = rv;
+  const keptName = nameOf(kept);
+  const rival = nameOf(best);
+  if (kept.verdict === "verified" && best.verdict !== "verified") return `Kept ${keptName}: it passed verification; ${rival} had a lower max error but did not pass.`;
+  if (kept.passShortfall != null && best.passShortfall != null)
+    return `Kept ${keptName}: closest to passing — shortfall ${kept.passShortfall.toFixed(2)} vs ${best.passShortfall.toFixed(2)} in ${rival}.`;
+  if (kept.testsTotal && best.testsTotal)
+    return `Kept ${keptName}: closest to passing — ${kept.testsPassed} of ${kept.testsTotal} tests vs ${best.testsPassed} of ${best.testsTotal} in ${rival}.`;
+  return `Kept ${keptName}: closest to passing by the keep rule; ${rival} had a lower max error.`;
 }
 
 function cap(s: string): string {

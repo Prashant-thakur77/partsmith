@@ -125,3 +125,45 @@ def test_cached_facts_from_older_rules_are_recomputed(tmp_path: Path, pool: Warm
     again = bake(CHAMFERED_TUBE, {}, ("stl",), pool=pool, root=tmp_path)
     assert again.cache_hit and again.facts is not None and not again.facts.supports_needed
     assert json.loads(man.read_text())["facts_rule"] == FACTS_RULE
+
+
+# Supports verdicts for the family templates at their defaults, and why. A small sloped edge (fillet or chamfer) that
+# tops out within 2 mm of the bed prints as first layers stepping outwards; real overhangs higher up still count.
+TEMPLATE_SUPPORTS = {
+    "caster_wheel": (False, "-Z"),  # a solid disc printed flat: its 2 mm bottom tread fillet is a bed edge
+    "spacer": (False, "-Z"),  # stands on its end; 45 deg chamfers and a vertical bore
+    "knob": (False, "+Z"),  # upside down: the top fillet becomes a bed edge (as modelled, the blind bore's ceiling
+    # is a flat bridge 12 mm up)
+    "l_bracket": (True, "-Z"),  # the upright leg's two horizontal 4.5 mm screw holes: their upper arcs, 5+ mm up
+    "hook": (True, "-Z"),  # the J arm's bend overhangs well above the plate in every orientation
+}
+
+
+@pytest.mark.parametrize("name", sorted(TEMPLATE_SUPPORTS))
+def test_template_supports_verdicts(name: str, tmp_path: Path, pool: WarmPool) -> None:
+    from services.agent.templates import get_template
+
+    needed, orient = TEMPLATE_SUPPORTS[name]
+    out = bake(get_template(name).code, {}, ("stl",), pool=pool, root=tmp_path)
+    assert out.facts is not None
+    assert out.facts.supports_needed is needed, (name, out.overhang_mm2)
+    assert out.facts.orientation.startswith(orient)
+    if name == "caster_wheel":
+        assert out.overhang_mm2["-Z"] == pytest.approx(0.0, abs=0.5)  # was ~148 mm^2 of fillet facets
+
+
+LOW_CEILING = (
+    "import cadquery as cq\n"
+    "PARAMS = {'d': (40.0, 20.0, 60.0, 0.1, 'mm', True, 'Disc')}\n"
+    "def build(p):\n"
+    "    stem = cq.Workplane('XY').circle(15).extrude(1.5)\n"
+    "    return stem.union(cq.Workplane('XY').workplane(offset=1.5).circle(p['d'] / 2).extrude(3))\n"
+    "result = build({k: v[0] for k, v in PARAMS.items()})\n"
+)
+
+
+def test_a_flat_ceiling_near_the_bed_still_counts(tmp_path: Path, pool: WarmPool) -> None:
+    # a 40 mm disc on a 30 mm stem 1.5 mm tall: the ring under the disc faces straight down (a ledge, not a sloped
+    # edge), so the bed-edge allowance does not hide it as modelled
+    out = bake(LOW_CEILING, {}, ("stl",), pool=pool, root=tmp_path)
+    assert out.overhang_mm2["-Z"] == pytest.approx(3.14159 * (20**2 - 15**2), rel=0.02)

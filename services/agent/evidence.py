@@ -762,8 +762,44 @@ def install_steps(family: str | None) -> tuple[str, str, str]:
     return INSTALL_STEPS[0], INSTALL_STEPS[1], _CHECK_STEP.get(family or "", INSTALL_STEPS[2])
 
 
+BANNER_RGB = (27, 38, 64)  # dark navy title strip, white text
+
+
+def titled_panel(png: bytes, title: str) -> bytes:
+    """The panel with a title strip drawn by code above it ("Step 2 of 3: Fit the printed replacement part …"), so
+    every panel of a card carries the same banner whatever the image model drew. The strip is added above the picture;
+    nothing in the picture is covered."""
+    from PIL import Image, ImageDraw
+
+    from services.agent.providers.mocks import _font
+
+    img = Image.open(io.BytesIO(png)).convert("RGB")
+    w = img.width
+    pad = max(10, w // 60)
+    size = max(14, w // 34)
+    draw = ImageDraw.Draw(img)
+    font = _font(size)
+    while size > 12 and draw.textlength(title, font=font) > w - 2 * pad:
+        size -= 1
+        font = _font(size)
+    text = title
+    if draw.textlength(title, font=font) > w - 2 * pad:  # still too long at the smallest size: cut with an ellipsis
+        while draw.textlength(text + "…", font=font) > w - 2 * pad and len(text) > 8:
+            text = text[:-1]
+        text = text.rstrip() + "…"
+    strip_h = round(max(14, w // 34) * 1.2) + 2 * pad  # from the width alone: one height for every panel of a card
+    ascent, descent = font.getmetrics()
+    out = Image.new("RGB", (w, img.height + strip_h), BANNER_RGB)
+    out.paste(img, (0, strip_h))
+    ImageDraw.Draw(out).text((pad, (strip_h - ascent - descent) // 2), text, fill=(255, 255, 255), font=font)
+    buf = io.BytesIO()
+    out.save(buf, format="PNG")
+    return buf.getvalue()
+
+
 def install_card(run: FixRun) -> bool:
-    """Anchored 3-panel install card (Muse Image; labelled mock without a key) in the user's own scene."""
+    """Anchored 3-panel install card (Muse Image; labelled mock without a key) in the user's own scene. Code draws the
+    same title strip on every panel (the image model is asked for no text)."""
     fn = getattr(providers, "install_card", None)
     b = run.best
     if fn is None or b is None or b.out is None or "top" not in b.out.views or "top" not in run.photos:
@@ -780,6 +816,10 @@ def install_card(run: FixRun) -> bool:
         data = _get(res, "data", default=None)
         if isinstance(data, (bytes, bytearray)):
             mode = str(_get(res, "mode", default=""))
+            step = steps[i - 1] if i <= len(steps) else ""
+            data = titled_panel(
+                bytes(data), f"Step {i} of {len(panels)}: {step}" if step else f"Step {i} of {len(panels)}"
+            )
             run.artifact("install_card", bytes(data), ".png",
                          f"install card {i}/{len(panels)}: {steps[i - 1] if i <= 3 else ''}"
                          + (" (mock)" if mode == "mock" else ""))  # fmt: skip

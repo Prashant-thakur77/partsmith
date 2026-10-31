@@ -54,3 +54,33 @@ export function splitNotes(reasons: readonly string[]): { findings: string[]; de
   for (const r of reasons) (isDebugNote(r) ? details : findings).push(r);
   return { findings, details };
 }
+
+/**
+ * The failing check a best-effort reason names first, in two or three words, for a card's status chip: "the side
+ * outline is off by up to 0.63 mm …" → "side outline", "the side view's average edge gap is 0.20 mm …" → "side
+ * outline", "the outline length is 0.38 mm too long …" → "outline length", "the judge flagged …" → "judge flag",
+ * "part test failed: …" → "part test". Reads only the reason text (written by code from the verification record);
+ * null when it says nothing this recognises.
+ */
+export function failingCheckWord(reason: string | null | undefined): string | null {
+  const r = (reason ?? "").trim();
+  if (!r) return null;
+  const view = /^the (\w+) (?:outline\b|view's\b)/i.exec(r);
+  if (view) return `${view[1]!.toLowerCase()} outline`;
+  if (/^the judge flagged\b/i.test(r)) return "judge flag";
+  if (/^part test failed\b/i.test(r)) return "part test";
+  const pos = /^(?:the )?([\w ]+?) is [\d.]+ mm off its measured position/i.exec(r);
+  if (pos) return `${pos[1]!.replace(/_/g, " ")} position`;
+  const size = /^(?:the )?([\w ]+?) is [\d.]+ mm too \w+/i.exec(r);
+  if (size) return size[1]!.replace(/_/g, " ");
+  return null;
+}
+
+/**
+ * The failing check to lead a best-effort card with, only when its max error is inside the size limit (a "Best effort
+ * · 0.498 mm" chip under a 0.50 mm limit reads like a pass); null otherwise, and the card keeps the millimetres.
+ */
+export function insideLimitCheckWord(status: string, maxErrorMm: number | null | undefined, reason: string | null | undefined, limitMm: number): string | null {
+  if (status !== "best_effort" || maxErrorMm == null || !Number.isFinite(maxErrorMm) || maxErrorMm > limitMm) return null;
+  return failingCheckWord(reason);
+}

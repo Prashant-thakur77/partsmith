@@ -21,9 +21,26 @@ export function imagesFrom(data: DataTransfer | null): File[] {
   return [...data.items].filter((i) => i.kind === "file" && i.type.startsWith("image/")).flatMap((i) => (i.getAsFile() ? [i.getAsFile()!] : []));
 }
 
+/** Height of the site's sticky header (it grows with the replay-mode banner), so a bar can stick just under it. */
+function useStickyHeaderHeight(): number {
+  const [h, setH] = React.useState(0);
+  React.useEffect(() => {
+    const el = document.querySelector<HTMLElement>("header.sticky");
+    if (!el) return;
+    const read = () => setH(Math.round(el.getBoundingClientRect().height));
+    read();
+    const ro = new ResizeObserver(read);
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, []);
+  return h;
+}
+
 /**
- * The reviewer's controls, pinned to the bottom of the screen so they never scroll away: how many pins, a note (paste a
- * screenshot straight into it), attached pictures, and the three decisions with their keys.
+ * The reviewer's controls: how many pins, a note (paste a screenshot straight into it), attached pictures, and the
+ * three decisions with their keys. It sits above the photo and the model and, from tablet width, sticks under the
+ * site header while the page scrolls: it never covers the photo, the model or their captions (pinned to the bottom it
+ * hid their lower part at 1440 × 900).
  */
 export function DecisionBar({
   pins,
@@ -65,12 +82,14 @@ export function DecisionBar({
   const [dragging, setDragging] = React.useState(false);
   const uploading = attachments.some((a) => !a.key && !a.error);
   const full = attachments.length >= MAX_ATTACHMENTS;
+  const top = useStickyHeaderHeight();
   return (
     <div
       role="region"
       aria-label="Your decision"
+      style={{ "--bar-top": `${top}px` } as React.CSSProperties}
       className={cn(
-        "z-20 space-y-2 rounded-lg border border-border bg-bg/95 px-3 py-2.5 md:sticky md:bottom-0 md:-mx-1 md:rounded-b-none md:border-b-0 shadow-[0_-8px_24px_-12px_rgba(0,0,0,0.25)] backdrop-blur",
+        "z-20 space-y-2 rounded-lg border border-border bg-bg/95 px-3 py-2.5 shadow-[0_8px_24px_-12px_rgba(0,0,0,0.25)] backdrop-blur md:sticky md:top-[var(--bar-top)] md:-mx-1",
         dragging && "ring-2 ring-accent",
       )}
       onDragOver={(e) => {

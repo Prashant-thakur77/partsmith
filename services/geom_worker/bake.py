@@ -50,14 +50,22 @@ OVERHANG_LIMIT_DEG = 45.0
 OVERHANG_MARGIN_DEG = 1.0
 OVERHANG_COS = float(np.cos(np.radians(OVERHANG_LIMIT_DEG - OVERHANG_MARGIN_DEG)))
 # Bump when the facts rules change: a cached bake made under older rules gets its facts recomputed from its STL.
-FACTS_RULE = 2
+FACTS_RULE = 3
 SUPPORT_AREA_MM2 = 4.0
 BED_TOL_MM = 0.1
+# A sloped edge at the bed (the bottom fillet of a wheel lying flat, a chamfer steeper than 45 deg) that tops out within
+# BED_EDGE_MM of the plate prints as a few first layers stepping outwards, not as an overhang that needs supports. It
+# is left out when it is small next to the bed contact (at most BED_EDGE_SHARE of it); a flat ceiling at that height
+# (a bridge, facing straight down) still counts.
+BED_EDGE_MM = 2.0
+BED_EDGE_SHARE = 0.25
+FLAT_COS = 0.999
 
 FACT_NOTES = {
     "mass": "solid-volume mass at 100 % infill (volume x density: PLA 1.24, PETG 1.27 g/cm^3); a real print weighs less",
     "print_minutes_est": "rough estimate: (volume / 8 mm^3/s + layers x 4 s) / 60, 0.2 mm layers, 100 % infill",
-    "supports_needed": "faces steeper than 45 deg overhang, off the bed, over 4 mm^2 in the recommended orientation",
+    "supports_needed": "faces steeper than 45 deg overhang, off the bed, over 4 mm^2 in the recommended orientation; a "
+    "small sloped edge (fillet or chamfer) that tops out within 2 mm of the bed is not counted",
     "orientation": "axis-aligned orientation with the least overhang area",
 }
 
@@ -140,9 +148,15 @@ def overhang_areas(mesh: Mesh) -> tuple[dict[str, float], dict[str, float], dict
         h_v = h_v - h_v.min()
         h_tri = h_v[mesh.faces]
         facing_down = normals @ d
-        on_bed = h_tri.max(axis=1) <= BED_TOL_MM
-        over[name] = float(area[(facing_down >= OVERHANG_COS) & ~on_bed].sum())
-        bed[name] = float(area[(facing_down >= 0.999) & on_bed].sum())
+        top = h_tri.max(axis=1)
+        on_bed = top <= BED_TOL_MM
+        steep = (facing_down >= OVERHANG_COS) & ~on_bed
+        contact = float(area[(facing_down >= FLAT_COS) & on_bed].sum())
+        edge = steep & (top <= BED_EDGE_MM) & (facing_down < FLAT_COS)
+        if float(area[edge].sum()) <= BED_EDGE_SHARE * contact:
+            steep &= ~edge
+        over[name] = float(area[steep].sum())
+        bed[name] = contact
         height[name] = float(h_v.max())
     return over, bed, height
 

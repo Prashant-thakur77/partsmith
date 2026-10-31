@@ -464,3 +464,15 @@ React finished `<main>` empty and discarded the server HTML. A `<Suspense>` boun
 layout makes React wait there instead. Feature detection (`useCapabilities`) answers "nothing yet" until its component
 has hydrated, because the OpenAPI document could land in the query cache before a delayed subtree hydrated and light up
 controls the server never drew.
+
+**2026-11-01 — Two fix-loop guardrails live in code, not in the prompt.** A recorded wall-hook run (`j_261029_5e9d54d1`)
+spent rounds shortening a plate that already matched its measured length while the side outline gap grew from 2.56 to
+4.70 mm. Telling the model not to do that is not enough, so two checks now sit between the fixer and the geometry, for
+both the agentic and the pipeline fixer. (a) A knob that the template's measure map ties to measured sizes which all
+pass their tests is *pinned* for the round: an edit that would move the model's size out of that tolerance is refused
+and the refusal is logged (`guard: <knob>: pinned — …`), unless the round's evidence points at the knob: a failing
+residual mapped to it, or the worst spot of a failing view inside the template region that knob shapes. Moves that keep
+the size inside its tolerance are allowed, and a reviewer job is exempt (the person's notes are the evidence). (b) After
+2 fix rounds in a row that leave the keep rule's shortfall where it was, the fix rounds stop with `stopped: no progress
+for 2 rounds`; a template that can still hand over to free code does that instead (it is a different approach), and the
+agent's `set_params` refuses further commits. Both change new runs only; recorded replays are not re-run or rewritten.

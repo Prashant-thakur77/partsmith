@@ -2,7 +2,8 @@ import { Layers, SlidersHorizontal } from "lucide-react";
 import Link from "next/link";
 import { artifactUrl } from "@/lib/api";
 import type { PartCard as PartCardT } from "@/lib/api-types";
-import { titleCase } from "@/lib/format";
+import { ERROR_LIMIT_MM, fmtErr, titleCase } from "@/lib/format";
+import { insideLimitCheckWord } from "@/lib/plain-terms";
 import { cn } from "@/lib/utils";
 import { OriginBadge } from "../ui/provenance";
 import { PartStatusBadge } from "./part-status";
@@ -35,6 +36,7 @@ export function PartThumb({ url, url2x, title, className, eager = false }: { url
 }
 
 export function PartCard({ part, className, eager = false }: { part: PartCardT; className?: string; eager?: boolean }) {
+  const check = insideLimitCheckWord(part.status, part.max_error_mm, part.status_reason, ERROR_LIMIT_MM);
   return (
     <Link
       href={`/parts/${encodeURIComponent(part.slug)}`}
@@ -54,7 +56,12 @@ export function PartCard({ part, className, eager = false }: { part: PartCardT; 
           </div>
         </div>
         <div className="flex flex-wrap items-center gap-1.5">
-          <PartStatusBadge status={part.status} maxErrorMm={part.max_error_mm} />
+          <PartStatusBadge status={part.status} maxErrorMm={part.max_error_mm} check={check} />
+          {check && part.max_error_mm != null ? (
+            <span className="font-mono text-[11.5px] text-muted tnum" data-testid="card-max-gap">
+              max gap {fmtErr(part.max_error_mm)} mm
+            </span>
+          ) : null}
           <OriginBadge origin={part.origin} hideReal />
         </div>
         {part.status === "best_effort" && part.status_reason ? (

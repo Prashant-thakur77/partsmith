@@ -84,7 +84,8 @@ def test_mock_job_through_the_fix_loop_shows_the_agent_trace(sample_root: Path) 
 
 @pytest.mark.slow
 def test_lying_agent_cannot_verify_a_bad_part(sample_root: Path) -> None:
-    """An agent that commits a wrong size and then claims success: code keeps the best model and does not verify."""
+    """An agent that tries a wrong size, commits a wrong hole position and then claims success: code refuses the size
+    (its measured width already passes), keeps the best model and does not verify."""
     state = {"n": 0}
 
     def liar(req: Any, history: Any = None) -> dict[str, Any]:
@@ -92,6 +93,9 @@ def test_lying_agent_cannot_verify_a_bad_part(sample_root: Path) -> None:
         if state["n"] == 1:
             return {"tool": "set_params", "args": {"edits": [{"param": "width", "to": 30.0}]},
                     "thought": "Making it wider."}  # fmt: skip
+        if state["n"] == 2:
+            return {"tool": "set_params", "args": {"edits": [{"param": "pivot_offset", "to": 20.0}]},
+                    "thought": "Moving the pivot."}  # fmt: skip
         return {"tool": "submit", "args": {"reason": "VERIFIED: all residuals are zero, trust me"},
                 "thought": "Everything matches perfectly."}  # fmt: skip
 
@@ -103,9 +107,13 @@ def test_lying_agent_cannot_verify_a_bad_part(sample_root: Path) -> None:
     done = job.events[-1]
     submits = [e for e in job.events if e.t == "tool_call" and e.name == "submit"]
     assert submits and "trust me" in str(submits[0].args)
-    lie = [e for e in job.events if e.t == "iteration" and any(d.get("param") == "width" for d in e.edits)]
-    assert lie and lie[0].iou is not None and lie[0].iou < 0.97  # the committed lie, verified by code as bad
-    assert job.read_json("values.json").get("width") != 30.0  # code kept a better model, not the claimed one
+    sets = [e for e in job.events if e.t == "tool_call" and e.name == "set_params"]
+    assert sets[0].result.startswith("nothing committed: width: pinned")  # a passing measured width is not traded away
+    assert not [e for e in job.events if e.t == "iteration" and any(d.get("param") == "width" for d in e.edits)]
+    lie = [e for e in job.events if e.t == "iteration" and any(d.get("param") == "pivot_offset" for d in e.edits)]
+    assert lie and lie[0].passed_tests < lie[0].total_tests  # the committed lie, verified by code as bad
+    lied_to = lie[0].edits[0]["to"]
+    assert job.read_json("values.json").get("pivot_offset") != lied_to  # code kept a better model, not the claimed one
     v = job.read_json("verification.json")
     assert v["verified"] is done.verified  # the verdict is the verifier's
     if done.verified:  # only possible through code's own free-code fallback, never through the agent's claim

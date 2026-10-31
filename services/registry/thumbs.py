@@ -5,6 +5,10 @@ vectorised z-buffer: every triangle is split into pixel fragments, the nearest f
 barycentric weights interpolate the vertex normals for smooth Lambert shading. Visible B-rep edges (depth-tested
 against the z-buffer) are drawn as crisp dark lines. The background is transparent, so the same PNG reads on light and
 dark pages. Everything is rendered at 2x the output size and area-downsampled for anti-aliasing.
+
+A view from above cannot show a feature that opens only on the underside (a knob's blind shaft bore). When the bottom
+face has such a blind recess, the main view moves left and a smaller view from below, labelled "underside", sits on
+the right. RENDER_TAG names this rendering; stored thumbnails made by an older one are re-rendered on the next request.
 """
 
 from __future__ import annotations
@@ -28,12 +32,19 @@ BASE_RGB = np.array([0.60, 0.615, 0.635])  # mid-grey plastic
 EDGE_RGB = (34, 36, 40)
 AZIMUTH_DEG = -50.0  # camera position angle in the XY plane, from +X towards +Y
 ELEVATION_DEG = 32.0
+UNDERSIDE_ELEVATION_DEG = -40.0
+RENDER_TAG = "r2"  # bump when the picture changes: cache keys carry it (registry and template thumbnails)
+RECESS_MIN_MM2 = 6.0  # a blind opening on the bottom face at least this big earns the underside view (a 3 mm bore: 7)
+RECESS_DEPTH_MM = 0.3  # deeper than this above the bottom face counts as a recess
+MAIN_SHARE = 0.68  # width of the main view when the underside view is shown
+LABEL_RGB = (120, 122, 130)  # mid grey: reads on light and dark pages
 _MAX_FRAGMENTS = 3_000_000  # fragments per vectorised chunk (bounded memory)
 
 
-def _camera() -> tuple[FloatArray, FloatArray, FloatArray]:
-    """Orthographic camera basis (right, up, forward) in the CAD frame (Z up)."""
-    az, el = np.radians(AZIMUTH_DEG), np.radians(ELEVATION_DEG)
+def _camera(elevation_deg: float = ELEVATION_DEG) -> tuple[FloatArray, FloatArray, FloatArray]:
+    """Orthographic camera basis (right, up, forward) in the CAD frame (Z up). A negative elevation looks up from
+    below, Z still up on screen."""
+    az, el = np.radians(AZIMUTH_DEG), np.radians(elevation_deg)
     eye = np.array([np.cos(el) * np.cos(az), np.cos(el) * np.sin(az), np.sin(el)])
     fwd = -eye
     right = np.cross(fwd, np.array([0.0, 0.0, 1.0]))
@@ -144,14 +155,59 @@ def _mesh(view: Mapping[str, Any]) -> tuple[FloatArray, npt.NDArray[np.int64], F
     return v, f, normals
 
 
+def underside_recess_mm2(view: Mapping[str, Any], mm_per_px: float = 0.25) -> float:
+    """Area (mm^2) of blind openings in the bottom face: seen straight from below, pixels inside the outline of the
+    bottom face where the surface lies higher than it. Through holes show no surface and do not count."""
+    verts, faces, _ = _mesh(view)
+    if len(faces) == 0:
+        return 0.0
+    lo, hi = verts[:, :2].min(axis=0), verts[:, :2].max(axis=0)
+    step = max(mm_per_px, float(np.max(hi - lo)) / 512.0)
+    w, h = (int(np.ceil(x)) + 3 for x in (hi - lo) / step)
+    xy = (verts[:, :2] - lo) / step + 1.0
+    tri_id, zbuf, _, _ = _rasterize(xy[faces], verts[:, 2][faces], w, h)
+    covered = tri_id >= 0
+    bottom = covered & (zbuf <= float(verts[:, 2].min()) + RECESS_DEPTH_MM)
+    _, labels = cv2.connectedComponents((~bottom).astype(np.uint8), connectivity=4)
+    outside = set(np.unique(np.concatenate([labels[0], labels[-1], labels[:, 0], labels[:, -1]])).tolist())
+    inside = ~bottom & ~np.isin(labels, list(outside))
+    return float((inside & covered).sum() * step * step)
+
+
 def render_rgba(view: Mapping[str, Any], width: int, height: int, *, supersample: int = 2) -> npt.NDArray[np.uint8]:
-    """Render `view.json` to an RGBA uint8 image (transparent background)."""
+    """Render `view.json` to an RGBA uint8 image (transparent background), with the underside view when the bottom
+    face has a blind opening a view from above cannot show."""
+    ss = max(1, int(supersample))
+    W, H = width * ss, height * ss
+    if underside_recess_mm2(view) < RECESS_MIN_MM2:
+        img = _render(view, W, H, ELEVATION_DEG)
+    else:
+        img = np.zeros((H, W, 4), np.uint8)
+        wm = round(W * MAIN_SHARE)
+        img[:, :wm] = _render(view, wm, H, ELEVATION_DEG)
+        wi, hi = W - wm, round(H * 0.52)
+        y0 = (H - hi) // 2 + round(H * 0.04)
+        img[y0 : y0 + hi, wm:] = _render(view, wi, hi, UNDERSIDE_ELEVATION_DEG)
+        _label(img, "underside", wm + wi // 2, y0)
+    if ss > 1:
+        img = _downsample(img, width, height)
+    return img
+
+
+def _label(img: npt.NDArray[np.uint8], text: str, cx: int, y_bottom: int) -> None:
+    font, scale = cv2.FONT_HERSHEY_SIMPLEX, img.shape[0] / 900
+    thick = max(1, round(img.shape[0] / 400))
+    (tw, th), _ = cv2.getTextSize(text, font, scale, thick)
+    cv2.putText(img, text, (cx - tw // 2, max(th + 2, y_bottom - th // 2)), font, scale, (*LABEL_RGB, 255), thick,
+                cv2.LINE_AA)  # fmt: skip
+
+
+def _render(view: Mapping[str, Any], W: int, H: int, elevation_deg: float) -> npt.NDArray[np.uint8]:
+    """One shaded view at full (supersampled) resolution."""
     verts, faces, vnormals = _mesh(view)
     if len(faces) == 0:
         raise ValueError("view.json has no triangles")
-    ss = max(1, int(supersample))
-    W, H = width * ss, height * ss
-    right, up, fwd = _camera()
+    right, up, fwd = _camera(elevation_deg)
     sx, sy, sz = verts @ right, verts @ up, verts @ fwd
     lo = np.array([sx.min(), sy.min()])
     hi = np.array([sx.max(), sy.max()])
@@ -180,7 +236,8 @@ def render_rgba(view: Mapping[str, Any], width: int, height: int, *, supersample
     n /= np.maximum(np.linalg.norm(n, axis=1, keepdims=True), 1e-12)
     n[(n @ fwd) > 0] *= -1.0
     intensity = np.full(len(n), 0.30)
-    for direction, weight in _lights(right, up, fwd):
+    # seen from below, light from below too, so the bottom face (where the hidden feature opens) is the lit one
+    for direction, weight in _lights(right, up if elevation_deg >= 0 else -up, fwd):
         intensity += weight * np.clip(n @ direction, 0.0, 1.0)
     # gentle depth cue: nearer surfaces slightly brighter
     z = zbuf[covered]
@@ -193,8 +250,6 @@ def render_rgba(view: Mapping[str, Any], width: int, height: int, *, supersample
     img[covered, 3] = 255
 
     _draw_edges(img, view, right, up, fwd, centre, scale, zbuf, extent)
-    if ss > 1:
-        img = _downsample(img, width, height)
     return img
 
 

@@ -1,5 +1,5 @@
 import pytest
-from partsmith_schemas.verification import ParamSpec
+from partsmith_schemas.verification import FeatureResidual, ParamSpec
 
 from services.agent import guards, lessons
 
@@ -132,3 +132,58 @@ def test_flexible_and_organic_objects_are_refused_with_plain_reasons():
     # rigid parts that merely mention nearby things are not refused
     for ok in ("battery cover of my kid's toy car", "the knob is sealed"):
         assert guards.refused_class(ok) is None, ok
+
+
+# ---- pinned knobs: a passing measured size is not traded away unless the round's evidence points at it ------------
+HOOK_MAP = {"length": "length", "width": "width", "hole_1.diameter": "hole_d", "side.thickness": "reach"}
+
+
+def _res(fid: str, q: str, measured: float, model: float, tol: float = 0.3) -> FeatureResidual:
+    d = model - measured
+    return FeatureResidual(feature_id=fid, quantity=q, measured_mm=measured, model_mm=model, delta_mm=d, tol_mm=tol,
+                           passed=abs(d) <= tol)  # fmt: skip
+
+
+# the recorded wall hook's round-5 residuals (j_261029_5e9d54d1): length passes, hole_2's position does not
+HOOK_RESIDUALS = [
+    _res("outline", "length", 49.829, 49.809),
+    _res("outline", "width", 22.272, 22.459),
+    _res("hole_1", "diameter", 3.91, 3.854, 0.15),
+    _res("hole_2", "center_x", -8.957, -9.848),
+    _res("side", "thickness", 39.751, 39.931),
+]
+
+
+def test_knobs_whose_measured_size_passes_are_pinned_unless_evidence_points_at_them():
+    pins = guards.pinned_knobs(HOOK_RESIDUALS, HOOK_MAP)
+    assert set(pins) == {"length", "width", "hole_d", "reach"}
+    assert pins["length"] == guards.Pin("length", 49.829, 49.809, 0.3)
+    assert pins["hole_d"].quantity == "hole 1 diameter"
+    # the worst spot of a failing view inside a knob's template region is evidence for that knob
+    assert "reach" not in guards.pinned_knobs(HOOK_RESIDUALS, HOOK_MAP, pointed=["reach"])
+    # a failing size is evidence too: that knob is not pinned at all
+    failing = [_res("outline", "length", 49.829, 53.01), *HOOK_RESIDUALS[1:]]
+    assert "length" not in guards.pinned_knobs(failing, HOOK_MAP)
+    # every size a knob controls must pass (a wheel's diameter sets both length and width)
+    wheel = {"length": "diameter", "width": "diameter"}
+    assert "diameter" not in guards.pinned_knobs(
+        [_res("outline", "length", 62, 62.1), _res("outline", "width", 62, 62.5)], wheel
+    )
+
+
+def test_a_pinned_length_is_not_shortened_out_of_its_tolerance():
+    specs = [_spec("length", 60.0, 36.0, 120.0), _spec("tip_length", 14.0, 3.0, 40.0)]
+    values = {"length": 44.8, "tip_length": 14.0}
+    pins = guards.pinned_knobs(HOOK_RESIDUALS, HOOK_MAP)
+    g = guards.guard_edits(
+        [{"param": "length", "to": 42.8}, {"param": "tip_length", "to": 13.0}], specs, values, pinned=pins
+    )
+    assert [e.param for e in g.applied] == ["tip_length"]  # only the pinned knob's edit is refused
+    assert g.rejected[0].startswith("length: pinned — its size test passes (model 49.81 mm vs measured length 49.83")
+    assert "nothing in this round's evidence points at it" in g.rejected[0]
+    # a move that keeps the size inside its tolerance is harmless and allowed
+    g2 = guards.guard_edits([{"param": "length", "to": 45.0}], specs, values, pinned=pins)
+    assert [(e.param, e.to) for e in g2.applied] == [("length", 45.0)]
+    # without pins (a reviewer round, or a failing size) the same edit goes through, step-capped as before
+    g3 = guards.guard_edits([{"param": "length", "to": 42.8}], specs, values)
+    assert [(e.param, e.to) for e in g3.applied] == [("length", 42.8)]

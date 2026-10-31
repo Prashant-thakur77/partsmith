@@ -29,7 +29,8 @@ function DemoPlaceholder() {
       </div>
       <div className="grid grid-cols-1 md:h-[456px] md:grid-cols-[minmax(0,1fr)_268px]">
         <div className="aspect-[4/3] bg-[var(--viewer-bg)] bg-dots md:aspect-auto md:h-full" />
-        <div className="space-y-4 border-t border-border p-4 md:border-t-0 md:border-l">
+        {/* a phone stacks the knob list under the viewer: keep the loaded list's height so the swap never moves the page */}
+        <div className="min-h-[540px] space-y-4 border-t border-border p-4 md:min-h-0 md:border-t-0 md:border-l">
           {[0, 1, 2, 3].map((i) => (
             <Skeleton key={i} className="h-14" />
           ))}

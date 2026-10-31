@@ -8,7 +8,10 @@ The fixer and the voice editor propose parameter edits; these checks decide what
   so one bad proposal cannot throw away a model that nearly fits;
 * edits that scale every outline dimension by the same factor are refused: rescaling the whole part to force a fit
   hides the real error (change the knob that is actually wrong);
-* knobs the user set (`locked`: a length the user stated because the photo cannot show it) are never moved.
+* knobs the user set (`locked`: a length the user stated because the photo cannot show it) are never moved;
+* a knob that is pinned by a measured value whose size test already passes (`pinned`) is not moved out of that test's
+  tolerance unless the round's evidence points at it (see `pinned_knobs`): shortening a plate that already matches its
+  measured length to chase another view's gap trades one passing test for a worse outline.
 """
 
 from __future__ import annotations
@@ -20,7 +23,7 @@ from collections.abc import Iterable, Mapping, Sequence
 from dataclasses import dataclass, field
 from typing import Any
 
-from partsmith_schemas.verification import ParamSpec
+from partsmith_schemas.verification import FeatureResidual, ParamSpec
 
 MAX_REL_DELTA = 0.20
 MAX_ABS_DELTA_MM = 2.0
@@ -32,6 +35,7 @@ RESCALE_MIN_PARAMS = 2
 RESCALE_REL_TOL = 0.01  # factors within 1 % of each other count as "the same scale"
 RESCALE_MIN_CHANGE = 0.01  # ... and they must actually change the size by more than 1 %
 OUTLINE_KEYS = ("length", "width")  # MEASURE_MAP keys that describe the outline's size
+STALL_ROUNDS = 2  # fix rounds in a row that leave the keep rule's shortfall where it was: the fix rounds stop
 
 
 @dataclass
@@ -58,6 +62,52 @@ class GuardResult:
         for e in self.applied:
             out[e.param] = e.to
         return out
+
+
+@dataclass(frozen=True)
+class Pin:
+    """A knob whose own measured size passes: the measured value, the model's value and the test tolerance (mm)."""
+
+    quantity: str
+    measured_mm: float
+    model_mm: float
+    tol_mm: float
+
+    def keeps_passing(self, move: float) -> bool:
+        """True when moving the knob by `move` (mm) still leaves the model's size within tolerance (a knob of the
+        measure map moves its size one to one)."""
+        return abs(self.model_mm + move - self.measured_mm) <= self.tol_mm + 1e-9
+
+
+def pinned_knobs(
+    residuals: Iterable[FeatureResidual], measure_map: Mapping[str, str], *, pointed: Iterable[str] = ()
+) -> dict[str, Pin]:
+    """Knobs a fixer may not move out of tolerance this round: every measured size the measure map ties to the knob
+    passes its test, and nothing in the round's evidence points at the knob. Evidence is a failing residual mapped to
+    the knob (it is then not pinned at all) or `pointed`: knobs whose template region holds the worst spot of a
+    failing view."""
+    rows: dict[str, list[FeatureResidual]] = {}
+    for r in residuals:
+        knob = residual_param(r.feature_id, r.quantity, measure_map)
+        if knob is not None:
+            rows.setdefault(knob, []).append(r)
+    skip = set(pointed)
+    out: dict[str, Pin] = {}
+    for knob, rs in rows.items():
+        if knob in skip or not all(r.passed for r in rs):
+            continue
+        r = max(rs, key=lambda x: abs(x.delta_mm) / max(x.tol_mm, 1e-9))  # the tightest of its sizes
+        label = f"{r.feature_id} {r.quantity}" if r.feature_id not in ("outline", "plate") else r.quantity
+        out[knob] = Pin(label.replace("_", " "), float(r.measured_mm), float(r.model_mm), float(r.tol_mm))
+    return out
+
+
+def pinned_reason(name: str, pin: Pin, to: float) -> str:
+    return (
+        f"{name}: pinned — its size test passes (model {pin.model_mm:.2f} mm vs measured {pin.quantity} "
+        f"{pin.measured_mm:.2f} ± {pin.tol_mm:g} mm) and nothing in this round's evidence points at it; {to:g} would "
+        "break that test. Change the knob that shapes the failing region instead"
+    )
 
 
 def closest_names(name: str, names: Iterable[str], n: int = 3) -> list[str]:
@@ -134,9 +184,11 @@ def guard_edits(
     cap_deltas: bool = True,
     residual_deltas: Mapping[str, float] | None = None,
     locked: Mapping[str, str] | None = None,
+    pinned: Mapping[str, Pin] | None = None,
 ) -> GuardResult:
     """Apply the guards to raw `{"param", "to", "reason"}` proposals. `current` holds the values in force now;
-    `locked` maps knobs nobody may move to the reason (e.g. "stated by the user")."""
+    `locked` maps knobs nobody may move to the reason (e.g. "stated by the user"); `pinned` holds knobs whose passing
+    size test may not be broken this round (`pinned_knobs`)."""
     by_name = {s.name: s for s in specs}
     res = GuardResult()
     if is_rescale(edits, current, outline_params, residual_deltas):
@@ -183,6 +235,10 @@ def guard_edits(
             notes.append(f"clamped to {spec.min:g}..{spec.max:g} {spec.unit}".rstrip())
         if math.isclose(value, cur, abs_tol=1e-9):
             res.rejected.append(f"{name}: already {cur:g}" + (f" ({'; '.join(notes)})" if notes else ""))
+            continue
+        pin = (pinned or {}).get(name)
+        if pin is not None and not spec.topology and not pin.keeps_passing(value - cur):
+            res.rejected.append(pinned_reason(name, pin, value))
             continue
         seen.add(name)
         reason = str(e.get("reason", "")).strip()

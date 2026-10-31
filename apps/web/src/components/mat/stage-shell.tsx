@@ -72,6 +72,7 @@ export function StageShell({
   tips = true,
   calibrateNext,
   phonePath,
+  gateExtra,
 }: {
   exitHref: string;
   title: string;
@@ -81,6 +82,8 @@ export function StageShell({
   calibrateNext: string;
   /** Page the phone should open (shown as a QR code from the toolbar). */
   phonePath?: string;
+  /** Extra content under the calibration gate's buttons (e.g. a link to a labelled example). */
+  gateExtra?: React.ReactNode;
 }) {
   const router = useRouter();
   const { t } = useT();
@@ -137,6 +140,7 @@ export function StageShell({
               <Link href={exitHref}>{t("mat.back")}</Link>
             </Button>
           </div>
+          {gateExtra}
         </div>
       </div>
     );

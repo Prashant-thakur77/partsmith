@@ -6,6 +6,7 @@ import { ErrorState } from "@/components/ui/error-state";
 import { Skeleton } from "@/components/ui/skeleton";
 import { budgetBar, pct, type AdminOverview } from "@/lib/api-admin";
 import { fmtMm, fmtUsd, timeAgo, titleCase } from "@/lib/format";
+import { passRateText, RUN_WORDS } from "@/lib/page-groups";
 import { cn } from "@/lib/utils";
 import { adminApi } from "./api";
 import { Bars, Panel, Stat } from "./bits";
@@ -58,14 +59,14 @@ export function OverviewTab() {
       <p className="flex flex-wrap items-center gap-2 text-[12px] text-muted">
         {o.mode !== "live" ? <Badge tone="mock">Providers: {o.mode}</Badge> : <Badge tone="ok">Providers: live</Badge>}
         <span>
-          Counted {timeAgo(o.generated_at)}. Job numbers leave out the {o.jobs.replays_excluded} recorded run{o.jobs.replays_excluded === 1 ? "" : "s"} (replays); the review queue lists them, counted apart.
+          Counted {timeAgo(o.generated_at)}. Job numbers count runs {RUN_WORDS.madeHere} and leave out the {o.jobs.replays_excluded} {RUN_WORDS.recorded} run{o.jobs.replays_excluded === 1 ? "" : "s"} (replays); the review queue lists them, counted apart.
         </span>
       </p>
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
         <Stat
           label="Pass rate"
           value={pct(o.jobs.pass_rate)}
-          sub={`${o.jobs.verified} verified of ${o.jobs.finished} finished · ${o.jobs.total} fix jobs. Counts jobs run on this server, not the bench's fixed test photos on /results.`}
+          sub={`${passRateText(o.jobs.verified, o.jobs.finished)} · ${o.jobs.total} ${RUN_WORDS.madeHere}. Counts runs made on this server, not the bench's fixed test photos on /results.`}
           source={o.jobs.source}
         />
         <Stat

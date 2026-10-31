@@ -92,7 +92,8 @@ def part_buy_or_print(slug: str) -> dict[str, Any]:
             flags = _provenance(src, stored)
     if lookup is None:
         notes.append("no stored lookup for this part: open its job's card to look up the original")
-    card = bop.build_card(title=part.title, status=st, facts=part.facts, lookup=lookup, slug=part.slug, notes=notes)
+    facts = P.facts(part) if part.facts is not None else None
+    card = bop.build_card(title=part.title, status=st, facts=facts, lookup=lookup, slug=part.slug, notes=notes)
     return _card_json(card.model_copy(update=flags))
 
 

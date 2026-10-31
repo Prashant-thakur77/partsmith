@@ -135,6 +135,20 @@ def test_cards_detail_thumbnails_and_lineage() -> None:
     assert P.part_detail(parent, reg)["lineage"][0]["relation"] == "variant_of"
 
 
+def test_thumbnails_from_an_older_renderer_are_re_rendered_on_the_next_request() -> None:
+    part = add_part("knob", "knob-old-thumb")
+    reg = get_registry()
+    u1, _ = P.ensure_thumbnail(part)
+    t = reg.thumbnail(part.slug)
+    assert t is not None
+    old = str(t["params_sha"]).split(":")[0]  # what the previous renderer stored (no renderer tag)
+    reg.set_thumbnail(part.slug, code_sha=part.code_sha, params_sha=old, key_1x=t["key_1x"], key_2x=t["key_2x"])
+    assert P.thumbnail_urls(part.slug, reg)[0] == "/api/v1/parts/knob-old-thumb/thumbnail.png"  # the lazy route
+    assert P.part_card(part, reg, reg.thumbnails())["thumbnail_url"].endswith("/thumbnail.png")
+    assert P.ensure_thumbnail(part) == (u1, P.thumbnail_urls(part.slug, reg)[1])  # re-rendered (same picture here)
+    assert P.thumbnail_urls(part.slug, reg)[0] == u1
+
+
 def test_after_publish_fills_facts() -> None:
     part = add_part("spacer", "spacer-x")
     assert part.facts is None
@@ -142,6 +156,20 @@ def test_after_publish_fills_facts() -> None:
     stored = get_registry().get_part("spacer-x")
     assert stored is not None and stored.facts is not None and stored.facts.mass_g_pla > 0
     assert get_registry().thumbnail("spacer-x") is not None
+
+
+def test_stored_supports_needed_from_older_rules_is_rederived_on_read() -> None:
+    """A caster published under the older supports rules says "needed" (its bottom tread fillet); the part page, the
+    bundle and the buy-or-print card read the facts the current rules give, without rewriting the record."""
+    part = add_part("caster_wheel", "caster-stale")
+    P.after_publish(part)
+    stored = get_registry().get_part("caster-stale")
+    assert stored is not None and stored.facts is not None and not stored.facts.supports_needed
+    stale = stored.model_copy(update={"facts": stored.facts.model_copy(update={"supports_needed": True})})
+    get_registry().upsert_part(stale)
+    assert P.facts(stale) is not None and not P.facts(stale).supports_needed
+    assert P.part_detail(stale)["facts"]["supports_needed"] is False
+    assert get_registry().get_part("caster-stale").facts.supports_needed  # not rewritten
 
 
 FREE_CODE = [  # the knobs of a free-code (extruded outline) program

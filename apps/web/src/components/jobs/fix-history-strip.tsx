@@ -11,7 +11,7 @@ import { CircleCheck, CircleDashed, CircleX, ImageOff, TriangleAlert } from "luc
 import * as React from "react";
 import { artifactUrl } from "@/lib/api";
 import type { JobEvent } from "@/lib/api-types";
-import { editsText, keepReason, roundsFromEvents, sizeSetsMaxError, type FixRound, type RoundVerdict } from "@/lib/fix-rounds";
+import { editsText, keepLine, keepReason, roundsFromEvents, sizeSetsMaxError, type FixRound, type RoundVerdict } from "@/lib/fix-rounds";
 import { fmtErr, fmtNum } from "@/lib/format";
 import { cn } from "@/lib/utils";
 
@@ -56,6 +56,7 @@ export function FixHistoryStrip({ events, className }: { events: JobEvent[]; cla
   const selected = s.rounds.find((r) => r.iter === sel) ?? null;
   const kept = s.rounds.find((r) => r.iter === s.keptIter) ?? null;
   const why = keepReason(s.rounds, s.keptIter);
+  const line = keepLine(s.rounds, s.keptIter);
   const later = kept && kept.iter !== s.rounds.at(-1)!.iter ? keptNote(kept, s.rounds) : "";
   return (
     <section aria-labelledby={titleId} className={cn("min-w-0 max-w-full rounded-lg border border-border bg-surface p-3", className)}>
@@ -68,14 +69,18 @@ export function FixHistoryStrip({ events, className }: { events: JobEvent[]; cla
           {s.limitMm != null ? <span className="ml-2 font-mono text-[11px] font-normal text-subtle tnum">limit {fmtNum(s.limitMm)} mm</span> : null}
         </p>
       </div>
-      {why || later ? (
+      {why && line ? (
+        <div className="mb-2 rounded-md border border-border bg-surface-2 px-2.5 py-1.5 text-[12px] leading-5 text-muted" data-testid="keep-reason">
+          <p className="font-medium text-fg">{line}</p>
+          <details className="group">
+            <summary className="cursor-pointer text-[11.5px] text-subtle hover:text-fg">How the keep rule decides</summary>
+            <p className="mt-1">
+              {why} {later}
+            </p>
+          </details>
+        </div>
+      ) : later ? (
         <p className="mb-2 rounded-md border border-border bg-surface-2 px-2.5 py-1.5 text-[12px] leading-5 text-muted" data-testid="keep-reason">
-          {why ? (
-            <>
-              <span className="font-medium text-fg">Why this round is kept: </span>
-              {why}{" "}
-            </>
-          ) : null}
           {later}
         </p>
       ) : null}

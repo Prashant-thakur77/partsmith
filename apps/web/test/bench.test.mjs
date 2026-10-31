@@ -2,7 +2,7 @@
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import test from "node:test";
-import { benchHeadline, benchSentence, benchVerified, columnLabel, configLabel, plainBench } from "../src/lib/bench.ts";
+import { benchHeadline, benchSentence, benchVerified, columnLabel, configLabel, passVsVerifiedNote, plainBench } from "../src/lib/bench.ts";
 
 const REPORT = JSON.parse(readFileSync(new URL("../../../eval/reports/latest/report.json", import.meta.url), "utf8"));
 
@@ -33,8 +33,17 @@ test("the plain sentence is built from the headline's own numbers", () => {
 
 test("column ids get plain headers; unknown ids stay readable", () => {
   assert.equal(columnLabel("median_abs_err_mm"), "Median size error (mm)");
-  assert.equal(columnLabel("pass@0.8"), "Passed 0.8 mm");
+  assert.equal(columnLabel("pass@0.8"), "All sizes within 0.8 mm of truth");
+  assert.equal(columnLabel("pass@0.5"), "All sizes within 0.5 mm of truth");
   assert.equal(columnLabel("weird_thing_mm"), "weird thing (mm)");
+});
+
+test("a table with both a size-pass column and Verified explains why they differ", () => {
+  const note = passVsVerifiedNote(REPORT.tables.synthetic.columns);
+  assert.match(note, /^“All sizes within 0\.5 mm of truth” compares every measured size/);
+  assert.match(note, /also needs the outline to match the photo and the part tests to pass/);
+  assert.equal(passVsVerifiedNote(["config", "verified_rate"]), null);
+  assert.equal(passVsVerifiedNote(["config", "pass@0.5"]), null);
 });
 
 test("the verified count comes from the headline's verified_rate and n (same cases as the median)", () => {

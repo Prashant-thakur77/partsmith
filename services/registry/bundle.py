@@ -145,7 +145,7 @@ def readme(part: PartRecord, values: Mapping[str, float], decision: ShipDecision
         lines.append("No dimension of this part was compared with a photo; every value comes from the program.")
     if v is not None and v.reasons:
         lines += ["", "Verifier notes:", *[f"- {r}" for r in v.reasons[:6]]]
-    f = part.facts
+    f = P.facts(part) if part.facts is not None else None
     lines += ["", "## How to print"]
     if f is not None:
         lines += [

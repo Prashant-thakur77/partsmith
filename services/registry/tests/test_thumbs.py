@@ -61,3 +61,30 @@ def test_store_pair_puts_png_blobs() -> None:
     k1, k2 = thumbs.store_pair(_box_view())
     assert k1.endswith(".png") and k2.endswith(".png") and k1 != k2
     assert blobs.get(k1)[:8] == b"\x89PNG\r\n\x1a\n"
+
+
+def _template_view(name: str, params: dict[str, float] | None = None) -> dict[str, object]:
+    import json
+
+    from services.registry.examples import bake_template
+
+    out = bake_template(name, params or {}, ("view",))
+    return dict(json.loads(out.files["view"].read_text()))
+
+
+def test_a_blind_bore_on_the_underside_gets_an_underside_view() -> None:
+    # the registry's smooth knob (no flutes): from above it is a plain cylinder; its D-bore opens only underneath
+    knob = _template_view("knob", {"height": 15.8, "flat_depth": 0.75, "grip_count": 0, "top_fillet": 0.7})
+    assert thumbs.underside_recess_mm2(knob) > thumbs.RECESS_MIN_MM2
+    a = np.asarray(Image.open(io.BytesIO(thumbs.render_pair(knob)[0])))
+    alpha = a[..., 3]
+    split = round(640 * thumbs.MAIN_SHARE)
+    assert (alpha[:, split + 4 :] > 0).mean() > 0.03  # the underside view fills part of the right column
+    assert (alpha[:, :split] > 0).mean() > 0.2  # the main view stays on the left
+    # a through bore shows from above already: a spacer keeps the single view
+    spacer = _template_view("spacer")
+    assert thumbs.underside_recess_mm2(spacer) < thumbs.RECESS_MIN_MM2
+    s = np.asarray(Image.open(io.BytesIO(thumbs.render_pair(spacer)[0])))[..., 3]
+    _, xs = np.nonzero(s > 0)
+    assert abs(xs.min() - (639 - xs.max())) <= 3  # centred, no side view
+    assert thumbs.underside_recess_mm2(_box_view()) == 0.0
