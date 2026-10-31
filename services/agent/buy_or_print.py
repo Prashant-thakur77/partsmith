@@ -19,7 +19,7 @@ from partsmith_schemas.commerce import Material
 
 from services.agent import providers
 from services.agent.jobs import Job
-from services.geom_worker.bake import DENSITY_G_CM3, FACT_NOTES
+from services.geom_worker.bake import DENSITY_G_CM3, FACT_NOTES, FACTS_RULE
 
 CARD_FILE = "buy_or_print.json"
 # Assumed retail price of a 1 kg filament spool (assumptions for the estimate, not quotes; change them here).
@@ -140,22 +140,31 @@ def build_card(
 # ------------------------------------------------------------------------------------------------- jobs
 
 
+FACTS_RULE_FILE = "facts_rule.json"  # {"rule": FACTS_RULE} next to facts.json: the rules those facts were made under
+
+
 def job_facts(job: Job) -> PartFacts | None:
+    """The job's printing facts. Facts stored under older rules that say supports are needed (the cut-off before 45 deg
+    chamfers were allowed) are re-derived from a bake of the job's program (a cache hit refreshes from the cached STL); a recorded
+    replay is never rewritten on disk."""
     raw = job.read_json("facts.json")
-    if raw:
-        return PartFacts.model_validate(raw)
+    stored = PartFacts.model_validate(raw) if raw else None
+    current = (job.read_json(FACTS_RULE_FILE) or {}).get("rule") == FACTS_RULE
+    if stored is not None and (current or not stored.supports_needed):  # the rule change only ever cleared supports
+        return stored
     code = job.read_text("part.py")
     if not code:
-        return None
+        return stored
     from services.geom_worker.bake import BakeError, bake
 
     try:
         bo = bake(code, {k: float(v) for k, v in (job.read_json("values.json") or {}).items()}, ("stl",))
     except (BakeError, ValueError):
-        return None
-    if bo.facts is not None:
+        return stored
+    if bo.facts is not None and not job.summary.is_replay:
         job.write_json("facts.json", bo.facts)
-    return bo.facts
+        job.write_json(FACTS_RULE_FILE, {"rule": FACTS_RULE})
+    return bo.facts or stored
 
 
 def job_title(job: Job) -> tuple[str, str | None]:

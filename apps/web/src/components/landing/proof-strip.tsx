@@ -2,24 +2,26 @@
 
 /**
  * Three big numbers, each with where it came from: the synthetic and reference-object bench headlines (as eval/ wrote
- * them) and the lying-model attacks code blocked. A table that has not run says so instead of showing a number.
+ * them, each with how many of the same cases passed verification) and the lying-model attacks code blocked. A table
+ * that has not run says so instead of showing a number.
  */
 import { useQuery } from "@tanstack/react-query";
 import { ArrowUpRight } from "lucide-react";
 import Link from "next/link";
 import { api } from "@/lib/api";
 import type { BenchReport } from "@/lib/api-types";
-import { benchHeadline, gtLabel } from "@/lib/bench";
+import { benchHeadline, benchVerified, gtLabel } from "@/lib/bench";
 import { cn } from "@/lib/utils";
 import { CountUp } from "../ui/count-up";
 import { Skeleton } from "../ui/skeleton";
 
-type Cell = { key: string; label: string; value: string | null; source: string; href: string; pending?: string };
+type Cell = { key: string; label: string; value: string | null; source: string; href: string; pending?: string; passed?: string };
 
 export function proofCells(b: BenchReport | undefined): Cell[] {
   const cell = (key: "synthetic" | "reference_objects", label: string, noun: string): Cell => {
     const t = b?.tables[key];
     const head = t ? benchHeadline(t) : null;
+    const ver = benchVerified(t);
     return {
       key,
       label,
@@ -27,6 +29,7 @@ export function proofCells(b: BenchReport | undefined): Cell[] {
       source: t && head ? `bench · ${t.n} ${noun} · ground truth: ${gtLabel(t.ground_truth)}` : `bench · ${noun}`,
       href: `/results#${key}`,
       pending: t?.status === "pending" || !head ? "not run yet" : undefined,
+      passed: ver ? `${ver.passed} of ${ver.n} passed verification (all checks within limits)` : undefined,
     };
   };
   const by = b?.evidence?.bypass;
@@ -52,7 +55,10 @@ export function ProofStrip({ bench: initial }: { bench?: BenchReport | null }) {
       <dl className="grid grid-cols-1 overflow-hidden rounded-xl border border-border bg-surface md:grid-cols-3 md:divide-x md:divide-border">
         {cells.map((c, i) => (
           <div key={c.key} data-reveal style={{ "--reveal-i": i } as React.CSSProperties} className={cn("group relative flex flex-col gap-3 p-6 sm:p-7", i > 0 && "border-t border-border md:border-t-0")}>
-            <dt className="order-2 text-[14px] leading-5 font-medium text-fg">{c.label}</dt>
+            <dt className="order-2 text-[14px] leading-5 font-medium text-fg">
+              {c.label}
+              {c.passed && c.value ? <span className="mt-1 block text-[13px] font-normal text-muted">{c.passed}</span> : null}
+            </dt>
             <dd className="order-1 font-mono text-[44px] leading-none font-medium tracking-[-0.04em] text-fg sm:text-[56px]">
               {q.isPending ? <Skeleton className="h-12 w-40" /> : c.value ? <CountUp text={c.value} unitClassName="ml-1 text-[0.42em] tracking-normal text-muted" /> : <span className="text-[20px] tracking-normal text-subtle">{c.pending ?? "—"}</span>}
             </dd>

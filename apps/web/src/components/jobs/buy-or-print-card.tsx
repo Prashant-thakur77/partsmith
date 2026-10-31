@@ -134,6 +134,7 @@ function CardBody({
         {/* buy side: cited only */}
         <div className="space-y-2 border-t border-border pt-3">
           <h3 className="text-[13px] font-semibold">{t("bop.buy")}</h3>
+          {oem || offers.length ? <p className="text-[11.5px] text-muted">{t("bop.nameMatch")}</p> : null}
 
           {oem ? (
             <div className="space-y-0.5 text-[12.5px]">

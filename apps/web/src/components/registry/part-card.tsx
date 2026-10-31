@@ -57,6 +57,11 @@ export function PartCard({ part, className }: { part: PartCardT; className?: str
           <PartStatusBadge status={part.status} maxErrorMm={part.max_error_mm} />
           <OriginBadge origin={part.origin} hideReal />
         </div>
+        {part.status === "best_effort" && part.status_reason ? (
+          <p className="line-clamp-2 text-[12px] leading-4 text-warn" title={part.status_reason}>
+            Why: {part.status_reason}
+          </p>
+        ) : null}
         {part.reason ? <p className="line-clamp-2 text-[12px] leading-4 text-muted">{part.reason}</p> : null}
         <div className="mt-auto flex items-center gap-3 pt-1 text-[12px] text-subtle">
           <span className="inline-flex items-center gap-1">

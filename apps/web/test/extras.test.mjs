@@ -121,3 +121,12 @@ test("hidden sizes from the /fix form: blank rows dropped, bad numbers named, ot
   assert.equal(hiddenStatusText("used_not_checked"), "used, not checked from the photo");
   assert.equal(hiddenStatusText("pending"), "checked once the verdict is in");
 });
+
+test("run modes come from the run's own model_call events: a live run with a mock judge is mixed", async () => {
+  const { runModes, runModesText } = await import("../src/lib/job-cost.ts");
+  const m = runModes([{ mode: "live" }, { mode: "live" }, { mode: "mock" }]);
+  assert.equal(m.mode, "mixed");
+  assert.equal(runModesText(m), "2 live · 1 mock calls");
+  assert.equal(runModes([{ mode: "replay" }]).mode, "replay");
+  assert.equal(runModes([]), null);
+});

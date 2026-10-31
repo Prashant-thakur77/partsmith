@@ -1,7 +1,7 @@
 "use client";
 
 import { useQuery } from "@tanstack/react-query";
-import { ArrowLeft, Download, History, ImageIcon, MapPin, MessageSquareText, ThumbsDown, ThumbsUp } from "lucide-react";
+import { ArrowLeft, Bot, Download, History, ImageIcon, MapPin, MessageSquareText, ThumbsDown, ThumbsUp } from "lucide-react";
 import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import * as React from "react";
@@ -15,6 +15,7 @@ import { REVIEW, review } from "@/lib/api-review";
 import type { FeedbackEntry } from "@/lib/api-types";
 import { useCapabilities } from "@/lib/capabilities";
 import { timeAgo, titleCase } from "@/lib/format";
+import { allTests, groupFeedback, type FeedbackBlock, type FeedbackRound } from "@/lib/page-groups";
 import { feedbackSummary, KIND_LABEL, OUTCOME_LABEL, outcomeTone, usedText } from "@/lib/review";
 import { cn } from "@/lib/utils";
 
@@ -43,7 +44,7 @@ function PinCrop({ photo, u, v, n }: { photo: string; u: number; v: number; n: n
   );
 }
 
-function Entry({ e }: { e: FeedbackEntry }) {
+function Entry({ e, testBadge }: { e: FeedbackEntry; testBadge: boolean }) {
   const Icon = KIND_ICON[e.kind];
   const used = usedText(e.used_in);
   const measured = e.before_mm != null && e.after_mm != null;
@@ -70,20 +71,20 @@ function Entry({ e }: { e: FeedbackEntry }) {
               gap {e.before_mm!.toFixed(2)} → {e.after_mm!.toFixed(2)} mm <span className="text-subtle">(limit {e.limit_mm.toFixed(2)})</span>
             </span>
           ) : null}
-          {e.by !== "person" ? <Badge tone="mock">test review, not a person</Badge> : null}
+          {testBadge && e.by !== "person" ? <Badge tone="mock">test review, not a person</Badge> : null}
         </div>
         <p className="text-[14px] leading-snug">
           <span className="text-subtle">What: </span>“{e.what}”
         </p>
-        <p className={cn("text-[13px] leading-snug", e.why ? "text-fg" : "text-subtle")}>
-          <span className="text-subtle">Why: </span>
-          {e.why ? `“${e.why}”` : "no reason given"}
-        </p>
+        {e.why ? (
+          <p className="text-[13px] leading-snug text-fg">
+            <span className="text-subtle">Why: </span>“{e.why}”
+          </p>
+        ) : null}
         <p className="flex flex-wrap gap-x-3 gap-y-0.5 text-[12px] text-muted">
           <Link href={`/review?job=${encodeURIComponent(e.job_id)}`} className="text-accent-text hover:underline">
-            {(e.title || e.job_id).replace(/\s*·\s*review round \d+$/, "")} · round {e.round}
+            Round {e.round} in the review queue
           </Link>
-          {e.family ? <span>{titleCase(e.family)}</span> : null}
           {e.at ? <span>{timeAgo(e.at)}</span> : null}
           {e.next_job ? (
             <Link href={`/jobs/${encodeURIComponent(e.next_job)}`} className="font-mono hover:underline">
@@ -93,6 +94,76 @@ function Entry({ e }: { e: FeedbackEntry }) {
         </p>
         {used ? <p className="text-[12px] text-muted">{used}</p> : null}
       </div>
+    </li>
+  );
+}
+
+/** Each round's measured gap before → after as bars against the limit (all numbers from the verifier, via the log). */
+function GapTrack({ rounds, limit }: { rounds: FeedbackRound[]; limit: number }) {
+  const measured = rounds.filter((r) => r.before_mm != null || r.after_mm != null);
+  if (!measured.length) return <p className="text-[12px] text-subtle">No gap was measured for these rounds.</p>;
+  const top = Math.max(limit * 1.25, ...measured.flatMap((r) => [r.before_mm ?? 0, r.after_mm ?? 0]));
+  const pct = (v: number) => `${Math.max(2, (v / top) * 100)}%`;
+  const bar = (v: number | null, kind: "before" | "after") =>
+    v == null ? (
+      <span className="text-[11px] text-subtle">not measured</span>
+    ) : (
+      <span className="flex min-w-0 flex-1 items-center gap-2">
+        <span className="relative h-2 min-w-0 flex-1 rounded-full bg-border">
+          <span className={cn("absolute inset-y-0 left-0 rounded-full", v <= limit ? "bg-ok" : kind === "before" ? "bg-warn" : "bg-accent")} style={{ width: pct(v) }} />
+          <span className="absolute -inset-y-0.5 w-px bg-ok" style={{ left: pct(limit) }} aria-hidden />
+        </span>
+        <span className="w-16 shrink-0 text-right font-mono text-[11.5px] tnum">{v.toFixed(2)} mm</span>
+      </span>
+    );
+  return (
+    <div className="space-y-1.5" role="group" aria-label={`Gap before and after each round, limit ${limit.toFixed(2)} mm`}>
+      {measured.map((r) => (
+        <div key={r.round} className="grid grid-cols-[4.5rem_minmax(0,1fr)] items-center gap-x-2 gap-y-1 text-[11.5px] sm:grid-cols-[4.5rem_minmax(0,1fr)_minmax(0,1fr)]">
+          <span className="text-muted">Round {r.round}</span>
+          <span className="flex min-w-0 items-center gap-1.5">
+            <span className="w-10 shrink-0 text-subtle">before</span>
+            {bar(r.before_mm, "before")}
+          </span>
+          <span className="col-start-2 flex min-w-0 items-center gap-1.5 sm:col-start-auto">
+            <span className="w-10 shrink-0 text-subtle">after</span>
+            {bar(r.after_mm, "after")}
+          </span>
+        </div>
+      ))}
+      <p className="text-[11px] text-subtle">
+        Worst gap of the reviewed model (before) and of the model the feedback produced (after), measured by code. Green line: the {limit.toFixed(2)} mm limit.
+      </p>
+    </div>
+  );
+}
+
+/** One part's review chain: its rounds in order, the gap track, then each piece of feedback. */
+function Block({ b, testBadges }: { b: FeedbackBlock<FeedbackEntry>; testBadges: boolean }) {
+  const reasons = b.entries.filter((e) => e.why).length;
+  const id = `fb-${b.root.replace(/\W+/g, "-")}`;
+  return (
+    <li className="space-y-3 rounded-xl border border-border bg-surface p-4" aria-labelledby={id}>
+      <div className="flex flex-wrap items-baseline justify-between gap-2">
+        <h2 id={id} className="text-[15px] font-semibold">
+          <Link href={`/review?job=${encodeURIComponent(b.root)}`} className="hover:underline">
+            {b.title}
+          </Link>
+        </h2>
+        <p className="flex flex-wrap gap-x-2 text-[12px] text-muted tnum">
+          {b.family ? <span>{titleCase(b.family)}</span> : null}
+          <span>
+            {b.rounds.length} round{b.rounds.length === 1 ? "" : "s"} · {b.entries.length} piece{b.entries.length === 1 ? "" : "s"} of feedback
+          </span>
+          <span>{reasons ? `${reasons} with a reason` : "no reason given"}</span>
+        </p>
+      </div>
+      <GapTrack rounds={b.rounds} limit={b.limit_mm} />
+      <ol className="space-y-2" aria-label={`Feedback on ${b.title}, by round`}>
+        {b.entries.map((e) => (
+          <Entry key={e.id} e={e} testBadge={testBadges} />
+        ))}
+      </ol>
     </li>
   );
 }
@@ -191,11 +262,21 @@ export function FeedbackLogClient() {
                 {family || outcome || by ? "Clear a filter to see more." : "Send a part back from the review queue and it shows up here, with the result of the next round."}
               </EmptyState>
             ) : (
-              <ol className="space-y-2" aria-label="Feedback, newest first">
-                {log.data.items.map((e) => (
-                  <Entry key={e.id} e={e} />
-                ))}
-              </ol>
+              <>
+                {allTests(log.data.items) ? (
+                  <div role="note" className="flex items-start gap-2 rounded-lg border border-dashed border-border-strong bg-surface-2 px-3 py-2 text-[12.5px] text-muted">
+                    <Bot className="mt-0.5 size-4 shrink-0" aria-hidden />
+                    <span>
+                      <span className="font-medium text-fg">Every entry below is a test review, not a person.</span> A script played the reviewer to exercise the review loop.
+                    </span>
+                  </div>
+                ) : null}
+                <ol className="space-y-4" aria-label="Feedback by part, newest first">
+                  {groupFeedback(log.data.items).map((b) => (
+                    <Block key={b.root} b={b} testBadges={!allTests(log.data.items)} />
+                  ))}
+                </ol>
+              </>
             )}
           </>
         )}

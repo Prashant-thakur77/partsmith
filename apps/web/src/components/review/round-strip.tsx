@@ -11,7 +11,8 @@ const DECISION_WORD: Record<string, string> = { accept: "accepted", improve: "se
 export function RoundStrip({ rounds, className }: { rounds: ReviewRound[]; className?: string }) {
   if (rounds.length < 2) return null;
   return (
-    <ol aria-label="Rounds so far" className={cn("scrollbar-thin flex items-stretch gap-1 overflow-x-auto pb-1", className)}>
+    // focusable so keyboard users can scroll it when the rounds overflow on a phone
+    <ol aria-label="Rounds so far" tabIndex={0} className={cn("scrollbar-thin flex items-stretch gap-1 overflow-x-auto pb-1", className)}>
       {rounds.map((r, i) => {
         const last = i === rounds.length - 1;
         const v = r.verdict;

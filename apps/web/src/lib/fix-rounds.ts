@@ -195,6 +195,15 @@ export function roundsFromEvents(events: readonly JobEvent[]): RoundsSummary {
   return { rounds, final, keptIter, limitMm, headline: headline(rounds, final, keptIter) };
 }
 
+/**
+ * True when a round's max error comes from a measured size (a hole, a length …) rather than the outline: `max_error_mm`
+ * is the worst of the silhouette gaps and the size residuals, so it can be larger than every view's Hausdorff.
+ */
+export function sizeSetsMaxError(r: Pick<FixRound, "maxErrorMm" | "hausdorffMm" | "views">): boolean {
+  const gaps = [r.hausdorffMm, ...r.views.map((v) => v.hausdorffMm)].filter((x): x is number => x != null);
+  return r.maxErrorMm != null && gaps.length > 0 && r.maxErrorMm - Math.max(...gaps) > 0.005;
+}
+
 /** The round the finished job shipped: matched by the `done` event's trace context, else by its max error, else the last. */
 export function keptRound(rounds: readonly FixRound[], doneCtx: string, doneMaxMm: number | null): number | null {
   if (rounds.length === 0) return null;

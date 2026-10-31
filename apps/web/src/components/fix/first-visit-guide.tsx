@@ -7,6 +7,9 @@ import { cn } from "@/lib/utils";
 import { Button } from "../ui/button";
 
 export const GUIDE_KEY = "partsmith.fix-guide.dismissed.v1";
+/** `<html data-fix-guide="hidden">` is set before first paint by GUIDE_SCRIPT so the server can render both states. */
+const GUIDE_ATTR = "fixGuide";
+const GUIDE_SCRIPT = `try{if(localStorage.getItem(${JSON.stringify(GUIDE_KEY)})==="1")document.documentElement.dataset.${GUIDE_ATTR}="hidden"}catch(e){}`;
 
 function readDismissed(): boolean {
   try {
@@ -23,6 +26,8 @@ function writeDismissed(v: boolean): void {
   } catch {
     /* storage blocked: the choice lasts for this page view */
   }
+  if (v) document.documentElement.dataset[GUIDE_ATTR] = "hidden";
+  else delete document.documentElement.dataset[GUIDE_ATTR];
 }
 
 /** Step 1: hold a bank card against the screen and match the on-screen outline (sets the screen's mm scale). */
@@ -93,6 +98,9 @@ const STEPS = [
 /**
  * First visit to /fix: three illustrated steps, dismissed once and remembered on this device (localStorage, guarded:
  * blocked storage just shows it again). Always offers the way out for people with no part in hand: /describe.
+ *
+ * No layout shift: before hydration both states are in the HTML and a tiny inline script flags `<html>` from
+ * localStorage before first paint, so CSS shows the right one; after hydration React renders only that one.
  */
 export function FirstVisitGuide({ className }: { className?: string }) {
   const [dismissed, setDismissed] = React.useState<boolean | null>(null);
@@ -106,19 +114,16 @@ export function FirstVisitGuide({ className }: { className?: string }) {
       No part in hand? Describe it <ArrowRight className="size-3.5" aria-hidden />
     </Link>
   );
-  if (dismissed === null) return <div className={cn("min-h-6", className)} aria-hidden />;
-  if (dismissed) {
-    return (
-      <div className={cn("flex flex-wrap items-center justify-between gap-3", className)}>
+  const collapsed = (extra?: string) => (
+      <div className={cn("flex flex-wrap items-center justify-between gap-3", extra, className)}>
         <button type="button" onClick={() => set(false)} className="inline-flex items-center gap-1.5 text-[13px] text-muted hover:text-fg">
           <BookOpen className="size-3.5" aria-hidden /> Show the 3-step guide
         </button>
         {describe}
       </div>
-    );
-  }
-  return (
-    <section aria-labelledby="fix-guide-title" className={cn("rounded-xl border border-border bg-surface p-4 sm:p-5", className)}>
+  );
+  const full = (extra?: string) => (
+    <section aria-labelledby="fix-guide-title" className={cn("rounded-xl border border-border bg-surface p-4 sm:p-5", extra, className)}>
       <div className="flex items-start justify-between gap-3">
         <div className="space-y-0.5">
           <h2 id="fix-guide-title" className="text-[16px] font-semibold tracking-tight">
@@ -159,4 +164,14 @@ export function FirstVisitGuide({ className }: { className?: string }) {
       </div>
     </section>
   );
+  if (dismissed === null) {
+    return (
+      <>
+        <script dangerouslySetInnerHTML={{ __html: GUIDE_SCRIPT }} />
+        {full("[html[data-fix-guide=hidden]_&]:hidden")}
+        {collapsed("[html:not([data-fix-guide=hidden])_&]:hidden")}
+      </>
+    );
+  }
+  return dismissed ? collapsed() : full();
 }

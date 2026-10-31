@@ -1,0 +1,106 @@
+// Unit tests for list shaping: lessons grouping, the jobs summary and filters, the feedback log by part, local origins.
+import assert from "node:assert/strict";
+import test from "node:test";
+import {
+  allTests,
+  filterJobs,
+  groupFeedback,
+  groupLessons,
+  groupLinks,
+  isLocalOrigin,
+  jobBucket,
+  jobsSummary,
+  jobsSummaryText,
+  knobMoves,
+  lessonKey,
+  median,
+  parseJobFilter,
+} from "../src/lib/page-groups.ts";
+
+test("local origins are the ones a phone cannot open", () => {
+  for (const o of ["http://127.0.0.1:3766", "http://localhost:3000", "http://[::1]:3000", "http://0.0.0.0:80", "http://app.localhost"]) assert.equal(isLocalOrigin(o), true, o);
+  for (const o of ["https://partsmith.example", "http://192.168.1.20:3000", "not a url"]) assert.equal(isLocalOrigin(o), false, o);
+});
+
+const link = (id) => ({ kind: "job", id, page: `/jobs/${id}` });
+const lesson = (id, over = {}) => ({ id, scope: "cover", rule: `rule ${id}`, status: "candidate", created_at: 0, evidence: {}, links: [link(`j_${id}`)], ...over });
+
+test("lessons on the same template knob or with the same text share one card, newest wording first", () => {
+  const list = [
+    lesson("a", { created_at: 1, rule: "corner_radius: 1 → 1.9", evidence: { template: "battery_cover", param: "corner_radius", first: 1, final: 1.9 } }),
+    lesson("b", { created_at: 3, rule: "corner_radius: 1 → 2.4", evidence: { template: "battery_cover", param: "corner_radius", first: 1, final: 2.4 } }),
+    lesson("c", { created_at: 2, rule: "Same  words" }),
+    lesson("d", { created_at: 4, rule: "same words", links: [link("j_c"), link("j_d")] }),
+    lesson("e", { created_at: 5, rule: "corner_radius: 1 → 2.4", status: "rejected", evidence: { template: "battery_cover", param: "corner_radius" } }),
+    lesson("f", { created_at: 6, scope: "hook", rule: "hook rule" }),
+  ];
+  assert.notEqual(lessonKey(list[0]), lessonKey(list[4]), "status splits groups");
+  const fams = groupLessons(list);
+  assert.deepEqual(fams.map((f) => [f.scope, f.lessons, f.groups.length]), [["cover", 5, 3], ["hook", 1, 1]]);
+  const [words, knob] = fams[0].groups; // equal sizes: the group with the newer lead comes first
+  assert.equal(fams[0].groups[2].lead.id, "e");
+  assert.deepEqual(knob.members.map((m) => m.id), ["b", "a"]);
+  assert.equal(knob.lead.id, "b");
+  assert.deepEqual(knobMoves(knob.members), ["1 → 2.4", "1 → 1.9"]);
+  assert.deepEqual(words.members.map((m) => m.id), ["d", "c"]);
+  assert.deepEqual(groupLinks(words.members).map((l) => l.id), ["j_c", "j_d"], "links are not repeated");
+});
+
+const job = (status, verified, max_error_mm, over = {}) => ({ status, verified, max_error_mm, is_replay: false, origin: "synthetic", ...over });
+
+test("the jobs summary and filters come from the list itself", () => {
+  const list = [
+    job("done", true, 0.3),
+    job("done", true, 0.1, { is_replay: true }),
+    job("done", false, 2.0),
+    job("failed", false, null),
+    job("running", false, null, { origin: "replay" }),
+    job("cancelled", false, 9.0),
+  ];
+  assert.deepEqual(list.map(jobBucket), ["verified", "verified", "best_effort", "failed", "in_progress", "failed"]);
+  const s = jobsSummary(list);
+  assert.equal(s.n, 6);
+  assert.equal(s.verified, 2);
+  assert.deepEqual(s.source, { recorded: 2, server: 4 });
+  assert.equal(s.gapN, 3, "only finished jobs with a gap count");
+  assert.equal(s.medianMaxGapMm, 0.3);
+  assert.equal(jobsSummaryText(s), "2 of 6 verified · median max gap 0.30 mm (3 finished jobs)");
+  assert.equal(jobsSummaryText(jobsSummary([job("failed", false, null)])), "0 of 1 verified");
+  assert.deepEqual(parseJobFilter("verified", "nope"), { status: "verified", source: null });
+  assert.deepEqual(parseJobFilter("bogus", "recorded"), { status: null, source: "recorded" });
+  assert.equal(filterJobs(list, { status: "verified", source: "server" }).length, 1);
+  assert.equal(filterJobs(list, { status: null, source: "recorded" }).length, 2);
+  assert.equal(median([3, 1, 2, 4]), 2.5);
+  assert.equal(median([]), null);
+});
+
+const fb = (id, root, round, over = {}) => ({ id, root_job: root, round, title: `Latch · review round ${round}`, family: "latch", by: "test", before_mm: null, after_mm: null, limit_mm: 0.5, at: round, ...over });
+
+test("feedback groups into one block per part with its rounds in order", () => {
+  const items = [
+    fb("x3", "r1", 3, { before_mm: 0.4, after_mm: 0.3, at: 30 }),
+    fb("y1", "r2", 1, { at: 50 }),
+    fb("x1", "r1", 1, { before_mm: 0.9, at: 10 }),
+    fb("x1b", "r1", 1, { after_mm: 0.6, at: 11 }),
+  ];
+  const blocks = groupFeedback(items);
+  assert.deepEqual(blocks.map((b) => b.root), ["r2", "r1"], "newest activity first");
+  const r1 = blocks[1];
+  assert.equal(r1.title, "Latch");
+  assert.deepEqual(r1.entries.map((e) => e.id), ["x1", "x1b", "x3"]);
+  assert.deepEqual(r1.rounds, [
+    { round: 1, before_mm: 0.9, after_mm: 0.6 },
+    { round: 3, before_mm: 0.4, after_mm: 0.3 },
+  ]);
+  assert.equal(allTests(items), true);
+  assert.equal(allTests([...items, fb("p", "r3", 1, { by: "person" })]), false);
+  assert.equal(allTests([]), false);
+});
+
+test("feedback rounds prefer the verifier's verdicts over a pin's local gap", () => {
+  const [b] = groupFeedback([
+    fb("p1", "r", 1, { before_mm: 3.2, after_mm: 0.05, verdict: { max_error_mm: 3.68 }, next_verdict: { max_error_mm: 1.15 } }),
+    fb("p2", "r", 1, { before_mm: 2.85, after_mm: 0.25, verdict: { max_error_mm: 3.68 }, next_verdict: { max_error_mm: 1.15 } }),
+  ]);
+  assert.deepEqual(b.rounds, [{ round: 1, before_mm: 3.68, after_mm: 1.15 }]);
+});

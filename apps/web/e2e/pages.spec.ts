@@ -39,7 +39,7 @@ const PAGES: PageCase[] = [
   { name: "workspace-best-effort", path: "/jobs/job_best", ready: async (p) => { await expect(p.getByRole("button", { name: "Export" })).toBeVisible(); } },
   { name: "how", path: "/how", ready: async (p) => { await expect(p.getByRole("heading", { name: "From a phone photo to a part you can print", level: 1 })).toBeVisible(); } },
   { name: "agents", path: "/agents", ready: async (p) => { await expect(p.getByRole("heading", { name: "Connect over MCP" })).toBeVisible(); } },
-  { name: "judges", path: "/judges", ready: async (p) => { await expect(p.getByRole("button", { name: "Play" })).toBeVisible(); } },
+  { name: "judges", path: "/judges", ready: async (p) => { await expect(p.getByRole("button", { name: /^(Play|Pause|Replay again)$/ })).toBeVisible(); } },
   { name: "not-found", path: "/definitely-not-here", ready: async (p) => { await expect(p.getByRole("heading", { name: /doesn.t exist/ })).toBeVisible(); } },
   { name: "home-offline", path: "/", opts: { offline: true }, ready: async (p) => { await expect(p.getByText("The PartSmith API is offline").first()).toBeVisible(); } },
   { name: "parts-empty", path: "/parts?q=zzz", opts: { emptyRegistry: true }, ready: async (p) => { await expect(p.getByRole("button", { name: "Request this part" })).toBeVisible(); } },

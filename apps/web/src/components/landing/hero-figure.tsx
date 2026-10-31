@@ -77,6 +77,13 @@ export function HeroFigure({ sheet }: { sheet: { n: number; of: number } }) {
       : "Fig. 1: the screen mat with a generic part; no stored run on this server.";
   const fade = reduced ? "duration-[120ms]" : "duration-[var(--dur-hero-step)]";
 
+  const cells = {
+    part: { k: "Fig. 1 · part", v: title ?? "—", w: 1.3 },
+    source: { k: "Source", v: fig ? `recorded run · ${fig.origin}` : "—", w: 1.9 },
+    scale: { k: "Scale", v: "1:1", w: 0.6 },
+    tolerance: { k: "Tolerance", v: lim != null ? `±${fmtNum(lim)} mm` : "—", w: 1 },
+    sheet: { k: "Sheet", v: `${sheet.n} / ${sheet.of}`, w: 0.7 },
+  };
   return (
     <figure className="relative">
       <div className="relative">
@@ -144,16 +151,12 @@ export function HeroFigure({ sheet }: { sheet: { n: number; of: number } }) {
 
       <figcaption className="mt-4 space-y-2.5">
         {state === "error" ? <ErrorState error={replays.error ?? job.error} compact what="the recorded run" onRetry={() => void (replays.isError ? replays.refetch() : job.refetch())} /> : null}
-        <TitleBlock
-          className="rounded-md"
-          cells={[
-            { k: "Fig. 1 · part", v: title ?? "—", w: 1.3 },
-            { k: "Source", v: fig ? `recorded run · ${fig.origin}` : "—", w: 1.9 },
-            { k: "Scale", v: "1:1", w: 0.6 },
-            { k: "Tolerance", v: lim != null ? `±${fmtNum(lim)} mm` : "—", w: 1 },
-            { k: "Sheet", v: `${sheet.n} / ${sheet.of}`, w: 0.7 },
-          ]}
-        />
+        {/* phones: the five cells in two rows so none is cut off; wider screens: one row */}
+        <div className="sm:hidden">
+          <TitleBlock className="rounded-t-md" cells={[cells.part, { ...cells.source, w: 1.7 }]} />
+          <TitleBlock className="-mt-px rounded-b-md" cells={[cells.scale, cells.tolerance, cells.sheet]} />
+        </div>
+        <TitleBlock className="hidden rounded-md sm:grid" cells={[cells.part, cells.source, cells.scale, cells.tolerance, cells.sheet]} />
         <div className="flex flex-wrap items-center justify-between gap-2 text-[12px]">
           <div className="inline-flex rounded-md border border-border bg-surface p-0.5" role="group" aria-label="Figure view">
             {(["drawing", "model"] as const).map((v) => {

@@ -297,6 +297,13 @@ def read_events(path: Path) -> Iterator[Event]:
                 yield EVENT_ADAPTER.validate_json(line)
 
 
+def say_synthetic_once(title: str) -> str:
+    """Older runs were titled "Spacer (synthetic, clean) (synthetic sample)": drop the trailing "(synthetic sample)"
+    when the title already says synthetic (new runs are titled that way from the start)."""
+    head, sep, _ = title.rpartition(" (synthetic sample)")
+    return head if sep and title.endswith(sep) and "synthetic" in head.lower() else title
+
+
 def load_job(run_dir: Path, *, is_replay: bool = False) -> Job:
     """Rebuild a finished (or interrupted) job from disk. Interrupted jobs are marked failed — they cannot resume a thread."""
     events = list(read_events(run_dir / "run.jsonl"))
@@ -313,6 +320,8 @@ def load_job(run_dir: Path, *, is_replay: bool = False) -> Job:
     if is_replay:
         summary.is_replay = True
         summary.origin = DataOrigin.replay if summary.origin == DataOrigin.real else summary.origin
+    if summary.title:
+        summary.title = say_synthetic_once(summary.title)
     if summary.status not in TERMINAL:
         summary.status = "failed"
     return Job(summary, job_input, run_dir, events=events)

@@ -70,7 +70,11 @@ export function LoopRing({
         {cur ? fmtNum(cur.mm) : "—"}
       </text>
       <text x={C} y={C + 20} textAnchor="middle" fontSize="11" fill="var(--fg-muted)" className="font-mono">
-        mm · round {cur?.iter ?? "—"} of {rounds.at(-1)?.iter ?? "—"}
+        mm
+      </text>
+      {/* above the largest gauge circle (r ≤ 104) and below the "photo" station, so it never crosses a ring */}
+      <text x={C} y={C - 108} textAnchor="middle" fontSize="11" fill="var(--fg-muted)" className="font-mono">
+        round {cur?.iter ?? "—"} of {rounds.at(-1)?.iter ?? "—"}
       </text>
 
     </svg>

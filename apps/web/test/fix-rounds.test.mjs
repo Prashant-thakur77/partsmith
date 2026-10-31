@@ -3,7 +3,7 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import test from "node:test";
 import { EventSchema } from "../src/lib/api-types.ts";
-import { editsText, headline, keptRound, parseViews, roundsFromEvents, verdictFromLabel } from "../src/lib/fix-rounds.ts";
+import { editsText, headline, keptRound, parseViews, roundsFromEvents, sizeSetsMaxError, verdictFromLabel } from "../src/lib/fix-rounds.ts";
 
 const REPLAYS = new URL("../../../data/replays/", import.meta.url);
 // replays are found by their demo sample (data/replays/seed_index.json), so a re-seed with new job ids keeps working
@@ -130,4 +130,12 @@ test("free-code rounds that rewrite the program are named, and set_params fills 
   const s = roundsFromEvents(events);
   assert.equal(editsText(s.rounds[0]), "program rewritten (free code)");
   assert.equal(editsText(s.rounds[1]), "width 30.00→24.60 mm");
+});
+
+test("a round's max error can come from a measured size, larger than every outline gap", () => {
+  const views = [{ view: "top", hausdorffMm: 0.17, withinLimit: true }, { view: "side", hausdorffMm: 0.08, withinLimit: true }];
+  assert.equal(sizeSetsMaxError({ maxErrorMm: 0.252, hausdorffMm: 0.168, views }), true);
+  assert.equal(sizeSetsMaxError({ maxErrorMm: 0.17, hausdorffMm: 0.168, views }), false);
+  assert.equal(sizeSetsMaxError({ maxErrorMm: null, hausdorffMm: 0.168, views }), false);
+  assert.equal(sizeSetsMaxError({ maxErrorMm: 0.3, hausdorffMm: null, views: [] }), false);
 });

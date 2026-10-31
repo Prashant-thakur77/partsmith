@@ -117,13 +117,13 @@ def build_server(*, allow_paths: bool = False, read_only: bool | None = None) ->
 
     @server.tool(annotations=READ_ONLY)
     def search_parts(
-        q: Annotated[str, Field(description="What you need, with sizes if known, e.g. 'cable clip 8 mm'")] = "",
+        q: Annotated[str, Field(description="What you need, with sizes if known, e.g. 'wall hook 66 mm'")] = "",
         family: Annotated[str | None, Field(description="Family filter, e.g. knob, hook, cable_clip, wheel")] = None,
         verified: Annotated[bool | None, Field(description="Only verified (true) or only unverified (false)")] = None,
         limit: Annotated[int, Field(ge=1, le=50)] = 10,
     ) -> dict[str, Any]:
         """Search the PartSmith registry. Numbers in the query boost parts with a matching default dimension.
-        Example: search_parts(q="caster wheel 50 mm"). Returns {items: [card + coverage], total, coverage, match,
+        Example: search_parts(q="caster wheel 62 mm"). Returns {items: [card + coverage], total, coverage, match,
         hint}. `coverage` (0-1) is the share of your words and numbers the best part matches (numbers within
         max(10 %, 0.5 mm) of a part dimension); `match` is good | partial | none ("all" for an empty query).
         match="none" means nothing close exists: say so and offer report_need instead of substituting an unrelated

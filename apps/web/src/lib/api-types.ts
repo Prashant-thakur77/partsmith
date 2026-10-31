@@ -549,6 +549,8 @@ export const JobDetailSchema = z.object({
   partspec: z.nullish(PartSpecSchema),
   measurements: z._default(z.record(z.string(), MeasurementsSchema), {}),
   verification: z.nullish(VerificationSchema),
+  /** Newer APIs: one short line naming the check that kept a best-effort result from passing (from its verification record). */
+  status_reason: z.catch(z.nullish(z.string()), null),
   code: z.nullish(z.string()),
   params: z._default(z.array(ParamSpecSchema), []),
   values: z._default(z.record(z.string(), num), {}),
@@ -642,6 +644,8 @@ export const PartCardSchema = z.object({
   status: PartStatusSchema,
   origin: DataOriginSchema,
   max_error_mm: z.nullish(num),
+  /** Newer APIs: one short line naming the check that kept a best-effort result from passing (from its verification record). */
+  status_reason: z.catch(z.nullish(z.string()), null),
   thumbnail_url: z.nullish(z.string()),
   params_count: z._default(z.int(), 0),
   topology_knobs: z._default(z.array(z.string()), []),
@@ -717,6 +721,8 @@ export const PartRecordSchema = z.object({
   fit_reports: z._default(z.array(z.record(z.string(), z.unknown())), []),
   origin: z.optional(DataOriginSchema),
   verified: z.optional(z.boolean()),
+  /** Newer APIs: one short line naming the check that kept a best-effort result from passing (from its verification record). */
+  status_reason: z.catch(z.nullish(z.string()), null),
   ship: z.optional(ShipDecisionSchema),
   passport: z.optional(PassportLinkSchema),
   /** Set when an admin took the part out of search ({reason, by, at}); the page still opens by its link. */
@@ -1319,6 +1325,9 @@ export const FeedbackEntrySchema = z.object({
   limit_mm: z.catch(z._default(num, 0.5), 0.5),
   outcome: z.catch(FeedbackOutcomeSchema, "not_measured"),
   next_job: z.catch(z.nullish(z.string()), null),
+  /** The verifier's verdict on the round that was reviewed and on the round it started (worst gap of each model). */
+  verdict: z.catch(z.nullish(ReviewVerdictSchema), null),
+  next_verdict: z.catch(z.nullish(ReviewVerdictSchema), null),
   used_in: z.catch(
     z._default(z.object({ jobs: count, accepted: count, improved: count, rejected: count }), { jobs: 0, accepted: 0, improved: 0, rejected: 0 }),
     { jobs: 0, accepted: 0, improved: 0, rejected: 0 },

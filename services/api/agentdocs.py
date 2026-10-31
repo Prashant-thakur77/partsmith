@@ -109,7 +109,7 @@ def prompt_txt(reg: Registry | None = None, *, base: str | None = None) -> str:
                 f"Registry: {stats['parts']} parts ({stats['verified']} verified). API: {b}/api/v1 · MCP: {b}/mcp.",
                 "",
                 "How to work:",
-                "1. Browse first: search_parts (or GET /api/v1/parts?q=...) with the object and its size, e.g. 'cable clip 8 mm'.",
+                "1. Browse first: search_parts (or GET /api/v1/parts?q=...) with the object and its size, e.g. 'wall hook 66 mm'.",
                 "2. Read the part: get_part gives the knobs (min/max/step), the verification record and printing facts.",
                 "3. Adapt with words or numbers: get_variant(slug, want='M4 hole, 2 mm taller'), then bake(slug, params).",
                 "   Report `applied` and `not_applied` back to the user; anything not applied did not happen.",

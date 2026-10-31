@@ -5,6 +5,9 @@ import test from "node:test";
 import { MeasuredSchema, NarrationRecordSchema, VerificationSchema } from "../src/lib/api-types.ts";
 import {
   NARRATION_NOTE,
+  isTestsSummaryReason,
+  testsPhrase,
+  verifiedScope,
   audioTypeFromName,
   boundText,
   isNarrated,
@@ -123,4 +126,25 @@ test("413 and 415 refusals name the upload the server refused", () => {
   assert.match(uploadRefusal(415, "orbit: use an MP4, MOV or WebM clip"), /^The walk-around clip is in a format/);
   assert.match(uploadRefusal(415, "side: not an image"), /^The side photo/);
   assert.equal(uploadRefusal(422, "x"), null);
+});
+
+test("verified scope counts knobs a test checked, only for a verified record that lists unchecked knobs", () => {
+  const params = ["outer_d", "height", "bore_d", "chamfer", "flat_count", "flat_depth"].map((name) => ({ name }));
+  const unchecked = [{ param: "chamfer" }, { param: "flat_depth" }];
+  assert.equal(verifiedScope({ verified: true, unchecked }, params), "Outline verified · 4 of 6 knobs measured");
+  assert.equal(verifiedScope({ verified: false, unchecked }, params), null);
+  assert.equal(verifiedScope({ verified: true, unchecked: [] }, params), null);
+  assert.equal(verifiedScope({ verified: true, unchecked: [{ param: "gone" }] }, params), null);
+  assert.equal(verifiedScope(null, params), null);
+});
+
+test("the tests phrase separates required tests from extra checks", () => {
+  const p0 = (passed) => ({ passed, priority: "P0" });
+  const p1 = (passed) => ({ passed, priority: "P1" });
+  assert.equal(testsPhrase([...Array(10)].map(() => p0(true)).concat([p1(true), p1(true), p1(false), p1(true)])), "all 10 required part tests passed, plus 4 extra checks (3 passed)");
+  assert.equal(testsPhrase([p0(true), p0(false)]), "1 of 2 required part tests passed");
+  assert.equal(testsPhrase([p0(true)]), "the required part test passed");
+  assert.equal(testsPhrase([]), null);
+  assert.ok(isTestsSummaryReason("Verified: all 10 P0 tests pass and every measured view is within tolerance."));
+  assert.ok(!isTestsSummaryReason("top view (photo frame): IoU 0.983"));
 });

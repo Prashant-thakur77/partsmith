@@ -14,6 +14,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { EmptyState } from "@/components/ui/empty-state";
+import { ExamplePreview } from "@/components/ui/example-preview";
 import { ErrorState } from "@/components/ui/error-state";
 import { Input, Label, Textarea } from "@/components/ui/input";
 import { ModeBadge } from "@/components/ui/provenance";
@@ -364,6 +365,68 @@ function NoFit({ rec }: { rec: DescribeRecord }) {
   );
 }
 
+const EXAMPLE_TEMPLATE = "spacer";
+const EXAMPLE_TEXT = EXAMPLES[1]!;
+const EXAMPLE_KNOBS = 6;
+
+/**
+ * Fills the empty result area before anything is described: the part program an example sentence would use, with its
+ * thumbnail and knobs at their defaults (from /templates). Labelled as a preview: nothing here was built from your text.
+ */
+function DescribeExample() {
+  const templates = useQuery({ queryKey: ["templates"], queryFn: productApi.templates, staleTime: 300_000 });
+  const t = templates.data?.find((x) => x.name === EXAMPLE_TEMPLATE) ?? templates.data?.[0];
+  if (templates.isError || (templates.data && !t)) return null;
+  return (
+    <ExamplePreview title="What a result looks like" kind="template at its defaults · not built from your text">
+      {!t ? (
+        <Skeleton className="h-48" />
+      ) : (
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-[220px_minmax(0,1fr)]">
+          <div className="flex aspect-square items-center justify-center overflow-hidden rounded-lg border border-border bg-[var(--viewer-bg)]">
+            {/* eslint-disable-next-line @next/next/no-img-element -- template thumbnail rendered by the API */}
+            <img src={artifactUrl(t.thumbnail_url)} alt={`${t.title} at its default values`} className="size-full object-contain p-3" loading="lazy" decoding="async" />
+          </div>
+          <div className="min-w-0 space-y-3">
+            <p className="text-[13px] text-muted">
+              You write: <span className="text-fg italic">“{EXAMPLE_TEXT}”</span>
+            </p>
+            <div className="space-y-1">
+              <div className="flex flex-wrap items-center gap-1.5">
+                <span className="text-[15px] font-semibold">{t.title}</span>
+                <Badge tone="outline">not verified: no photo</Badge>
+                <Badge tone="neutral" className="font-mono">
+                  {t.name}.py
+                </Badge>
+              </div>
+              <p className="text-[12.5px] text-muted">
+                A model picks this part program and sets its knobs from your numbers. Each knob is tagged: <Badge tone="ok">you said</Badge> for your numbers,{" "}
+                <Badge tone="neutral">default</Badge> for the rest. Code then measures every number you gave on the built model.
+              </p>
+            </div>
+            <dl className="grid grid-cols-1 gap-x-4 gap-y-1 text-[12.5px] sm:grid-cols-2">
+              {t.params.slice(0, EXAMPLE_KNOBS).map((p) => (
+                <div key={p.name} className="flex min-w-0 items-baseline justify-between gap-2 border-b border-border py-1">
+                  <dt className="truncate text-muted">{p.label || p.name}</dt>
+                  <dd className="shrink-0 font-mono tnum">
+                    {fmtNum(p.default, p.step >= 1 ? 0 : p.step >= 0.1 ? 1 : 2)}
+                    {p.unit ? ` ${p.unit === "deg" ? "°" : p.unit}` : ""} <span className="text-[11px] text-subtle">default</span>
+                  </dd>
+                </div>
+              ))}
+            </dl>
+            <Button asChild variant="outline" size="sm">
+              <Link href={`/describe?q=${encodeURIComponent(EXAMPLE_TEXT)}`} scroll={false}>
+                Use this sentence <ArrowRight aria-hidden />
+              </Link>
+            </Button>
+          </div>
+        </div>
+      )}
+    </ExamplePreview>
+  );
+}
+
 export function DescribeClient() {
   const caps = useCapabilities();
   const sp = useSearchParams();
@@ -393,7 +456,8 @@ export function DescribeClient() {
         compact={!!id}
       />
       <Container className="space-y-6 py-8">
-        {!id ? <DescribeForm initial={(sp.get("q") ?? "").slice(0, 500)} /> : null}
+        {!id ? <DescribeForm key={sp.get("q") ?? ""} initial={(sp.get("q") ?? "").slice(0, 500)} /> : null}
+        {!id ? <DescribeExample /> : null}
         {id && rec.isPending ? <Skeleton className="h-96" /> : null}
         {id && rec.isError ? <ErrorState error={rec.error} what="this description" onRetry={() => void rec.refetch()} /> : null}
         {r?.status === "needs_answers" ? <Questions key={r.id} rec={r} /> : null}

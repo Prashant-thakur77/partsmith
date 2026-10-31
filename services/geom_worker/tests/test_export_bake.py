@@ -7,7 +7,7 @@ import numpy as np
 import pytest
 import trimesh
 
-from services.geom_worker.bake import BakeError, bake, cache_key
+from services.geom_worker.bake import FACTS_RULE, BakeError, bake, cache_key
 from services.geom_worker.export import glb_bytes, vertex_normals
 from services.geom_worker.program import defaults
 from services.geom_worker.sandbox import WarmPool
@@ -92,3 +92,36 @@ def test_overhang_detects_supports(tmp_path: Path, pool: WarmPool) -> None:
     assert out.overhang_mm2["+Z"] == pytest.approx(0.0)  # bar face down: nothing overhangs
     assert out.facts.orientation[:2] in ("+Z", "-Y", "+Y")  # lying flat on its side also needs no support
     assert not out.facts.supports_needed
+
+
+CHAMFERED_TUBE = (
+    "import cadquery as cq\n"
+    "PARAMS = {'d': (7.0, 4.0, 30.0, 0.05, 'mm', True, 'Outer'), 'h': (12.0, 2.0, 60.0, 0.1, 'mm', True, 'Height')}\n"
+    "def build(p):\n"
+    "    t = cq.Workplane('XY').circle(p['d'] / 2).extrude(p['h'])\n"
+    "    t = t.cut(cq.Workplane('XY').workplane(offset=-1).circle(1.7).extrude(p['h'] + 2))\n"
+    "    return t.faces('>Z or <Z').edges().chamfer(0.4)\n"
+    "result = build({k: v[0] for k, v in PARAMS.items()})\n"
+)
+
+
+def test_upright_tube_with_45_deg_chamfers_needs_no_supports(tmp_path: Path, pool: WarmPool) -> None:
+    # A plain 7 x 12 mm spacer stands on its flat end; its 45 deg chamfers print without supports.
+    out = bake(CHAMFERED_TUBE, {}, ("stl",), pool=pool, root=tmp_path)
+    assert out.facts is not None and not out.facts.supports_needed
+    assert out.facts.orientation.startswith(("-Z", "+Z"))
+    assert out.overhang_mm2["-Z"] == pytest.approx(0.0, abs=0.5)
+
+
+def test_cached_facts_from_older_rules_are_recomputed(tmp_path: Path, pool: WarmPool) -> None:
+    import json
+
+    out = bake(CHAMFERED_TUBE, {}, ("stl",), pool=pool, root=tmp_path)
+    man = out.files["stl"].parent / "manifest.json"
+    m = json.loads(man.read_text())
+    m.pop("facts_rule")
+    m["facts"]["supports_needed"] = True  # what the old 45 deg cut-off said
+    man.write_text(json.dumps(m))
+    again = bake(CHAMFERED_TUBE, {}, ("stl",), pool=pool, root=tmp_path)
+    assert again.cache_hit and again.facts is not None and not again.facts.supports_needed
+    assert json.loads(man.read_text())["facts_rule"] == FACTS_RULE

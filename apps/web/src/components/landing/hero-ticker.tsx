@@ -1,28 +1,29 @@
 "use client";
 
 /**
- * A mono readout above the hero headline, built only from API numbers: runs on this server (`/stats`), stored runs
- * (`/replays`), the synthetic bench's median size error with its N (`/bench`, labelled synthetic) and the lying-model
- * attacks code blocked (bench evidence). An item is left out while its source is missing — never a placeholder number.
+ * A mono readout above the hero headline, built only from API numbers: the synthetic bench's median size error and,
+ * beside it, how many of the same cases passed verification (both `/bench`, labelled synthetic, with n), the runs
+ * stored on this server (`/stats`) and the lying-model attacks code blocked (bench evidence). An item is left out
+ * while its source is missing — never a placeholder number.
  */
 import { useQuery } from "@tanstack/react-query";
 import * as React from "react";
 import { api } from "@/lib/api";
 import type { BenchReport, Stats } from "@/lib/api-types";
-import { benchHeadline } from "@/lib/bench";
+import { benchHeadline, benchVerified } from "@/lib/bench";
 import { fmtInt } from "@/lib/format";
 import { CountUp } from "../ui/count-up";
-import { useReplays } from "./use-figure-run";
 
 type Item = { k: string; v: string; note?: string; href: string };
 
-export function tickerItems(stats?: Stats | null, bench?: BenchReport | null, replays?: number | null): Item[] {
+export function tickerItems(stats?: Stats | null, bench?: BenchReport | null): Item[] {
   const out: Item[] = [];
-  if (stats) out.push({ k: stats.jobs === 1 ? "run on this server" : "runs on this server", v: fmtInt(stats.jobs), href: "/jobs" });
-  if (replays != null) out.push({ k: "recorded runs", v: fmtInt(replays), href: "/judges" });
   const syn = bench?.tables.synthetic;
   const head = syn ? benchHeadline(syn) : null;
   if (syn && head && /median/.test(head.gt)) out.push({ k: "median size error", v: head.value, note: `n = ${head.n} · synthetic`, href: "/results#synthetic" });
+  const ver = benchVerified(syn);
+  if (ver) out.push({ k: "passed verification", v: `${ver.passed}/${ver.n}`, note: "same synthetic cases", href: "/results#synthetic" });
+  if (stats) out.push({ k: stats.jobs === 1 ? "run stored on this server" : "runs stored on this server", v: fmtInt(stats.jobs), href: "/jobs" });
   const by = bench?.evidence?.bypass;
   if (by) out.push({ k: "lying-model attacks blocked", v: `${by.blocked}/${by.attempts}`, note: "scripted", href: "/judges" });
   return out;
@@ -31,8 +32,7 @@ export function tickerItems(stats?: Stats | null, bench?: BenchReport | null, re
 export function HeroTicker({ stats: initialStats, bench: initialBench }: { stats?: Stats | null; bench?: BenchReport | null }) {
   const stats = useQuery({ queryKey: ["stats"], queryFn: api.stats, initialData: initialStats ?? undefined, initialDataUpdatedAt: 0, retry: false });
   const bench = useQuery({ queryKey: ["bench"], queryFn: api.bench, initialData: initialBench ?? undefined, initialDataUpdatedAt: 0, retry: false, staleTime: 300_000 });
-  const replays = useReplays();
-  const items = tickerItems(stats.data, bench.data, replays.data?.length ?? null);
+  const items = tickerItems(stats.data, bench.data);
   const live = stats.isSuccess;
   return (
     <div className="flex max-w-full items-stretch overflow-hidden rounded-md border border-border bg-surface/80 font-mono text-[11.5px] leading-none shadow-sm backdrop-blur-sm">

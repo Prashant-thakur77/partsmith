@@ -11,7 +11,7 @@ import { CircleCheck, CircleDashed, CircleX, ImageOff, TriangleAlert } from "luc
 import * as React from "react";
 import { artifactUrl } from "@/lib/api";
 import type { JobEvent } from "@/lib/api-types";
-import { editsText, roundsFromEvents, type FixRound, type RoundVerdict } from "@/lib/fix-rounds";
+import { editsText, roundsFromEvents, sizeSetsMaxError, type FixRound, type RoundVerdict } from "@/lib/fix-rounds";
 import { fmtNum } from "@/lib/format";
 import { cn } from "@/lib/utils";
 
@@ -111,8 +111,10 @@ export function FixHistoryStrip({ events, className }: { events: JobEvent[]; cla
                   {r.maxErrorMm != null ? `${fmtNum(r.maxErrorMm)} mm` : "—"}
                   <span className="ml-1 font-sans text-[10.5px] text-subtle">max error</span>
                 </span>
+                {sizeSetsMaxError(r) ? <span className="text-[11px] leading-4 text-muted">from a measured size; outline gaps:</span> : null}
                 {r.views.length ? (
                   <span className="flex flex-wrap gap-x-2 gap-y-0.5 font-mono text-[11px] tnum">
+                    {sizeSetsMaxError(r) ? null : <span className="font-sans text-subtle">outline gap</span>}
                     {r.views.map((w) => (
                       <span key={w.view} className={w.withinLimit == null ? "text-muted" : w.withinLimit ? "text-ok" : "text-bad"}>
                         {w.view} {w.hausdorffMm != null ? fmtNum(w.hausdorffMm) : "—"}
@@ -134,7 +136,7 @@ export function FixHistoryStrip({ events, className }: { events: JobEvent[]; cla
         {selected ? <RoundDetail r={selected} limit={s.limitMm} /> : (
           <p className="mt-1 text-[11.5px] text-subtle">
             {kept && kept.iter !== s.rounds.at(-1)!.iter ? `${keptNote(kept, s.rounds)} ` : ""}
-            Select a round to see its overlay. Per view: the biggest gap (Hausdorff) against the limit (✓ within, ✗ over); the verdict also needs the overlap (IoU) and the part tests.
+            Select a round to see its overlay. Max error is the worst of the outline gaps and the measured sizes; per view: the biggest outline gap (Hausdorff) against the limit (✓ within, ✗ over); the verdict also needs the overlap (IoU) and the part tests.
           </p>
         )}
       </div>

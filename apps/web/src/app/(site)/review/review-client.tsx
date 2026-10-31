@@ -28,7 +28,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Spinner } from "@/components/ui/spinner";
 import { toast } from "@/components/ui/toast";
 import { Switch } from "@/components/ui/toggle";
-import { api, request } from "@/lib/api";
+import { api, apiUrl, request } from "@/lib/api";
 import { REVIEW, review, type DecisionBody } from "@/lib/api-review";
 import { ReviewQueueSchema, type ArtifactEvent, type ReviewQueueItem, type ReviewVerdict } from "@/lib/api-types";
 import { useCapabilities } from "@/lib/capabilities";
@@ -377,6 +377,9 @@ function ReviewDetailPanel({ jobId, item, admin }: { jobId: string; item: Review
     [job.data?.events, artifacts],
   );
   const modelUrl = artifacts.view;
+  // Phones load 3D on tap: until then they see a shaded picture of the same model (when this API draws one).
+  const caps = useCapabilities();
+  const modelPoster = modelUrl && artifacts.stl && caps.has("get", "/jobs/{job_id}/model.png") ? apiUrl(`/jobs/${encodeURIComponent(jobId)}/model.png`) : null;
 
   const decide = useMutation({
     mutationFn: (body: DecisionBody) => review.decide(cur!.job_id, body),
@@ -512,7 +515,7 @@ function ReviewDetailPanel({ jobId, item, admin }: { jobId: string; item: Review
             Agent made <span className="font-normal text-muted">· the 3D model, drag to turn it</span>
           </h3>
           <div className="overflow-hidden rounded-lg border border-border bg-surface">
-            <CadViewer viewUrl={modelUrl} className="h-[380px] lg:h-[460px]" label="Model" emptyText="This round has no 3D model." />
+            <CadViewer viewUrl={modelUrl} poster={modelPoster} className="h-[380px] lg:h-[460px]" label="Model" emptyText="This round has no 3D model." />
           </div>
         </section>
       </div>

@@ -15,6 +15,7 @@ import { PartDetails } from "./part-details";
 import dynamic from "next/dynamic";
 import { useCapabilities } from "@/lib/capabilities";
 import { shipState } from "@/lib/ship";
+import { isTestsSummaryReason, testsPhrase, verifiedScope } from "@/lib/evidence-notes";
 
 // Below the first screen on phones and only useful after interaction: loaded after hydration.
 const ExportGateNotice = dynamic(() => import("@/components/export-gate").then((m) => m.ExportGateNotice), { ssr: false });
@@ -141,8 +142,8 @@ function FitFeedback({ slug, reports }: { slug: string; reports: number }) {
 
 function VerificationCard({ part }: { part: PartRecord }) {
   const v = part.verification;
-  const tests = v?.tests ?? [];
-  const passed = tests.filter((t) => t.passed).length;
+  const phrase = testsPhrase(v?.tests ?? []);
+  const reasons = (v?.reasons ?? []).filter((r) => !isTestsSummaryReason(r));
   const verUrl = artifactUrl(part.artifacts.verification);
   return (
     <Card>
@@ -157,11 +158,7 @@ function VerificationCard({ part }: { part: PartRecord }) {
               {v.verified ? "Verified" : v.status === "best_effort" ? "Best effort" : "Failed"} at{" "}
               <span className="font-mono text-fg tnum">{v.max_error_mm != null ? `${fmtNum(v.max_error_mm)} mm` : "—"}</span> max error vs the
               photo (limit <span className="font-mono tnum">{fmtNum(v.thresholds.hausdorff_mm)} mm</span>)
-              {tests.length ? (
-                <>
-                  {" "}· <span className="font-mono text-fg tnum">{passed}/{tests.length}</span> tests passed
-                </>
-              ) : null}
+              {phrase ? <> · {phrase}</> : null}
               {part.created_at ? <> · built {fmtDate(part.created_at)}</> : null}
               {part.provenance.photo_shas[0] ? (
                 <>
@@ -177,9 +174,10 @@ function VerificationCard({ part }: { part: PartRecord }) {
                 </Badge>
               ))}
             </div>
-            {v.reasons.length ? (
+            {part.status_reason ? <p className="text-[13px] text-fg">Why best effort: {part.status_reason}</p> : null}
+            {reasons.length ? (
               <ul className="list-disc space-y-0.5 pl-4 text-[12px] text-muted">
-                {v.reasons.slice(0, 4).map((r) => (
+                {reasons.slice(0, 4).map((r) => (
                   <li key={r}>{r}</li>
                 ))}
               </ul>
@@ -267,7 +265,7 @@ export function PartClient({ slug, withDetails = true }: { slug: string; withDet
   if (live.part.isError) {
     return (
       <Container className="py-16">
-        <ErrorState error={live.part.error} what="this part" onRetry={() => void live.part.refetch()} />
+        <ErrorState error={live.part.error} what="this part" onRetry={() => void live.part.refetch()} back={{ href: "/parts", label: "Browse all parts" }} />
       </Container>
     );
   }
@@ -285,6 +283,7 @@ export function PartClient({ slug, withDetails = true }: { slug: string; withDet
 
   const values = live.values;
   const ship = shipState(part.verification, part.ship);
+  const scope = verifiedScope(part.verification, part.params);
   const gate = { locked: ship !== "verified", ack: gateAck, setAck: setGateAck, open: ship === "verified" || (ship === "best_effort" && gateAck) };
   const facts = (live.changed ? live.bake.data?.facts : null) ?? part.facts ?? live.bake.data?.facts ?? null;
   const dl = (format: "stl" | "3mf" | "step" | "py" | "glb") =>
@@ -317,6 +316,7 @@ export function PartClient({ slug, withDetails = true }: { slug: string; withDet
               <h1 className="text-[26px] leading-tight font-semibold tracking-[-0.025em] sm:text-[30px]">{part.title}</h1>
               <div className="flex flex-wrap items-center gap-1.5">
                 <PartStatusBadge status={part.status} maxErrorMm={part.verification?.max_error_mm} />
+                {scope ? <span className="text-[12px] text-muted">{scope}</span> : null}
                 <OriginBadge origin={part.provenance.origin} />
                 <ModeBadge mode={part.provenance.provider_mode} hideLive />
                 <Badge tone="outline" className="font-mono">v{part.version}</Badge>
@@ -327,6 +327,9 @@ export function PartClient({ slug, withDetails = true }: { slug: string; withDet
                   </Badge>
                 ))}
               </div>
+              {part.status === "best_effort" && part.status_reason ? (
+                <p className="max-w-2xl text-[13px] leading-5 text-warn">Best effort because {part.status_reason}.</p>
+              ) : null}
               {part.summary ? <p className="max-w-2xl text-[14px] leading-6 text-muted">{part.summary}</p> : null}
             </div>
             <div className="flex flex-wrap gap-2">

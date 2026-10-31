@@ -92,7 +92,7 @@ export const COLUMN_LABEL: Record<string, string> = {
   "pass@0.5_ci95": "Passed 0.5 mm, 95 % range",
   verified_rate: "Verified",
   verified_ci95: "Verified, 95 % range",
-  verified_but_off: "Verified but off",
+  verified_but_off: "Verified, yet a size over 0.5 mm off",
   valid_rate: "Printable solid",
   median_iters: "Median rounds",
   median_wall_s: "Median time (s)",
@@ -119,7 +119,9 @@ export const CONFIG_LABEL: Record<string, string> = {
   B0: "One shot, no mat scale",
   B1: "One shot, no loop",
   B2: "Loop, pictures only",
-  PS: "Full loop",
+  PS: "PartSmith (full pipeline)",
+  "PS-open": "PartSmith, open-weights builder",
+  "PS-open-all": "PartSmith, all open weights",
   "PS-noTemplate": "Loop, no templates",
   "PS-noJudge": "Loop, no judge",
   "PS-noHeightCorr": "Loop, no height fix",
@@ -127,6 +129,19 @@ export const CONFIG_LABEL: Record<string, string> = {
 
 export function configLabel(id: string): string {
   return CONFIG_LABEL[id] ?? id;
+}
+
+/**
+ * Report text in plain words: setup ids ("PS", "PS-noJudge") become their names and split/suite ids lose their
+ * underscores. "syn-hook-s1 · PS (synthetic, held_out)" → "syn-hook-s1 · full pipeline (synthetic, held-out)".
+ */
+export function plainBench(text: string): string {
+  return text
+    .replace(/\b(PS-[A-Za-z-]+|B\d)\b/g, (id) => CONFIG_LABEL[id] ?? id)
+    .replace(/\bPS\b(?=\s*\()/g, "full pipeline")
+    .replace(/\bPS\b/g, "PartSmith (full pipeline)")
+    .replace(/\bheld_out\b/g, "held-out")
+    .replace(/\breference_objects\b/g, "reference objects");
 }
 
 /** The columns worth showing before "Show the full table" (those the table has). */
@@ -144,6 +159,15 @@ function countOf(rate: unknown, n: number): number | null {
   return typeof rate === "number" && Number.isFinite(rate) ? Math.round(rate * n) : null;
 }
 
+/** How many of the table's cases passed the code's verification (headline `verified_rate` × n), or null. */
+export function benchVerified(t: BenchTable | undefined): { passed: number; n: number } | null {
+  if (!t || t.status === "pending") return null;
+  const h = t.headline as Record<string, unknown>;
+  const n = typeof h.n === "number" ? h.n : t.n;
+  const passed = n ? countOf(h.verified_rate, n) : null;
+  return passed != null && n ? { passed, n } : null;
+}
+
 /**
  * One plain sentence from the table's own headline numbers (nothing typed here), e.g. "On 12 rendered test photos the
  * full loop's median size error was 0.10 mm; 3 of 12 had every size within 0.5 mm, and 2 of 12 passed the code's check."
@@ -158,7 +182,7 @@ export function benchSentence(key: string, t: BenchTable): string | null {
     return `${h.correct} of ${n} ${noun} were handled as expected${key === "redteam" ? " (rejected or refused)" : key === "control" ? " (accepted)" : ""}.`;
   }
   if (typeof h.median_abs_err_mm !== "number" || !n) return null;
-  const who = typeof h.config === "string" ? `the ${configLabel(h.config).toLowerCase()}'s` : "the";
+  const who = typeof h.config === "string" ? `the ${h.config === "PS" ? "full pipeline" : configLabel(h.config).toLowerCase()}'s` : "the";
   const parts = [`On ${n} ${noun} ${who} median size error was ${h.median_abs_err_mm.toFixed(2)} mm`];
   const tail: string[] = [];
   for (const [k, v] of Object.entries(h)) {

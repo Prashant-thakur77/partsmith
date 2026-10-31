@@ -49,7 +49,7 @@ export function AgentsStrip() {
           <CodeBlock
             title="shell"
             wrap
-            code={`# find a part, then bake a variant as STL\ncurl "${origin}/api/v1/parts?q=cable+clip&verified=true"\ncurl "${origin}/api/v1/parts/<slug>/variant?want=fits+a+6+mm+cable"\ncurl -o part.stl "${origin}/api/v1/parts/<slug>/bake?format=stl&download=1"`}
+            code={`# find a part, then bake a variant as STL\ncurl "${origin}/api/v1/parts?q=wall+hook&verified=true"\ncurl "${origin}/api/v1/parts/<slug>/variant?want=40+mm+reach"\ncurl -o part.stl "${origin}/api/v1/parts/<slug>/bake?format=stl&download=1"`}
           />
         </TabsContent>
         <TabsContent value="mcp">

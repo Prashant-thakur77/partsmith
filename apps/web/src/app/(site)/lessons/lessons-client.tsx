@@ -3,6 +3,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { BookOpenCheck, Check, Lightbulb, X } from "lucide-react";
 import Link from "next/link";
+import * as React from "react";
 import { Container, PageHeader, Section } from "@/components/layout/page";
 import { Badge } from "@/components/ui/badge";
 import { EmptyState } from "@/components/ui/empty-state";
@@ -13,40 +14,70 @@ import { Button } from "@/components/ui/button";
 import { decideLesson, lessons, R2, type Lesson } from "@/lib/api-r2";
 import { useCapabilities } from "@/lib/capabilities";
 import { timeAgo, titleCase } from "@/lib/format";
+import { groupLessons, groupLinks, knobMoves, type LessonGroup } from "@/lib/page-groups";
 import { trackText } from "@/lib/review";
 
+/** Evidence worth a line under the rule; a knob lesson's template, knob and values are already in its wording. */
 function evidenceFacts(ev: Record<string, unknown>): string[] {
-  const skip = new Set(["job_id", "job_ids", "slug", "part_slug", "fit_report_ids"]);
+  const skip = new Set(["job_id", "job_ids", "slug", "part_slug", "fit_report_ids", ...(typeof ev.param === "string" ? ["template", "param", "first", "final"] : [])]);
   return Object.entries(ev)
     .filter(([k, v]) => !skip.has(k) && (typeof v === "number" || typeof v === "string" || typeof v === "boolean"))
     .slice(0, 6)
     .map(([k, v]) => `${k.replaceAll("_", " ")}: ${typeof v === "number" ? (Number.isInteger(v) ? String(v) : v.toFixed(2)) : String(v)}`);
 }
 
-function LessonCard({ l, admin }: { l: Lesson; admin: boolean }) {
+function Decide({ l }: { l: Lesson }) {
   const qc = useQueryClient();
   const decide = useMutation({
     mutationFn: (a: "promote" | "reject") => decideLesson(l.id, a),
     onSuccess: () => void qc.invalidateQueries({ queryKey: ["lessons"] }),
   });
+  return (
+    <>
+      <div className="flex gap-2">
+        <Button size="sm" variant="outline" disabled={decide.isPending} onClick={() => decide.mutate("promote")}>
+          <Check aria-hidden /> Promote
+        </Button>
+        <Button size="sm" variant="ghost" disabled={decide.isPending} onClick={() => decide.mutate("reject")}>
+          <X aria-hidden /> Reject
+        </Button>
+      </div>
+      {decide.isError ? <ErrorState error={decide.error} compact what="the decision" /> : null}
+    </>
+  );
+}
+
+const MAX_LINKS = 6;
+
+/** One card per group of lessons that say the same thing; the newest wording leads, the others fold away. */
+function LessonCard({ g, admin }: { g: LessonGroup<Lesson>; admin: boolean }) {
+  const l = g.lead;
+  const n = g.members.length;
   const facts = evidenceFacts(l.evidence);
   const track = trackText(l.track);
+  const used = (l.track?.used_in ?? 0) > 0 || l.status === "promoted";
+  const links = groupLinks(g.members);
+  const moves = n > 1 ? knobMoves(g.members) : [];
   return (
     <li className="space-y-2 rounded-lg border border-border bg-surface p-4">
       <div className="flex flex-wrap items-center gap-1.5">
         <Badge tone={l.status === "promoted" ? "ok" : l.status === "candidate" ? "accent" : "neutral"}>{l.status}</Badge>
-        <Badge tone="neutral">{l.scope === "global" ? "All parts" : titleCase(l.scope)}</Badge>
-        {l.created_at ? <span className="text-[11.5px] text-subtle">{timeAgo(l.created_at)}</span> : null}
+        {n > 1 ? <Badge tone="info">suggested by {n} runs</Badge> : null}
+        {l.created_at ? <span className="text-[11.5px] text-subtle">{n > 1 ? "newest " : ""}{timeAgo(l.created_at)}</span> : null}
         {l.promoted_by && l.status !== "candidate" ? <span className="text-[11.5px] text-subtle">· by {l.promoted_by}</span> : null}
       </div>
       <p className="text-[14px] leading-6 text-fg">{l.rule}</p>
-      {facts.length ? <p className="font-mono text-[11.5px] leading-5 text-muted tnum">{facts.join(" · ")}</p> : null}
-      {track ? (
-        <p className="text-[12px] leading-5 text-muted tnum">{track}</p>
+      {moves.length ? (
+        <p className="font-mono text-[11.5px] leading-5 text-muted tnum">
+          {String(l.evidence.param ?? "value")}, first build → final: {moves.join(" · ")}
+        </p>
+      ) : facts.length ? (
+        <p className="font-mono text-[11.5px] leading-5 text-muted tnum">{facts.join(" · ")}</p>
       ) : null}
-      {l.links.length ? (
+      {track && used ? <p className="text-[12px] leading-5 text-muted tnum">{track}</p> : null}
+      {links.length ? (
         <ul className="flex flex-wrap gap-x-3 gap-y-1 text-[12px]" aria-label="Evidence">
-          {l.links.map((e) => (
+          {links.slice(0, MAX_LINKS).map((e) => (
             <li key={`${e.kind}-${e.id}`}>
               <span className="text-subtle">{e.kind.replace("_", " ")} </span>
               {e.page ? (
@@ -58,20 +89,92 @@ function LessonCard({ l, admin }: { l: Lesson; admin: boolean }) {
               )}
             </li>
           ))}
+          {links.length > MAX_LINKS ? <li className="text-subtle">+{links.length - MAX_LINKS} more</li> : null}
         </ul>
       ) : null}
       {admin && l.status === "candidate" ? (
-        <div className="flex gap-2 pt-1">
-          <Button size="sm" variant="outline" disabled={decide.isPending} onClick={() => decide.mutate("promote")}>
-            <Check aria-hidden /> Promote
-          </Button>
-          <Button size="sm" variant="ghost" disabled={decide.isPending} onClick={() => decide.mutate("reject")}>
-            <X aria-hidden /> Reject
-          </Button>
+        <div className="pt-1">
+          <Decide l={l} />
         </div>
       ) : null}
-      {decide.isError ? <ErrorState error={decide.error} compact what="the decision" /> : null}
+      {n > 1 ? (
+        <details className="text-[12.5px]">
+          <summary className="cursor-pointer text-muted select-none hover:text-fg">Every wording ({n})</summary>
+          <ul className="mt-2 space-y-2 border-l border-border pl-3">
+            {g.members.map((m) => (
+              <li key={m.id} className="space-y-1">
+                <p className="leading-5 text-muted">{m.rule}</p>
+                <p className="text-[11.5px] text-subtle">
+                  <span className="font-mono">{m.id}</span>
+                  {m.created_at ? ` · ${timeAgo(m.created_at)}` : ""}
+                </p>
+                {admin && m.status === "candidate" && m.id !== l.id ? <Decide l={m} /> : null}
+              </li>
+            ))}
+          </ul>
+        </details>
+      ) : null}
     </li>
+  );
+}
+
+const PER_FAMILY = 3;
+const OPEN_FAMILIES = 3;
+
+/**
+ * Lessons of one status, one block per family (largest first). The first few families start open with their first
+ * few cards; the rest start folded to a heading, so a long list stays scannable.
+ */
+function FamilyGroups({ list, admin, label }: { list: Lesson[]; admin: boolean; label: string }) {
+  const families = React.useMemo(() => groupLessons(list), [list]);
+  const [toggled, setToggled] = React.useState<Set<string>>(() => new Set());
+  const [all, setAll] = React.useState<Set<string>>(() => new Set());
+  const flip = (set: React.Dispatch<React.SetStateAction<Set<string>>>, k: string) =>
+    set((s) => {
+      const next = new Set(s);
+      if (next.has(k)) next.delete(k);
+      else next.add(k);
+      return next;
+    });
+  return (
+    <div className="space-y-5">
+      {families.map((f, i) => {
+        const open = (i < OPEN_FAMILIES) !== toggled.has(f.scope);
+        const showAll = all.has(f.scope);
+        const shown = showAll ? f.groups : f.groups.slice(0, PER_FAMILY);
+        const id = `${label}-${f.scope}`;
+        return (
+          <section key={f.scope} aria-labelledby={id} className="space-y-2.5">
+            <div className="flex flex-wrap items-center gap-x-3 gap-y-1 border-b border-border pb-1.5">
+              <h3 id={id} className="flex flex-wrap items-baseline gap-2 text-[14px] font-semibold">
+                {f.scope === "global" ? "All parts" : titleCase(f.scope)}
+                <span className="text-[12px] font-normal text-subtle tnum">
+                  {f.groups.length} card{f.groups.length === 1 ? "" : "s"}
+                  {f.lessons > f.groups.length ? ` from ${f.lessons} suggestions` : ""}
+                </span>
+              </h3>
+              <Button variant="ghost" size="sm" className="ml-auto" aria-expanded={open} aria-controls={`${id}-cards`} onClick={() => flip(setToggled, f.scope)}>
+                {open ? "Fold" : "Show"}
+              </Button>
+            </div>
+            {open ? (
+              <div id={`${id}-cards`} className="space-y-2.5">
+                <ul className="grid grid-cols-1 gap-3 md:grid-cols-2">
+                  {shown.map((g) => (
+                    <LessonCard key={g.key} g={g} admin={admin} />
+                  ))}
+                </ul>
+                {f.groups.length > PER_FAMILY ? (
+                  <Button variant="ghost" size="sm" aria-expanded={showAll} onClick={() => flip(setAll, f.scope)}>
+                    {showAll ? "Show fewer" : `Show all ${f.groups.length}`}
+                  </Button>
+                ) : null}
+              </div>
+            ) : null}
+          </section>
+        );
+      })}
+    </div>
   );
 }
 
@@ -84,19 +187,26 @@ export function LessonsClient() {
   const promoted = q.data?.filter((l) => l.status === "promoted") ?? [];
   const candidates = q.data?.filter((l) => l.status === "candidate") ?? [];
   const rejected = q.data?.filter((l) => l.status === "rejected") ?? [];
+  const unusedCandidates = candidates.length > 0 && candidates.every((l) => (l.track?.used_in ?? 0) === 0);
   const promotedSection = (
     <Section key="promoted" title={`Promoted (${promoted.length})`} description="Fed to the builder on new runs in their scope.">
       {promoted.length ? (
-        <ul className="grid grid-cols-1 gap-3 md:grid-cols-2">{promoted.map((l) => <LessonCard key={l.id} l={l} admin={admin} />)}</ul>
+        <FamilyGroups list={promoted} admin={admin} label="promoted" />
       ) : (
-        <EmptyState compact icon={BookOpenCheck} title="None promoted yet" />
+        <EmptyState compact icon={BookOpenCheck} title="None promoted yet">
+          A person promotes a candidate once its evidence holds up. Until then no lesson reaches a build.
+        </EmptyState>
       )}
     </Section>
   );
   const candidatesSection = (
-    <Section key="candidates" title={`Candidates (${candidates.length})`} description="Suggested by a run; waiting for a person to promote or reject.">
+    <Section
+      key="candidates"
+      title={`Candidates (${candidates.length})`}
+      description={`Suggested by a run; waiting for a person to promote or reject.${unusedCandidates ? " None has been used in a job yet: only promoted lessons reach builds." : ""} Suggestions that say the same thing share one card.`}
+    >
       {candidates.length ? (
-        <ul className="grid grid-cols-1 gap-3 md:grid-cols-2">{candidates.map((l) => <LessonCard key={l.id} l={l} admin={admin} />)}</ul>
+        <FamilyGroups list={candidates} admin={admin} label="candidates" />
       ) : (
         <EmptyState compact icon={Lightbulb} title="No candidates right now" />
       )}
@@ -126,7 +236,7 @@ export function LessonsClient() {
             {promoted.length ? [promotedSection, candidatesSection] : [candidatesSection, promotedSection]}
             {rejected.length ? (
               <Section title={`Rejected (${rejected.length})`} description="Kept for the record; never used.">
-                <ul className="grid grid-cols-1 gap-3 md:grid-cols-2">{rejected.map((l) => <LessonCard key={l.id} l={l} admin={admin} />)}</ul>
+                <FamilyGroups list={rejected} admin={admin} label="rejected" />
               </Section>
             ) : null}
             {!admin && candidates.length ? <AdminAccess what="Promoting or rejecting a lesson needs an admin token." /> : null}

@@ -18,9 +18,11 @@ import { ModeBadge, OriginBadge, RunBadge } from "@/components/ui/provenance";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Slider } from "@/components/ui/slider";
 import { VerifiedBadge } from "@/components/ui/verified-badge";
-import { api } from "@/lib/api";
+import { api, artifactUrl } from "@/lib/api";
 import { distinctTitles, fmtNum, splitTitle } from "@/lib/format";
 import { STAGE_LABELS, summarizeEvents } from "@/lib/job-events";
+import type { JobEvent } from "@/lib/api-types";
+import { useInView, usePrefersReducedMotion } from "@/lib/motion";
 import { curateReplays, replayTitle } from "@/lib/replays";
 import { cn } from "@/lib/utils";
 import { radioGroupKeys } from "@/lib/a11y";
@@ -36,6 +38,37 @@ const ConvergenceChart = dynamic(() => import("@/components/jobs/convergence-cha
 });
 
 const REPO_URL = process.env.NEXT_PUBLIC_REPO_URL ?? "";
+const MODEL_ROWS = 6;
+
+const FRAMES: { kind: string; caption: string }[] = [
+  { kind: "render_overlay", caption: "Model drawn over the photo" },
+  { kind: "measure_overlay", caption: "Outline and features measured in mm" },
+  { kind: "mask_overlay", caption: "Segmentation mask" },
+  { kind: "rectified", caption: "Photo rectified to the mat" },
+  { kind: "photo", caption: "Phone photo on the screen mat" },
+];
+
+/** The latest top-view picture among `events`: the model over the photo, else what was measured, else the photo. */
+function latestFrame(events: readonly JobEvent[]): { src: string; caption: string } | null {
+  for (const f of FRAMES) {
+    for (let i = events.length - 1; i >= 0; i--) {
+      const e = events[i]!;
+      if (e.t !== "artifact" || e.kind !== f.kind) continue;
+      if (f.kind !== "render_overlay" && e.label && !/^top/i.test(e.label)) continue; // the top view reads best
+      const src = artifactUrl(e.url);
+      if (src) return { src, caption: f.caption };
+    }
+  }
+  return null;
+}
+
+/** The picture for where the replay is; before the first picture arrives, the run's input photo. */
+function replayFrame(shown: readonly JobEvent[], all: readonly JobEvent[]): { src: string; caption: string } | null {
+  const now = latestFrame(shown);
+  if (now) return now;
+  const first = latestFrame(all.filter((e) => e.t === "artifact" && (e.kind === "photo" || e.kind === "rectified")));
+  return first ? { ...first, caption: "The input photo" } : null;
+}
 
 /** Plays a stored run back event by event (labelled replay). The Verified badge appears only at the end, from the stored verification. */
 function ReplayPlayer({ id }: { id: string }) {
@@ -45,6 +78,14 @@ function ReplayPlayer({ id }: { id: string }) {
   const [playing, setPlaying] = React.useState(false);
   const [speed, setSpeed] = React.useState(2);
   const traceRef = React.useRef<HTMLDivElement>(null);
+  const reduced = usePrefersReducedMotion();
+  const { ref: viewRef, seen } = useInView<HTMLDivElement>({ threshold: 0.35 });
+  // Autoplay once per run when the player is in view (2×); with reduced motion show the final frame instead. Any touch
+  // of the controls hands over to the visitor.
+  const auto = React.useRef<string | null>(null);
+  const takeOver = () => {
+    auto.current = id;
+  };
 
   // while playing, keep the newest stage in view inside the trace box (its own scroll only, never the page's)
   React.useEffect(() => {
@@ -58,6 +99,18 @@ function ReplayPlayer({ id }: { id: string }) {
   }, [id]);
 
   React.useEffect(() => {
+    if (!events.length || auto.current === id) return;
+    if (reduced) {
+      setIdx(events.length);
+      setPlaying(false);
+    } else if (seen) {
+      auto.current = id;
+      setIdx(0);
+      setPlaying(true);
+    }
+  }, [events.length, reduced, seen, id]);
+
+  React.useEffect(() => {
     if (!playing || idx >= events.length) {
       if (idx >= events.length && events.length) setPlaying(false);
       return;
@@ -69,15 +122,28 @@ function ReplayPlayer({ id }: { id: string }) {
     return () => window.clearTimeout(t);
   }, [playing, idx, events, speed]);
 
-  if (job.isError) return <ErrorState error={job.error} compact what="the replay" />;
-  if (!job.data) return <Skeleton className="h-80" />;
+  // the in-view ref sits on a wrapper that exists from the first render (the player itself waits for the run)
+  if (job.isError)
+    return (
+      <div ref={viewRef}>
+        <ErrorState error={job.error} compact what="the replay" />
+      </div>
+    );
+  if (!job.data)
+    return (
+      <div ref={viewRef}>
+        <Skeleton className="h-80" />
+      </div>
+    );
 
   const s = summarizeEvents(events.slice(0, idx));
+  const frame = replayFrame(events.slice(0, idx), events);
   const finished = idx >= events.length && events.length > 0;
   const threshold = job.data.verification?.thresholds.hausdorff_mm ?? null;
   const last = s.convergence.filter((c) => c.hausdorff_mm != null).at(-1)?.hausdorff_mm;
 
   return (
+    <div ref={viewRef}>
     <div className="overflow-hidden rounded-xl border border-border bg-surface">
       <div className="flex flex-wrap items-center gap-2 border-b border-border px-4 py-3">
         <span className="truncate text-[14px] font-medium">{replayTitle(job.data.summary.title || id, splitTitle)}</span>
@@ -87,13 +153,22 @@ function ReplayPlayer({ id }: { id: string }) {
           {finished ? (
             <VerifiedBadge verification={job.data.verification} />
           ) : (
-            <Badge tone="neutral">{playing ? "verifier result at the end" : "press play"}</Badge>
+            <Badge tone="neutral">{playing ? "verifier result at the end" : idx > 0 ? "paused" : "press play"}</Badge>
           )}
         </div>
       </div>
       <div className="grid grid-cols-1 gap-0 md:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
         <div className="space-y-4 border-b border-border p-4 md:border-r md:border-b-0">
-          <div aria-live="polite" className="min-h-10">
+          {frame ? (
+            <figure className="space-y-1">
+              <div className="relative aspect-[16/9] overflow-hidden rounded-md border border-border bg-surface-2">
+                {/* eslint-disable-next-line @next/next/no-img-element -- API blob from the stored run */}
+                <img key={frame.src} src={frame.src} alt={frame.caption} className="size-full object-contain motion-safe:animate-fade-up" decoding="async" />
+              </div>
+              <figcaption className="text-[11.5px] text-muted">{frame.caption}</figcaption>
+            </figure>
+          ) : null}
+          <div aria-live={playing ? "off" : "polite"} className="min-h-10">
             <Eyebrow>Now</Eyebrow>
             <p className="text-[15px] font-medium">
               {s.done
@@ -111,12 +186,12 @@ function ReplayPlayer({ id }: { id: string }) {
             <ConvergenceChart data={s.convergence} threshold={threshold} height={170} />
           </div>
         </div>
-        <div ref={traceRef} className="scrollbar-thin max-h-[360px] overflow-y-auto p-4" tabIndex={0} role="region" aria-label="Replay trace">
+        <div ref={traceRef} className="scrollbar-thin max-h-[300px] overflow-y-auto p-4 md:max-h-[520px]" tabIndex={0} role="region" aria-label="Replay trace">
           <TraceTimeline summary={s} live={playing} />
         </div>
       </div>
       <div className="flex flex-wrap items-center gap-3 border-t border-border px-4 py-3">
-        <Button size="sm" variant="primary" onClick={() => (finished ? (setIdx(0), setPlaying(true)) : setPlaying((p) => !p))} disabled={!events.length}>
+        <Button size="sm" variant="primary" onClick={() => (takeOver(), finished ? (setIdx(0), setPlaying(true)) : setPlaying((p) => !p))} disabled={!events.length}>
           {playing ? <Pause aria-hidden /> : finished ? <RotateCcw aria-hidden /> : <Play aria-hidden />}
           {playing ? "Pause" : finished ? "Replay again" : "Play"}
         </Button>
@@ -128,6 +203,7 @@ function ReplayPlayer({ id }: { id: string }) {
           step={1}
           value={[idx]}
           onValueChange={(v) => {
+            takeOver();
             setPlaying(false);
             setIdx(v[0] ?? 0);
           }}
@@ -154,6 +230,7 @@ function ReplayPlayer({ id }: { id: string }) {
         </Link>
       </div>
     </div>
+    </div>
   );
 }
 
@@ -163,6 +240,7 @@ export function JudgesClient() {
   const bench = useQuery({ queryKey: ["bench"], queryFn: api.bench, retry: false });
   const [picked, setPicked] = React.useState<string | null>(null);
   const [more, setMore] = React.useState(false);
+  const [allModels, setAllModels] = React.useState(false);
   const playerRef = React.useRef<HTMLDivElement>(null);
   const curated = React.useMemo(() => curateReplays(replays.data ?? []), [replays.data]);
   const active = picked ?? curated.featured[0]?.replay.id ?? replays.data?.[0]?.id ?? null;
@@ -209,7 +287,7 @@ export function JudgesClient() {
           </>
         }
       />
-      <Container className="space-y-14 py-10">
+      <Container className="space-y-12 py-8">
         <ol className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
           {steps.map((s) => (
             <li key={s.n}>
@@ -328,7 +406,7 @@ export function JudgesClient() {
                   </tr>
                 </thead>
                 <tbody>
-                  {status.data.providers.map((p) => (
+                  {(allModels ? status.data.providers : status.data.providers.slice(0, MODEL_ROWS)).map((p) => (
                     <tr key={`${p.stage}-${p.role}`} className="border-t border-border">
                       <th scope="row" className="px-3 py-2 text-left font-normal">
                         {p.role} <span className="text-subtle">· {p.stage}</span>
@@ -345,6 +423,13 @@ export function JudgesClient() {
                   ))}
                 </tbody>
               </table>
+              {status.data.providers.length > MODEL_ROWS ? (
+                <div className="border-t border-border px-3 py-2">
+                  <Button variant="ghost" size="sm" aria-expanded={allModels} onClick={() => setAllModels((v) => !v)}>
+                    {allModels ? "Show fewer stages" : `Show all ${status.data.providers.length} stages`}
+                  </Button>
+                </div>
+              ) : null}
             </div>
           )}
         </Section>

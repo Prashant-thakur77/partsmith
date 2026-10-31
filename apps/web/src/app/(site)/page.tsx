@@ -39,9 +39,18 @@ export default async function HomePage() {
           </div>
           <div className="grid items-center gap-12 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.06fr)] lg:gap-14">
             <div className="space-y-7 motion-safe:animate-fade-up">
-              <p className="font-mono text-[11px] tracking-[0.16em] text-subtle uppercase">
-                Photo <span className="text-dim">→</span> millimetres <span className="text-dim">→</span> program <span className="text-dim">→</span>{" "}
-                <span className="text-accent-text">verified</span>
+              {/* each arrow stays with the word after it, so a wrap never leaves an arrow alone at a line end */}
+              <p className="flex flex-wrap gap-x-[0.6em] font-mono text-[11px] tracking-[0.1em] text-subtle uppercase sm:tracking-[0.16em]">
+                <span>Photo</span>
+                <span className="whitespace-nowrap">
+                  <span className="text-dim">→</span> millimetres
+                </span>
+                <span className="whitespace-nowrap">
+                  <span className="text-dim">→</span> program
+                </span>
+                <span className="whitespace-nowrap">
+                  <span className="text-dim">→</span> <span className="text-accent-text">verified</span>
+                </span>
               </p>
               <h1 className="text-[44px] leading-[0.98] font-semibold tracking-[-0.045em] text-fg sm:text-[60px] xl:text-[68px]">
                 A broken plastic part in. A <span className="text-accent-text">proven</span> replacement out.
@@ -161,7 +170,7 @@ export default async function HomePage() {
           of={OF}
           kicker="Cost"
           title="Buy it, or print it?"
-          description="For the recorded run on sheet 1: what the original costs where a search could cite a price, against what the verified program takes to print."
+          description="For the recorded run on sheet 1: the closest price a web search could cite (matched by name, not the same part), against what the verified program takes to print."
         >
           <BuyOrPrintStrip />
         </Sheet>

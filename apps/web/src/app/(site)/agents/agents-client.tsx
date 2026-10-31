@@ -91,7 +91,7 @@ export function AgentsClient() {
             ))}
             <CodeBlock
               title="example"
-              code={`curl "${origin}/api/v1/parts?q=cooler+wheel&verified=true"\ncurl "${origin}/api/v1/parts/<slug>/variant?want=32+mm+wheel,+8+mm+axle"\ncurl -o wheel.stl "${origin}/api/v1/parts/<slug>/bake?diameter=32&format=stl&download=1"`}
+              code={`curl "${origin}/api/v1/parts?q=M3+standoff&verified=true"\ncurl "${origin}/api/v1/parts/<slug>/variant?want=12+mm+tall,+for+an+M4+screw"\ncurl -o spacer.stl "${origin}/api/v1/parts/<slug>/bake?height=12&bore_d=4.5&format=stl&download=1"`}
             />
           </div>
         </Section>

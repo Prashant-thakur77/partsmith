@@ -8,7 +8,8 @@ type Point = { iter: number; hausdorff_mm: number | null };
 const NICE = [0.1, 0.2, 0.25, 0.5, 1, 2, 2.5, 5, 10, 20, 25, 50, 100];
 
 /**
- * Max error (Hausdorff, mm) per iteration. The green band is the verifier's pass zone (0 … threshold); every point carries
+ * Outline gap (Hausdorff, mm) per iteration — the silhouette part of the max error (a round's max error can be larger
+ * when a measured size is further off). The green band is the verifier's pass zone (0 … threshold); every point carries
  * its value. Data and threshold come from the job's events / verification record. When the finished job shipped an
  * earlier round (`keptIter`), that point is ringed and labelled "kept" and the later points read as discarded tries.
  */
@@ -73,7 +74,7 @@ export function ConvergenceChart({ data, threshold, height = 160, keptIter = nul
               cursor={{ stroke: "var(--border-strong)" }}
               contentStyle={{ background: "var(--surface)", border: "1px solid var(--border)", borderRadius: 6, fontSize: 12 }}
               labelFormatter={(v) => `iteration ${v}${tag(Number(v))}`}
-              formatter={(v) => [`${fmtNum(Number(v))} mm`, "max error"]}
+              formatter={(v) => [`${fmtNum(Number(v))} mm`, "outline gap (Hausdorff)"]}
             />
             <Line
               type="linear"
@@ -106,7 +107,7 @@ export function ConvergenceChart({ data, threshold, height = 160, keptIter = nul
           Iteration #{kept!.iter} is the result. Later points are tries that were discarded.
         </p>
       ) : null}
-      <figcaption className="sr-only">Max error by iteration: {summary}.</figcaption>
+      <figcaption className="sr-only">Outline gap (Hausdorff) by iteration: {summary}.</figcaption>
     </figure>
   );
 }

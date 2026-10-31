@@ -32,7 +32,7 @@ Every tool carries MCP annotations (`readOnlyHint` true except the two write too
 (or `PARTSMITH_MCP_READ_ONLY=1`) leaves the write tools out. Errors name the closest valid slug or knob. Local file
 paths (`path`, `top_path`, `inline_stl_path`) are accepted only over stdio; the HTTP server never reads its own disk.
 
-Example session: `search_parts(q="cable clip 8 mm")` → `get_variant(slug, want="for an 8 mm cable, 3 channels")` →
+Example session: `search_parts(q="cable clip 34 mm")` → `get_variant(slug, want="for an 8 mm cable, 3 channels")` →
 `bake(slug, params=<params from the variant>, formats=["stl", "step"])`.
 
 ## Client configuration

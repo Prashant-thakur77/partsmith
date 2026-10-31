@@ -8,7 +8,7 @@ touching the CAD kernel. Each bake also computes printing facts from the mesh:
 - print time (rough estimate): minutes = (V / 8 mm^3/s + n_layers x 4 s) / 60, with n_layers = height / 0.2 mm in the
   recommended orientation. 8 mm^3/s is a 0.4 mm nozzle at 0.2 mm layers and 100 mm/s. It assumes 100 % infill.
 - supports: for each of the six axis-aligned orientations, the area of faces pointing down more steeply than 45 deg
-  that are not on the bed. Recommended orientation = least overhang (then more bed contact, then lower height).
+  (with a 1 deg margin, so 45 deg chamfers do not count) that are not on the bed. Recommended orientation = least overhang (then more bed contact, then lower height).
   Supports are needed when that area exceeds 4 mm^2 (small horizontal holes count, although they often bridge).
 
 `passport=<id>` (off unless asked for; benches and the job pipeline never pass it) debosses the id into the part after
@@ -18,6 +18,7 @@ stored in the manifest (`BakeOutput.passport`, `passport_report(cache_key)`).
 
 from __future__ import annotations
 
+import contextlib
 import hashlib
 import json
 import os
@@ -43,7 +44,13 @@ DENSITY_G_CM3 = {"PLA": 1.24, "PETG": 1.27}
 FLOW_MM3_S = 8.0
 LAYER_MM = 0.2
 LAYER_OVERHEAD_S = 4.0
-OVERHANG_COS = float(np.cos(np.radians(45.0)))
+# A face overhangs when it points down MORE steeply than 45 deg. A 45 deg chamfer prints without supports, and its
+# tessellated facets land a hair either side of 45 deg, so the cut-off sits 1 deg past it.
+OVERHANG_LIMIT_DEG = 45.0
+OVERHANG_MARGIN_DEG = 1.0
+OVERHANG_COS = float(np.cos(np.radians(OVERHANG_LIMIT_DEG - OVERHANG_MARGIN_DEG)))
+# Bump when the facts rules change: a cached bake made under older rules gets its facts recomputed from its STL.
+FACTS_RULE = 2
 SUPPORT_AREA_MM2 = 4.0
 BED_TOL_MM = 0.1
 
@@ -142,7 +149,8 @@ def overhang_areas(mesh: Mesh) -> tuple[dict[str, float], dict[str, float], dict
 
 def part_facts(volume_mm3: float, mesh: Mesh) -> tuple[PartFacts, dict[str, float]]:
     over, bed, height = overhang_areas(mesh)
-    best = min(ORIENTATIONS, key=lambda k: (round(over[k], 1), -round(bed[k], 1), height[k]))
+    # overhang differences under SUPPORT_AREA_MM2 are ties (a tessellation hair should not stand a bracket on its end)
+    best = min(ORIENTATIONS, key=lambda k: (int(over[k] // SUPPORT_AREA_MM2), -round(bed[k], 1), height[k]))
     size = mesh.vertices.max(axis=0) - mesh.vertices.min(axis=0)
     layers = height[best] / LAYER_MM
     minutes = (volume_mm3 / FLOW_MM3_S + layers * LAYER_OVERHEAD_S) / 60.0
@@ -161,6 +169,8 @@ def part_facts(volume_mm3: float, mesh: Mesh) -> tuple[PartFacts, dict[str, floa
 
 def _from_manifest(d: Path, t0: float) -> BakeOutput:
     m = json.loads((d / "manifest.json").read_text())
+    if m.get("facts") and m.get("facts_rule") != FACTS_RULE:
+        m = _refresh_facts(d, m)
     return BakeOutput(
         cache_key=m["cache_key"],
         cache_hit=True,
@@ -175,6 +185,27 @@ def _from_manifest(d: Path, t0: float) -> BakeOutput:
         overhang_mm2=m.get("overhang_mm2", {}),
         passport=m.get("passport"),
     )
+
+
+def _refresh_facts(d: Path, m: dict[str, Any]) -> dict[str, Any]:
+    """Recompute a cached bake's facts under the current rules from its STL (same mesh, same volume); left as it was
+    when the bake has no STL or the STL does not load."""
+    stl = d / m.get("files", {}).get("stl", "")
+    if not stl.is_file():
+        return m
+    try:
+        import trimesh
+
+        tm = trimesh.load_mesh(stl, file_type="stl", process=True)
+        mesh = Mesh(vertices=np.asarray(tm.vertices, dtype=np.float64), faces=np.asarray(tm.faces, dtype=np.int64))
+        facts, over = part_facts(float(m["facts"]["volume_mm3"]), mesh)
+    except Exception:
+        return m
+    m = {**m, "facts": facts.model_dump(mode="json"), "facts_notes": FACT_NOTES, "facts_rule": FACTS_RULE,
+         "overhang_mm2": {k: round(v, 2) for k, v in over.items()}}  # fmt: skip
+    with contextlib.suppress(OSError):  # a read-only cache still answers with the refreshed facts
+        (d / "manifest.json").write_text(json.dumps(m, indent=1))
+    return m
 
 
 def passport_report(key: str, root: Path | None = None) -> dict[str, Any] | None:
@@ -245,6 +276,7 @@ def bake(
             "files": files,
             "facts": facts.model_dump(mode="json"),
             "facts_notes": FACT_NOTES,
+            "facts_rule": FACTS_RULE,
             "overhang_mm2": {k: round(v, 2) for k, v in over.items()},
             "build_ms": res.ms,
             "warnings": res.warnings,

@@ -8,7 +8,15 @@ import threading
 from datetime import UTC, datetime, timedelta
 
 from services.registry import demand, filenames
-from services.registry.store import coverage, get_registry, match_hint, match_label, number_hit, query_terms
+from services.registry.store import (
+    coverage,
+    get_registry,
+    match_hint,
+    match_label,
+    number_hit,
+    query_terms,
+    screw_fits,
+)
 from services.registry.tests.fixtures import add_part, make_part
 
 
@@ -125,3 +133,45 @@ def test_download_names() -> None:
     assert all(c.isascii() and (c.isalnum() or c in ".-") for c in long)
     assert filenames.num_text(8.0) == "8" and filenames.num_text(0.25) == "0.25" and filenames.num_text(-5) == "-5"
     assert filenames.knob_short("wall_t") == "wall" and filenames.knob_short("hole_spacing") == "holespacing"
+
+
+def _plain_spacer(slug: str = "spacer-8mm", bore_d: float = 3.9) -> object:
+    """Like the seeded spacer: title and tags say only "spacer" (no "standoff", no "M3")."""
+    part = make_part("spacer", slug, params={"bore_d": bore_d})
+    part = part.model_copy(
+        update={"title": "Spacer, 8 mm", "tags": ["spacer", "synthetic"], "summary": "Annular spacer."}
+    )
+    get_registry().upsert_part(part)
+    return part
+
+
+def test_screw_size_is_one_word_matched_against_holes() -> None:
+    assert query_terms("M3 standoff") == (["m3", "standoff"], [])
+    assert query_terms("m2.5 spacer 10 mm") == (["m2.5", "spacer"], [10.0])
+    assert query_terms("M3x10 bolt") == (["m3", "bolt"], [10.0])
+    assert query_terms("m7 thing") == (["thing"], [7.0])  # not a size in the clearance table: a plain number
+    assert query_terms("8mm") == ([], [8.0])
+    assert screw_fits("3", [3.4]) and screw_fits("3", [3.9]) and screw_fits("3", [2.5])
+    assert not screw_fits("3", [4.5]) and not screw_fits("3", [2.0])
+    assert screw_fits("4", [4.5]) and screw_fits("4", [3.4]) and not screw_fits("4", [3.0])  # 3.4: a pilot hole
+
+
+def test_standoff_and_screw_size_find_the_spacer() -> None:
+    _plain_spacer()
+    add_part("knob", "drawer-knob")
+    reg = get_registry()
+    for q in ("standoff", "M3 standoff", "M3 spacer", "standoffs"):
+        items, _, covs, best = reg.search_scored(q, role="part")
+        assert items and items[0].slug == "spacer-8mm" and covs[0] == 1.0 and best == 1.0, q
+    items, _, covs, _ = reg.search_scored("M5 spacer", role="part")
+    assert items[0].slug == "spacer-8mm" and covs[0] == 0.5  # a 3.9 mm bore does not take an M5 screw
+
+
+def test_synonyms_and_family_names_match() -> None:
+    add_part("caster_wheel", "chair-caster")
+    add_part("battery_cover", "remote-cover")
+    reg = get_registry()
+    assert reg.search_scored("castor wheel", role="part")[0][0].slug == "chair-caster"
+    items, _, covs, _ = reg.search_scored("lid", role="part")
+    assert items[0].slug == "remote-cover" and covs[0] == 1.0
+    assert reg.search_scored("zeppelin", role="part")[1] == 0

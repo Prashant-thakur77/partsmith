@@ -7,6 +7,7 @@ import { Container, PageHeader, Section } from "@/components/layout/page";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { EmptyState } from "@/components/ui/empty-state";
+import { ExamplePreview } from "@/components/ui/example-preview";
 import { ErrorState } from "@/components/ui/error-state";
 import { Input, Label } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -122,9 +123,34 @@ export function RequestsClient() {
           ) : needs.isError ? (
             <ErrorState error={needs.error} what="requests" onRetry={() => void needs.refetch()} />
           ) : list.length === 0 ? (
-            <EmptyState icon={Inbox} title="No requests yet">
-              Be the first: describe the part above, with any size you know.
-            </EmptyState>
+            <div className="space-y-4">
+              <EmptyState
+                compact
+                icon={Inbox}
+                title="No requests yet"
+                action={
+                  <Button type="button" variant="primary" size="sm" onClick={() => document.getElementById("need")?.focus()}>
+                    <Send aria-hidden /> Request a part
+                  </Button>
+                }
+              >
+                For anyone who searched the registry and came up empty, people and agents alike. Describe the part above with any size you know; the most-wanted
+                parts get built next.
+              </EmptyState>
+              <ExamplePreview title="What a request looks like" kind="illustration · not a real request">
+                <div className="flex items-center gap-3 rounded-lg border border-border bg-surface px-4 py-3">
+                  <span className="flex w-12 shrink-0 flex-col items-center rounded-md border border-dashed border-border py-1 text-muted" aria-hidden>
+                    <ArrowUp className="size-3.5" />
+                    <span className="font-mono text-[11px]">vote</span>
+                  </span>
+                  <div className="min-w-0 flex-1">
+                    <p className="text-[14px] font-medium text-fg">Cooler wheel, 32 mm across, 8 mm axle</p>
+                    <p className="text-[12px] text-subtle">Others who need the same part vote it up; the server counts one vote per person.</p>
+                  </div>
+                  <Badge tone="neutral">open</Badge>
+                </div>
+              </ExamplePreview>
+            </div>
           ) : (
             <ol className="divide-y divide-border overflow-hidden rounded-lg border border-border bg-surface">
               {list.map((n) => (

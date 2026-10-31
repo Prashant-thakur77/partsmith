@@ -1,6 +1,7 @@
 "use client";
 
-import { AlertTriangle, PlugZap, RotateCw } from "lucide-react";
+import { AlertTriangle, ArrowLeft, PlugZap, RotateCw } from "lucide-react";
+import Link from "next/link";
 import { ApiError, ApiSchemaError, isOffline } from "@/lib/api";
 import { cn } from "@/lib/utils";
 import { Button } from "./button";
@@ -12,13 +13,17 @@ export function ErrorState({
   className,
   compact = false,
   what = "this",
+  back,
 }: {
   error: unknown;
   onRetry?: () => void;
   className?: string;
   compact?: boolean;
   what?: string;
+  /** Where to go when the thing does not exist (a 404): shown instead of "Try again", which would only fail again. */
+  back?: { href: string; label: string };
 }) {
+  const missing = error instanceof ApiError && error.status === 404;
   const offline = isOffline(error);
   const Icon = offline ? PlugZap : AlertTriangle;
   let title = `Could not load ${what}`;
@@ -58,7 +63,13 @@ export function ErrorState({
         <p className="text-sm font-medium text-fg">{title}</p>
         <p className="text-[13px] leading-5 text-muted">{body}</p>
       </div>
-      {onRetry ? (
+      {missing && back ? (
+        <Button asChild size="sm" variant="outline">
+          <Link href={back.href}>
+            <ArrowLeft aria-hidden /> {back.label}
+          </Link>
+        </Button>
+      ) : onRetry ? (
         <Button size="sm" variant="outline" onClick={onRetry}>
           <RotateCw aria-hidden /> Try again
         </Button>

@@ -52,3 +52,33 @@ def test_endpoint_serves_cached_jpeg_or_404(svc: FakeService) -> None:
     assert r.content[:2] == b"\xff\xd8"
     assert client.get(f"/api/v1/jobs/{job.id}/thumbnail.jpg").content == r.content  # cached file
     assert client.get("/api/v1/jobs/j_nope/thumbnail.jpg").status_code == 404
+
+
+def _stl_box() -> bytes:
+    import trimesh
+
+    return bytes(trimesh.creation.box(extents=(20.0, 10.0, 5.0)).export(file_type="stl"))
+
+
+def test_render_model_draws_a_shaded_png() -> None:
+    out = cv2.imdecode(np.frombuffer(job_thumbs.render_model(_stl_box()), np.uint8), cv2.IMREAD_COLOR)
+    assert out is not None
+    assert out.shape[:2] == (job_thumbs.MODEL_PX, job_thumbs.MODEL_PX)
+    assert (out < 250).any() and (out == 255).all(axis=2).any()  # a shaded shape on a white background
+    with pytest.raises(ValueError):
+        job_thumbs.render_model(b"not a mesh")
+
+
+def test_model_picture_endpoint_serves_cached_png_or_404(svc: FakeService) -> None:
+    from partsmith_schemas import ArtifactEvent
+
+    client = TestClient(M.app)
+    job = finish(svc.new_job())
+    assert client.get(f"/api/v1/jobs/{job.id}/model.png").json()["error"]["code"] == "no_model"
+    key = blobs.put(_stl_box(), ".stl")
+    job.emit(ArtifactEvent(job=job.id, kind="stl", sha=key, url=blobs.url(key), label="STL export"))
+    r = client.get(f"/api/v1/jobs/{job.id}/model.png")
+    assert r.status_code == 200 and r.headers["content-type"] == "image/png"
+    assert r.content[:8] == b"\x89PNG\r\n\x1a\n"
+    assert client.get(f"/api/v1/jobs/{job.id}/model.png").content == r.content  # cached file
+    assert client.get("/api/v1/jobs/j_nope/model.png").status_code == 404

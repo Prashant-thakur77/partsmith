@@ -273,20 +273,30 @@ test.describe("feedback log", () => {
     await page.goto("/review");
     await page.getByRole("link", { name: "Feedback log" }).click();
     await expect(page).toHaveURL(/\/review\/log$/);
-    const list = page.getByRole("list", { name: "Feedback, newest first" });
-    const first = list.getByRole("listitem").first();
+    // one block per part (root job), newest activity first; each block lists its rounds in order
+    const list = page.getByRole("list", { name: "Feedback by part, newest first" });
+    const blocks = list.locator(":scope > li");
+    await expect(blocks).toHaveCount(2);
+    const first = blocks.first();
+    await expect(first.getByRole("heading", { name: "Cupboard latch" })).toBeVisible();
     await expect(first).toContainText("“this corner was square”");
     await expect(first).toContainText("“the latch has to sit flush against the door frame”");
-    await expect(first).toContainText("gap 0.84 → 0.21 mm");
+    await expect(first.getByRole("group", { name: /Gap before and after each round/ })).toContainText("0.84 mm");
+    await expect(first.getByRole("group", { name: /Gap before and after each round/ })).toContainText("0.21 mm");
     await expect(first).toContainText("fixed");
     await expect(first).toContainText("Given to 2 later jobs · their reviews: 1 accepted, 1 sent back, 0 rejected");
     await expect(first.getByRole("img", { name: "Close-up of pin 1 on the photo" })).toBeVisible();
-    const second = list.getByRole("listitem").nth(1);
+    const second = blocks.nth(1);
+    // a mixed log keeps the per-row label; reasons are never invented
     await expect(second).toContainText("test review, not a person");
     await expect(second).toContainText("no reason given");
+    await expect(page.getByRole("note").filter({ hasText: "Every entry below is a test review" })).toHaveCount(0);
     await expect(page.getByText("2 pieces of feedback · 1 fixed · 1 rejected")).toBeVisible();
-    await page.getByLabel("Result").selectOption("fixed");
-    await expect(page).toHaveURL(/outcome=fixed/);
-    await expect(list.getByRole("listitem")).toHaveCount(1);
+    await page.getByLabel("Result").selectOption("rejected");
+    await expect(page).toHaveURL(/outcome=rejected/);
+    await expect(blocks).toHaveCount(1);
+    // only test reviews left: one banner instead of a badge on every row
+    await expect(page.getByRole("note").filter({ hasText: "Every entry below is a test review, not a person." })).toBeVisible();
+    await expect(blocks.first()).not.toContainText("test review, not a person");
   });
 });

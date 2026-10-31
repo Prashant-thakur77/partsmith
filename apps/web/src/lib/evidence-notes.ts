@@ -130,3 +130,44 @@ export function uploadRefusal(status: number, message: string): string | null {
   if (status === 415) return `${what} is in a format the server does not accept. ${message}`;
   return null;
 }
+
+/**
+ * "Outline verified · 4 of 6 knobs measured" for a verified record that lists the knobs no test checked; null when the
+ * record is not verified or does not list unchecked knobs (older records), so nothing is claimed either way.
+ */
+export function verifiedScope(
+  verification: { verified: boolean; unchecked: readonly { param: string }[] } | null | undefined,
+  params: readonly { name: string }[],
+): string | null {
+  if (!verification?.verified || !verification.unchecked.length || !params.length) return null;
+  const names = new Set(params.map((p) => p.name));
+  const open = verification.unchecked.filter((u) => names.has(u.param)).length;
+  if (!open) return null;
+  return `Outline verified · ${params.length - open} of ${params.length} knobs measured`;
+}
+
+/**
+ * One plain phrase for the part tests: "all 10 required part tests passed, plus 4 extra checks (4 passed)". Required
+ * (P0) tests decide the verdict; extra (P1) checks are informational. Null without tests.
+ */
+export function testsPhrase(tests: readonly { passed: boolean; priority?: "P0" | "P1" }[]): string | null {
+  if (!tests.length) return null;
+  const req = tests.filter((t) => (t.priority ?? "P0") === "P0");
+  const extra = tests.filter((t) => t.priority === "P1");
+  const reqOk = req.filter((t) => t.passed).length;
+  const head = !req.length
+    ? "no required part tests"
+    : reqOk === req.length
+      ? req.length === 1
+        ? "the required part test passed"
+        : `all ${req.length} required part tests passed`
+      : `${reqOk} of ${req.length} required part tests passed`;
+  if (!extra.length) return head;
+  const extraOk = extra.filter((t) => t.passed).length;
+  return `${head}, plus ${extra.length} extra check${extra.length === 1 ? "" : "s"} (${extraOk} passed)`;
+}
+
+/** The verifier's own "Verified: all N P0 tests pass …" summary line, which `testsPhrase` already says in plain words. */
+export function isTestsSummaryReason(reason: string): boolean {
+  return /^Verified: all \d+ P0 tests pass/.test(reason);
+}

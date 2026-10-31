@@ -46,6 +46,7 @@ import { ApiError, api, artifactUrl } from "@/lib/api";
 import { couponFeatures } from "@/lib/coupon-fit";
 import type { ArtifactEvent, BakeResult, JobDetail, JobEvent, Measured, Measurements, PartTest } from "@/lib/api-types";
 import { isNarrated } from "@/lib/evidence-notes";
+import { runModes } from "@/lib/job-cost";
 import { fmtNum, fmtUsd, paramLabel, splitTitle } from "@/lib/format";
 import { useBake, useCountTo, useJobBake } from "@/lib/hooks";
 import { STAGE_LABELS, summarizeEvents, useJobEvents, type EventSummary, type StreamState } from "@/lib/job-events";
@@ -416,7 +417,7 @@ export function WorkspaceClient({ id }: { id: string }) {
   if (detail.isError) {
     return (
       <div className="mx-auto max-w-3xl px-4 py-16">
-        <ErrorState error={detail.error} what="this job" onRetry={() => void detail.refetch()} />
+        <ErrorState error={detail.error} what="this job" onRetry={() => void detail.refetch()} back={{ href: "/jobs", label: "See all jobs" }} />
       </div>
     );
   }
@@ -460,7 +461,7 @@ export function WorkspaceClient({ id }: { id: string }) {
                 </Badge>
               ))}
               {sum.status !== "done" ? <JobStatusBadge job={sum} /> : null}
-              <RunBadge mode={sum.provider_mode} recorded={replay} finished={!!done} />
+              <RunBadge mode={sum.provider_mode} recorded={replay} finished={!!done} modes={runModes(s.modelCalls)} />
               {sum.origin !== "replay" ? <OriginBadge origin={sum.origin} hideReal /> : null}
               {d.review ? (
                 <Link href={`/review?job=${encodeURIComponent(id)}`} className="rounded-[5px] hover:opacity-80">
@@ -537,6 +538,7 @@ export function WorkspaceClient({ id }: { id: string }) {
                       : t("ws.bestEffort")}
               </div>
               {d.partspec?.refusal ? <p className="text-muted">{d.partspec.refusal}</p> : null}
+              {doneStatus === "best_effort" && d.status_reason ? <p className="text-fg">Why: {d.status_reason}.</p> : null}
               {verification?.reasons.length ? (
                 <ul className="list-disc space-y-0.5 pl-4 text-muted">
                   {verification.reasons.map((r) => (

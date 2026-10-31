@@ -248,8 +248,13 @@ class Registry:
                 stmt = stmt.where(~PartRow.search_text.contains(ROLE_REFERENCE_TAG))
             if not (role is None if include_withdrawn is None else include_withdrawn):
                 stmt = stmt.where(PartRow.slug.not_in(select(WithdrawnRow.slug)))
-            if tokens:
-                stmt = stmt.where(or_(*[PartRow.search_text.contains(_stem(t)) for t in tokens]))
+            words = [t for t in tokens if not _screw_size(t)]
+            if words:  # any word (or a synonym or family name of it) must appear; screw sizes are matched later
+                conds: list[Any] = [PartRow.search_text.contains(_stem(a)) for t in words for a in _alternatives(t)]
+                fams = sorted({f for t in words for f in _families_named(t)})
+                if fams:
+                    conds.append(PartRow.family.in_(fams))
+                stmt = stmt.where(or_(*conds))
             rows = list(s.scalars(stmt))
         parts = [PartRecord.model_validate_json(r.record) for r in rows]
         if sort == "newest":
@@ -546,6 +551,37 @@ class Registry:
             ]
 
 
+FAMILY_TITLES = {
+    "clip": "Clips",
+    "knob": "Knobs",
+    "bracket": "Brackets",
+    "hook": "Hooks",
+    "spacer": "Spacers & standoffs",
+    "cover": "Covers & lids",
+    "wheel": "Wheels & casters",
+    "latch": "Latches & catches",
+    "gear": "Gears",
+    "cable_clip": "Cable management",
+    "hinge": "Hinges",
+    "custom": "Custom parts",
+}
+# Words that name the same object in a search ("castor wheel" finds caster wheels). Family display names above add
+# more (a "standoff" finds the spacer family). Kept small on purpose: only true synonyms, no loose relatives.
+SEARCH_SYNONYMS: dict[str, tuple[str, ...]] = {
+    "standoff": ("spacer",),
+    "spacer": ("standoff",),
+    "castor": ("caster",),
+    "caster": ("castor",),
+    "lid": ("cover",),
+    "catch": ("latch",),
+}
+# Normal (medium) metric clearance hole per screw size, mm.
+METRIC_CLEARANCE_MM = {"2": 2.4, "2.5": 2.9, "3": 3.4, "3.5": 3.9, "4": 4.5, "5": 5.5, "6": 6.6, "8": 9.0}
+SCREW_PILOT_RATIO = 0.8  # smallest hole that still takes the screw: a pilot it cuts its own thread in (~0.8 x size)
+SCREW_LOOSE_MM = 0.6  # largest: the clearance hole plus a loose-fit / printed-oversize allowance
+_HOLE_KEY = re.compile(r"(hole|bore|pivot|pin|screw|axle)")
+_TERM = re.compile(r"(?<![a-z0-9.])m(\d+(?:\.\d+)?)(?![\d.])|[a-z]+")
+
 QUERY_STOPWORDS = frozenset(
     {"mm", "for", "the", "and", "with", "my", "of", "to", "in", "on", "an", "part", "parts", "replacement", "new",
      "broken", "need", "spare"}
@@ -557,10 +593,50 @@ NUMBER_TOL_MM = 0.5  # ... or within half a millimetre, whichever is larger
 
 
 def query_terms(q: str) -> tuple[list[str], list[float]]:
-    """Words (two letters or more, filler words dropped) and numbers of a search query."""
-    tokens = [t for t in re.findall(r"[a-z]+", q.lower()) if len(t) > 1 and t not in QUERY_STOPWORDS]
-    numbers = [float(n) for n in re.findall(r"\d+(?:\.\d+)?", q)]
+    """Words (two letters or more, filler words dropped) and numbers of a search query. A metric screw size ("M3",
+    "m2.5") stays one word ("m3") and is matched against hole diameters, not counted as the number 3."""
+    low = q.lower()
+    tokens: list[str] = []
+    rest = low
+    for m in _TERM.finditer(low):
+        size = m.group(1)
+        if size is not None:
+            if size in METRIC_CLEARANCE_MM:
+                tokens.append(f"m{size}")
+                rest = rest[: m.start()] + " " * (m.end() - m.start()) + rest[m.end() :]
+        elif len(m.group(0)) > 1 and m.group(0) not in QUERY_STOPWORDS:
+            tokens.append(m.group(0))
+    numbers = [float(n) for n in re.findall(r"\d+(?:\.\d+)?", rest)]
     return tokens, numbers
+
+
+def _screw_size(token: str) -> str | None:
+    """ "m3" -> "3" for a screw-size token, else None."""
+    return token[1:] if token.startswith("m") and token[1:] in METRIC_CLEARANCE_MM else None
+
+
+def screw_fits(size: str, diameters: list[float]) -> bool:
+    """A screw of `size` (e.g. "3" for M3) goes through one of these hole diameters: from a pilot hole it threads
+    itself into (0.8 x size) up to its normal clearance hole plus SCREW_LOOSE_MM."""
+    lo, hi = SCREW_PILOT_RATIO * float(size), METRIC_CLEARANCE_MM[size] + SCREW_LOOSE_MM
+    return any(lo <= d <= hi for d in diameters)
+
+
+def hole_diameters(p: PartRecord) -> list[float]:
+    """Default hole / bore / pivot diameters of a part (knobs named like `hole_d`, `bore_d`, `pivot_d`)."""
+    return [
+        float(v) for k, v in p.defaults.items()
+        if v > 0 and _HOLE_KEY.search(k) and (k.endswith("_d") or "diam" in k)
+    ]  # fmt: skip
+
+
+def _alternatives(token: str) -> tuple[str, ...]:
+    return (token, *SEARCH_SYNONYMS.get(_stem(token), ()))
+
+
+def _families_named(token: str) -> list[str]:
+    """Families whose display name has this word ("standoff" -> spacer, "lid" -> cover)."""
+    return [f for f, title in FAMILY_TITLES.items() if _word_hit(token, set(re.findall(r"[a-z]+", title.lower())))]
 
 
 def _stem(word: str) -> str:
@@ -581,16 +657,37 @@ def number_hit(n: float, dims: list[float]) -> bool:
 def coverage(p: PartRecord, tokens: list[str], numbers: list[float]) -> float:
     """Share (0..1) of the query's words and numbers this part matches: a word must start a word of the part's title,
     family, tags, summary or slug (plural "s" ignored); a number must lie within max(10 %, 0.5 mm) of one of the part's
-    default dimensions or a number written in its title or tags. 0.0 for an empty query."""
+    default dimensions or a number written in its title or tags. Synonyms and the family's display name count as
+    words ("standoff" matches a spacer); a screw size ("m3") matches a hole it fits (see `screw_fits`). 0.0 for an
+    empty query."""
     terms = len(tokens) + len(numbers)
     if not terms:
         return 0.0
-    text = " ".join([p.title, p.family.value.replace("_", " "), " ".join(p.tags), p.summary, p.slug.replace("-", " ")])
-    words = set(re.findall(r"[a-z]+", text.lower()))
-    dims = [float(v) for v in p.defaults.values() if v > 0]
-    dims += [float(n) for n in re.findall(r"\d+(?:\.\d+)?", " ".join([p.title, " ".join(p.tags)]))]
-    hits = sum(1 for t in tokens if _word_hit(t, words)) + sum(1 for n in numbers if number_hit(n, dims))
+    hits = sum(1 for t in tokens if _token_hit(p, t)) + sum(1 for n in numbers if number_hit(n, _dims(p)))
     return round(hits / terms, 3)
+
+
+def _part_text(p: PartRecord) -> str:
+    return " ".join([
+        p.title, p.family.value.replace("_", " "), FAMILY_TITLES.get(p.family.value, ""), " ".join(p.tags), p.summary,
+        p.slug.replace("-", " "),
+    ]).lower()  # fmt: skip
+
+
+def _dims(p: PartRecord) -> list[float]:
+    dims = [float(v) for v in p.defaults.values() if v > 0]
+    return dims + [float(n) for n in re.findall(r"\d+(?:\.\d+)?", " ".join([p.title, " ".join(p.tags)]))]
+
+
+def _token_hit(p: PartRecord, token: str) -> bool:
+    """A query word matches a word of the part (or a synonym does); a screw size matches a hole it fits, or the
+    size written on the part ("M3" in its tags)."""
+    text = _part_text(p)
+    size = _screw_size(token)
+    if size is not None:
+        return screw_fits(size, hole_diameters(p)) or re.search(rf"\b{re.escape(token)}\b", text) is not None
+    words = set(re.findall(r"[a-z]+", text))
+    return any(_word_hit(a, words) for a in _alternatives(token))
 
 
 def match_label(best: float | None) -> str:
@@ -615,8 +712,11 @@ def match_hint(match: str) -> str | None:
 
 
 def _score(p: PartRecord, tokens: list[str], numbers: list[float]) -> float:
-    text = " ".join([p.title, p.family.value, " ".join(p.tags), p.summary]).lower()
-    score = sum(3.0 if t in p.title.lower() else 1.0 for t in tokens if t in text)
+    title = p.title.lower()
+    score = 0.0
+    for t in tokens:
+        if _token_hit(p, t):
+            score += 3.0 if any(a in title for a in _alternatives(t)) else (2.0 if _screw_size(t) else 1.0)
     if p.verification and p.verification.verified:
         score += 0.5
     for n in numbers:  # closest default dimension to each number in the query

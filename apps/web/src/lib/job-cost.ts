@@ -57,3 +57,25 @@ export function jobCost(calls: readonly CostCall[], opts: { replay: boolean }): 
           : "live model calls, as each provider reported them";
   return { usd, tokensIn, tokensOut, calls: calls.length, failed, liveCalls, perModel, kind, note };
 }
+
+export type RunModes = {
+  /** "mixed" when the run's model calls used more than one mode (e.g. live builder, mock judge). */
+  mode: "live" | "mock" | "replay" | "mixed";
+  counts: { live: number; mock: number; replay: number };
+};
+
+/** Where a run's model answers came from, counted from its own `model_call` events; null without any. */
+export function runModes(calls: readonly Pick<CostCall, "mode">[]): RunModes | null {
+  const counts = { live: 0, mock: 0, replay: 0 };
+  for (const c of calls) if (c.mode in counts) counts[c.mode] += 1;
+  const used = (Object.keys(counts) as (keyof typeof counts)[]).filter((k) => counts[k] > 0);
+  if (!used.length) return null;
+  return { mode: used.length > 1 ? "mixed" : used[0]!, counts };
+}
+
+/** "11 live · 3 mock calls" for a tooltip. */
+export function runModesText(m: RunModes): string {
+  const parts = (["live", "mock", "replay"] as const).filter((k) => m.counts[k]).map((k) => `${m.counts[k]} ${k === "replay" ? "recorded" : k}`);
+  const n = m.counts.live + m.counts.mock + m.counts.replay;
+  return `${parts.join(" · ")} call${n === 1 ? "" : "s"}`;
+}

@@ -1,7 +1,7 @@
 "use client";
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Check, CornerUpLeft, Factory, Send, X } from "lucide-react";
+import { ArrowRight, Check, CornerUpLeft, Factory, Send, X } from "lucide-react";
 import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import * as React from "react";
@@ -9,6 +9,7 @@ import { Container, PageHeader, Section } from "@/components/layout/page";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { EmptyState } from "@/components/ui/empty-state";
+import { ExamplePreview } from "@/components/ui/example-preview";
 import { ErrorState } from "@/components/ui/error-state";
 import { Input, Label, Textarea } from "@/components/ui/input";
 import { Kbd } from "@/components/ui/kbd";
@@ -134,6 +135,53 @@ function ApprovalQueue({ runId, items }: { runId: string; items: SteerQueueItem[
   );
 }
 
+/** What a run looks like, drawn by hand from the page's own layout: words only, no numbers, never a real record. */
+function FactoryExample() {
+  const plan = [
+    { title: "Cupboard turn-button latch", family: "latch" },
+    { title: "Hinge leaf", family: "hinge" },
+    { title: "L-bracket shelf support", family: "bracket" },
+  ];
+  const lanes: { slug: string; status: string; tone: "ok" | "warn" | "accent" }[] = [
+    { slug: "cupboard-latch", status: "self-check passed", tone: "ok" },
+    { slug: "hinge-leaf", status: "best effort", tone: "warn" },
+    { slug: "shelf-support", status: "building", tone: "accent" },
+  ];
+  return (
+    <ExamplePreview title="What a run looks like" kind="illustration · not a run, no measurements">
+      <ol className="grid grid-cols-1 gap-3 text-[13px] md:grid-cols-3">
+        <li className="space-y-2 rounded-lg border border-border bg-surface p-3">
+          <div className="font-mono text-[11px] text-subtle">1 · brief → plan</div>
+          <p className="text-muted italic">“cupboard hardware kit: latches, hinge leaves, shelf supports”</p>
+          <ul className="space-y-1">
+            {plan.map((p) => (
+              <li key={p.title} className="flex items-center justify-between gap-2">
+                <span className="truncate">{p.title}</span>
+                <Badge tone="neutral">{titleCase(p.family)}</Badge>
+              </li>
+            ))}
+          </ul>
+        </li>
+        <li className="space-y-2 rounded-lg border border-border bg-surface p-3">
+          <div className="font-mono text-[11px] text-subtle">2 · build lanes, each checked by code</div>
+          <ul className="space-y-1">
+            {lanes.map((l) => (
+              <li key={l.slug} className="flex items-center justify-between gap-2">
+                <span className="truncate font-mono text-[12px]">{l.slug}</span>
+                <Badge tone={l.tone}>{l.status}</Badge>
+              </li>
+            ))}
+          </ul>
+        </li>
+        <li className="space-y-2 rounded-lg border border-border bg-surface p-3">
+          <div className="font-mono text-[11px] text-subtle">3 · a person approves</div>
+          <p className="text-muted">Each finished part waits in the approval queue. Approve publishes it to the registry, send back returns it with your note, reject drops it.</p>
+        </li>
+      </ol>
+    </ExamplePreview>
+  );
+}
+
 export function SteerClient() {
   const { admin } = useAdmin();
   const router = useRouter();
@@ -220,9 +268,26 @@ export function SteerClient() {
               </ul>
             </Section>
           ) : (
-            <EmptyState icon={Factory} title="No runs yet">
-              Start a run above. Each part goes through the same verifier as a photo fix; nothing is published without approval.
-            </EmptyState>
+            <div className="space-y-4">
+              <EmptyState
+                compact
+                icon={Factory}
+                title="No factory runs on this server yet"
+                action={
+                  admin ? null : (
+                    <Button asChild variant="outline" size="sm">
+                      <Link href="/parts">
+                        Browse the parts already published <ArrowRight aria-hidden />
+                      </Link>
+                    </Button>
+                  )
+                }
+              >
+                For people who keep a range of parts, like a repair shop or a maker space: one brief becomes a planned family, every part is built and checked, and
+                nothing is published until a person approves it. {admin ? "Write a brief above to start the first run." : "Starting a run needs an admin token."}
+              </EmptyState>
+              <FactoryExample />
+            </div>
           )
         ) : run.isError ? (
           <ErrorState error={run.error} what="this run" onRetry={() => void run.refetch()} />

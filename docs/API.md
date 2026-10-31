@@ -95,8 +95,9 @@ Screen calibration (ID-1 card 85.60 × 53.98 mm) happens in the browser and is s
 | GET | `/jobs/demo/samples` | `[{"id": str, "title": str, "family_hint": str\|null, "kind": "template"\|"reference_object"}]` — bundled **synthetic** samples |
 | POST | `/jobs/demo` | `{"sample": str}` → `JobSummary` — runs a bundled **synthetic** sample (labelled synthetic everywhere); unknown ids → `404 sample_not_found` + closest |
 | GET | `/jobs?limit=&include_replays=&kind=` | `[JobSummary]` (newest first) |
-| GET | `/jobs/{id}` | `JobDetail = {"passport": PassportLink, "summary": JobSummary, "events": [Event], "partspec": PartSpec\|null, "measurements": {view: Measurements}, "verification": Verification\|null, "code": str\|null, "params": [ParamSpec], "values": {name: float}, "artifacts": {kind: url}, "question": QuestionEvent\|null, "hidden_dims": [HiddenDimCheck]}` |
+| GET | `/jobs/{id}` | `JobDetail = {"passport": PassportLink, "summary": JobSummary, "events": [Event], "partspec": PartSpec\|null, "measurements": {view: Measurements}, "verification": Verification\|null, "code": str\|null, "params": [ParamSpec], "values": {name: float}, "artifacts": {kind: url}, "question": QuestionEvent\|null, "hidden_dims": [HiddenDimCheck], "status_reason": str\|null}` (see `PartCard`) |
 | GET | `/jobs/{id}/thumbnail.jpg` | the job's rectified top photo cropped to the part, ≤ 240 px JPEG, cached per photo; `404 no_photo` when the job has no measured photo |
+| GET | `/jobs/{id}/model.png` | a shaded picture of the job's latest STL (480 px PNG, cached per model; the phone poster before "View in 3D"); picture only, nothing is measured from it; `404 no_model` when no model was built |
 | GET | `/jobs/{id}/events` | **SSE**: one `data: <Event JSON>` per event (`id:` = seq). Agentic fix rounds add `thought` (`{"stage","model","text","iter","mode"}`), `tool_call` (`{"stage","name","args","result","ok","ms","iter","mode"}`) and `focus` (`{"feature","view","at_mm","label","iter"}`, a location code picked from the verifier's worst residual) events; `iter` on `thought`/`tool_call` is the agent's turn within its session, on `focus` the fix round; `mode` is `live`\|`replay`\|`mock`, and a mock run's thoughts come from the deterministic policy (`model: "mock fix agent"`, text ending "(deterministic mock)"). A job that verifies on its first build runs no agent and has none of them. Replays all past events first, then live ones. Ends after `done` — unless `?follow=1`: then the stream stays open (up to 30 min, keep-alives every 15 s) and delivers events appended after `done`, such as a fit check uploaded from a phone. `?from_seq=` (or the `Last-Event-ID` header) resumes. Events keep their original `ts` (the replay player paces on ts gaps). A `: keep-alive` comment is sent after 15 s without events; the stream starts with `retry: 3000`. Headers: `Cache-Control: no-cache, no-transform`, `X-Accel-Buffering: no` |
 | POST | `/jobs/{id}/answer` | `{"id": str, "value": str\|float, "via": "text"\|"voice"}` → `JobSummary` (resumes a paused job; `409 no_pending_question` otherwise) |
 | POST | `/jobs/{id}/edit` | JSON `{"text": str}` or multipart `audio` (+ optional `text`) → `{"transcript": str, "edits": [{"param","from","to","reason"}], "not_understood": [str], "confidence": float, "mode": str, "bake": BakeResult}` (voice/text edit; clamped to PARAMS) |
@@ -272,12 +273,21 @@ adds beyond the broken end out of every comparison (like the completed region), 
 | POST | `/lessons/{id}/promote`, `/lessons/{id}/reject` | **admin**. `{"by"?: str}` → the lesson. Only promoted lessons reach future builds |
 | GET | `/stats` | `{"parts": int, "verified": int, "synthetic": int, "real": int, "reference_object": int, "reference": int, "jobs": int, "grams_pla": float, "calls_total": int, "mcp_calls": int, "distinct_clients": int, "last_7d": {"calls","mcp_calls","distinct_clients"}, "usage": {… + "top_routes": [{"route","calls"}]}}` — computed from the DB |
 
-`PartCard = {"slug","title","family","status","origin","verified","max_error_mm","thumbnail_url","thumbnail_2x_url","params_count","topology_knobs": [str],"summary","bbox_mm": [x,y,z]|null}`
+`PartCard = {"slug","title","family","status","origin","verified","max_error_mm","status_reason": str|null,"thumbnail_url","thumbnail_2x_url","params_count","topology_knobs": [str],"summary","bbox_mm": [x,y,z]|null}`.
+`status_reason` (also on part detail and `JobDetail`) is one short line naming the check that kept a best-effort
+result from passing, built by `services.verifier.ship.short_reason` from the verification record only: a blocking judge
+veto, the worst failed size residual ("the outline length is 0.38 mm too long (allowed ±0.30 mm)"), the first failed
+required part test, a view over the Hausdorff limit, or a view gate from the verifier's own view line (e.g. mean contour
+distance). `null` for verified, failed or unverified records.
 
 **Search coverage and demand.** With a query, each search result carries `coverage` (0–1): the share of the query's
 words and numbers the part matches. A word matches when it starts a word of the part's title, family, tags, summary or
 slug (a plural "s" is ignored; filler words like "for", "the", "replacement" are dropped); a number matches when it lies
-within max(10 %, 0.5 mm) of one of the part's default dimensions or a number in its title or tags. The page's
+within max(10 %, 0.5 mm) of one of the part's default dimensions or a number in its title or tags. The family's display
+name and a short synonym list count as words ("standoff" finds the spacer family, "lid" a cover, "castor" a caster). A
+metric screw size (`M2`, `M2.5`, `M3`, `M3.5`, `M4`, `M5`, `M6`, `M8`) is one term, matched against the part's hole,
+bore, pivot and pin diameters: it fits from a self-tapping pilot (0.8 × size) up to the ISO 273 medium clearance
+hole + 0.6 mm (M3: 2.4–4.0 mm), or when the size is written in the part's text. The page's
 `coverage` is the best over every candidate, `match` is `good` (≥ 0.75), `partial` (≥ 0.5) or `none`, and `hint` says
 what to do when nothing matches well ("No close match — describe it at /describe or fix from a photo at /fix …").
 Without a query `match` is `"all"` and `coverage`/`hint` are null. MCP `search_parts` returns the same fields.

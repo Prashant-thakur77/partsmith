@@ -27,25 +27,14 @@ from services.geom_worker.program import clamp, closest_names, params_sha
 from services.geom_worker.sandbox import WarmPool
 from services.media.voice import RELATIVE_WORDS, map_utterance, snap_clamp
 from services.registry import gate, passport
+from services.registry.store import FAMILY_TITLES as FAMILY_TITLES  # re-exported: P.FAMILY_TITLES
+from services.registry.store import METRIC_CLEARANCE_MM as METRIC_CLEARANCE_MM  # re-exported
 from services.registry.store import Registry, get_registry
+from services.verifier.ship import short_reason
 
 API = "/api/v1"
 DEFAULT_FORMATS = ("stl", "step", "view")
 ALL_FORMATS = geom_bake.FORMATS
-FAMILY_TITLES = {
-    "clip": "Clips",
-    "knob": "Knobs",
-    "bracket": "Brackets",
-    "hook": "Hooks",
-    "spacer": "Spacers & standoffs",
-    "cover": "Covers & lids",
-    "wheel": "Wheels & casters",
-    "latch": "Latches & catches",
-    "gear": "Gears",
-    "cable_clip": "Cable management",
-    "hinge": "Hinges",
-    "custom": "Custom parts",
-}
 
 
 # ------------------------------------------------------------------------------------------------- lookup
@@ -168,7 +157,6 @@ VARIANT_SCHEMA: dict[str, Any] = {
 }
 
 # ISO 273 "medium" clearance holes for metric screws (mm)
-METRIC_CLEARANCE_MM = {"2": 2.4, "2.5": 2.9, "3": 3.4, "3.5": 3.9, "4": 4.5, "5": 5.5, "6": 6.6, "8": 9.0}
 RESCALE_WORDS = {"scale", "rescale", "factor", "scale_factor", "size", "uniform_scale"}
 _WORD_COUNTS = {
     "no": 0,
@@ -656,6 +644,7 @@ def part_card(
         "origin": part.provenance.origin.value,
         "verified": bool(v and v.verified),
         "max_error_mm": v.max_error_mm if v else None,
+        "status_reason": short_reason(v),
         "thumbnail_url": thumb,
         "thumbnail_2x_url": thumb2,
         "params_count": len(part.params),
@@ -763,6 +752,7 @@ def part_detail(part: PartRecord, reg: Registry | None = None) -> dict[str, Any]
     d["fit_reports"] = reg.fit_reports(part.slug)
     d["origin"] = part.provenance.origin.value
     d["verified"] = bool(part.verification and part.verification.verified)
+    d["status_reason"] = short_reason(part.verification)  # which check kept a best-effort part from passing
     d["ship"] = gate.decide_part(part).to_dict()  # the export gate's decision, same as jobs and bundle.zip
     d["passport"] = passport.link(passport.part_id(part)).model_dump(mode="json")
     return d

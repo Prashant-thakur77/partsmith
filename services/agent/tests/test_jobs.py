@@ -75,3 +75,14 @@ def test_cancel_unblocks_question(manager):
     job.cancel()
     t.join(5)
     assert job.summary.status == "cancelled"
+
+
+def test_old_titles_say_synthetic_once() -> None:
+    from services.agent.jobs import say_synthetic_once
+
+    assert (
+        say_synthetic_once("Spacer / standoff (synthetic, clean) (synthetic sample)")
+        == "Spacer / standoff (synthetic, clean)"
+    )
+    assert say_synthetic_once("Hook (synthetic sample)") == "Hook (synthetic sample)"  # the only mention stays
+    assert say_synthetic_once("Battery cover (synthetic, paper)") == "Battery cover (synthetic, paper)"

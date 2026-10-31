@@ -178,6 +178,11 @@ function PassportItems({ passport, origin }: { passport: PassportLink; origin: s
   );
 }
 
+/** A mock or placeholder preview (no image model ran): never shown as if it were a picture of the fix. */
+export function isPlaceholderPreview(p: { mode: string; label: string }): boolean {
+  return p.mode === "mock" || /\bmock\b|placeholder|not ai-generated/i.test(p.label);
+}
+
 /** "See the fix": Muse Image composites the new part into the original photo. Always labelled as a generated preview. */
 export function PreviewDialog({ jobId, photoUrl, disabled }: { jobId: string; photoUrl?: string; disabled?: boolean }) {
   const preview = useMutation({ mutationFn: () => api.preview(jobId) });
@@ -197,6 +202,16 @@ export function PreviewDialog({ jobId, photoUrl, disabled }: { jobId: string; ph
           </div>
         ) : preview.isError ? (
           <ErrorState error={preview.error} compact what="the preview" onRetry={() => preview.mutate()} />
+        ) : preview.data && isPlaceholderPreview(preview.data) ? (
+          <div role="note" className="flex aspect-[16/7] flex-col items-center justify-center gap-2 rounded-lg border border-dashed border-border bg-surface-2 px-6 text-center">
+            <ImageIcon className="size-6 text-subtle" aria-hidden />
+            <p className="text-[14px] font-medium text-fg">No picture of the fix on this server</p>
+            <p className="max-w-md text-[12.5px] text-muted">
+              The image model is not being called here (mock mode), so there is only a placeholder and it is not shown. The 3D model,
+              the measurements and the verdict on this page are the real result.
+            </p>
+            <ModeBadge mode={preview.data.mode} />
+          </div>
         ) : preview.data ? (
           <div className="space-y-2">
             <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">

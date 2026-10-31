@@ -217,4 +217,14 @@ Seven workstreams in flight: providers, verifier, synth/eval, API/registry, metr
   overview); intermittent hydration error #418 fixed site-wide; `/jobs` rows show the measured photo cropped to the part
   (`/jobs/{id}/thumbnail.jpg`) and the max gap; `/models` opens with the photo → part pipeline coloured by model; withdrawn
   parts say so on their page.
+- **Review fixes (Oct 31):** search matches family names, a short synonym list and screw sizes (M3 → hole diameters);
+  every example query on the site returns a part; landing shows the pass rate beside the median; best-effort parts and
+  jobs say which check failed (`status_reason`); 45 deg chamfers no longer mark plain spacers "supports needed" (stale
+  cached facts are recomputed); real 404s for missing parts and jobs; plain words on /results; buy offers labelled as
+  name matches.
+- **Weak pages polished:** /fix no longer shifts on load (mobile CLS 0.53 → 0.00, measured with Playwright under 4× CPU
+  throttling) and hides the QR on a local-only server; /lessons folds duplicate suggestions into one card per family;
+  /judges autoplays the replay with its photos; empty Labs pages, /describe and /shop show labelled examples; /jobs has a
+  summary and URL filters; /review/log groups feedback by part with before → after gaps; phones see a shaded model
+  picture on /review (`GET /jobs/{id}/model.png`).
 - **Next:** real photos, a dozen honest reviews on `/review`, Modal login and deploy go-ahead from Prashant; the final video with real-world shots.

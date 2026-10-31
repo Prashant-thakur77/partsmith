@@ -1,7 +1,8 @@
 "use client";
 
 /**
- * Buy or print, for the recorded run on Fig. 1: the cheapest cited offer the web search found (with its link) next to
+ * Buy or print, for the recorded run on Fig. 1: the cheapest cited offer the web search found by name (with its link,
+ * labelled as not the same part: the run's part is a synthetic test part, or at best unchecked against the offer) next to
  * the code's own print estimate (grams, minutes, filament cost). Read from `/jobs/{id}/buy-or-print`; a price is shown
  * only with its source link, and the whole card is labelled with the part and where its numbers came from.
  */
@@ -54,7 +55,7 @@ export function BuyOrPrintStrip() {
       <div className="grid grid-cols-1 overflow-hidden rounded-xl border border-border bg-surface md:grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)]">
         <section aria-label="Buy" className="flex flex-col gap-4 p-6 sm:p-7" data-reveal>
           <div className="flex items-center gap-2 font-mono text-[11px] tracking-[0.14em] text-subtle uppercase">
-            <ShoppingCart className="size-3.5" aria-hidden /> Buy the original
+            <ShoppingCart className="size-3.5" aria-hidden /> Closest cited offer
           </div>
           {best ? (
             <>
@@ -67,6 +68,11 @@ export function BuyOrPrintStrip() {
                     {" "}· part <span className="font-mono text-fg">{oem.number || oem.name}</span>
                   </>
                 ) : null}
+              </p>
+              <p className="text-[12.5px] leading-5 text-warn">
+                {pick.origin === "synthetic"
+                  ? "Found by name by the web search, not the same part: this test part is synthetic, so no shop sells it."
+                  : "Found by name by the web search; not checked to be the same part."}
               </p>
               <a href={best.href} target="_blank" rel="noreferrer noopener" className="inline-flex w-fit items-center gap-1 font-mono text-[12px] text-accent-text hover:underline">
                 {hostOf(best.href)} <ArrowUpRight className="size-3.5" aria-hidden />

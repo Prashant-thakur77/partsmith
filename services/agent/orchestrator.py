@@ -2672,7 +2672,7 @@ class FixRun:
     # ---- 10. package ----------------------------------------------------------------------------------------------------------
     def package(self, v: Verification | None) -> None:
         from services.agent import evidence
-        from services.geom_worker.bake import BakeError, bake
+        from services.geom_worker.bake import FACTS_RULE, BakeError, bake
 
         b = self.best
         if b is None or v is None or v.status == "failed" or not b.code:
@@ -2697,6 +2697,7 @@ class FixRun:
                     made.append(fmt)
                 if bo.facts is not None:
                     self.job.write_json("facts.json", bo.facts)
+                    self.job.write_json("facts_rule.json", {"rule": FACTS_RULE})
             except BakeError as exc:
                 self.log(f"export failed: {exc}", "error")
             self.artifact("verification", v.model_dump_json(indent=2).encode(), ".json", "verification.json")

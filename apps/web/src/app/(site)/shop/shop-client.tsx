@@ -10,6 +10,8 @@ import { Container, PageHeader, Section } from "@/components/layout/page";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { EmptyState } from "@/components/ui/empty-state";
+import { ExamplePreview } from "@/components/ui/example-preview";
+import { OriginBadge } from "@/components/ui/provenance";
 import { ErrorState } from "@/components/ui/error-state";
 import { Input, Label, Select } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -18,7 +20,7 @@ import { adminToken } from "@/lib/admin";
 import { API_PREFIX, api } from "@/lib/api";
 import { R2, shop, type BatchRow } from "@/lib/api-r2";
 import { useCapabilities } from "@/lib/capabilities";
-import { fmtNum, timeAgo, titleCase } from "@/lib/format";
+import { fmtNum, splitTitle, timeAgo, titleCase } from "@/lib/format";
 
 async function downloadSheet(id: string, name: string) {
   const token = adminToken();
@@ -176,6 +178,61 @@ function BatchView({ id }: { id: string }) {
   );
 }
 
+const EXAMPLE_ROWS = 3;
+
+/**
+ * What a day's batch looks like, filled with this server's recorded runs (titles, verdicts and max errors from /replays).
+ * The customer column is placeholder text: no customer data is ever shown here.
+ */
+function ShopExample() {
+  const replays = useQuery({ queryKey: ["replays"], queryFn: api.replays, staleTime: 300_000 });
+  const rows = (replays.data ?? []).slice(0, EXAMPLE_ROWS);
+  return (
+    <ExamplePreview title="What a batch looks like" kind="recorded runs · placeholder customers">
+      {replays.isPending ? (
+        <Skeleton className="h-28" />
+      ) : !rows.length ? (
+        <p className="text-[13px] text-muted">This server has no recorded runs to show here.</p>
+      ) : (
+        <div tabIndex={0} role="region" aria-label="Example batch (recorded runs)" className="scrollbar-thin overflow-x-auto rounded-lg border border-border bg-surface">
+          <table className="w-full min-w-[520px] text-[13px]">
+            <thead className="bg-surface-2 text-left text-[11px] text-subtle">
+              <tr>
+                <th scope="col" className="px-3 py-2 font-medium">Customer</th>
+                <th scope="col" className="px-3 py-2 font-medium">Part (recorded run)</th>
+                <th scope="col" className="px-3 py-2 font-medium">Status</th>
+                <th scope="col" className="px-3 py-2 text-right font-medium">Max error</th>
+              </tr>
+            </thead>
+            <tbody>
+              {rows.map((r, i) => (
+                <tr key={r.id} className="border-t border-border">
+                  <th scope="row" className="px-3 py-2 text-left font-normal text-muted italic">
+                    Customer {i + 1}
+                  </th>
+                  <td className="px-3 py-2">
+                    <Link href={`/jobs/${encodeURIComponent(r.id)}`} className="hover:underline">
+                      {splitTitle(r.title).title}
+                    </Link>{" "}
+                    <OriginBadge origin={r.origin} hideReal />
+                  </td>
+                  <td className="px-3 py-2">{r.verified ? <Badge tone="ok">Verified</Badge> : <Badge tone="warn">Best effort</Badge>}</td>
+                  <td className="px-3 py-2 text-right font-mono tnum">{r.max_error_mm != null ? `${fmtNum(r.max_error_mm)} mm` : "—"}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+      <p className="mt-3 text-[12px] text-muted">
+        A real batch adds the PLA grams and a price estimate per job from the server&apos;s rate, and prints everything on one A4 job sheet.
+      </p>
+    </ExamplePreview>
+  );
+}
+
+const SHOP_FOR = "For repair counters that take in several broken parts a day: one batch per day, one fix job per customer, one printed job sheet.";
+
 /** Repair-shop batch mode: batches of customers, each with a fix job; statuses live from the jobs API. */
 export function ShopClient() {
   const caps = useCapabilities();
@@ -213,7 +270,11 @@ export function ShopClient() {
             .
           </EmptyState>
         ) : !admin ? (
-          <AdminAccess what="Batches hold customer names and contacts, so they are admin-only. Enter the shop's admin token to open them on this device." />
+          <>
+            <p className="text-[14px] text-muted">{SHOP_FOR}</p>
+            <AdminAccess what="Batches hold customer names and contacts, so they are admin-only. Enter the shop's admin token to open them on this device." />
+            <ShopExample />
+          </>
         ) : (
           <>
             <AdminLock />
@@ -240,7 +301,12 @@ export function ShopClient() {
               ) : batches.isError ? (
                 <ErrorState error={batches.error} what="batches" />
               ) : batches.data.length === 0 ? (
-                <EmptyState compact icon={Store} title="No batches yet" />
+                <div className="space-y-4">
+                  <EmptyState compact icon={Store} title="No batches yet">
+                    {SHOP_FOR} Name today&apos;s batch above to start.
+                  </EmptyState>
+                  {batchId ? null : <ShopExample />}
+                </div>
               ) : (
                 <ul className="divide-y divide-border overflow-hidden rounded-lg border border-border bg-surface">
                   {batches.data.map((b) => (

@@ -19,7 +19,7 @@ Live site _(coming)_ · Video _(coming)_ · Judges page _(coming)_ · Try a samp
 <!-- BEGIN:headline -->
 | Number | What it counts | Source |
 |---|---|---|
-| **17/17** | lying-model attacks blocked by code; suite: lying-brain (scripted mock attacks; no model calls) | `eval/reports/latest/bypass.json` |
+| **17/17** | lying-model attacks blocked by code; suite: scripted attacks, no model calls | `eval/reports/latest/bypass.json` |
 | **0/2** synthetic · **0/4** reference objects | verified parts that are > 0.5 mm off the ground truth (off / verified) | `eval/reports/latest/report.json` → `tables.*.headline.verified_but_off` |
 | **6/6** control · **10/10** red-team | intact photos accepted · bad or unsuitable photos rejected or refused | `eval/reports/latest/report.json` → `tables.control`, `tables.redteam` |
 | **0.1 mm** | median absolute error per dimension, synthetic photos, config PS, n = 12 | `eval/reports/latest/report.json` → `tables.synthetic.headline` |

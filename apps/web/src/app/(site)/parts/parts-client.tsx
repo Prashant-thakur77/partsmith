@@ -54,6 +54,9 @@ export function PartsClient() {
   }, [dq, sp, setParam]);
 
   const families = useQuery({ queryKey: ["families"], queryFn: api.families });
+  const counts = families.data?.length
+    ? families.data.reduce((acc, f) => ({ count: acc.count + f.count, verified: acc.verified + f.verified }), { count: 0, verified: 0 })
+    : null;
   const list = useInfiniteQuery({
     queryKey: ["parts", { q: dq, family, verified, sort }],
     queryFn: ({ pageParam }) => extrasApi.parts({ q: dq || undefined, family: family || undefined, verified, sort, cursor: pageParam, limit: 24 }),
@@ -75,8 +78,8 @@ export function PartsClient() {
     <>
       <PageHeader
         eyebrow="Registry"
-        title="Verified parametric parts"
-        description="Every part is a CadQuery program with typed knobs, a verification record and provenance. Drag the knobs, download STL, 3MF or STEP."
+        title="Parametric parts"
+        description={`${counts ? `${fmtInt(counts.verified)} of ${fmtInt(counts.count)} verified by code against their photos; the rest are best effort. ` : ""}Every part is a CadQuery program with typed knobs, a verification record and provenance. Drag the knobs, download STL, 3MF or STEP.`}
       />
       <Container className="space-y-6 py-8">
         <div className="space-y-4">
@@ -88,7 +91,7 @@ export function PartsClient() {
                 aria-label="Search parts"
                 value={q}
                 onChange={(e) => setQ(e.target.value)}
-                placeholder="Search: cooler wheel 32 mm, M3 standoff, cupboard latch…"
+                placeholder="Search: M3 standoff, battery cover 45 mm, cupboard latch…"
                 className="h-10 pl-9"
               />
             </div>

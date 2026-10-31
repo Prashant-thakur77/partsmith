@@ -126,7 +126,9 @@ test("Hinglish toggle translates /fix and is remembered", async ({ page }) => {
 test("two-device flow: QR on /fix, and the laptop fit page flips when the phone's check arrives", async ({ page }) => {
   await setup(page, { liveFitCheck: true });
   await page.goto("/fix");
-  await expect(page.getByRole("img", { name: /QR code: http.*\/fix/ })).toBeVisible();
+  // The e2e server is local-only, so the QR (which a phone could never open) is replaced by a note.
+  await expect(page.getByTestId("phone-qr-local")).toContainText("Local server");
+  await expect(page.getByRole("img", { name: /QR code: http.*\/fix/ })).toHaveCount(0);
   await page.goto("/jobs/job_demo_1/fit");
   await expect(page.getByText("Lay the part exactly on the pink outline")).toBeVisible();
   await expect(page.getByRole("dialog", { name: "Fit check result" })).toContainText("It fits the outline", { timeout: 10_000 });

@@ -43,6 +43,7 @@ from services.common import blobs
 from services.common.images import decode_bgr
 from services.common.paths import REPO_ROOT
 from services.geom_worker.program import code_sha, parse_params, set_defaults
+from services.verifier.ship import short_reason
 
 SAMPLES_DIRS = (REPO_ROOT / "data" / "synthetic" / "samples", REPO_ROOT / "data" / "synthetic" / "bench")
 SYNC_QUESTION_TIMEOUT_S = 0.0  # synchronous runs never wait for a human: defaults are used
@@ -377,6 +378,7 @@ def detail_of(job: Job) -> dict[str, Any]:
         artifacts[e.kind] = e.url
     q = job.pending_question()
     judge = job.read_json("judge.json")
+    vrec = Verification.model_validate(ver) if ver else None
     return {
         "hidden_dims": _hidden_dims_of(job),
         "judge": judge if isinstance(judge, dict) else None,  # the judge's advisory scorecard (never the verdict)
@@ -385,7 +387,8 @@ def detail_of(job: Job) -> dict[str, Any]:
         "events": events,
         "partspec": PartSpec.model_validate(spec).model_dump(mode="json") if spec else None,
         "measurements": _measurements(job),
-        "verification": Verification.model_validate(ver).model_dump(mode="json") if ver else None,
+        "verification": vrec.model_dump(mode="json") if vrec else None,
+        "status_reason": short_reason(vrec),  # which check kept a best-effort result from passing
         "code": code,
         "params": params,
         "values": job.read_json("values.json") or {},

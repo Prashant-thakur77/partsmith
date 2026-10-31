@@ -11,7 +11,7 @@ import { ModeBadge } from "@/components/ui/provenance";
 import { Skeleton } from "@/components/ui/skeleton";
 import { api, ApiError, artifactUrl } from "@/lib/api";
 import type { BenchTable } from "@/lib/api-types";
-import { BENCH_TABLES, EXTRA_TITLES, benchHeadline, benchSentence, cellText, columnLabel, configLabel, gtLabel, KEY_COLUMNS } from "@/lib/bench";
+import { BENCH_TABLES, EXTRA_TITLES, benchHeadline, benchSentence, cellText, columnLabel, configLabel, gtLabel, KEY_COLUMNS, plainBench } from "@/lib/bench";
 import { titleCase } from "@/lib/format";
 import { cn } from "@/lib/utils";
 
@@ -141,11 +141,11 @@ export function BenchClient() {
                 key={key}
                 id={key}
                 title={meta?.title ?? EXTRA_TITLES[key]?.title ?? table?.title ?? titleCase(key)}
-                description={meta?.blurb ?? EXTRA_TITLES[key]?.blurb ?? table?.note}
+                description={meta?.blurb ?? EXTRA_TITLES[key]?.blurb ?? (table?.note ? plainBench(table.note) : undefined)}
               >
                 {table && table.status !== "pending" ? (
                   <div className="space-y-3">
-                    {table.title ? <p className="text-[13px] font-medium text-fg">{table.title}</p> : null}
+                    {table.title ? <p className="text-[13px] font-medium text-fg">{plainBench(table.title)}</p> : null}
                     <div className="flex flex-wrap gap-1.5">
                       <Badge tone="inverse" className="font-mono tnum">N = {table.n}</Badge>
                       <Badge tone="outline" className="whitespace-normal">
@@ -164,7 +164,7 @@ export function BenchClient() {
                     {benchSentence(key, table) ? <p className="max-w-3xl text-[15px] leading-6 text-fg">{benchSentence(key, table)}</p> : null}
                     <Tables t={table} />
                     {table.note ? (
-                      <p className="rounded-md border border-warn-border bg-warn-soft px-3 py-2 text-[12.5px] leading-5 text-fg">{table.note}</p>
+                      <p className="rounded-md border border-warn-border bg-warn-soft px-3 py-2 text-[12.5px] leading-5 text-fg">{plainBench(table.note)}</p>
                     ) : null}
                   </div>
                 ) : (
@@ -173,7 +173,7 @@ export function BenchClient() {
                     <span>
                       Pending {meta?.pendingLabel ?? "table"}. Ground truth when it runs:{" "}
                       <span className="text-fg">{gtLabel(table?.ground_truth, meta?.gt ?? "not stated")}</span>.
-                      {table?.note ? <span className="mt-1 block font-mono text-[12px] text-subtle">{table.note}</span> : null}
+                      {table?.note ? <span className="mt-1 block font-mono text-[12px] text-subtle">{plainBench(table.note)}</span> : null}
                     </span>
                   </div>
                 )}
@@ -188,15 +188,16 @@ export function BenchClient() {
                       <li key={i} className="overflow-hidden rounded-lg border border-border bg-surface">
                         <div className="relative aspect-[4/3] border-b border-border bg-surface-2">
                           {img ? (
-                            <FallbackImg src={img} alt={`Failure: ${f.title}`} className="absolute inset-0 size-full object-contain" />
+                            <FallbackImg src={img} alt={`Failure: ${plainBench(f.title)}`} className="absolute inset-0 size-full object-contain" />
                           ) : (
-                            <div className="absolute inset-0 flex items-center justify-center text-subtle">
+                            <div className="absolute inset-0 flex flex-col items-center justify-center gap-1.5 px-4 text-center text-[12px] text-subtle">
                               <ImageOff className="size-5" aria-hidden />
+                              No overlay image was saved for this run.
                             </div>
                           )}
                         </div>
                         <div className="space-y-1 p-3 text-[12.5px]">
-                          <div className="font-medium">{f.title}</div>
+                          <div className="font-medium">{plainBench(f.title)}</div>
                           <p className="text-muted">{f.reason}</p>
                         </div>
                       </li>

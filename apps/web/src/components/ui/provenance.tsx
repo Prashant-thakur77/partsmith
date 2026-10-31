@@ -1,5 +1,6 @@
 import { BookOpen, Bot, FlaskConical, History, Ruler, ScanLine, Sparkles, UserRound, Wand2, Box } from "lucide-react";
 import type { Citation, DataOrigin, ProviderMode, Source } from "@/lib/api-types";
+import { runModesText, type RunModes } from "@/lib/job-cost";
 import { Badge } from "./badge";
 import { Tooltip } from "./tooltip";
 
@@ -81,17 +82,32 @@ const MODELS: Record<string, string> = { live: "live models", mock: "mock models
  *  - otherwise the calls are happening now → the LIVE / MOCK chip.
  */
 export function RunBadge({
-  mode,
+  mode: summaryMode,
   recorded = false,
   finished = false,
   plain = false,
+  modes = null,
 }: {
   mode: ProviderMode | string;
   recorded?: boolean;
   finished?: boolean;
   /** No focusable tooltip (the tip goes in `title`), for use inside a button or link. */
   plain?: boolean;
+  /** Counted from the run's own `model_call` events; wins over the summary's mode (a live run can have a mock judge). */
+  modes?: RunModes | null;
 }) {
+  const mode = modes?.mode ?? summaryMode;
+  if (mode === "mixed" && modes) {
+    const used = (["live", "mock", "replay"] as const).filter((k) => modes.counts[k]).map((k) => (k === "replay" ? "recorded" : k));
+    const tip = `${recorded ? "A stored run played back from its log. " : ""}Its model answers came from more than one mode: ${runModesText(modes)}. Mock answers are not model output.`;
+    const chip = (
+      <Badge tone="mock" {...(plain ? { title: tip } : { tabIndex: 0, className: "cursor-help" })}>
+        {recorded ? <History aria-hidden /> : <Bot aria-hidden />}
+        {recorded ? `Recorded run · ${used.join(" + ")} models` : `${used.join(" + ")} models`}
+      </Badge>
+    );
+    return plain ? chip : <Tooltip content={tip}>{chip}</Tooltip>;
+  }
   if (!recorded && !finished) return <ModeBadge mode={mode} />;
   const models = MODELS[mode] ?? `${mode} models`;
   const tip = recorded

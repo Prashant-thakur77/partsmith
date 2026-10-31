@@ -6,19 +6,35 @@ import Link from "next/link";
 import * as React from "react";
 import { api } from "@/lib/api";
 import { useT } from "@/lib/i18n";
+import { isLocalOrigin } from "@/lib/page-groups";
 import { useOrigin } from "@/lib/use-origin";
 import { cn } from "@/lib/utils";
 import { QrCode } from "./qr-code";
 import { toast } from "./ui/toast";
 
-/** QR + link that opens `path` on the phone. Shown on laptops/tablets; hidden on phones (they already are the phone). */
+/**
+ * QR + link that opens `path` on the phone. Shown on laptops/tablets; hidden on phones (they already are the phone).
+ * On a local-only origin the QR is replaced by a same-size note, so nothing moves when the real origin is known.
+ */
 export function PhoneHandoff({ path, className, compact = false, dark = false }: { path: string; className?: string; compact?: boolean; dark?: boolean }) {
   const { t } = useT();
   const origin = useOrigin();
   const url = `${origin}${path}`;
+  const local = isLocalOrigin(origin);
+  const size = compact ? 112 : 136;
   return (
     <div className={cn("hidden items-center gap-4 rounded-xl border p-4 md:flex", dark ? "border-white/15 bg-black/70 text-white" : "border-border bg-surface", className)}>
-      <QrCode value={url} size={compact ? 112 : 136} label={`QR code: ${url}`} />
+      {local ? (
+        <p
+          data-testid="phone-qr-local"
+          style={{ width: size, height: size }}
+          className={cn("flex shrink-0 items-center rounded-md border border-dashed p-2 text-[11px] leading-[14px]", dark ? "border-white/25 text-white/70" : "border-border-strong text-muted")}
+        >
+          {t("phone.local")}
+        </p>
+      ) : (
+        <QrCode value={url} size={size} label={`QR code: ${url}`} />
+      )}
       <div className="min-w-0 space-y-1.5">
         <p className="flex items-center gap-1.5 text-[14px] font-semibold">
           <Smartphone className="size-4" aria-hidden /> {t("phone.title")}

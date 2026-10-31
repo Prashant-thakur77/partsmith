@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { HydrationBoundary, QueryClient, dehydrate } from "@tanstack/react-query";
+import { notFound } from "next/navigation";
 import { Suspense } from "react";
 import { PartRecordSchema } from "@/lib/api-types";
 import { Container } from "@/components/layout/page";
@@ -8,10 +9,12 @@ import { PartClient } from "./part-client";
 import { PartDetails } from "./part-details";
 import { apiOrigin } from "@/lib/api-origin";
 
+/** The part, "missing" when the API answers 404 (a real 404 page), or null when the API could not be asked (the client retries). */
 async function fetchPart(slug: string) {
   try {
     const base = apiOrigin();
     const res = await fetch(`${base}/api/v1/parts/${encodeURIComponent(slug)}`, { cache: "no-store", signal: AbortSignal.timeout(2500) });
+    if (res.status === 404) return "missing" as const;
     if (!res.ok) return null;
     const parsed = PartRecordSchema.safeParse(await res.json());
     return parsed.success ? parsed.data : null;
@@ -35,8 +38,9 @@ async function apiHasRoute(path: string): Promise<boolean> {
 
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
   const { slug } = await params;
-  const part = await fetchPart(decodeURIComponent(slug));
-  if (!part) return { title: slug, description: "A parametric replacement part in the PartSmith registry: typed knobs, verification record, STL, 3MF and STEP." };
+  const found = await fetchPart(decodeURIComponent(slug));
+  const part = found === "missing" ? null : found;
+  if (!part) return { title: found === "missing" ? "Part not found" : slug, description: "A parametric replacement part in the PartSmith registry: typed knobs, verification record, STL, 3MF and STEP." };
   const err = part.verification?.verified ? part.verification.max_error_mm : null;
   const status = part.verification?.verified ? "" : part.status === "best_effort" ? " Best effort (not verified)." : "";
   const description = `${(part.summary || part.title).replace(/\.+$/, "")}. ${part.params.length} knobs${err != null ? `, verified at ${err.toFixed(2)} mm max error vs photo` : ""}. STL, 3MF, STEP and CadQuery source.${status}`;
@@ -58,7 +62,9 @@ export default async function PartPage({ params }: { params: Promise<{ slug: str
   const s = decodeURIComponent(slug);
   // Server-render the part (title, facts, thumbnail poster) so the first paint is the real page, not a skeleton.
   const qc = new QueryClient();
-  const part = await fetchPart(s);
+  const found = await fetchPart(s);
+  if (found === "missing") notFound();
+  const part = found;
   if (part) qc.setQueryData(["part", s], part);
   // Static sections (provenance, lineage, knob reference, matching) render here without client JS.
   const matching = part ? await api.matching(s).catch((e: unknown) => e) : null;

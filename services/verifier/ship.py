@@ -16,12 +16,13 @@ decision itself is unchanged (that check is informational, `verified` is about m
 
 from __future__ import annotations
 
+import re
 from collections.abc import Mapping
 from dataclasses import dataclass
 from typing import Any
 
 from partsmith_schemas.common import HAUSDORFF_PASS_MM, IOU_PASS
-from partsmith_schemas.verification import Verification
+from partsmith_schemas.verification import FeatureResidual, Verification
 from pydantic import ValidationError
 
 COUPON_HINT = "Print the fit-test coupon first: it checks the critical holes and edges in a few minutes of printing."
@@ -69,20 +70,7 @@ def worst_problem(v: Verification) -> str:
     """The single most important reason a part is best effort, in plain words."""
     bad = [r for r in v.residuals if not r.passed]
     if bad:
-        r = max(bad, key=lambda r: abs(r.delta_mm) - r.tol_mm)
-        d = r.delta_mm
-        name = "the outline" if r.feature_id == "outline" else r.feature_id.replace("_", " ")
-        if r.quantity in ("center_x", "center_y"):
-            return f"{r.feature_id} is {abs(d):.1f} mm off its measured position"
-        words = {
-            "diameter": ("too large", "too small"),
-            "length": ("too long", "too short"),
-            "width": ("too wide", "too narrow"),
-            "thickness": ("too thick", "too thin"),
-            "depth": ("too deep", "too shallow"),
-        }.get(r.quantity, ("too big", "too small"))
-        what = r.feature_id if r.quantity in ("diameter", "depth") else f"{name} {r.quantity}"
-        return f"{what} is {abs(d):.1f} mm {words[0] if d > 0 else words[1]}"
+        return _residual_phrase(max(bad, key=lambda r: abs(r.delta_mm) - r.tol_mm), "the outline", 1)
     for t in v.tests:
         if t.priority == "P0" and not t.passed:
             return f"test failed: {t.description}"
@@ -91,9 +79,82 @@ def worst_problem(v: Verification) -> str:
         vm = max(off, key=lambda m: m.hausdorff_mm)
         where = f" near ({vm.worst_point_mm[0]:.0f}, {vm.worst_point_mm[1]:.0f}) mm" if vm.worst_point_mm else ""
         return f"the {vm.view} outline differs from the photo by up to {vm.hausdorff_mm:.1f} mm{where}"
+    gates = failing_view_gates(v)
+    if gates:
+        return gates[0]
     if v.reasons:
         return str(v.reasons[0])
     return "the model does not match the measurements within tolerance"
+
+
+def _residual_phrase(r: FeatureResidual, outline: str, digits: int) -> str:
+    """ "the outline length is 0.4 mm too long" for a failed residual (model minus measured = `delta_mm`)."""
+    d = r.delta_mm
+    name = outline if r.feature_id == "outline" else r.feature_id.replace("_", " ")
+    if r.quantity in ("center_x", "center_y"):
+        return f"{r.feature_id} is {abs(d):.{digits}f} mm off its measured position"
+    words = {
+        "diameter": ("too large", "too small"),
+        "length": ("too long", "too short"),
+        "width": ("too wide", "too narrow"),
+        "thickness": ("too thick", "too thin"),
+        "depth": ("too deep", "too shallow"),
+    }.get(r.quantity, ("too big", "too small"))
+    what = r.feature_id if r.quantity in ("diameter", "depth") else f"{name} {r.quantity}"
+    return f"{what} is {abs(d):.{digits}f} mm {words[0] if d > 0 else words[1]}"
+
+
+# One gated number in a verifier view line: "mean contour distance 0.20 mm (needs <= 0.15 mm)", "IoU 0.965 (needs >= 0.97)".
+_VIEW_GATE = re.compile(
+    r"(?P<name>IoU|mean contour distance|Hausdorff|HD95)\s+(?P<val>\d+(?:\.\d+)?)(?P<unit> mm)?\s+"
+    r"\(needs (?P<op><=|>=) (?P<lim>\d+(?:\.\d+)?)(?: mm)?\)"
+)
+
+
+def failing_view_gates(v: Verification) -> list[str]:
+    """The gated view numbers that missed their limit, read from the verifier's own view lines (those ending
+    "- fails"), e.g. "the side view's mean contour distance is 0.20 mm (needs <= 0.15 mm)"."""
+    out: list[str] = []
+    for line in v.reasons:
+        if not line.rstrip().endswith("- fails") or " view" not in line:
+            continue
+        view = line.split(" view", 1)[0].strip()
+        for m in _VIEW_GATE.finditer(line):
+            val, lim = float(m["val"]), float(m["lim"])
+            if (val > lim) if m["op"] == "<=" else (val < lim):
+                unit = " mm" if m["unit"] else ""
+                op = "≤" if m["op"] == "<=" else "≥"
+                out.append(f"the {view} view's {m['name']} is {m['val']}{unit} (needs {op} {m['lim']}{unit})")
+    return out
+
+
+def short_reason(v: Verification | None) -> str | None:
+    """One short line saying which check kept a best-effort part from passing, built only from its verification
+    record (failed residual, part test, view limit or judge veto). None unless the record is best effort."""
+    if v is None or v.verified or v.status != "best_effort":
+        return None
+    blocking = [x for x in v.vetoes if x.severity == "blocking"]
+    if blocking:
+        return f"the judge flagged {blocking[0].feature}: {blocking[0].issue}"[:140]
+    bad = [r for r in v.residuals if not r.passed]
+    if bad:
+        r = max(bad, key=lambda r: abs(r.delta_mm) - r.tol_mm)
+        return f"{_residual_phrase(r, 'the outline', 2)} (allowed ±{r.tol_mm:.2f} mm)"
+    failed = [t for t in v.tests if t.priority == "P0" and not t.passed]
+    if failed:
+        name = re.split(r":| ==| \(", failed[0].description, maxsplit=1)[0].strip() or failed[0].id
+        more = f" (+{len(failed) - 1} more)" if len(failed) > 1 else ""
+        return f"part test failed: {name}{more}"
+    off = [vm for vm in v.views if vm.hausdorff_mm > v.thresholds.hausdorff_mm]
+    if off:
+        vm = max(off, key=lambda m: m.hausdorff_mm)
+        return (
+            f"the {vm.view} outline is off by up to {vm.hausdorff_mm:.2f} mm (limit {v.thresholds.hausdorff_mm:.2f} mm)"
+        )
+    gates = failing_view_gates(v)
+    if gates:
+        return gates[0]
+    return worst_problem(v)
 
 
 FIT_TEST_PREFIX = "fit.mate."  # services/verifier/mate_fit.py: "fits where it goes" (P1, informational)
