@@ -61,6 +61,22 @@ holes: [{diameter: 4.0}]
 
 with `top.jpg` (and optionally `side.jpg`) next to it.
 
+### Photo day (real parts, in order)
+
+```bash
+make real-intake FROM=<folder of phone photos>   # <part>_top.jpg / <part>_side.jpg / <part>_context.jpg, or parts.csv
+                                                 # (file,part,view); writes data/real/<part>/ + gt.yaml templates
+# fill every gt.yaml with the ruler readings (gt_source: ruler, uncertainty_mm, dims, holes)
+make real-check                                  # offline: gt.yaml rules + the /fix capture gate on every photo
+uv run python -m eval.splits assign              # after gt.yaml is final: the held-out hash covers its bytes
+PROVIDER_MODE=live uv run python -m eval.run --live --suite real_ruler --suite reference_objects --max-usd 10
+make bench                                       # rebuild every table from the stored runs
+```
+
+`tools/real_check.py` explains both subcommands (`--json`, `--no-part-check`, `--dry-run`, `--reencode`, `--force`).
+Intake strips location, dates and device EXIF fields, keeps the orientation and focal-length tags and does not
+re-encode JPEG pixels; it never overwrites a `gt.yaml`. `make real-check` exits 1 when any folder is unusable.
+
 ## Full loop — PartSmith-Bench (`eval/run.py`)
 
 ```bash

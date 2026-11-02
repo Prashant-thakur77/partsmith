@@ -70,6 +70,49 @@ Good candidates: cupboard latches, cooler or caster wheels, bucket-handle clips,
 cable clips, hooks, spacers. Avoid medical, vehicle-safety and weapon parts (the app refuses them).
 After adding parts: `uv run python -m eval.splits assign` (10 dev, the rest held-out; held-out is frozen by hash), then `make bench`.
 
+### Photo day: commands in order
+
+1. Put the phone exports in one folder (any folder, e.g. `~/photos-nov4/`) and name each file `<part>_top.jpg`,
+   `<part>_side.jpg`, `<part>_context.jpg` (part ids: lowercase, digits, `-`, `_`). Reference objects use the object
+   name and a number: `id1_card_top_1.jpg`, `sd_card_side_1.jpg`, `lego_2x4_top_3.jpg`, `aa_cell_top_2.jpg`. If renaming
+   is a pain, keep the camera names and add a `parts.csv` in the same folder instead (`file,part,view` per line, e.g.
+   `IMG_1234.jpg,cupboard-latch,top`). HEIC does not work: set the iPhone to **Most Compatible** or export as JPEG.
+2. Bring them in (`ARGS=--dry-run` first shows what would happen):
+   ```bash
+   make real-intake FROM=~/photos-nov4
+   ```
+   It writes `data/real/<part>/{top,side,context}.jpg` and `data/real/reference_objects/<object>/<view>_<n>.jpg`. Location,
+   dates and device fields are stripped; the orientation and focal-length tags stay (the 35 mm focal length feeds
+   the camera estimate) and the JPEG pixels are not re-encoded (`ARGS=--reencode` writes upright re-encoded copies
+   instead). Each new part gets a `gt.yaml` template full of `TODO`s. An existing `gt.yaml` is never overwritten; an
+   existing photo is only replaced with `ARGS=--force`.
+3. Fill every `gt.yaml` with the ruler readings (format above; `length` is the longer side seen from above).
+4. Check everything offline, no model calls, no spend:
+   ```bash
+   make real-check                 # table + one line per thing to fix; exit 1 if any folder is unusable
+   make real-check ARGS=--json     # the same as JSON
+   ```
+   It validates each `gt.yaml` (ruler source, uncertainty, positive mm, holes list, values over 300 mm or under 1 mm,
+   plate thicker than the part) and runs the same capture gate as `/fix` on every photo (markers, blur, tilt, glare,
+   moiré, exposure, scale). A failed top photo or reference photo makes the folder unusable ("retake top"); a failed
+   side photo is a warning, because the job drops it and goes on with the top view. A rough threshold-mask measurement
+   (no model) checks that the part is found and flags a ruler reading that is far off (cm typed as mm, swapped
+   photos); those lines are advisory. Retake or fix, then run it again until every row says `ok`.
+5. Freeze the split **after** the `gt.yaml` files are final (the held-out hash covers their bytes):
+   ```bash
+   uv run python -m eval.splits assign
+   ```
+6. Run the real parts and reference photos live with a spend cap (the cap stops new runs once finished ones cost that
+   much; `--configs` narrows which configs run):
+   ```bash
+   make smoke
+   PROVIDER_MODE=live uv run python -m eval.run --live --suite real_ruler --suite reference_objects --max-usd 10
+   ```
+7. Rebuild every table from all stored runs (live runs win over mock) and the README blocks:
+   ```bash
+   make bench
+   ```
+
 **Walk-around clip (heights):** for parts with tall features (hooks, knobs, latches), also record a 5–10 s video circling the
 part on the mat, with the phone tilted about 45° and every marker mostly in frame. Upload it in the **Walk-around clip** slot on
 `/fix`. On the same page you can tap holes, slots or the broken edge on the photo, so SAM 3.1 cuts exactly that feature.

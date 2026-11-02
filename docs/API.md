@@ -3,6 +3,8 @@
 Server: `services/api/main.py` (`uv run uvicorn services.api.main:app --port 8000`). Interactive docs at `/api/v1/docs`,
 OpenAPI 3.1 at `/api/v1/openapi.json`.
 
+**Contents:** [System](#system) · [Mats and calibration](#mats-and-calibration) · [Files](#files) · [Jobs](#jobs) · [Measure / verify (stateless)](#measure--verify-stateless) · [Registry](#registry) · [Repair passport](#repair-passport) · [Steer (factory)](#steer-factory) · [Playground (family templates)](#playground-family-templates) · [Describe it](#describe-it) · [Variants](#variants) · [Review (human in the loop)](#review-human-in-the-loop) · [Admin console (all admin)](#admin-console-all-admin) · [Repair-shop batches (all admin)](#repair-shop-batches-all-admin) · [Bench](#bench) · [Agent docs and MCP](#agent-docs-and-mcp)
+
 Types refer to `packages/schemas/partsmith_schemas` (TypeScript copies in `apps/web/src/lib/schemas.ts`). All lengths are mm.
 Anonymous read is allowed. **Admin token:** with `PARTSMITH_ADMIN_TOKEN` set, publishing (`POST /jobs/{id}/publish`),
 Steer (`POST /steer`, `POST /steer/{id}/review`), lesson promotion/rejection, request status changes and every
@@ -26,7 +28,9 @@ named something that does not exist (slug, parameter, mat, sample, job, format, 
 `agent_unavailable`, `not_implemented`, `internal_error`, `admin_required`, `needs_ack`, `not_shippable`,
 `unknown_preset`, `need_not_found`, `lesson_not_found`, `batch_not_found`, `no_measurements`, `busy`, `bad_frame`,
 `provider_error`, `passport_not_found`, `template_not_found`, `no_coupon`, `describe_not_found`, `no_change`,
-`rule_not_found`, `not_withdrawn`, `not_disabled`.
+`rule_not_found`, `not_withdrawn`, `not_disabled`, `artifact_not_found`, `bad_key`, `bad_report`,
+`invalid_points`, `invalid_hidden_dims`, `no_mate_fit`, `no_model`, `no_photo`, `no_run_log`, `no_verification`,
+`review_busy`, `review_decided`, `review_empty`.
 
 **Export gate** (`services/registry/gate.py` over `services.verifier.ship.can_ship`): job publish, job-part downloads
 (`/jobs/{id}/bake?download=1`), published-part downloads (`/parts/{slug}/bake?download=1`), both for any format but
@@ -326,6 +330,12 @@ rescaling (a `scale` knob, or three or more mm dimensions changed by one common 
 mock understands "M4 hole" (ISO 273 medium clearance), "2 mm taller", "for a 25 mm rail", "for an 8 mm cable", "3 ribs",
 "no gussets", "40 mm diameter", "6 mm shaft". Confidence is capped at 0.75 when something was not applied.
 
+### Registry clean-up
+Seeded parts are named from their own knobs ("Cupboard door latch, 52 mm" → `cupboard-door-latch-52mm`), never from the
+sample folder; `seed()` renames older `demo-…` slugs. Reference objects (ID-1 card, SD card, LEGO brick, AA cell) are
+bench-only: tag `role:reference`, hidden from `/parts`, `/families`, matching, MCP search and llms.txt, still reachable
+by slug and with `role=reference`.
+
 ## Repair passport
 | Method | Path | Returns |
 |---|---|---|
@@ -542,12 +552,6 @@ is no longer put into builder or fixer prompts, nor recorded in `lessons_used.js
 
 Price estimate = PLA grams × `PARTSMITH_PRICE_PER_G_INR` (default 3) + `PARTSMITH_PRICE_BASE_INR` per part (default 0);
 the sheet prints the rate used.
-
-## Registry clean-up
-Seeded parts are named from their own knobs ("Cupboard door latch, 52 mm" → `cupboard-door-latch-52mm`), never from the
-sample folder; `seed()` renames older `demo-…` slugs. Reference objects (ID-1 card, SD card, LEGO brick, AA cell) are
-bench-only: tag `role:reference`, hidden from `/parts`, `/families`, matching, MCP search and llms.txt, still reachable
-by slug and with `role=reference`.
 
 ## Bench
 | Method | Path | Returns |

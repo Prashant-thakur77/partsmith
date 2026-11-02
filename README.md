@@ -11,7 +11,7 @@ Live site _(coming)_ · Video _(coming)_ · Judges page _(coming)_ · Try a samp
 <sub>Recorded from the web app replaying a stored live run (`make media`); the numbers are the stored run's own.</sub>
 
 <!-- BEGIN:status -->
-> **Status: live providers** · bench report 2026-10-29 at commit `304f933` plus uncommitted changes · real photos measured: 0 · real parts with ruler ground truth: 0 · real repairs logged: 0
+> **Status: live providers** · bench report 2026-11-02 at commit `2311505` plus uncommitted changes · real photos measured: 0 · real parts with ruler ground truth: 0 · real repairs logged: 0
 >
 > Numbers below come from live model calls on synthetic photos. Some stages ran as labelled mocks: see `provider_modes` in `eval/reports/latest/report.json`. Real-photo results are pending and say so in their tables.
 <!-- END:status -->
@@ -28,6 +28,57 @@ Live site _(coming)_ · Video _(coming)_ · Judges page _(coming)_ · Try a samp
 **The model proposes; code decides.** Entry for the Meta Global AI Developer Hackathon (Indie Developer track, problem
 statement: Push the Frontier).
 
+## Why it is different
+
+- **No scanner, no caliper.** The web app draws a ring of ArUco markers at true 1:1 scale on your laptop or tablet screen
+  (calibrated once against a bank card). You lay the part on it and take a phone photo or a short walk-around clip.
+- **Numbers with error bars.** Every millimetre value carries an uncertainty and a source: measured from the photo,
+  stated by you, cited from a spec, or inferred. The 3D view can colour the model by source.
+- **Code decides.** Meta's models look, point, cut out and write CadQuery. Deterministic code measures, renders the model
+  from the photo's own camera and compares. Only the verifier can mark a part verified, and every download goes through
+  one export gate. A model that says "VERIFIED" on a wrong part is caught (see the first row of the table above).
+- **Parametric, not a mesh.** Every part is a CadQuery program with named knobs (hole Ø, length, clearance). You change
+  a knob, not the scale of a mesh, so the hole spacing stays right.
+- **A person has the last word on what a photo cannot show.** Reviewers pin the photo, the fixer gets the notes, and code
+  measures whether the next round fixed it.
+- **An open registry.** Verified parts are searchable over REST and MCP, each with its verification record and knob schema.
+
+## Try it in 2 minutes
+
+`make setup && make dev`, then open <http://localhost:3000>. No keys needed: model stages run as labelled mocks, and the
+stored runs replay as recorded (labelled "replay").
+
+| # | Open | What you see |
+|---|---|---|
+| 1 | `/judges` | A stored live run replayed step by step, then *A lying model, caught*: a scripted model says "VERIFIED", the verifier's overlay shows the real error and the export is blocked |
+| 2 | `/jobs` → **Battery compartment cover** (a recorded live run) | The job workspace: photo with the model drawn on it, 3D model, error per view, the fail → fix history, the agent's tool calls, knobs, buy-or-print card, cost from the job's own model calls |
+| 3 | the job's *Check the fit on your screen* card → **See an example** | The 1:1 screen fit check: the model's outline drawn on the calibrated screen (`/jobs/{id}/fit?example=1` is a labelled example drawn from the job's own outline, never a measurement) |
+| 4 | `/playground` | Every family template with presets: drag a knob, watch the CadQuery program change, download at your values |
+| 5 | `/describe` | No part in hand: type what you need with your numbers; a template part is built and each of your numbers is measured on the model |
+| 6 | `/review` → `/review/log` | The review desk (accept, send back with pins, reject; judge scorecard and vetoes beside the verifier's numbers) and the feedback log of what was fixed |
+| 7 | `/admin` | Overview, registry moderation, taught rules, audit log and demand; every number names its source and its `n` |
+| 8 | `/parts`, `/agents` | Registry search with match coverage, a part's `verification.json` and `params.json`, and the MCP / REST docs for coding agents |
+
+In a terminal, `make lie` shows the same refusal in seconds: the scripted model's claim, the verifier's real max error
+against the limit and `export BLOCKED (<reason>)` (`eval.bypass --demo` exits 3 when the export is refused, which is
+the expected result; `make lie` reports it as OK). Which model ran each stage, live or mock: `/models`. Where the
+numbers come from: [Results](#results), `/results` and [`eval/REPRODUCE.md`](eval/REPRODUCE.md).
+
+[![Four screens from the web app in replay mode: (a) a lying model caught, the export blocked (a scripted model, no live calls); (b) Colour by source and (c) the impact panel and buy-or-print card, both on the stored live battery-cover run; (d) the walk-around clip and voice note slots on the fix page](docs/media/grid.png)](docs/media/grid.png)
+
+[![Six newer pages from the web app in replay mode: (a) the playground of family templates, (b) describe a part with your numbers, (c) the review desk, (d) the feedback log (scripted test reviews, labelled), (e) the admin overview in development mode, (f) a labelled screen fit-check example](docs/media/pages.png)](docs/media/pages.png)
+
+## What is real and what is not yet
+
+- The bench numbers come from live model calls on **synthetic photos** with exact ground truth, and on synthetic renders
+  of standard reference objects. The status line above says so, and every table names its photo source. `make bench`
+  re-scores the stored live runs without new model calls, so the report date in the status line is when the tables were
+  last rebuilt, not when the models ran.
+- The **real-part bench is pending**: no real photos have been measured yet, so the real-photo tables say "pending".
+- The stored runs behind `/judges`, `/jobs` and the media are **replays** of live runs, labelled as replays. Reviews made
+  by scripts are labelled tests and never count as a person's.
+- No physical print results yet; the physical check is the screen fit check.
+
 ## The problem
 
 A cupboard latch snaps, a battery cover goes missing, a cable clip cracks. The appliance still works, but the plastic piece
@@ -35,25 +86,8 @@ is not sold on its own, so the whole thing goes in the bin. A 3D print would fix
 a millimetre or it will not fit. That takes a caliper, CAD skills and an hour, which most people do not have.
 
 PartSmith turns your laptop screen into a calibrated measuring mat. You lay the part on it and take a photo (or walk around
-it with a short video). Meta's models look, point, cut out and write CadQuery. Deterministic code measures, renders the model
-from the photo's own camera and decides whether it matches. The result is a parametric part you can print, re-size with
-named knobs, or send to a print shop, and it joins an open registry that people and coding agents can search over REST and
-MCP. No printer, caliper or special paper needed.
-
-## 30-second judge path
-
-| | |
-|---|---|
-| Watch a stored run, step by step | `/judges` in the web app (replays are labelled "replay") |
-| Watch a lying model get caught | `/judges` → *A lying model, caught*: a scripted model says "VERIFIED", the verifier's overlay shows its real error and the export is blocked |
-| See the same refusal in your terminal | `make lie`: the scripted model's claim, the verifier's real max error against the limit and `export BLOCKED (<reason>)`. `eval.bypass --demo` exits 3 when the export is refused; for this demo the non-zero exit is the success case, and `make lie` reports it as OK |
-| Run it yourself with no keys | `make setup && make dev` → <http://localhost:3000> → **Fix a part → Try a sample** |
-| Which model ran where, live or mock | `/models` (per stage, with open-weights badges) |
-| Numbers and how they were made | [Results](#results) · `/results` · [`eval/REPRODUCE.md`](eval/REPRODUCE.md) |
-| What a model wrote vs what we wrote | [Model-written vs hand-written](#model-written-vs-hand-written) · [Built during the hackathon](#built-during-the-hackathon) |
-| For agents | `/agents`, `/llms.txt`, MCP at `/mcp` |
-
-[![Four screens from the web app in replay mode: (a) a lying model caught, the export blocked (a scripted model, no live calls); (b) Colour by source and (c) the impact panel and buy-or-print card, both on the stored live battery-cover run; (d) the walk-around clip and voice note slots on the fix page](docs/media/grid.png)](docs/media/grid.png)
+it with a short video). The result is a parametric part you can print, re-size with named knobs, or send to a print shop,
+and it joins an open registry that people and coding agents can search over REST and MCP.
 
 ## Why trust a model-made part?
 
@@ -65,11 +99,13 @@ never trusts what a model says about itself:
 | SAM 3.1 returns a mask | ArUco pose, parallax correction and sub-pixel edge fitting turn it into mm with an uncertainty per value; the capture gate rejects blurred, tilted, glary or multi-part photos | `services/metrology` |
 | Muse Spark names a feature and the pixel it is at | SAM 3.1 cuts that point out, code fits the circle or slot in mm | `services/metrology/points.py` |
 | Muse Spark Open writes and edits CadQuery | It runs in a sandbox (AST allowlist, rlimits, no network); guards cap each edit and refuse uniform rescaling | `services/geom_worker`, `services/agent/guards.py` |
+| The fix agent proposes a knob edit | Refused if it moves a knob out of a measured size test that already passes, unless a failing residual or a failing view's worst spot points at it; the rounds stop after two that make no progress | `services/agent/guards.py`, `services/agent/orchestrator.py` |
 | The fix agent says "done" | The verifier re-renders from the photo's camera and re-measures model and photo with the same code; only it sets `verified` | `services/verifier` |
 | Muse Wonder quotes a spec | Accepted only if a web search ran and the URL came back from it; cited values never override a measurement | `services/agent/providers/spec.py` |
 | Muse Image completes the broken region | Accepted only if every mat marker re-detects in place and the intact part is unchanged | `services/metrology/recon_gate.py` |
-| Muse Glimmer judges the result | Veto only: it can block a pass, never grant one | `services/agent/orchestrator.py` |
+| Muse Glimmer judges the result | Veto only: it can block a pass, never grant one; its vetoes are shown with the model and mode that made them | `services/agent/orchestrator.py` |
 | Muse Spark points at features while you narrate a clip | A point is kept only if it lands on the part in its own frame and on the measured footprint; the words steer, never set a number | `services/metrology/narration.py` |
+| Muse Spark reads a typed description | Template names, knob names and values are mapped and clamped by code; a "you said" value whose quote is not in your text is downgraded; the result is "Matches your numbers", never "verified" | `services/registry/describe.py` |
 | A search finds the original part's price | Kept only with the source link the search returned and a quote that shows the price; grams, print time and cost come from the mesh | `services/agent/providers/buy.py`, `services/agent/buy_or_print.py` |
 | A tall part is seen only from above | The photo bounds its length and width instead of fixing them; without a side view or clip, code refuses to verify an extruded guess, and every knob nothing checked is listed as inferred | `services/verifier/verify.py` |
 | Anyone asks to download | Every download URL gives a best-effort part only after an explicit "I understand" and refuses a failed one | `services/verifier/ship.py`, `services/registry/gate.py` |
@@ -97,13 +133,13 @@ workspace shows them live. This table's file:line links are generated from the c
 <!-- BEGIN:meta-tooling -->
 | Meta model | How we run it | Role | Where |
 |---|---|---|---|
-| **SAM 3.1** | Meta Model API | The measuring instrument: text-prompted part masks, point-prompted feature cuts (holes, slots, tapped points) and video tracking of a walk-around clip. Code turns every mask into millimetres | [`services/agent/providers/routing.py:109`](services/agent/providers/routing.py#L109) · [`services/metrology/segment.py:664`](services/metrology/segment.py#L664) · [`services/agent/evidence.py:166`](services/agent/evidence.py#L166) · [`services/agent/evidence.py:239`](services/agent/evidence.py#L239) |
-| **Muse Spark 1.3** | Meta Model API | Understand stage: family, features, broken region, unknowns (strict PartSpec JSON), and the pixel it saw each hole or slot at, which SAM 3.1 then cuts and code measures. Watches and listens to a narrated walk-around clip and points at the features it hears about (frame and pixel), kept only if they land on the part. Turns a reviewer's notes into family rules the person ticks before they are kept, and judges when Glimmer is not deployed | [`services/agent/orchestrator.py:1217`](services/agent/orchestrator.py#L1217) · [`services/review/rules.py:83`](services/review/rules.py#L83) · [`services/agent/evidence.py:57`](services/agent/evidence.py#L57) · [`services/agent/evidence.py:314`](services/agent/evidence.py#L314) |
-| **Muse Spark Open** | open weights (Baseten / Fireworks / Together) | CadQuery builder, and the fix agent that operates PartSmith's own tools (inspect residuals, measure, segment, render, run tests, set knobs) until the verifier agrees | [`services/agent/orchestrator.py:1869`](services/agent/orchestrator.py#L1869) · [`services/agent/agent_loop.py:473`](services/agent/agent_loop.py#L473) |
-| **Muse Glimmer 30B** | open weights (llama.cpp on a Modal GPU) | Independent judge: vetoes plus an advisory 1–5 scorecard (outline, features, printability, fit), shown the photos, the model's silhouettes, a shaded 3D view and crops zoomed on the verifier's worst spots. It can block, never pass | [`services/agent/orchestrator.py:2519`](services/agent/orchestrator.py#L2519) · [`infra/modal/glimmer.py:51`](infra/modal/glimmer.py#L51) |
+| **SAM 3.1** | Meta Model API | The measuring instrument: text-prompted part masks, point-prompted feature cuts (holes, slots, tapped points) and video tracking of a walk-around clip. Code turns every mask into millimetres | [`services/agent/providers/routing.py:110`](services/agent/providers/routing.py#L110) · [`services/metrology/segment.py:664`](services/metrology/segment.py#L664) · [`services/agent/evidence.py:166`](services/agent/evidence.py#L166) · [`services/agent/evidence.py:239`](services/agent/evidence.py#L239) |
+| **Muse Spark 1.3** | Meta Model API | Understand stage: family, features, broken region, unknowns (strict PartSpec JSON), and the pixel it saw each hole or slot at, which SAM 3.1 then cuts and code measures. Watches and listens to a narrated walk-around clip and points at the features it hears about (frame and pixel), kept only if they land on the part. Turns a reviewer's notes into family rules the person ticks before they are kept, judges when Glimmer is not deployed, and turns a typed or spoken description with numbers into one template part whose numbers code then measures | [`services/agent/orchestrator.py:1233`](services/agent/orchestrator.py#L1233) · [`services/registry/describe.py:529`](services/registry/describe.py#L529) · [`services/review/rules.py:83`](services/review/rules.py#L83) · [`services/agent/evidence.py:57`](services/agent/evidence.py#L57) · [`services/agent/evidence.py:314`](services/agent/evidence.py#L314) |
+| **Muse Spark Open** | open weights (Baseten / Fireworks / Together) | CadQuery builder, and the fix agent that operates PartSmith's own tools (inspect residuals, measure, segment, render, run tests, set knobs) until the verifier agrees | [`services/agent/orchestrator.py:1903`](services/agent/orchestrator.py#L1903) · [`services/agent/agent_loop.py:493`](services/agent/agent_loop.py#L493) |
+| **Muse Glimmer 30B** | open weights (llama.cpp on a Modal GPU) | Independent judge: vetoes plus an advisory 1–5 scorecard (outline, features, printability, fit), shown the photos, the model's silhouettes, a shaded 3D view and crops zoomed on the verifier's worst spots. It can block, never pass | [`services/agent/orchestrator.py:2618`](services/agent/orchestrator.py#L2618) · [`infra/modal/glimmer.py:51`](infra/modal/glimmer.py#L51) |
 | **Muse Wonder** | Meta Model API | Finds a published spec for the named appliance with web search. Code accepts a value only if a search really ran and its URL is one the search returned; cited values fill unknowns and never override a measurement. Also finds the original part's price with search grounding for the buy-or-print card (a price is kept only with its source link and a quote showing it) and plans part families for the factory | [`services/agent/evidence.py:398`](services/agent/evidence.py#L398) · [`services/agent/providers/buy.py:294`](services/agent/providers/buy.py#L294) · [`services/agent/providers/spec.py:140`](services/agent/providers/spec.py#L140) · [`services/registry/steer.py:545`](services/registry/steer.py#L545) |
 | **Muse Image** | Meta Model API | Completes the broken region of the photo (accepted only if markers and the intact part are unchanged), an in-place repair preview and an install card (both labelled AI images) | [`services/agent/evidence.py:569`](services/agent/evidence.py#L569) · [`services/metrology/recon_gate.py:205`](services/metrology/recon_gate.py#L205) · [`services/media/preview.py:78`](services/media/preview.py#L78) |
-| **Muse Voice Transcribe** | Meta Model API | Hindi/English voice edits ("make the hole a bit bigger") mapped to knob changes, live while you talk (realtime stream relayed by the API, knob names as keywords) or from a recorded clip, and spoken answers | [`services/media/voice.py:452`](services/media/voice.py#L452) · [`services/api/voice_live.py:139`](services/api/voice_live.py#L139) |
+| **Muse Voice Transcribe** | Meta Model API | Hindi/English voice edits ("make the hole a bit bigger") mapped to knob changes, live while you talk (realtime stream relayed by the API, knob names as keywords) or from a recorded clip, and spoken answers | [`services/media/voice.py:453`](services/media/voice.py#L453) · [`services/api/voice_live.py:139`](services/api/voice_live.py#L139) |
 | **SAM 3 (open weights)** | open weights (Modal GPU) | All-open-weights segmentation path and bench | [`infra/modal/sam3.py:47`](infra/modal/sam3.py#L47) |
 <!-- END:meta-tooling -->
 
@@ -149,49 +185,84 @@ flowchart TD
 ```
 
 Solid arrows are the main pipeline; dotted arrows are side paths whose output code accepts only after a check. Boxes that
-name a model are model calls; boxes marked "(code)" are deterministic, hand-written checks. The same diagram, with the runtime layout, is in
-[`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md).
+name a model are model calls; boxes marked "(code)" are deterministic, hand-written checks. The same diagram, with the
+runtime layout (review, admin and spend-cap layers included), is in [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md).
 
 - **Screen mat.** The web app draws a ring of ArUco markers at true 1:1 scale on a laptop or tablet. You calibrate the scale once
   by matching an ID-1 bank card (85.60 × 53.98 mm). A plain-paper A4 mat PDF works too. Open the capture page on your phone with
   the QR code; the laptop follows the job live.
 - **Measurement.** Sub-pixel marker corners → homography and camera pose → SAM 3.1 mask → contour in mm with exact parallax
   correction for the part's thickness, circle/slot fitting, see-through hole fitting for thick parts, and an uncertainty per
-  value. A 5–10 s walk-around clip gives heights a single top photo cannot.
+  value. A 5–10 s walk-around clip gives heights a single top photo cannot. Sizes the photo cannot see (a hidden depth) can
+  be typed on `/fix`: they are labelled "stated by you", used by the builder and checked against the program, never verified.
 - **Broken parts.** The broken region is masked out of the comparison: the part is verified on its intact region only, and the
   missing piece comes from the template, your stated size, a cited spec or a gated Muse Image completion, each labelled.
 - **Agent loop.** The fix agent can inspect residuals, measure a feature, cut out a point, render a candidate, run the part
-  tests and set knobs. Rendering is free; committing a change costs one of six rounds and passes the same guards.
+  tests and set knobs. Rendering is free; committing a change costs one of six rounds and passes the same guards. Code
+  stops the loop early after two rounds that leave the shortfall where it was, and the job page says which rule kept the
+  final round.
 - **Verified** means: all P0 part tests pass, Hausdorff ≤ 0.5 mm on every view, IoU ≥ 0.97 on views large enough for IoU to
-  mean something, and no veto from the independent judge. Only the verifier can set it.
+  mean something, and no veto from the independent judge. Only the verifier can set it. A best-effort part says which
+  check failed.
 - **Screen fit check.** Before printing, the model's 1:1 outline is drawn on the calibrated screen. You lay the real part on it
-  and photograph it, and the same verifier says pass or fail with an overlay.
+  and photograph it, and the same verifier says pass or fail with an overlay. A fit-test coupon (the hole at −0.2, 0 and
+  +0.2 mm) learns your printer's clearance.
+- **Spend cap.** `PARTSMITH_DAILY_USD_CAP` stops live model calls for the rest of the UTC day once that day's spend reaches
+  the cap; the job fails with a clear message rather than falling back silently. `/status` and the admin overview show
+  today's spend against the cap.
 
 ## Human review
 
 Code decides whether a part matches the photo; only a person knows what the photo cannot show (the corner was square, this
-hole takes an M3 screw). Every finished job waits on `/review` with the photo and the model drawn on it, the verifier's
-numbers, the judge's scorecard, each agent's calls and the cost.
+hole takes an M3 screw). Every finished job waits on `/review` with the photo and the model side by side, the verifier's
+numbers, the judge's scorecard and vetoes (with the model and mode that made them), each agent's calls and the cost.
 
 - **Accept (A)** records a person's sign-off next to the verdict, never instead of it. An accepted part that the
   verifier did not pass publishes as "best effort, accepted by a person".
 - **Improve (I)**: click the photo where something is wrong and say what. A reviewer round starts from that model (no new
   reading or plan): the fixer gets each note, a photo | model crop with the pin drawn as a numbered ring, and the
-  local mismatch code measures at the pin. It comes back as round 2 with each pin's mismatch before → after.
+  local mismatch code measures at the pin. It comes back as the next round with each pin's mismatch before → after.
 - **Reject (R)** with a reason, kept as a lesson candidate.
 - **Paste a screenshot** (Ctrl+V) or drop a picture of how the part should look; it goes to the fixer with the notes.
-- **Feedback log** (`/review/log`): every send-back and rejection with what was wrong, *why it matters* (the reviewer's
-  reason), a close-up of the pinned spot and what code measured in the next round (fixed, better, not fixed). A
-  person's feedback measured as fixed, with its reason, is given to later jobs of the same family; each entry shows
-  how later reviews of those jobs went, so a lesson that does not hold is visible.
+- **Feedback log** (`/review/log`): every send-back and rejection, grouped by part, with what was wrong, *why it matters*
+  (the reviewer's reason), a close-up of the pinned spot and what code measured in the next round (fixed, better, not
+  fixed). A person's feedback measured as fixed, with its reason, is given to later jobs of the same family; each entry
+  shows how later reviews of those jobs went, so a lesson that does not hold is visible.
 - **Memory.** On accept, Muse Spark drafts one general rule per note for the part's family; the reviewer edits and ticks
   them. Only ticked rules reach future builder and fixer prompts for that family, each with the job it came from, and
-  `/lessons` shows how later reviews of jobs that used a rule went, so a rule that does not help is visible.
+  `/lessons` shows how later reviews of jobs that used a rule went. An admin can switch a taught rule off on `/admin`.
 - **Who reviewed.** Every decision says whether a person made it or it was a scripted test; tests never promote a rule,
   publish a part or count toward agreement. The recorded hinge-leaf chain on `/review` is a labelled test chain.
 - **Judge vs person.** The judge's 1–5 scorecard is advice; it sees the photos, the model's silhouettes and a shaded 3D
-  view, because a silhouette cannot show a rolled barrel or a countersink. `/review` counts how often it agreed with the reviewer
-  (Cohen's κ from the stored reviews, with the number of reviewers).
+  view, because a silhouette cannot show a rolled barrel or a countersink. `/review` counts how often it agreed with the
+  reviewer (Cohen's κ from the stored reviews, with the number of reviewers).
+
+## Admin console
+
+`/admin` (admin token when `PARTSMITH_ADMIN_TOKEN` is set; open in development mode, and the page warns about it):
+
+- **Overview**: jobs made here and recorded, pass rate, rounds to verify, max-error median and P90, why people sent parts
+  back, review states, registry and request counts, cost by stage and model, and today's spend against the cap. Every
+  block is computed by `services/admin` from stored data and carries its `n` and a source.
+- **Registry**: unpublish or republish a part with a reason; each part lists the criteria it meets.
+- **Taught rules**: every rule and fixed feedback that later jobs are given, the jobs that used it, and an off switch.
+- **Audit**: an append-only log of every admin write and review decision.
+- **Demand**: open part requests and searches that found nothing close (no IP or user agent is logged).
+
+## Registry and agents
+
+- **Search** (`/parts`, MCP `search_parts`) returns a `coverage` score and a `match` of good, partial or none with a hint,
+  so an agent can tell "nothing close" from a weak match. Searches that find nothing close are listed by `GET /demand`.
+- **Per-part records**: `/api/v1/parts/{slug}/verification.json` (the stored verification record) and `params.json` (the
+  knobs as a JSON-Schema document); both are on the part page's Data tab.
+- **Playground**: `/api/v1/templates` lists the family templates; `/templates/{name}/bake` builds one at any knob values;
+  its downloads go through the template export gate.
+- **REST**: `/api/v1` ([docs/API.md](docs/API.md), OpenAPI at `/api/v1/openapi.json`).
+- **MCP**: `uv run python -m services.mcp --stdio`, or streamable HTTP at `/mcp`. Tools: `search_parts`, `get_part`,
+  `get_variant`, `bake`, `verify`, `get_lessons`, `find_matching`, `list_families`, `measure_photo`, `get_job`,
+  `start_fix_job`, `report_need` ([services/mcp/README.md](services/mcp/README.md)).
+- **Agent rules**: never rescale a part to force a fit — change the right knob; if no part matches, say so and call
+  `report_need`; report which dimensions were measured and which were assumed.
 
 ## Model-written vs hand-written
 
@@ -208,17 +279,20 @@ the code that judges that data. Everything a model produces lands in the job's r
 | Masks of the part and of tapped points; video tracks | SAM 3.1 | `run.jsonl` artifacts |
 | Cited spec values and prices, with the search URLs | Muse Wonder | `run.jsonl`, the buy-or-print card |
 | Completion of the broken region, repair preview, install card (labelled AI images) | Muse Image | `run.jsonl` artifacts |
-| Veto notes | Muse Glimmer | `verification.json` → `vetoes` |
+| Veto notes and the advisory scorecard | Muse Glimmer | `verification.json` → `vetoes`, `judge.json` |
+| Draft family rules from a reviewer's notes | Muse Spark | the review record, kept only when a person ticks them |
+| A described part's template and values, with sources | Muse Spark | `$PARTSMITH_HOME/describe/<id>.json` |
 | Transcripts of voice edits | Muse Voice Transcribe | `run.jsonl` |
 
 | Hand-written, deterministic code | Where |
 |---|---|
 | Metrology: mats, pose, capture gate, mask → mm, circle and slot fits, uncertainty per value | [`services/metrology`](services/metrology) |
 | Verifier: render from the photo's camera, metrics, part tests, the pass rule; the only writer of `verified` and `verification.json` | [`services/verifier`](services/verifier) |
-| Guards on model output: edit caps, no uniform rescale, knob ranges; acceptance checks for points, citations and completions | [`services/agent/guards.py`](services/agent/guards.py) · [`services/agent/evidence.py`](services/agent/evidence.py) · [`services/agent/providers/spec.py`](services/agent/providers/spec.py) · [`services/metrology/recon_gate.py`](services/metrology/recon_gate.py) |
+| Guards on model output: edit caps, no uniform rescale, pinned knobs, knob ranges; acceptance checks for points, citations and completions | [`services/agent/guards.py`](services/agent/guards.py) · [`services/agent/evidence.py`](services/agent/evidence.py) · [`services/agent/providers/spec.py`](services/agent/providers/spec.py) · [`services/metrology/recon_gate.py`](services/metrology/recon_gate.py) |
 | Sandbox for model-written CadQuery | [`services/geom_worker`](services/geom_worker) |
 | Export gate | [`services/verifier/ship.py`](services/verifier/ship.py) · [`services/registry/gate.py`](services/registry/gate.py) |
-| Orchestrator, jobs, family templates, prompts, the labelled mock brain used with no keys | [`services/agent`](services/agent) |
+| Orchestrator, jobs, family templates, prompts, daily spend cap, the labelled mock brain used with no keys | [`services/agent`](services/agent) |
+| Review store, pins, feedback ledger; admin overview, moderation and audit log | [`services/review`](services/review) · [`services/admin`](services/admin) |
 | Registry, REST API, MCP server | [`services/registry`](services/registry) · [`services/api`](services/api) · [`services/mcp`](services/mcp) |
 | Web app | [`apps/web`](apps/web) |
 | Benches, scorers, lying-model suite, synthetic photo generator | [`eval`](eval) · [`tools/synth`](tools/synth) |
@@ -229,7 +303,7 @@ Every number here is written by `make bench` (`tools/readme.py` reads `eval/repo
 mixed: synthetic photos (exact), standard reference objects (published specs), real broken parts (school ruler, ±0.5 mm).
 
 <!-- BEGIN:bench -->
-Generated 2026-10-29T20:43:37+00:00 at commit `304f9333bc2a5f23791c8529d43a990ad18c1c5f` · mode **live**.
+Generated 2026-11-02T20:53:37+00:00 at commit `231150543799ec889330553ab61172228bbe191e` · mode **live**.
 
 **Synthetic bench (exact ground truth)**
 
@@ -280,38 +354,35 @@ make setup        # uv sync (Python 3.12) + pnpm install + generated types
 make dev          # seeds the registry from the bundled samples, starts API :8000 and web :3000
 make test         # unit tests, no network, no keys
 make bench        # rebuilds every results table from stored runs (no keys needed)
+make lie          # a scripted model claims VERIFIED on a wrong part; code refuses the export
 make smoke        # one call per provider: ✅ live · ⚠️ key missing (mock) · ❌ failed
 make live         # smoke, then re-run the benches on live models
 ```
 
 With no keys every model stage runs as a deterministic mock, and the app says so on every page. Add keys to `.env` (see
-`.env.example`) and run `make live`. Self-hosting Glimmer and SAM 3 on Modal: [`infra/modal/README.md`](infra/modal/README.md).
+`.env.example`) and run `make live`; set `PARTSMITH_DAILY_USD_CAP` to cap a day's live spend. Self-hosting Glimmer and
+SAM 3 on Modal: [`infra/modal/README.md`](infra/modal/README.md).
 
 ## Pages
 
 | Page | What it is for |
 |---|---|
-| `/fix` | Upload photos or a clip (or scan the QR on your phone), narrate the clip, tap holes or the broken edge, describe the part in English or Hinglish |
-| `/jobs/{id}` | Live workspace: photos, 3D model, error per view, the agent's thoughts and tool calls, knobs, live Hindi/English voice edits, a buy-or-print card, exports with "open in slicer", and a fit-test coupon that learns your printer's clearance |
-| `/jobs/{id}/fit` | 1:1 screen fit check |
+| `/fix` | Upload photos or a clip (or scan the QR on your phone), narrate the clip, tap holes or the broken edge, type sizes the photo cannot see, describe the part in English or Hinglish |
+| `/calibrate`, `/mat` | Match a bank card once; the full-screen 1:1 measuring mat |
+| `/jobs`, `/jobs/{id}` | Recent jobs (attempts at the same part folded together); the live workspace: photos, 3D model, error per view, the agent's thoughts and tool calls, knobs, live Hindi/English voice edits, buy-or-print, cost, exports with "open in slicer", and a fit-test coupon that learns your printer's clearance |
+| `/jobs/{id}/fit` | 1:1 screen fit check (`?example=1`: a labelled example from the job's own outline) |
 | `/describe` | No part in hand: type or say what it is with your numbers; a template part is built and every number you gave is measured on the model ("Matches your numbers", never "verified") |
 | `/playground` | Every family template as an example with presets: drag knobs, watch the CadQuery program change, share the link, download at your values |
-| `/parts` | The registry: verified parametric parts with knobs, fit presets per printer and material, share cards |
+| `/parts`, `/parts/{slug}` | The registry: search with match coverage; parametric parts with knobs, fit presets per printer and material, verification record and knob schema, share cards |
+| `/p/{id}` | Repair passport: reprint a part from its verified model with your printer's learned clearance |
 | `/requests` | Parts people need that nobody has made yet; vote on them |
 | `/factory` | Muse Wonder plans part families; a human approves before anything is published |
-| `/review` | Admin review queue: accept, send back with pins on the photo, or reject; judge-vs-person agreement |
+| `/review`, `/review/log` | Review desk: accept, send back with pins on the photo, or reject; judge-vs-person agreement; the feedback log |
 | `/lessons` | What the agent learned from failures and reviews, promoted only with evidence or a person's tick |
+| `/admin` | Admin console: overview with sources, registry moderation, taught rules, audit log, demand |
 | `/shop` | Batch jobs for a print shop, with a job-sheet PDF |
-| `/results`, `/models`, `/judges` | Benchmarks, per-stage model routing, stored replays and a lying model being caught |
-
-## For agents and developers
-
-- REST: `/api/v1` ([docs/API.md](docs/API.md), OpenAPI at `/api/v1/openapi.json`)
-- MCP: `uv run python -m services.mcp --stdio`, or streamable HTTP at `/mcp` — tools `search_parts`, `get_part`, `get_variant`,
-  `bake`, `find_matching`, `list_families`, `measure_photo`, `start_fix_job`, `get_job`, `report_need`
-  ([services/mcp/README.md](services/mcp/README.md))
-- Agent rules: never rescale a part to force a fit — change the right knob; if no part matches, say so and call `report_need`;
-  report which dimensions were measured and which were assumed.
+| `/results`, `/models`, `/judges`, `/how` | Benchmarks, per-stage model routing, stored replays and a lying model being caught, the five steps in plain words |
+| `/agents` | REST, MCP and `llms.txt` for coding agents |
 
 ## Limitations (honest)
 
@@ -323,6 +394,7 @@ With no keys every model stage runs as a deterministic mock, and the app says so
 - Flexible parts (rubber seals, gaskets) and free-form objects (figurines, sculptures) are refused with a reason: a rigid
   parametric model cannot replace them.
 - Real reference-object photos and real broken parts are pending; those tables say "pending" until they exist.
+- Judge-vs-person agreement needs reviews by people; scripted test reviews are excluded, so its `n` is small until then.
 - No physical print results yet; the physical proof is the screen fit check. Prints are optional and will only be reported if
   made.
 
@@ -333,8 +405,9 @@ With no keys every model stage runs as a deterministic mock, and the app says so
 | `services/metrology` | mats, card scale, capture gate, pose, segmentation, point cuts, walk-around clips, mm features, fit check |
 | `services/geom_worker` | sandboxed CadQuery execution, exporters, bake cache |
 | `services/verifier` | camera-frame comparison, metrics, part tests, the pass rule, the export gate |
-| `services/agent` | orchestrator, fix agent and its tools, providers, templates, prompts, jobs and replays |
-| `services/api`, `services/mcp`, `services/registry` | REST + SSE, MCP, registry, factory |
+| `services/agent` | orchestrator, fix agent and its tools, guards, providers and the spend cap, templates, prompts, jobs and replays |
+| `services/review`, `services/admin` | review store, pins and feedback ledger; admin overview, moderation, taught rules, audit log |
+| `services/api`, `services/mcp`, `services/registry` | REST + SSE, MCP, registry, describe, factory |
 | `apps/web` | Next.js app |
 | `tools/synth`, `eval` | synthetic photo generator with exact ground truth, benches, suites and reports |
 | `tools/readme.py` | writes every generated block of this README |
@@ -346,20 +419,20 @@ All code in this repository was written during the hackathon (from Oct 26 2026, 
 are computed from `git log`, so they stay true as the history grows.
 
 <!-- BEGIN:built -->
-**49 commits** between 2026-10-27 05:59 ET and 2026-10-30 10:27 ET; the hackathon started 2026-10-26 12:00 ET. Commits dated before the start: **0**.
+**56 commits** between 2026-10-27 05:59 ET and 2026-10-31 19:08 ET; the hackathon started 2026-10-26 12:00 ET. Commits dated before the start: **0**.
 
 | Area | Files added | Lines added: code and docs | Lines added: data, reports, lockfiles, generated | First commit | Last commit |
 |---|---|---|---|---|---|
-| `services/` (Python backend) | 270 | 54,155 | 0 | 2026-10-27 | 2026-10-30 |
-| `apps/web/` (web app) | 256 | 27,566 | 2,405 | 2026-10-27 | 2026-10-30 |
-| `eval/` (benches and reports) | 570 | 5,409 | 82,872 | 2026-10-27 | 2026-10-29 |
-| `packages/` (typed contracts) | 12 | 1,408 | 5,625 | 2026-10-27 | 2026-10-30 |
-| `tools/` (synthetic data, mats, generators) | 32 | 5,174 | 0 | 2026-10-27 | 2026-10-30 |
-| `infra/` (Modal, deploy) | 12 | 1,014 | 86 | 2026-10-27 | 2026-10-29 |
-| `docs/` | 18 | 1,941 | 7 | 2026-10-27 | 2026-10-30 |
-| `data/` (samples, replays) | 4,293 | 0 | 656,495 | 2026-10-27 | 2026-10-30 |
-| root files | 15 | 1,364 | 8,271 | 2026-10-27 | 2026-10-30 |
-| **Total** | **5,478** | **98,031** | **755,761** | | |
+| `services/` (Python backend) | 302 | 60,915 | 0 | 2026-10-27 | 2026-10-31 |
+| `apps/web/` (web app) | 354 | 43,287 | 5,520 | 2026-10-27 | 2026-10-31 |
+| `eval/` (benches and reports) | 570 | 5,415 | 82,875 | 2026-10-27 | 2026-10-31 |
+| `packages/` (typed contracts) | 12 | 1,434 | 5,657 | 2026-10-27 | 2026-10-31 |
+| `tools/` (synthetic data, mats, generators) | 32 | 5,177 | 0 | 2026-10-27 | 2026-10-31 |
+| `infra/` (Modal, deploy) | 12 | 1,014 | 88 | 2026-10-27 | 2026-10-31 |
+| `docs/` | 18 | 2,276 | 7 | 2026-10-27 | 2026-10-31 |
+| `data/` (samples, replays) | 4,293 | 0 | 656,539 | 2026-10-27 | 2026-10-30 |
+| root files | 16 | 1,384 | 8,277 | 2026-10-27 | 2026-10-31 |
+| **Total** | **5,609** | **120,902** | **758,963** | | |
 
 <details><summary>Every commit since the start, oldest first</summary>
 
@@ -414,6 +487,13 @@ are computed from `git log`, so they stay true as the history grows.
 | 2026-10-29 17:41 ET | `1cce252` | feat: draft demo video target, strict-JSON bench reports, results and replay fixes |
 | 2026-10-30 03:28 ET | `57ece97` | feat: human review loop with reviewer rounds, judge scorecard and family rules |
 | 2026-10-30 10:27 ET | `d4025df` | feat: judge sees a shaded 3D view, labelled test reviews, recorded review chain |
+| 2026-10-30 11:58 ET | `6d608b5` | feat: review desk, feedback log with reasons, pasted screenshots, plainer site |
+| 2026-10-31 05:46 ET | `12d4626` | feat: admin console, landing drawing set, describe and playground, search coverage, spend cap |
+| 2026-10-31 07:01 ET | `77aeeda` | fix: honest numbers and wording, search that finds its examples, weakest pages reworked |
+| 2026-10-31 16:56 ET | `a5ed156` | fix: job pages name the real failure, plainer pages, one explained pass rate |
+| 2026-10-31 18:00 ET | `e7f0eaa` | fix: judge vetoes shown, one registry count, pages that agree with each other |
+| 2026-10-31 18:22 ET | `de343ab` | fix: no claim that a person reviewed the scripted hinge chain; honest learning row and hero caption |
+| 2026-10-31 19:08 ET | `2311505` | feat: fix-loop guardrails, one count vocabulary, visible fit check, grouped attempts |
 
 </details>
 

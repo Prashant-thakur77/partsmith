@@ -9,7 +9,7 @@
 | [PROGRESS.md](PROGRESS.md) | Build log: what was done, the command that proves it, what is next |
 | [HANDOFF.md](HANDOFF.md) | What only the owner can do: keys, real photos, deploy, video, submission |
 | [FAQ_ANSWERS.md](FAQ_ANSWERS.md) | Answers to hackathon questions the participant guide does not cover |
-| [media/](media/) | README hero GIF and screenshot grid, recorded from the web app in replay mode with mock providers by `make media` (no keys) |
+| [media/](media/) | README hero GIF and screenshot grids (`grid.png`, `pages.png`), recorded from the web app in replay mode by `make media` (no keys; stored runs served as recorded) |
 | [links.json](links.json) | URLs for the README link row (live site, video, judges page, sample); empty means "(coming)" |
 | [../eval/REPRODUCE.md](../eval/REPRODUCE.md) | How every bench number is produced, and the commands to reproduce it |
 

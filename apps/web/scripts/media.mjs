@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 /**
- * README media, recorded from the real app: docs/media/hero.gif, docs/media/grid.png and one PNG per grid tile.
+ * README media, recorded from the real app: docs/media/hero.gif, docs/media/grid.png (four close-ups),
+ * docs/media/pages.png (the newer pages, one viewport each) and one PNG per tile.
  *
  * Run it through `make media`, which starts the API in replay mode (no keys, scratch PARTSMITH_HOME) and `next start`,
  * then calls this script and stops both. Every number in the media is whatever the app shows for the committed replays
@@ -115,15 +116,24 @@ async function heroFrames(browser, id) {
     .split(",")
     .map((w) => w.trim())
     .filter((w) => w && !/^(synthetic|synthetic sample|replay|real|real photo)$/i.test(w));
-  const chips = page.getByRole("radio", { name: preset.length ? `${title} · ${preset.join(", ")}` : title, exact: true });
-  await ((await chips.count()) ? chips : page.getByRole("radio", { name: title, exact: true })).click();
+  // The run is either one of the featured cards ("Runs worth a look") or a chip behind "More runs".
+  const card = page.getByRole("list", { name: "Runs worth a look" }).getByRole("button").filter({ hasText: title });
+  if (await card.count()) await card.first().click();
+  else {
+    const more = page.getByRole("button", { name: /^More runs/ });
+    if (await more.count()) await more.click();
+    const chips = page.getByRole("radio", { name: preset.length ? `${title} · ${preset.join(", ")}` : title, exact: true });
+    await ((await chips.count()) ? chips : page.getByRole("radio", { name: title, exact: true })).click();
+  }
   await settled(page, 600);
+  const slider = page.getByRole("slider", { name: "Replay position" });
+  await slider.evaluate((el) => el.focus({ preventScroll: true }));
+  await page.waitForTimeout(800); // picking a run scrolls the player into view smoothly; let that finish first
   await page.evaluate(() => {
-    const el = document.getElementById("replay");
+    // the player itself (below the run cards), else the section
+    const el = document.querySelector("#replay .scroll-mt-28") ?? document.getElementById("replay");
     if (el) window.scrollTo(0, el.getBoundingClientRect().top + window.scrollY - 118); // below the sticky nav + replay banner
   });
-  const slider = page.getByRole("slider", { name: "Replay position" });
-  await slider.focus();
   await page.keyboard.press("Home");
   await page.waitForTimeout(300);
   await snap(0.6);
@@ -224,8 +234,12 @@ async function clipShot(page, file, locators, pad = 12) {
   const y = Math.max(0, Math.min(...boxes.map((b) => b.y)) - pad);
   const r = Math.max(...boxes.map((b) => b.r)) + pad;
   const btm = Math.max(...boxes.map((b) => b.b)) + pad;
-  // Back to the top: the sticky header would otherwise be drawn over the clip at the current scroll position.
-  await page.evaluate(() => window.scrollTo(0, 0));
+  // Back to the top: the sticky header would otherwise be drawn over the clip at the current scroll position. Section
+  // headers fade in once scrolled into view; mark them shown, as a reader scrolling past them would see them.
+  await page.evaluate(() => {
+    window.scrollTo(0, 0);
+    document.querySelectorAll("[data-reveal]").forEach((e) => e.setAttribute("data-revealed", ""));
+  });
   await page.mouse.move(1, 1);
   await page.waitForTimeout(400);
   await page.screenshot({ path: file, fullPage: true, clip: { x, y, width: r - x, height: btm - y }, animations: "disabled" });
@@ -275,7 +289,10 @@ async function gridTiles(browser, id) {
   await page.goto(`${BASE}/fix`);
   await settled(page);
   const sample = join(REPO, "data/synthetic/samples", CLIP_SAMPLE);
-  // The clip slot appears once the API's capabilities say the fix endpoint takes a clip; attach files after that.
+  // The clip slot appears once the API's capabilities say the fix endpoint takes a clip, inside "Add more (optional)";
+  // open that section, then attach files.
+  const addMore = page.getByRole("button", { name: /^Add more/ });
+  if ((await addMore.count()) && !(await page.getByRole("heading", { name: /^Walk around it/ }).isVisible())) await addMore.first().click();
   await page.getByRole("heading", { name: /^Walk around it/ }).waitFor({ timeout: 30_000 });
   const video = page.locator("video").first();
   for (let attempt = 0; attempt < 3 && !(await video.isVisible()); attempt++) {
@@ -302,9 +319,18 @@ async function gridTiles(browser, id) {
   await clipShot(page, file("fix-upload"), [slot(/^Walk around it/), slot(/^Voice note/)]);
   failOnErrors(errors, "/fix");
 
-  // Compose the 2×2 grid as a tiny local HTML page: in each row both tiles get the same height (flex-grow = aspect).
+  await ctx.close();
+  const s = replaySummary(id);
+  await composeGrid(browser, TILES, file, "grid.png", `PartSmith web app, replay mode: ${s.mode}, ${s.title} (stored run ${id})`);
+}
+
+/**
+ * Compose tiles as a tiny local HTML page, two per row: in each row both tiles get the same height (flex-grow = aspect).
+ * Writes docs/media/<out> and shrinks it and every tile under their size limits.
+ */
+async function composeGrid(browser, tiles, file, out, header) {
   const dims = Object.fromEntries(
-    TILES.map((t) => {
+    tiles.map((t) => {
       const [w, h] = execFileSync("ffprobe", ["-v", "error", "-show_entries", "stream=width,height", "-of", "csv=p=0", file(t.key)], { encoding: "utf8" })
         .trim()
         .split(",")
@@ -314,7 +340,9 @@ async function gridTiles(browser, id) {
   );
   const fig = (t, i) =>
     `<figure style="flex:${dims[t.key].toFixed(4)} 1 0"><img src="file://${file(t.key)}"><figcaption><b>${String.fromCharCode(97 + i)}</b>${t.caption}</figcaption></figure>`;
-  const rows = [TILES.slice(0, 2), TILES.slice(2, 4)].map((r, k) => `<div class="row">${r.map((t, i) => fig(t, k * 2 + i)).join("")}</div>`).join("");
+  const pairs = [];
+  for (let k = 0; k < tiles.length; k += 2) pairs.push(tiles.slice(k, k + 2));
+  const rows = pairs.map((r, k) => `<div class="row">${r.map((t, i) => fig(t, k * 2 + i)).join("")}</div>`).join("");
   const html = `<!doctype html><meta charset="utf-8"><style>
     body{margin:0;background:#f4f4f5;font:16px/1.35 "DejaVu Sans",system-ui,sans-serif;color:#18181b}
     main{width:${GRID_WIDTH}px;box-sizing:border-box;padding:16px;display:flex;flex-direction:column;gap:16px}
@@ -324,18 +352,54 @@ async function gridTiles(browser, id) {
     img{display:block;width:100%;height:auto;border-bottom:1px solid #e4e4e7}
     figcaption{padding:9px 12px;background:#18181b;color:#fafafa;min-height:44px}
     figcaption b{display:inline-block;margin-right:8px;color:#fb923c}
-  </style><main><header>PartSmith web app, replay mode: ${replaySummary(id).mode}, ${replaySummary(id).title} (stored run ${id})</header>${rows}</main>`;
-  const htmlFile = join(TMP, "grid.html");
+  </style><main><header>${header}</header>${rows}</main>`;
+  const htmlFile = join(TMP, `${out}.html`);
   writeFileSync(htmlFile, html);
   const gp = await browser.newPage({ viewport: { width: GRID_WIDTH, height: 1200 }, deviceScaleFactor: 1 });
   await gp.goto(`file://${htmlFile}`);
   await gp.waitForLoadState("load");
   await gp.waitForTimeout(300);
-  await gp.locator("main").screenshot({ path: join(OUT, "grid.png") });
+  await gp.locator("main").screenshot({ path: join(OUT, out) });
   await gp.close();
+  shrinkPng(join(OUT, out), LIMITS.grid);
+  for (const t of tiles) shrinkPng(file(t.key), 1.2e6);
+}
+
+// ------------------------------------------------------------------------------------------------------------ pages
+
+const PAGE_TILES = [
+  { key: "playground", path: () => "/playground", caption: "Playground: every family template is a program with knobs; drag one and the CadQuery program changes" },
+  { key: "describe", path: () => "/describe", caption: "Describe it: type what you need with your numbers; each number is measured on the built model" },
+  { key: "review", path: () => "/review", caption: "Review desk: accept, send back with pins on the photo, or reject; the measurements still decide pass or fail" },
+  { key: "feedback-log", path: () => "/review/log", caption: "Feedback log: what was wrong, why it matters, and what code measured in the next round" },
+  { key: "admin", path: () => "/admin", caption: "Admin overview: every number computed from stored data, with its n and source (development mode, no token)" },
+  { key: "fit-example", path: (id) => `/jobs/${encodeURIComponent(id)}/fit?example=1`, caption: "Screen fit check, labelled example: the model's 1:1 outline drawn from the job's own outline, not a measurement" },
+];
+
+/** One viewport screenshot per newer page (desktop, light theme), composed into docs/media/pages.png. */
+async function pageTiles(browser, id) {
+  const ctx = await browser.newContext({ viewport: { width: 1280, height: 860 }, colorScheme: "light", deviceScaleFactor: 1 });
+  const page = await ctx.newPage();
+  const errors = [];
+  page.on("console", (m) => m.type() === "error" && errors.push(m.text()));
+  page.on("pageerror", (e) => errors.push(e.message));
+  const file = (key) => join(OUT, `tile-${key}.png`);
+  for (const t of PAGE_TILES) {
+    errors.length = 0;
+    const path = t.path(id);
+    await page.goto(`${BASE}${path}`);
+    await settled(page, 1500);
+    await page.evaluate(() => {
+      window.scrollTo(0, 0);
+      document.querySelectorAll("[data-reveal]").forEach((e) => e.setAttribute("data-revealed", ""));
+    });
+    await page.mouse.move(1, 1);
+    await page.waitForTimeout(600);
+    await page.screenshot({ path: file(t.key), animations: "disabled" });
+    failOnErrors(errors, path);
+  }
   await ctx.close();
-  shrinkPng(join(OUT, "grid.png"), LIMITS.grid);
-  for (const t of TILES) shrinkPng(file(t.key), 1.2e6);
+  await composeGrid(browser, PAGE_TILES, file, "pages.png", "PartSmith web app in replay mode: no keys, stored runs served as recorded");
 }
 
 // ------------------------------------------------------------------------------------------------------------ main
@@ -354,17 +418,18 @@ async function main() {
       log(`hero.gif: ${frames.length} frames, ${frames.reduce((s, f) => s + f.seconds, 0).toFixed(1)} s, corner label ${labelled ? "burned in" : "skipped (no DejaVu font); the page's own replay badge is visible"}`);
     }
     if (!only || only === "grid") await gridTiles(browser, id);
+    if (!only || only === "pages") await pageTiles(browser, id);
   } finally {
     await browser.close();
     if (OWN_TMP) rmSync(TMP, { recursive: true, force: true });
   }
   let total = 0;
-  for (const f of ["hero.gif", "grid.png", ...TILES.map((t) => `tile-${t.key}.png`)]) {
+  for (const f of ["hero.gif", "grid.png", "pages.png", ...[...TILES, ...PAGE_TILES].map((t) => `tile-${t.key}.png`)]) {
     const p = join(OUT, f);
     if (!existsSync(p)) continue;
     const size = statSync(p).size;
     total += size;
-    const limit = f === "hero.gif" ? LIMITS.hero : f === "grid.png" ? LIMITS.grid : Infinity;
+    const limit = f === "hero.gif" ? LIMITS.hero : f === "grid.png" || f === "pages.png" ? LIMITS.grid : Infinity;
     log(`${f.padEnd(24)} ${(size / 1e6).toFixed(2)} MB${size > limit ? `  OVER the ${(limit / 1e6).toFixed(1)} MB limit` : ""}`);
   }
   log(`total ${(total / 1e6).toFixed(2)} MB${total > LIMITS.total ? "  OVER the 10 MB limit" : ""}`);

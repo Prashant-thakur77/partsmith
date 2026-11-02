@@ -134,8 +134,9 @@ TEMPLATE_SUPPORTS = {
     "spacer": (False, "-Z"),  # stands on its end; 45 deg chamfers and a vertical bore
     "knob": (False, "+Z"),  # upside down: the top fillet becomes a bed edge (as modelled, the blind bore's ceiling
     # is a flat bridge 12 mm up)
-    "l_bracket": (True, "-Z"),  # the upright leg's two horizontal 4.5 mm screw holes: their upper arcs, 5+ mm up
-    "hook": (True, "-Z"),  # the J arm's bend overhangs well above the plate in every orientation
+    "l_bracket": (False, "-Z"),  # the upright leg's two horizontal 4.5 mm screw holes: their top arcs bridge
+    "hook": (True, "-Y"),  # the J arm's bend overhangs well above the plate in every orientation; on its side the
+    # two screw holes are horizontal and bridge, which leaves a little less overhang than flat on its plate
 }
 
 
@@ -167,3 +168,26 @@ def test_a_flat_ceiling_near_the_bed_still_counts(tmp_path: Path, pool: WarmPool
     # edge), so the bed-edge allowance does not hide it as modelled
     out = bake(LOW_CEILING, {}, ("stl",), pool=pool, root=tmp_path)
     assert out.overhang_mm2["-Z"] == pytest.approx(3.14159 * (20**2 - 15**2), rel=0.02)
+
+
+SIDE_HOLE = (
+    "import cadquery as cq\n"
+    "PARAMS = {'d': (5.0, 2.0, 12.0, 0.1, 'mm', True, 'Hole')}\n"
+    "def build(p):\n"
+    "    block = cq.Workplane('XY').box(30, 20, 20, centered=(True, True, False))\n"
+    "    return block.cut(cq.Workplane('YZ').workplane(offset=-20).center(0, 10).circle(p['d'] / 2).extrude(40))\n"
+    "result = build({k: v[0] for k, v in PARAMS.items()})\n"
+)
+
+
+@pytest.mark.parametrize(("d", "counted"), [(4.0, False), (6.0, False), (10.0, True)])
+def test_top_arc_of_a_small_horizontal_hole_is_not_an_overhang(
+    d: float, counted: bool, tmp_path: Path, pool: WarmPool
+) -> None:
+    # a block lying flat with a hole along X, 10 mm up: up to 6 mm across the hole's top arc bridges; a 10 mm hole's
+    # top arc (about 30 mm x 2 x 0.8 rad x r of facets steeper than 45 deg) still needs support as modelled
+    out = bake(SIDE_HOLE, {"d": d}, ("stl",), pool=pool, root=tmp_path)
+    if counted:
+        assert out.overhang_mm2["-Z"] > 100
+    else:
+        assert out.overhang_mm2["-Z"] == pytest.approx(0.0, abs=0.5)

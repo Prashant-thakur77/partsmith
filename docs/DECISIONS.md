@@ -476,3 +476,21 @@ the size inside its tolerance are allowed, and a reviewer job is exempt (the per
 2 fix rounds in a row that leave the keep rule's shortfall where it was, the fix rounds stop with `stopped: no progress
 for 2 rounds`; a template that can still hand over to free code does that instead (it is a different approach), and the
 agent's `set_params` refuses further commits. Both change new runs only; recorded replays are not re-run or rewritten.
+
+**2026-11-03 — The top arcs of small horizontal holes do not count as overhangs.** The supports heuristic marked the
+L-bracket "supports needed" only because of its two horizontal 4.5 mm screw holes: their upper arcs face down more
+steeply than 45 deg, but a hole that small bridges on any common printer. An overhanging patch is now left out when it
+fits a concave cylinder of at most 6 mm diameter whose axis is level with the bed and whose arc centres on straight down
+(`services/geom_worker/bake.py`, `small_hole_arc`). The patch is tested on its own, so the bore of a hole in an
+overhanging ceiling joins the ceiling's patch, fails the fit and still counts; bigger holes and convex undersides (a boss)
+still count. `FACTS_RULE` went to 4, so cached bakes recompute their facts from the STL. At their defaults the L-bracket
+now needs no supports and the hook still does (lying on its side it now has slightly less overhang than flat, because its
+screw holes become horizontal and bridge). Caster wheel, spacer and knob are unchanged.
+
+**2026-11-03 — Real photos come in through one tool that checks them the way `/fix` does.** `make real-intake` lays out
+`data/real/` from a loose folder of phone exports and `make real-check` validates it offline before any paid run
+(`tools/real_check.py`). The check runs the same capture gate the `/fix` capture stage runs (no part mask), so a folder
+it calls usable is one the job will accept; the threshold-mask part check and the rough size comparison are advisory
+because the product segments with SAM 3.1. Intake keeps JPEG pixels as they are and rewrites the EXIF block to the
+orientation and focal-length tags only, for the same reason the upload path does not re-encode (accuracy), while still
+dropping location, dates and device fields.

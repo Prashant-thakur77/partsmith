@@ -67,8 +67,27 @@ flowchart LR
     prov -->|"HTTPS"| meta["Meta Model API<br/>Muse Spark, Wonder, Image, Voice, SAM 3.1"]
     prov -->|"HTTPS"| open["Open weights<br/>Muse Spark Open (hosted), Glimmer and SAM 3 on Modal"]
     prov -.->|"no key"| mock["Deterministic mocks<br/>labelled on every page"]
+    prov --> budget["Daily spend cap (code)<br/>PARTSMITH_DAILY_USD_CAP"]
+    api --> review["services/review<br/>queue · pins · feedback ledger · rules"]
+    review -->|"improve: reviewer round"| svc
+    api --> admin["services/admin<br/>overview · moderation · audit log"]
     svc --> store[("SQLite or Postgres<br/>blob dir or R2<br/>runs/job-id/run.jsonl")]
+    review --> store
+    admin --> store
 ```
+
+Three layers sit beside the job pipeline, none of which can set `verified`:
+
+- **Review** (`services/review`): every finished job waits on `/review`. A person accepts, rejects with a reason, or
+  sends it back with pins on the photo; "improve" starts a reviewer round (a new fix job that starts from the reviewed
+  program). The feedback ledger records what code measured at each pin in the next round, and only rules a person
+  ticked, or feedback measured as fixed, reach later prompts. Scripted test reviews are labelled and never promote,
+  publish or count toward judge-vs-person agreement.
+- **Admin** (`services/admin`, `/admin`): the overview is computed from stored data, each block with its `n` and source;
+  unpublish / republish and rule off / on take a reason and are written to the append-only audit log.
+- **Budget** (`services/agent/providers/budget.py`): before each live model call, code checks today's spend against
+  `PARTSMITH_DAILY_USD_CAP`; at the cap the call fails with a clear message (no silent fallback). Spend persists in
+  `$PARTSMITH_HOME/spend/`, and `/status` and the admin overview show it.
 
 ## Modules
 
@@ -155,9 +174,9 @@ Runtime data lives in `$PARTSMITH_HOME` (default `./var`, gitignored): `blobs/` 
 - `jobs.py` — job state machine, pause/resume on questions, event bus, `run.jsonl`, replay.
 
 ### `services/api`, `services/mcp`, `services/media`, `services/cli.py`
-REST under `/api/v1` (PLAN §8.3) with OpenAPI at `/api/v1/openapi.json`; SSE at `/api/v1/jobs/{id}/events`.
-MCP tools: `search_parts`, `get_part`, `get_variant`, `bake`, `find_matching`, `list_families`, `measure_photo`, `start_fix_job`,
-`get_job`, `report_need`. CLI: `partsmith fix <folder>`, `partsmith bake`, `partsmith synth`, `partsmith mat`, `partsmith serve`.
+REST under `/api/v1` (`docs/API.md`) with OpenAPI at `/api/v1/openapi.json`; SSE at `/api/v1/jobs/{id}/events`.
+MCP tools: `search_parts`, `get_part`, `get_variant`, `bake`, `verify`, `get_lessons`, `find_matching`, `list_families`,
+`measure_photo`, `start_fix_job`, `get_job`, `report_need`. CLI: `partsmith fix <folder>`, `partsmith bake`, `partsmith synth`, `partsmith mat`, `partsmith serve`.
 
 ### `tools/`, `eval/`
 `tools/mat` (paper mat + template PDFs), `tools/calib` (camera intrinsics), `tools/synth` (synthetic photos + reference objects,

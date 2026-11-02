@@ -11,7 +11,7 @@ VIDEO_API_PORT ?= 8766
 VIDEO_WEB_PORT ?= 3766
 
 .PHONY: help setup sync web-install schemas test test-all test-web lint typecheck check smoke dev api web worker \
-        seed synth bench bench-live live lie mat media video mcp e2e clean-var gitleaks deploy-check
+        seed synth bench bench-live real-check real-intake live lie mat media video mcp e2e clean-var gitleaks deploy-check
 
 help: ## Show targets
 	@grep -E '^[a-zA-Z_-]+:.*?## ' $(MAKEFILE_LIST) | awk 'BEGIN{FS=":.*?## "}{printf "  \033[36m%-12s\033[0m %s\n",$$1,$$2}'
@@ -62,6 +62,13 @@ bench: ## Regenerate eval reports from stored runs (no keys needed)
 bench-live: ## Re-run every bench with the providers configured in .env
 	$(UV) run python -m eval.run --live
 	$(UV) run python -m tools.readme
+
+real-check: ## Check data/real/ offline (gt.yaml + the /fix capture gate on every photo; no model calls)
+	$(UV) run python -m tools.real_check check $(ARGS)
+
+real-intake: ## Bring phone photos from FROM=<dir> into data/real/ (location/EXIF stripped) + gt.yaml templates
+	@test -n "$(FROM)" || { echo "usage: make real-intake FROM=<folder of photos> [ARGS=--dry-run]"; exit 2; }
+	$(UV) run python -m tools.real_check intake "$(FROM)" $(ARGS)
 
 live: ## Check keys, then re-run the benches live
 	$(UV) run python -m tools.smoke && PROVIDER_MODE=live $(MAKE) bench-live

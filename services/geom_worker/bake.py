@@ -9,7 +9,8 @@ touching the CAD kernel. Each bake also computes printing facts from the mesh:
   recommended orientation. 8 mm^3/s is a 0.4 mm nozzle at 0.2 mm layers and 100 mm/s. It assumes 100 % infill.
 - supports: for each of the six axis-aligned orientations, the area of faces pointing down more steeply than 45 deg
   (with a 1 deg margin, so 45 deg chamfers do not count) that are not on the bed. Recommended orientation = least overhang (then more bed contact, then lower height).
-  Supports are needed when that area exceeds 4 mm^2 (small horizontal holes count, although they often bridge).
+  Supports are needed when that area exceeds 4 mm^2. The top arcs of a horizontal hole up to 6 mm across bridge
+  fine, so they are not counted.
 
 `passport=<id>` (off unless asked for; benches and the job pipeline never pass it) debosses the id into the part after
 the program ran (`passport_mark.py`, trusted code in the sandbox child) and keys the cache on it; the mark's report is
@@ -50,7 +51,7 @@ OVERHANG_LIMIT_DEG = 45.0
 OVERHANG_MARGIN_DEG = 1.0
 OVERHANG_COS = float(np.cos(np.radians(OVERHANG_LIMIT_DEG - OVERHANG_MARGIN_DEG)))
 # Bump when the facts rules change: a cached bake made under older rules gets its facts recomputed from its STL.
-FACTS_RULE = 3
+FACTS_RULE = 4
 SUPPORT_AREA_MM2 = 4.0
 BED_TOL_MM = 0.1
 # A sloped edge at the bed (the bottom fillet of a wheel lying flat, a chamfer steeper than 45 deg) that tops out within
@@ -60,12 +61,22 @@ BED_TOL_MM = 0.1
 BED_EDGE_MM = 2.0
 BED_EDGE_SHARE = 0.25
 FLAT_COS = 0.999
+# The top arc of a horizontal hole up to SMALL_HOLE_MAX_DIAMETER_MM across bridges without supports. An overhanging
+# patch is such an arc when it fits a concave cylinder (normals pointing at one axis) of at most that diameter, with
+# the axis level with the bed and the arc centred on "straight down"; a patch joined to other overhangs (a hole in an
+# overhanging ceiling) does not fit, so it still counts.
+SMALL_HOLE_MAX_DIAMETER_MM = 6.0
+HOLE_FIT_TOL_MM = 0.1
+HOLE_AXIS_LEVEL = 0.05  # |axis . down|: the axis is level with the bed
+HOLE_ARC_CENTRED_COS = float(np.cos(np.radians(15.0)))  # mean normal of the arc within 15 deg of straight down
+HOLE_MIN_SPREAD = 0.15  # rms sideways spread of the normals: a flat patch has none and is not an arc
 
 FACT_NOTES = {
     "mass": "solid-volume mass at 100 % infill (volume x density: PLA 1.24, PETG 1.27 g/cm^3); a real print weighs less",
     "print_minutes_est": "rough estimate: (volume / 8 mm^3/s + layers x 4 s) / 60, 0.2 mm layers, 100 % infill",
     "supports_needed": "faces steeper than 45 deg overhang, off the bed, over 4 mm^2 in the recommended orientation; a "
-    "small sloped edge (fillet or chamfer) that tops out within 2 mm of the bed is not counted",
+    "small sloped edge (fillet or chamfer) that tops out within 2 mm of the bed and the top arcs of horizontal holes up "
+    "to 6 mm across (they bridge) are not counted",
     "orientation": "axis-aligned orientation with the least overhang area",
 }
 
@@ -132,6 +143,58 @@ def cache_key(
     return hashlib.sha256(json.dumps(doc, separators=(",", ":")).encode()).hexdigest()
 
 
+def _patches(faces: np.ndarray[Any, Any], sel: np.ndarray[Any, Any]) -> list[np.ndarray[Any, Any]]:
+    """Face indices of `sel`, grouped into patches that share an edge (the mesh's vertices are merged)."""
+    from scipy.sparse import coo_matrix
+    from scipy.sparse.csgraph import connected_components
+
+    idx = np.flatnonzero(sel)
+    if idx.size == 0:
+        return []
+    f = faces[idx]
+    edges = np.sort(np.concatenate([f[:, [0, 1]], f[:, [1, 2]], f[:, [2, 0]]]), axis=1)
+    owner = np.tile(np.arange(idx.size), 3)
+    key = edges[:, 0] * (int(faces.max()) + 1) + edges[:, 1]
+    order = np.argsort(key, kind="stable")
+    shared = key[order][1:] == key[order][:-1]
+    a, b = owner[order][:-1][shared], owner[order][1:][shared]
+    graph = coo_matrix((np.ones(a.size), (a, b)), shape=(idx.size, idx.size))
+    n, labels = connected_components(graph, directed=False)
+    return [idx[labels == i] for i in range(n)]
+
+
+def small_hole_arc(centroids: np.ndarray[Any, Any], normals: np.ndarray[Any, Any], down: np.ndarray[Any, Any]) -> bool:
+    """True when an overhanging patch is the top arc of a horizontal hole of at most SMALL_HOLE_MAX_DIAMETER_MM: its
+    normals lie in one plane (cylinder axis = that plane's normal, level with the bed), point at a common axis from a
+    radius <= 3 mm (concave: a hole, not a boss) and centre on straight down."""
+    if len(normals) < 3:
+        return False
+    mean = normals.mean(axis=0)
+    if float(mean @ down) < HOLE_ARC_CENTRED_COS * float(np.linalg.norm(mean)):
+        return False
+    _, sv, vt = np.linalg.svd(normals, full_matrices=False)
+    if sv[1] / np.sqrt(len(normals)) < HOLE_MIN_SPREAD:
+        return False
+    axis = vt[-1]
+    if abs(float(axis @ down)) > HOLE_AXIS_LEVEL:
+        return False
+    u = np.cross(axis, down)
+    u /= np.linalg.norm(u)
+    w = np.cross(axis, u)
+    p = np.c_[centroids @ u, centroids @ w].ravel()
+    n2 = np.c_[normals @ u, normals @ w]
+    # every face centroid p_i = c - r n_i (c the axis in the cross-section plane, r the radius)
+    m = np.zeros((2 * len(normals), 3))
+    m[0::2, 0] = 1.0
+    m[1::2, 1] = 1.0
+    m[0::2, 2] = -n2[:, 0]
+    m[1::2, 2] = -n2[:, 1]
+    sol = np.linalg.lstsq(m, p, rcond=None)[0]
+    r = float(sol[2])
+    fit = float(np.abs(m @ sol - p).max())
+    return 0.0 < r <= SMALL_HOLE_MAX_DIAMETER_MM / 2 + HOLE_FIT_TOL_MM / 2 and fit <= HOLE_FIT_TOL_MM
+
+
 def overhang_areas(mesh: Mesh) -> tuple[dict[str, float], dict[str, float], dict[str, float]]:
     """Per orientation: (overhang area mm^2, bed contact area mm^2, build height mm)."""
     v = mesh.vertices
@@ -139,6 +202,7 @@ def overhang_areas(mesh: Mesh) -> tuple[dict[str, float], dict[str, float], dict
     cross = np.cross(tri[:, 1] - tri[:, 0], tri[:, 2] - tri[:, 0])
     area = np.linalg.norm(cross, axis=1) / 2
     normals = np.divide(cross, 2 * area[:, None], out=np.zeros_like(cross), where=area[:, None] > 0)
+    centroids = tri.mean(axis=1)
     over: dict[str, float] = {}
     bed: dict[str, float] = {}
     height: dict[str, float] = {}
@@ -155,6 +219,9 @@ def overhang_areas(mesh: Mesh) -> tuple[dict[str, float], dict[str, float], dict
         edge = steep & (top <= BED_EDGE_MM) & (facing_down < FLAT_COS)
         if float(area[edge].sum()) <= BED_EDGE_SHARE * contact:
             steep &= ~edge
+        for patch in _patches(mesh.faces, steep):
+            if small_hole_arc(centroids[patch], normals[patch], d):
+                steep[patch] = False
         over[name] = float(area[steep].sum())
         bed[name] = contact
         height[name] = float(h_v.max())
