@@ -292,3 +292,19 @@ def test_charts_read_their_reports_and_stay_inside_the_frame() -> None:
     rep = json.loads((readme.REPORT.parent / "report.json").read_text())
     for name, within, off, not_verified in rc.verified_counts(rep):
         assert within >= 0 and off >= 0 and not_verified >= 0, name
+
+
+def test_mermaid_flowchart_nodes_are_well_formed() -> None:
+    """A node whose brackets were lost ("run --> verifyVerifier compares it") stops GitHub drawing the whole diagram."""
+    import re
+
+    text = (ROOT / "README.md").read_text(encoding="utf-8")
+    target = re.compile(r"^\w+(\[.*\]|\{.*\}|\(.*\))?$")
+    edges = 0
+    for block in re.findall(r"```mermaid\nflowchart[^\n]*\n(.*?)```", text, flags=re.S):
+        for line in block.splitlines():
+            parts = re.split(r'\s*-\.?->(?:\|"[^"]*"\|)?\s*', line.strip())
+            for node in parts[1:]:
+                edges += 1
+                assert target.match(node), f"malformed Mermaid node: {line.strip()}"
+    assert edges > 20

@@ -301,11 +301,11 @@ sequenceDiagram
 ```mermaid
 flowchart TD
     build["Muse Spark Open writes the program<br/>(family template or free code)"] --> run["Sandbox runs it"]
-    run --> verifyVerifier compares it with every photo
+    run --> verify{"Verifier compares it with every photo"}
     verify -->|"all limits met"| done["Verified"]
     verify -->|"gap too large"| tools["Fix agent uses the tools:<br/>inspect residuals · measure · segment<br/>render a candidate · run tests"]
     tools --> edit["Commits a knob or code edit<br/>(costs one round)"]
-    edit --> guardGuards (code)<br/>edit caps · no uniform rescale<br/>measured knobs stay pinned
+    edit --> guard{"Guards (code)<br/>edit caps · no uniform rescale<br/>measured knobs stay pinned"}
     guard -->|"refused"| tools
     guard -->|"accepted"| run
     verify -->|"six rounds used,<br/>or two rounds with no progress"| best["Best effort, keeping the best round,<br/>with the check that failed named"]
@@ -344,11 +344,11 @@ flowchart LR
 flowchart TD
     model["Model from the sandbox"] --> render["Render from each photo's own camera"]
     render --> m["Measure model and photo with the same code"]
-    m --> ruleP0 part tests pass,<br/>outline gap and overlap within limits<br/>on every view, no judge veto?
+    m --> rule{"Required part tests pass,<br/>outline gap and overlap within limits<br/>on every view, no judge veto?"}
     rule -->|"yes"| v["verified"]
     rule -->|"valid, but a limit missed"| b["best effort"]
     rule -->|"no valid model"| f["failed"]
-    v --> gateExport gate: one code path for every download
+    v --> gate{"Export gate: one code path for every download"}
     b --> gate
     f --> gate
     gate -->|"verified"| dl["Download"]
