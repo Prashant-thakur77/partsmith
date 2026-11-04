@@ -67,7 +67,7 @@ test.describe("functional", () => {
     await expect(page.getByRole("note", { name: "Judge and reviewer agreement" })).toContainText("Judge agreed with the reviewer in 3/4 reviews (κ 0.50)");
     await expect(page.getByRole("note", { name: "Judge and reviewer agreement" })).toContainText("1 reviewer");
     await expect(page.getByRole("note", { name: "Judge and reviewer agreement" })).toContainText("1 test review not counted");
-    await expect(page.getByRole("navigation", { name: "Main" }).getByRole("link", { name: /Review/ })).toContainText("2");
+    await expect(page.getByRole("contentinfo").getByRole("link", { name: "Review desk" })).toHaveAttribute("href", "/review");
     const card = page.getByRole("region", { name: "Judge scorecard" });
     await expect(card).toContainText("Advice from the judge. Pass/fail comes from the measurements.");
     await expect(card).toContainText("judge: mock (rule-based)");

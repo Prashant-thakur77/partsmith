@@ -2,36 +2,49 @@
  * Real CadQuery output baked ahead of time (tools/deck_data.py): `/deck/models/index.json` lists each knob's steps and each
  * step's mesh file. A slider moves between those real meshes; the browser never runs CAD and never scales a mesh to fake one.
  */
-import { z } from "zod";
+import { z } from "zod/mini";
 
 const StepSchema = z.object({
   value: z.number(),
   file: z.string(),
   size_mm: z.tuple([z.number(), z.number(), z.number()]),
   triangles: z.number(),
+  holes: z.optional(z.array(z.object({ x: z.number(), y: z.number(), d: z.number() }))),
 });
 
 const KnobSchema = z.object({
   label: z.string(),
   unit: z.string(),
   default: z.number(),
-  topology: z.boolean().optional(),
-  steps: z.array(StepSchema).min(1),
+  topology: z.optional(z.boolean()),
+  steps: z.array(StepSchema).check(z.minLength(1)),
 });
 
 const PartSchema = z.object({
   title: z.string(),
   status: z.string(),
-  max_error_mm: z.number().nullable().optional(),
+  max_error_mm: z.nullish(z.number()),
   knobs: z.record(z.string(), KnobSchema),
 });
 
-export const BakedIndexSchema = z.object({ parts: z.record(z.string(), PartSchema) });
+/** The stretch-against-knob example: one part's baked base and the steps of two knobs, with each step's measured holes. */
+const StarSchema = z.object({
+  slug: z.string(),
+  base: z.object({
+    file: z.string(),
+    size_mm: z.tuple([z.number(), z.number(), z.number()]),
+    holes: z.array(z.object({ x: z.number(), y: z.number(), d: z.number() })),
+  }),
+  knobs: z.object({ hole_d: z.array(StepSchema), length: z.array(StepSchema) }),
+});
 
-export type BakedStep = z.infer<typeof StepSchema>;
-export type BakedKnob = z.infer<typeof KnobSchema>;
-export type BakedPart = z.infer<typeof PartSchema>;
-export type BakedIndex = z.infer<typeof BakedIndexSchema>;
+export const BakedIndexSchema = z.object({ parts: z.record(z.string(), PartSchema), star: z.optional(StarSchema) });
+
+export type BakedStep = z.output<typeof StepSchema>;
+export type BakedKnob = z.output<typeof KnobSchema>;
+export type BakedPart = z.output<typeof PartSchema>;
+export type BakedStar = z.output<typeof StarSchema>;
+export type BakedIndex = z.output<typeof BakedIndexSchema>;
 
 export const BAKED_INDEX_URL = "/deck/models/index.json";
 

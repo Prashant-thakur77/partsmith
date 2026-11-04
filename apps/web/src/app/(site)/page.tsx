@@ -112,7 +112,7 @@ export default async function HomePage() {
       </Container>
 
       <Container className="space-y-28 py-16 sm:space-y-32 sm:py-20">
-        <Sheet id="proof" n={n("proof")} of={OF} kicker="Proof" title="Measured, not claimed." description="Three numbers from this server's bench report. Each says how many cases it covers and what it was checked against.">
+        <Sheet id="proof" n={n("proof")} of={OF} kicker="Proof" title="Measured, not claimed." actions={<Button asChild variant="ghost" size="sm"><Link href="/proof">All the evidence, and what isn&apos;t tested <ArrowRight aria-hidden /></Link></Button>} description="Three numbers from this server's bench report. Each says how many cases it covers and what it was checked against.">
           <ProofStrip bench={benchV} />
         </Sheet>
 

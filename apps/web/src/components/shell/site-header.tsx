@@ -1,13 +1,9 @@
 "use client";
 
-import { useQuery } from "@tanstack/react-query";
 import { Menu, X } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import * as React from "react";
-import { REVIEW, review } from "@/lib/api-review";
-import { useCapabilities } from "@/lib/capabilities";
-import { waitingCount } from "@/lib/review";
 import { cn } from "@/lib/utils";
 import { Button } from "../ui/button";
 import { ThemeToggle } from "../theme-toggle";
@@ -19,24 +15,10 @@ import { ModeBanner } from "./mode-banner";
 export const NAV = [
   { href: "/parts", label: "Parts" },
   { href: "/how", label: "How it works" },
-  { href: "/review", label: "Review" },
+  { href: "/proof", label: "Proof" },
   { href: "/agents", label: "For developers" },
   { href: "/judges", label: "Judges" },
 ] as const;
-
-/** Parts waiting for a person's review, shown next to the nav link; only when this API serves the review queue. */
-function ReviewCount() {
-  const caps = useCapabilities();
-  const q = useQuery({ queryKey: ["review", "queue"], queryFn: () => review.queue(true), enabled: caps.has("get", REVIEW.queue), staleTime: 30_000, retry: false });
-  const n = q.data ? waitingCount(q.data.items) : 0;
-  if (!n) return null;
-  return (
-    <span className="ml-1 inline-flex h-4 min-w-4 items-center justify-center rounded-full bg-accent-soft px-1 font-mono text-[10px] text-accent-text tnum">
-      {n}
-      <span className="sr-only"> waiting</span>
-    </span>
-  );
-}
 
 export function SiteHeader() {
   const pathname = usePathname();
@@ -62,7 +44,6 @@ export function SiteHeader() {
                 )}
               >
                 {n.label}
-                {n.href === "/review" ? <ReviewCount /> : null}
               </Link>
             ))}
           </nav>
@@ -106,7 +87,6 @@ export function SiteHeader() {
                     className={cn("border-b border-border py-3 text-[15px] font-medium text-muted hover:text-fg", active(n.href) && "text-fg")}
                   >
                     {n.label}
-                    {n.href === "/review" ? <ReviewCount /> : null}
                   </Link>
                 ))}
               </nav>

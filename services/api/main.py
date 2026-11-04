@@ -38,6 +38,7 @@ from services.admin import costs as admin_costs
 from services.agent import providers
 from services.api import admin_routes, agentdocs, auth, job_thumbs, product, review_routes, round3, usage, voice_live
 from services.api import passport as passport_api
+from services.api import proof as proof_routes
 from services.api.auth import require_admin
 from services.api.common import (
     API,
@@ -1642,6 +1643,7 @@ app.include_router(extras_router)
 app.include_router(passport_api.router)
 app.include_router(review_routes.router)
 app.include_router(admin_routes.router)
+app.include_router(proof_routes.router)
 app.include_router(embed_router)
 app.add_api_route("/llms.txt", llms_txt, methods=["GET"], include_in_schema=False)
 app.add_api_route("/prompt.txt", prompt_txt, methods=["GET"], include_in_schema=False)

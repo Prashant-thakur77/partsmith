@@ -28,6 +28,7 @@ import { PhotoPanel, imagesByView } from "@/components/jobs/photo-panel";
 import { QuestionPanel } from "@/components/jobs/question-panel";
 import { ResidualTable } from "@/components/jobs/residual-table";
 import { IterationList, TraceTimeline } from "@/components/jobs/trace-timeline";
+import { useAdmin } from "@/components/admin-access";
 import { KnobPanel } from "@/components/registry/knob-panel";
 import { JudgeScorecard } from "@/components/review/judge-scorecard";
 import { Badge } from "@/components/ui/badge";
@@ -309,6 +310,7 @@ function sceneMarks(items: ValueItem[], selectedId: string | null): SceneSourceM
 
 function JobActions({ id, summary }: { id: string; summary: JobDetail["summary"] }) {
   const qc = useQueryClient();
+  const { admin } = useAdmin();
   const publish = useMutation({
     mutationFn: (ack: boolean) => api.publish(id, undefined, ack),
     onSuccess: (part) => {
@@ -339,6 +341,15 @@ function JobActions({ id, summary }: { id: string; summary: JobDetail["summary"]
           <Boxes aria-hidden /> Registry page
         </Link>
       </Button>
+    );
+  if (summary.status === "done" && !admin)
+    return (
+      <p className="max-w-[260px] text-[12px] leading-4 text-muted">
+        Publishing needs the site owner&apos;s token.{" "}
+        <Link href="/admin" className="underline underline-offset-2 hover:text-fg">
+          Have it?
+        </Link>
+      </p>
     );
   if (summary.status === "done" && needsAck)
     return (

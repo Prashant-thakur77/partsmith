@@ -557,6 +557,7 @@ the sheet prints the rate used.
 | Method | Path | Returns |
 |---|---|---|
 | GET | `/bench` | latest `eval/reports/latest/report.json` with `"status": "ok"`, or a `"status": "pending"` payload of the same shape. Both carry `"evidence": {"bypass", "program_vs_mesh", "impact", "open_weights"}` — the side reports in `eval/reports/latest/` (null until their script runs) |
+| GET | `/proof` | the evidence as one response: each suite with n, interval, ground truth, source file and command; every test gate; the audit of verified parts against ground truth; what has not been tested; the scale evaluation when `scale.json` exists |
 | GET | `/bench/files/{path}` | a report file under `eval/reports/` (png/jpg/svg/json/md/csv/txt; no traversal, no hidden files) |
 
 `evidence.bypass.caught[]` = `{id, attack, claim, claim_source, verifier: {verified, status, max_error_mm, threshold_mm, top_hausdorff_mm, top_iou, failed_tests, reasons}, export: {ok, requires_ack, status, reason, gate}, overlay (path under eval/reports, served by /bench/files), overlay_px, overlay_note}` — the lying-model moments shown on /judges.

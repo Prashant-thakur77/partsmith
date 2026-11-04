@@ -734,6 +734,53 @@ export const captureContrastFail = {
 };
 
 /** Route every `/api/v1/*` call to fixtures. Returns a log of requested paths for assertions. */
+const proofEntry = (id: string, title: string, headline: string) => ({
+  id,
+  title,
+  headline,
+  what: `what ${id} measures`,
+  n: 12,
+  ci: "[0.2, 1.2]",
+  ci_of: "95 % interval of the mean error",
+  ground_truth: `ground truth for ${id}`,
+  label: "Rendered photos.",
+  detail: null,
+  source: "eval/reports/latest/report.json",
+  command: "make bench",
+});
+
+export const proofFixture = {
+  report_date: "2026-11-04",
+  report_mode: "live providers",
+  errors: [proofEntry("synthetic", "Rendered photos", "0.1 mm"), { ...proofEntry("public_photos", "Real objects in public photos", "0.31 mm"), label: "Real photographs pasted on a rendered mat, not phone captures." }],
+  outcomes: [proofEntry("bypass", "A model that lies", "17/17 blocked")],
+  instruments: [{ ...proofEntry("program_vs_mesh", "Stretching a mesh against turning a knob", "2.77 mm against 0 mm"), n: 17, detail: "Worst case: 13.87 mm for the mesh, 3.1 mm for the knob" }],
+  tests: {
+    generated_at: "2026-11-04T23:00:00+00:00",
+    git: "abcdef0123",
+    source: "eval/reports/latest/tests.json",
+    gates: [
+      { id: "backend", title: "Backend unit tests", status: "passed", tests: 1023, passed: 1023, failed: 0, skipped: 0, command: "make test" },
+      { id: "browser", title: "Browser tests", status: "not run", command: null },
+    ],
+  },
+  audit: [{ suite: "Intact parts, top photo only", runs: 6, verified: 4, within: 0, off: 4 }],
+  scale: {
+    source: "eval/reports/latest/scale.json",
+    command: "uv run python -m eval.scale_report",
+    runs: { "synthetic/PS": 150 },
+    planned: { "synthetic/PS": 200 },
+    usd: { total: 42.5 },
+    paired_b1_vs_ps: { n_pairs: 80, metric: "pass@0.5", b1_pass: 20, ps_pass: 35, p_value: 0.001 },
+    verified_but_off: { all_ps: { k: 12, n: 40, off_in_height: 9, of_runs: 150 }, top_only: { k: 4, n: 4, ci95: [0.5, 1] }, top_and_side: { k: 1, n: 4, ci95: [0.05, 0.7] } },
+    understanding: { family_correct: { k: 90, n: 100, ci95: [0.82, 0.95] } },
+    sam: { by_preset: { clean: { n: 50, iou_median: 0.98, boundary_mean_mm_median: 0.12 } } },
+    wonder: { accepted_with_citation: { k: 24, n: 30 } },
+    voice: { speech: "synthesised", spoken: { k: 30, n: 40 } },
+  },
+  not_tested: { real_phone_photos_measured: 0, real_parts_with_ruler_ground_truth: 0, real_prints_or_repairs_logged: 0, person_reviewed_rounds: 0, scripted_review_decisions: 7 },
+};
+
 export async function mockApi(page: Page, opts: MockOptions = {}): Promise<string[]> {
   const log: string[] = [];
   const reviewed = new Map<string, Record<string, unknown>>(); // review chains decided on this page, by root job
@@ -889,6 +936,7 @@ export async function mockApi(page: Page, opts: MockOptions = {}): Promise<strin
     if (path === "/replays") return json(route, replays);
     if (path === "/measure") return json(route, { capture: opts.contrastFail ? captureContrastFail : captureOk, calibration: null, measurements: null, overlay_url: `${A}/measure.png` });
     if (path === "/bench") return json(route, opts.noBench ? benchPending : bench);
+    if (path === "/proof") return json(route, proofFixture);
     if (path === "/steer" && method === "POST") return json(route, { id: "steer_1" });
     if (path === "/steer" && method === "GET") return json(route, [{ id: "steer_1", brief: steerRun.brief, count: 3, status: "reviewing", created_at: NOW - 900, family_title: steerRun.family_title, pending: 2, published: 0 }]);
     if (path === "/jobs/demo/samples") return json(route, demoSamples);

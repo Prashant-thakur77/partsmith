@@ -59,6 +59,7 @@ test("workspace shows the agent log, focus, progress lines, citations and new ar
 
 test("export gate: best effort needs an acknowledgement; publish asks before sending ack", async ({ page }) => {
   const { log } = await setup(page);
+  await asAdmin(page);
   await page.goto("/jobs/job_best");
   await page.getByRole("button", { name: "Export" }).click();
   const dialog = page.getByRole("dialog");
