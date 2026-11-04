@@ -298,7 +298,7 @@ def test_mermaid_flowchart_nodes_are_well_formed() -> None:
     """A node whose brackets were lost ("run --> verifyVerifier compares it") stops GitHub drawing the whole diagram."""
     import re
 
-    text = (ROOT / "README.md").read_text(encoding="utf-8")
+    text = (Path(__file__).resolve().parents[2] / "README.md").read_text(encoding="utf-8")
     target = re.compile(r"^\w+(\[.*\]|\{.*\}|\(.*\))?$")
     edges = 0
     for block in re.findall(r"```mermaid\nflowchart[^\n]*\n(.*?)```", text, flags=re.S):
