@@ -11,7 +11,7 @@ VIDEO_API_PORT ?= 8766
 VIDEO_WEB_PORT ?= 3766
 
 .PHONY: help setup sync web-install schemas test test-all test-web lint typecheck check smoke dev api web worker \
-        seed synth bench bench-live real-check real-intake live lie mat media video mcp e2e clean-var gitleaks deploy-check proof rebake
+        seed synth bench bench-live real-check real-intake live lie mat media video mcp e2e clean-var gitleaks deploy-check proof rebake diagrams
 
 help: ## Show targets
 	@grep -E '^[a-zA-Z_-]+:.*?## ' $(MAKEFILE_LIST) | awk 'BEGIN{FS=":.*?## "}{printf "  \033[36m%-12s\033[0m %s\n",$$1,$$2}'
@@ -147,6 +147,9 @@ deploy-check: ## Static checks of infra/deploy (no image build, no deploy; see i
 
 rebake: ## Time fresh knob changes on the stored battery cover; writes eval/reports/latest/rebake.json
 	$(UV) run python -m eval.rebake
+
+diagrams: ## Redraw the README flowcharts: docs/diagrams/*.excalidraw and docs/media/flow-*.png
+	node apps/web/scripts/diagrams.mjs
 
 proof: ## Run the gates; write eval/reports/latest/tests.json and docs/PROOF.md from machine output
 	$(UV) run python -m tools.proof $(ARGS)

@@ -214,7 +214,13 @@ the product yet, so they are not counted above.
 
 ## How it works
 
+<sub>Drawn with Excalidraw from data in `apps/web/scripts/diagrams.mjs` (`make diagrams`). Open any `docs/diagrams/*.excalidraw` file at excalidraw.com to edit it.</sub>
+
 ### The pipeline
+
+![Flowchart from a phone photo through the capture gate, measurement, Muse Spark, the CadQuery program, the sandbox, the verifier and fix loop, to the export gate, files, person review and the registry](docs/media/flow-pipeline.png)
+
+<details><summary>The same diagram as text</summary>
 
 ```mermaid
 flowchart TD
@@ -248,6 +254,8 @@ flowchart TD
     voice["Muse Voice Transcribe: Hindi/English edits"] -.->|"clamped knob edits → re-bake in the sandbox"| sandbox
 ```
 
+</details>
+
 Solid arrows are the main pipeline; dotted arrows are side paths whose output code accepts only after a check. Boxes that
 name a model are model calls; boxes marked "(code)" are deterministic, hand-written checks. The same diagram, with the
 runtime layout (review, admin and spend-cap layers included), is in [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md).
@@ -277,6 +285,10 @@ runtime layout (review, admin and spend-cap layers included), is in [`docs/ARCHI
 
 ### What a person does
 
+![The ten things a person does, from matching a bank card once to downloading the file](docs/media/flow-person.png)
+
+<details><summary>The same diagram as text</summary>
+
 ```mermaid
 sequenceDiagram
     actor You
@@ -296,7 +308,13 @@ sequenceDiagram
     You->>Laptop: Download STL, 3MF or STEP through the export gate
 ```
 
+</details>
+
 ### The agent loop
+
+![The agent loop: program, sandbox, verifier; the fix agent uses tools, commits an edit, guards accept or refuse it, and rounds end in verified or best effort](docs/media/flow-loop.png)
+
+<details><summary>The same diagram as text</summary>
 
 ```mermaid
 flowchart TD
@@ -311,9 +329,15 @@ flowchart TD
     verify -->|"six rounds used,<br/>or two rounds with no progress"| best["Best effort, keeping the best round,<br/>with the check that failed named"]
 ```
 
+</details>
+
 Rendering a candidate is free. Only a committed edit uses a round, and code decides which round is kept.
 
 ### System architecture
+
+![System architecture: web app and coding agents, API and MCP, job service, orchestrator, metrology, sandbox, verifier, provider layer and the Meta models](docs/media/flow-architecture.png)
+
+<details><summary>The same diagram as text</summary>
 
 ```mermaid
 flowchart LR
@@ -338,7 +362,13 @@ flowchart LR
     admin --> store
 ```
 
+</details>
+
 ### Verification and the export gate
+
+![The verifier decides verified, best effort or failed, a model saying verified is ignored, and every download passes one export gate](docs/media/flow-gate.png)
+
+<details><summary>The same diagram as text</summary>
 
 ```mermaid
 flowchart TD
@@ -357,7 +387,13 @@ flowchart TD
     claim["A model saying verified"] -.->|"ignored"| rule
 ```
 
+</details>
+
 ### Where a job's data goes
+
+![What a job writes: blobs, measurements, partspec, part.py, files, verification.json, the registry record and the run log](docs/media/flow-data.png)
+
+<details><summary>The same diagram as text</summary>
 
 ```mermaid
 flowchart LR
@@ -373,6 +409,8 @@ flowchart LR
     part -.-> log
     vj -.-> log
 ```
+
+</details>
 
 ## Why trust a model-made part?
 
