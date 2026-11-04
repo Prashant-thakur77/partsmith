@@ -34,13 +34,27 @@ test("fix flow: photo → capture gate → start job → workspace", async ({ pa
   const { log } = await setup(page);
   await page.goto("/fix");
   await page.getByLabel("Upload Top view photo").setInputFiles(join(__dirname, "fixtures/generated/photo.png"));
-  await expect(page.getByText("Capture gate passed").first()).toBeVisible();
+  // the report itself: the checklist beside it lists the same words before any photo is in
+  await expect(page.getByRole("status").filter({ hasText: "Capture gate passed" })).toBeVisible();
   await page.getByLabel("What broke, and what should change?").fill("Same size, stronger.");
   await page.getByLabel("Thickness, if you know it").fill("3.2");
   await page.getByRole("button", { name: "Start the fix" }).click();
   await expect(page).toHaveURL(/\/jobs\/job_demo_1$/);
   expect(log.some((l) => l.startsWith("POST /jobs/fix"))).toBeTruthy();
   expect(log.some((l) => l.startsWith("POST /measure"))).toBeTruthy();
+});
+
+test("fix flow: a photo chosen before the page's scripts finish loading is not lost", async ({ page }) => {
+  await setup(page);
+  // hold the scripts back so the file lands in the server-rendered input, before React is listening
+  await page.route("**/_next/static/chunks/**", async (route) => {
+    await new Promise((resolve) => setTimeout(resolve, 1_500));
+    await route.continue();
+  });
+  await page.goto("/fix", { waitUntil: "domcontentloaded" });
+  await page.getByLabel("Upload Top view photo").setInputFiles(join(__dirname, "fixtures/generated/photo.png"));
+  await expect(page.getByRole("status").filter({ hasText: "Capture gate passed" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Start the fix" })).toBeEnabled();
 });
 
 test("workspace streams events, ends verified and exposes exports", async ({ page }) => {

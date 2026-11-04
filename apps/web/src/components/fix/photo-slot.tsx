@@ -84,6 +84,10 @@ export function PhotoSlot({
     }
   };
 
+  // A file can land in the input before the page's scripts run (a slow phone, a restored form); its change event is gone by then.
+  const acceptLate = React.useRef(accept);
+  React.useEffect(() => void acceptLate.current(fileRef.current?.files?.[0] ?? camRef.current?.files?.[0]), []);
+
   React.useEffect(() => () => (value?.info.url ? URL.revokeObjectURL(value.info.url) : undefined), [value]);
 
   return (

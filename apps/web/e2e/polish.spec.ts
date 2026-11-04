@@ -68,7 +68,10 @@ test.describe("phone", () => {
     await expect
       .poll(() => tagline.locator("span.whitespace-nowrap").evaluateAll((els) => els.map((e) => e.getClientRects().length)))
       .toEqual([1, 1, 1]);
-    const fig = page.locator("figure").first();
+    // the hero now leads with the 3D part and its knob; the title block sits on the recorded-run drawing under the film
+    await expect(page.locator("#try figure")).toBeVisible();
+    const fig = page.locator("figure", { hasText: "Fig. 1 · part" }).first();
+    await fig.scrollIntoViewIfNeeded();
     await expect(fig.getByText("Fig. 1 · part").first()).toBeVisible();
     const cut = await fig.locator("dl:visible dd, dl:visible dt").evaluateAll((els) => els.filter((e) => e.scrollWidth > e.clientWidth + 1).map((e) => e.textContent));
     expect(cut, `cut off: ${cut.join(", ")}`).toEqual([]);

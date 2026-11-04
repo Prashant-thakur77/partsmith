@@ -87,7 +87,7 @@ test("fix: tap-to-point taps and the orbit slot go out with the job", async ({ p
   await page.getByRole("button", { name: /Add more \(optional\)/ }).click();
   await expect(page.getByText("Walk around it (video)")).toBeVisible();
   await page.getByLabel("Upload Top view photo").setInputFiles(join(__dirname, "fixtures/generated/photo.png"));
-  await expect(page.getByText("Capture gate passed").first()).toBeVisible();
+  await expect(page.getByRole("status").filter({ hasText: "Capture gate passed" })).toBeVisible();
   await page.getByRole("radio", { name: "Slot" }).click();
   const layer = page.getByRole("group", { name: /tap to mark features/ });
   const box = (await layer.boundingBox())!;
@@ -107,7 +107,7 @@ test("fix: a photo plus a walk-around clip attach without a page error and the v
   await page.getByRole("button", { name: /Add more \(optional\)/ }).click();
   await expect(page.getByText("Walk around it (video)")).toBeVisible();
   await page.getByLabel("Upload Top view photo").setInputFiles(join(__dirname, "fixtures/generated/photo.png"));
-  await expect(page.getByText("Capture gate passed").first()).toBeVisible();
+  await expect(page.getByRole("status").filter({ hasText: "Capture gate passed" })).toBeVisible();
   const clip = join(__dirname, "../../../data/synthetic/samples/demo-l-bracket/orbit.mp4");
   await page.locator('input[type=file][accept^="video/"]').first().setInputFiles(clip);
   await expect(page.locator("video").first()).toBeVisible();
