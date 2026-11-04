@@ -1,0 +1,85 @@
+{
+ "suite": "public_photos",
+ "config": "PS",
+ "sample_id": "sd_card-8",
+ "split": "held_out",
+ "kind": "public_photo",
+ "preset": "sd_card",
+ "mode": "live",
+ "gt_source": "published_spec_pasted",
+ "status": "verified",
+ "verified": true,
+ "iterations": 2,
+ "iterations_to_converge": 2,
+ "strategy": "free_code",
+ "template": null,
+ "verifier_max_error_mm": 0.23093286284310735,
+ "retake_reason": null,
+ "failed_checks": [],
+ "usd": 0.085548,
+ "tokens_in": 45510,
+ "tokens_out": 12156,
+ "model_calls": 16,
+ "model_ms": 112231,
+ "provider_modes": [
+  "live"
+ ],
+ "providers": {
+  "segment": [
+   "meta:sam-3.1"
+  ],
+  "understand": [
+   "meta:muse-spark-1.3"
+  ],
+  "plan": [
+   "baseten:meta-models/muse-spark-open-1026"
+  ],
+  "build": [
+   "baseten:meta-models/muse-spark-open-1026"
+  ],
+  "fix_agent": [
+   "baseten:meta-models/muse-spark-open-1026"
+  ],
+  "judge": [
+   "meta:muse-spark-1.3"
+  ]
+ },
+ "convergence": [
+  {
+   "iter": 2,
+   "hausdorff_mm": 0.23093286284310735,
+   "iou": 0.9912933930571108,
+   "max_error_mm": 0.23093286284310735
+  }
+ ],
+ "wall_s": 122.75,
+ "dims": [
+  {
+   "name": "length",
+   "gt_mm": 32.0,
+   "model_mm": 31.8649,
+   "error_mm": -0.1351,
+   "set_by_construction": true
+  },
+  {
+   "name": "width",
+   "gt_mm": 24.0,
+   "model_mm": 24.8182,
+   "error_mm": 0.8182,
+   "within_spec": false
+  }
+ ],
+ "missed": [],
+ "extra_holes": 0,
+ "pass_0_3": false,
+ "pass_0_5": false,
+ "valid": true,
+ "valid_reason": "",
+ "failure_category": "dim_off",
+ "overlay": "overlay.png",
+ "failure": "worst width +0.82 mm",
+ "git": {
+  "sha": "1f77aad30f748b303ab28a048e362a72929fe3d1",
+  "dirty": true
+ }
+}

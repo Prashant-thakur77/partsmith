@@ -1,0 +1,62 @@
+import cadquery as cq
+import math
+
+# Base profile measured points (mm) - polyline outline centred near origin, long axis X
+BASE_POINTS = [(-15.885, 7.663), (-15.822, -11.806), (-15.478, -12.239), (-8.861, -12.369), (-8.022, -11.99), (-7.407, -12.212), (-5.827, -12.183), (-4.913, -11.446), (-1.488, -11.488), (-1.116, -12.242), (12.638, -12.409), (15.065, -12.252), (15.816, -11.708), (15.965, -5.911), (15.676, -5.166), (15.932, -4.415), (15.795, -0.047), (15.983, 10.506), (15.57, 11.467), (14.002, 12.005), (12.738, 12.128), (11.782, 11.926), (11.259, 12.22), (10.718, 11.991), (10.07, 12.412), (7.751, 12.358), (7.737, 11.994), (7.431, 11.855), (6.016, 12.376), (5.204, 11.804), (4.841, 11.925), (4.752, 12.328), (2.532, 12.163), (0.544, 12.302), (-0.369, 11.798), (-0.766, 12.277), (-4.924, 12.087), (-5.557, 11.352), (-6.956, 11.775), (-7.317, 12.199), (-11.121, 12.112), (-12.369, 11.548)]
+
+PARAMS = {
+    "thickness": (2.1, 0.8, 4.0, 0.1, "mm", True, "Body thickness"),
+    "hole_dia": (0.0, 0.0, 5.0, 0.1, "mm", True, "Hidden hole dia (0=no hole)"),
+    "hole_x": (-10.6, -15.0, -5.0, 0.1, "mm", False, "Hidden hole X"),
+    "hole_y": (3.5, -6.0, 6.0, 0.1, "mm", False, "Hidden hole Y"),
+    "edge_fillet": (0.8, 0.0, 1.0, 0.1, "mm", False, "Top edge fillet radius"),
+    "num_notches": (0, 0, 3, 1, "", False, "Extra notch count top edge"),
+}
+
+def build(p: dict) -> cq.Workplane:
+    thickness = float(p.get("thickness", 2.1))
+    hole_dia = float(p.get("hole_dia", 0.0))
+    hole_x = float(p.get("hole_x", -10.6))
+    hole_y = float(p.get("hole_y", 3.5))
+    edge_fillet = float(p.get("edge_fillet", 0.3))
+    num_notches = int(p.get("num_notches", 0))
+
+    # Create base profile - close polyline explicitly
+    pts = BASE_POINTS
+    wp = cq.Workplane("XY")
+    wp = wp.moveTo(pts[0][0], pts[0][1])
+    for x, y in pts[1:]:
+        wp = wp.lineTo(x, y)
+    wp = wp.close()
+    # Extrude solid from Z=0 upward (mounting face on Z=0, +Z up)
+    solid = wp.extrude(thickness, combine=True)
+
+    # Optional hidden hole - only if diameter > 0
+    if hole_dia > 0.05:
+        solid = solid.faces(">Z").workplane().pushPoints([(hole_x, hole_y)]).circle(hole_dia / 2.0).cutThruAll()
+
+    # Extra notches topology parameter - small rectangular cutouts on top edge for configurability
+    # Keeps part solid over most of footprint when count=0
+    if num_notches > 0:
+        # distribute notches along top edge region near y ~12
+        notch_w = 2.0
+        notch_d = 1.5
+        for i in range(num_notches):
+            nx = -5.0 + i * 5.0
+            ny = 11.0
+            solid = solid.faces(">Z").workplane().pushPoints([(nx, ny)]).rect(notch_w, notch_d).cutBlind(-thickness)
+
+    # Light fillet on top perimeter edges if requested - does not affect thickness measurement significantly
+    if edge_fillet > 0.01:
+        try:
+            solid = solid.edges("|Z").fillet(edge_fillet)
+        except Exception:
+            pass
+        try:
+            solid = solid.edges(">>Z").fillet(edge_fillet * 0.5)
+        except Exception:
+            pass
+
+    return solid
+
+result = build({k: v[0] for k, v in PARAMS.items()})

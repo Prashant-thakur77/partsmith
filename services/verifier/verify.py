@@ -1,4 +1,4 @@
-"""verify(): the sole authority for ``verified`` (PLAN §6.5).
+"""verify(): the sole authority for ``verified``.
 
 For every measured view: register the model silhouette onto the measured one (rigid 2-D search, never scaling),
 compute IoU, boundary distances and over/under areas, and draw the residual overlay. When the view comes with a camera
@@ -828,7 +828,7 @@ def verify(
     }
     residuals.sort(key=lambda r: abs(r.delta_mm), reverse=True)
 
-    # ---- the pass rule (PLAN §6.5), exactly
+    # ---- the pass rule, exactly
     p0_failed = [t for t in tests if t.priority == "P0" and not t.passed]
     view_fail = [
         vr.metrics

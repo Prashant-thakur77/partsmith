@@ -1,6 +1,6 @@
 """AST allowlist for part programs. Pure: no imports of cadquery, nothing is executed.
 
-Rules (PLAN §6.4): only ``import cadquery as cq``, ``import math`` and ``from math import ...``; allowlisted builtins only;
+Rules: only ``import cadquery as cq``, ``import math`` and ``from math import ...``; allowlisted builtins only;
 no dunder or private names; no attribute that reaches files, processes, frames or the OCP layer. Unbounded loops are
 allowed here and stopped by the child's CPU limit.
 """

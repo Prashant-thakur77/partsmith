@@ -1,4 +1,4 @@
-"""Bake a part program into files, with a content-addressed cache (PLAN §4.2 "live knob rebuild").
+"""Bake a part program into files, with a content-addressed cache.
 
 Cache key = sha256(code sha, version, sorted clamped params, sorted formats). A hit returns the stored files without
 touching the CAD kernel. Each bake also computes printing facts from the mesh:

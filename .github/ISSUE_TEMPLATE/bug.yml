@@ -1,0 +1,30 @@
+name: Bug report
+description: Something does not work as the docs or the page say it should
+labels: [bug]
+body:
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened, and what did you expect?
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      description: The page or command, and the job id if there is one.
+    validations:
+      required: true
+  - type: dropdown
+    id: mode
+    attributes:
+      label: Provider mode
+      description: Shown in the banner at the top of the site, and on /models.
+      options: [replay, mock, live, mixed, not sure]
+    validations:
+      required: true
+  - type: textarea
+    id: env
+    attributes:
+      label: Environment
+      description: Browser, operating system, and Python and Node versions if you run it locally. Never paste keys.

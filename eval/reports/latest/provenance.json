@@ -1,7 +1,7 @@
 {
  "report": "eval/run.py",
- "generated_at": "2026-11-02T20:53:37+00:00",
- "git_sha": "231150543799ec889330553ab61172228bbe191e",
+ "generated_at": "2026-11-04T21:36:47+00:00",
+ "git_sha": "1f77aad30f748b303ab28a048e362a72929fe3d1",
  "git_dirty": true,
  "mode": "live",
  "stages": {
@@ -258,5 +258,5 @@
    }
   }
  },
- "n_runs": 76
+ "n_runs": 92
 }

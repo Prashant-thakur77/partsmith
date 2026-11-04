@@ -1,0 +1,75 @@
+import cadquery as cq
+import math
+
+PARAMS = {
+    "thickness": (2.1, 1.0, 4.0, 0.05, "mm", False, "Body thickness"),
+    "slot_length": (3.857, 2.0, 6.0, 0.01, "mm", True, "Slot overall length"),
+    "slot_width": (3.18, 1.5, 5.0, 0.01, "mm", True, "Slot width/diameter"),
+    "slot_angle": (163.36, 0.0, 360.0, 1.0, "deg", False, "Slot angle from +X"),
+    "slot_cx": (-2.37, -10.0, 10.0, 0.01, "mm", False, "Slot center X"),
+    "slot_cy": (0.016, -10.0, 10.0, 0.01, "mm", False, "Slot center Y"),
+    "clearance": (0.2, 0.0, 0.5, 0.01, "mm", True, "Fit clearance"),
+    "n_slots": (0, 0, 1, 1, "", False, "Number of slots"),
+}
+
+def build(p: dict) -> cq.Workplane:
+    pts = [
+        (-15.525, -11.301),
+        (-14.709, -11.704),
+        (-8.73, -11.735),
+        (-7.946, -11.549),
+        (-5.572, -11.812),
+        (-5.217, -11.142),
+        (-4.826, -10.97),
+        (-1.918, -11.023),
+        (-1.543, -11.621),
+        (-0.971, -11.769),
+        (10.553, -11.875),
+        (15.202, -11.692),
+        (15.547, -10.95),
+        (15.739, -8.43),
+        (15.564, -6.939),
+        (15.739, 2.4),
+        (15.407, 11.471),
+        (14.423, 11.875),
+        (-4.37, 11.496),
+        (-4.7, 11.001),
+        (-5.892, 10.986),
+        (-6.482, 11.537),
+        (-11.477, 11.46),
+        (-11.918, 11.28),
+        (-15.331, 7.856),
+        (-15.571, 7.3),
+        (-15.739, -10.387),
+    ]
+
+    thickness = float(p["thickness"])
+    slot_length = float(p["slot_length"])
+    slot_width = float(p["slot_width"])
+    slot_angle = float(p["slot_angle"])
+    slot_cx = float(p["slot_cx"])
+    slot_cy = float(p["slot_cy"])
+    n_slots = int(p["n_slots"])
+
+    # Base solid: polyline profile extruded from Z=0 to +thickness (mounting face at Z=0)
+    wp = cq.Workplane("XY")
+    wp = wp.moveTo(pts[0][0], pts[0][1])
+    for x, y in pts[1:]:
+        wp = wp.lineTo(x, y)
+    wp = wp.close()
+    base = wp.extrude(thickness, combine=True)
+
+    # Slot cut - obround through full thickness
+    if n_slots > 0 and slot_length > 0 and slot_width > 0:
+        # CadQuery slot2D creates slot along X axis, overall length = slot_length
+        slot_wp = cq.Workplane("XY").transformed(
+            offset=(slot_cx, slot_cy, 0),
+            rotate=(0, 0, slot_angle)
+        )
+        slot_wp = slot_wp.slot2D(slot_length, slot_width, forConstruction=False)
+        slot_tool = slot_wp.extrude(thickness + 0.2, combine=False)
+        base = base.cut(slot_tool)
+
+    return base
+
+result = build({k: v[0] for k, v in PARAMS.items()})

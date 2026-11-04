@@ -27,9 +27,10 @@ FILES = ("Dockerfile", "Dockerfile.dockerignore", "entrypoint.sh", "api.env.exam
 REQUIRED_API = ("PARTSMITH_ADMIN_TOKEN", "PROVIDER_MODE", "PARTSMITH_CORS_ORIGINS", "PARTSMITH_PUBLIC_URL",
                 "PARTSMITH_WEB_URL", "PARTSMITH_MCP_ALLOWED_HOSTS", "PARTSMITH_HOME")  # fmt: skip
 REQUIRED_WEB = ("NEXT_PUBLIC_API_URL", "NEXT_PUBLIC_SITE_URL")
+AWS_FILES = ("Caddyfile", "Dockerfile.web", "Dockerfile.web.dockerignore", "README.md", "compose.yml")
 NO_SPEND_MODES = ("replay", "mock")
 SECRET_RE = re.compile(r"(_KEY|_TOKEN|_SECRET|PASSWORD|DATABASE_URL)$")
-NEVER_IN_IMAGE = (".env", "var/blobs/x", "PLAN.md", "KICKOFF_PROMPT.md", "docs/REUSE_LOG.md", "apps/web/package.json",
+NEVER_IN_IMAGE = (".env", "var/blobs/x", "notes.md", "docs/notes.md", "apps/web/package.json",
                   "data/real/part/top.jpg", "node_modules/x", ".venv/bin/python")  # fmt: skip
 MAX_OVERLAY_BYTES = 150_000
 
@@ -116,6 +117,43 @@ def modal_sources(path: Path) -> tuple[set[str], dict[str, str]]:
     return sources, env
 
 
+def aws_checks(repo: Path, api_env: dict[str, str]) -> list[tuple[str, str | None]]:
+    """The single-server deployment in infra/deploy/aws: same no-spend default, no secret in its files or images."""
+    aws = repo / "infra" / "deploy" / "aws"
+    missing = [f for f in AWS_FILES if not (aws / f).is_file()]
+    if missing:
+        return [("AWS deploy files present", f"missing: {', '.join(missing)}")]
+    res: list[tuple[str, str | None]] = [("AWS deploy files present", None)]
+    web = (aws / "Dockerfile.web").read_text()
+    pats = ignore_patterns(aws / "Dockerfile.web.dockerignore")
+    copies = dockerfile_copies(web)
+    absent = [s for s in copies if not (repo / s).exists()]
+    res.append(("AWS web image COPY sources exist", f"not in the repo: {absent}" if absent else None))
+    blocked = [s for s in copies if not in_context(s, pats)]
+    res.append(("AWS web image COPY sources allowed by its dockerignore", f"excluded: {blocked}" if blocked else None))
+    leaked = [
+        p for p in (*NEVER_IN_IMAGE, "infra/deploy/aws/api.env", "infra/deploy/aws/site.env") if in_context(p, pats)
+    ]
+    leaked = [p for p in leaked if p != "apps/web/package.json"]  # the web image is the web app
+    res.append(("AWS web image context keeps secrets and data out", f"would be sent: {leaked}" if leaked else None))
+    baked = [k for k, v in dockerfile_env(web).items() if SECRET_RE.search(k) and v]
+    res.append(("AWS web image bakes no secret", f"ENV with values: {baked}" if baked else None))
+    compose = (aws / "compose.yml").read_text()
+    inline = [k for k in re.findall(r"^\s*([A-Z_]+):", compose, re.M) if SECRET_RE.search(k)]
+    res.append(("compose.yml carries no secret values", f"inline: {inline}" if inline else None))
+    gated = "infra/deploy/Dockerfile" in compose and "env_file: api.env" in compose
+    res.append(("compose.yml runs the checked API image with api.env", None if gated else "check the api service"))
+    ignored = "infra/deploy/aws/*.env" in (repo / ".gitignore").read_text()
+    res.append(("AWS env files are ignored by git", None if ignored else "add infra/deploy/aws/*.env to .gitignore"))
+    res.append(
+        (
+            "AWS path inherits the no-spend default",
+            None if api_env.get("PROVIDER_MODE") in NO_SPEND_MODES else "api.env.example",
+        )
+    )
+    return res
+
+
 def run_checks(repo: Path = REPO) -> list[tuple[str, str | None]]:
     """[(check, problem or None)]."""
     deploy = repo / "infra" / "deploy"
@@ -185,6 +223,10 @@ def run_checks(repo: Path = REPO) -> list[tuple[str, str | None]]:
     check("Modal app sources exist", f"missing: {absent}" if absent else None)
     m = menv.get("PROVIDER_MODE")
     check("Modal app defaults to a no-spend provider mode", None if m in NO_SPEND_MODES else f"PROVIDER_MODE={m!r}")
+
+    if (deploy / "aws").is_dir():
+        for name, problem in aws_checks(repo, api_env):
+            check(name, problem)
 
     replays = [d for d in (repo / "data" / "replays").glob("*/run.jsonl")]
     check("committed replays present for the public judge path", None if replays else "data/replays has no runs")

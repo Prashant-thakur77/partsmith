@@ -1,4 +1,4 @@
-"""Guards between model proposals and the geometry (PLAN §6.6). Pure functions, no IO.
+"""Guards between model proposals and the geometry. Pure functions, no IO.
 
 The fixer and the voice editor propose parameter edits; these checks decide what is applied:
 
@@ -276,7 +276,7 @@ def extract_code(text: str) -> str:
 FLEXIBLE = "flexible or elastomer part"
 ORGANIC = "organic or free-form object"
 
-# Refused part classes (PLAN §13). The understand model classifies too; this list is the code-side backstop.
+# Refused part classes. The understand model classifies too; this list is the code-side backstop.
 REFUSED_PATTERNS: dict[str, tuple[str, ...]] = {
     "firearm or weapon component": (
         r"\bgun\b",

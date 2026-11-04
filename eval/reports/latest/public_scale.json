@@ -1,0 +1,471 @@
+{
+ "generated_at": "2026-11-04T21:06:08+00:00",
+ "source": "public_photo",
+ "ground_truth": "documented board layout (held-out inner markers); printed size unknown",
+ "scope": "Measures how well a flat-plane marker fit holds on real lenses and real printed paper. It says nothing about a phone photographing a laptop screen, nothing about measuring a part, and these photos are not counted as real photos measured. The boards' printed size is unknown, so all numbers are relative; the mm figure is the relative error applied to a 100 mm span on our mat, not a measured length.",
+ "counts_as_real_photos_measured": 0,
+ "summary": {
+  "status": "ok",
+  "photos": [
+   "scale-2",
+   "scale-3"
+  ],
+  "n_photos": 2,
+  "n_markers": 12,
+  "n_corners": 48,
+  "mean_err_pct": 0.138,
+  "ci95_pct": [
+   0.108,
+   0.178
+  ],
+  "median_err_pct": 0.114,
+  "max_err_pct": 0.452,
+  "mean_err_mm_over_100mm": 0.138,
+  "ci95_mm_over_100mm": [
+   0.108,
+   0.178
+  ],
+  "ci_method": "percentile bootstrap over held-out markers, 2000 resamples, seeded; not over photos"
+ },
+ "summary_documented_as_written": {
+  "status": "ok",
+  "photos": [
+   "scale-1",
+   "scale-2",
+   "scale-3"
+  ],
+  "n_photos": 3,
+  "n_markers": 27,
+  "n_corners": 108,
+  "mean_err_pct": 0.578,
+  "ci95_pct": [
+   0.424,
+   0.73
+  ],
+  "median_err_pct": 0.24,
+  "max_err_pct": 1.65,
+  "mean_err_mm_over_100mm": 0.578,
+  "ci95_mm_over_100mm": [
+   0.424,
+   0.73
+  ],
+  "ci_method": "percentile bootstrap over held-out markers, 2000 resamples, seeded; not over photos"
+ },
+ "summary_outer_fitted": {
+  "status": "ok",
+  "photos": [
+   "scale-1",
+   "scale-2",
+   "scale-3"
+  ],
+  "n_photos": 3,
+  "n_markers": 27,
+  "n_corners": 108,
+  "mean_err_pct": 0.106,
+  "ci95_pct": [
+   0.087,
+   0.13
+  ],
+  "median_err_pct": 0.085,
+  "max_err_pct": 0.452,
+  "mean_err_mm_over_100mm": 0.106,
+  "ci95_mm_over_100mm": [
+   0.087,
+   0.13
+  ],
+  "ci_method": "percentile bootstrap over held-out markers, 2000 resamples, seeded; not over photos"
+ },
+ "layout_finding": "scale-1: the documented layout fits only 24/80 outer corners, so it does not describe this print (0.9292 % held-out as written). The outer markers alone give a gap ratio of 0.2 (0.0794 % held-out). That photo is left out of the headline because its layout is estimated, not documented",
+ "photos": [
+  {
+   "photo_id": "scale-1",
+   "note": "grid board on a desk",
+   "image_px": [
+    640,
+    480
+   ],
+   "layout": {
+    "kind": "grid",
+    "size": [
+     5,
+     7
+    ],
+    "a": 100.0,
+    "b": 10.0
+   },
+   "markers_detected": 35,
+   "markers_in_layout": 35,
+   "fit_markers": 20,
+   "held_out_markers": 15,
+   "held_out_corners": 60,
+   "status": "ok",
+   "fit_inlier_corners": 24,
+   "fit_corners": 80,
+   "fit_mean_err_pct": 0.2266,
+   "mean_err_pct": 0.9292,
+   "median_err_pct": 1.1527,
+   "p90_err_pct": 1.4868,
+   "max_err_pct": 1.65,
+   "mean_err_px": 2.882,
+   "one_px_in_pct": 0.3224,
+   "errors_pct_by_marker": [
+    [
+     0.9151,
+     1.34764,
+     1.21705,
+     0.1069
+    ],
+    [
+     0.72044,
+     1.17292,
+     1.27629,
+     0.21463
+    ],
+    [
+     0.45836,
+     1.05976,
+     1.27598,
+     0.70005
+    ],
+    [
+     0.96707,
+     1.43981,
+     1.19911,
+     0.03472
+    ],
+    [
+     0.9023,
+     1.29258,
+     1.14738,
+     0.1761
+    ],
+    [
+     0.47115,
+     1.24191,
+     1.23443,
+     0.42834
+    ],
+    [
+     1.11185,
+     1.535,
+     1.1701,
+     0.06828
+    ],
+    [
+     0.95864,
+     1.36461,
+     1.17211,
+     0.09065
+    ],
+    [
+     0.74383,
+     1.33252,
+     1.20026,
+     0.23606
+    ],
+    [
+     1.19814,
+     1.63974,
+     1.18872,
+     0.1026
+    ],
+    [
+     1.10487,
+     1.51167,
+     1.14336,
+     0.09319
+    ],
+    [
+     0.93759,
+     1.48399,
+     1.19761,
+     0.0692
+    ],
+    [
+     1.21767,
+     1.65003,
+     1.15797,
+     0.06445
+    ],
+    [
+     1.20574,
+     1.5797,
+     1.17323,
+     0.03005
+    ],
+    [
+     1.07195,
+     1.58966,
+     1.2316,
+     0.12383
+    ]
+   ],
+   "layout_confirmed_by_outer_markers": false,
+   "outer_fitted_gap_ratio": 0.2,
+   "with_outer_fitted_ratio": {
+    "markers_detected": 35,
+    "markers_in_layout": 35,
+    "fit_markers": 20,
+    "held_out_markers": 15,
+    "held_out_corners": 60,
+    "status": "ok",
+    "fit_inlier_corners": 80,
+    "fit_corners": 80,
+    "fit_mean_err_pct": 0.1489,
+    "mean_err_pct": 0.0794,
+    "median_err_pct": 0.0717,
+    "p90_err_pct": 0.1358,
+    "max_err_pct": 0.1997,
+    "mean_err_px": 0.245,
+    "one_px_in_pct": 0.3237,
+    "errors_pct_by_marker": [
+     [
+      0.17064,
+      0.04379,
+      0.03364,
+      0.13264
+     ],
+     [
+      0.18145,
+      0.04052,
+      0.08592,
+      0.19966
+     ],
+     [
+      0.12953,
+      0.0385,
+      0.06001,
+      0.13086
+     ],
+     [
+      0.08287,
+      0.07049,
+      0.01472,
+      0.06701
+     ],
+     [
+      0.1672,
+      0.01943,
+      0.07018,
+      0.07511
+     ],
+     [
+      0.09802,
+      0.10315,
+      0.07856,
+      0.07465
+     ],
+     [
+      0.06787,
+      0.05832,
+      0.073,
+      0.0263
+     ],
+     [
+      0.07947,
+      0.07088,
+      0.02622,
+      0.04178
+     ],
+     [
+      0.04833,
+      0.12521,
+      0.1059,
+      0.0334
+     ],
+     [
+      0.06111,
+      0.1263,
+      0.02376,
+      0.03741
+     ],
+     [
+      0.09658,
+      0.1094,
+      0.06013,
+      0.08575
+     ],
+     [
+      0.05769,
+      0.16707,
+      0.11954,
+      0.08104
+     ],
+     [
+      0.02495,
+      0.03665,
+      0.03084,
+      0.07232
+     ],
+     [
+      0.11092,
+      0.03855,
+      0.05,
+      0.08103
+     ],
+     [
+      0.07104,
+      0.16383,
+      0.07293,
+      0.05745
+     ]
+    ]
+   }
+  },
+  {
+   "photo_id": "scale-2",
+   "note": "checker board on a desk",
+   "image_px": [
+    640,
+    480
+   ],
+   "layout": {
+    "kind": "checker",
+    "size": [
+     5,
+     7
+    ],
+    "a": 0.04,
+    "b": 0.02
+   },
+   "markers_detected": 17,
+   "markers_in_layout": 17,
+   "fit_markers": 10,
+   "held_out_markers": 7,
+   "held_out_corners": 28,
+   "status": "ok",
+   "fit_inlier_corners": 39,
+   "fit_corners": 40,
+   "fit_mean_err_pct": 0.1559,
+   "mean_err_pct": 0.1131,
+   "median_err_pct": 0.1034,
+   "p90_err_pct": 0.2058,
+   "max_err_pct": 0.2678,
+   "mean_err_px": 0.396,
+   "one_px_in_pct": 0.2853,
+   "errors_pct_by_marker": [
+    [
+     0.10755,
+     0.24298,
+     0.20144,
+     0.11534
+    ],
+    [
+     0.12337,
+     0.21611,
+     0.04388,
+     0.04875
+    ],
+    [
+     0.26777,
+     0.1503,
+     0.06196,
+     0.08064
+    ],
+    [
+     0.08507,
+     0.11093,
+     0.08415,
+     0.08743
+    ],
+    [
+     0.13233,
+     0.12629,
+     0.02866,
+     0.08333
+    ],
+    [
+     0.16891,
+     0.07037,
+     0.03951,
+     0.1346
+    ],
+    [
+     0.11215,
+     0.09935,
+     0.05284,
+     0.0895
+    ]
+   ],
+   "wrong_layout_mean_err_pct": 1.2428,
+   "layout_confirmed_by_outer_markers": true
+  },
+  {
+   "photo_id": "scale-3",
+   "note": "checker board, partly covered",
+   "image_px": [
+    640,
+    480
+   ],
+   "layout": {
+    "kind": "checker",
+    "size": [
+     5,
+     7
+    ],
+    "a": 0.04,
+    "b": 0.02
+   },
+   "markers_detected": 13,
+   "markers_in_layout": 17,
+   "fit_markers": 8,
+   "held_out_markers": 5,
+   "held_out_corners": 20,
+   "status": "ok",
+   "fit_inlier_corners": 31,
+   "fit_corners": 32,
+   "fit_mean_err_pct": 0.1479,
+   "mean_err_pct": 0.1736,
+   "median_err_pct": 0.1436,
+   "p90_err_pct": 0.3109,
+   "max_err_pct": 0.452,
+   "mean_err_px": 0.579,
+   "one_px_in_pct": 0.2999,
+   "errors_pct_by_marker": [
+    [
+     0.26158,
+     0.31699,
+     0.45202,
+     0.31018
+    ],
+    [
+     0.15509,
+     0.22496,
+     0.06589,
+     0.10139
+    ],
+    [
+     0.28822,
+     0.22721,
+     0.01794,
+     0.23079
+    ],
+    [
+     0.1516,
+     0.06216,
+     0.05507,
+     0.12144
+    ],
+    [
+     0.13567,
+     0.11621,
+     0.0865,
+     0.09029
+    ]
+   ],
+   "wrong_layout_mean_err_pct": 1.4487,
+   "layout_confirmed_by_outer_markers": true
+  }
+ ],
+ "missing": [],
+ "excluded": [
+  {
+   "photo_id": "scale-x1",
+   "reason": "loose markers with no documented layout: no held-out truth"
+  },
+  {
+   "photo_id": "scale-x2",
+   "reason": "marker diamonds with no documented layout between them: no held-out truth"
+  }
+ ]
+}

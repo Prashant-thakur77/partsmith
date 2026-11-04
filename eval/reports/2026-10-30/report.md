@@ -1,6 +1,6 @@
 # PartSmith-Bench — 2026-10-29T20:43:37+00:00
 
-Mode: `live` · git `304f9333bc` · CI: 95 %: bootstrap over samples (2000 resamples, seeded) for mean errors; Wilson for rates.
+Mode: `live` · git `d4495f48dd` · CI: 95 %: bootstrap over samples (2000 resamples, seeded) for mean errors; Wilson for rates.
 - tables rebuilt from 76 stored run(s) in eval/runs/live/ (nothing re-run)
 
 ## synthetic (GT: exact: the template mesh the photo was rendered from)

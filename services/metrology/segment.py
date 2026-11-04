@@ -23,7 +23,7 @@ F32 = NDArray[np.float32]
 U8 = NDArray[np.uint8]
 BoolMask = NDArray[np.bool_]
 
-# Provider ladder (PLAN §5.4): stop early on a confident mask, ignore anything below the floor.
+# Provider ladder: stop early on a confident mask, ignore anything below the floor.
 EARLY_EXIT_SCORE = 0.85
 SCORE_FLOOR = 0.4
 DUPLICATE_IOU = 0.72

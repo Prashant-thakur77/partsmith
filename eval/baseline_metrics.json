@@ -1,7 +1,7 @@
 {
  "mode": "mock",
  "generated_at": "2026-10-27T13:57:09+00:00",
- "git_sha": "1d815f4f2af784c32734c83f50ff91c25ab02907",
+ "git_sha": "9b7e0407a46a267839c720353551de5397bbdbd3",
  "slack": {
   "median_abs_err_mm": 0.15,
   "pass@0.5": 0.15,

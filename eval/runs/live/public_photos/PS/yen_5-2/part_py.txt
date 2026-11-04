@@ -1,0 +1,74 @@
+import cadquery as cq
+import math
+
+PARAMS = {
+    "thickness": (1.8, 0.8, 3.0, 0.1, "mm", False, "Body thickness"),
+    "hole_dia": (5.0, 4.0, 7.0, 0.05, "mm", True, "Center hole diameter"),
+    "clearance": (0.2, 0.0, 0.6, 0.05, "mm", True, "Fit clearance (added to hole dia)"),
+    "hole_count": (1, 1, 1, 1, "", False, "Hole count (topology)"),
+}
+
+# measured base profile polyline (closed)
+PROFILE_PTS = [
+    [-9.938, -5.012],
+    [-7.737, -7.913],
+    [-5.877, -9.387],
+    [-4.087, -10.223],
+    [-0.978, -10.873],
+    [0.019, -10.868],
+    [0.006, -10.653],
+    [0.948, -10.847],
+    [1.066, -10.629],
+    [1.447, -10.774],
+    [3.251, -10.379],
+    [5.56, -9.373],
+    [7.858, -7.669],
+    [8.758, -6.55],
+    [10.158, -4.151],
+    [10.649, -2.554],
+    [10.978, 0.749],
+    [10.423, 3.372],
+    [9.544, 5.362],
+    [8.072, 7.365],
+    [6.455, 8.82],
+    [3.091, 10.488],
+    [1.344, 10.833],
+    [-0.763, 10.876],
+    [-2.899, 10.495],
+    [-4.576, 9.871],
+    [-6.728, 8.567],
+    [-8.485, 6.834],
+    [-9.5, 5.333],
+    [-10.766, 2.342],
+    [-10.981, 0.115],
+    [-10.84, -2.199],
+]
+
+HOLE_CENTER = [0.441, -0.349]
+
+def build(p: dict) -> cq.Workplane:
+    t = float(p["thickness"])
+    d = float(p["hole_dia"])
+    clr = float(p["clearance"])
+    hc = int(p["hole_count"])
+
+    # Effective hole diameter includes fit clearance (diametral)
+    eff_d = d + clr
+    eff_r = eff_d / 2.0
+
+    wp = cq.Workplane("XY")
+    wp = wp.moveTo(PROFILE_PTS[0][0], PROFILE_PTS[0][1])
+    for x, y in PROFILE_PTS[1:]:
+        wp = wp.lineTo(x, y)
+    wp = wp.close()
+    # solid body from Z=0 to Z=thickness, centred in XY (profile already centred)
+    body = wp.extrude(t, both=False)
+
+    # vertical through hole(s)
+    if hc >= 1:
+        # use top face workplane to place hole at measured center
+        body = body.faces(">Z").workplane().pushPoints([(HOLE_CENTER[0], HOLE_CENTER[1])]).circle(eff_r).cutThruAll()
+
+    return body
+
+result = build({k: v[0] for k, v in PARAMS.items()})

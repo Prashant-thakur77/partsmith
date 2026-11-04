@@ -1,4 +1,4 @@
-"""Phase 2 exit gate (PLAN §14): verifier self-consistency on every family template.
+"""Exit gate: verifier self-consistency on every family template.
 
 For each template: build it at its defaults, make SYNTHETIC top-view measurements from its own rendered silhouette
 (placed at a rotated, shifted pose), and verify the same model against them -> Hausdorff must be < 0.15 mm. Then

@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 760 320" width="760" height="320" font-family="system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif" role="img" aria-label="One stored live run: outline gap per round">
+<rect width="760" height="320" rx="10" fill="#fdfcf9" stroke="#e4dfd4"/>
+<text x="24.0" y="32.0" font-size="17" fill="#1c2230" font-weight="600" text-anchor="start">One stored live run: outline gap per round</text>
+<text x="24.0" y="52.0" font-size="13" fill="#5b6170" font-weight="400" text-anchor="start">Battery cover on a rendered photo. It fails twice, the agent edits the program, code passes it on round 3.</text>
+<line x1="70.0" y1="260.0" x2="700.0" y2="260.0" stroke="#e4dfd4"/>
+<line x1="70.0" y1="230.9" x2="700.0" y2="230.9" stroke="#5b6170" stroke-dasharray="5 4"/>
+<text x="70.0" y="246.9" font-size="12" fill="#5b6170" font-weight="400" text-anchor="start">pass limit 0.5 mm</text>
+<polyline points="70.0,103.5 385.0,230.3 700.0,237.5" fill="none" stroke="#c2410c" stroke-width="2"/>
+<circle cx="70.0" cy="103.5" r="5" fill="#c2410c" stroke="#fdfcf9" stroke-width="2"/>
+<text x="70.0" y="91.5" font-size="13" fill="#1c2230" font-weight="600" text-anchor="start">2.69 mm</text>
+<text x="70.0" y="280.0" font-size="12" fill="#5b6170" font-weight="400" text-anchor="start">First build</text>
+<circle cx="385.0" cy="230.3" r="5" fill="#c2410c" stroke="#fdfcf9" stroke-width="2"/>
+<text x="385.0" y="218.3" font-size="13" fill="#1c2230" font-weight="600" text-anchor="middle">0.51 mm</text>
+<text x="385.0" y="280.0" font-size="12" fill="#5b6170" font-weight="400" text-anchor="middle">Round 2</text>
+<circle cx="700.0" cy="237.5" r="5" fill="#c2410c" stroke="#fdfcf9" stroke-width="2"/>
+<text x="700.0" y="225.5" font-size="13" fill="#1c2230" font-weight="600" text-anchor="end">0.39 mm</text>
+<text x="700.0" y="280.0" font-size="12" fill="#5b6170" font-weight="400" text-anchor="end">Round 3</text>
+<text x="24.0" y="306.0" font-size="11" fill="#5b6170" font-weight="400" text-anchor="start">Source: data/replays/j_261029_daf26965/run.jsonl (iteration events) · eval/reports/latest/provenance.json</text>
+</svg>

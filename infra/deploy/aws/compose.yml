@@ -1,0 +1,40 @@
+# The whole site on one server: API + sandboxed CAD worker, web app, HTTPS front. Run on the server from this folder:
+#   docker compose --env-file site.env up -d --build
+# site.env (never committed) holds SITE_HOST, SITE_URL, REPO_URL; api.env (never committed) starts from ../api.env.example.
+services:
+  api:
+    build:
+      context: ../../..
+      dockerfile: infra/deploy/Dockerfile
+    env_file: api.env
+    volumes:
+      - partsmith-data:/data
+    restart: always
+  web:
+    build:
+      context: ../../..
+      dockerfile: infra/deploy/aws/Dockerfile.web
+      args:
+        SITE_URL: ${SITE_URL}
+        REPO_URL: ${REPO_URL:-}
+    depends_on:
+      - api
+    restart: always
+  caddy:
+    image: caddy:2.8.4
+    environment:
+      SITE_HOST: ${SITE_HOST}
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy-data:/data
+    ports:
+      - "80:80"
+      - "443:443"
+      - "443:443/udp"
+    depends_on:
+      - web
+      - api
+    restart: always
+volumes:
+  partsmith-data:
+  caddy-data:

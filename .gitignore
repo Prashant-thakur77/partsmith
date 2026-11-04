@@ -1,9 +1,7 @@
 .env
 .env.*
 !.env.example
-PLAN.md
-KICKOFF_PROMPT.md
-docs/REUSE_LOG.md
+infra/deploy/aws/*.env
 node_modules/
 .venv/
 __pycache__/
@@ -27,3 +25,5 @@ apps/web/out/
 .DS_Store
 data/synthetic/bench/
 data/synthetic/suites/
+video/refs/*.wav
+data/public_photos/samples/

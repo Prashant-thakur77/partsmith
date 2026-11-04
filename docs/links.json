@@ -1,7 +1,8 @@
 {
  "_about": "Link row at the top of README.md (tools/readme.py). Leave a URL empty and the README shows (coming). judges and sample default to <live_site>/judges and <live_site>/jobs/demo.",
- "live_site": "",
- "video": "",
+ "repo": "https://github.com/Prashant-thakur77/partsmith",
+ "live_site": "https://partsmith-52-204-199-249.sslip.io",
+ "video": "https://youtu.be/bdMTeAaa7dY",
  "judges": "",
  "sample": ""
 }

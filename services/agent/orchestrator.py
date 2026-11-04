@@ -1,4 +1,4 @@
-"""The fix job (PLAN §3.2 Flow A, §6.2): photos on a mat → measured PartSpec → part program → verified loop → package.
+"""The fix job: photos on a mat → measured PartSpec → part program → verified loop → package.
 
     capture → measure → understand → ask → plan → build → execute → verify → fix (≤ max_iters) → judge → package → learn
 
@@ -212,7 +212,7 @@ class RunOptions:
     mat_id: str | None = None
     package: bool = True
     learn: bool = True
-    # Bench ablations (PLAN §10.3); each switches off exactly one thing. Defaults = the full PartSmith loop.
+    # Bench ablations; each switches off exactly one thing. Defaults = the full PartSmith loop.
     single_shot: bool = False  # B0/B1: one build; no fix loop, no strategy switch, no judge
     mat_scale: bool = True  # B0: False = the models get no mat-calibrated numbers (sizes guessed from the photo)
     numeric_feedback: bool = True  # B2: False = the fixer sees the overlay images only, no residual numbers

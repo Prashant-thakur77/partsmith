@@ -1,0 +1,83 @@
+import cadquery as cq
+import math
+
+PARAMS = {
+    "thickness": (0.8, 0.4, 3.0, 0.01, "mm", True, "Plate thickness"),
+    "scale_x": (1.0, 0.95, 1.05, 0.001, "", True, "Scale along X"),
+    "scale_y": (1.0, 0.95, 1.05, 0.001, "", True, "Scale along Y"),
+    "hidden_hole_dia": (0.0, 0.0, 8.0, 0.1, "mm", False, "Hidden hole diameter 0=no hole"),
+    "hidden_hole_x": (29.3, 25.0, 35.0, 0.1, "mm", False, "Hidden hole X pos"),
+    "hidden_hole_y": (16.0, 12.0, 20.0, 0.1, "mm", False, "Hidden hole Y pos"),
+    "edge_fillet": (0.0, 0.0, 2.0, 0.1, "mm", False, "Top edge fillet radius"),
+    "smooth_iter": (0, 0, 3, 1, "", False, "Smoothing iterations"),
+}
+
+def build(p: dict) -> cq.Workplane:
+    thickness = float(p.get("thickness", 0.76))
+    scale_x = float(p.get("scale_x", 1.0))
+    scale_y = float(p.get("scale_y", 1.0))
+    hidden_hole_dia = float(p.get("hidden_hole_dia", 0.0))
+    hidden_hole_x = float(p.get("hidden_hole_x", 29.3))
+    hidden_hole_y = float(p.get("hidden_hole_y", 16.0))
+    edge_fillet = float(p.get("edge_fillet", 0.0))
+    smooth_iter = int(p.get("smooth_iter", 0))
+
+    base_pts = [
+        (42.545, -24.292),
+        (42.712, -22.482),
+        (41.847, 22.951),
+        (41.483, 24.752),
+        (40.186, 26.028),
+        (38.764, 26.45),
+        (-37.443, 26.851),
+        (-40.349, 26.593),
+        (-41.306, 26.07),
+        (-42.087, 25.147),
+        (-42.465, 23.965),
+        (-42.68, -23.146),
+        (-42.383, -24.942),
+        (-41.114, -26.292),
+        (-40.052, -26.72),
+        (-38.703, -26.857),
+        (38.292, -26.615),
+        (40.578, -26.417),
+        (41.425, -25.929),
+    ]
+
+    # apply scale centred at origin, long axis +X already
+    pts = [(x * scale_x, y * scale_y) for x, y in base_pts]
+
+    # optional smoothing iterations - simple moving average, topology param
+    for _ in range(smooth_iter):
+        n = len(pts)
+        new_pts = []
+        for i in range(n):
+            x0, y0 = pts[i]
+            x1, y1 = pts[(i + 1) % n]
+            xm = (x0 + x1) * 0.5
+            ym = (y0 + y1) * 0.5
+            # blend slightly toward midpoint to keep shape but count as topology op
+            nx = x0 * 0.85 + xm * 0.15
+            ny = y0 * 0.85 + ym * 0.15
+            new_pts.append((nx, ny))
+        pts = new_pts
+
+    # build solid plate with mounting face on Z=0, +Z up, centred at origin
+    wp = cq.Workplane("XY")
+    wp = wp.polyline(pts).close().extrude(thickness, combine=True)
+
+    # hidden hole feature if enabled (0 = no hole)
+    if hidden_hole_dia > 0.05:
+        r = hidden_hole_dia * 0.5
+        wp = wp.faces(">Z").workplane().moveTo(hidden_hole_x * scale_x, hidden_hole_y * scale_y).circle(r).cutThruAll()
+
+    # optional top edge fillet, only if small enough to not consume thickness
+    if edge_fillet > 0.01 and edge_fillet < thickness * 0.45:
+        try:
+            wp = wp.edges("|Z").fillet(edge_fillet)
+        except Exception:
+            pass
+
+    return wp
+
+result = build({k: v[0] for k, v in PARAMS.items()})

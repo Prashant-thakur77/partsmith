@@ -43,7 +43,8 @@ test("workspace shows the agent log, focus, progress lines, citations and new ar
   await expect(log).toContainText("set_param");
   await expect(log).toContainText("length 38.00 → 40.10 mm");
   await log.getByRole("button", { name: "Show" }).click();
-  await expect(page.getByText(/The fixer is checking: hole_1/)).toBeVisible();
+  // The caption waits for the geometry, which software WebGL can take longer than the default 10 s to load on a busy machine.
+  await expect(page.getByText(/The fixer is checking: hole_1/)).toBeVisible({ timeout: 30_000 });
   await expect(page.getByRole("link", { name: /Source 1: Bracket datasheet/ }).first()).toBeAttached();
   await page.getByRole("tab", { name: "Residuals" }).click();
   await expect(page.getByText("Functional probes (advisory)")).toBeVisible();

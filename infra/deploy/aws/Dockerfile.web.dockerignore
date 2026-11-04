@@ -1,0 +1,12 @@
+# Allow-list for the web image: only the web app and the workspace manifests enter the build context.
+*
+!package.json
+!pnpm-lock.yaml
+!pnpm-workspace.yaml
+!apps/web/
+**/node_modules
+**/.next
+**/.env
+**/.env.*
+apps/web/test-results
+apps/web/playwright-report

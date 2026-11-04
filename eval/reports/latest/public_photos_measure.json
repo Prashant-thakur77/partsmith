@@ -1,0 +1,732 @@
+{
+ "generated_at": "2026-11-04T21:00:13+00:00",
+ "source": "public_photo",
+ "ground_truth": "published spec, pasted at known size",
+ "segmenter": "threshold (no model)",
+ "scope": "Composites, not phone captures: a real object cut out of a public photograph by code and pasted on our rendered screen mat at a scale set from one published dimension (the long side). That dimension is marked set_by_construction and excluded from every error. The mat, the camera and the light on the mat are rendered, the cut-out is flat, has no walls and casts no shadow. Counted as 0 real photos measured. It says nothing about a phone photographing a laptop screen.",
+ "counts_as_real_photos_measured": 0,
+ "summary": {
+  "n_photos": 16,
+  "objects": {
+   "aa_cell": 1,
+   "id1_card": 1,
+   "microsd_card": 2,
+   "sd_card": 8,
+   "us_dime": 1,
+   "yen_5": 3
+  },
+  "n_source_photos": 13,
+  "capture_gate_passed": 16,
+  "capture_gate_ci95": [
+   0.806,
+   1.0
+  ],
+  "held_out": {
+   "n_dims": 21,
+   "mean_abs_mm": 0.432,
+   "ci95_mm": [
+    0.296,
+    0.603
+   ],
+   "median_abs_mm": 0.302,
+   "p90_abs_mm": 0.832,
+   "max_abs_mm": 1.675,
+   "bias_mm": -0.21,
+   "within_0_5": 16
+  },
+  "cutout_only": {
+   "n_dims": 19,
+   "mean_abs_mm": 0.322,
+   "ci95_mm": [
+    0.198,
+    0.45
+   ],
+   "median_abs_mm": 0.14,
+   "p90_abs_mm": 0.737,
+   "max_abs_mm": 0.954,
+   "bias_mm": -0.044,
+   "within_0_5": 13
+  },
+  "pass_at_0_5": 10,
+  "pass_at_0_5_of": 16,
+  "pass_at_0_5_ci95": [
+   0.386,
+   0.815
+  ],
+  "by_object": {
+   "aa_cell": {
+    "n_dims": 1,
+    "mean_abs_mm": 1.675,
+    "ci95_mm": [
+     1.675,
+     1.675
+    ],
+    "median_abs_mm": 1.675,
+    "p90_abs_mm": 1.675,
+    "max_abs_mm": 1.675,
+    "bias_mm": -1.675,
+    "within_0_5": 0
+   },
+   "id1_card": {
+    "n_dims": 1,
+    "mean_abs_mm": 0.267,
+    "ci95_mm": [
+     0.267,
+     0.267
+    ],
+    "median_abs_mm": 0.267,
+    "p90_abs_mm": 0.267,
+    "max_abs_mm": 0.267,
+    "bias_mm": -0.267,
+    "within_0_5": 1
+   },
+   "microsd_card": {
+    "n_dims": 4,
+    "mean_abs_mm": 0.309,
+    "ci95_mm": [
+     0.257,
+     0.362
+    ],
+    "median_abs_mm": 0.362,
+    "p90_abs_mm": 0.484,
+    "max_abs_mm": 0.491,
+    "bias_mm": 0.053,
+    "within_0_5": 4
+   },
+   "sd_card": {
+    "n_dims": 8,
+    "mean_abs_mm": 0.341,
+    "ci95_mm": [
+     0.17,
+     0.536
+    ],
+    "median_abs_mm": 0.278,
+    "p90_abs_mm": 0.705,
+    "max_abs_mm": 0.832,
+    "bias_mm": -0.015,
+    "within_0_5": 6
+   },
+   "us_dime": {
+    "n_dims": 2,
+    "mean_abs_mm": 0.592,
+    "ci95_mm": [
+     0.592,
+     0.592
+    ],
+    "median_abs_mm": 0.592,
+    "p90_abs_mm": 0.888,
+    "max_abs_mm": 0.962,
+    "bias_mm": -0.592,
+    "within_0_5": 1
+   },
+   "yen_5": {
+    "n_dims": 5,
+    "mean_abs_mm": 0.398,
+    "ci95_mm": [
+     0.23,
+     0.608
+    ],
+    "median_abs_mm": 0.302,
+    "p90_abs_mm": 0.637,
+    "max_abs_mm": 0.757,
+    "bias_mm": -0.277,
+    "within_0_5": 4
+   }
+  },
+  "candidates_rejected": 39
+ },
+ "rejected": [
+  {
+   "object": "lego_2x4",
+   "reason": "strong perspective"
+  },
+  {
+   "object": "lego_2x4",
+   "reason": "built into a model on a baseplate"
+  },
+  {
+   "object": "lego_2x4",
+   "reason": "tiny pieces in a grid pattern; no 2x4 brick alone"
+  },
+  {
+   "object": "lego_2x4",
+   "reason": "oblique view with the walls showing"
+  },
+  {
+   "object": "lego_2x4",
+   "reason": "oblique view with the walls showing"
+  },
+  {
+   "object": "lego_2x4",
+   "reason": "oblique view with the walls showing"
+  },
+  {
+   "object": "lego_2x4",
+   "reason": "a render and not a photograph"
+  },
+  {
+   "object": "lego_2x4",
+   "reason": "a loose pile"
+  },
+  {
+   "object": "sd_card",
+   "reason": "the card fills the frame and touches its edge"
+  },
+  {
+   "object": "sd_card",
+   "reason": "oblique view",
+   "background out of focus": null
+  },
+  {
+   "object": "sd_card",
+   "reason": "oblique view"
+  },
+  {
+   "object": "sd_card",
+   "reason": "oblique view"
+  },
+  {
+   "object": "sd_card",
+   "reason": "touching another card"
+  },
+  {
+   "object": "sd_card",
+   "reason": "second card in a photograph already used"
+  },
+  {
+   "object": "sd_card",
+   "reason": "second card in a photograph already used"
+  },
+  {
+   "object": "sd_card",
+   "reason": "second card in a photograph already used"
+  },
+  {
+   "object": "sd_card",
+   "reason": "third card in a photograph already used"
+  },
+  {
+   "object": "id1_card",
+   "reason": "the card touches the frame"
+  },
+  {
+   "object": "id1_card",
+   "reason": "not ID-1 proportions and no published size"
+  },
+  {
+   "object": "id1_card",
+   "reason": "a loose pile"
+  },
+  {
+   "object": "id1_card",
+   "reason": "held in a wall slot"
+  },
+  {
+   "object": "id1_card",
+   "reason": "the card fills the frame"
+  },
+  {
+   "object": "id1_card",
+   "reason": "the card fills the frame and shows a printed number"
+  },
+  {
+   "object": "id1_card",
+   "reason": "a real payment card"
+  },
+  {
+   "object": "id1_card",
+   "reason": "a real payment card"
+  },
+  {
+   "object": "aa_cell",
+   "reason": "oblique view"
+  },
+  {
+   "object": "aa_cell",
+   "reason": "cells touching each other"
+  },
+  {
+   "object": "aa_cell",
+   "reason": "the cell runs out of the frame"
+  },
+  {
+   "object": "aa_cell",
+   "reason": "the cell runs out of the frame"
+  },
+  {
+   "object": "aa_cell",
+   "reason": "oblique view"
+  },
+  {
+   "object": "aa_cell",
+   "reason": "standing on end"
+  },
+  {
+   "object": "aa_cell",
+   "reason": "oblique view"
+  },
+  {
+   "object": "us_coin",
+   "reason": "one published dimension only",
+   "so nothing held out": null
+  },
+  {
+   "object": "us_coin",
+   "reason": "one published dimension only",
+   "so nothing held out": null
+  },
+  {
+   "object": "us_coin",
+   "reason": "one published dimension only",
+   "so nothing held out": null
+  },
+  {
+   "object": "washer",
+   "reason": "inside a printed pack"
+  },
+  {
+   "object": "washer",
+   "reason": "no published size for each washer"
+  },
+  {
+   "object": "washer",
+   "reason": "inside a plastic bag"
+  },
+  {
+   "object": "microsd_card",
+   "reason": "held in a hand"
+  }
+ ],
+ "rows": [
+  {
+   "sample_id": "sd_card-1",
+   "object": "sd_card",
+   "photo_id": 1,
+   "scale_set_by": "long side of this object",
+   "accepted": true,
+   "reason": "",
+   "dims": [
+    {
+     "name": "length",
+     "gt_mm": 32.0,
+     "measured_mm": 32.03,
+     "error_mm": 0.03,
+     "set_by_construction": true
+    },
+    {
+     "name": "width",
+     "gt_mm": 24.0,
+     "measured_mm": 23.966,
+     "error_mm": -0.034,
+     "cutout_error_mm": -0.072
+    }
+   ],
+   "missed": [],
+   "extra_holes": 0
+  },
+  {
+   "sample_id": "sd_card-2",
+   "object": "sd_card",
+   "photo_id": 2,
+   "scale_set_by": "long side of this object",
+   "accepted": true,
+   "reason": "",
+   "dims": [
+    {
+     "name": "length",
+     "gt_mm": 32.0,
+     "measured_mm": 31.961,
+     "error_mm": -0.039,
+     "set_by_construction": true
+    },
+    {
+     "name": "width",
+     "gt_mm": 24.0,
+     "measured_mm": 23.834,
+     "error_mm": -0.166,
+     "cutout_error_mm": -0.087
+    }
+   ],
+   "missed": [],
+   "extra_holes": 0
+  },
+  {
+   "sample_id": "sd_card-3",
+   "object": "sd_card",
+   "photo_id": 3,
+   "scale_set_by": "long side of this object",
+   "accepted": true,
+   "reason": "",
+   "dims": [
+    {
+     "name": "length",
+     "gt_mm": 32.0,
+     "measured_mm": 31.928,
+     "error_mm": -0.072,
+     "set_by_construction": true
+    },
+    {
+     "name": "width",
+     "gt_mm": 24.0,
+     "measured_mm": 23.983,
+     "error_mm": -0.017,
+     "cutout_error_mm": 0.02
+    }
+   ],
+   "missed": [],
+   "extra_holes": 0
+  },
+  {
+   "sample_id": "sd_card-4",
+   "object": "sd_card",
+   "photo_id": 4,
+   "scale_set_by": "long side of this object",
+   "accepted": true,
+   "reason": "",
+   "dims": [
+    {
+     "name": "length",
+     "gt_mm": 32.0,
+     "measured_mm": 31.912,
+     "error_mm": -0.088,
+     "set_by_construction": true
+    },
+    {
+     "name": "width",
+     "gt_mm": 24.0,
+     "measured_mm": 24.473,
+     "error_mm": 0.473,
+     "cutout_error_mm": 0.678
+    }
+   ],
+   "missed": [],
+   "extra_holes": 0
+  },
+  {
+   "sample_id": "sd_card-6",
+   "object": "sd_card",
+   "photo_id": 5,
+   "scale_set_by": "long side of this object",
+   "accepted": true,
+   "reason": "",
+   "dims": [
+    {
+     "name": "length",
+     "gt_mm": 32.0,
+     "measured_mm": 31.477,
+     "error_mm": -0.523,
+     "set_by_construction": true
+    },
+    {
+     "name": "width",
+     "gt_mm": 24.0,
+     "measured_mm": 23.751,
+     "error_mm": -0.249,
+     "cutout_error_mm": -0.129
+    }
+   ],
+   "missed": [],
+   "extra_holes": 0
+  },
+  {
+   "sample_id": "sd_card-8",
+   "object": "sd_card",
+   "photo_id": 6,
+   "scale_set_by": "long side of this object",
+   "accepted": true,
+   "reason": "",
+   "dims": [
+    {
+     "name": "length",
+     "gt_mm": 32.0,
+     "measured_mm": 31.965,
+     "error_mm": -0.035,
+     "set_by_construction": true
+    },
+    {
+     "name": "width",
+     "gt_mm": 24.0,
+     "measured_mm": 24.832,
+     "error_mm": 0.832,
+     "cutout_error_mm": 0.954
+    }
+   ],
+   "missed": [],
+   "extra_holes": 0
+  },
+  {
+   "sample_id": "microsd_card-1",
+   "object": "microsd_card",
+   "photo_id": 6,
+   "scale_set_by": "long side of sd_card-8",
+   "accepted": true,
+   "reason": "",
+   "dims": [
+    {
+     "name": "length",
+     "gt_mm": 15.0,
+     "measured_mm": 15.257,
+     "error_mm": 0.257,
+     "cutout_error_mm": 0.322
+    },
+    {
+     "name": "width",
+     "gt_mm": 11.0,
+     "measured_mm": 11.467,
+     "error_mm": 0.467,
+     "cutout_error_mm": 0.515
+    }
+   ],
+   "missed": [],
+   "extra_holes": 0
+  },
+  {
+   "sample_id": "sd_card-9",
+   "object": "sd_card",
+   "photo_id": 7,
+   "scale_set_by": "long side of this object",
+   "accepted": true,
+   "reason": "",
+   "dims": [
+    {
+     "name": "length",
+     "gt_mm": 32.0,
+     "measured_mm": 31.69,
+     "error_mm": -0.31,
+     "set_by_construction": true
+    },
+    {
+     "name": "width",
+     "gt_mm": 24.0,
+     "measured_mm": 23.35,
+     "error_mm": -0.65,
+     "cutout_error_mm": -0.655
+    }
+   ],
+   "missed": [],
+   "extra_holes": 0
+  },
+  {
+   "sample_id": "microsd_card-2",
+   "object": "microsd_card",
+   "photo_id": 7,
+   "scale_set_by": "long side of sd_card-9",
+   "accepted": true,
+   "reason": "",
+   "dims": [
+    {
+     "name": "length",
+     "gt_mm": 15.0,
+     "measured_mm": 14.978,
+     "error_mm": -0.022,
+     "cutout_error_mm": 0.155
+    },
+    {
+     "name": "width",
+     "gt_mm": 11.0,
+     "measured_mm": 10.509,
+     "error_mm": -0.491,
+     "cutout_error_mm": -0.476
+    }
+   ],
+   "missed": [],
+   "extra_holes": 0
+  },
+  {
+   "sample_id": "us_dime-1",
+   "object": "us_dime",
+   "photo_id": 7,
+   "scale_set_by": "long side of sd_card-9",
+   "accepted": true,
+   "reason": "",
+   "dims": [
+    {
+     "name": "length",
+     "gt_mm": 17.91,
+     "measured_mm": 17.689,
+     "error_mm": -0.221,
+     "cutout_error_mm": -0.049
+    },
+    {
+     "name": "width",
+     "gt_mm": 17.91,
+     "measured_mm": 16.948,
+     "error_mm": -0.962,
+     "cutout_error_mm": -0.891
+    }
+   ],
+   "missed": [],
+   "extra_holes": 0
+  },
+  {
+   "sample_id": "yen_5-1",
+   "object": "yen_5",
+   "photo_id": 8,
+   "scale_set_by": "long side of this object",
+   "accepted": true,
+   "reason": "",
+   "dims": [
+    {
+     "name": "length",
+     "gt_mm": 22.0,
+     "measured_mm": 21.876,
+     "error_mm": -0.124,
+     "set_by_construction": true
+    },
+    {
+     "name": "width",
+     "gt_mm": 22.0,
+     "measured_mm": 21.243,
+     "error_mm": -0.757,
+     "cutout_error_mm": -0.698
+    },
+    {
+     "name": "hole_1.diameter",
+     "gt_mm": 5.0,
+     "measured_mm": 4.542,
+     "error_mm": -0.458
+    }
+   ],
+   "missed": [],
+   "extra_holes": 0
+  },
+  {
+   "sample_id": "yen_5-2",
+   "object": "yen_5",
+   "photo_id": 9,
+   "scale_set_by": "long side of this object",
+   "accepted": true,
+   "reason": "",
+   "dims": [
+    {
+     "name": "length",
+     "gt_mm": 22.0,
+     "measured_mm": 21.963,
+     "error_mm": -0.037,
+     "set_by_construction": true
+    },
+    {
+     "name": "width",
+     "gt_mm": 22.0,
+     "measured_mm": 21.758,
+     "error_mm": -0.242,
+     "cutout_error_mm": -0.126
+    },
+    {
+     "name": "hole_1.diameter",
+     "gt_mm": 5.0,
+     "measured_mm": 5.302,
+     "error_mm": 0.302
+    }
+   ],
+   "missed": [],
+   "extra_holes": 0
+  },
+  {
+   "sample_id": "yen_5-3",
+   "object": "yen_5",
+   "photo_id": 10,
+   "scale_set_by": "long side of this object",
+   "accepted": true,
+   "reason": "",
+   "dims": [
+    {
+     "name": "length",
+     "gt_mm": 22.0,
+     "measured_mm": 22.009,
+     "error_mm": 0.009,
+     "set_by_construction": true
+    },
+    {
+     "name": "width",
+     "gt_mm": 22.0,
+     "measured_mm": 21.77,
+     "error_mm": -0.23,
+     "cutout_error_mm": -0.08
+    }
+   ],
+   "missed": [
+    "hole_1.diameter"
+   ],
+   "extra_holes": 0
+  },
+  {
+   "sample_id": "id1_card-1",
+   "object": "id1_card",
+   "photo_id": 11,
+   "scale_set_by": "long side of this object",
+   "accepted": true,
+   "reason": "",
+   "dims": [
+    {
+     "name": "length",
+     "gt_mm": 85.6,
+     "measured_mm": 85.425,
+     "error_mm": -0.175,
+     "set_by_construction": true
+    },
+    {
+     "name": "width",
+     "gt_mm": 53.98,
+     "measured_mm": 53.713,
+     "error_mm": -0.267,
+     "cutout_error_mm": -0.053
+    }
+   ],
+   "missed": [],
+   "extra_holes": 0
+  },
+  {
+   "sample_id": "aa_cell-1",
+   "object": "aa_cell",
+   "photo_id": 12,
+   "scale_set_by": "long side of this object",
+   "accepted": true,
+   "reason": "",
+   "dims": [
+    {
+     "name": "length",
+     "gt_mm": 50.5,
+     "measured_mm": 37.016,
+     "error_mm": -13.484,
+     "set_by_construction": true
+    },
+    {
+     "name": "width",
+     "gt_mm": 14.5,
+     "measured_mm": 12.825,
+     "error_mm": -1.675,
+     "cutout_error_mm": -0.14
+    }
+   ],
+   "missed": [],
+   "extra_holes": 0
+  },
+  {
+   "sample_id": "sd_card-10",
+   "object": "sd_card",
+   "photo_id": 14,
+   "scale_set_by": "long side of this object",
+   "accepted": true,
+   "reason": "",
+   "dims": [
+    {
+     "name": "length",
+     "gt_mm": 32.0,
+     "measured_mm": 31.951,
+     "error_mm": -0.049,
+     "set_by_construction": true
+    },
+    {
+     "name": "width",
+     "gt_mm": 24.0,
+     "measured_mm": 23.693,
+     "error_mm": -0.307,
+     "cutout_error_mm": -0.024
+    }
+   ],
+   "missed": [],
+   "extra_holes": 0
+  }
+ ]
+}

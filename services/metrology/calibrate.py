@@ -180,7 +180,7 @@ def _gray(img: NDArray[np.uint8]) -> NDArray[np.uint8]:
     return np.asarray(cv2.cvtColor(img, cv2.COLOR_BGR2GRAY), dtype=np.uint8)
 
 
-def _detector() -> cv2.aruco.ArucoDetector:
+def _detector(dictionary: cv2.aruco.Dictionary | None = None) -> cv2.aruco.ArucoDetector:
     p = cv2.aruco.DetectorParameters()
     p.cornerRefinementMethod = cv2.aruco.CORNER_REFINE_SUBPIX
     p.cornerRefinementWinSize = 6
@@ -188,7 +188,7 @@ def _detector() -> cv2.aruco.ArucoDetector:
     p.cornerRefinementMaxIterations = 60
     p.cornerRefinementMinAccuracy = 0.005
     p.adaptiveThreshWinSizeMax = 53
-    return cv2.aruco.ArucoDetector(aruco_dictionary(), p)
+    return cv2.aruco.ArucoDetector(aruco_dictionary() if dictionary is None else dictionary, p)
 
 
 def _refine_corners(gray: NDArray[np.uint8], corners: F64) -> F64:
@@ -263,6 +263,19 @@ def _refine_corners(gray: NDArray[np.uint8], corners: F64) -> F64:
 # ---------------------------------------------------------------- detection
 
 
+def fit_plane_homography(img_pts: F64, plane_pts: F64) -> tuple[F64, NDArray[np.bool_]] | None:
+    """RANSAC homography image px → plane units (mm on a mat), refit on its inliers; None when no plane fits."""
+    H, inl = cv2.findHomography(img_pts, plane_pts, cv2.RANSAC, RANSAC_THRESHOLD_MM, maxIters=4000, confidence=0.999)
+    if H is None:
+        return None
+    inliers = inl.ravel().astype(bool)
+    # Least-squares refit on the inliers (RANSAC's own refinement minimises the same error; this pins it down).
+    H2, _ = cv2.findHomography(img_pts[inliers], plane_pts[inliers], 0)
+    if H2 is not None:
+        H = H2
+    return np.asarray(H / H[2, 2], dtype=np.float64), inliers
+
+
 def detect_mat(
     img_bgr: NDArray[np.uint8], *, K: F64 | None = None, dist: F64 | None = None, mat_id: str | None = None
 ) -> MatDetection:
@@ -329,17 +342,10 @@ def detect_mat(
         recovered=recovered,
     )
     tmp.img_pts = tmp.undistort(raw.reshape(-1, 2))
-    H, inl = cv2.findHomography(
-        tmp.img_pts, tmp.mat_pts, cv2.RANSAC, RANSAC_THRESHOLD_MM, maxIters=4000, confidence=0.999
-    )
-    if H is None:
+    fit = fit_plane_homography(tmp.img_pts, tmp.mat_pts)
+    if fit is None:
         raise MatNotFoundError("Could not fit the mat plane from the detected markers.")
-    inliers = inl.ravel().astype(bool)
-    # Least-squares refit on the inliers (RANSAC's own refinement minimises the same error; this pins it down).
-    H2, _ = cv2.findHomography(tmp.img_pts[inliers], tmp.mat_pts[inliers], 0)
-    if H2 is not None:
-        H = H2
-    tmp.H = np.asarray(H / H[2, 2], dtype=np.float64)
+    tmp.H, inliers = fit
     tmp.inliers = inliers
     e_mm = np.linalg.norm(apply_h(tmp.H, tmp.img_pts[inliers]) - tmp.mat_pts[inliers], axis=1)
     e_px = np.linalg.norm(apply_h(np.linalg.inv(tmp.H), tmp.mat_pts[inliers]) - tmp.img_pts[inliers], axis=1)

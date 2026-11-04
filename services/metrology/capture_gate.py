@@ -1,4 +1,4 @@
-"""Capture gate: deterministic photo checks before any paid model call (PLAN §5.2).
+"""Capture gate: deterministic photo checks before any paid model call.
 
 Each check returns pass/warn/fail with the measured value, its threshold and one actionable sentence for the user.
 The report passes when no check fails. Thresholds are named constants; they were set on synthetic renders (see the

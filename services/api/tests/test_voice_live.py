@@ -10,6 +10,7 @@ from typing import Any
 import pytest
 from fastapi.testclient import TestClient
 from partsmith_schemas import DataOrigin, JobInput
+from partsmith_schemas.verification import ParamSpec
 from starlette.websockets import WebSocketDisconnect
 
 from services.agent import providers
@@ -247,3 +248,17 @@ def test_busy_when_too_many_sessions(client: TestClient, svc: VoiceService, monk
 
 def test_route_is_listed() -> None:
     assert ("WS", "/api/v1/jobs/{job_id}/voice/live") in set(M.iter_routes())
+
+
+def test_knob_keywords_stay_within_the_realtime_limit() -> None:
+    """One over-long label used to make the handshake reject the session, which silently lost realtime transcripts."""
+    long_label = ParamSpec(
+        name="length", label="Overall length including tongues", default=45.0, min=26.0, max=100.0, step=0.1, unit="mm"
+    )
+    short = ParamSpec(name="width", label="Width", default=30.0, min=16.0, max=60.0, step=0.1, unit="mm")
+    assert voice_live.knob_keywords([long_label, short]) == ["Width"]
+
+
+def test_speaker_tags_never_reach_the_transcript() -> None:
+    assert realtime.clean_transcript("covers ko lamba karo <|speaker_A|>") == "covers ko lamba karo"
+    assert realtime.clean_transcript("<speaker_B> make it longer") == "make it longer"

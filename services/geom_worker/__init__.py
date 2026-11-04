@@ -1,1 +1,1 @@
-"""Sandboxed CadQuery execution, exporters and the bake cache (PLAN §6.4)."""
+"""Sandboxed CadQuery execution, exporters and the bake cache."""

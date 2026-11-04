@@ -1,0 +1,71 @@
+import cadquery as cq
+import math
+
+PARAMS = {
+    "thickness": (2.1, 0.8, 4.0, 0.1, "mm", True, "Body thickness"),
+    "slot_length": (4.0, 1.0, 4.0, 0.01, "mm", True, "Slot overall length"),
+    "slot_width": (3.0, 0.8, 3.0, 0.01, "mm", True, "Slot width / diameter"),
+    "slot_cx": (-6.0, -10.0, -3.0, 0.1, "mm", True, "Slot center X"),
+    "slot_cy": (0.2, -5.0, 5.0, 0.1, "mm", True, "Slot center Y"),
+    "slot_angle_deg": (54.5, 0.0, 180.0, 0.5, "deg", False, "Slot angle CCW from +X"),
+    "slot_count": (1, 0, 1, 1, "", False, "Number of slots"),
+}
+
+BASE_POINTS = [
+    (-15.831, 11.612),
+    (-15.862, -11.295),
+    (-15.541, -11.685),
+    (-13.909, -11.889),
+    (3.953, -11.915),
+    (4.243, -11.793),
+    (4.4, -11.331),
+    (5.906, -11.289),
+    (6.403, -11.932),
+    (11.169, -11.99),
+    (12.312, -11.512),
+    (15.669, -8.213),
+    (15.961, 10.888),
+    (15.536, 11.699),
+    (13.782, 11.984),
+    (8.317, 11.933),
+    (8.214, 11.441),
+    (7.776, 11.169),
+    (2.01, 11.325),
+    (1.164, 11.904),
+    (-14.912, 11.976),
+]
+
+def build(p: dict) -> cq.Workplane:
+    thickness = float(p["thickness"])
+    slot_length = float(p["slot_length"])
+    slot_width = float(p["slot_width"])
+    slot_cx = float(p["slot_cx"])
+    slot_cy = float(p["slot_cy"])
+    slot_angle_deg = float(p["slot_angle_deg"])
+    slot_count = int(p["slot_count"])
+
+    wp = cq.Workplane("XY")
+    wp = wp.moveTo(BASE_POINTS[0][0], BASE_POINTS[0][1])
+    pts_rest = [(x, y) for x, y in BASE_POINTS[1:]]
+    wp = wp.polyline(pts_rest).close()
+    body = wp.extrude(thickness, combine=True)
+
+    if slot_count > 0 and slot_width > 0 and slot_length > 0:
+        r = slot_width / 2.0
+        straight = max(0.0, slot_length - slot_width)
+        cutter_wp = cq.Workplane("XY").transformed(
+            offset=cq.Vector(slot_cx, slot_cy, -0.2),
+            rotate=cq.Vector(0, 0, slot_angle_deg)
+        )
+        cutter_wp = cutter_wp.moveTo(-straight / 2.0, -r)
+        cutter_wp = cutter_wp.lineTo(straight / 2.0, -r)
+        cutter_wp = cutter_wp.threePointArc((straight / 2.0 + r, 0), (straight / 2.0, r))
+        cutter_wp = cutter_wp.lineTo(-straight / 2.0, r)
+        cutter_wp = cutter_wp.threePointArc((-straight / 2.0 - r, 0), (-straight / 2.0, -r))
+        cutter_wp = cutter_wp.close()
+        cutter = cutter_wp.extrude(thickness + 0.5, combine=False)
+        body = body.cut(cutter)
+
+    return body
+
+result = build({k: v[0] for k, v in PARAMS.items()})

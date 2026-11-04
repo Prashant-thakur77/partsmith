@@ -1,4 +1,4 @@
-# Handoff: what only Prashant can do
+# Handoff: what only the project owner can do
 
 Everything else is built and runs with zero keys (deterministic mocks, labelled). This is the short list of things that need a
 human: keys, photos, the video and the submission. Do them roughly in this order.
@@ -142,7 +142,8 @@ outline and photograph it. The app shows pass or fail.
 - Real 3D prints: order the demo parts' STLs online only if you want to (Robu.in, Makenica, Zbotic, iamrapid, NIT lab). Never
   claim a print that wasn't made.
 - **Deploy (only when you decide to go public: it makes the project public).** Everything is prepared in
-  `infra/deploy/` (full guide: `infra/deploy/README.md`); nothing has been deployed. The public site needs no model keys:
+  `infra/deploy/`. The submission uses one AWS server with Docker Compose (`infra/deploy/aws/README.md`); the Modal and Vercel
+  steps below are an optional alternative (full guide: `infra/deploy/README.md`). The public site needs no model keys:
   the API runs in replay mode (labelled mocks for anything not recorded) with the committed replays, demo samples and
   bench reports baked in.
   1. `make deploy-check` (static checks; builds nothing) and `openssl rand -hex 24` for `PARTSMITH_ADMIN_TOKEN`.
@@ -242,11 +243,10 @@ job page shows VERIFIED.
 ## 5. Submission (Cerebral Valley platform, before Wed Nov 4 2026, 9:00 PM ET)
 
 1. Create the GitHub repo and push: `gh repo create partsmith --public --source=. --push`. Run `make gitleaks` first, then check
-   that `git ls-files | grep -E 'PLAN.md|KICKOFF_PROMPT.md|REUSE_LOG.md|\.env$'` prints nothing.
-2. Write the README **Credits** section (use the gitignored `docs/REUSE_LOG.md`).
-3. Upload the video, then submit: problem statement **Push the Frontier**. Claim the bonus prizes with evidence links:
+   that `git ls-files | grep -E '\.env$'` prints nothing.
+2. Upload the video, then submit: problem statement **Push the Frontier**. Claim the bonus prizes with evidence links:
    Open Weights → `/models` + `eval/reports/latest/open_weights.json` + bench open-weights rows; Agentic → the workspace Agent
    tab (thoughts, tool calls, focus) + a factory run; Creative → Muse Image broken-region completion with its code gate,
    see-the-fix preview and install card; Viral → X post link.
-4. Post on X (clip + thread), and do the community-vote outreach.
-5. Open the repo, the video and the live URL in an incognito window, then save the submission confirmation screenshot.
+3. Post on X (clip + thread), and do the community-vote outreach.
+4. Open the repo, the video and the live URL in an incognito window, then save the submission confirmation screenshot.

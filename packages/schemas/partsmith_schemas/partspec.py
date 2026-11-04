@@ -1,4 +1,4 @@
-"""PartSpec: the typed contract between understand -> plan -> build -> verify (PLAN §6.3, Appendix B)."""
+"""PartSpec: the typed contract between understand -> plan -> build -> verify."""
 
 from __future__ import annotations
 

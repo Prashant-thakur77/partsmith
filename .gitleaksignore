@@ -2,3 +2,4 @@
 services/registry/describe.py:generic-api-key:331
 apps/web/e2e/fixtures/generated/product.json:generic-api-key:2272
 apps/web/e2e/fixtures/generated/product.json:generic-api-key:2972
+services/registry/describe.py:generic-api-key:389

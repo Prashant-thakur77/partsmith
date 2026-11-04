@@ -1,4 +1,4 @@
-"""Job event stream (SSE + run.jsonl). PLAN §4.4. Every event carries ctx so stale results are discarded."""
+"""Job event stream (SSE + run.jsonl). Every event carries ctx so stale results are discarded."""
 
 from __future__ import annotations
 

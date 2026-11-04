@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 760 230" width="760" height="230" font-family="system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif" role="img" aria-label="Median error per dimension: single shot and full loop">
+<rect width="760" height="230" rx="10" fill="#fdfcf9" stroke="#e4dfd4"/>
+<text x="24.0" y="32.0" font-size="17" fill="#1c2230" font-weight="600" text-anchor="start">Median error per dimension: single shot and full loop</text>
+<text x="24.0" y="52.0" font-size="13" fill="#5b6170" font-weight="400" text-anchor="start">Lower is better. Both use the same measurements; the loop adds the verifier's feedback and the fix agent.</text>
+<text x="24.0" y="100.0" font-size="13" fill="#1c2230" font-weight="600" text-anchor="start">Rendered parts (n = 12)</text>
+<path d="M210.0 78.0H546.0Q550.0 78.0 550.0 82.0V92.0Q550.0 96.0 546.0 96.0H210.0Z" fill="#2f6f9f"/>
+<text x="558.0" y="92.0" font-size="12" fill="#1c2230" font-weight="400" text-anchor="start">Single shot: 0.18 mm</text>
+<path d="M210.0 100.0H394.9Q398.9 100.0 398.9 104.0V114.0Q398.9 118.0 394.9 118.0H210.0Z" fill="#c2410c"/>
+<text x="406.9" y="114.0" font-size="12" fill="#1c2230" font-weight="400" text-anchor="start">Full loop: 0.1 mm</text>
+<text x="24.0" y="158.0" font-size="13" fill="#1c2230" font-weight="600" text-anchor="start">Reference objects (n = 8)</text>
+<path d="M210.0 136.0H281.6Q285.6 136.0 285.6 140.0V150.0Q285.6 154.0 281.6 154.0H210.0Z" fill="#2f6f9f"/>
+<text x="293.6" y="150.0" font-size="12" fill="#1c2230" font-weight="400" text-anchor="start">Single shot: 0.04 mm</text>
+<path d="M210.0 158.0H300.4Q304.4 158.0 304.4 162.0V172.0Q304.4 176.0 300.4 176.0H210.0Z" fill="#c2410c"/>
+<text x="312.4" y="172.0" font-size="12" fill="#1c2230" font-weight="400" text-anchor="start">Full loop: 0.05 mm</text>
+<text x="24.0" y="216.0" font-size="11" fill="#5b6170" font-weight="400" text-anchor="start">Source: eval/reports/latest/report.json, tables.synthetic and tables.reference_objects, configs B1 and PS</text>
+</svg>

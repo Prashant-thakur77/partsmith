@@ -1,4 +1,4 @@
-"""Jobs, registry parts, bakes and variants (PLAN §4.3, §8.3)."""
+"""Jobs, registry parts, bakes and variants."""
 
 from __future__ import annotations
 

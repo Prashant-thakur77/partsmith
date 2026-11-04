@@ -34,7 +34,7 @@ export type DataOrigin = z.output<typeof DataOriginSchema>;
 export const ProviderModeSchema = z.enum(["live", "mock", "replay"]);
 export type ProviderMode = z.output<typeof ProviderModeSchema>;
 
-export const GroundTruthSourceSchema = z.enum(["synthetic_exact", "reference_spec", "ruler", "caliper", "expected_outcome"]);
+export const GroundTruthSourceSchema = z.enum(["synthetic_exact", "reference_spec", "ruler", "caliper", "published_spec_pasted", "expected_outcome"]);
 export type GroundTruthSource = z.output<typeof GroundTruthSourceSchema>;
 
 export const CitationSchema = z.object({ url: z.string(), title: z._default(z.string(), ""), quote: z._default(z.string(), "") });
@@ -962,6 +962,8 @@ export const BenchReportSchema = z.object({
   label: z.nullish(z.string()),
   notes: z._default(z.array(z.string()), []),
   tables: z.record(z.string(), BenchTableSchema),
+  /** Suites kept apart from `tables` (public photos pasted on a rendered mat); shown after them, never merged. */
+  separate_tables: z._default(z.record(z.string(), BenchTableSchema), {}),
   runs: z.optional(z.unknown()),
   failures: z._default(z.array(z.looseObject({ title: z.string(), reason: z.string(), overlay_url: z.nullish(z.string()) })), []),
   /** Side reports next to report.json; a malformed one is dropped (null) rather than failing the whole bench. */

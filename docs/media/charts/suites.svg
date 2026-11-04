@@ -1,0 +1,34 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 760 270" width="760" height="270" font-family="system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif" role="img" aria-label="Every full-loop run, suite by suite">
+<rect width="760" height="270" rx="10" fill="#fdfcf9" stroke="#e4dfd4"/>
+<text x="24.0" y="32.0" font-size="17" fill="#1c2230" font-weight="600" text-anchor="start">Every full-loop run, suite by suite</text>
+<text x="24.0" y="52.0" font-size="13" fill="#5b6170" font-weight="400" text-anchor="start">Most hard photos end as best effort. Verified is not a promise on sizes a photo cannot see, such as height from above.</text>
+<rect x="24" y="64" width="12" height="12" rx="2" fill="#2e7d4f"/>
+<text x="42.0" y="75.0" font-size="12" fill="#1c2230" font-weight="400" text-anchor="start">Verified, within 0.5 mm on every size</text>
+<rect x="290" y="64" width="12" height="12" rx="2" fill="#b7791f"/>
+<text x="308.0" y="75.0" font-size="12" fill="#1c2230" font-weight="400" text-anchor="start">Verified, but over 0.5 mm off</text>
+<rect x="510" y="64" width="12" height="12" rx="2" fill="#cfc8ba"/>
+<text x="528.0" y="75.0" font-size="12" fill="#1c2230" font-weight="400" text-anchor="start">Not verified</text>
+<text x="24.0" y="109.0" font-size="13" fill="#1c2230" font-weight="600" text-anchor="start">Rendered parts (n = 12)</text>
+<rect x="275.0" y="92.0" width="54.9" height="24" rx="3" fill="#2e7d4f"/>
+<text x="302.4" y="109.0" font-size="12" fill="#ffffff" font-weight="600" text-anchor="middle">2</text>
+<rect x="331.9" y="92.0" width="282.4" height="24" rx="3" fill="#cfc8ba"/>
+<text x="473.1" y="109.0" font-size="12" fill="#1c2230" font-weight="600" text-anchor="middle">10</text>
+<text x="24.0" y="145.0" font-size="13" fill="#1c2230" font-weight="600" text-anchor="start">Reference objects (n = 8)</text>
+<rect x="275.0" y="128.0" width="111.8" height="24" rx="3" fill="#2e7d4f"/>
+<text x="330.9" y="145.0" font-size="12" fill="#ffffff" font-weight="600" text-anchor="middle">4</text>
+<rect x="388.8" y="128.0" width="111.8" height="24" rx="3" fill="#cfc8ba"/>
+<text x="444.6" y="145.0" font-size="12" fill="#1c2230" font-weight="600" text-anchor="middle">4</text>
+<text x="24.0" y="181.0" font-size="13" fill="#1c2230" font-weight="600" text-anchor="start">Intact parts (top photo only) (n = 6)</text>
+<rect x="275.0" y="164.0" width="111.8" height="24" rx="3" fill="#b7791f"/>
+<text x="330.9" y="181.0" font-size="12" fill="#ffffff" font-weight="600" text-anchor="middle">4</text>
+<rect x="388.8" y="164.0" width="54.9" height="24" rx="3" fill="#cfc8ba"/>
+<text x="416.2" y="181.0" font-size="12" fill="#1c2230" font-weight="600" text-anchor="middle">2</text>
+<text x="24.0" y="217.0" font-size="13" fill="#1c2230" font-weight="600" text-anchor="start">Public photos, pasted (n = 16)</text>
+<rect x="275.0" y="200.0" width="111.8" height="24" rx="3" fill="#2e7d4f"/>
+<text x="330.9" y="217.0" font-size="12" fill="#ffffff" font-weight="600" text-anchor="middle">4</text>
+<rect x="388.8" y="200.0" width="54.9" height="24" rx="3" fill="#b7791f"/>
+<text x="416.2" y="217.0" font-size="12" fill="#ffffff" font-weight="600" text-anchor="middle">2</text>
+<rect x="445.6" y="200.0" width="282.4" height="24" rx="3" fill="#cfc8ba"/>
+<text x="586.8" y="217.0" font-size="12" fill="#1c2230" font-weight="600" text-anchor="middle">10</text>
+<text x="24.0" y="256.0" font-size="11" fill="#5b6170" font-weight="400" text-anchor="start">Source: eval/reports/latest/report.json, runs.*.PS (verified, max_abs_err_mm)</text>
+</svg>

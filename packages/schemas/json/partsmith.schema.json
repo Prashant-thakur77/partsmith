@@ -601,6 +601,16 @@
           "title": "Mode",
           "type": "string"
         },
+        "recorded": {
+          "default": false,
+          "title": "Recorded",
+          "type": "boolean"
+        },
+        "stored": {
+          "default": false,
+          "title": "Stored",
+          "type": "boolean"
+        },
         "created_at": {
           "default": 0.0,
           "title": "Created At",
@@ -1630,6 +1640,18 @@
           "default": 0,
           "title": "Total Tests",
           "type": "integer"
+        },
+        "pass_shortfall": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Pass Shortfall"
         }
       },
       "required": [

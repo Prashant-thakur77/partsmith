@@ -1,0 +1,75 @@
+import cadquery as cq
+import math
+
+PARAMS = {
+    "thickness": (1.5, 0.8, 3.0, 0.1, "mm", False, "Thickness"),
+    "hole_diameter": (21.628, 18.0, 25.0, 0.1, "mm", True, "Hole Diameter"),
+    "outline_scale": (1.15, 0.85, 1.15, 0.01, "", False, "Outline Scale"),
+    "hole_count": (1, 1, 1, 1, "", False, "Hole Count"),
+}
+
+# measured base profile polyline, centred near origin, XY plane
+BASE_POINTS = [
+    (-8.59, -6.68),
+    (-6.889, -8.338),
+    (-5.239, -9.403),
+    (-3.457, -10.138),
+    (-1.382, -10.574),
+    (0.918, -10.565),
+    (2.951, -10.26),
+    (4.642, -9.666),
+    (6.593, -8.533),
+    (8.034, -7.295),
+    (9.118, -5.94),
+    (10.254, -3.776),
+    (10.743, -1.934),
+    (10.936, 0.686),
+    (10.566, 2.8),
+    (10.208, 3.52),
+    (10.361, 3.745),
+    (8.995, 6.185),
+    (7.851, 7.525),
+    (6.127, 8.92),
+    (4.269, 9.879),
+    (1.952, 10.501),
+    (-0.781, 10.61),
+    (-2.778, 10.332),
+    (-4.758, 9.628),
+    (-6.468, 8.609),
+    (-7.867, 7.425),
+    (-9.177, 5.808),
+    (-10.235, 3.762),
+    (-10.87, 1.057),
+    (-10.919, -0.928),
+    (-10.53, -2.951),
+    (-9.75, -4.909),
+]
+
+# measured hole center (essentially origin)
+HOLE_CENTER = (0.033, -0.004)
+
+def build(p: dict) -> cq.Workplane:
+    scale = p["outline_scale"]
+    thick = p["thickness"]
+    hd = p["hole_diameter"]
+    hcount = int(p["hole_count"])
+
+    scaled_pts = [(x * scale, y * scale) for x, y in BASE_POINTS]
+    scaled_center = (HOLE_CENTER[0] * scale, HOLE_CENTER[1] * scale)
+
+    # solid body extruded from mounting face Z=0 upward, centred at origin XY
+    body = cq.Workplane("XY").polyline(scaled_pts).close().extrude(thick)
+
+    # through hole - plain solid, cut through entire thickness
+    if hcount >= 1 and hd > 0:
+        body = (
+            body.faces(">Z")
+            .workplane()
+            .center(scaled_center[0], scaled_center[1])
+            .circle(hd / 2.0)
+            .cutThruAll()
+        )
+
+    return body
+
+result = build({k: v[0] for k, v in PARAMS.items()})

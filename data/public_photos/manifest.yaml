@@ -1,0 +1,63 @@
+# Test photos made from public photographs of real objects (tools/public_photos.py). Source: public_photo.
+# region: rectangle around the object in the stored photo, set by eye.
+# One SD card per photograph, chosen by position (first in the photo) and not by any result.
+# id1_card-1: a contactless chip card, taken to be ID-1 from what its photo shows; no size is published for this card.
+samples:
+  - {id: sd_card-1, object: sd_card, photo: p01.jpg, photo_id: 1, region: [60, 60, 1220, 1540], seed: 7101, method: threshold}
+  - {id: sd_card-2, object: sd_card, photo: p02.jpg, photo_id: 2, region: [60, 60, 1200, 1540], seed: 7102, method: threshold}
+  - {id: sd_card-3, object: sd_card, photo: p03.jpg, photo_id: 3, region: [60, 60, 1250, 1540], seed: 7103, method: threshold}
+  - {id: sd_card-4, object: sd_card, photo: p04.jpg, photo_id: 4, region: [60, 50, 830, 950], seed: 7104, method: threshold}
+  - {id: sd_card-6, object: sd_card, photo: p05.jpg, photo_id: 5, region: [20, 10, 470, 480], seed: 7106}
+  - {id: sd_card-8, object: sd_card, photo: p06.jpg, photo_id: 6, region: [390, 190, 975, 920], seed: 7108, method: threshold}
+  - {id: microsd_card-1, object: microsd_card, photo: p06.jpg, photo_id: 6, region: [980, 540, 1270, 920], seed: 7109, scale_from: sd_card-8, method: threshold}
+  - {id: sd_card-9, object: sd_card, photo: p07.jpg, photo_id: 7, region: [930, 250, 1385, 835], seed: 7110, method: threshold}
+  - {id: microsd_card-2, object: microsd_card, photo: p07.jpg, photo_id: 7, region: [630, 500, 865, 790], seed: 7111, scale_from: sd_card-9}
+  - {id: us_dime-1, object: us_dime, photo: p07.jpg, photo_id: 7, region: [180, 420, 520, 765], seed: 7112, scale_from: sd_card-9}
+  - {id: yen_5-1, object: yen_5, photo: p08.jpg, photo_id: 8, region: [310, 20, 1250, 930], seed: 7113}
+  - {id: yen_5-2, object: yen_5, photo: p09.jpg, photo_id: 9, region: [0, 0, 400, 400], seed: 7114, method: threshold, thresh_k: 0.4}
+  - {id: yen_5-3, object: yen_5, photo: p10.jpg, photo_id: 10, region: [0, 0, 400, 400], seed: 7115, method: threshold, thresh_k: 0.4}
+  - {id: id1_card-1, object: id1_card, photo: p11.jpg, photo_id: 11, region: [450, 310, 1360, 920], seed: 7116, stage: dark, method: threshold}
+  - {id: aa_cell-1, object: aa_cell, photo: p12.jpg, photo_id: 12, region: [40, 190, 1570, 700], seed: 7117}
+  - {id: sd_card-10, object: sd_card, photo: p14.jpg, photo_id: 14, region: [320, 40, 930, 510], seed: 7118, method: threshold}
+
+# Candidates looked at and left out (object, reason); counted by eval/public_photos.py.
+rejected:
+  - {object: lego_2x4, reason: strong perspective}
+  - {object: lego_2x4, reason: built into a model on a baseplate}
+  - {object: lego_2x4, reason: tiny pieces in a grid pattern; no 2x4 brick alone}
+  - {object: lego_2x4, reason: oblique view with the walls showing}
+  - {object: lego_2x4, reason: oblique view with the walls showing}
+  - {object: lego_2x4, reason: oblique view with the walls showing}
+  - {object: lego_2x4, reason: a render and not a photograph}
+  - {object: lego_2x4, reason: a loose pile}
+  - {object: sd_card, reason: the card fills the frame and touches its edge}
+  - {object: sd_card, reason: oblique view, background out of focus}
+  - {object: sd_card, reason: oblique view}
+  - {object: sd_card, reason: oblique view}
+  - {object: sd_card, reason: touching another card}
+  - {object: sd_card, reason: second card in a photograph already used}
+  - {object: sd_card, reason: second card in a photograph already used}
+  - {object: sd_card, reason: second card in a photograph already used}
+  - {object: sd_card, reason: third card in a photograph already used}
+  - {object: id1_card, reason: the card touches the frame}
+  - {object: id1_card, reason: not ID-1 proportions and no published size}
+  - {object: id1_card, reason: a loose pile}
+  - {object: id1_card, reason: held in a wall slot}
+  - {object: id1_card, reason: the card fills the frame}
+  - {object: id1_card, reason: the card fills the frame and shows a printed number}
+  - {object: id1_card, reason: a real payment card}
+  - {object: id1_card, reason: a real payment card}
+  - {object: aa_cell, reason: oblique view}
+  - {object: aa_cell, reason: cells touching each other}
+  - {object: aa_cell, reason: the cell runs out of the frame}
+  - {object: aa_cell, reason: the cell runs out of the frame}
+  - {object: aa_cell, reason: oblique view}
+  - {object: aa_cell, reason: standing on end}
+  - {object: aa_cell, reason: oblique view}
+  - {object: us_coin, reason: one published dimension only, so nothing held out}
+  - {object: us_coin, reason: one published dimension only, so nothing held out}
+  - {object: us_coin, reason: one published dimension only, so nothing held out}
+  - {object: washer, reason: inside a printed pack}
+  - {object: washer, reason: no published size for each washer}
+  - {object: washer, reason: inside a plastic bag}
+  - {object: microsd_card, reason: held in a hand}

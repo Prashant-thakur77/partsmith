@@ -8,6 +8,9 @@ recorded as a labelled deterministic mock. The committed replays (`data/replays`
 (`data/synthetic/samples`) and bench reports (`eval/reports`, including the lying-model evidence on `/judges`) are
 part of the API image, so `/judges`, "Try a sample" (`/jobs/demo`) and the registry work on first boot.
 
+**The submission runs on one AWS server:** API, web app and an HTTPS front with Docker Compose. See
+[aws/README.md](aws/README.md). The Modal and Vercel paths below remain optional.
+
 | Piece | Where | Files |
 |---|---|---|
 | API (FastAPI + SSE + MCP + sandboxed CadQuery worker) | Modal **or** any VM with Docker | `Dockerfile`, `Dockerfile.dockerignore`, `entrypoint.sh`, `modal_app.py`, `api.env.example` |

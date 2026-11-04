@@ -1,4 +1,4 @@
-"""Deterministic verifier: silhouettes, metrics, feature residuals, part tests and the pass rule (PLAN §6.5).
+"""Deterministic verifier: silhouettes, metrics, feature residuals, part tests and the pass rule.
 
 This package is the only authority for ``verified``.
 """

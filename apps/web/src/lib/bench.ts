@@ -27,6 +27,10 @@ export const BENCH_TABLES = [
 
 /** Plain titles for the expected-outcome suites the report adds after the three accuracy tables. */
 export const EXTRA_TITLES: Record<string, { title: string; blurb: string }> = {
+  public_photos: {
+    title: "Public photos of real objects, pasted on a rendered mat",
+    blurb: "Not phone photos, and not counted as real photos measured. Each object is cut out of a public photograph and pasted on our rendered screen mat. The paste scale comes from one published size, which is left out of the errors; only the other sizes count.",
+  },
   control: { title: "Intact parts: should be accepted", blurb: "Normal photos of parts that are fine. The check should say yes." },
   redteam: {
     title: "Bad photos: should be turned away",
@@ -38,6 +42,7 @@ export const GT_LABEL: Record<string, string> = {
   synthetic_exact: "synthetic, exact",
   reference_spec: "published spec",
   ruler: "ruler ±0.5 mm",
+  published_spec_pasted: "published spec, pasted at known size",
   caliper: "caliper",
   expected_outcome: "expected accept / reject / refuse per case",
 };
@@ -159,6 +164,7 @@ export function passVsVerifiedNote(columns: readonly string[]): string | null {
 export const KEY_COLUMNS = ["config", "family", "n", "median_abs_err_mm", "p90_mm", "pass@0.5", "verified_rate", "verified_but_off"];
 
 const NOUN: Record<string, string> = {
+  public_photos: "public photos pasted on a rendered mat",
   synthetic: "rendered test photos",
   reference_objects: "photos of standard objects",
   real_ruler: "real broken parts",

@@ -1,0 +1,66 @@
+import cadquery as cq
+import math
+
+PARAMS = {
+    "thickness": (2.1, 0.8, 5.0, 0.1, "mm", False, "Body thickness (Z)"),
+    "hidden_hole_diameter": (0.0, 0.0, 3.0, 0.1, "mm", True, "Hidden hole Ø at (-6.6,8.0) 0=no hole"),
+    "hole_count": (0, 0, 1, 1, "", False, "Number of hidden holes to create (0/1)"),
+}
+
+# base profile polyline points measured, centered at origin, XY plane
+PROFILE_POINTS = [
+    (15.698, 11.581),
+    (13.608, 12.132),
+    (-0.693, 12.233),
+    (-4.195, 11.83),
+    (-6.395, 12.19),
+    (-7.997, 12.183),
+    (-12.049, 11.662),
+    (-15.912, 7.592),
+    (-15.941, -10.559),
+    (-15.752, -11.759),
+    (-14.946, -12.173),
+    (-9.086, -12.236),
+    (-8.423, -12.116),
+    (-8.186, -11.408),
+    (-7.46, -11.777),
+    (-5.885, -11.731),
+    (-5.259, -11.325),
+    (-1.655, -11.496),
+    (-1.229, -12.123),
+    (12.765, -12.218),
+    (15.426, -12.022),
+    (15.877, -11.255),
+    (15.715, -1.487),
+    (15.876, 10.247),
+]
+
+HOLE_POS = (-6.6, 8.0)
+
+def build(p: dict) -> cq.Workplane:
+    thickness = float(p["thickness"])
+    hole_dia = float(p["hidden_hole_diameter"])
+    hole_count = int(p["hole_count"])
+
+    # Build base solid from polyline: mounting face on Z=0, +Z up, centred at origin
+    wp = cq.Workplane("XY")
+    # start polyline
+    wp = wp.moveTo(PROFILE_POINTS[0][0], PROFILE_POINTS[0][1])
+    for x, y in PROFILE_POINTS[1:]:
+        wp = wp.lineTo(x, y)
+    wp = wp.close()
+    solid = wp.extrude(thickness, combine=True)
+
+    # Optional hidden hole - only if diameter > 0 and count > 0
+    # keeps model solid when default 0 (no hole) as per photos/spec
+    if hole_count > 0 and hole_dia > 0.01:
+        # hole through full thickness, centred at HOLE_POS
+        solid = solid.faces(">Z").workplane(origin=(0, 0, 0)).pushPoints([HOLE_POS]).hole(hole_dia, depth=thickness)
+        # alternative robust cut if hole operation fails due to face selection:
+        # create cylinder cutter
+        # cutter = cq.Workplane("XY").pushPoints([HOLE_POS]).circle(hole_dia/2).extrude(thickness)
+        # solid = solid.cut(cutter)
+
+    return solid
+
+result = build({k: v[0] for k, v in PARAMS.items()})

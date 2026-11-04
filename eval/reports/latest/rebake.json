@@ -1,0 +1,21 @@
+{
+ "part": "battery cover (stored live run)",
+ "run": "j_261029_daf26965",
+ "formats": [
+  "stl"
+ ],
+ "n": 5,
+ "median_ms": 157,
+ "max_ms": 171,
+ "samples_ms": [
+  485,
+  147,
+  157,
+  136,
+  171,
+  142,
+  162
+ ],
+ "dropped_warmup": 2,
+ "note": "fresh bakes in a warm sandbox worker on the build laptop; no model call and no cache hit"
+}

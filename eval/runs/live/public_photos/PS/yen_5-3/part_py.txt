@@ -1,0 +1,94 @@
+import cadquery as cq
+import math
+
+PARAMS = {
+    "thickness": (1.5, 0.8, 3.0, 0.1, "mm", True, "Thickness"),
+    "hole_dia": (5.121, 4.0, 6.5, 0.01, "mm", True, "Center Hole Diameter"),
+    "hole_cx": (-0.097, -2.0, 2.0, 0.01, "mm", False, "Hole Center X"),
+    "hole_cy": (0.058, -2.0, 2.0, 0.01, "mm", False, "Hole Center Y"),
+    "slot_length": (10.72, 8.0, 16.0, 0.01, "mm", True, "Slot Length"),
+    "slot_width": (7.68, 6.0, 12.0, 0.01, "mm", True, "Slot Width"),
+    "slot_angle": (165.82, 0.0, 360.0, 0.5, "deg", False, "Slot Angle"),
+    "slot_cx": (0.17, -8.0, 8.0, 0.01, "mm", False, "Slot Center X"),
+    "slot_cy": (2.92, -8.0, 8.0, 0.01, "mm", False, "Slot Center Y"),
+}
+
+# measured outer polyline (mm) - already centred near origin
+OUTLINE_POINTS = [
+    (2.273, -10.714),
+    (4.998, -9.821),
+    (6.666, -8.821),
+    (7.761, -7.913),
+    (9.522, -5.673),
+    (10.393, -3.828),
+    (10.915, -1.596),
+    (11.001, 0.71),
+    (10.742, 2.542),
+    (9.822, 5.018),
+    (7.959, 7.531),
+    (6.19, 9.032),
+    (4.052, 10.168),
+    (2.064, 10.722),
+    (0.112, 10.885),
+    (-1.95, 10.706),
+    (-3.943, 10.137),
+    (-5.771, 9.244),
+    (-7.776, 7.658),
+    (-9.365, 5.591),
+    (-10.432, 3.331),
+    (-10.942, 1.17),
+    (-10.964, -0.725),
+    (-10.588, -3.465),
+    (-10.306, -3.635),
+    (-10.021, -4.722),
+    (-8.629, -6.789),
+    (-7.356, -8.139),
+    (-5.341, -9.49),
+    (-1.895, -10.739),
+    (0.63, -10.885),
+    (1.471, -10.581),
+]
+
+def build(p: dict) -> cq.Workplane:
+    t = float(p["thickness"])
+    hole_d = float(p["hole_dia"])
+    hole_cx = float(p["hole_cx"])
+    hole_cy = float(p["hole_cy"])
+    slot_L = float(p["slot_length"])
+    slot_W = float(p["slot_width"])
+    slot_angle = float(p["slot_angle"])
+    slot_cx = float(p["slot_cx"])
+    slot_cy = float(p["slot_cy"])
+
+    # base solid from polyline, extruded from Z=0 to +t (mounting face on Z=0)
+    wp = cq.Workplane("XY")
+    wp = wp.moveTo(OUTLINE_POINTS[0][0], OUTLINE_POINTS[0][1])
+    for x, y in OUTLINE_POINTS[1:]:
+        wp = wp.lineTo(x, y)
+    wp = wp.close()
+    base = wp.extrude(t)
+
+    # central through hole (see-through cylinder)
+    base = (
+        base.faces(">Z")
+        .workplane()
+        .pushPoints([(hole_cx, hole_cy)])
+        .circle(hole_d / 2.0)
+        .cutThruAll()
+    )
+
+    # obround slot - length is total length (including end arcs), width is end-arc diameter
+    # use transformed workplane + Sketch.slot for reliable stadium shape
+    # Sketch.slot(w, h) creates centered stadium with w=total length, h=width
+    slot_wp = cq.Workplane("XY").transformed(
+        offset=cq.Vector(slot_cx, slot_cy, 0),
+        rotate=cq.Vector(0, 0, slot_angle),
+    )
+    # create slot solid slightly taller than body to ensure through cut
+    slot_solid = slot_wp.sketch().slot(slot_L, slot_W).finalize().extrude(t + 0.4)
+    # ensure cut is through - slot_solid already spans Z 0..t+0.4
+    base = base.cut(slot_solid)
+
+    return base
+
+result = build({k: v[0] for k, v in PARAMS.items()})

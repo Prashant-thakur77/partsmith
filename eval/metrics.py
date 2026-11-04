@@ -1,4 +1,4 @@
-"""Bench aggregates (PLAN Appendix D): per-dimension absolute errors, pass@tol, CIs, IoU/Hausdorff summaries.
+"""Bench aggregates: per-dimension absolute errors, pass@tol, CIs, IoU/Hausdorff summaries.
 
 Pure numpy. Every function takes plain numbers so it can be checked by hand; reports carry N and the ground-truth
 source next to every number. P90 uses numpy's default linear interpolation between order statistics.

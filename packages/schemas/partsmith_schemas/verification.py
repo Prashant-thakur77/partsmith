@@ -1,4 +1,4 @@
-"""verification.json: the single source for the Verified badge, README tables and the video (PLAN §6.5)."""
+"""verification.json: the single source for the Verified badge, README tables and the video."""
 
 from __future__ import annotations
 

@@ -18,6 +18,7 @@ import contextlib
 import io
 import json
 import queue
+import re
 import threading
 import time
 import wave
@@ -75,6 +76,11 @@ def handshake(key: str, model: str, keywords: Sequence[str], language_bias: Sequ
     return frame
 
 
+def clean_transcript(text: str) -> str:
+    """The transcript without the service's speaker tags (`<|speaker_A|>`), which are not words anyone said."""
+    return re.sub(r"<\|?speaker[^>]*>", "", text).strip()
+
+
 def _to_event(frame: dict[str, Any]) -> VoiceEvent | None:
     kind = frame.get("type")
     turn = frame.get("turnId")
@@ -84,10 +90,13 @@ def _to_event(frame: dict[str, Any]) -> VoiceEvent | None:
     if kind == "speechEnd":
         return VoiceEvent("speech_end", turn_id=turn_id)
     if kind == "speechComplete":
-        return VoiceEvent("final", str(frame.get("transcript", "")).strip(), turn_id)
+        text = clean_transcript(str(frame.get("transcript", "")))
+        return (
+            VoiceEvent("final", text, turn_id) if text else None
+        )  # an empty turn at the end of a session is not speech
     if kind == "transcript":
-        text = str(frame.get("transcript", "")).strip()
-        return VoiceEvent("final" if frame.get("final") else "partial", text, turn_id)
+        text = clean_transcript(str(frame.get("transcript", "")))
+        return VoiceEvent("final" if frame.get("final") else "partial", text, turn_id) if text else None
     if kind == "error":
         raise ProviderError(redact(f"Muse Voice realtime error: {frame.get('message', frame)}"), provider="meta")
     return None

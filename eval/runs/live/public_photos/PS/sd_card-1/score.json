@@ -1,0 +1,108 @@
+{
+ "suite": "public_photos",
+ "config": "PS",
+ "sample_id": "sd_card-1",
+ "split": "held_out",
+ "kind": "public_photo",
+ "preset": "sd_card",
+ "mode": "live",
+ "gt_source": "published_spec_pasted",
+ "status": "best_effort",
+ "verified": false,
+ "iterations": 4,
+ "iterations_to_converge": null,
+ "strategy": "free_code",
+ "template": null,
+ "verifier_max_error_mm": 11.394923655562428,
+ "retake_reason": null,
+ "failed_checks": [],
+ "usd": 0.505244,
+ "tokens_in": 120850,
+ "tokens_out": 92219,
+ "model_calls": 24,
+ "model_ms": 659924,
+ "provider_modes": [
+  "live"
+ ],
+ "providers": {
+  "segment": [
+   "meta:sam-3.1"
+  ],
+  "understand": [
+   "meta:muse-spark-1.3"
+  ],
+  "segment_points": [
+   "meta:sam-3.1"
+  ],
+  "plan": [
+   "baseten:meta-models/muse-spark-open-1026"
+  ],
+  "build": [
+   "baseten:meta-models/muse-spark-open-1026"
+  ],
+  "fix_agent": [
+   "baseten:meta-models/muse-spark-open-1026"
+  ],
+  "judge": [
+   "meta:muse-spark-1.3"
+  ],
+  "fix": [
+   "baseten:meta-models/muse-spark-open",
+   "meta:muse-spark-1.3"
+  ]
+ },
+ "convergence": [
+  {
+   "iter": 1,
+   "hausdorff_mm": 11.394923655562428,
+   "iou": 0.9531884604111711,
+   "max_error_mm": 11.394923655562428
+  },
+  {
+   "iter": 2,
+   "hausdorff_mm": 11.394923655562428,
+   "iou": 0.9531884604111711,
+   "max_error_mm": 11.394923655562428
+  },
+  {
+   "iter": 3,
+   "hausdorff_mm": 11.401679925301288,
+   "iou": 0.9409317803660566,
+   "max_error_mm": 11.401679925301288
+  },
+  {
+   "iter": 4,
+   "hausdorff_mm": 11.394923655562428,
+   "iou": 0.9481589348866237,
+   "max_error_mm": 11.394923655562428
+  }
+ ],
+ "wall_s": 675.51,
+ "dims": [
+  {
+   "name": "length",
+   "gt_mm": 32.0,
+   "model_mm": 31.9625,
+   "error_mm": -0.0375,
+   "set_by_construction": true
+  },
+  {
+   "name": "width",
+   "gt_mm": 24.0,
+   "model_mm": 23.9247,
+   "error_mm": -0.0753,
+   "within_spec": true
+  }
+ ],
+ "missed": [],
+ "extra_holes": 2,
+ "pass_0_3": true,
+ "pass_0_5": true,
+ "valid": true,
+ "valid_reason": "",
+ "failure_category": null,
+ "git": {
+  "sha": "1f77aad30f748b303ab28a048e362a72929fe3d1",
+  "dirty": true
+ }
+}

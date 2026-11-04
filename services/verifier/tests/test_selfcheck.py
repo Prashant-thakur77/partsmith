@@ -8,7 +8,7 @@ from services.verifier.selfcheck import SELF_HAUSDORFF_MAX_MM, format_table, run
 
 @pytest.mark.slow
 def test_phase2_exit_gate(vpool: WarmPool) -> None:
-    """PLAN §14 Phase 2: self-consistency < 0.15 mm and +/-1 mm perturbations detected with the right sign."""
+    """Self-consistency < 0.15 mm and +/-1 mm perturbations detected with the right sign."""
     rows = run(vpool)
     table = format_table(rows)
     assert len(rows) == 10, table

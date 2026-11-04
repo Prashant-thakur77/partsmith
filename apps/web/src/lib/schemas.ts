@@ -91,6 +91,8 @@ export interface BuyOrPrint {
   prints?: Array<PrintEstimate>;
   lookup?: BuyLookup | null;
   mode?: "live" | "mock" | "replay";
+  recorded?: boolean;
+  stored?: boolean;
   created_at?: number;
   notes?: Array<string>;
 }
@@ -261,6 +263,7 @@ export interface IterationEvent {
   iou?: number | null;
   passed_tests?: number;
   total_tests?: number;
+  pass_shortfall?: number | null;
 }
 
 export interface JobInput {

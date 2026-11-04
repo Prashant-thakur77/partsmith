@@ -39,6 +39,7 @@ class GroundTruthSource(StrEnum):
     caliper = "caliper"
     expected_outcome = "expected_outcome"
     """The expected refusal/accept outcome of a gate case (control and red-team suites), not a mm value."""
+    published_spec_pasted = "published_spec_pasted"  # public photo pasted on a rendered mat at a scale set by the spec
 
 
 class Citation(Strict):
@@ -67,7 +68,7 @@ class Measured(Strict):
 Point2 = tuple[float, float]
 Json = dict[str, Any]
 
-# Pass rule thresholds (PLAN §6.5). Code is the only authority for "verified".
+# Pass rule thresholds. Code is the only authority for "verified".
 HAUSDORFF_PASS_MM = 0.5
 IOU_PASS = 0.97
 FEATURE_TOL_MM = 0.15

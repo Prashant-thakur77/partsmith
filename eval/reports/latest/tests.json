@@ -1,0 +1,69 @@
+{
+ "generated_at": "2026-11-04T23:08:07+00:00",
+ "git": {
+  "sha": "1f77aad30f748b303ab28a048e362a72929fe3d1",
+  "dirty": true
+ },
+ "gates": {
+  "backend": {
+   "title": "Backend unit tests (pytest)",
+   "command": "make test",
+   "seconds": 275,
+   "tests": 1023,
+   "passed": 1023,
+   "failed": 0,
+   "skipped": 0,
+   "status": "passed"
+  },
+  "web_unit": {
+   "title": "Web unit tests (node --test)",
+   "command": "pnpm -s test (in apps/web)",
+   "seconds": 1,
+   "tests": 153,
+   "passed": 153,
+   "failed": 0,
+   "skipped": 0,
+   "status": "passed"
+  },
+  "browser": {
+   "title": "Browser tests (Playwright)",
+   "command": "pnpm -s exec playwright test --workers=2 (after next build)",
+   "seconds": 303,
+   "tests": 552,
+   "passed": 273,
+   "failed": 0,
+   "skipped": 279,
+   "status": "passed"
+  },
+  "deploy_check": {
+   "title": "Deploy configuration check",
+   "command": "make deploy-check",
+   "seconds": 0,
+   "status": "passed"
+  },
+  "python_lint": {
+   "title": "Python lint and format (ruff)",
+   "command": "make lint",
+   "seconds": 0,
+   "status": "passed"
+  },
+  "python_types": {
+   "title": "Python types (mypy --strict)",
+   "command": "make typecheck",
+   "seconds": 5,
+   "status": "failed"
+  },
+  "web_types": {
+   "title": "Web types (tsc)",
+   "command": "pnpm -C apps/web -s typecheck",
+   "seconds": 2,
+   "status": "passed"
+  },
+  "web_lint": {
+   "title": "Web lint (eslint)",
+   "command": "pnpm -C apps/web -s lint",
+   "seconds": 4,
+   "status": "passed"
+  }
+ }
+}

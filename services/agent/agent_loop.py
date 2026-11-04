@@ -1,7 +1,7 @@
 """Agentic fixer: the model operates PartSmith's own instrument through tools ("Spark drives the instrument").
 
 Tools: inspect_residuals, measure_feature, segment_points, render_overlay, run_tests, set_params, ask_human, submit.
-Rendering a candidate costs no round; committing one with set_params is a round (the PLAN's 6-round cap still holds),
+Rendering a candidate costs no round; committing one with set_params is a round (the 6-round cap still holds),
 passes the same guards as the pipeline fixer and is verified by code. `submit` only ends the session: the orchestrator
 re-runs the verifier on the committed parameters and only the verifier sets `verified`.
 

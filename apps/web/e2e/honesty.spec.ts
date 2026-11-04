@@ -68,6 +68,30 @@ test("results: shares read as counts of cases, failures by part and condition, a
   await expect(gallery.getByText("syn-hook-tilt-s656341 · full pipeline (synthetic, held-out)")).toBeVisible();
 });
 
+test("results: public photos get their own labelled table, never the words real photos measured", async ({ page }) => {
+  await setup(page);
+  const pub = {
+    status: "ok",
+    title: "public photos (GT: published spec, pasted at known size)",
+    n: 3,
+    ground_truth: "published_spec_pasted",
+    ci: "95 %",
+    columns: ["config", "n", "median_abs_err_mm"],
+    rows: [{ config: "PS", n: 3, median_abs_err_mm: 0.4 }],
+    headline: { config: "PS", median_abs_err_mm: 0.4, n: 3 },
+    median_abs_err_mm: 0.4,
+    note: "Not phone captures and not counted as real photos measured.",
+  };
+  const withPublic = { ...bench, separate_tables: { public_photos: pub } };
+  await page.route("**/api/v1/bench", (r) => r.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify(withPublic) }));
+  await page.goto("/results");
+  const section = page.locator("#public_photos");
+  await expect(section.getByRole("heading", { name: "Public photos of real objects, pasted on a rendered mat" })).toBeVisible();
+  await expect(section.getByText("Not phone photos, and not counted as real photos measured.")).toBeVisible();
+  await expect(section.getByText("ground truth: published spec, pasted at known size")).toBeVisible();
+  await expect(section.getByText("N = 3")).toBeVisible();
+});
+
 test("models: one set of mode words with one legend; the open-weights line says what it counts", async ({ page }) => {
   await setup(page);
   const s = { ...status, open_weights: { open_weights_only: false, stages_live_on_open_weights: [], calls_on_open_weights: 404, last_live_call_ts: {} } };

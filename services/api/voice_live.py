@@ -47,6 +47,7 @@ DRAIN_S = 15.0  # after the upload ends, wait this long for the last transcripts
 EDIT_TIMEOUT_S = 90.0  # an edit re-bakes the part
 MAX_SESSIONS = 8  # concurrent live sessions per API process
 MAX_KEYWORDS = 24
+MAX_KEYWORD_CHARS = 30  # the realtime handshake rejects the whole session over one longer keyword
 LANGUAGE_BIAS = ("English", "Hindi")
 DEFAULT_MOCK_SCRIPT = "hook ko 1 mm mota karo"
 
@@ -77,7 +78,7 @@ def knob_keywords(specs: Sequence[ParamSpec]) -> list[str]:
     out: list[str] = []
     for s in specs:
         label = " ".join(s.label.split())
-        if label and len(label) <= 40 and label.lower() not in {k.lower() for k in out}:
+        if label and len(label) <= MAX_KEYWORD_CHARS and label.lower() not in {k.lower() for k in out}:
             out.append(label)
     return out[:MAX_KEYWORDS]
 

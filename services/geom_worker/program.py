@@ -1,4 +1,4 @@
-"""The part program contract (PLAN §6.4).
+"""The part program contract.
 
 A part program is a plain Python file::
 

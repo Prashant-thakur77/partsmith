@@ -615,7 +615,7 @@ export function WorkspaceClient({ id }: { id: string }) {
 
       <div className="grid grid-cols-1 gap-4 px-4 pt-4 sm:px-6 xl:grid-cols-[minmax(0,1fr)_minmax(0,1.3fr)_380px]">
         {/* centre: viewer (first on small screens) */}
-        <div className="overflow-hidden rounded-lg border border-border bg-surface xl:order-2">
+        <div id="model-viewer" className="overflow-hidden rounded-lg border border-border bg-surface xl:order-2">
           <CadViewer
             viewUrl={viewUrl}
             busy={knobBake.pending && changed}
@@ -697,7 +697,15 @@ export function WorkspaceClient({ id }: { id: string }) {
                   <AgentLog
                     events={s.agent}
                     modelCalls={s.modelCalls}
-                    onFocus={(e) => e.at_mm && setManualFocus({ at: e.at_mm, key: `m${e.seq}-${Date.now()}`, label: e.feature || e.label })}
+                    onFocus={(e) => {
+                      if (!e.at_mm) return;
+                      setManualFocus({ at: e.at_mm, key: `m${e.seq}-${Date.now()}`, label: e.feature || e.label });
+                      // The viewer loads when it scrolls into view, so bring it there or "Show" has nothing to show.
+                      document.getElementById("model-viewer")?.scrollIntoView({
+                        behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth",
+                        block: "nearest",
+                      });
+                    }}
                   />
                 </TabsContent>
                 <TabsContent value="trace">

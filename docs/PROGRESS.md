@@ -3,10 +3,9 @@
 Newest entries at the bottom. Each entry: what was done, evidence (command + output), what's next.
 A fresh session should read this file, `docs/ARCHITECTURE.md`, `docs/API.md` and `docs/DECISIONS.md`, then continue from "Next".
 
-## 2026-10-27 — Bootstrap (PLAN §0.2)
+## 2026-10-27 — Bootstrap
 
-- `.gitignore` checked before any `git add`: `git status --ignored` lists `.env`, `PLAN.md`, `KICKOFF_PROMPT.md`,
-  `docs/REUSE_LOG.md` as ignored; `git check-ignore -v PLAN.md .env` matches both.
+- `.gitignore` checked before any `git add`: `git status --ignored` lists `.env` as ignored.
 - Tools: uv 0.10.9, Node 22, pnpm, gh (logged in), make present; installed modal 1.6.2, gitleaks 8.30.1, Muse Code 1.4.13.
 - Repo is local only (no GitHub repo created, nothing pushed) by instruction.
 - Contracts written: `packages/schemas/partsmith_schemas`, `docs/ARCHITECTURE.md`, `docs/API.md`, `docs/DECISIONS.md`.
@@ -19,9 +18,9 @@ A fresh session should read this file, `docs/ARCHITECTURE.md`, `docs/API.md` and
 
 ## 2026-10-27 — Wave 1 results
 
-- **Spike (PLAN §0.2 step 5):** `spikes/golden_path.py` reproduced on this machine — correct code IoU 0.9995 / Hausdorff 0.125 mm,
+- **Spike:** `spikes/golden_path.py` reproduced on this machine — correct code IoU 0.9995 / Hausdorff 0.125 mm,
   deliberately wrong draft IoU 0.962 / HD95 0.523 mm (synthetic photo).
-- **Providers** (`c2d834e`): `uv run pytest services/agent/providers services/media tools/tests` → 69 passed; `make smoke` with zero keys →
+- **Providers** (`0d8c48b`): `uv run pytest services/agent/providers services/media tools/tests` → 69 passed; `make smoke` with zero keys →
   `0 live ✅ · 12 missing ⚠️ (mock) · 0 failed ❌`, exit 0. No live call has been made (no keys).
 - **Metrology** (`0002f31`): `uv run pytest services/metrology tools/mat tools/calib` → 69 passed. Synthetic accuracy (not a bench result):
   1 mm and 8 mm plates measured within 0.06 mm with height correction; uncorrected 8 mm plate off by 1.77 mm (the test asserts the
@@ -50,7 +49,7 @@ A fresh session should read this file, `docs/ARCHITECTURE.md`, `docs/API.md` and
 - **Full-loop bench** (`eval/run.py`, `make bench`): 70 mock runs in 5 min 21 s, configs B0/B1/B2/PS/PS-noTemplate/PS-noJudge/
   PS-noHeightCorr on synthetic (n=6) + reference-object renders (n=4); real_ruler pending. Mock pipeline check only. First pass:
   PS synthetic verified 1/6, median 0.10 mm but mean 3.6 mm (glare/white-part failures); `--check-regression` wired for CI.
-- **Verifier camera-frame comparison** (`3237b2f`): posed 8 mm plate verifies at Hausdorff 0.07 mm; ±1 mm / Ø+0.4 mm still caught.
+- **Verifier camera-frame comparison** (`77eb2fe`): posed 8 mm plate verifies at Hausdorff 0.07 mm; ±1 mm / Ø+0.4 mm still caught.
 - **Metrology round 2:** see-through hole fitting (thick-part holes 0/4 → 4/4 found, Ø error ≈ 0.02–0.03 mm on renders), hidden-hole
   notes, shadow suppression, dark screen stage + `contrast` gate check, thin side views, round profiles. Synthetic measure-only bench
   mean 1.503 → 0.628 mm (flat 0.172, tall features 0.984, side thickness 0.731, reference renders 0.194). Phase 1 gate (≤ 0.4 mm)
@@ -59,7 +58,7 @@ A fresh session should read this file, `docs/ARCHITECTURE.md`, `docs/API.md` and
   fragmentation after wall joining. Synthetic measure-only mean 0.667 → 0.466 mm (white parts on the dark stage 2.76 → 0.68 mm,
   14/14 accepted; white-on-light correctly rejected 5/6). Side-view thickness of parts with lower features stays ambiguous from
   one photo (reported as a range in notes, σ widened). Measure-only gate (≤ 0.4 mm): synthetic 0.466 FAIL, reference renders 0.170 PASS.
-- **API fixes from the live web suite** (`a705786`): atomic job writes, 409 codes, bench gallery files, cancel status, SSE headers,
+- **API fixes from the live web suite** (`891ef2a`): atomic job writes, 409 codes, bench gallery files, cancel status, SSE headers,
   forwarded-host links, shared Hinglish synonyms.
 - **Verification regression found and fixed:** after camera-frame verification landed, 0/17 demo samples verified. Bisect
   (exported trees per commit) pinned it to comparing the model with the binary mask's ~0.3 mm blur halo instead of the
@@ -67,7 +66,7 @@ A fresh session should read this file, `docs/ARCHITECTURE.md`, `docs/API.md` and
   coverage. IoU gate now only for views ≥ 20 mm wide (scale-free mean-distance gate below that; see DECISIONS).
   Demo samples (mock): 5/17 verified (battery cover 0.23, knob 0.41, L-bracket 0.30, AA cell 0.20, spacer 0.10 mm); remaining
   failures are mostly side-view shape errors of templates and the hard white/glare cases. `pytest -m "not live"`: 432 passed.
-- **Fresh bench at 1d815f4** (mock pipeline check, `make bench`): synthetic PS median 0.15 mm, mean 0.482 mm [0.15, 0.84],
+- **Fresh bench at 9b7e040** (mock pipeline check, `make bench`): synthetic PS median 0.15 mm, mean 0.482 mm [0.15, 0.84],
   verified 2/6; reference objects PS verified 2/4; real parts pending. Measure-only synthetic 0.466 mm, reference renders 0.170 mm.
   README tables regenerated by `tools/readme.py`.
 - **Registry seeded + replays:** 12 parts published from the committed samples (6 verified, 6 best effort ≤ 2 mm), all origin
@@ -90,7 +89,7 @@ A fresh session should read this file, `docs/ARCHITECTURE.md`, `docs/API.md` and
 
 ## 2026-10-27 — Round 2 (refinement): research → plan → build
 
-Research: feature gap analysis and a deep Meta capability study (summaries kept in the private plan).
+Research: feature gap analysis and a deep Meta capability study.
 Plan highlights: Spark tool-calling agent operates our metrology/verifier (code still decides); Spark points → SAM 3.1 point
 prompts → feature fits; phone orbit video → SAM 3.1 video tracking + per-frame ArUco poses → multi-view verification and
 visual-hull height; Muse Image completes broken regions behind a code gate; Muse Wonder web search for cited OEM specs;
@@ -98,20 +97,20 @@ realtime voice; Glimmer judge on hotspot crops; single export gate + lying-brain
 program-vs-mesh; registry clean-up, zip/embed, presets, admin token, requests/lessons, usage counter, open-weights evidence
 pack, QR phone handoff, repair-shop batches, share cards, Hinglish UI, landing replay loop; red-team/control suites, failure
 taxonomy, provenance, impact log.
-Schemas (`732ee27`): Source.cited + Citation, thought/tool_call/focus events, orbit view, new artifact kinds.
+Schemas (`ed0c2eb`): Source.cited + Citation, thought/tool_call/focus events, orbit view, new artifact kinds.
 Seven workstreams in flight: providers, verifier, synth/eval, API/registry, metrology, web, agent loop.
 - **Interruption (Oct 27 late):** earlyoom killed the VS Code process hosting the session while 7 workers ran tests/renders/
   builds in parallel on a 15 GB machine. Round-2 work is partially in the working tree (uncommitted). New rule: at most 2 workers
   at a time, `--jobs 2` / `NPROC=2`, no Playwright/Lighthouse/next build while Python benches run.
   Resume order: (1) providers + metrology, (2) verifier + agent loop, (3) API/registry + synth/eval, (4) web. Each worker checks
   its own partial edits (`git status`) and finishes its round-2 task.
-- **Round 2 committed (Oct 28, 2 workers at a time):** metrology points/orbit/recon gate (`11c3ed1`, `4d7ab79`: orbit height
+- **Round 2 committed (Oct 28, 2 workers at a time):** metrology points/orbit/recon gate (`e6b258b`, `6e0b1b4`: orbit height
   within ~0.3 mm on demo clips, single_part check); providers tool loop + SAM points/video + Wonder citations + Muse Image
-  edits + realtime voice (`25042a8`); verifier probes + can_ship + 16/16 lying-brain + program-vs-mesh 2.77 mm vs 0.00 mm
-  (`66078af`), orbit views + broken-region verification (`cc3fed8`); API/registry catalogue, export gate, bundles, presets,
-  requests, lessons, batches, usage, open-weights endpoint (`fc0cf16`); agentic fixer (`ef58595`, same 6 verified as the
-  pipeline, lower error on 6 more); synth orbit clips/broken parts/red-team/taxonomy/provenance (`51174b5`); refusals + upload
-  fields (`061ce7c`, red-team 9/10, control 6/6).
+  edits + realtime voice (`e2158eb`); verifier probes + can_ship + 16/16 lying-brain + program-vs-mesh 2.77 mm vs 0.00 mm
+  (`9d322a5`), orbit views + broken-region verification (`03b8691`); API/registry catalogue, export gate, bundles, presets,
+  requests, lessons, batches, usage, open-weights endpoint (`ee11cac`); agentic fixer (`55f5a2f`, same 6 verified as the
+  pipeline, lower error on 6 more); synth orbit clips/broken parts/red-team/taxonomy/provenance (`cc2373a`); refusals + upload
+  fields (`c4a83e7`, red-team 9/10, control 6/6).
 - **Web round 2 (`dccb06e`):** QR two-device fit flow, Agent tab (thought/tool/focus), cited footnotes, orbit + tap-to-point
   capture, three-state export gate, requests/lessons/shop/factory, presets, share cards, Hinglish, landing replay loop;
   133 e2e passed (75 skipped by design), e2e:live 9/9, Lighthouse mobile 95–97 / a11y 100.
@@ -140,7 +139,7 @@ Seven workstreams in flight: providers, verifier, synth/eval, API/registry, metr
   `.env`: Meta, Baseten (smoke ✅), Hugging Face (SAM 3 gated access approved).
 - **Next:** live runs once the Meta credits show → Modal deploys → real photos and a print from Prashant → reseed, bench,
   re-score.
-- **First live runs (Oct 29, `95790e6`):** `make smoke` 8/8 ✅ live (Spark 1.3, Wonder, Image, Voice file + realtime, SAM 3.1,
+- **First live runs (Oct 29, `c4da56e`):** `make smoke` 8/8 ✅ live (Spark 1.3, Wonder, Image, Voice file + realtime, SAM 3.1,
   Spark Open `-1026` on Baseten). First live seed of the 19 demos, $6.31 in total: 4 verified (spacer 0.077, ID-1 card 0.180,
   battery cover 0.249, broken hook tip 0.491 mm), AA cell and SD card refused by the model, broken latch failed (no solid).
   Live fixes: SAM confidence inside the mask token, stale `previous_response_id` on the install card, hinted template for
@@ -235,4 +234,5 @@ Seven workstreams in flight: providers, verifier, synth/eval, API/registry, metr
 - **Glance fixes (Nov 1):** one vocabulary for run counts on home, `/jobs` and `/admin` (listed = made here + recorded; finished = done or failed; the median gap counts jobs "with a measured gap"); `/results` names `pass@0.5` "All sizes within 0.5 mm of truth" and says why it differs from Verified; a labelled fit-check example drawn from the job's own outline (`/jobs/{id}/fit?example=1`, linked from the calibration gate and a new fit card on job pages; never a measurement); same-title attempts fold under the best one on `/jobs` and the `/review` queue; the review decision bar sits above the photo and model and sticks under the header (no longer covers them at 1440 × 900); landing loading states sized like the loaded sections (sign-off, replay player, knob demo) for mobile fast-scroll CLS; best-effort part cards inside the size limit lead with the failing check ("Best effort · side outline").
 - **Fix-loop guardrails (Nov 1):** code refuses a fixer edit that moves a knob out of a measured size test it already passes unless a failing residual or the worst spot of a failing view points at it (logged as `guard: … pinned`), and the fix rounds stop after 2 rounds that leave the keep rule's shortfall where it was (`stopped: no progress for 2 rounds`); new runs only, stored replays untouched. The job page's keep note is one line with the full rule in a fold; install card panels all get a code-drawn title strip (the image model is asked for no text); a small sloped edge within 2 mm of the bed no longer counts as an overhang (caster and knob: no supports; facts rule 3, stale stored "needed" re-derived on read); thumbnails add a labelled underside view when a blind opening hides under the part (the knob's D-bore), re-rendered on the next request.
 - **Submission docs (Nov 3):** README rewritten for judges (why it is different, a numbered 2-minute page path, what is real and what is not yet, admin console, registry and agents, spend cap, guardrails) with every generated block refreshed by `make bench` (same stored live runs, re-scored); `docs/API.md` gets a contents line and the missing error codes (every app route checked against it); `docs/ARCHITECTURE.md` runtime diagram adds the review, admin and budget layers; QUALITY rows updated from evidence (Playwright 271 passed; `make test` 976 passed); `make media` also records `docs/media/pages.png` (playground, describe, review desk, feedback log, admin overview, fit-check example).
+- **Public photos and test evidence (Nov 5):** real-camera scale check on printed boards (`eval/public_scale.py`), `public_photos` suite of real objects pasted on a rendered mat with the scale dimension left out of every error (`tools/public_photos.py`, `eval/public_photos.py`, one capped live run), and `make proof` (`tools/proof.py` → `eval/reports/latest/tests.json`, `docs/PROOF.md`). None of it counts as real photos measured; that count stays where the reports put it.
 - **Next:** real photos, a dozen honest reviews on `/review`, Modal login and deploy go-ahead from Prashant; the final video with real-world shots.

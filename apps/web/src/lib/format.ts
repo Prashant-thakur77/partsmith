@@ -60,14 +60,17 @@ export function timeAgo(tsSeconds: number, now = Date.now()): string {
   return `${Math.round(d / 86400)} d ago`;
 }
 
+/** In UTC, so the server's render and the visitor's browser print the same text whatever their time zones. */
 export function fmtDate(tsSeconds: number): string {
-  return new Date(tsSeconds * 1000).toLocaleString("en-GB", {
+  const text = new Date(tsSeconds * 1000).toLocaleString("en-GB", {
     year: "numeric",
     month: "short",
     day: "2-digit",
     hour: "2-digit",
     minute: "2-digit",
+    timeZone: "UTC",
   });
+  return `${text} UTC`;
 }
 
 export function shortSha(sha: string | null | undefined, n = 8): string {

@@ -1,4 +1,4 @@
-"""Steer: a one-line brief becomes a coherent kit of registry parts (PLAN flow D).
+"""Steer: a one-line brief becomes a coherent kit of registry parts.
 
 1. **Plan** — the `steer_plan` stage (Muse Wonder) turns the brief into parts, each a family template plus parameter
    values. Code checks the plan: unknown templates/parameters are mapped to the closest real ones or dropped, values are

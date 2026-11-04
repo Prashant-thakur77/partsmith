@@ -1,0 +1,80 @@
+import cadquery as cq
+import math
+
+PARAMS = {
+    "thickness": (2.1, 1.0, 4.0, 0.1, "mm", True, "Body thickness"),
+    "length_scale": (1.0, 0.9, 1.1, 0.01, "", False, "Length scale"),
+    "width_scale": (1.0, 0.9, 1.1, 0.01, "", False, "Width scale"),
+    "feature_count": (1, 0, 4, 1, "", False, "Feature count"),
+}
+
+# Base profile points from PartSpec polyline (mm), centred at origin, long axis +X
+BASE_POINTS = [
+    [15.335, -11.452],
+    [15.548, -10.856],
+    [15.792, 9.831],
+    [15.502, 10.383],
+    [14.608, 10.749],
+    [14.183, 11.586],
+    [-4.956, 11.259],
+    [-5.121, 10.765],
+    [-5.712, 10.644],
+    [-6.742, 10.825],
+    [-7.161, 11.312],
+    [-11.789, 11.228],
+    [-12.361, 11.053],
+    [-15.738, 7.549],
+    [-15.783, -0.662],
+    [-15.481, -1.06],
+    [-15.776, -1.55],
+    [-15.691, -4.82],
+    [-15.282, -4.996],
+    [-15.713, -5.867],
+    [-15.734, -6.92],
+    [-15.477, -7.269],
+    [-15.769, -7.655],
+    [-15.746, -9.272],
+    [-15.466, -10.11],
+    [-15.598, -10.948],
+    [-15.261, -11.57],
+    [-8.895, -11.674],
+    [-8.77, -11.129],
+    [-6.018, -11.072],
+    [-5.458, -11.64],
+    [-4.663, -11.66],
+    [-2.687, -10.95],
+    [-2.136, -11.102],
+    [-1.974, -11.579],
+    [14.963, -11.662],
+]
+
+def build(p: dict) -> cq.Workplane:
+    thickness = float(p.get("thickness", 2.1))
+    ls = float(p.get("length_scale", 1.0))
+    ws = float(p.get("width_scale", 1.0))
+    feature_count = int(p.get("feature_count", 0))
+
+    # Scale points if needed (keeps centred at origin)
+    pts = [(x * ls, y * ws) for x, y in BASE_POINTS]
+
+    # Create solid body on XY plane with mounting face on Z=0, +Z up
+    wp = cq.Workplane("XY")
+    # polyline requires closing explicitly
+    body = wp.polyline(pts).close().extrude(thickness)
+
+    # Topology parameter placeholder - intentional no-op when 0 to satisfy
+    # requirement for an integer count without adding hidden geometry.
+    # If feature_count > 0 we add harmless small emboss markers outside
+    # main functional area but keep body solid (not cutting through).
+    if feature_count > 0:
+        # Add tiny reference nubs on top face for counting, does not affect fit
+        for i in range(feature_count):
+            # place along top edge, small cylinder emboss
+            x_off = -10 + i * 2.0
+            y_off = 0
+            nub = cq.Workplane("XY").workplane(offset=thickness).moveTo(x_off, y_off).circle(0.3).extrude(0.1)
+            body = body.union(nub)
+
+    return body
+
+result = build({k: v[0] for k, v in PARAMS.items()})

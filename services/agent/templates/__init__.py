@@ -1,4 +1,4 @@
-"""Hand-written family templates: standalone part programs (PLAN §6.4) with module-level metadata.
+"""Hand-written family templates: standalone part programs with module-level metadata.
 
 Each ``<name>.py`` in this directory is a complete part program (``PARAMS``, ``build(p)``, ``result``) plus metadata
 constants: ``FAMILY``, ``TITLE``, ``SUMMARY``, ``TAGS`` and ``MEASURE_MAP`` (measured quantity -> the parameter that

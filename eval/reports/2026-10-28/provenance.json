@@ -1,7 +1,7 @@
 {
  "report": "eval/run.py",
  "generated_at": "2026-10-28T17:42:07+00:00",
- "git_sha": "a1cc53261280969617163abde80865837dd61588",
+ "git_sha": "039c6d2466e7d9b32618af14b1043ab13f0445ff",
  "git_dirty": true,
  "mode": "mock",
  "stages": {

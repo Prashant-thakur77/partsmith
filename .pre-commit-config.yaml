@@ -6,9 +6,9 @@ repos:
         entry: gitleaks git --pre-commit --staged --redact --no-banner
         language: system
         pass_filenames: false
-      - id: private-files
-        name: block private files
-        entry: bash -c 'git diff --cached --name-only | grep -E "(^|/)(PLAN\.md|KICKOFF_PROMPT\.md|REUSE_LOG\.md|\.env)$" && { echo "private file staged"; exit 1; } || exit 0'
+      - id: env-files
+        name: block env files
+        entry: bash -c 'git diff --cached --name-only | grep -E "(^|/)\.env$" && { echo ".env staged"; exit 1; } || exit 0'
         language: system
         pass_filenames: false
       - id: ruff

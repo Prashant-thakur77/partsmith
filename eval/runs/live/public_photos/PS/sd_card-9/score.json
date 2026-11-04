@@ -1,0 +1,109 @@
+{
+ "suite": "public_photos",
+ "config": "PS",
+ "sample_id": "sd_card-9",
+ "split": "held_out",
+ "kind": "public_photo",
+ "preset": "sd_card",
+ "mode": "live",
+ "gt_source": "published_spec_pasted",
+ "status": "best_effort",
+ "verified": false,
+ "iterations": 5,
+ "iterations_to_converge": null,
+ "strategy": "free_code",
+ "template": null,
+ "verifier_max_error_mm": 11.599359257563895,
+ "retake_reason": null,
+ "failed_checks": [],
+ "usd": 0.230515,
+ "tokens_in": 207870,
+ "tokens_out": 24089,
+ "model_calls": 25,
+ "model_ms": 240308,
+ "provider_modes": [
+  "live"
+ ],
+ "providers": {
+  "segment": [
+   "meta:sam-3.1"
+  ],
+  "understand": [
+   "meta:muse-spark-1.3"
+  ],
+  "plan": [
+   "baseten:meta-models/muse-spark-open-1026"
+  ],
+  "build": [
+   "baseten:meta-models/muse-spark-open-1026"
+  ],
+  "fix_agent": [
+   "baseten:meta-models/muse-spark-open-1026"
+  ],
+  "judge": [
+   "meta:muse-spark-1.3"
+  ]
+ },
+ "convergence": [
+  {
+   "iter": 1,
+   "hausdorff_mm": 11.60657802468077,
+   "iou": 0.9377449455676516,
+   "max_error_mm": 11.60657802468077
+  },
+  {
+   "iter": 2,
+   "hausdorff_mm": 11.605547830544856,
+   "iou": 0.9323961483859021,
+   "max_error_mm": 11.605547830544856
+  },
+  {
+   "iter": 3,
+   "hausdorff_mm": 11.599359257563895,
+   "iou": 0.9377371400136841,
+   "max_error_mm": 11.599359257563895
+  },
+  {
+   "iter": 4,
+   "hausdorff_mm": 11.59948163231448,
+   "iou": 0.9320282007374153,
+   "max_error_mm": 11.59948163231448
+  },
+  {
+   "iter": 5,
+   "hausdorff_mm": 11.607708704357684,
+   "iou": 0.9378382581648522,
+   "max_error_mm": 11.607708704357684
+  }
+ ],
+ "wall_s": 259.15,
+ "dims": [
+  {
+   "name": "length",
+   "gt_mm": 32.0,
+   "model_mm": 31.5803,
+   "error_mm": -0.4197,
+   "set_by_construction": true
+  },
+  {
+   "name": "width",
+   "gt_mm": 24.0,
+   "model_mm": 23.2484,
+   "error_mm": -0.7516,
+   "within_spec": false
+  }
+ ],
+ "missed": [],
+ "extra_holes": 0,
+ "pass_0_3": false,
+ "pass_0_5": false,
+ "valid": true,
+ "valid_reason": "",
+ "failure_category": "dim_off",
+ "overlay": "overlay.png",
+ "failure": "worst width -0.75 mm",
+ "git": {
+  "sha": "1f77aad30f748b303ab28a048e362a72929fe3d1",
+  "dirty": true
+ }
+}

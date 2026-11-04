@@ -202,6 +202,8 @@ def bench_tables() -> str:
         "synthetic": "Synthetic bench (exact ground truth)",
         "reference_objects": "Reference objects (vs published specs)",
         "real_ruler": "Real broken parts (vs school ruler, ±0.5 mm)",
+        "public_photos": "Public photos of real objects, pasted on a rendered mat (vs published spec; not phone photos, "
+        "not counted as real photos measured)",
     }
     cols = [
         "config",
@@ -216,7 +218,7 @@ def bench_tables() -> str:
         "usd_per_job",
     ]
     for key, title in names.items():
-        t = rep.get("tables", {}).get(key)
+        t = {**rep.get("tables", {}), **rep.get("separate_tables", {})}.get(key)
         out.append(f"\n**{title}**")
         if not t or t.get("status") != "ok":
             out.append(f"\n_Pending — {(t or {}).get('note') or 'no data yet'}._")
@@ -233,11 +235,38 @@ def bench_tables() -> str:
             out.append("\n_usd_per_job is — on mock rows: mock providers make no paid calls._")
         if t.get("note"):
             out.append(f"\n_{t['note']}_")
+    out += public_evidence()
     mo = rep.get("measure_only")
     if isinstance(mo, dict) and mo.get("summary"):
         out.append("\n**Measurement only (photo → mm, no CAD loop)**\n")
         out.append("```\n" + str(mo["summary"]).strip() + "\n```")
     return "\n".join(out)
+
+
+def public_evidence() -> list[str]:
+    """The two public-photo checks that run without a model, read from their own reports."""
+    out: list[str] = []
+    pm = _load("public_photos_measure.json")
+    h = ((pm or {}).get("summary") or {}).get("held_out") or {}
+    if pm and h.get("n_dims"):
+        s = pm["summary"]
+        out.append(
+            f"\n**Public photos, measure only (no model).** Capture gate passed {s['capture_gate_passed']}/{s['n_photos']}. "
+            f"Held-out dimensions: mean abs error {h['mean_abs_mm']} mm (95 % CI {h['ci95_mm'][0]} to {h['ci95_mm'][1]}), "
+            f"n = {h['n_dims']}. The dimension that set the paste scale is excluded. "
+            "`eval/reports/latest/public_photos_measure.md`"
+        )
+    ps = _load("public_scale.json")
+    sc = (ps or {}).get("summary") or {}
+    if ps and sc.get("status") == "ok":
+        out.append(
+            f"\n**Real-camera scale check (public photos of printed boards).** A flat-plane fit to the outer markers "
+            f"predicts the inner corners to {sc['mean_err_pct']} % of span (95 % CI {sc['ci95_pct'][0]} to "
+            f"{sc['ci95_pct'][1]}, n = {sc['n_corners']} corners in {sc['n_photos']} photos), "
+            f"{sc['mean_err_mm_over_100mm']} mm over a 100 mm span. It says nothing about a phone photographing a laptop "
+            "screen. `eval/reports/latest/public_scale.md`"
+        )
+    return out
 
 
 def _load(name: str) -> dict[str, Any] | None:
@@ -267,6 +296,13 @@ def evidence() -> str:
             out.append(
                 f"| Verified {what}{mock} that are > 0.5 mm off the ground truth | {h['verified_but_off']} "
                 f"(config {h['config']}) | `eval/reports/latest/report.json` → `tables.{key}` |"
+            )
+    for key, what in (("control", "intact parts with only a top photo"), ("public_photos", "public photos")):
+        ver = _verified_runs(rep, key)
+        if ver:
+            out.append(
+                f"| Verified {what}{mock} that are > 0.5 mm off the ground truth | {len(_off(ver))}/{len(ver)} (config PS) | "
+                f"`eval/reports/latest/report.json` → `runs.{key}.PS` |"
             )
     pvm = (_load("program_vs_mesh.json") or {}).get("summary")
     if pvm:
@@ -383,6 +419,8 @@ def status_line() -> str:
         )
     if photos == 0 or parts == 0:
         body += " Real-photo results are pending and say so in their tables."
+    if _suite_row(rep, "public_photos"):
+        body += " Public photos pasted on a rendered mat have their own table and are not counted as real photos."
     return f"{head}\n>\n> {body}"
 
 
@@ -406,9 +444,13 @@ def headline() -> str:
         for k, label in (("synthetic", "synthetic"), ("reference_objects", "reference objects"))
         if (tables.get(k) or {}).get("status") == "ok" and (tables[k].get("headline") or {}).get("verified_but_off")
     ]
+    for key, label in (("control", "intact parts, top photo only"), ("public_photos", "public photos")):
+        ver = _verified_runs(rep, key)
+        if ver:
+            vbo.append(f"**{len(_off(ver))}/{len(ver)}** {label}")
     rows.append(
-        f"| {' · '.join(vbo) or 'pending'} | verified parts that are > 0.5 mm off the ground truth (off / verified){tag} "
-        f"| {src} → `tables.*.headline.verified_but_off` |"
+        f"| {' · '.join(vbo) or 'pending'} | verified parts that are > 0.5 mm off the ground truth on some dimension (off / verified){tag}; "
+        f"[every one is listed](#every-verified-part-against-ground-truth) | {src} → `tables.*.headline.verified_but_off`, `runs.*.PS` |"
     )
     suites = [
         f"**{h['correct']}/{h['n']}** {label}"
@@ -428,6 +470,313 @@ def headline() -> str:
         )
     else:
         rows.append(f"| pending | median absolute error, synthetic photos | {src} |")
+    return "\n".join(rows)
+
+
+# --- first screen extras: badges, film slot ----------------------------------------------------------------------------
+
+
+def _shield(label: str, value: str, colour: str, link: str = "") -> str:
+    def enc(s: str) -> str:
+        return s.replace("-", "--").replace("_", "__").replace(" ", "%20").replace("/", "%2F")
+
+    img = f"![{label}: {value}](https://img.shields.io/badge/{enc(label)}-{enc(value)}-{colour})"
+    return f"[{img}]({link})" if link else img
+
+
+def badges() -> str:
+    """Only true things: the CI workflow, the stack, passing test suites and the open-weights share, from their reports."""
+    links = _read_links()
+    repo = str(links.get("repo") or "").rstrip("/")
+    out = []
+    if repo:
+        out.append(f"[![CI]({repo}/actions/workflows/ci.yml/badge.svg)]({repo}/actions/workflows/ci.yml)")
+    out += [_shield("Python", "3.12", "3776ab"), _shield("Next.js", "15", "1c2230")]
+    gates = (_load("tests.json") or {}).get("gates") or {}
+    for key, label in (("backend", "backend tests"), ("web_unit", "web unit tests")):
+        g = gates.get(key) or {}
+        if g.get("status") == "passed" and g.get("passed"):
+            out.append(_shield(label, f"{g['passed']} passing", "2e7d4f", "docs/PROOF.md"))
+    builder = (_load("open_weights.json") or {}).get("builder") or {}
+    if builder.get("calls"):
+        share = round(float(builder.get("share_tokens_open_weights") or 0) * 100)
+        out.append(
+            _shield(
+                "builder tokens on open weights", f"{share} percent", "c2410c", "eval/reports/latest/open_weights.json"
+            )
+        )
+    byp = _load("bypass.json") or {}
+    if byp.get("attempts"):
+        out.append(
+            _shield(
+                "lying-model attacks blocked",
+                f"{byp['blocked']} of {byp['attempts']}",
+                "2e7d4f",
+                "eval/reports/latest/bypass.json",
+            )
+        )
+    return " ".join(out)
+
+
+def film() -> str:
+    url = str(_read_links().get("video") or "").strip()
+    if not url:
+        return "_The demo film's link goes here when it is uploaded._"
+    thumb = ROOT / "docs" / "media" / "film-thumbnail.png"
+    return (
+        f"[![Watch the demo film](docs/media/film-thumbnail.png)]({url})"
+        if thumb.exists()
+        else f"**[Watch the demo film]({url})**"
+    )
+
+
+# --- time, verified audit, thresholds, failures, gates, rubric ----------------------------------------------------------
+
+BATTERY_RUN = "j_261029_daf26965"
+
+
+def _battery() -> dict[str, Any]:
+    """The stored battery-cover run's own timing, errors, cost and print estimate."""
+    d = ROOT / "data" / "replays" / BATTERY_RUN
+    s = json.loads((d / "summary.json").read_text())
+    ev = [json.loads(x) for x in (d / "run.jsonl").read_text().splitlines()]
+    first = next(e["ts"] for e in ev if e.get("t") == "artifact" and e.get("kind") == "threemf")
+    pla = json.loads((d / "buy_or_print.json").read_text())["prints"][0]
+    return {
+        "minutes": round((first - s["created_at"]) / 60, 2),
+        "errors": [round(e["hausdorff_mm"], 2) for e in ev if e.get("t") == "iteration"],
+        "usd": s["cost_usd"],
+        "print_minutes": pla["print_minutes"],
+        "grams": pla["grams"],
+        "inr": pla["filament_cost"]["INR"],
+    }
+
+
+def _suite_row(rep: dict[str, Any], key: str, config: str = "PS") -> dict[str, Any]:
+    t = {**(rep.get("tables") or {}), **(rep.get("separate_tables") or {})}.get(key) or {}
+    return next((r for r in t.get("rows") or [] if r.get("config") == config), {})
+
+
+def time_table() -> str:
+    """Measured times only; there is no manual baseline in this table because none was measured or found published."""
+    rep = _load("report.json") or {}
+    b = _battery()
+    src = "`eval/reports/latest/report.json`"
+    rows = ["| What | Measured | Model cost | Source |", "|---|---|---|---|"]
+    rows.append(
+        f"| One stored live run, photo to checked file (battery cover) | {b['minutes']} min, no answers needed from a person "
+        f"| ${b['usd']:.2f} | `data/replays/{BATTERY_RUN}/` (`run.jsonl`, `summary.json`) |"
+    )
+    for key, what in (
+        ("synthetic", "Median job, hard rendered photos"),
+        ("reference_objects", "Median job, reference-object renders"),
+        ("public_photos", "Median job, public photos of real objects pasted on a rendered mat"),
+    ):
+        r = _suite_row(rep, key)
+        if r:
+            rows.append(
+                f"| {what} (n = {r['n']}) | {float(r['median_wall_s']) / 60:.1f} min | ${float(r['usd_per_job']):.2f} per job | {src} → `median_wall_s`, `usd_per_job` |"
+            )
+    rb = _load("rebake.json") or {}
+    if rb.get("median_ms"):
+        rows.append(
+            f"| The next person changing a knob on that stored program (n = {rb['n']}) | {rb['median_ms']:g} ms median "
+            "| no model call | `eval/reports/latest/rebake.json` (`uv run python -m eval.rebake`) |"
+        )
+    rows.append(
+        f"| Printing it, by estimate | about {b['print_minutes']:g} min, {b['grams']:g} g of PLA, ₹{b['inr']:g} of filament "
+        f"| not a quote | `data/replays/{BATTERY_RUN}/buy_or_print.json` |"
+    )
+    return "\n".join(rows)
+
+
+SUITE_NAMES = {
+    "synthetic": "Rendered parts",
+    "reference_objects": "Reference objects (renders)",
+    "control": "Intact parts, top photo only",
+    "public_photos": "Public photos, pasted on a rendered mat",
+    "redteam": "Bad or unsuitable photos",
+}
+
+
+def _verified_runs(rep: dict[str, Any], key: str) -> list[dict[str, Any]]:
+    return [r for r in ((rep.get("runs") or {}).get(key) or {}).get("PS") or [] if r.get("verified")]
+
+
+def _off(rows: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    return [r for r in rows if (r.get("max_abs_err_mm") or 0) > 0.5]
+
+
+def audit() -> str:
+    """Every verified full-loop part, checked against ground truth on every dimension, including the misses."""
+    rep = _load("report.json") or {}
+    rows = [
+        "| Suite | Full-loop runs | Verified | Within 0.5 mm on every size | Off by more than 0.5 mm |",
+        "|---|---|---|---|---|",
+    ]
+    before = [r for k in ("synthetic", "reference_objects", "control", "redteam") for r in _verified_runs(rep, k)]
+    for key, name in SUITE_NAMES.items():
+        runs = ((rep.get("runs") or {}).get(key) or {}).get("PS") or []
+        ver = _verified_runs(rep, key)
+        rows.append(f"| {name} | {len(runs)} | {len(ver)} | {len(ver) - len(_off(ver))} | {len(_off(ver))} |")
+    pub = _verified_runs(rep, "public_photos")
+    height = sum("thickness" in str(r.get("failure")) for r in _off(before))
+    lines = [
+        "\n".join(rows),
+        f"\nBefore the public photos, the full loop verified **{len(before)}** parts, and **{len(_off(before))}** of them were "
+        f"more than 0.5 mm off on some dimension. **{height}** of those were in height, on intact parts with only a top photo, "
+        f'which cannot see height. The public-photo suite adds **{len(_off(pub))} of {len(pub)}**. So "verified" means the model '
+        "matches the photos it was given within the limits below. It is not a promise on sizes those photos cannot see, "
+        "and a size no check compared with a photo is listed as inferred.",
+        "\n<details><summary>Every verified run</summary>\n",
+        "| Suite | Sample | Worst error on any size | Note |",
+        "|---|---|---|---|",
+    ]
+    for key, name in SUITE_NAMES.items():
+        for r in _verified_runs(rep, key):
+            lines.append(
+                f"| {name} | `{r['sample_id']}` | {_fmt(r.get('max_abs_err_mm'))} mm | {r.get('failure') or 'within limit'} |"
+            )
+    lines.append("\n</details>")
+    return "\n".join(lines)
+
+
+THRESHOLD_MEANINGS = {
+    "HAUSDORFF_PASS_MM": "Largest allowed outline gap between model and photo, on every compared view",
+    "IOU_PASS": "Smallest allowed overlap (IoU) on views whose short side is at least 20 mm",
+    "FEATURE_TOL_MM": "Allowed error on a measured feature such as a hole diameter",
+    "BBOX_TOL_MM": "Allowed error on the overall outline length and width",
+    "MIN_WALL_MM": "Thinnest wall a printable part may have",
+    "BLUR_WARN": "Marker-edge sharpness below this warns",
+    "BLUR_FAIL": "Marker-edge sharpness below this rejects the photo",
+    "CLIP_HIGH": "Grey level at or above which a pixel counts as blown out",
+    "CLIP_LOW": "Grey level at or below which a pixel counts as crushed",
+    "CLIP_FLAT_STD": "Local grey-level spread under which a clipped area counts as carrying no texture",
+    "CLIP_WARN": "Share of clipped pixels on the stage that warns",
+    "CLIP_FAIL": "Share of clipped pixels on the stage that rejects the photo",
+    "CONE_CHROMA_TOL": "Colour distance under which a part counts as shadow-coloured",
+    "CONE_MIN_RATIO": "Brightness ratio under which a shadow-coloured part cannot be told from its shadow",
+    "CONTRAST_FAIL_WEAK": "Share of weak part edges that rejects the photo",
+    "CONTRAST_WARN_WEAK": "Share of weak part edges that warns",
+    "CONTRAST_MIN_LARGEST_FRACTION": "Share of the part the largest piece must hold, or the mask is fragmented",
+    "CONTRAST_MIN_SEPARATION": "Grey-level gap needed between part and stage",
+    "CONTRAST_MIN_SOLIDITY": "Smallest solidity for a mask to count as one part",
+    "EDGE_MIN_CONTRAST": "Grey-level step for an edge to count as strong",
+    "GLARE_FAIL_MARKERS": "Number of glared markers that rejects the photo",
+    "GLARE_MARKER_DARK_FRACTION": "Share of a marker's black cells blown out for it to count as glared",
+    "GLARE_MIN_BLOB_MM2": "Smallest bright blob that counts as glare on the stage (mm²)",
+    "GRID_CELLS": "Cells per side of an ArUco marker",
+    "MIN_MARKERS_WARN": "Fewer detected markers than this warns",
+    "MIN_PART_AREA_MM2": "Smallest part area accepted (mm²)",
+    "MOIRE_FAIL": "Periodic screen pattern strength that rejects the photo (rms grey levels)",
+    "MOIRE_WARN": "Periodic screen pattern strength that warns (rms grey levels)",
+    "MOIRE_PEAK_RATIO": "Spectral peak over its ring's median for a pattern to count as periodic",
+    "PATCH_PX_PER_CELL": "Pixels per marker cell when a marker is rectified for checking",
+    "REPROJ_FAIL_PX": "Marker reprojection error that rejects the photo",
+    "REPROJ_WARN_PX": "Marker reprojection error that warns",
+    "SCALE_FAIL": "Disagreement in marker size across the mat that rejects the photo",
+    "SCALE_WARN": "Disagreement in marker size across the mat that warns",
+    "SINGLE_PART_MIN_MM2": "Size above which a second object on the stage counts",
+    "SINGLE_PART_REL": "Size relative to the largest object above which a second object counts",
+    "STAGE_EDGE_MARGIN_MM": "Distance the part must keep from the stage edge",
+    "TILT_FAIL_DEG": "Camera tilt that rejects the photo",
+    "TILT_WARN_DEG": "Camera tilt that warns",
+}
+
+
+def thresholds() -> str:
+    """Every limit the code applies, read from `provenance.json`, with what it means."""
+    t = (_load("provenance.json") or {}).get("thresholds") or {}
+    gate = t.get("capture_gate") or {}
+    rows = ["| Limit | Value | Meaning |", "|---|---|---|"]
+    rows += [
+        f"| `{k}` | {v} | {THRESHOLD_MEANINGS.get(k, 'see the code')} |"
+        for k, v in t.items()
+        if not isinstance(v, dict)
+    ]
+    out = [
+        "**Pass rule (`services/verifier`)**\n",
+        "\n".join(rows),
+        "\n**Capture gate (`services/metrology/capture_gate.py`), checked before any paid call**\n",
+    ]
+    rows = ["| Limit | Value | Meaning |", "|---|---|---|"]
+    rows += [f"| `{k}` | {v} | {THRESHOLD_MEANINGS.get(k, 'see the code')} |" for k, v in gate.items()]
+    out.append("\n".join(rows))
+    return "\n".join(out)
+
+
+def failures() -> str:
+    """Why the runs that did not pass ended where they did, by suite and config."""
+    rep = _load("report.json") or {}
+    cats = rep.get("taxonomy_categories") or {}
+    tax = rep.get("failure_taxonomy") or {}
+    if not tax:
+        return "_No failure taxonomy yet._"
+    names = list(cats)
+    rows = [
+        "| Suite | Config | Runs | " + " | ".join(f"`{c}`" for c in names) + " |",
+        "|---|---|---|" + "---|" * len(names),
+    ]
+    for suite, configs in tax.items():
+        for cfg, counts in configs.items():
+            rows.append(
+                f"| {SUITE_NAMES.get(suite, suite)} | {cfg} | {counts.get('runs', 0)} | "
+                + " | ".join(str(counts.get(c, 0)) for c in names)
+                + " |"
+            )
+    legend = " · ".join(f"`{k}`: {v}" for k, v in cats.items())
+    return "\n".join(rows) + f"\n\n{legend}."
+
+
+def gates() -> str:
+    """The last `make proof` run. A gate that failed or did not run says so."""
+    t = _load("tests.json")
+    if not t:
+        return "_No gate report yet: run `make proof`._"
+    rows = ["| Gate | Command | Result | Took |", "|---|---|---|---|"]
+    for g in (t.get("gates") or {}).values():
+        count = f"{g['passed']} passed" if g.get("passed") else ""
+        if g.get("failed"):
+            count += f", {g['failed']} failed"
+        if g.get("skipped"):
+            count += f", {g['skipped']} skipped"
+        status = str(g.get("status", "?"))
+        rows.append(
+            f"| {g.get('title', '?')} | `{g.get('command', 'see docs/PROOF.md')}` | **{status}** {('(' + count + ')') if count else ''} | {g.get('seconds', '?')} s |"
+        )
+    return (
+        f"Last run {str(t.get('generated_at', '?'))[:16]} UTC. Details: [docs/PROOF.md](docs/PROOF.md).\n\n"
+        + "\n".join(rows)
+    )
+
+
+def rubric() -> str:
+    """The judging criteria and bonus prizes, each with where to check it. Numbers are read from the reports."""
+    rep = _load("report.json") or {}
+    byp = _load("bypass.json") or {}
+    pvm = (_load("program_vs_mesh.json") or {}).get("summary") or {}
+    b = _battery()
+    w = (_load("open_weights.json") or {}).get("builder") or {}
+    pub = _suite_row(rep, "public_photos")
+    tests = ((_load("tests.json") or {}).get("gates") or {}).get("backend") or {}
+    share = round(float(w.get("share_tokens_open_weights") or 0) * 100)
+    rows = [
+        "| Criterion | What we claim | Check it here |",
+        "|---|---|---|",
+        f"| **Impact**: who benefits, could people use it | A broken plastic part stops meaning a thrown-out appliance: no caliper, no CAD, no printer of your own. One stored run takes {b['minutes']} min and about ₹{b['inr']:g} of filament by estimate. Not yet shown: real phone photos and real prints | [The problem](#the-problem-and-who-it-serves), [Time](#how-long-it-takes-and-why-it-works), [Limitations](#limitations), `/requests`, `/shop` |",
+        f"| **Use of Meta AI tooling**: beyond a basic integration | SAM 3.1 as a measuring instrument (masks become millimetres, video tracking gives heights); Muse Spark names features and points at pixels, and SAM 3.1 cuts them; Muse Spark Open writes programs and operates our tools ({w.get('calls_on_open_weights', '?')} of {w.get('calls', '?')} builder calls on open weights); Muse Wonder's citations are checked by code; Muse Image completions must leave the markers and intact part unchanged; Voice Transcribe hears Hindi and English mixed, with knob names as keywords | [Meta models](#what-was-not-possible-before-and-how-metas-models-made-it-possible), `eval/reports/latest/open_weights.json`, `/models` |",
+        f"| **Technical depth and execution** | A deterministic verifier is the only writer of `verified`; sandboxed CAD; one export gate; {tests.get('passed', '?')} backend tests; {byp.get('blocked', '?')}/{byp.get('attempts', '?')} lying-model attacks blocked; mesh vs knob measured over {pvm.get('parts', '?')} parts | [Verify it yourself](#verify-it-yourself), [Results](#results), [docs/DECISIONS.md](docs/DECISIONS.md) |",
+        "| **Demo**: works, holds up live, good to watch | `/judges` replays a stored live run and shows a lying model being caught, with no login and no keys. The demo film walks the same flow | [Try it](#try-it-in-2-minutes), the link row at the top |",
+        f"| **Bonus: open weights** | Muse Spark Open on partner inference writes and fixes every program: {share} % of builder tokens. Muse Glimmer is wired for an own-GPU path but ran as a labelled mock in the stored bench, so it is not claimed | `eval/reports/latest/open_weights.json`, `infra/modal/` |",
+        "| **Bonus: agentic** | The fix agent reads residuals, measures, renders candidates, runs tests and sets knobs within bounded rounds, and code judges the result | job page Agent tab, `services/agent/agent_loop.py` |",
+        "| **Bonus: creative** | Muse Image completes the broken region under a code gate, previews the repair and draws the install card, always labelled as AI images | `services/metrology/recon_gate.py`, `services/media/preview.py` |",
+        "| **Bonus: viral, community vote** | Decided by the post and the gallery, not by this repo | the submission page |",
+    ]
+    if pub:
+        rows.insert(
+            4,
+            f"| **Technical depth: real objects** | {pub['n']} public photos of real objects, pasted on a rendered mat: median error {_fmt(pub['median_abs_err_mm'])} mm against published sizes. Not phone captures | `eval/reports/latest/report.json` → `separate_tables.public_photos`, `eval/REPRODUCE.md` |",
+        )
     return "\n".join(rows)
 
 
@@ -544,6 +893,14 @@ BLOCKS: dict[str, Callable[[], str]] = {
     "bench": bench_tables,
     "evidence": evidence,
     "built": built,
+    "badges": badges,
+    "film": film,
+    "time": time_table,
+    "audit": audit,
+    "thresholds": thresholds,
+    "failures": failures,
+    "gates": gates,
+    "rubric": rubric,
 }
 
 
@@ -560,6 +917,10 @@ def render(text: str) -> str:
 
 
 def main() -> None:
+    from tools import readme_charts
+
+    if (REPORT.parent / "report.json").exists():
+        readme_charts.write_all()
     README.write_text(render(README.read_text(encoding="utf-8")), encoding="utf-8")
     print(f"updated {README.relative_to(ROOT)}: {', '.join(BLOCKS)}")
 

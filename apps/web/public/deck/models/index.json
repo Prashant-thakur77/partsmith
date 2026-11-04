@@ -1,0 +1,2825 @@
+{
+ "parts": {
+  "battery-cover-45mm": {
+   "title": "Battery cover, 45.3 mm",
+   "status": "verified",
+   "max_error_mm": 0.39,
+   "knobs": {
+    "length": {
+     "label": "Overall length including tongues",
+     "unit": "mm",
+     "default": 45.3,
+     "topology": false,
+     "steps": [
+      {
+       "value": 35.3,
+       "file": "models/battery-cover-45mm__length_35.3.bin",
+       "params": {
+        "length": 35.3,
+        "width": 30.01,
+        "thickness": 1.5,
+        "tongue_length": 3.0,
+        "tongue_width": 4.8,
+        "tongue_count": 1.0,
+        "latch_width": 10.0,
+        "latch_height": 3.5,
+        "latch_overhang": 0.8,
+        "groove_count": 0.0,
+        "corner_radius": 1.9
+       },
+       "clamped": {},
+       "size_mm": [
+        35.3,
+        30.01,
+        5.0
+       ],
+       "triangles": 572,
+       "ms": 0,
+       "cache_hit": true
+      },
+      {
+       "value": 40.3,
+       "file": "models/battery-cover-45mm__length_40.3.bin",
+       "params": {
+        "length": 40.3,
+        "width": 30.01,
+        "thickness": 1.5,
+        "tongue_length": 3.0,
+        "tongue_width": 4.8,
+        "tongue_count": 1.0,
+        "latch_width": 10.0,
+        "latch_height": 3.5,
+        "latch_overhang": 0.8,
+        "groove_count": 0.0,
+        "corner_radius": 1.9
+       },
+       "clamped": {},
+       "size_mm": [
+        40.3,
+        30.01,
+        5.0
+       ],
+       "triangles": 572,
+       "ms": 0,
+       "cache_hit": true
+      },
+      {
+       "value": 45.3,
+       "file": "models/battery-cover-45mm__length_45.3.bin",
+       "params": {
+        "length": 45.3,
+        "width": 30.01,
+        "thickness": 1.5,
+        "tongue_length": 3.0,
+        "tongue_width": 4.8,
+        "tongue_count": 1.0,
+        "latch_width": 10.0,
+        "latch_height": 3.5,
+        "latch_overhang": 0.8,
+        "groove_count": 0.0,
+        "corner_radius": 1.9
+       },
+       "clamped": {},
+       "size_mm": [
+        45.3,
+        30.01,
+        5.0
+       ],
+       "triangles": 572,
+       "ms": 0,
+       "cache_hit": true
+      },
+      {
+       "value": 50.3,
+       "file": "models/battery-cover-45mm__length_50.3.bin",
+       "params": {
+        "length": 50.3,
+        "width": 30.01,
+        "thickness": 1.5,
+        "tongue_length": 3.0,
+        "tongue_width": 4.8,
+        "tongue_count": 1.0,
+        "latch_width": 10.0,
+        "latch_height": 3.5,
+        "latch_overhang": 0.8,
+        "groove_count": 0.0,
+        "corner_radius": 1.9
+       },
+       "clamped": {},
+       "size_mm": [
+        50.3,
+        30.01,
+        5.0
+       ],
+       "triangles": 572,
+       "ms": 0,
+       "cache_hit": true
+      },
+      {
+       "value": 55.3,
+       "file": "models/battery-cover-45mm__length_55.3.bin",
+       "params": {
+        "length": 55.3,
+        "width": 30.01,
+        "thickness": 1.5,
+        "tongue_length": 3.0,
+        "tongue_width": 4.8,
+        "tongue_count": 1.0,
+        "latch_width": 10.0,
+        "latch_height": 3.5,
+        "latch_overhang": 0.8,
+        "groove_count": 0.0,
+        "corner_radius": 1.9
+       },
+       "clamped": {},
+       "size_mm": [
+        55.3,
+        30.01,
+        5.0
+       ],
+       "triangles": 572,
+       "ms": 0,
+       "cache_hit": true
+      },
+      {
+       "value": 60.3,
+       "file": "models/battery-cover-45mm__length_60.3.bin",
+       "params": {
+        "length": 60.3,
+        "width": 30.01,
+        "thickness": 1.5,
+        "tongue_length": 3.0,
+        "tongue_width": 4.8,
+        "tongue_count": 1.0,
+        "latch_width": 10.0,
+        "latch_height": 3.5,
+        "latch_overhang": 0.8,
+        "groove_count": 0.0,
+        "corner_radius": 1.9
+       },
+       "clamped": {},
+       "size_mm": [
+        60.3,
+        30.01,
+        5.0
+       ],
+       "triangles": 572,
+       "ms": 0,
+       "cache_hit": true
+      },
+      {
+       "value": 65.3,
+       "file": "models/battery-cover-45mm__length_65.3.bin",
+       "params": {
+        "length": 65.3,
+        "width": 30.01,
+        "thickness": 1.5,
+        "tongue_length": 3.0,
+        "tongue_width": 4.8,
+        "tongue_count": 1.0,
+        "latch_width": 10.0,
+        "latch_height": 3.5,
+        "latch_overhang": 0.8,
+        "groove_count": 0.0,
+        "corner_radius": 1.9
+       },
+       "clamped": {},
+       "size_mm": [
+        65.3,
+        30.01,
+        5.0
+       ],
+       "triangles": 572,
+       "ms": 0,
+       "cache_hit": true
+      }
+     ]
+    },
+    "width": {
+     "label": "Width",
+     "unit": "mm",
+     "default": 30.01,
+     "topology": false,
+     "steps": [
+      {
+       "value": 22.01,
+       "file": "models/battery-cover-45mm__width_22.01.bin",
+       "params": {
+        "length": 45.3,
+        "width": 22.01,
+        "thickness": 1.5,
+        "tongue_length": 3.0,
+        "tongue_width": 4.8,
+        "tongue_count": 1.0,
+        "latch_width": 10.0,
+        "latch_height": 3.5,
+        "latch_overhang": 0.8,
+        "groove_count": 0.0,
+        "corner_radius": 1.9
+       },
+       "clamped": {},
+       "size_mm": [
+        45.3,
+        22.01,
+        5.0
+       ],
+       "triangles": 572,
+       "ms": 0,
+       "cache_hit": true
+      },
+      {
+       "value": 26.01,
+       "file": "models/battery-cover-45mm__width_26.01.bin",
+       "params": {
+        "length": 45.3,
+        "width": 26.01,
+        "thickness": 1.5,
+        "tongue_length": 3.0,
+        "tongue_width": 4.8,
+        "tongue_count": 1.0,
+        "latch_width": 10.0,
+        "latch_height": 3.5,
+        "latch_overhang": 0.8,
+        "groove_count": 0.0,
+        "corner_radius": 1.9
+       },
+       "clamped": {},
+       "size_mm": [
+        45.3,
+        26.01,
+        5.0
+       ],
+       "triangles": 572,
+       "ms": 0,
+       "cache_hit": true
+      },
+      {
+       "value": 30.01,
+       "file": "models/battery-cover-45mm__width_30.01.bin",
+       "params": {
+        "length": 45.3,
+        "width": 30.01,
+        "thickness": 1.5,
+        "tongue_length": 3.0,
+        "tongue_width": 4.8,
+        "tongue_count": 1.0,
+        "latch_width": 10.0,
+        "latch_height": 3.5,
+        "latch_overhang": 0.8,
+        "groove_count": 0.0,
+        "corner_radius": 1.9
+       },
+       "clamped": {},
+       "size_mm": [
+        45.3,
+        30.01,
+        5.0
+       ],
+       "triangles": 572,
+       "ms": 0,
+       "cache_hit": true
+      },
+      {
+       "value": 34.01,
+       "file": "models/battery-cover-45mm__width_34.01.bin",
+       "params": {
+        "length": 45.3,
+        "width": 34.01,
+        "thickness": 1.5,
+        "tongue_length": 3.0,
+        "tongue_width": 4.8,
+        "tongue_count": 1.0,
+        "latch_width": 10.0,
+        "latch_height": 3.5,
+        "latch_overhang": 0.8,
+        "groove_count": 0.0,
+        "corner_radius": 1.9
+       },
+       "clamped": {},
+       "size_mm": [
+        45.3,
+        34.01,
+        5.0
+       ],
+       "triangles": 572,
+       "ms": 1,
+       "cache_hit": true
+      },
+      {
+       "value": 38.01,
+       "file": "models/battery-cover-45mm__width_38.01.bin",
+       "params": {
+        "length": 45.3,
+        "width": 38.01,
+        "thickness": 1.5,
+        "tongue_length": 3.0,
+        "tongue_width": 4.8,
+        "tongue_count": 1.0,
+        "latch_width": 10.0,
+        "latch_height": 3.5,
+        "latch_overhang": 0.8,
+        "groove_count": 0.0,
+        "corner_radius": 1.9
+       },
+       "clamped": {},
+       "size_mm": [
+        45.3,
+        38.01,
+        5.0
+       ],
+       "triangles": 572,
+       "ms": 1,
+       "cache_hit": true
+      },
+      {
+       "value": 42.01,
+       "file": "models/battery-cover-45mm__width_42.01.bin",
+       "params": {
+        "length": 45.3,
+        "width": 42.01,
+        "thickness": 1.5,
+        "tongue_length": 3.0,
+        "tongue_width": 4.8,
+        "tongue_count": 1.0,
+        "latch_width": 10.0,
+        "latch_height": 3.5,
+        "latch_overhang": 0.8,
+        "groove_count": 0.0,
+        "corner_radius": 1.9
+       },
+       "clamped": {},
+       "size_mm": [
+        45.3,
+        42.01,
+        5.0
+       ],
+       "triangles": 572,
+       "ms": 1,
+       "cache_hit": true
+      },
+      {
+       "value": 46.01,
+       "file": "models/battery-cover-45mm__width_46.01.bin",
+       "params": {
+        "length": 45.3,
+        "width": 46.01,
+        "thickness": 1.5,
+        "tongue_length": 3.0,
+        "tongue_width": 4.8,
+        "tongue_count": 1.0,
+        "latch_width": 10.0,
+        "latch_height": 3.5,
+        "latch_overhang": 0.8,
+        "groove_count": 0.0,
+        "corner_radius": 1.9
+       },
+       "clamped": {},
+       "size_mm": [
+        45.3,
+        46.01,
+        5.0
+       ],
+       "triangles": 572,
+       "ms": 1,
+       "cache_hit": true
+      }
+     ]
+    },
+    "tongue_count": {
+     "label": "Hinge tongues",
+     "unit": "",
+     "default": 1.0,
+     "topology": true,
+     "steps": [
+      {
+       "value": 1,
+       "file": "models/battery-cover-45mm__tongue_count_1.bin",
+       "params": {
+        "length": 45.3,
+        "width": 30.01,
+        "thickness": 1.5,
+        "tongue_length": 3.0,
+        "tongue_width": 4.8,
+        "tongue_count": 1.0,
+        "latch_width": 10.0,
+        "latch_height": 3.5,
+        "latch_overhang": 0.8,
+        "groove_count": 0.0,
+        "corner_radius": 1.9
+       },
+       "clamped": {},
+       "size_mm": [
+        45.3,
+        30.01,
+        5.0
+       ],
+       "triangles": 572,
+       "ms": 0,
+       "cache_hit": true
+      },
+      {
+       "value": 2,
+       "file": "models/battery-cover-45mm__tongue_count_2.bin",
+       "params": {
+        "length": 45.3,
+        "width": 30.01,
+        "thickness": 1.5,
+        "tongue_length": 3.0,
+        "tongue_width": 4.8,
+        "tongue_count": 2.0,
+        "latch_width": 10.0,
+        "latch_height": 3.5,
+        "latch_overhang": 0.8,
+        "groove_count": 0.0,
+        "corner_radius": 1.9
+       },
+       "clamped": {},
+       "size_mm": [
+        45.3,
+        30.01,
+        5.0
+       ],
+       "triangles": 588,
+       "ms": 0,
+       "cache_hit": true
+      },
+      {
+       "value": 3,
+       "file": "models/battery-cover-45mm__tongue_count_3.bin",
+       "params": {
+        "length": 45.3,
+        "width": 30.01,
+        "thickness": 1.5,
+        "tongue_length": 3.0,
+        "tongue_width": 4.8,
+        "tongue_count": 3.0,
+        "latch_width": 10.0,
+        "latch_height": 3.5,
+        "latch_overhang": 0.8,
+        "groove_count": 0.0,
+        "corner_radius": 1.9
+       },
+       "clamped": {},
+       "size_mm": [
+        45.3,
+        30.01,
+        5.0
+       ],
+       "triangles": 604,
+       "ms": 0,
+       "cache_hit": true
+      }
+     ]
+    }
+   },
+   "base": {
+    "file": "models/battery-cover-45mm.bin",
+    "params": {
+     "length": 45.3,
+     "width": 30.01,
+     "thickness": 1.5,
+     "tongue_length": 3.0,
+     "tongue_width": 4.8,
+     "tongue_count": 1.0,
+     "latch_width": 10.0,
+     "latch_height": 3.5,
+     "latch_overhang": 0.8,
+     "groove_count": 0.0,
+     "corner_radius": 1.9
+    },
+    "clamped": {},
+    "size_mm": [
+     45.3,
+     30.01,
+     5.0
+    ],
+    "triangles": 572,
+    "ms": 0,
+    "cache_hit": true
+   }
+  },
+  "wall-hook-66mm": {
+   "title": "Wall hook, 66.4 mm",
+   "status": "verified",
+   "max_error_mm": 0.43,
+   "knobs": {
+    "reach": {
+     "label": "Reach from the wall",
+     "unit": "mm",
+     "default": 30.0,
+     "topology": false,
+     "steps": [
+      {
+       "value": 18,
+       "file": "models/wall-hook-66mm__reach_18.bin",
+       "params": {
+        "length": 66.4,
+        "width": 19.4,
+        "plate_thickness": 3.0,
+        "hole_d": 4.09,
+        "hole_count": 1.0,
+        "arm_width": 12.0,
+        "arm_thickness": 6.0,
+        "reach": 18.0,
+        "bend_radius": 8.0,
+        "tip_length": 14.0,
+        "corner_radius": 2.5,
+        "hole_shift": -1.1,
+        "hole_y": 0.0,
+        "hole_spread": 1.0
+       },
+       "clamped": {},
+       "size_mm": [
+        66.4,
+        19.4,
+        21.0
+       ],
+       "triangles": 2190,
+       "ms": 1,
+       "cache_hit": true,
+       "holes": [
+        {
+         "x": 14.401,
+         "y": -0.0,
+         "d": 4.089
+        }
+       ]
+      },
+      {
+       "value": 24,
+       "file": "models/wall-hook-66mm__reach_24.bin",
+       "params": {
+        "length": 66.4,
+        "width": 19.4,
+        "plate_thickness": 3.0,
+        "hole_d": 4.09,
+        "hole_count": 1.0,
+        "arm_width": 12.0,
+        "arm_thickness": 6.0,
+        "reach": 24.0,
+        "bend_radius": 8.0,
+        "tip_length": 14.0,
+        "corner_radius": 2.5,
+        "hole_shift": -1.1,
+        "hole_y": 0.0,
+        "hole_spread": 1.0
+       },
+       "clamped": {},
+       "size_mm": [
+        66.4,
+        19.4,
+        27.0
+       ],
+       "triangles": 2190,
+       "ms": 0,
+       "cache_hit": true,
+       "holes": [
+        {
+         "x": 14.401,
+         "y": -0.0,
+         "d": 4.089
+        }
+       ]
+      },
+      {
+       "value": 30,
+       "file": "models/wall-hook-66mm__reach_30.bin",
+       "params": {
+        "length": 66.4,
+        "width": 19.4,
+        "plate_thickness": 3.0,
+        "hole_d": 4.09,
+        "hole_count": 1.0,
+        "arm_width": 12.0,
+        "arm_thickness": 6.0,
+        "reach": 30.0,
+        "bend_radius": 8.0,
+        "tip_length": 14.0,
+        "corner_radius": 2.5,
+        "hole_shift": -1.1,
+        "hole_y": 0.0,
+        "hole_spread": 1.0
+       },
+       "clamped": {},
+       "size_mm": [
+        66.4,
+        19.4,
+        33.0
+       ],
+       "triangles": 2190,
+       "ms": 0,
+       "cache_hit": true,
+       "holes": [
+        {
+         "x": 14.401,
+         "y": -0.0,
+         "d": 4.089
+        }
+       ]
+      },
+      {
+       "value": 36,
+       "file": "models/wall-hook-66mm__reach_36.bin",
+       "params": {
+        "length": 66.4,
+        "width": 19.4,
+        "plate_thickness": 3.0,
+        "hole_d": 4.09,
+        "hole_count": 1.0,
+        "arm_width": 12.0,
+        "arm_thickness": 6.0,
+        "reach": 36.0,
+        "bend_radius": 8.0,
+        "tip_length": 14.0,
+        "corner_radius": 2.5,
+        "hole_shift": -1.1,
+        "hole_y": 0.0,
+        "hole_spread": 1.0
+       },
+       "clamped": {},
+       "size_mm": [
+        66.4,
+        19.4,
+        39.0
+       ],
+       "triangles": 2190,
+       "ms": 1,
+       "cache_hit": true,
+       "holes": [
+        {
+         "x": 14.401,
+         "y": -0.0,
+         "d": 4.089
+        }
+       ]
+      },
+      {
+       "value": 42,
+       "file": "models/wall-hook-66mm__reach_42.bin",
+       "params": {
+        "length": 66.4,
+        "width": 19.4,
+        "plate_thickness": 3.0,
+        "hole_d": 4.09,
+        "hole_count": 1.0,
+        "arm_width": 12.0,
+        "arm_thickness": 6.0,
+        "reach": 42.0,
+        "bend_radius": 8.0,
+        "tip_length": 14.0,
+        "corner_radius": 2.5,
+        "hole_shift": -1.1,
+        "hole_y": 0.0,
+        "hole_spread": 1.0
+       },
+       "clamped": {},
+       "size_mm": [
+        66.4,
+        19.4,
+        45.0
+       ],
+       "triangles": 2190,
+       "ms": 1,
+       "cache_hit": true,
+       "holes": [
+        {
+         "x": 14.401,
+         "y": -0.0,
+         "d": 4.089
+        }
+       ]
+      },
+      {
+       "value": 48,
+       "file": "models/wall-hook-66mm__reach_48.bin",
+       "params": {
+        "length": 66.4,
+        "width": 19.4,
+        "plate_thickness": 3.0,
+        "hole_d": 4.09,
+        "hole_count": 1.0,
+        "arm_width": 12.0,
+        "arm_thickness": 6.0,
+        "reach": 48.0,
+        "bend_radius": 8.0,
+        "tip_length": 14.0,
+        "corner_radius": 2.5,
+        "hole_shift": -1.1,
+        "hole_y": 0.0,
+        "hole_spread": 1.0
+       },
+       "clamped": {},
+       "size_mm": [
+        66.4,
+        19.4,
+        51.0
+       ],
+       "triangles": 2190,
+       "ms": 1,
+       "cache_hit": true,
+       "holes": [
+        {
+         "x": 14.401,
+         "y": -0.0,
+         "d": 4.089
+        }
+       ]
+      },
+      {
+       "value": 54,
+       "file": "models/wall-hook-66mm__reach_54.bin",
+       "params": {
+        "length": 66.4,
+        "width": 19.4,
+        "plate_thickness": 3.0,
+        "hole_d": 4.09,
+        "hole_count": 1.0,
+        "arm_width": 12.0,
+        "arm_thickness": 6.0,
+        "reach": 54.0,
+        "bend_radius": 8.0,
+        "tip_length": 14.0,
+        "corner_radius": 2.5,
+        "hole_shift": -1.1,
+        "hole_y": 0.0,
+        "hole_spread": 1.0
+       },
+       "clamped": {},
+       "size_mm": [
+        66.4,
+        19.4,
+        57.0
+       ],
+       "triangles": 2190,
+       "ms": 1,
+       "cache_hit": true,
+       "holes": [
+        {
+         "x": 14.401,
+         "y": -0.0,
+         "d": 4.089
+        }
+       ]
+      }
+     ]
+    },
+    "hole_count": {
+     "label": "Screw holes",
+     "unit": "",
+     "default": 1.0,
+     "topology": true,
+     "steps": [
+      {
+       "value": 1,
+       "file": "models/wall-hook-66mm__hole_count_1.bin",
+       "params": {
+        "length": 66.4,
+        "width": 19.4,
+        "plate_thickness": 3.0,
+        "hole_d": 4.09,
+        "hole_count": 1.0,
+        "arm_width": 12.0,
+        "arm_thickness": 6.0,
+        "reach": 30.0,
+        "bend_radius": 8.0,
+        "tip_length": 14.0,
+        "corner_radius": 2.5,
+        "hole_shift": -1.1,
+        "hole_y": 0.0,
+        "hole_spread": 1.0
+       },
+       "clamped": {},
+       "size_mm": [
+        66.4,
+        19.4,
+        33.0
+       ],
+       "triangles": 2190,
+       "ms": 0,
+       "cache_hit": true,
+       "holes": [
+        {
+         "x": 14.401,
+         "y": -0.0,
+         "d": 4.089
+        }
+       ]
+      },
+      {
+       "value": 2,
+       "file": "models/wall-hook-66mm__hole_count_2.bin",
+       "params": {
+        "length": 66.4,
+        "width": 19.4,
+        "plate_thickness": 3.0,
+        "hole_d": 4.09,
+        "hole_count": 2.0,
+        "arm_width": 12.0,
+        "arm_thickness": 6.0,
+        "reach": 30.0,
+        "bend_radius": 8.0,
+        "tip_length": 14.0,
+        "corner_radius": 2.5,
+        "hole_shift": -1.1,
+        "hole_y": 0.0,
+        "hole_spread": 1.0
+       },
+       "clamped": {},
+       "size_mm": [
+        66.4,
+        19.4,
+        33.0
+       ],
+       "triangles": 3328,
+       "ms": 0,
+       "cache_hit": true,
+       "holes": [
+        {
+         "x": 5.551,
+         "y": -0.0,
+         "d": 4.089
+        },
+        {
+         "x": 23.251,
+         "y": -0.0,
+         "d": 4.089
+        }
+       ]
+      },
+      {
+       "value": 3,
+       "file": "models/wall-hook-66mm__hole_count_3.bin",
+       "params": {
+        "length": 66.4,
+        "width": 19.4,
+        "plate_thickness": 3.0,
+        "hole_d": 4.09,
+        "hole_count": 3.0,
+        "arm_width": 12.0,
+        "arm_thickness": 6.0,
+        "reach": 30.0,
+        "bend_radius": 8.0,
+        "tip_length": 14.0,
+        "corner_radius": 2.5,
+        "hole_shift": -1.1,
+        "hole_y": 0.0,
+        "hole_spread": 1.0
+       },
+       "clamped": {},
+       "size_mm": [
+        66.4,
+        19.4,
+        33.0
+       ],
+       "triangles": 4466,
+       "ms": 0,
+       "cache_hit": true,
+       "holes": [
+        {
+         "x": 2.601,
+         "y": -0.0,
+         "d": 4.089
+        },
+        {
+         "x": 14.401,
+         "y": -0.0,
+         "d": 4.089
+        },
+        {
+         "x": 26.201,
+         "y": -0.0,
+         "d": 4.089
+        }
+       ]
+      }
+     ]
+    },
+    "arm_thickness": {
+     "label": "Arm thickness",
+     "unit": "mm",
+     "default": 6.0,
+     "topology": false,
+     "steps": [
+      {
+       "value": 3.5,
+       "file": "models/wall-hook-66mm__arm_thickness_3.5.bin",
+       "params": {
+        "length": 66.4,
+        "width": 19.4,
+        "plate_thickness": 3.0,
+        "hole_d": 4.09,
+        "hole_count": 1.0,
+        "arm_width": 12.0,
+        "arm_thickness": 3.5,
+        "reach": 30.0,
+        "bend_radius": 8.0,
+        "tip_length": 14.0,
+        "corner_radius": 2.5,
+        "hole_shift": -1.1,
+        "hole_y": 0.0,
+        "hole_spread": 1.0
+       },
+       "clamped": {},
+       "size_mm": [
+        66.4,
+        19.4,
+        31.75
+       ],
+       "triangles": 2190,
+       "ms": 1,
+       "cache_hit": true,
+       "holes": [
+        {
+         "x": 13.151,
+         "y": -0.0,
+         "d": 4.089
+        }
+       ]
+      },
+      {
+       "value": 4.5,
+       "file": "models/wall-hook-66mm__arm_thickness_4.5.bin",
+       "params": {
+        "length": 66.4,
+        "width": 19.4,
+        "plate_thickness": 3.0,
+        "hole_d": 4.09,
+        "hole_count": 1.0,
+        "arm_width": 12.0,
+        "arm_thickness": 4.5,
+        "reach": 30.0,
+        "bend_radius": 8.0,
+        "tip_length": 14.0,
+        "corner_radius": 2.5,
+        "hole_shift": -1.1,
+        "hole_y": 0.0,
+        "hole_spread": 1.0
+       },
+       "clamped": {},
+       "size_mm": [
+        66.4,
+        19.4,
+        32.25
+       ],
+       "triangles": 2190,
+       "ms": 0,
+       "cache_hit": true,
+       "holes": [
+        {
+         "x": 13.651,
+         "y": -0.0,
+         "d": 4.089
+        }
+       ]
+      },
+      {
+       "value": 6,
+       "file": "models/wall-hook-66mm__arm_thickness_6.bin",
+       "params": {
+        "length": 66.4,
+        "width": 19.4,
+        "plate_thickness": 3.0,
+        "hole_d": 4.09,
+        "hole_count": 1.0,
+        "arm_width": 12.0,
+        "arm_thickness": 6.0,
+        "reach": 30.0,
+        "bend_radius": 8.0,
+        "tip_length": 14.0,
+        "corner_radius": 2.5,
+        "hole_shift": -1.1,
+        "hole_y": 0.0,
+        "hole_spread": 1.0
+       },
+       "clamped": {},
+       "size_mm": [
+        66.4,
+        19.4,
+        33.0
+       ],
+       "triangles": 2190,
+       "ms": 0,
+       "cache_hit": true,
+       "holes": [
+        {
+         "x": 14.401,
+         "y": -0.0,
+         "d": 4.089
+        }
+       ]
+      },
+      {
+       "value": 7,
+       "file": "models/wall-hook-66mm__arm_thickness_7.bin",
+       "params": {
+        "length": 66.4,
+        "width": 19.4,
+        "plate_thickness": 3.0,
+        "hole_d": 4.09,
+        "hole_count": 1.0,
+        "arm_width": 12.0,
+        "arm_thickness": 7.0,
+        "reach": 30.0,
+        "bend_radius": 8.0,
+        "tip_length": 14.0,
+        "corner_radius": 2.5,
+        "hole_shift": -1.1,
+        "hole_y": 0.0,
+        "hole_spread": 1.0
+       },
+       "clamped": {},
+       "size_mm": [
+        66.4,
+        19.4,
+        33.5
+       ],
+       "triangles": 2190,
+       "ms": 0,
+       "cache_hit": true,
+       "holes": [
+        {
+         "x": 14.901,
+         "y": -0.0,
+         "d": 4.089
+        }
+       ]
+      },
+      {
+       "value": 8,
+       "file": "models/wall-hook-66mm__arm_thickness_8.bin",
+       "params": {
+        "length": 66.4,
+        "width": 19.4,
+        "plate_thickness": 3.0,
+        "hole_d": 4.09,
+        "hole_count": 1.0,
+        "arm_width": 12.0,
+        "arm_thickness": 8.0,
+        "reach": 30.0,
+        "bend_radius": 8.0,
+        "tip_length": 14.0,
+        "corner_radius": 2.5,
+        "hole_shift": -1.1,
+        "hole_y": 0.0,
+        "hole_spread": 1.0
+       },
+       "clamped": {},
+       "size_mm": [
+        66.4,
+        19.4,
+        34.0
+       ],
+       "triangles": 2190,
+       "ms": 1,
+       "cache_hit": true,
+       "holes": [
+        {
+         "x": 15.401,
+         "y": -0.0,
+         "d": 4.089
+        }
+       ]
+      },
+      {
+       "value": 9,
+       "file": "models/wall-hook-66mm__arm_thickness_9.bin",
+       "params": {
+        "length": 66.4,
+        "width": 19.4,
+        "plate_thickness": 3.0,
+        "hole_d": 4.09,
+        "hole_count": 1.0,
+        "arm_width": 12.0,
+        "arm_thickness": 9.0,
+        "reach": 30.0,
+        "bend_radius": 8.0,
+        "tip_length": 14.0,
+        "corner_radius": 2.5,
+        "hole_shift": -1.1,
+        "hole_y": 0.0,
+        "hole_spread": 1.0
+       },
+       "clamped": {},
+       "size_mm": [
+        66.4,
+        19.4,
+        34.5
+       ],
+       "triangles": 2190,
+       "ms": 0,
+       "cache_hit": true,
+       "holes": [
+        {
+         "x": 15.901,
+         "y": -0.0,
+         "d": 4.089
+        }
+       ]
+      },
+      {
+       "value": 10,
+       "file": "models/wall-hook-66mm__arm_thickness_10.bin",
+       "params": {
+        "length": 66.4,
+        "width": 19.4,
+        "plate_thickness": 3.0,
+        "hole_d": 4.09,
+        "hole_count": 1.0,
+        "arm_width": 12.0,
+        "arm_thickness": 10.0,
+        "reach": 30.0,
+        "bend_radius": 8.0,
+        "tip_length": 14.0,
+        "corner_radius": 2.5,
+        "hole_shift": -1.1,
+        "hole_y": 0.0,
+        "hole_spread": 1.0
+       },
+       "clamped": {},
+       "size_mm": [
+        66.4,
+        19.4,
+        35.0
+       ],
+       "triangles": 2190,
+       "ms": 0,
+       "cache_hit": true,
+       "holes": [
+        {
+         "x": 16.401,
+         "y": -0.0,
+         "d": 4.089
+        }
+       ]
+      }
+     ]
+    }
+   },
+   "base": {
+    "file": "models/wall-hook-66mm.bin",
+    "params": {
+     "length": 66.4,
+     "width": 19.4,
+     "plate_thickness": 3.0,
+     "hole_d": 4.09,
+     "hole_count": 1.0,
+     "arm_width": 12.0,
+     "arm_thickness": 6.0,
+     "reach": 30.0,
+     "bend_radius": 8.0,
+     "tip_length": 14.0,
+     "corner_radius": 2.5,
+     "hole_shift": -1.1,
+     "hole_y": 0.0,
+     "hole_spread": 1.0
+    },
+    "clamped": {},
+    "size_mm": [
+     66.4,
+     19.4,
+     33.0
+    ],
+    "triangles": 2190,
+    "ms": 0,
+    "cache_hit": true,
+    "holes": [
+     {
+      "x": 14.401,
+      "y": -0.0,
+      "d": 4.089
+     }
+    ]
+   }
+  },
+  "shelf-panel-clip-44mm": {
+   "title": "Shelf panel clip, 43.6 mm",
+   "status": "verified",
+   "max_error_mm": 0.5,
+   "knobs": {
+    "arm_height": {
+     "label": "Hook arm height above the plate",
+     "unit": "mm",
+     "default": 7.0,
+     "topology": false,
+     "steps": [
+      {
+       "value": 4,
+       "file": "models/shelf-panel-clip-44mm__arm_height_4.bin",
+       "params": {
+        "length": 43.6,
+        "width": 16.1,
+        "thickness": 3.0,
+        "hole_d": 3.55,
+        "arm_height": 4.0,
+        "arm_thickness": 2.5,
+        "hook_overhang": 1.0,
+        "rib_count": 0.0,
+        "corner_radius": 1.2
+       },
+       "clamped": {},
+       "size_mm": [
+        43.6,
+        16.1,
+        7.0
+       ],
+       "triangles": 808,
+       "ms": 0,
+       "cache_hit": true
+      },
+      {
+       "value": 5.5,
+       "file": "models/shelf-panel-clip-44mm__arm_height_5.5.bin",
+       "params": {
+        "length": 43.6,
+        "width": 16.1,
+        "thickness": 3.0,
+        "hole_d": 3.55,
+        "arm_height": 5.5,
+        "arm_thickness": 2.5,
+        "hook_overhang": 1.0,
+        "rib_count": 0.0,
+        "corner_radius": 1.2
+       },
+       "clamped": {},
+       "size_mm": [
+        43.6,
+        16.1,
+        8.5
+       ],
+       "triangles": 808,
+       "ms": 0,
+       "cache_hit": true
+      },
+      {
+       "value": 7,
+       "file": "models/shelf-panel-clip-44mm__arm_height_7.bin",
+       "params": {
+        "length": 43.6,
+        "width": 16.1,
+        "thickness": 3.0,
+        "hole_d": 3.55,
+        "arm_height": 7.0,
+        "arm_thickness": 2.5,
+        "hook_overhang": 1.0,
+        "rib_count": 0.0,
+        "corner_radius": 1.2
+       },
+       "clamped": {},
+       "size_mm": [
+        43.6,
+        16.1,
+        10.0
+       ],
+       "triangles": 808,
+       "ms": 1,
+       "cache_hit": true
+      },
+      {
+       "value": 9,
+       "file": "models/shelf-panel-clip-44mm__arm_height_9.bin",
+       "params": {
+        "length": 43.6,
+        "width": 16.1,
+        "thickness": 3.0,
+        "hole_d": 3.55,
+        "arm_height": 9.0,
+        "arm_thickness": 2.5,
+        "hook_overhang": 1.0,
+        "rib_count": 0.0,
+        "corner_radius": 1.2
+       },
+       "clamped": {},
+       "size_mm": [
+        43.6,
+        16.1,
+        12.0
+       ],
+       "triangles": 808,
+       "ms": 1,
+       "cache_hit": true
+      },
+      {
+       "value": 11,
+       "file": "models/shelf-panel-clip-44mm__arm_height_11.bin",
+       "params": {
+        "length": 43.6,
+        "width": 16.1,
+        "thickness": 3.0,
+        "hole_d": 3.55,
+        "arm_height": 11.0,
+        "arm_thickness": 2.5,
+        "hook_overhang": 1.0,
+        "rib_count": 0.0,
+        "corner_radius": 1.2
+       },
+       "clamped": {},
+       "size_mm": [
+        43.6,
+        16.1,
+        14.0
+       ],
+       "triangles": 808,
+       "ms": 1,
+       "cache_hit": true
+      },
+      {
+       "value": 14,
+       "file": "models/shelf-panel-clip-44mm__arm_height_14.bin",
+       "params": {
+        "length": 43.6,
+        "width": 16.1,
+        "thickness": 3.0,
+        "hole_d": 3.55,
+        "arm_height": 14.0,
+        "arm_thickness": 2.5,
+        "hook_overhang": 1.0,
+        "rib_count": 0.0,
+        "corner_radius": 1.2
+       },
+       "clamped": {},
+       "size_mm": [
+        43.6,
+        16.1,
+        17.0
+       ],
+       "triangles": 808,
+       "ms": 2,
+       "cache_hit": true
+      },
+      {
+       "value": 17,
+       "file": "models/shelf-panel-clip-44mm__arm_height_17.bin",
+       "params": {
+        "length": 43.6,
+        "width": 16.1,
+        "thickness": 3.0,
+        "hole_d": 3.55,
+        "arm_height": 17.0,
+        "arm_thickness": 2.5,
+        "hook_overhang": 1.0,
+        "rib_count": 0.0,
+        "corner_radius": 1.2
+       },
+       "clamped": {},
+       "size_mm": [
+        43.6,
+        16.1,
+        20.0
+       ],
+       "triangles": 808,
+       "ms": 2,
+       "cache_hit": true
+      }
+     ]
+    },
+    "hole_d": {
+     "label": "Screw hole diameter",
+     "unit": "mm",
+     "default": 3.55,
+     "topology": false,
+     "steps": [
+      {
+       "value": 2.5,
+       "file": "models/shelf-panel-clip-44mm__hole_d_2.5.bin",
+       "params": {
+        "length": 43.6,
+        "width": 16.1,
+        "thickness": 3.0,
+        "hole_d": 2.5,
+        "arm_height": 7.0,
+        "arm_thickness": 2.5,
+        "hook_overhang": 1.0,
+        "rib_count": 0.0,
+        "corner_radius": 1.2
+       },
+       "clamped": {},
+       "size_mm": [
+        43.6,
+        16.1,
+        10.0
+       ],
+       "triangles": 808,
+       "ms": 2,
+       "cache_hit": true
+      },
+      {
+       "value": 3,
+       "file": "models/shelf-panel-clip-44mm__hole_d_3.bin",
+       "params": {
+        "length": 43.6,
+        "width": 16.1,
+        "thickness": 3.0,
+        "hole_d": 3.0,
+        "arm_height": 7.0,
+        "arm_thickness": 2.5,
+        "hook_overhang": 1.0,
+        "rib_count": 0.0,
+        "corner_radius": 1.2
+       },
+       "clamped": {},
+       "size_mm": [
+        43.6,
+        16.1,
+        10.0
+       ],
+       "triangles": 808,
+       "ms": 2,
+       "cache_hit": true
+      },
+      {
+       "value": 3.55,
+       "file": "models/shelf-panel-clip-44mm__hole_d_3.55.bin",
+       "params": {
+        "length": 43.6,
+        "width": 16.1,
+        "thickness": 3.0,
+        "hole_d": 3.55,
+        "arm_height": 7.0,
+        "arm_thickness": 2.5,
+        "hook_overhang": 1.0,
+        "rib_count": 0.0,
+        "corner_radius": 1.2
+       },
+       "clamped": {},
+       "size_mm": [
+        43.6,
+        16.1,
+        10.0
+       ],
+       "triangles": 808,
+       "ms": 1,
+       "cache_hit": true
+      },
+      {
+       "value": 4,
+       "file": "models/shelf-panel-clip-44mm__hole_d_4.bin",
+       "params": {
+        "length": 43.6,
+        "width": 16.1,
+        "thickness": 3.0,
+        "hole_d": 4.0,
+        "arm_height": 7.0,
+        "arm_thickness": 2.5,
+        "hook_overhang": 1.0,
+        "rib_count": 0.0,
+        "corner_radius": 1.2
+       },
+       "clamped": {},
+       "size_mm": [
+        43.6,
+        16.1,
+        10.0
+       ],
+       "triangles": 808,
+       "ms": 1,
+       "cache_hit": true
+      },
+      {
+       "value": 4.5,
+       "file": "models/shelf-panel-clip-44mm__hole_d_4.5.bin",
+       "params": {
+        "length": 43.6,
+        "width": 16.1,
+        "thickness": 3.0,
+        "hole_d": 4.5,
+        "arm_height": 7.0,
+        "arm_thickness": 2.5,
+        "hook_overhang": 1.0,
+        "rib_count": 0.0,
+        "corner_radius": 1.2
+       },
+       "clamped": {},
+       "size_mm": [
+        43.6,
+        16.1,
+        10.0
+       ],
+       "triangles": 808,
+       "ms": 2,
+       "cache_hit": true
+      },
+      {
+       "value": 5,
+       "file": "models/shelf-panel-clip-44mm__hole_d_5.bin",
+       "params": {
+        "length": 43.6,
+        "width": 16.1,
+        "thickness": 3.0,
+        "hole_d": 5.0,
+        "arm_height": 7.0,
+        "arm_thickness": 2.5,
+        "hook_overhang": 1.0,
+        "rib_count": 0.0,
+        "corner_radius": 1.2
+       },
+       "clamped": {},
+       "size_mm": [
+        43.6,
+        16.1,
+        10.0
+       ],
+       "triangles": 808,
+       "ms": 2,
+       "cache_hit": true
+      },
+      {
+       "value": 6,
+       "file": "models/shelf-panel-clip-44mm__hole_d_6.bin",
+       "params": {
+        "length": 43.6,
+        "width": 16.1,
+        "thickness": 3.0,
+        "hole_d": 6.0,
+        "arm_height": 7.0,
+        "arm_thickness": 2.5,
+        "hook_overhang": 1.0,
+        "rib_count": 0.0,
+        "corner_radius": 1.2
+       },
+       "clamped": {},
+       "size_mm": [
+        43.6,
+        16.1,
+        10.0
+       ],
+       "triangles": 808,
+       "ms": 0,
+       "cache_hit": true
+      }
+     ]
+    },
+    "rib_count": {
+     "label": "Stiffening ribs behind the arm",
+     "unit": "",
+     "default": 0.0,
+     "topology": true,
+     "steps": [
+      {
+       "value": 0,
+       "file": "models/shelf-panel-clip-44mm__rib_count_0.bin",
+       "params": {
+        "length": 43.6,
+        "width": 16.1,
+        "thickness": 3.0,
+        "hole_d": 3.55,
+        "arm_height": 7.0,
+        "arm_thickness": 2.5,
+        "hook_overhang": 1.0,
+        "rib_count": 0.0,
+        "corner_radius": 1.2
+       },
+       "clamped": {},
+       "size_mm": [
+        43.6,
+        16.1,
+        10.0
+       ],
+       "triangles": 808,
+       "ms": 0,
+       "cache_hit": true
+      },
+      {
+       "value": 1,
+       "file": "models/shelf-panel-clip-44mm__rib_count_1.bin",
+       "params": {
+        "length": 43.6,
+        "width": 16.1,
+        "thickness": 3.0,
+        "hole_d": 3.55,
+        "arm_height": 7.0,
+        "arm_thickness": 2.5,
+        "hook_overhang": 1.0,
+        "rib_count": 1.0,
+        "corner_radius": 1.2
+       },
+       "clamped": {},
+       "size_mm": [
+        43.6,
+        16.1,
+        10.0
+       ],
+       "triangles": 824,
+       "ms": 0,
+       "cache_hit": true
+      },
+      {
+       "value": 2,
+       "file": "models/shelf-panel-clip-44mm__rib_count_2.bin",
+       "params": {
+        "length": 43.6,
+        "width": 16.1,
+        "thickness": 3.0,
+        "hole_d": 3.55,
+        "arm_height": 7.0,
+        "arm_thickness": 2.5,
+        "hook_overhang": 1.0,
+        "rib_count": 2.0,
+        "corner_radius": 1.2
+       },
+       "clamped": {},
+       "size_mm": [
+        43.6,
+        16.1,
+        10.0
+       ],
+       "triangles": 832,
+       "ms": 0,
+       "cache_hit": true
+      },
+      {
+       "value": 3,
+       "file": "models/shelf-panel-clip-44mm__rib_count_3.bin",
+       "params": {
+        "length": 43.6,
+        "width": 16.1,
+        "thickness": 3.0,
+        "hole_d": 3.55,
+        "arm_height": 7.0,
+        "arm_thickness": 2.5,
+        "hook_overhang": 1.0,
+        "rib_count": 3.0,
+        "corner_radius": 1.2
+       },
+       "clamped": {},
+       "size_mm": [
+        43.6,
+        16.1,
+        10.0
+       ],
+       "triangles": 848,
+       "ms": 0,
+       "cache_hit": true
+      },
+      {
+       "value": 4,
+       "file": "models/shelf-panel-clip-44mm__rib_count_4.bin",
+       "params": {
+        "length": 43.6,
+        "width": 16.1,
+        "thickness": 3.0,
+        "hole_d": 3.55,
+        "arm_height": 7.0,
+        "arm_thickness": 2.5,
+        "hook_overhang": 1.0,
+        "rib_count": 4.0,
+        "corner_radius": 1.2
+       },
+       "clamped": {},
+       "size_mm": [
+        43.6,
+        16.1,
+        10.0
+       ],
+       "triangles": 864,
+       "ms": 0,
+       "cache_hit": true
+      }
+     ]
+    }
+   },
+   "base": {
+    "file": "models/shelf-panel-clip-44mm.bin",
+    "params": {
+     "length": 43.6,
+     "width": 16.1,
+     "thickness": 3.0,
+     "hole_d": 3.55,
+     "arm_height": 7.0,
+     "arm_thickness": 2.5,
+     "hook_overhang": 1.0,
+     "rib_count": 0.0,
+     "corner_radius": 1.2
+    },
+    "clamped": {},
+    "size_mm": [
+     43.6,
+     16.1,
+     10.0
+    ],
+    "triangles": 808,
+    "ms": 0,
+    "cache_hit": true
+   }
+  },
+  "spacer-8mm": {
+   "title": "Spacer, 8 mm",
+   "status": "verified",
+   "max_error_mm": 0.08,
+   "knobs": {
+    "height": {
+     "label": "Height",
+     "unit": "mm",
+     "default": 8.5,
+     "topology": false,
+     "steps": [
+      {
+       "value": 3,
+       "file": "models/spacer-8mm__height_3.bin",
+       "params": {
+        "outer_d": 8.0,
+        "height": 3.0,
+        "bore_d": 3.9,
+        "chamfer": 0.4,
+        "flat_count": 0.0,
+        "flat_depth": 0.8
+       },
+       "clamped": {},
+       "size_mm": [
+        8.0,
+        8.0,
+        3.0
+       ],
+       "triangles": 2772,
+       "ms": 0,
+       "cache_hit": true
+      },
+      {
+       "value": 5,
+       "file": "models/spacer-8mm__height_5.bin",
+       "params": {
+        "outer_d": 8.0,
+        "height": 5.0,
+        "bore_d": 3.9,
+        "chamfer": 0.4,
+        "flat_count": 0.0,
+        "flat_depth": 0.8
+       },
+       "clamped": {},
+       "size_mm": [
+        8.0,
+        8.0,
+        5.0
+       ],
+       "triangles": 2772,
+       "ms": 0,
+       "cache_hit": true
+      },
+      {
+       "value": 8.5,
+       "file": "models/spacer-8mm__height_8.5.bin",
+       "params": {
+        "outer_d": 8.0,
+        "height": 8.5,
+        "bore_d": 3.9,
+        "chamfer": 0.4,
+        "flat_count": 0.0,
+        "flat_depth": 0.8
+       },
+       "clamped": {},
+       "size_mm": [
+        8.0,
+        8.0,
+        8.5
+       ],
+       "triangles": 2772,
+       "ms": 0,
+       "cache_hit": true
+      },
+      {
+       "value": 12,
+       "file": "models/spacer-8mm__height_12.bin",
+       "params": {
+        "outer_d": 8.0,
+        "height": 12.0,
+        "bore_d": 3.9,
+        "chamfer": 0.4,
+        "flat_count": 0.0,
+        "flat_depth": 0.8
+       },
+       "clamped": {},
+       "size_mm": [
+        8.0,
+        8.0,
+        12.0
+       ],
+       "triangles": 2772,
+       "ms": 0,
+       "cache_hit": true
+      },
+      {
+       "value": 18,
+       "file": "models/spacer-8mm__height_18.bin",
+       "params": {
+        "outer_d": 8.0,
+        "height": 18.0,
+        "bore_d": 3.9,
+        "chamfer": 0.4,
+        "flat_count": 0.0,
+        "flat_depth": 0.8
+       },
+       "clamped": {},
+       "size_mm": [
+        8.0,
+        8.0,
+        18.0
+       ],
+       "triangles": 2772,
+       "ms": 0,
+       "cache_hit": true
+      },
+      {
+       "value": 25,
+       "file": "models/spacer-8mm__height_25.bin",
+       "params": {
+        "outer_d": 8.0,
+        "height": 25.0,
+        "bore_d": 3.9,
+        "chamfer": 0.4,
+        "flat_count": 0.0,
+        "flat_depth": 0.8
+       },
+       "clamped": {},
+       "size_mm": [
+        8.0,
+        8.0,
+        25.0
+       ],
+       "triangles": 2772,
+       "ms": 1,
+       "cache_hit": true
+      },
+      {
+       "value": 32,
+       "file": "models/spacer-8mm__height_32.bin",
+       "params": {
+        "outer_d": 8.0,
+        "height": 32.0,
+        "bore_d": 3.9,
+        "chamfer": 0.4,
+        "flat_count": 0.0,
+        "flat_depth": 0.8
+       },
+       "clamped": {},
+       "size_mm": [
+        8.0,
+        8.0,
+        32.0
+       ],
+       "triangles": 2772,
+       "ms": 1,
+       "cache_hit": true
+      }
+     ]
+    },
+    "bore_d": {
+     "label": "Bore diameter",
+     "unit": "mm",
+     "default": 3.9,
+     "topology": false,
+     "steps": [
+      {
+       "value": 2,
+       "file": "models/spacer-8mm__bore_d_2.bin",
+       "params": {
+        "outer_d": 8.0,
+        "height": 8.5,
+        "bore_d": 2.0,
+        "chamfer": 0.4,
+        "flat_count": 0.0,
+        "flat_depth": 0.8
+       },
+       "clamped": {},
+       "size_mm": [
+        8.0,
+        8.0,
+        8.5
+       ],
+       "triangles": 2772,
+       "ms": 1,
+       "cache_hit": true
+      },
+      {
+       "value": 2.5,
+       "file": "models/spacer-8mm__bore_d_2.5.bin",
+       "params": {
+        "outer_d": 8.0,
+        "height": 8.5,
+        "bore_d": 2.5,
+        "chamfer": 0.4,
+        "flat_count": 0.0,
+        "flat_depth": 0.8
+       },
+       "clamped": {},
+       "size_mm": [
+        8.0,
+        8.0,
+        8.5
+       ],
+       "triangles": 2772,
+       "ms": 1,
+       "cache_hit": true
+      },
+      {
+       "value": 3.2,
+       "file": "models/spacer-8mm__bore_d_3.2.bin",
+       "params": {
+        "outer_d": 8.0,
+        "height": 8.5,
+        "bore_d": 3.2,
+        "chamfer": 0.4,
+        "flat_count": 0.0,
+        "flat_depth": 0.8
+       },
+       "clamped": {},
+       "size_mm": [
+        8.0,
+        8.0,
+        8.5
+       ],
+       "triangles": 2772,
+       "ms": 1,
+       "cache_hit": true
+      },
+      {
+       "value": 3.9,
+       "file": "models/spacer-8mm__bore_d_3.9.bin",
+       "params": {
+        "outer_d": 8.0,
+        "height": 8.5,
+        "bore_d": 3.9,
+        "chamfer": 0.4,
+        "flat_count": 0.0,
+        "flat_depth": 0.8
+       },
+       "clamped": {},
+       "size_mm": [
+        8.0,
+        8.0,
+        8.5
+       ],
+       "triangles": 2772,
+       "ms": 0,
+       "cache_hit": true
+      },
+      {
+       "value": 4.5,
+       "file": "models/spacer-8mm__bore_d_4.5.bin",
+       "params": {
+        "outer_d": 8.0,
+        "height": 8.5,
+        "bore_d": 4.5,
+        "chamfer": 0.4,
+        "flat_count": 0.0,
+        "flat_depth": 0.8
+       },
+       "clamped": {},
+       "size_mm": [
+        8.0,
+        8.0,
+        8.5
+       ],
+       "triangles": 2772,
+       "ms": 0,
+       "cache_hit": true
+      },
+      {
+       "value": 5,
+       "file": "models/spacer-8mm__bore_d_5.bin",
+       "params": {
+        "outer_d": 8.0,
+        "height": 8.5,
+        "bore_d": 5.0,
+        "chamfer": 0.4,
+        "flat_count": 0.0,
+        "flat_depth": 0.8
+       },
+       "clamped": {},
+       "size_mm": [
+        8.0,
+        8.0,
+        8.5
+       ],
+       "triangles": 2520,
+       "ms": 0,
+       "cache_hit": true
+      },
+      {
+       "value": 6,
+       "file": "models/spacer-8mm__bore_d_6.bin",
+       "params": {
+        "outer_d": 8.0,
+        "height": 8.5,
+        "bore_d": 6.0,
+        "chamfer": 0.4,
+        "flat_count": 0.0,
+        "flat_depth": 0.8
+       },
+       "clamped": {},
+       "size_mm": [
+        8.0,
+        8.0,
+        8.5
+       ],
+       "triangles": 2520,
+       "ms": 0,
+       "cache_hit": true
+      }
+     ]
+    },
+    "flat_count": {
+     "label": "Wrench flats",
+     "unit": "",
+     "default": 0.0,
+     "topology": true,
+     "steps": [
+      {
+       "value": 0,
+       "file": "models/spacer-8mm__flat_count_0.bin",
+       "params": {
+        "outer_d": 8.0,
+        "height": 8.5,
+        "bore_d": 3.9,
+        "chamfer": 0.4,
+        "flat_count": 0.0,
+        "flat_depth": 0.8
+       },
+       "clamped": {},
+       "size_mm": [
+        8.0,
+        8.0,
+        8.5
+       ],
+       "triangles": 2772,
+       "ms": 0,
+       "cache_hit": true
+      },
+      {
+       "value": 2,
+       "file": "models/spacer-8mm__flat_count_2.bin",
+       "params": {
+        "outer_d": 8.0,
+        "height": 8.5,
+        "bore_d": 3.9,
+        "chamfer": 0.4,
+        "flat_count": 2.0,
+        "flat_depth": 0.8
+       },
+       "clamped": {},
+       "size_mm": [
+        6.4,
+        8.0,
+        8.5
+       ],
+       "triangles": 2312,
+       "ms": 0,
+       "cache_hit": true
+      },
+      {
+       "value": 4,
+       "file": "models/spacer-8mm__flat_count_4.bin",
+       "params": {
+        "outer_d": 8.0,
+        "height": 8.5,
+        "bore_d": 3.9,
+        "chamfer": 0.4,
+        "flat_count": 4.0,
+        "flat_depth": 0.8
+       },
+       "clamped": {},
+       "size_mm": [
+        6.4,
+        6.4,
+        8.5
+       ],
+       "triangles": 1848,
+       "ms": 0,
+       "cache_hit": true
+      },
+      {
+       "value": 6,
+       "file": "models/spacer-8mm__flat_count_6.bin",
+       "params": {
+        "outer_d": 8.0,
+        "height": 8.5,
+        "bore_d": 3.9,
+        "chamfer": 0.4,
+        "flat_count": 6.0,
+        "flat_depth": 0.8
+       },
+       "clamped": {},
+       "size_mm": [
+        7.04,
+        8.0,
+        8.5
+       ],
+       "triangles": 1596,
+       "ms": 1,
+       "cache_hit": true
+      }
+     ]
+    }
+   },
+   "base": {
+    "file": "models/spacer-8mm.bin",
+    "params": {
+     "outer_d": 8.0,
+     "height": 8.5,
+     "bore_d": 3.9,
+     "chamfer": 0.4,
+     "flat_count": 0.0,
+     "flat_depth": 0.8
+    },
+    "clamped": {},
+    "size_mm": [
+     8.0,
+     8.0,
+     8.5
+    ],
+    "triangles": 2772,
+    "ms": 0,
+    "cache_hit": true
+   }
+  }
+ },
+ "star": {
+  "slug": "wall-hook-66mm",
+  "base": {
+   "file": "models/star-base.bin",
+   "params": {
+    "length": 66.4,
+    "width": 19.4,
+    "plate_thickness": 3.0,
+    "hole_d": 4.09,
+    "hole_count": 2.0,
+    "arm_width": 12.0,
+    "arm_thickness": 6.0,
+    "reach": 30.0,
+    "bend_radius": 8.0,
+    "tip_length": 14.0,
+    "corner_radius": 2.5,
+    "hole_shift": -1.1,
+    "hole_y": 0.0,
+    "hole_spread": 1.0
+   },
+   "clamped": {},
+   "size_mm": [
+    66.4,
+    19.4,
+    33.0
+   ],
+   "triangles": 3328,
+   "ms": 0,
+   "cache_hit": true,
+   "holes": [
+    {
+     "x": 5.551,
+     "y": -0.0,
+     "d": 4.089
+    },
+    {
+     "x": 23.251,
+     "y": -0.0,
+     "d": 4.089
+    }
+   ]
+  },
+  "knobs": {
+   "hole_d": [
+    {
+     "value": 3.0,
+     "file": "models/star__hole_d_3.bin",
+     "params": {
+      "length": 66.4,
+      "width": 19.4,
+      "plate_thickness": 3.0,
+      "hole_d": 3.0,
+      "hole_count": 2.0,
+      "arm_width": 12.0,
+      "arm_thickness": 6.0,
+      "reach": 30.0,
+      "bend_radius": 8.0,
+      "tip_length": 14.0,
+      "corner_radius": 2.5,
+      "hole_shift": -1.1,
+      "hole_y": 0.0,
+      "hole_spread": 1.0
+     },
+     "clamped": {},
+     "size_mm": [
+      66.4,
+      19.4,
+      33.0
+     ],
+     "triangles": 3328,
+     "ms": 1,
+     "cache_hit": true,
+     "holes": [
+      {
+       "x": 5.551,
+       "y": -0.001,
+       "d": 3.0
+      },
+      {
+       "x": 23.251,
+       "y": -0.001,
+       "d": 3.0
+      }
+     ]
+    },
+    {
+     "value": 3.5,
+     "file": "models/star__hole_d_3.5.bin",
+     "params": {
+      "length": 66.4,
+      "width": 19.4,
+      "plate_thickness": 3.0,
+      "hole_d": 3.5,
+      "hole_count": 2.0,
+      "arm_width": 12.0,
+      "arm_thickness": 6.0,
+      "reach": 30.0,
+      "bend_radius": 8.0,
+      "tip_length": 14.0,
+      "corner_radius": 2.5,
+      "hole_shift": -1.1,
+      "hole_y": 0.0,
+      "hole_spread": 1.0
+     },
+     "clamped": {},
+     "size_mm": [
+      66.4,
+      19.4,
+      33.0
+     ],
+     "triangles": 3328,
+     "ms": 1,
+     "cache_hit": true,
+     "holes": [
+      {
+       "x": 5.551,
+       "y": -0.0,
+       "d": 3.5
+      },
+      {
+       "x": 23.251,
+       "y": -0.0,
+       "d": 3.5
+      }
+     ]
+    },
+    {
+     "value": 4.09,
+     "file": "models/star__hole_d_4.09.bin",
+     "params": {
+      "length": 66.4,
+      "width": 19.4,
+      "plate_thickness": 3.0,
+      "hole_d": 4.09,
+      "hole_count": 2.0,
+      "arm_width": 12.0,
+      "arm_thickness": 6.0,
+      "reach": 30.0,
+      "bend_radius": 8.0,
+      "tip_length": 14.0,
+      "corner_radius": 2.5,
+      "hole_shift": -1.1,
+      "hole_y": 0.0,
+      "hole_spread": 1.0
+     },
+     "clamped": {},
+     "size_mm": [
+      66.4,
+      19.4,
+      33.0
+     ],
+     "triangles": 3328,
+     "ms": 1,
+     "cache_hit": true,
+     "holes": [
+      {
+       "x": 5.551,
+       "y": -0.0,
+       "d": 4.089
+      },
+      {
+       "x": 23.251,
+       "y": -0.0,
+       "d": 4.089
+      }
+     ]
+    },
+    {
+     "value": 4.5,
+     "file": "models/star__hole_d_4.5.bin",
+     "params": {
+      "length": 66.4,
+      "width": 19.4,
+      "plate_thickness": 3.0,
+      "hole_d": 4.5,
+      "hole_count": 2.0,
+      "arm_width": 12.0,
+      "arm_thickness": 6.0,
+      "reach": 30.0,
+      "bend_radius": 8.0,
+      "tip_length": 14.0,
+      "corner_radius": 2.5,
+      "hole_shift": -1.1,
+      "hole_y": 0.0,
+      "hole_spread": 1.0
+     },
+     "clamped": {},
+     "size_mm": [
+      66.4,
+      19.4,
+      33.0
+     ],
+     "triangles": 3328,
+     "ms": 1,
+     "cache_hit": true,
+     "holes": [
+      {
+       "x": 5.55,
+       "y": -0.0,
+       "d": 4.499
+      },
+      {
+       "x": 23.25,
+       "y": -0.0,
+       "d": 4.499
+      }
+     ]
+    },
+    {
+     "value": 5.0,
+     "file": "models/star__hole_d_5.bin",
+     "params": {
+      "length": 66.4,
+      "width": 19.4,
+      "plate_thickness": 3.0,
+      "hole_d": 5.0,
+      "hole_count": 2.0,
+      "arm_width": 12.0,
+      "arm_thickness": 6.0,
+      "reach": 30.0,
+      "bend_radius": 8.0,
+      "tip_length": 14.0,
+      "corner_radius": 2.5,
+      "hole_shift": -1.1,
+      "hole_y": 0.0,
+      "hole_spread": 1.0
+     },
+     "clamped": {},
+     "size_mm": [
+      66.4,
+      19.4,
+      33.0
+     ],
+     "triangles": 3328,
+     "ms": 1,
+     "cache_hit": true,
+     "holes": [
+      {
+       "x": 5.549,
+       "y": 0.0,
+       "d": 4.999
+      },
+      {
+       "x": 23.249,
+       "y": 0.0,
+       "d": 4.999
+      }
+     ]
+    },
+    {
+     "value": 5.5,
+     "file": "models/star__hole_d_5.5.bin",
+     "params": {
+      "length": 66.4,
+      "width": 19.4,
+      "plate_thickness": 3.0,
+      "hole_d": 5.5,
+      "hole_count": 2.0,
+      "arm_width": 12.0,
+      "arm_thickness": 6.0,
+      "reach": 30.0,
+      "bend_radius": 8.0,
+      "tip_length": 14.0,
+      "corner_radius": 2.5,
+      "hole_shift": -1.1,
+      "hole_y": 0.0,
+      "hole_spread": 1.0
+     },
+     "clamped": {},
+     "size_mm": [
+      66.4,
+      19.4,
+      33.0
+     ],
+     "triangles": 3328,
+     "ms": 1,
+     "cache_hit": true,
+     "holes": [
+      {
+       "x": 5.55,
+       "y": 0.0,
+       "d": 5.6
+      },
+      {
+       "x": 23.25,
+       "y": 0.0,
+       "d": 5.6
+      }
+     ]
+    },
+    {
+     "value": 6.0,
+     "file": "models/star__hole_d_6.bin",
+     "params": {
+      "length": 66.4,
+      "width": 19.4,
+      "plate_thickness": 3.0,
+      "hole_d": 6.0,
+      "hole_count": 2.0,
+      "arm_width": 12.0,
+      "arm_thickness": 6.0,
+      "reach": 30.0,
+      "bend_radius": 8.0,
+      "tip_length": 14.0,
+      "corner_radius": 2.5,
+      "hole_shift": -1.1,
+      "hole_y": 0.0,
+      "hole_spread": 1.0
+     },
+     "clamped": {},
+     "size_mm": [
+      66.4,
+      19.4,
+      33.0
+     ],
+     "triangles": 2824,
+     "ms": 1,
+     "cache_hit": true,
+     "holes": [
+      {
+       "x": 5.55,
+       "y": -0.0,
+       "d": 6.599
+      },
+      {
+       "x": 23.25,
+       "y": -0.0,
+       "d": 6.599
+      }
+     ]
+    }
+   ],
+   "length": [
+    {
+     "value": 56.4,
+     "file": "models/star__length_56.4.bin",
+     "params": {
+      "length": 56.4,
+      "width": 19.4,
+      "plate_thickness": 3.0,
+      "hole_d": 4.09,
+      "hole_count": 2.0,
+      "arm_width": 12.0,
+      "arm_thickness": 6.0,
+      "reach": 30.0,
+      "bend_radius": 8.0,
+      "tip_length": 14.0,
+      "corner_radius": 2.5,
+      "hole_shift": -1.1,
+      "hole_y": 0.0,
+      "hole_spread": 1.0
+     },
+     "clamped": {},
+     "size_mm": [
+      56.4,
+      19.4,
+      33.0
+     ],
+     "triangles": 3328,
+     "ms": 1,
+     "cache_hit": true,
+     "holes": [
+      {
+       "x": 8.051,
+       "y": -0.0,
+       "d": 4.089
+      },
+      {
+       "x": 20.751,
+       "y": -0.0,
+       "d": 4.089
+      }
+     ]
+    },
+    {
+     "value": 61.4,
+     "file": "models/star__length_61.4.bin",
+     "params": {
+      "length": 61.4,
+      "width": 19.4,
+      "plate_thickness": 3.0,
+      "hole_d": 4.09,
+      "hole_count": 2.0,
+      "arm_width": 12.0,
+      "arm_thickness": 6.0,
+      "reach": 30.0,
+      "bend_radius": 8.0,
+      "tip_length": 14.0,
+      "corner_radius": 2.5,
+      "hole_shift": -1.1,
+      "hole_y": 0.0,
+      "hole_spread": 1.0
+     },
+     "clamped": {},
+     "size_mm": [
+      61.4,
+      19.4,
+      33.0
+     ],
+     "triangles": 3328,
+     "ms": 1,
+     "cache_hit": true,
+     "holes": [
+      {
+       "x": 6.801,
+       "y": -0.0,
+       "d": 4.089
+      },
+      {
+       "x": 22.001,
+       "y": -0.0,
+       "d": 4.089
+      }
+     ]
+    },
+    {
+     "value": 66.4,
+     "file": "models/star__length_66.4.bin",
+     "params": {
+      "length": 66.4,
+      "width": 19.4,
+      "plate_thickness": 3.0,
+      "hole_d": 4.09,
+      "hole_count": 2.0,
+      "arm_width": 12.0,
+      "arm_thickness": 6.0,
+      "reach": 30.0,
+      "bend_radius": 8.0,
+      "tip_length": 14.0,
+      "corner_radius": 2.5,
+      "hole_shift": -1.1,
+      "hole_y": 0.0,
+      "hole_spread": 1.0
+     },
+     "clamped": {},
+     "size_mm": [
+      66.4,
+      19.4,
+      33.0
+     ],
+     "triangles": 3328,
+     "ms": 1,
+     "cache_hit": true,
+     "holes": [
+      {
+       "x": 5.551,
+       "y": -0.0,
+       "d": 4.089
+      },
+      {
+       "x": 23.251,
+       "y": -0.0,
+       "d": 4.089
+      }
+     ]
+    },
+    {
+     "value": 71.4,
+     "file": "models/star__length_71.4.bin",
+     "params": {
+      "length": 71.4,
+      "width": 19.4,
+      "plate_thickness": 3.0,
+      "hole_d": 4.09,
+      "hole_count": 2.0,
+      "arm_width": 12.0,
+      "arm_thickness": 6.0,
+      "reach": 30.0,
+      "bend_radius": 8.0,
+      "tip_length": 14.0,
+      "corner_radius": 2.5,
+      "hole_shift": -1.1,
+      "hole_y": 0.0,
+      "hole_spread": 1.0
+     },
+     "clamped": {},
+     "size_mm": [
+      71.4,
+      19.4,
+      33.0
+     ],
+     "triangles": 3328,
+     "ms": 1,
+     "cache_hit": true,
+     "holes": [
+      {
+       "x": 4.3,
+       "y": -0.0,
+       "d": 4.089
+      },
+      {
+       "x": 24.5,
+       "y": -0.0,
+       "d": 4.089
+      }
+     ]
+    },
+    {
+     "value": 76.4,
+     "file": "models/star__length_76.4.bin",
+     "params": {
+      "length": 76.4,
+      "width": 19.4,
+      "plate_thickness": 3.0,
+      "hole_d": 4.09,
+      "hole_count": 2.0,
+      "arm_width": 12.0,
+      "arm_thickness": 6.0,
+      "reach": 30.0,
+      "bend_radius": 8.0,
+      "tip_length": 14.0,
+      "corner_radius": 2.5,
+      "hole_shift": -1.1,
+      "hole_y": 0.0,
+      "hole_spread": 1.0
+     },
+     "clamped": {},
+     "size_mm": [
+      76.4,
+      19.4,
+      33.0
+     ],
+     "triangles": 3328,
+     "ms": 78,
+     "cache_hit": true,
+     "holes": [
+      {
+       "x": 3.05,
+       "y": -0.0,
+       "d": 4.089
+      },
+      {
+       "x": 25.75,
+       "y": -0.0,
+       "d": 4.089
+      }
+     ]
+    },
+    {
+     "value": 81.4,
+     "file": "models/star__length_81.4.bin",
+     "params": {
+      "length": 81.4,
+      "width": 19.4,
+      "plate_thickness": 3.0,
+      "hole_d": 4.09,
+      "hole_count": 2.0,
+      "arm_width": 12.0,
+      "arm_thickness": 6.0,
+      "reach": 30.0,
+      "bend_radius": 8.0,
+      "tip_length": 14.0,
+      "corner_radius": 2.5,
+      "hole_shift": -1.1,
+      "hole_y": 0.0,
+      "hole_spread": 1.0
+     },
+     "clamped": {},
+     "size_mm": [
+      81.4,
+      19.4,
+      33.0
+     ],
+     "triangles": 3328,
+     "ms": 1,
+     "cache_hit": true,
+     "holes": [
+      {
+       "x": 1.801,
+       "y": -0.0,
+       "d": 4.089
+      },
+      {
+       "x": 27.001,
+       "y": -0.0,
+       "d": 4.089
+      }
+     ]
+    },
+    {
+     "value": 86.4,
+     "file": "models/star__length_86.4.bin",
+     "params": {
+      "length": 86.4,
+      "width": 19.4,
+      "plate_thickness": 3.0,
+      "hole_d": 4.09,
+      "hole_count": 2.0,
+      "arm_width": 12.0,
+      "arm_thickness": 6.0,
+      "reach": 30.0,
+      "bend_radius": 8.0,
+      "tip_length": 14.0,
+      "corner_radius": 2.5,
+      "hole_shift": -1.1,
+      "hole_y": 0.0,
+      "hole_spread": 1.0
+     },
+     "clamped": {},
+     "size_mm": [
+      86.4,
+      19.4,
+      33.0
+     ],
+     "triangles": 3328,
+     "ms": 1,
+     "cache_hit": true,
+     "holes": [
+      {
+       "x": 0.551,
+       "y": -0.0,
+       "d": 4.089
+      },
+      {
+       "x": 28.251,
+       "y": -0.0,
+       "d": 4.089
+      }
+     ]
+    }
+   ]
+  }
+ },
+ "rebake": {
+  "ms": 109,
+  "cache_hit": false,
+  "slug": "battery-cover-45mm",
+  "length_mm": 47.13,
+  "api_mode": "local server, replay mode"
+ },
+ "registry": {
+  "parts": 11,
+  "verified": 4,
+  "items": [
+   {
+    "slug": "battery-cover-45mm",
+    "title": "Battery cover, 45.3 mm",
+    "verified": true
+   },
+   {
+    "slug": "wall-hook-66mm",
+    "title": "Wall hook, 66.4 mm",
+    "verified": true
+   },
+   {
+    "slug": "shelf-panel-clip-44mm",
+    "title": "Shelf panel clip, 43.6 mm",
+    "verified": true
+   },
+   {
+    "slug": "spacer-8mm",
+    "title": "Spacer, 8 mm",
+    "verified": true
+   },
+   {
+    "slug": "battery-cover-53mm",
+    "title": "Battery cover, 52.6 mm",
+    "verified": false
+   },
+   {
+    "slug": "cable-clip-34mm",
+    "title": "Cable clip, 33.9 mm",
+    "verified": false
+   },
+   {
+    "slug": "caster-wheel-62mm",
+    "title": "Caster wheel, 62.2 mm",
+    "verified": false
+   },
+   {
+    "slug": "cupboard-door-latch-55mm",
+    "title": "Cupboard door latch, 55.1 mm",
+    "verified": false
+   },
+   {
+    "slug": "battery-cover-54mm",
+    "title": "Battery cover, 53.5 mm",
+    "verified": false
+   },
+   {
+    "slug": "control-knob-30mm",
+    "title": "Control knob, 30 mm",
+    "verified": false
+   },
+   {
+    "slug": "l-bracket-46mm",
+    "title": "L-bracket, 46 mm",
+    "verified": false
+   }
+  ]
+ }
+}

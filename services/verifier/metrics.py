@@ -1,4 +1,4 @@
-"""2-D comparison metrics between a photo mask and a model silhouette on the same mm frame (PLAN Appendix D).
+"""2-D comparison metrics between a photo mask and a model silhouette on the same mm frame.
 
 - ``iou``: |A and B| / |A or B|.
 - ``contour_distances_mm``: symmetric distances between the two boundaries; each boundary is resampled to <= 0.05 mm

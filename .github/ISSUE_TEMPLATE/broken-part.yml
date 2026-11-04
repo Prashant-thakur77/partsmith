@@ -1,0 +1,28 @@
+name: Broken part request
+description: A plastic part you need that nobody sells
+labels: [part-request]
+body:
+  - type: input
+    id: part
+    attributes:
+      label: What is the part, and what does it belong to?
+      placeholder: Battery cover of a TV remote
+    validations:
+      required: true
+  - type: textarea
+    id: sizes
+    attributes:
+      label: Sizes you know, in millimetres
+      description: Rough ruler sizes are fine. Say which ones you are unsure of.
+  - type: textarea
+    id: photos
+    attributes:
+      label: Photos
+      description: The part next to a card or ruler, and where it fits. Remove anything personal first.
+  - type: checkboxes
+    id: safe
+    attributes:
+      label: Safety
+      options:
+        - label: This is not a medical, vehicle-safety or weapon part.
+          required: true

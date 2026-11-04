@@ -1,4 +1,4 @@
-"""Run untrusted part programs safely (PLAN §6.4).
+"""Run untrusted part programs safely.
 
 Two layers:
 

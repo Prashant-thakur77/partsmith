@@ -1,0 +1,13 @@
+# One public origin with automatic HTTPS: API routes and MCP go to the API (SSE and WebSockets pass through), the rest to the web app.
+{$SITE_HOST} {
+	encode gzip zstd
+	@api path /api/* /mcp /mcp/*
+	handle @api {
+		reverse_proxy api:8000 {
+			flush_interval -1
+		}
+	}
+	handle {
+		reverse_proxy web:3000
+	}
+}

@@ -1,4 +1,4 @@
-"""Bench ablation switches on RunOptions (PLAN §10.3): each one turns off exactly one thing. SYNTHETIC photos, mocks."""
+"""Bench ablation switches on RunOptions: each one turns off exactly one thing. SYNTHETIC photos, mocks."""
 
 from __future__ import annotations
 

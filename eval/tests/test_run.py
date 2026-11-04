@@ -178,7 +178,10 @@ def test_cluster_bootstrap_and_charts() -> None:
 def test_markdown_and_report_shape(tmp_path: Path) -> None:
     rep = R.build_report([_score("PS", "a", errs=[0.1], passed=True, conv=[0.8, 0.1])], "mock", [], tmp_path)
     assert set(rep) >= {"generated_at", "git_sha", "mode", "tables", "runs", "failures", "measure_only", "charts"}
-    assert set(rep["tables"]) == set(R.ALL_SUITES) and rep["runs"]["synthetic"]["PS"][0]["sample_id"] == "a"
+    assert (
+        set(rep["tables"]) | set(rep["separate_tables"]) == set(R.ALL_SUITES)
+        and rep["runs"]["synthetic"]["PS"][0]["sample_id"] == "a"
+    )
     md = R.to_markdown(rep)
     assert "NOT MODEL PERFORMANCE" in md and "**pending**" in md
     mo = R.latest_measure_only()
@@ -249,3 +252,48 @@ def test_a_report_rebuilt_from_stored_runs_names_the_commit_the_runs_were_made_a
     mixed = R.runs_git([a, {"git": {"sha": "bbb", "dirty": False}}])
     assert mixed["source"] == "current tree"
     assert R.runs_git([a, {}])["source"] == "current tree"  # a run stored before runs were stamped
+
+
+def test_a_dimension_that_set_the_scale_is_shown_but_never_scored() -> None:
+    gt = [
+        {"name": "length", "value_mm": 32.0, "set_by_construction": True},
+        {"name": "width", "value_mm": 24.0},
+    ]
+    r = R.compare(gt, {"length": 40.0, "width": 24.2}, [])
+    assert r["pass_0_5"] and r["dims"][0]["set_by_construction"] is True
+    assert R.compare(gt, {"length": 32.0, "width": 26.0}, [])["pass_0_5"] is False
+    assert [d["name"] for d in R.scored_dims(r)] == ["width"]
+    row = R.config_row("PS", [{"suite": "public_photos", "sample_id": "a", **r}])
+    assert row["dims"] == 1 and row["median_abs_err_mm"] == pytest.approx(0.2)
+    # the scale dimension alone is no evidence of anything
+    assert R.compare(gt[:1], {"length": 32.0}, [])["pass_0_5"] is False
+
+
+def test_public_photos_is_its_own_suite_labelled_and_counted_as_no_real_photos() -> None:
+    assert R.GROUND_TRUTH["public_photos"] == "published_spec_pasted"
+    assert R.GT_NOTE["public_photos"] == "published spec, pasted at known size"
+    assert R.split_of("public_photos", "x", {}) == "held_out"
+    s = _score("PS", "x", errs=[0.2], passed=True, suite="public_photos")
+    t = R.build_tables([s], "live", [])
+    pub = t["public_photos"]
+    assert pub["status"] == "ok" and pub["n"] == 1 and pub["photos"] == R.PUBLIC_PHOTOS_LABEL
+    assert pub["counts_as_real_photos_measured"] == 0
+    assert "Not phone captures" in pub["note"] and "excluded from every error" in pub["note"]
+    for other in ("synthetic", "reference_objects", "real_ruler"):
+        assert t[other]["status"] == "pending"  # never merged into another suite
+
+
+def test_public_photo_failures_never_push_other_suites_out_of_the_gallery(tmp_path: Path) -> None:
+    fails = [
+        {**_score("PS", f"p{i}", errs=[2.0], passed=False, suite="public_photos"), "split": "held_out"}
+        for i in range(3)
+    ] + [{**_score("PS", "s0", errs=[2.0], passed=False, suite="synthetic"), "split": "held_out"}]
+    out = R.failures_gallery(fails, "live", tmp_path, limit=1)
+    assert out[0]["title"].startswith("s0")
+
+
+def test_a_new_ground_truth_value_never_reaches_tables_an_older_web_build_validates(tmp_path: Path) -> None:
+    s = _score("PS", "x", errs=[0.2], passed=True, suite="public_photos")
+    rep = R.build_report([s], "live", [], tmp_path)
+    assert "public_photos" not in rep["tables"] and rep["separate_tables"]["public_photos"]["n"] == 1
+    assert "public_photos" in R.to_markdown(rep)

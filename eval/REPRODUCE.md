@@ -1,13 +1,14 @@
 # Reproducing the PartSmith benches
 
 Every number in the README, the video and the site comes from a script in `eval/` run on stored data. Each table
-names its ground-truth source; the three sources are never merged:
+names its ground-truth source; the sources are never merged:
 
 | Source | Ground truth | Where |
 |---|---|---|
 | synthetic bench | exact (rendered from the CAD mesh with a known camera) | `data/synthetic/bench/` (re-rendered from a seed) |
 | reference objects | published specs (ID-1 card, SD card, LEGO 2×4, AA cell — AA is a loose spec) | synthetic renders in the bench; real photos in `data/real/reference_objects/<object>/*.jpg` |
 | real parts | school ruler, ±0.5 mm (never called caliper accuracy) | `data/real/<part>/gt.yaml` with `gt_source: ruler` |
+| public photos | published spec, pasted at known size (never counted as real photos measured) | `data/public_photos/` (composites generated from `manifest.yaml`) |
 
 ## Phase 1 — measurement only (no keys, no models)
 
@@ -122,6 +123,54 @@ partial mat, a foreign marker board, a clay figurine, a silicone gasket, two par
 buckle). Each table gives the share handled as expected with a Wilson 95 % CI. The photos are rendered into
 `data/synthetic/suites/` (seed 11) when missing.
 
+## Public photos (no phone photos of real parts exist yet)
+
+Neither check below is a phone capture of a laptop-screen mat, and neither adds to "real photos measured".
+
+**Real-camera scale check** (`eval/public_scale.py`, no model, no cost). Public real camera photos of printed marker
+boards. A homography is fitted to the outer markers' corners with the product's own code
+(`calibrate.fit_plane_homography`, its detector settings and sub-pixel corners) and predicts the inner markers' corners.
+The error is on the board plane, with the board's long side = 100, so the same number is the % of span and the mm over
+a 100 mm span on our mat. CI: bootstrap over held-out markers. The boards' printed size is unknown, so nothing here is
+an absolute length. When a board's outer markers reject its documented layout (under 90 % of their corners fit), the
+photo leaves the headline; the report keeps it as written and with the gap ratio fitted on outer markers only.
+Photos and the source list stay in the gitignored `var/public_photos/`; `--download` refetches them from that list.
+
+```bash
+uv run python -m eval.public_scale    # eval/reports/latest/public_scale.{json,md}
+```
+
+**`public_photos` suite** (`tools/public_photos.py`). Each object is cut out of a public photograph by code (threshold
+or GrabCut, no model) and pasted on our rendered screen mat. The object's pixels are real; the mat, the camera and the
+light on the mat are rendered, and the flat cut-out sits on the plane at the stated thickness, with no walls or shadow.
+
+Circularity rule: the paste scale comes from one published dimension (the long side, or for a second object in the same
+photograph the first object's long side). In `gt.yaml` that dimension is `set_by_construction`: it is shown but left out
+of every error, pass rate and chart. Width and hole diameters are held out. The job gets the thickness and a neutral
+intent that does not name the object; the object is still visible in the photo, so a model can recognise it. The
+measure-only report has no model at all.
+
+```bash
+uv run python -m tools.public_photos build --preview var/preview.png   # composites from data/public_photos/manifest.yaml
+uv run python -m eval.public_photos                                    # measure only: public_photos_measure.{json,md}
+make smoke
+PROVIDER_MODE=live uv run python -m eval.run --live --suite public_photos --configs PS --jobs 2 --max-usd 5 \
+  --out var/public_photos/live_report   # keeps the full report in eval/reports/latest/ intact
+make bench                              # rebuilds every table from stored runs, public_photos as its own table
+```
+
+`--max-usd` stops starting runs once finished runs reach the cap; running ones finish. The manifest lists every candidate
+photo that was looked at and left out, with the reason. Masks were checked by eye against the object's edge; the first
+pass, with cast shadows in some masks, is kept as `public_photos_measure_first_pass.json`. Runs of this suite stay out of
+`open_weights.json`, and its failures sort last in the failure gallery, so the other suites' figures do not move. Its
+table sits under `separate_tables` in `report.json`, not `tables`.
+
+## Test evidence
+
+`make proof` (`tools/proof.py`) runs the gates and writes `eval/reports/latest/tests.json` and `docs/PROOF.md` from junit
+xml, the node runner's summary and exit codes. `ARGS=--browser` adds the browser tests with `--workers=2` and a 10 minute
+limit; `ARGS="--skip backend"` skips a gate. A gate that did not run says `not run`; no count is carried over.
+
 ## Failure taxonomy, provenance, open weights, impact
 
 - Every failed run gets one category, by the first matching rule: refused → timeout → scale_fail → seg_fail →
@@ -146,3 +195,23 @@ dev / held-out split and its hash once the real parts are collected. Held-out pa
 Real parts follow the dev / held-out lists in `eval/splits.lock`; a part in neither list is "unassigned" and never
 reaches a table. The synthetic bench and the reference objects are never used for tuning, so they count as held out
 (the demo set in `data/synthetic/samples/` is the synthetic dev set).
+
+## Knob-change time
+
+`make rebake` times fresh bakes of the stored battery cover in a warm sandbox worker, each at a length no earlier bake used,
+and writes `eval/reports/latest/rebake.json`. No model call. The first two bakes wake the worker and are dropped from the
+median. The times come from the machine that ran it.
+
+## Scale evaluation
+
+`eval/SCALE_PLAN.md` fixes the sizes, seeds, configs and success rules before any run. The stored results are under
+`eval/runs/live_scale/`, apart from the frozen bench in `eval/runs/live/`, and the summary is `eval/reports/latest/scale.json`.
+
+```sh
+uv run python -m eval.scale_report                 # rebuild scale.json from the stored runs (no keys, no model calls)
+uv run python -m eval.scale_data --jobs 8          # re-render the datasets (seed 20261105) into var/scale_data
+PROVIDER_MODE=live uv run python -m eval.scale_run # re-run the full-loop suites with live models; costs real credits
+PROVIDER_MODE=live uv run python -m eval.scale_stages sam|wonder|voice
+```
+
+These are live model calls on rendered photos with exact ground truth. They are not phone captures and never count as real photos measured.

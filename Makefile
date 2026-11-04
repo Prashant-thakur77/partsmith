@@ -11,7 +11,7 @@ VIDEO_API_PORT ?= 8766
 VIDEO_WEB_PORT ?= 3766
 
 .PHONY: help setup sync web-install schemas test test-all test-web lint typecheck check smoke dev api web worker \
-        seed synth bench bench-live real-check real-intake live lie mat media video mcp e2e clean-var gitleaks deploy-check
+        seed synth bench bench-live real-check real-intake live lie mat media video mcp e2e clean-var gitleaks deploy-check proof rebake
 
 help: ## Show targets
 	@grep -E '^[a-zA-Z_-]+:.*?## ' $(MAKEFILE_LIST) | awk 'BEGIN{FS=":.*?## "}{printf "  \033[36m%-12s\033[0m %s\n",$$1,$$2}'
@@ -58,6 +58,7 @@ synth: ## Regenerate the synthetic bench (exact ground truth, deterministic from
 bench: ## Regenerate eval reports from stored runs (no keys needed)
 	$(UV) run python -m eval.run --from-runs
 	$(UV) run python -m tools.readme
+	$(UV) run python -m tools.proof --write-only
 
 bench-live: ## Re-run every bench with the providers configured in .env
 	$(UV) run python -m eval.run --live
@@ -144,8 +145,18 @@ e2e: ## Playwright e2e for the web app
 deploy-check: ## Static checks of infra/deploy (no image build, no deploy; see infra/deploy/README.md)
 	$(UV) run python infra/deploy/check.py
 
+rebake: ## Time fresh knob changes on the stored battery cover; writes eval/reports/latest/rebake.json
+	$(UV) run python -m eval.rebake
+
+proof: ## Run the gates; write eval/reports/latest/tests.json and docs/PROOF.md from machine output
+	$(UV) run python -m tools.proof $(ARGS)
+
 gitleaks: ## Secret scan of the git history + working tree
-	gitleaks git --no-banner --redact . && gitleaks dir --no-banner --redact .
+	gitleaks git --no-banner --redact .
+	@# The working tree, as far as git would ever see it (ignored runtime data and local env files are out of scope).
+	@set -e; repo="$(CURDIR)"; d=$$(mktemp -d); trap 'rm -rf "$$d"' EXIT; \
+	git ls-files -co --exclude-standard -z | xargs -0 cp --parents -t "$$d" 2>/dev/null || true; \
+	cd "$$d" && gitleaks dir --no-banner --redact --gitleaks-ignore-path "$$repo/.gitleaksignore" .
 
 clean-var: ## Delete local runtime data (var/)
 	rm -rf var

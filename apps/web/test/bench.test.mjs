@@ -65,3 +65,23 @@ test("report ids read as plain words: no bare PS, no underscores", () => {
   assert.equal(configLabel("PS"), "PartSmith (full pipeline)");
   assert.equal(columnLabel("verified_but_off"), "Verified, yet a size over 0.5 mm off");
 });
+
+test("public photos are labelled as pasted on a rendered mat and never as real photos measured", async () => {
+  const { EXTRA_TITLES, gtLabel } = await import("../src/lib/bench.ts");
+  assert.equal(gtLabel("published_spec_pasted"), "published spec, pasted at known size");
+  const { title, blurb } = EXTRA_TITLES.public_photos;
+  assert.match(title, /rendered mat/);
+  assert.match(blurb, /Not phone photos/);
+  assert.match(blurb, /not counted as real photos measured/);
+  assert.match(blurb, /left out of the errors/);
+  const s = benchSentence("public_photos", { status: "ok", n: 3, headline: { config: "PS", median_abs_err_mm: 0.4, pass_at_0_5: 1 / 3, verified_rate: 0, n: 3 } });
+  assert.equal(s, "On 3 public photos pasted on a rendered mat the full pipeline's median size error was 0.40 mm; 1 of 3 had every size within 0.5 mm, and 0 of 3 passed the code's check.");
+});
+
+test("the report schema accepts the public-photo table next to the others and the committed report validates", async () => {
+  const { BenchReportSchema } = await import("../src/lib/api-types.ts");
+  const parsed = BenchReportSchema.parse(REPORT);
+  for (const t of Object.values(parsed.tables)) assert.notEqual(t.ground_truth, "published_spec_pasted");
+  const withPublic = BenchReportSchema.parse({ ...REPORT, separate_tables: { public_photos: { n: 1, ground_truth: "published_spec_pasted" } } });
+  assert.equal(withPublic.separate_tables.public_photos.ground_truth, "published_spec_pasted");
+});

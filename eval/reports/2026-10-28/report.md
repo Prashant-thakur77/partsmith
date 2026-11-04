@@ -2,7 +2,7 @@
 
 > **PIPELINE CHECK — DETERMINISTIC MOCK PROVIDERS, NOT MODEL PERFORMANCE.** Every model stage ran on deterministic mocks; these tables show that the pipeline and the scorer work end to end, not how well any model performs.
 
-Mode: `mock` · git `a1cc532612` · CI: 95 %: bootstrap over samples (2000 resamples, seeded) for mean errors; Wilson for rates.
+Mode: `mock` · git `039c6d2466` · CI: 95 %: bootstrap over samples (2000 resamples, seeded) for mean errors; Wilson for rates.
 - PS-open / PS-open-all are provider-routing variants: identical to PS with mock providers, so they run only with --live
 - synthetic: seeded subset of 6/60 bench samples (seed 7)
 - reference_objects: 4 synthetic renders; real photos pending (data/real/reference_objects/)

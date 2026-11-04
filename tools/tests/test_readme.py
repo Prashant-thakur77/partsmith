@@ -53,7 +53,7 @@ def test_render_requires_every_block() -> None:
 REPORT_MOCK = {
     "mode": "mock",
     "generated_at": "2026-10-28T16:03:49+00:00",
-    "git_sha": "1c91d0f00cd68f47d8c5c4fd3e268a3598866335",
+    "git_sha": "43520820538763f0dbaba2b99fa5c543d60f7640",
     "tables": {
         "synthetic": {
             "status": "ok",
@@ -79,7 +79,7 @@ def test_status_line_is_derived_from_the_report_mode(monkeypatch: pytest.MonkeyP
     monkeypatch.setattr(readme, "_replay_modes", lambda: (0, 0))
     _fixtures(monkeypatch, REPORT_MOCK, **{"impact.json": {"n_sessions": 0}})
     s = readme.status_line()
-    assert s.startswith("> **Status: mock providers** · bench report 2026-10-28 at commit `1c91d0f`")
+    assert s.startswith("> **Status: mock providers** · bench report 2026-10-28 at commit `4352082`")
     assert "real photos measured: 0" in s and "deterministic mock models on synthetic photos" in s
     assert "live runs are pending" in s
 
@@ -212,6 +212,83 @@ def test_status_line_counts_live_replays_and_drops_the_no_live_call_claim(monkey
 def test_status_line_says_when_the_bench_ran_on_uncommitted_changes(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setattr(readme, "_replay_modes", lambda: (0, 0))
     _fixtures(monkeypatch, REPORT_MOCK, **{"provenance.json": {"git_dirty": True}})
-    assert "at commit `1c91d0f` plus uncommitted changes ·" in readme.status_line()
+    assert "at commit `4352082` plus uncommitted changes ·" in readme.status_line()
     _fixtures(monkeypatch, REPORT_MOCK, **{"provenance.json": {"git_dirty": False}})
-    assert "at commit `1c91d0f` ·" in readme.status_line()
+    assert "at commit `4352082` ·" in readme.status_line()
+
+
+def test_public_evidence_is_read_from_its_reports_and_labelled(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setattr(readme, "REPORT", tmp_path / "report.json")
+    assert readme.public_evidence() == []
+    (tmp_path / "public_scale.json").write_text(
+        json.dumps(
+            {"summary": {"status": "ok", "mean_err_pct": 0.1, "ci95_pct": [0.05, 0.2], "n_corners": 8, "n_photos": 2, "mean_err_mm_over_100mm": 0.1}}
+        )
+    )  # fmt: skip
+    (tmp_path / "public_photos_measure.json").write_text(
+        json.dumps(
+            {"summary": {"capture_gate_passed": 2, "n_photos": 3, "held_out": {"n_dims": 4, "mean_abs_mm": 0.4, "ci95_mm": [0.2, 0.6]}}}
+        )
+    )  # fmt: skip
+    text = "\n".join(readme.public_evidence())
+    assert "2/3" in text and "0.4 mm" in text and "excluded" in text
+    assert "0.1 % of span" in text and "says nothing about a phone photographing a laptop screen" in text
+
+
+def _report_with_runs() -> dict[str, object]:
+    def run(sid: str, v: bool, err: float, why: str | None = None) -> dict[str, object]:
+        return {"sample_id": sid, "verified": v, "max_abs_err_mm": err, "failure": why}
+
+    return {
+        "runs": {
+            "synthetic": {"PS": [run("a", True, 0.1), run("b", False, 3.0)]},
+            "control": {
+                "PS": [run("c", True, 7.9, "worst thickness -7.90 mm"), run("d", True, 0.6, "worst length -0.60 mm")]
+            },
+            "public_photos": {"PS": [run("e", True, 0.8, "worst width +0.82 mm"), run("f", True, 0.2)]},
+        }
+    }
+
+
+def test_audit_lists_verified_parts_that_miss_and_how_many_were_height(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setattr(readme, "_load", lambda name: _report_with_runs() if name == "report.json" else None)
+    text = readme.audit()
+    assert "verified **3** parts, and **2** of them were" in text
+    assert "**1** of those were in height" in text
+    assert "adds **1 of 2**" in text
+    assert "`c`" in text and "7.9 mm" in text
+
+
+def test_headline_counts_the_misses_outside_the_two_clean_tables(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setattr(readme, "_load", lambda name: _report_with_runs() if name == "report.json" else None)
+    row = readme.headline().splitlines()[3]
+    assert "**2/2** intact parts" in row and "**1/2** public photos" in row
+
+
+def test_badges_leave_out_a_suite_that_did_not_pass(monkeypatch: pytest.MonkeyPatch) -> None:
+    gates = {
+        "gates": {
+            "backend": {"status": "passed", "passed": 9},
+            "web_unit": {"status": "failed", "passed": 8, "failed": 1},
+        }
+    }
+    monkeypatch.setattr(readme, "_load", lambda name: gates if name == "tests.json" else None)
+    text = readme.badges()
+    assert "backend" in text and "9%20passing" in text
+    assert "web%20unit" not in text
+
+
+def test_every_threshold_in_the_stored_provenance_has_a_meaning() -> None:
+    t = json.loads((readme.REPORT.parent / "provenance.json").read_text())["thresholds"]
+    names = [k for k, v in t.items() if not isinstance(v, dict)] + list(t["capture_gate"])
+    assert [n for n in names if n not in readme.THRESHOLD_MEANINGS] == []
+
+
+def test_charts_read_their_reports_and_stay_inside_the_frame() -> None:
+    from tools import readme_charts as rc
+
+    for svg in (rc.rounds_chart(), rc.single_vs_loop_chart(), rc.mesh_vs_knob_chart(), rc.suites_chart()):
+        assert svg.startswith("<svg") and "Source:" in svg and 'fill="#fdfcf9"' in svg
+    rep = json.loads((readme.REPORT.parent / "report.json").read_text())
+    for name, within, off, not_verified in rc.verified_counts(rep):
+        assert within >= 0 and off >= 0 and not_verified >= 0, name

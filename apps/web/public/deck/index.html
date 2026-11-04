@@ -1,0 +1,461 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>PartSmith Pitch Deck</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;800&family=Geist+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: a set of numbered drawing sheets on drafting paper, each with an engineer's title block; 96 × 54 rem at 20 px. */
+:root {
+  --paper: #faf7f1; --sheet: #fdfcf9; --tint: #f3eee4; --rule: #ddd6c8; --rule-strong: #bdb4a2;
+  --ink: #1c2230; --muted: #5b6170; --accent: #e8590c; --accent-soft: #fdecdf;
+  --pass: #007439; --pass-soft: #e3f3ea; --warn: #8a5a00; --warn-soft: #fbf1da; --danger: #be2323; --danger-soft: #fbe7e4;
+  --sans: Geist, "Helvetica Neue", Arial, sans-serif; --mono: "Geist Mono", ui-monospace, Menlo, monospace;
+  --ease: cubic-bezier(.16, 1, .3, 1);
+}
+* { box-sizing: border-box; }
+html { font-size: 20px; height: 100%; }
+body { margin: 0; height: 100%; overflow: hidden; background: #e9e3d6; color: var(--ink); font-family: var(--sans); -webkit-font-smoothing: antialiased; }
+#stage { position: absolute; left: 0; top: 0; width: 1920px; height: 1080px; transform-origin: 0 0; background: var(--paper); overflow: hidden;
+  background-image: linear-gradient(rgba(90,75,50,.06) 1px, transparent 1px), linear-gradient(90deg, rgba(90,75,50,.06) 1px, transparent 1px); background-size: 2.4rem 2.4rem; }
+.s { position: absolute; inset: 0; padding: 2.6rem 3.6rem 4.6rem; display: none; flex-direction: column; gap: 1.2rem; min-width: 0; }
+.s.on { display: flex; }
+h1, h2, h3, p { margin: 0; }
+h1 { font-size: 5.6rem; line-height: 1.02; letter-spacing: -.035em; font-weight: 800; text-wrap: balance; }
+h2 { font-size: 3.1rem; line-height: 1.06; letter-spacing: -.025em; font-weight: 800; text-wrap: balance; }
+h3 { font-size: 1.5rem; line-height: 1.18; font-weight: 600; letter-spacing: -.01em; }
+p { font-size: 1.32rem; line-height: 1.36; }
+.lead { font-size: 1.6rem; line-height: 1.3; color: var(--muted); max-width: 66rem; }
+.small { font-size: 1.04rem; line-height: 1.34; color: var(--muted); overflow-wrap: anywhere; }
+.mono { font-family: var(--mono); }
+.num { font-variant-numeric: tabular-nums; }
+.tag { align-self: flex-start; display: inline-block; font: 500 1rem/1.3 var(--mono); color: var(--muted); padding: .22rem .6rem; border: 1px dashed var(--rule-strong); border-radius: .3rem; background: var(--sheet); }
+.ac { color: var(--accent); }
+.row { display: flex; gap: 1.2rem; min-width: 0; }
+.grow { flex: 1; min-width: 0; min-height: 0; }
+.col { display: flex; flex-direction: column; gap: .9rem; min-width: 0; min-height: 0; }
+.panel { background: var(--sheet); border: 1px solid var(--rule); border-radius: .5rem; padding: 1.1rem 1.25rem; min-width: 0; }
+button { font: inherit; color: inherit; background: var(--sheet); border: 1px solid var(--rule-strong); border-radius: .4rem; padding: .5rem .85rem; cursor: pointer; font-size: 1.14rem; text-align: left; transition: border-color .15s, background .15s, transform .15s; }
+button:hover { border-color: var(--accent); }
+button[aria-pressed="true"], button[aria-selected="true"] { background: var(--accent-soft); border-color: var(--accent); }
+:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
+input[type=range] { width: 100%; accent-color: var(--accent); height: 1.6rem; }
+label { font-size: 1.1rem; font-weight: 500; }
+/* title block: sheet number, units, limit */
+#block { position: absolute; right: 3.6rem; bottom: 1.15rem; display: flex; border: 1px solid var(--ink); font: 500 .92rem/1 var(--mono); background: var(--sheet); z-index: 5; }
+#block span { padding: .42rem .7rem; border-right: 1px solid var(--ink); white-space: nowrap; }
+#block span:last-child { border-right: 0; }
+#nav { position: absolute; left: 3.6rem; bottom: 1.05rem; display: flex; align-items: center; gap: .36rem; z-index: 5; }
+#nav .dot { width: 1.05rem; height: 1.05rem; padding: 0; border-radius: 50%; border: 1px solid var(--rule-strong); background: var(--sheet); }
+#nav .dot.done { background: var(--rule-strong); }
+#nav .dot.cur { background: var(--accent); border-color: var(--accent); }
+#nav .go { padding: .25rem .6rem; font: 500 1rem var(--mono); }
+#nav .hint { margin-left: .8rem; font: 400 .9rem var(--mono); color: var(--muted); }
+#notes { position: absolute; left: 3.6rem; right: 3.6rem; bottom: 3.6rem; max-height: 20rem; overflow: auto; background: var(--ink); color: #fbf7ef; padding: 1rem 1.3rem; border-radius: .5rem; font-size: 1.32rem; line-height: 1.38; z-index: 9; }
+/* viewers */
+.vw { position: relative; min-height: 0; background: var(--sheet); border: 1px solid var(--rule); border-radius: .5rem; overflow: hidden; touch-action: pan-y; cursor: grab; }
+.vw canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+.vw .cap { position: absolute; left: .7rem; bottom: .55rem; font: 500 .92rem var(--mono); color: var(--muted); pointer-events: none; }
+/* slide 1 */
+.cover { display: grid; grid-template-columns: 1.05fr 1fr; gap: 2rem; flex: 1; min-height: 0; }
+.cover .vw { border: 0; background: transparent; }
+/* slide 2 */
+.story { display: grid; grid-template-columns: 2.1fr 1fr; gap: 1.3rem; flex: 1; min-height: 0; }
+.pic { position: relative; background-size: cover; background-position: center; border-radius: .5rem; min-height: 0; border: 1px solid var(--rule); }
+.pic .line { position: absolute; left: 0; right: 0; bottom: 0; padding: 3rem 1.4rem 1rem; color: #fff; font-size: 1.9rem; font-weight: 600; line-height: 1.2; background: linear-gradient(transparent, rgba(0,0,0,.72)); border-radius: 0 0 .5rem .5rem; }
+.thumbs { display: grid; grid-template-columns: repeat(5, 1fr); gap: .5rem; }
+.thumbs button { padding: 0; aspect-ratio: 16/10; background-size: cover; background-position: center; border-width: 2px; }
+.bigstat { font-size: 5.4rem; line-height: 1; font-weight: 800; letter-spacing: -.03em; }
+/* slide 3 flow */
+.rail { display: grid; grid-template-columns: repeat(8, 1fr); gap: .5rem; }
+.rail button { padding: .6rem .7rem; font-size: 1.06rem; line-height: 1.16; font-weight: 500; }
+.rail b { display: block; font: 500 .9rem var(--mono); color: var(--accent); margin-bottom: .15rem; }
+.stagepic { flex: 1; min-height: 0; display: grid; grid-template-columns: 1.5fr 1fr; gap: 1.2rem; }
+.imgbox { min-height: 0; background: #fff; border: 1px solid var(--rule); border-radius: .5rem; overflow: hidden; position: relative; display: flex; align-items: center; justify-content: center; }
+.imgbox img { width: 100%; height: 100%; object-fit: contain; display: block; }
+pre.code { margin: 0; padding: 1rem 1.2rem; width: 100%; height: 100%; overflow: auto; font: 400 .98rem/1.5 var(--mono); background: var(--tint); white-space: pre-wrap; word-break: break-word; }
+/* slide 4 */
+.tryit { display: grid; grid-template-columns: 1.7fr 1fr; gap: 1.2rem; flex: 1; min-height: 0; }
+.knob { display: flex; flex-direction: column; gap: .15rem; }
+.knob .top { display: flex; justify-content: space-between; gap: .6rem; align-items: baseline; }
+.val { font: 500 1.26rem var(--mono); font-variant-numeric: tabular-nums; }
+.pick { display: grid; grid-template-columns: 1fr 1fr; gap: .5rem; }
+/* slide 5 */
+.star { display: grid; grid-template-columns: 1fr 1fr 21rem; gap: 1.1rem; flex: 1; min-height: 0; }
+.star h3 { padding: .1rem .1rem .3rem; }
+table { border-collapse: collapse; width: 100%; font-size: 1.14rem; }
+.land tr[data-r] { cursor: pointer; } .land tr.sel td { background: var(--tint); } .land tr.ours td { font-weight: 700; color: var(--ink); } .land tr.ours td:last-child { color: var(--pass); } .land th { font-size: 1.14rem; color: var(--muted); vertical-align: bottom; } .land button { font-weight: 600; width: 100%; white-space: nowrap; } .land td, .land th { padding: .42rem .7rem !important; } a { color: var(--accent); }
+table.big { font-size: 1.42rem; } table.big td, table.big th { padding: .72rem .25rem; }
+td, th { padding: .32rem .25rem; text-align: left; border-bottom: 1px solid var(--rule); font-weight: 500; }
+td.r, th.r { text-align: right; font-family: var(--mono); font-variant-numeric: tabular-nums; }
+.bar { height: 1.2rem; background: var(--tint); border-radius: .25rem; overflow: hidden; margin-top: .2rem; }
+.bar i { display: block; height: 100%; transition: width .8s var(--ease); }
+/* slide 6 */
+.save { display: grid; grid-template-columns: 1.1fr 1fr; gap: 1.2rem; flex: 1; min-height: 0; }
+.why { flex: 1; display: grid; grid-template-columns: 9.5rem 1fr; align-items: center; align-content: center; column-gap: 1rem; row-gap: .15rem; padding: .62rem 1.1rem; border: 1px solid var(--rule); border-radius: .45rem; background: var(--sheet); }
+.why .old { color: var(--muted); font-size: 1.36rem; grid-row: span 2; }
+.why s { text-decoration-color: var(--danger); text-decoration-thickness: 3px; }
+.why b { font-size: 1.5rem; }
+.s.on .why { animation: rise .6s var(--ease) both; }
+.s.on .why:nth-child(2) { animation-delay: .25s; } .s.on .why:nth-child(3) { animation-delay: .5s; } .s.on .why:nth-child(4) { animation-delay: .75s; }
+@keyframes rise { from { opacity: 0; transform: translateY(12px); } }
+.timegrid { display: grid; grid-template-columns: 1fr 1fr; gap: .7rem; }
+.tile strong { display: block; font-size: 2.5rem; line-height: 1.04; font-weight: 800; letter-spacing: -.02em; font-variant-numeric: tabular-nums; }
+.calc input { width: 100%; font: 500 1.34rem var(--mono); padding: .34rem .5rem; border: 1px solid var(--rule-strong); border-radius: .3rem; background: #fff; color: var(--ink); }
+.calc .f3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: .6rem; }
+/* slide 7 wipe */
+.wipe { position: relative; flex: 1; min-height: 0; background: #fff; border: 1px solid var(--rule); border-radius: .5rem; overflow: hidden; }
+.wipe img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; }
+.wipe .seam { position: absolute; top: 0; bottom: 0; width: 3px; background: var(--accent); box-shadow: 0 0 12px rgba(232,89,12,.6); pointer-events: none; }
+.wipe .side { position: absolute; top: .6rem; font: 500 1rem var(--mono); background: var(--ink); color: #fbf7ef; padding: .22rem .55rem; border-radius: .25rem; }
+/* slide 8 loop */
+.loop { display: grid; grid-template-columns: 1.15fr 1fr; gap: 1.2rem; flex: 1; min-height: 0; }
+.stamp { position: absolute; right: 1rem; top: 1rem; padding: .35rem .8rem; border: 4px solid currentColor; border-radius: .4rem; font-weight: 800; font-size: 1.9rem; letter-spacing: .04em; transform: rotate(-5deg); background: rgba(255,255,255,.9); }
+.edits { display: flex; flex-direction: column; gap: .24rem; font: 500 1.04rem/1.3 var(--mono); }
+svg text { font-family: var(--mono); fill: var(--muted); }
+/* slide 9 attacks */
+.att { display: grid; grid-template-columns: 26rem 1fr; gap: 1.2rem; flex: 1; min-height: 0; }
+.att .list { display: flex; flex-direction: column; gap: .24rem; overflow: auto; padding-right: .3rem; }
+.att .list button { font-size: 1rem; padding: .3rem .6rem; line-height: 1.2; }
+.lock { display: inline-flex; gap: .4rem; font: 500 1.1rem var(--mono); color: var(--danger); background: var(--danger-soft); border: 1px solid var(--danger); padding: .25rem .6rem; border-radius: .3rem; align-self: flex-start; }
+/* slide 10 voice */
+video { display: block; width: 100%; height: 100%; object-fit: contain; background: #fff; }
+.hindi { font-size: 2.5rem; font-weight: 600; line-height: 1.2; }
+/* slide 11 models */
+.mcards { display: grid; grid-template-columns: repeat(3, 1fr); gap: .6rem; }
+.mcards button { padding: .7rem .9rem; }
+.mcards b { display: block; font-size: 1.28rem; }
+.mcards span { font: 500 .96rem var(--mono); color: var(--muted); }
+/* slide 12 proof */
+.proof { display: grid; grid-template-columns: repeat(4, 1fr); grid-auto-rows: 1fr; gap: 1rem; flex: 1; min-height: 0; }
+.stat { display: flex; flex-direction: column; justify-content: center; }
+.stat strong { display: block; font-size: 2.9rem; line-height: 1; font-weight: 800; letter-spacing: -.025em; color: var(--pass); font-variant-numeric: tabular-nums; white-space: nowrap; }
+.stat p { font-size: 1.4rem; font-weight: 600; margin-top: .7rem; line-height: 1.18; }
+.stat .small { margin-top: .5rem; font-size: 1.12rem; }
+/* slide 14 */
+td.ok { color: var(--pass); } td.next { color: var(--accent); }
+@media (max-width: 820px), (orientation: portrait) and (max-width: 1000px) {
+  html { font-size: 12.5px; }
+  body { overflow: auto; height: auto; background: var(--paper); }
+  #stage { position: static; width: 100%; height: auto; transform: none !important; padding-bottom: 5.5rem; overflow: visible; }
+  .s { position: static; padding: 1.4rem 0 1rem; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+  .cover, .story, .stagepic, .tryit, .star, .save, .loop, .att { display: flex; flex-direction: column; }
+  .rail { grid-template-columns: repeat(4, 1fr); }
+  .mcards, .timegrid { grid-template-columns: 1fr 1fr; }
+  .proof { grid-template-columns: 1fr 1fr; }
+  .vw { height: 24rem; flex: none; } .wipe { height: 22rem; flex: none; } .pic { height: 22rem; flex: none; } .imgbox { height: 24rem; flex: none; }
+  .att { } .att .list { max-height: 18rem; }
+  h1 { font-size: 3.6rem !important; } .bigstat { font-size: 3rem !important; } .row.wrap { flex-direction: column; } .s h2 { font-size: 2.7rem !important; margin-block: 0 !important; }
+  .stat strong { font-size: 2.3rem; white-space: normal; } .proof { grid-auto-rows: auto; } .why { grid-template-columns: 7rem 1fr; } .row.wrap > .vw { flex: none !important; width: 100%; height: 30rem; } .why { flex: none; }
+  #block { display: none; }
+  #nav { position: fixed; left: 0; right: 0; bottom: 0; background: var(--sheet); border-top: 1px solid var(--rule); padding-block: .6rem calc(.6rem + env(safe-area-inset-bottom, 0px)); padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); flex-wrap: wrap; gap: .3rem; }
+  #nav .hint { display: none; } #nav .dot { width: 1.2rem; height: 1.2rem; }
+  #notes { position: fixed; left: 8px; right: 8px; bottom: 5rem; }
+}
+@media (prefers-reduced-motion: reduce) { * { animation: none !important; transition: none !important; } }
+</style>
+</head>
+<body>
+<main id="stage" aria-label="PartSmith pitch deck">
+  <div id="deck"></div>
+  <div id="notes" hidden></div>
+  <nav id="nav" aria-label="Slides"></nav>
+  <div id="block" aria-hidden="true"><span>PARTSMITH</span><span id="b-sheet"></span><span>UNITS mm</span><span id="b-limit"></span></div>
+</main>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script>
+"use strict";
+const $ = (s, r = document) => r.querySelector(s);
+const $$ = (s, r = document) => [...r.querySelectorAll(s)];
+const el = (html) => { const t = document.createElement("template"); t.innerHTML = html.trim(); return t.content.firstChild; };
+const esc = (s) => String(s ?? "").replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]);
+const REDUCED = matchMedia("(prefers-reduced-motion: reduce)").matches;
+const fmt = (n) => Number(n).toLocaleString("en");
+const fx = (n, d = 2) => Number(n).toFixed(d);
+
+/* ---------- 3D: real baked meshes only. The browser swaps files; it never runs CAD. ---------- */
+const meshCache = new Map();
+async function loadMesh(file) {
+  if (!meshCache.has(file)) meshCache.set(file, fetch(file).then((r) => { if (!r.ok) throw new Error(file); return r.arrayBuffer(); }).then((buf) => {
+    const [nv, nf] = new Uint32Array(buf, 0, 2);
+    const pos = new Float32Array(buf, 8, nv * 3);
+    const idx = new Uint32Array(buf, 8 + nv * 12, nf * 3);
+    const g = new THREE.BufferGeometry();
+    g.setAttribute("position", new THREE.BufferAttribute(pos, 3));
+    g.setIndex(new THREE.BufferAttribute(idx, 1));
+    const flat = g.toNonIndexed();
+    flat.computeVertexNormals();
+    flat.computeBoundingBox();
+    return { flat, edges: new THREE.EdgesGeometry(g, 28) };
+  }));
+  return meshCache.get(file);
+}
+const viewers = [];
+class Viewer {
+  constructor(box, { spin = true, az = -.7, el = .62, color = 0x8e9bab, radius = 0 } = {}) {
+    this.box = box; this.spin = spin; this.az = az; this.el = el; this.radius = radius; this.scale = [1, 1, 1]; this.token = 0;
+    this.scene = new THREE.Scene();
+    this.scene.add(new THREE.HemisphereLight(0xffffff, 0xb9b0a0, .72));
+    const sun = new THREE.DirectionalLight(0xffffff, .75); sun.position.set(.6, -.5, 1); this.scene.add(sun);
+    const fill = new THREE.DirectionalLight(0xffffff, .6); fill.position.set(-.3, .2, -1); this.scene.add(fill);
+    this.group = new THREE.Group(); this.scene.add(this.group);
+    this.mat = new THREE.MeshStandardMaterial({ color, roughness: .62, metalness: .02, side: THREE.DoubleSide, polygonOffset: true, polygonOffsetFactor: 1, polygonOffsetUnits: 1 });
+    this.lineMat = new THREE.LineBasicMaterial({ color: 0x1c2230, transparent: true, opacity: .55 });
+    this.camera = new THREE.PerspectiveCamera(26, 1, .1, 4000);
+    this.camera.up.set(0, 0, 1);
+    this.canvas = document.createElement("canvas"); box.prepend(this.canvas);
+    try { this.renderer = new THREE.WebGLRenderer({ canvas: this.canvas, antialias: true, alpha: true, preserveDrawingBuffer: true }); this.renderer.setClearColor(0, 0); }
+    catch (e) { box.insertAdjacentHTML("beforeend", '<p class="small" style="padding:1rem">This browser could not start 3D. The numbers beside it are still real.</p>'); return; }
+    this.renderer.setPixelRatio(Math.min(devicePixelRatio || 1, 2));
+    let drag = null;
+    this.canvas.addEventListener("pointerdown", (e) => { drag = [e.clientX, e.clientY]; this.spin = false; this.canvas.setPointerCapture(e.pointerId); box.style.cursor = "grabbing"; });
+    this.canvas.addEventListener("pointermove", (e) => { if (!drag) return; this.az -= (e.clientX - drag[0]) * .009; this.el = Math.max(-1.5, Math.min(1.5, this.el + (e.clientY - drag[1]) * .009)); drag = [e.clientX, e.clientY]; this.draw(); });
+    const up = () => { drag = null; box.style.cursor = "grab"; };
+    this.canvas.addEventListener("pointerup", up); this.canvas.addEventListener("pointercancel", up);
+    viewers.push(this);
+    new ResizeObserver(() => this.resize()).observe(box);
+  }
+  resize() { const w = this.box.clientWidth, h = this.box.clientHeight; if (!w || !h || !this.renderer) return; this.renderer.setSize(w, h, false); this.camera.aspect = w / h; this.camera.updateProjectionMatrix(); this.draw(); }
+  async show(file) {
+    if (!this.renderer) return;
+    const t = ++this.token;
+    const { flat, edges } = await loadMesh(file);
+    if (t !== this.token) return;
+    this.group.clear();
+    flat.boundingBox.getCenter(this.center = new THREE.Vector3());
+    this.size = flat.boundingBox.getSize(new THREE.Vector3());
+    this.group.add(new THREE.Mesh(flat, this.mat));
+    this.group.add(new THREE.LineSegments(edges, this.lineMat));
+    this.applyScale(); this.resize();
+  }
+  applyScale() { this.group.scale.set(...this.scale); if (this.center) this.group.position.set(-this.center.x * this.scale[0], -this.center.y * this.scale[1], -this.center.z * this.scale[2]); this.draw(); }
+  draw() {
+    if (!this.renderer || !this.size) return;
+    const r = this.radius || Math.max(this.size.x, this.size.y, this.size.z) * 1.05;
+    const d = r / Math.tan(this.camera.fov * Math.PI / 360) * (this.camera.aspect < 1 ? 1 / this.camera.aspect : 1) * .78;
+    this.camera.position.set(d * Math.cos(this.el) * Math.sin(this.az), -d * Math.cos(this.el) * Math.cos(this.az), d * Math.sin(this.el));
+    this.camera.lookAt(0, 0, 0);
+    this.renderer.render(this.scene, this.camera);
+  }
+  visible() { return this.box.offsetParent !== null; }
+}
+(function loop() { requestAnimationFrame(loop); if (REDUCED) return; for (const v of viewers) if (v.spin && v.visible()) { v.az += .006; v.draw(); } })();
+
+/* ---------- slides ---------- */
+let D, M;
+const slides = [];
+function slide(title, notes, html, enter) { slides.push({ title, notes, html, enter }); }
+function src(text) { return `<span class="small mono">${esc(text)}</span>`; }
+
+async function boot() {
+  [D, M] = await Promise.all([fetch("data.json").then((r) => r.json()), fetch("models/index.json").then((r) => r.json())]);
+  $("#b-limit").textContent = `LIMIT ${D.limit_mm} mm`;
+  const R = D.run, half = D.limit_mm === .5 ? "half a millimetre" : `${D.limit_mm} mm`;
+  const [e0, e1, e2] = R.errors;
+
+  slide("Title", `PartSmith turns a phone photo of a broken plastic part into a measured, verified, printable replacement. You don't need a caliper, because your laptop screen is the ruler. This model on screen is real CadQuery output from a verified part: you can drag it. I built this alone during the hackathon, on Meta's models.`,
+    `<div class="cover"><div class="col" style="justify-content:center;gap:1.5rem"><span class="tag">Meta Global AI Developer Hackathon · Indie track</span>
+      <h1>Part<span class="ac">Smith</span></h1><p style="font-size:2.3rem;line-height:1.16;font-weight:500;letter-spacing:-.015em">Photo of a broken part → a measured, verified, printable replacement.</p>
+      <p class="lead">No caliper: your laptop screen is the ruler. The model proposes, code decides.</p></div>
+      <div class="vw" id="v-cover"><span class="cap">Real CadQuery output · ${esc(M.parts["battery-cover-45mm"].title)} · drag to turn</span></div></div>`,
+    (s) => { once(s, () => new Viewer($("#v-cover", s), { az: -.8, el: .7 }).show(M.parts["battery-cover-45mm"].base.file)); });
+
+  const story = [["story-father", "It's nine at night. Your father reaches for the TV remote."], ["story-band", "For years, he has held it together with a rubber band."], ["story-snapped", "One small plastic cover snapped, and the batteries keep falling out."], ["story-shop", "Nobody makes that cover now. The shop says: buy a new remote."], ["story-heap", "So the whole thing goes on the pile."]];
+  slide("The problem", `Everyone has seen this remote. One small piece of plastic snaps, nobody sells it, and something that still works gets thrown away. A print shop could make the part tonight, but it needs an exact file, and half a millimetre off means it won't click shut. These paintings were drawn by Muse Image, and this home is imagined. The number on the right is from the UN's e-waste report.`,
+    `<h2>One snapped piece of plastic ends a working device</h2><div class="story"><div class="col"><div class="pic grow" id="st-pic"><div class="line" id="st-line"></div></div>
+      <div class="thumbs" id="st-th" role="group" aria-label="Story steps"></div></div>
+      <div class="col" style="justify-content:center;gap:1.6rem"><div><div class="bigstat">${D.outside.ewaste_bn_kg}<span style="font-size:2.2rem"> billion kg</span></div><p>of electronics thrown out in ${D.outside.ewaste_year}</p>${src("Source: " + D.outside.ewaste_source)}</div>
+      <div><p style="font-weight:600">A print shop could make the part tonight, but it needs an exact file.</p><p class="small" style="margin-top:.4rem">And ${half} off means it won't click shut.</p></div>
+      <span class="tag">Illustrations by Muse Image · an imagined home</span></div></div>`,
+    (s) => { once(s, () => { const pick = (i) => { $("#st-pic", s).style.backgroundImage = `url(img/${story[i][0]}.jpg)`; $("#st-line", s).textContent = story[i][1]; $$("#st-th button", s).forEach((b, j) => b.setAttribute("aria-pressed", i === j)); };
+      story.forEach(([n, t], i) => { const b = el(`<button aria-label="${esc(t)}" style="background-image:url(img/${n}.jpg)"></button>`); b.onclick = () => pick(i); $("#st-th", s).append(b); }); pick(0); }); });
+
+  const flow = [
+    ["Photo on the mat", "img/flow-photo.jpg", "A phone photo of the part lying on calibrated markers your laptop screen draws. This one is a rendered sample from our test set.", "Rendered sample photo"],
+    ["Cut out", "img/see-mask.jpg", "SAM 3.1 finds the part from a plain text prompt and returns its mask.", "Live SAM 3.1 mask, stored run"],
+    ["Measured", "img/see-measure.jpg", "Plain code turns the outline into millimetres between the markers. Every size carries an error bar and a source.", "Code, no model"],
+    ["A real program", null, "Muse Spark Open writes parametric CadQuery with named knobs. These are the knobs of the finished part.", "From the run's part.py"],
+    ["Check vs photo", "img/see-heat1.jpg", `The sandbox runs the program and the verifier lays the model over the photo. First build: ${e0} mm off, against a limit of ${D.limit_mm} mm.`, "Verifier overlay, round 1"],
+    ["Fix, then pass", "img/see-heat3.jpg", `The agent reads the gap and edits the program. By round ${R.rounds} the worst gap is ${e2} mm. Only the verifier can pass it.`, `Verifier overlay, round ${R.rounds}`],
+    ["Person's review", "img/flow-review.jpg", "A reviewer can pin what the photo missed and send it back. The fixer gets the note, and code measures the fix.", "Review desk, on scripted test reviews"],
+    ["Printable file", "img/flow-model.jpg", "One export gate. STL, 3MF and STEP unlock only when the part passes.", "Shaded view of the verified model"],
+  ];
+  slide("The flow", `Here is the whole flow in eight steps. Click any step. All of these pictures are real files from one stored live run with Meta's models. The input photo in that run is a rendered sample, and the page says so.`,
+    `<h2>From one photo to one printable file</h2><div class="rail" id="fl-rail" role="group" aria-label="Flow steps"></div><div class="stagepic"><div class="imgbox" id="fl-img"></div><div class="col" style="justify-content:center"><h3 id="fl-h" style="font-size:2.1rem"></h3><p id="fl-p"></p><span class="tag" id="fl-t"></span></div></div>`,
+    (s) => { once(s, () => { const pick = (i) => { const [h, img, p, t] = flow[i]; $("#fl-h", s).textContent = h; $("#fl-p", s).textContent = p; $("#fl-t", s).textContent = t; $("#fl-img", s).innerHTML = img ? `<img src="${img}" alt="${esc(h)}">` : `<pre class="code">${esc(R.program.join("\n"))}</pre>`; $$("#fl-rail button", s).forEach((b, j) => b.setAttribute("aria-pressed", i === j)); };
+      flow.forEach(([h], i) => { const b = el(`<button><b>${i + 1}</b>${esc(h)}</button>`); b.onclick = () => pick(i); $("#fl-rail", s).append(b); }); pick(0); }); });
+
+  const verifiedSlugs = Object.keys(M.parts);
+  slide("Try it", `This is the part you can play with. Pick a verified part and drag a knob. Each step of the slider is a real CadQuery bake made ahead of time, so the mesh you see came out of the part's own program, and the size readout is measured from that mesh. On the live site the same knobs bake on demand.`,
+    `<h2>Every part is a program. Drag a knob</h2><div class="tryit"><div class="vw" id="v-try"><span class="cap">Drag to turn</span></div>
+      <div class="col"><div class="pick" id="tr-pick" role="group" aria-label="Part"></div><div class="panel col" id="tr-knobs"></div>
+      <div class="panel"><table><tr><td>Size (x × y × z)</td><td class="r" id="tr-size"></td></tr><tr><td>Verifier, default size</td><td class="r" id="tr-err"></td></tr></table></div>
+      <span class="tag">Real CadQuery output, baked ahead of time · the browser runs no CAD</span></div></div>`,
+    (s) => { once(s, () => { const v = new Viewer($("#v-try", s), { az: -.8, el: .6 });
+      const showPart = (slug) => { const P = M.parts[slug]; $$("#tr-pick button", s).forEach((b) => b.setAttribute("aria-pressed", b.dataset.s === slug)); const box = $("#tr-knobs", s); box.innerHTML = ""; v.show(P.base.file);
+        $("#tr-size", s).textContent = P.base.size_mm.join(" × ") + " mm"; $("#tr-err", s).textContent = P.max_error_mm != null ? `${fx(P.max_error_mm)} mm` : "n/a";
+        const sliders = [];
+        Object.entries(P.knobs).forEach(([name, K]) => { const start = Math.max(0, K.steps.findIndex((x) => Math.abs(x.value - K.default) < 1e-6));
+          const row = el(`<div class="knob"><div class="top"><label for="k-${slug}-${name}">${esc(K.label)}</label><span class="val" data-val></span></div><input id="k-${slug}-${name}" type="range" min="0" max="${K.steps.length - 1}" step="1" value="${start}"></div>`);
+          const input = $("input", row), out = $("[data-val]", row); const label = () => { const st = K.steps[+input.value]; out.textContent = `${st.value}${K.unit ? " " + K.unit : ""}`; };
+          label(); input.oninput = () => { sliders.forEach((o) => { if (o.input !== input) { o.input.value = o.start; o.label(); } }); label(); const st = K.steps[+input.value]; v.spin = false; v.show(st.file); $("#tr-size", s).textContent = st.size_mm.join(" × ") + " mm"; };
+          sliders.push({ input, start, label }); box.append(row); }); };
+      verifiedSlugs.forEach((slug) => { const b = el(`<button data-s="${slug}">${esc(M.parts[slug].title)}</button>`); b.onclick = () => showPart(slug); $("#tr-pick", s).append(b); }); showPart(verifiedSlugs[0]); }); });
+
+  const St = M.star; const spacing = (h) => h.length > 1 ? h[h.length - 1].x - h[0].x : 0;
+  slide("Stretch vs knob", `This is why a program beats a mesh. Both sides start from the same wall-hook plate with two screw holes, viewed from behind. Move the slider. On the left we scale the mesh in your browser, the way you would with a scan, and everything moves with it. On the right we swap in the real CadQuery bake at that value: only what you asked for changes. Switch the goal to make the part longer, and on the left the holes turn into ovals. Across the benchmark, stretching a mesh shifts hole spacing by a median of ${D.mesh.median_mm} millimetres; the knob shifts it ${D.mesh.knob_median_mm}.`,
+    `<h2>Scale a mesh and everything moves. Turn a knob and only one thing does</h2><div class="row wrap" style="align-items:center"><div class="row" role="group" aria-label="Goal"><button id="g-hole" aria-pressed="true">Bigger holes</button><button id="g-len" aria-pressed="false">Longer plate</button></div><div class="grow"><label for="st-s" id="st-l"></label><input id="st-s" type="range" min="0" max="6" step="1" value="2"></div></div>
+      <div class="star"><div class="col"><h3>Scale the mesh <span class="small">(in your browser)</span></h3><div class="vw grow" id="v-mesh"></div></div><div class="col"><h3>Turn the knob <span class="small">(real CadQuery bake)</span></h3><div class="vw grow" id="v-knob"></div></div>
+      <div class="col"><div class="panel"><table id="st-t"></table></div><div class="panel"><p style="font-weight:600;font-size:1.16rem">Benchmark: hole spacing shift, median over ${D.mesh.parts} parts</p><div class="small" style="margin-top:.4rem">Mesh scaling <b class="mono">${D.mesh.median_mm} mm</b></div><div class="bar"><i style="width:100%;background:var(--warn)"></i></div><div class="small" style="margin-top:.3rem">Knob edit <b class="mono">${fx(D.mesh.knob_median_mm, 1)} mm</b></div><div class="bar"><i style="width:1%;background:var(--pass)"></i></div>${src("eval/reports/latest/program_vs_mesh.json")}</div><span class="tag">Hook plate with 2 holes · knob variant of a verified part</span></div></div>`,
+    (s) => { once(s, () => { const view = { spin: false, az: 0, el: -1.5, radius: 74 }; const a = new Viewer($("#v-mesh", s), view), b = new Viewer($("#v-knob", s), view); let goal = "hole_d"; const base = St.base; const s0 = spacing(base.holes); const d0 = St.knobs.hole_d[2].value; const L0 = base.size_mm[0];
+      a.show(base.file);
+      const rend = () => { const steps = St.knobs[goal], st = steps[+$("#st-s", s).value]; b.show(st.file); const rows = []; const sk = spacing(st.holes);
+        if (goal === "hole_d") { const k = st.value / d0; a.scale = [k, k, k]; a.applyScale(); $("#st-l", s).textContent = `Target hole diameter: ${st.value} mm`;
+          rows.push(["", "Mesh", "Knob"], ["Hole Ø", fx(d0 * k), fx(st.value)], ["Hole spacing shift", fx(Math.abs(s0 * k - s0)), fx(Math.abs(sk - s0))], ["Plate length", fx(L0 * k, 1), fx(st.size_mm[0], 1)], ["Plate thickness", fx(3 * k), fx(3)]); }
+        else { const k = st.value / L0; a.scale = [k, 1, 1]; a.applyScale(); $("#st-l", s).textContent = `Target plate length: ${st.value} mm`;
+          rows.push(["", "Mesh", "Knob"], ["Plate length", fx(L0 * k, 1), fx(st.size_mm[0], 1)], ["Hole shape", Math.abs(k - 1) < .001 ? "round" : `oval ${fx(k)}:1`, "round"], ["Hole Ø along length", fx(d0 * k), fx(d0)], ["Hole spacing (knob: the program's own rule)", fx(s0 * k, 1), fx(sk, 1)]); }
+        $("#st-t", s).innerHTML = rows.map((r, i) => `<tr>${r.map((c, j) => i === 0 ? `<th class="${j ? "r" : ""}">${esc(c)}</th>` : `<td class="${j ? "r" : ""}">${esc(c)}</td>`).join("")}</tr>`).join(""); };
+      const setGoal = (g) => { goal = g; $("#g-hole", s).setAttribute("aria-pressed", g === "hole_d"); $("#g-len", s).setAttribute("aria-pressed", g === "length"); $("#st-s", s).value = 2; rend(); };
+      $("#g-hole", s).onclick = () => setGoal("hole_d"); $("#g-len", s).onclick = () => setGoal("length"); $("#st-s", s).oninput = rend; rend(); }); });
+
+  const T = D.time;
+  slide("Time saved, and why it works", `Photo to checked file took ${R.minutes_to_file} minutes on this run. That is measured from the run's own log. Across the bench, the median job took ${Math.round(T.synthetic.median_wall_s)} seconds on rendered photos and ${Math.round(T.public.median_wall_s)} seconds on the public-photo set. Once a part exists, the next person's size re-bakes in about ${T.rebake.ms} milliseconds. We could not find a published baseline for how long this takes by hand, so we don't claim a saving. Type in your own estimate and the page compares it with our measured run. It works because three things get replaced: the screen replaces the caliper, the agent replaces CAD, and the verifier replaces trial prints. And every part solved once stays solved in the open registry.`,
+    `<h2>Measured time, and why it can be this short</h2><div class="save"><div class="col"><div class="timegrid">
+        <div class="panel tile"><strong>${R.minutes_to_file} min</strong><p class="small">Photo to checked file, battery cover run</p>${src("run.jsonl: first 3MF minus job start")}</div>
+        <div class="panel tile"><strong>${Math.round(T.rebake.ms)} ms</strong><p class="small">Fresh re-bake at a new size for the next person, no cache</p>${src("local bake, cache_hit false")}</div>
+        <div class="panel tile"><strong>${Math.round(T.synthetic.median_wall_s)} s</strong><p class="small">Median job, ${T.synthetic.n} rendered photos, $${fx(T.synthetic.usd_per_job)} a job</p>${src("report.json tables.synthetic")}</div>
+        <div class="panel tile"><strong>${Math.round(T.public.median_wall_s)} s</strong><p class="small">Median job, ${T.public.n} public photos on a rendered mat, $${fx(T.public.usd_per_job)} a job</p>${src("report.json public_photos")}</div>
+      </div><div class="panel"><p style="font-size:1.16rem">Print estimate: about <b class="num">${fx(R.print_minutes, 1)} min</b>, <b class="num">${fx(R.grams, 2)} g</b>, <b class="num">₹${fx(R.inr)}</b> of filament. An estimate from the mesh, not a quote.</p>${src("buy_or_print.json")}</div>
+      <div class="panel calc col"><h3>Compare with your own estimate</h3><div class="f3"><div><label for="c-m">Measuring (hours)</label><input id="c-m" inputmode="decimal" type="number" min="0" step="0.25" aria-describedby="c-out"></div><div><label for="c-c">CAD (hours)</label><input id="c-c" inputmode="decimal" type="number" min="0" step="0.25"></div><div><label for="c-t">Trial prints (hours)</label><input id="c-t" inputmode="decimal" type="number" min="0" step="0.25"></div></div><p id="c-out" aria-live="polite" style="font-size:1.18rem">Your estimate goes here. No published baseline exists, so we state no saving of our own.</p></div></div>
+      <div class="col" style="gap:.75rem"><h3 style="font-size:1.9rem">Why it works</h3><div class="col grow" style="gap:.6rem"><div class="why"><span class="old"><s>Caliper</s></span><b>The screen replaces it</b><span class="small">Markers drawn at true size give the scale.</span></div><div class="why"><span class="old"><s>CAD skills</s></span><b>The agent replaces them</b><span class="small">It writes a program with named knobs.</span></div><div class="why"><span class="old"><s>Trial prints</s></span><b>The verifier replaces them</b><span class="small">The model is checked against the photo before any filament.</span></div><div class="why"><span class="old">Next person</span><b>Solved once stays solved</b><span class="small">Every verified part goes into the open registry.</span></div></div>
+      <span class="tag">Measured on stored runs · rendered and public-photo inputs · no printed part yet</span></div></div>`,
+    (s) => { once(s, () => { const ids = ["#c-m", "#c-c", "#c-t"]; const upd = () => { const vals = ids.map((i) => parseFloat($(i, s).value)); const any = vals.some((v) => isFinite(v) && v > 0); const out = $("#c-out", s); if (!any) { out.textContent = "Your estimate goes here. No published baseline exists, so we state no saving of our own."; return; } const hours = vals.reduce((a, v) => a + (isFinite(v) && v > 0 ? v : 0), 0); const ours = R.minutes_to_file / 60; const diff = hours - ours; out.innerHTML = `Your estimate: <b class="num">${fx(hours, 2)} h</b>. Our measured run: <b class="num">${R.minutes_to_file} min</b>. Difference: <b class="num ac">${fx(Math.abs(diff), 2)} h ${diff >= 0 ? "less" : "more"}</b>, against your own number.`; }; ids.forEach((i) => ($(i, s).oninput = upd)); }); });
+
+  const wipes = [["Photo", "Measured outline", "img/see-photo-crop.jpg", "img/see-measure.jpg"], ["Flattened to true scale", "SAM 3.1 mask", "img/see-rect.jpg", "img/see-mask.jpg"], ["First build", "Final round", "img/see-heat1.jpg", "img/see-heat3.jpg"]];
+  slide("How it sees", `Drag the seam across the picture. The first pair is the photo against the outline plain code measured. The second is the photo flattened to true scale by the markers, against the mask from SAM 3.1. The third is the verifier's overlay on the first build against the final round. The model only looks. Code does the measuring. This scene uses a rendered sample photo.`,
+    `<h2>SAM 3.1 looks. Code measures</h2><div class="row" role="group" aria-label="What to compare" id="w-tabs"></div><div class="wipe" id="w-box"><img id="w-a" alt=""><img id="w-b" alt=""><div class="seam" id="w-seam"></div><span class="side" id="w-la" style="left:.6rem"></span><span class="side" id="w-lb" style="right:.6rem"></span></div><label for="w-r">Drag to compare</label><input id="w-r" type="range" min="0" max="100" value="50"><span class="tag">Real pictures from the recorded live run · rendered sample photo</span>`,
+    (s) => { once(s, () => { const r = $("#w-r", s); const set = () => { $("#w-b", s).style.clipPath = `inset(0 ${100 - r.value}% 0 0)`; $("#w-seam", s).style.left = `${r.value}%`; }; const pick = (i) => { const [la, lb, a, b] = wipes[i]; $("#w-a", s).src = a; $("#w-b", s).src = b; $("#w-la", s).textContent = lb; $("#w-lb", s).textContent = la; $("#w-a", s).alt = la; $("#w-b", s).alt = lb; $("#w-a", s).src = a; $("#w-b", s).src = b; $$("#w-tabs button", s).forEach((x, j) => x.setAttribute("aria-pressed", i === j)); };
+      wipes.forEach(([a, b], i) => { const x = el(`<button>${esc(a)} vs ${esc(b)}</button>`); x.onclick = () => pick(i); $("#w-tabs", s).append(x); }); r.oninput = set; pick(0); set(); }); });
+
+  const rd = R.rounds_detail;
+  slide("The loop", `This is one real run. Step through the rounds. First build: ${e0} millimetres off, so it fails. The agent reads the gap, removes an extra tongue and gets to ${e1}. Then ${e2}, inside the limit, and only the verifier can stamp it. The whole run cost ${Math.round(R.usd * 100)} cents of model calls. Print time and filament are estimates from the mesh, not quotes. The input was a rendered sample photo with live Meta models.`,
+    `<h2>Fail, fix, pass, with the numbers from the run's own log</h2><div class="row" role="group" aria-label="Round" id="l-tabs"></div><div class="loop"><div class="imgbox"><img id="l-img" alt="Verifier overlay"><div class="stamp" id="l-st"></div></div><div class="col"><div class="panel"><svg id="l-chart" viewBox="0 0 640 230" role="img" aria-label="Worst gap per round against the limit" style="width:100%;display:block"></svg></div><div class="panel col"><h3 id="l-h"></h3><div class="edits" id="l-e"></div></div><div class="panel"><p style="font-size:1.14rem">Run cost <b class="num">$${fx(R.usd, 3)}</b> · print about <b class="num">${Math.round(R.print_minutes)} min</b> · filament about <b class="num">₹${Math.round(R.inr)}</b> <span class="small">(print figures are estimates)</span></p></div><span class="tag">Recorded live run · rendered sample photo</span></div></div>`,
+    (s) => { once(s, () => { const pick = (i) => { const r = rd[i], pass = r.error_mm <= D.limit_mm; $("#l-img", s).src = `img/see-heat${i + 1}.jpg`; const st = $("#l-st", s); st.textContent = pass ? "VERIFIED" : i === 0 ? "FAILED" : "NOT YET"; st.style.color = pass ? "var(--pass)" : i === 0 ? "var(--danger)" : "var(--warn)";
+        $("#l-h", s).textContent = `Round ${r.round}: ${fx(r.error_mm)} mm worst gap, overlap ${r.iou}`; $("#l-e", s).innerHTML = r.edits.length ? r.edits.map((x) => `<div>${esc(x.param)}: ${x.from} → ${x.to}</div>`).join("") : "<div>First build, no edits yet</div>"; $$("#l-tabs button", s).forEach((b, j) => b.setAttribute("aria-pressed", i === j));
+        const W = 640, H = 230, L = 62, B = 34, T0 = 12, maxY = Math.ceil(Math.max(...rd.map((x) => x.error_mm))); const X = (k) => L + (k + .5) * ((W - L - 12) / rd.length), Y = (v) => T0 + (1 - v / maxY) * (H - T0 - B); let g = ""; for (let y = 0; y <= maxY; y++) g += `<line x1="${L}" x2="${W - 12}" y1="${Y(y)}" y2="${Y(y)}" stroke="#ddd6c8"/><text x="${L - 10}" y="${Y(y) + 6}" text-anchor="end" font-size="17">${y}</text>`;
+        g += `<line x1="${L}" x2="${W - 12}" y1="${Y(D.limit_mm)}" y2="${Y(D.limit_mm)}" stroke="#007439" stroke-width="2.5" stroke-dasharray="7 5"/><text x="${L + 6}" y="${Y(D.limit_mm) + 21}" font-size="17" style="fill:#007439">limit ${D.limit_mm} mm</text>`;
+        const pts = rd.slice(0, i + 1).map((x, k) => `${X(k)},${Y(x.error_mm)}`).join(" "); g += `<polyline points="${pts}" fill="none" stroke="#e8590c" stroke-width="3.5"/>`; rd.forEach((x, k) => { g += `<text x="${X(k)}" y="${H - 10}" text-anchor="middle" font-size="17">round ${x.round}</text>`; if (k <= i) g += `<circle cx="${X(k)}" cy="${Y(x.error_mm)}" r="7" fill="#e8590c"/><text x="${X(k) + 12}" y="${Y(x.error_mm) - 10}" font-size="19" style="fill:#1c2230">${fx(x.error_mm)}</text>`; }); $("#l-chart", s).innerHTML = g; };
+      rd.forEach((r, i) => { const b = el(`<button>Round ${r.round}: ${fx(r.error_mm)} mm</button>`); b.onclick = () => pick(i); $("#l-tabs", s).append(b); }); pick(0); }); });
+
+  const A = D.bypass;
+  slide("The risky case", `What if the model lies? We scripted attacks against our own system: a model that says verified on a wrong part, flips the verified flag, loosens the thresholds, smuggles an import into the sandbox. Click through them. In every case code caught it and the export stayed locked. These are scripted attacks with no model calls, aimed at the real verifier and export gate. ${A.blocked} of ${A.attempts} blocked.`,
+    `<h2>The model proposes. Code decides: <span class="ac num">${A.blocked}/${A.attempts}</span> fake passes blocked</h2><div class="att"><div class="list" id="a-list" role="group" aria-label="Attacks"></div><div class="col"><div class="panel col"><span class="small mono">THE ATTACK</span><p id="a-att" style="font-size:1.5rem;font-weight:600"></p><span class="small mono">WHAT CODE DID</span><p id="a-det"></p><div class="row" style="align-items:center"><span class="lock" id="a-lock"></span><span class="small mono" id="a-by"></span></div></div><div class="imgbox grow" id="a-img"></div><span class="tag">${esc(A.suite)} · ${esc("eval/reports/latest/bypass.json")}</span></div></div>`,
+    (s) => { once(s, () => { const pick = (i) => { const r = A.rows[i]; $("#a-att", s).textContent = r.attack; $("#a-det", s).textContent = r.detail; $("#a-lock", s).textContent = r.blocked ? "Blocked · export stays locked" : "Not blocked"; $("#a-by", s).textContent = `caught by ${r.blocked_by}`; $("#a-img", s).innerHTML = r.image ? `<img src="${r.image}" alt="The verifier's overlay for this attack">` : '<p class="small" style="padding:1rem">No picture for this attack: it is stopped before anything is drawn.</p>'; $$("#a-list button", s).forEach((b, j) => b.setAttribute("aria-pressed", i === j)); };
+      A.rows.forEach((r, i) => { const b = el(`<button>${esc(r.id.replace(/_/g, " "))}</button>`); b.onclick = () => pick(i); $("#a-list", s).append(b); }); pick(0); }); });
+
+  const Vc = D.voice;
+  slide("Voice", `Real repair doesn't happen in English only. This is a real session with Muse Voice Transcribe. The test line was spoken in a synthesised voice into a fake microphone, because I wanted a repeatable take, but the transcription and the knob change are live. It writes the Hindi out while you speak, and the length moves by one millimetre: from ${fx(Vc.from_mm)} to ${fx(Vc.to_mm)}. The code clamps every change to the part's allowed range.`,
+    `<h2>Say the change, in Hindi and English mixed</h2><div class="row grow wrap"><div class="vw" style="flex:0 0 40rem;cursor:default"><video src="voice.mp4" muted loop playsinline autoplay controls aria-label="Screen recording of the voice edit"></video></div><div class="col grow" style="justify-content:center;gap:1.1rem"><p class="small mono">HEARD, CONFIDENCE ${Vc.confidence_pct} %</p><p class="hindi">“${esc(Vc.transcript)}”</p><p class="lead">(${esc(Vc.gloss)})</p><div class="panel"><p style="font-size:1.5rem"><b style="color:var(--pass)">Applied</b> · ${esc(Vc.knob)} <span class="mono num">${fx(Vc.from_mm)} → ${fx(Vc.to_mm)} mm</span></p></div><span class="tag">Live call to Muse Voice Transcribe · test line in a synthesised voice · screen recording</span></div></div>`,
+    (s) => { const vid = $("video", s); if (vid) vid.play?.().catch(() => {}); });
+
+  const Ls = D.landscape;
+  slide("What people use today", `Here is what people use today, by category. AI image-to-3D gives you a mesh with guessed sizes. Phone scans need many photos and come out rough on small parts. Text-to-CAD gives you editable CAD, if you already know the numbers. Libraries work if someone already modelled your part. By hand works, with a caliper and CAD skills, and you print to find out. We found none that check the result against your part, in millimetres, before you print. Click any row for the reason. What makes the last row possible is on the next slide's models: SAM 3.1 as a measuring instrument, and Muse Spark Open writing the program on open weights. To be clear about scope, our checks so far ran on rendered and public photos, and real phone captures come next.`,
+    `<h2>What people use today</h2><div style="overflow-x:auto"><table class="big land" id="ls-t"><tr><th></th>${Ls.columns.map((c) => `<th>${esc(c)}</th>`).join("")}</tr>${Ls.rows.map((r, i) => `<tr data-r="${i}" class="${r.ours ? "ours" : ""}"><td><button aria-pressed="false">${esc(r.name)}</button></td>${r.cells.map((c) => `<td>${esc(c)}</td>`).join("")}</tr>`).join("")}</table></div>
+      <div class="panel" style="min-height:3.8rem"><p id="ls-why" aria-live="polite"></p></div>
+      <div class="row wrap grow" style="align-items:stretch"><div class="panel grow col" style="justify-content:center"><p style="font-size:1.7rem;font-weight:600;line-height:1.2">${esc(Ls.finding)}</p><p class="small"><a href="${esc(Ls.source_url)}" target="_blank" rel="noopener">${esc(Ls.source)}</a></p></div><div class="panel grow col" style="justify-content:center;border-color:var(--accent)"><p class="small mono">WHAT MAKES THE LAST ROW POSSIBLE</p><p style="font-weight:600"><span class="ac">SAM 3.1</span> as a measuring instrument, and <span class="ac">Muse Spark Open</span> writing the program on open weights.</p><p class="small">Our checks so far ran on rendered and public photos. Real phone captures come next.</p></div></div>`,
+    (s) => { once(s, () => { const pick = (i) => { $("#ls-why", s).innerHTML = `<b>${esc(Ls.rows[i].name)}:</b> ${esc(Ls.rows[i].why)}`; $$("#ls-t tr[data-r]", s).forEach((tr, j) => { tr.classList.toggle("sel", i === j); $("button", tr).setAttribute("aria-pressed", i === j); }); }; $$("#ls-t tr[data-r]", s).forEach((tr) => (tr.onclick = () => pick(+tr.dataset.r))); pick(Ls.rows.length - 1); }); });
+
+  slide("Why Meta", `Before these models, a part like this took a caliper and CAD skills, or a scanner's mesh you can't really edit. SAM 3.1 becomes a measuring instrument: text-prompted masks that code turns into millimetres. Muse Spark 1.3 names the part and finds the break. Muse Spark Open runs on open weights and wrote the program: ${D.open.calls} of ${D.open.total} builder calls. Wonder finds cited specs, Image previews the repair, Voice Transcribe hears mixed Hindi and English. Click any card for where it is in the code. To be straight about one thing: Muse Glimmer is written for open-weights use as an independent judge, but it hasn't run live yet, and the bench logged it as a mock.`,
+    `<h2>What each Meta model makes possible</h2><div class="row wrap"><div class="panel grow"><p class="small mono">BEFORE</p><p>A caliper and CAD skills, or a scanner's mesh you can't really edit. A chatbot could guess a size, but it couldn't measure one or check it.</p></div><div class="panel grow" style="border-color:var(--accent)"><p class="small mono">WITH THESE MODELS</p><p>A phone photo gives a mask that code can measure, an agent writes and fixes real CAD on open weights, and you can ask for changes in your own language.</p></div></div>
+      <div class="mcards" id="m-cards" role="group" aria-label="Models"></div><div class="panel col grow" id="m-det"></div><p class="small"><b>Not yet live:</b> Muse Glimmer 30B is written as an open-weights judge. It hasn't run live, and the bench logged it as a mock, so no result here depends on it.</p>`,
+    (s) => { once(s, () => { const pick = (i) => { const m = D.models[i]; $("#m-det", s).innerHTML = `<h3 style="font-size:1.9rem">${esc(m.name)}</h3><p>${esc(m.job)}</p><p class="small mono">${m.calls ? `${fmt(m.calls)} live calls in stored bench runs · open_weights.json` : "Used in stored runs; the bench's call table doesn't list it separately"}</p>${m.where.length ? `<p class="small mono">${m.where.map(esc).join(" · ")}</p>` : ""}`; $$("#m-cards button", s).forEach((b, j) => b.setAttribute("aria-pressed", i === j)); };
+      D.models.forEach((m, i) => { const b = el(`<button><b>${esc(m.name)}</b><span>${m.calls ? fmt(m.calls) + " live calls" : "see where it runs"}</span></button>`); b.onclick = () => pick(i); $("#m-cards", s).append(b); }); pick(0); }); });
+
+  const t = D.tests || {};
+  const stats = [
+    [`${D.synthetic.single_shot_median_mm}→${D.synthetic.median_mm} mm`, "Median error, single shot to full loop", `Rendered photos, exact ground truth, n = ${D.synthetic.n}. report.json`],
+    [`${A.blocked}/${A.attempts}`, "Lying-model attacks blocked", "Scripted attacks on the real verifier. bypass.json"],
+    [`${D.redteam[0]}/${D.redteam[1]}`, "Bad photos caught", "Blur, glare and refused part classes. report.json tables.redteam"],
+    [`${D.control[0]}/${D.control[1]}`, "Intact parts accepted", "Normal rendered photos. report.json tables.control"],
+    [`${D.public.median_mm} mm`, "Median error on real objects", `${D.public.n} public photos pasted on a rendered mat, published sizes. Not phone captures. report.json`],
+    [`${D.scale.mm_per_100} mm`, "Marker scale drift per 100 mm", `${D.scale.corners} corners on ${D.scale.photos} real camera photos of printed boards. public_scale.json`],
+    ...(t.backend ? [[fmt(t.backend.passed), "Backend tests passing", "pytest, from make proof. tests.json"]] : []),
+    ...(t.web_unit ? [[fmt(t.web_unit.passed), "Web unit tests passing", "From make proof. tests.json"]] : []),
+  ];
+  slide("Proof", `Every number here comes from a script, and each card says where. The loop beats a single shot on rendered photos. Code blocked every lying-model attack. On public photos of real objects the median error was ${D.public.median_mm} millimetres, but these were pasted on a rendered mat, so they test the pipeline on real surfaces, not a phone capture. Marker scale held to about ${D.scale.mm_per_100} millimetres per hundred on real camera photos. The tests shown here are only the suites that passed on the last proof run.`,
+    `<h2>Tested against ground truth, each number with its scope</h2><div class="proof">${stats.map(([b, h, c]) => `<div class="panel stat"><strong data-count="${esc(b)}">${esc(b)}</strong><p>${esc(h)}</p><p class="small" style="font-weight:400">${esc(c)}</p></div>`).join("")}</div>${src(`eval/reports/latest · report ${D.report_date} · commit ${D.git_sha}`)}`,
+    (s) => { $$("[data-count]", s).forEach(countUp); });
+
+  slide("Market and vision", `The hardware is already out there. Over a million entry-level 3D printers shipped in one quarter. Europe's new repair law says makers can't block 3D-printed spare parts. What's missing is the file. Our vision: one snapped piece of plastic should never mean throwing out the whole thing. The aim is an open library of verified parts, so the next person with that remote just downloads it.`,
+    `<div class="row wrap"><div class="panel grow"><div class="bigstat ac" style="font-size:4.4rem">${esc(D.outside.printers_text)}</div><p style="font-weight:600">entry-level 3D printers shipped in one quarter</p>${src(`${D.outside.printers_source} · ${D.outside.printers_period}`)}</div><div class="panel grow"><div class="bigstat ac" style="font-size:4.4rem">3D-printed spares</div><p style="font-weight:600">Makers can't block them, under Europe's new repair law</p>${src(D.outside.repair_law)}</div></div>
+      <h2 style="font-size:4.3rem;margin-block:auto .2rem">One snapped piece of plastic should never mean throwing out the whole thing.</h2><p class="lead" style="margin-bottom:auto;font-size:1.9rem">The aim: an open library of verified parts, so the next person with that remote just downloads it.</p>
+      <div class="row wrap"><div class="panel grow"><h3>Families</h3><p class="small">Fix what still works, with a phone and a laptop.</p></div><div class="panel grow"><h3>Repair and print shops</h3><p class="small">Get an exact file for a part nobody sells.</p></div><div class="panel grow"><h3>Printer owners</h3><p class="small">Print the part without learning CAD.</p></div><div class="panel grow"><h3>Coding agents</h3><p class="small">Search and adapt verified parts over REST and MCP.</p></div></div>`);
+
+  const Ad = D.audit, Rg = M.registry;
+  slide("Status and next", `Here is exactly where it stands. Real parts measured with a phone: ${D.real_parts}, and that's the next step, as soon as I shoot them. No part has been printed yet. The verifier has passed ${Ad.verified} parts across stored runs: ${Ad.within} were within ${half} on every size, and ${Ad.off} were not. ${Ad.off_height} of those were height, which a top photo can't see, which is why the side photo matters. The tools for photo day are already built, and the results page keeps saying zero until that changes.`,
+    `<h2>Where it stands today, and what comes next</h2><div class="row grow wrap"><div class="panel grow big" style="flex:1.35"><table class="big"><tr><th>Measured so far</th><th class="r">Today</th></tr><tr><td>Real parts measured from phone captures</td><td class="r">${D.real_parts}</td></tr><tr><td>Printed parts</td><td class="r">none yet</td></tr><tr><td>Verified parts in stored runs</td><td class="r">${Ad.verified}</td></tr><tr><td>Of those, within ${D.limit_mm} mm on every size</td><td class="r ok">${Ad.within}</td></tr><tr><td>Of those, off on some size (${Ad.off_height} on height a top photo can't see)</td><td class="r">${Ad.off}</td></tr><tr><td>Public-photo runs verified</td><td class="r">${D.public.verified}/${D.public.n}</td></tr><tr><td>Registry parts verified</td><td class="r">${Rg.verified}/${Rg.parts}</td></tr></table>${src("report.json · registry on the local server")}</div>
+      <div class="col grow"><h3 style="font-size:1.9rem">Next</h3>${D.next_steps.map((x) => `<div class="panel"><p style="font-weight:500;font-size:1.42rem">${esc(x)}</p></div>`).join("")}<p class="small">The photo-day tools are built: <span class="mono">make real-intake</span> and <span class="mono">make real-check</span>. The results page stays at zero until real numbers replace it.</p></div></div>`);
+
+  const site = D.links.site;
+  slide("Try it now", `You can try it with no sign-in. Open the judges page for a thirty-second path: a stored run replayed step by step, then a lying model getting caught. Or use these buttons to jump back to the parts you can play with here. Got a broken part at home? Send it in. The most wanted get modelled first.`,
+    `<h1 style="font-size:4.6rem">Part<span class="ac">Smith</span></h1><p class="lead">Got a broken part at home? Send it in. The most wanted get modelled first.</p><div class="row wrap grow"><div class="vw" id="v-end" style="flex:1"><span class="cap">Real CadQuery output · ${esc(M.parts["wall-hook-66mm"].title)}</span></div><div class="col" style="flex:1.5"><div class="panel col grow"><h3>On the web, no sign-in</h3><p style="font-weight:600;font-size:1.6rem" class="mono">${site ? `<a href="${esc(site)}">${esc(site.replace(/^https?:\/\//, ""))}</a>` : "Live link on the submission page"}</p><p class="small mono">/judges: the 30-second path · /playground: every template · /parts: the registry · /results: every number</p>${D.links.repo ? `<p class="small mono">${esc(D.links.repo)}</p>` : `<p class="small">Code: repository link on the submission page.</p>`}</div><div class="panel col grow"><h3>For coding agents</h3><p class="small">Read-only tools need no key: search_parts, get_part, get_variant, bake.</p><p class="mono" style="font-size:1.14rem">${site ? esc(site) : "&lt;site&gt;"}/mcp</p><p class="small">REST lives at <span class="mono">/api/v1</span>, with lengths in millimetres.</p></div></div></div><div class="row wrap"><button data-go="4">Try the knobs</button><button data-go="5">Stretch vs knob</button><button data-go="9">Catch a lying model</button><button data-go="8">Step through the loop</button></div><p class="small">Built during the hackathon: first commit ${esc(D.git_first)}. Every number here is generated into data.json from stored runs at commit ${esc(D.git_sha)}.</p>`,
+    (s) => { once(s, () => { new Viewer($("#v-end", s), { az: -.9, el: .45 }).show(M.parts["wall-hook-66mm"].base.file); $$("[data-go]", s).forEach((b) => (b.onclick = () => goTo(+b.dataset.go - 1))); }); });
+
+  render();
+}
+
+function once(s, fn) { if (!s.dataset.ready) { s.dataset.ready = "1"; fn(); } }
+function countUp(node) {
+  const final = node.dataset.count; const m = /^(\d[\d,]*\.?\d*)/.exec(final);
+  node.textContent = final; if (REDUCED || !m || final.includes("→")) return;
+  const value = parseFloat(m[1].replace(/,/g, "")), rest = final.slice(m[1].length), dec = (m[1].split(".")[1] || "").length, comma = m[1].includes(","), t0 = performance.now();
+  const step = (now) => { const k = Math.min(1, (now - t0) / 800), v = value * (1 - Math.pow(1 - k, 3)); node.textContent = k >= 1 ? final : (comma ? Math.round(v).toLocaleString("en") : v.toFixed(dec)) + rest; if (k < 1) requestAnimationFrame(step); };
+  requestAnimationFrame(step);
+}
+
+/* ---------- deck shell ---------- */
+let cur = 0;
+function render() {
+  const deck = $("#deck");
+  slides.forEach((s, i) => { const sec = el(`<section class="s" aria-label="${esc(s.title)}">${s.html}</section>`); deck.append(sec); s.node = sec; const b = el(`<button class="dot" aria-label="Slide ${i + 1}: ${esc(s.title)}" title="${i + 1}. ${esc(s.title)}"></button>`); b.onclick = () => goTo(i); $("#nav").append(b); });
+  const prev = el('<button class="go" aria-label="Previous slide">‹</button>'), next = el('<button class="go" aria-label="Next slide">›</button>');
+  prev.onclick = () => goTo(cur - 1); next.onclick = () => goTo(cur + 1); $("#nav").prepend(prev); $("#nav").append(next);
+  const hint = el('<span class="hint">← → move · F full screen · N notes</span>'); $("#nav").append(hint);
+  fit(); addEventListener("resize", fit);
+  const h = parseInt(location.hash.slice(1), 10); goTo(h >= 1 && h <= slides.length ? h - 1 : 0, true);
+  addEventListener("hashchange", () => { const n = parseInt(location.hash.slice(1), 10); if (n >= 1 && n <= slides.length) goTo(n - 1, true); });
+  addEventListener("keydown", key);
+}
+function goTo(i, fromHash) {
+  i = Math.max(0, Math.min(slides.length - 1, i)); cur = i;
+  slides.forEach((s, j) => s.node.classList.toggle("on", j === i));
+  $$("#nav .dot").forEach((d, j) => { d.classList.toggle("cur", j === i); d.classList.toggle("done", j < i); if (j === i) d.setAttribute("aria-current", "true"); else d.removeAttribute("aria-current"); });
+  $("#b-sheet").textContent = `SHEET ${i + 1}/${slides.length}`;
+  $("#notes").textContent = slides[i].notes;
+  slides[i].enter?.(slides[i].node);
+  viewers.forEach((v) => v.visible() && v.resize());
+  if (!fromHash) { try { history.replaceState(null, "", "#" + (i + 1)); } catch (e) { location.hash = String(i + 1); } }
+  if (matchMedia("(max-width: 820px)").matches) scrollTo(0, 0);
+}
+function fit() {
+  const st = $("#stage"); if (matchMedia("(max-width: 820px), (orientation: portrait) and (max-width: 1000px)").matches) { st.style.transform = ""; return; }
+  const k = Math.min(innerWidth / 1920, innerHeight / 1080); st.style.transform = `translate(${(innerWidth - 1920 * k) / 2}px, ${(innerHeight - 1080 * k) / 2}px) scale(${k})`;
+}
+function key(e) {
+  const typing = /^(INPUT|TEXTAREA|SELECT)$/.test(e.target.tagName);
+  if (typing && e.target.type !== "range") return;
+  if (e.key === "f" || e.key === "F") { const d = document; if (d.fullscreenElement) d.exitFullscreen?.(); else d.documentElement.requestFullscreen?.().catch(() => {}); }
+  else if (e.key === "n" || e.key === "N") $("#notes").hidden = !$("#notes").hidden;
+  else if (typing) return;
+  else if (e.key === "ArrowRight" || e.key === "PageDown" || e.key === " ") { e.preventDefault(); goTo(cur + 1); }
+  else if (e.key === "ArrowLeft" || e.key === "PageUp") { e.preventDefault(); goTo(cur - 1); }
+  else if (e.key === "Home") goTo(0); else if (e.key === "End") goTo(slides.length - 1);
+}
+boot().catch((err) => { document.body.insertAdjacentHTML("beforeend", `<p style="padding:2rem;font-size:20px">The deck could not load its data: ${esc(err.message)}. Open it from a web server, not from a file.</p>`); });
+</script>
+</body>
+</html>

@@ -1,4 +1,4 @@
-"""Lessons (PLAN §6.8): after each job, code extracts candidate lessons from what the loop actually measured.
+"""Lessons: after each job, code extracts candidate lessons from what the loop actually measured.
 
 Candidates go into the registry with status "candidate" and are never promoted here: promotion needs a human in the
 Steer queue or the review page, or a fit check / printed part that confirms it. Only promoted lessons are shown to the

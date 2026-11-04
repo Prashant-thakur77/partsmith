@@ -1,0 +1,262 @@
+{
+ "report": "eval/run.py",
+ "generated_at": "2026-11-04T21:36:47+00:00",
+ "git_sha": "1f77aad30f748b303ab28a048e362a72929fe3d1",
+ "git_dirty": true,
+ "mode": "live",
+ "stages": {
+  "build": [
+   {
+    "provider": "baseten",
+    "model": "meta-models/muse-spark-open-1026",
+    "mode": "live",
+    "calls": 86,
+    "tokens_in": 164549,
+    "tokens_out": 235039,
+    "usd": 1.168414
+   }
+  ],
+  "capture_triage": [
+   {
+    "provider": "mock",
+    "model": "muse-glimmer",
+    "mode": "mock",
+    "calls": 21,
+    "tokens_in": 0,
+    "tokens_out": 0,
+    "usd": 0.0
+   }
+  ],
+  "fix_agent": [
+   {
+    "provider": "baseten",
+    "model": "meta-models/muse-spark-open-1026",
+    "mode": "live",
+    "calls": 790,
+    "tokens_in": 7605597,
+    "tokens_out": 648233,
+    "usd": 6.137602
+   },
+   {
+    "provider": "meta",
+    "model": "muse-spark-1.3",
+    "mode": "live",
+    "calls": 1,
+    "tokens_in": 0,
+    "tokens_out": 0,
+    "usd": 0.0
+   }
+  ],
+  "judge": [
+   {
+    "provider": "mock",
+    "model": "muse-glimmer",
+    "mode": "mock",
+    "calls": 42,
+    "tokens_in": 0,
+    "tokens_out": 0,
+    "usd": 0.0
+   }
+  ],
+  "plan": [
+   {
+    "provider": "baseten",
+    "model": "meta-models/muse-spark-open-1026",
+    "mode": "live",
+    "calls": 42,
+    "tokens_in": 36986,
+    "tokens_out": 40827,
+    "usd": 0.212144
+   }
+  ],
+  "segment": [
+   {
+    "provider": "meta",
+    "model": "sam-3.1",
+    "mode": "live",
+    "calls": 302,
+    "tokens_in": 0,
+    "tokens_out": 0,
+    "usd": 0.755
+   }
+  ],
+  "segment_points": [
+   {
+    "provider": "meta",
+    "model": "sam-3.1",
+    "mode": "live",
+    "calls": 53,
+    "tokens_in": 0,
+    "tokens_out": 0,
+    "usd": 0.1325
+   }
+  ],
+  "understand": [
+   {
+    "provider": "meta",
+    "model": "muse-spark-1.3",
+    "mode": "live",
+    "calls": 63,
+    "tokens_in": 720093,
+    "tokens_out": 354549,
+    "usd": 1.891436
+   }
+  ]
+ },
+ "thresholds": {
+  "HAUSDORFF_PASS_MM": 0.5,
+  "IOU_PASS": 0.97,
+  "FEATURE_TOL_MM": 0.15,
+  "BBOX_TOL_MM": 0.3,
+  "MIN_WALL_MM": 0.8,
+  "capture_gate": {
+   "BLUR_FAIL": 2.5,
+   "BLUR_WARN": 4.0,
+   "CLIP_FAIL": 0.05,
+   "CLIP_FLAT_STD": 2.0,
+   "CLIP_HIGH": 250,
+   "CLIP_LOW": 5,
+   "CLIP_WARN": 0.02,
+   "CONE_CHROMA_TOL": 16.0,
+   "CONE_MIN_RATIO": 0.5,
+   "CONTRAST_FAIL_WEAK": 0.2,
+   "CONTRAST_MIN_LARGEST_FRACTION": 0.85,
+   "CONTRAST_MIN_SEPARATION": 20.0,
+   "CONTRAST_MIN_SOLIDITY": 0.25,
+   "CONTRAST_WARN_WEAK": 0.08,
+   "EDGE_MIN_CONTRAST": 20.0,
+   "GLARE_FAIL_MARKERS": 3,
+   "GLARE_MARKER_DARK_FRACTION": 0.15,
+   "GLARE_MIN_BLOB_MM2": 4.0,
+   "GRID_CELLS": 7,
+   "MIN_MARKERS_WARN": 4,
+   "MIN_PART_AREA_MM2": 10.0,
+   "MOIRE_FAIL": 5.0,
+   "MOIRE_PEAK_RATIO": 25.0,
+   "MOIRE_WARN": 2.0,
+   "PATCH_PX_PER_CELL": 8,
+   "REPROJ_FAIL_PX": 2.0,
+   "REPROJ_WARN_PX": 1.0,
+   "SCALE_FAIL": 0.03,
+   "SCALE_WARN": 0.015,
+   "SINGLE_PART_MIN_MM2": 20.0,
+   "SINGLE_PART_REL": 0.05,
+   "STAGE_EDGE_MARGIN_MM": 1.0,
+   "TILT_FAIL_DEG": 25.0,
+   "TILT_WARN_DEG": 15.0
+  }
+ },
+ "seeds": {
+  "synthetic_bench": 7,
+  "subset": 7,
+  "suites": 11
+ },
+ "datasets": {
+  "synthetic_bench": {
+   "file": "data/synthetic/bench_manifest.json",
+   "dataset_sha256": "f0125ffd9022d77a59d53cc260adbe17caf81c327f6befc7787c878c8d046983",
+   "generator": "synth-2",
+   "seed": 7,
+   "n_samples": 86
+  },
+  "demo_samples": {
+   "file": "data/synthetic/samples/manifest.json",
+   "dataset_sha256": null,
+   "generator": null,
+   "seed": null,
+   "n_samples": 20
+  },
+  "suite_control": {
+   "file": "data/synthetic/suites/control/manifest.json",
+   "dataset_sha256": "0f43aa4031d259a4acbdb78b3f17158e90099a8b2d601fde5c036221ebefd265",
+   "generator": "synth-2",
+   "seed": 11,
+   "n_samples": 6
+  },
+  "suite_redteam": {
+   "file": "data/synthetic/suites/redteam/manifest.json",
+   "dataset_sha256": "c1870aaf1ce2792a575bbfed9192ac7ca0b7a3d57ff888702ff79d5bf62bcdc3",
+   "generator": "synth-2",
+   "seed": 11,
+   "n_samples": 10
+  }
+ },
+ "generator_versions": {
+  "tools.synth": "synth-2"
+ },
+ "template_code_sha": {
+  "battery_cover": "d3616e422f48e8532ac6d73c9ddbb31da4a6d66dcff6ef6fe1d939910c61c890",
+  "cable_clip": "9ce73360b59174402aa751c7d6fc631c048fcc70875d17db82b99aa4b42d0b33",
+  "caster_wheel": "0b79e548f279c63316b145964b3275d93a5a9128a6698da5040d8180c1b6423c",
+  "clip": "9c94c94e4f9492b89df5e579a3eca4da4698dd7a95dbcffdfadcea4592888eeb",
+  "cupboard_latch": "af00d6aaeee94f59e04ff9a6c2ff926232913a80a6a5e2f115714a8e8a2e94c2",
+  "hinge_leaf": "6ce5bb8fb23ab79eace3e05eb93535c7aef3df59ff51e0090dde5bdeec86614f",
+  "hook": "d90c8db43c4c2bfd13fc8e456ac8133eb4b55b9f85bda16da2fb11955c9f0cb9",
+  "knob": "9235318d3b929705f583b07b89d557534f532b68309c81ce59619ee98d4fa3f6",
+  "l_bracket": "e4bcd8a00f950e4dbf0af119e79aea4ca38d0d3a8caf17c060852834eec62e0a",
+  "spacer": "8ee1df3bdf29173c9101dce735c222bdbcd34157cd749cd863df77a8faf2a261"
+ },
+ "configs": {
+  "B0": {
+   "description": "single shot from the raw photo, no mat scale",
+   "options": {
+    "single_shot": true,
+    "mat_scale": false
+   },
+   "env": {}
+  },
+  "B1": {
+   "description": "single shot with the mat measurements (no loop)",
+   "options": {
+    "single_shot": true
+   },
+   "env": {}
+  },
+  "B2": {
+   "description": "full loop, visual-only feedback (overlays, no residual numbers)",
+   "options": {
+    "numeric_feedback": false
+   },
+   "env": {}
+  },
+  "PS": {
+   "description": "full PartSmith loop with numeric residuals",
+   "options": {},
+   "env": {}
+  },
+  "PS-noTemplate": {
+   "description": "PS without the template library (free code only)",
+   "options": {
+    "templates": false
+   },
+   "env": {}
+  },
+  "PS-noJudge": {
+   "description": "PS without the judge",
+   "options": {
+    "judge": false
+   },
+   "env": {}
+  },
+  "PS-noHeightCorr": {
+   "description": "PS without the parallax (height) correction",
+   "options": {
+    "height_correction": false
+   },
+   "env": {}
+  },
+  "PS-open": {
+   "description": "PS; builder/fixer must be served by open weights (default chain)",
+   "options": {},
+   "env": {}
+  },
+  "PS-open-all": {
+   "description": "PS with every stage on open weights",
+   "options": {},
+   "env": {
+    "OPEN_WEIGHTS_ONLY": "1"
+   }
+  }
+ },
+ "n_runs": 92
+}

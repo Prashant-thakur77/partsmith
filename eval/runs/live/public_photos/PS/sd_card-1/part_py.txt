@@ -1,0 +1,94 @@
+import cadquery as cq
+import math
+
+# SD card reference solid - measured polyline footprint with single obround slot
+# Model centred at origin, +Z up, bottom face on Z=0, thickness extruded +Z
+
+PARAMS = {
+    "thickness": (2.1, 0.8, 4.0, 0.1, "mm", True, "Body thickness"),
+    "slot_length": (3.705, 2.0, 6.0, 0.05, "mm", True, "Slot overall length"),
+    "slot_width": (1.548, 0.8, 3.0, 0.05, "mm", True, "Slot width"),
+    "slot_cx": (11.55, 8.0, 14.0, 0.1, "mm", False, "Slot center X"),
+    "slot_cy": (-6.549, -9.0, -3.0, 0.1, "mm", False, "Slot center Y"),
+    "slot_angle": (89.75, 0.0, 180.0, 1.0, "deg", False, "Slot angle from +X"),
+    "clearance": (0.2, 0.0, 0.5, 0.05, "mm", True, "Fit clearance applied to slot"),
+    "edge_chamfer": (0.18, 0.0, 0.5, 0.05, "mm", False, "Top edge chamfer"),
+    "slot_count": (1, 0, 2, 1, "", False, "Number of slots"),
+}
+
+# measured base profile polyline points (mm), closed to form footprint
+BASE_POINTS = [
+    (-15.898, 8.16),
+    (-15.952, -10.811),
+    (-15.522, -11.793),
+    (-8.51, -11.959),
+    (-8.007, -11.77),
+    (-7.634, -11.29),
+    (-1.742, -11.332),
+    (-1.17, -11.872),
+    (14.854, -11.888),
+    (15.841, -11.457),
+    (16.011, -10.697),
+    (15.781, 0.272),
+    (15.948, 11.26),
+    (15.655, 11.678),
+    (14.173, 11.849),
+    (-3.983, 11.916),
+    (-4.284, 11.804),
+    (-4.507, 11.294),
+    (-5.989, 11.325),
+    (-6.406, 11.927),
+    (-11.742, 11.975),
+    (-12.317, 11.716),
+]
+
+def build(p: dict) -> cq.Workplane:
+    thickness = float(p["thickness"])
+    slot_length = float(p["slot_length"])
+    slot_width = float(p["slot_width"])
+    slot_cx = float(p["slot_cx"])
+    slot_cy = float(p["slot_cy"])
+    slot_angle = float(p["slot_angle"])
+    clearance = float(p["clearance"])
+    edge_chamfer = float(p["edge_chamfer"])
+    slot_count = int(p["slot_count"])
+
+    # Effective slot size includes clearance for FDM fit
+    eff_length = slot_length + clearance
+    eff_width = slot_width + clearance
+    # guard against degenerate geometry
+    if eff_width < 0.3:
+        eff_width = 0.3
+    if eff_length < eff_width:
+        eff_length = eff_width + 0.01
+
+    # Base solid: polyline footprint extruded from Z=0 to thickness (solid, no cavity)
+    base = (
+        cq.Workplane("XY")
+        .polyline(BASE_POINTS)
+        .close()
+        .extrude(thickness, both=False)
+    )
+
+    # Cut obround slot(s) as through slots
+    if slot_count > 0:
+        # CadQuery slot2D(length, diameter, angle) - length is overall length
+        cutter = (
+            cq.Workplane("XY")
+            .moveTo(slot_cx, slot_cy)
+            .slot2D(eff_length, eff_width, angle=slot_angle)
+            .extrude(thickness + 1.0, both=False)
+        )
+        base = base.cut(cutter)
+
+    # Light chamfer on top face to break sharp edge, keep bottom mounting face on Z=0 sharp
+    if edge_chamfer > 0.01:
+        # chamfer only top horizontal edges
+        try:
+            base = base.edges(">Z").chamfer(edge_chamfer)
+        except Exception:
+            pass
+
+    return base
+
+result = build({k: v[0] for k, v in PARAMS.items()})

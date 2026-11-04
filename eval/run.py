@@ -1,10 +1,11 @@
-"""PartSmith-Bench: the full fix loop on benchmark photos, scored against hidden ground truth (PLAN §10).
+"""PartSmith-Bench: the full fix loop on benchmark photos, scored against hidden ground truth.
 
 Suites (never merged): `synthetic` (data/synthetic/bench, exact GT), `reference_objects` (published specs; synthetic
-renders now, real photos from data/real/reference_objects/<object>/*.jpg when they exist) and `real_ruler`
-(data/real/<part>/gt.yaml with gt_source: ruler, ±0.5 mm; "pending" while there are none).
+renders now, real photos from data/real/reference_objects/<object>/*.jpg when they exist), `real_ruler`
+(data/real/<part>/gt.yaml with gt_source: ruler, ±0.5 mm; "pending" while there are none) and `public_photos` (public
+photographs of real objects pasted on a rendered mat, tools/public_photos.py; never counted as real photos measured).
 
-Configs change one thing at a time (PLAN §10.3): B0 single shot without the mat scale, B1 single shot with
+Configs change one thing at a time: B0 single shot without the mat scale, B1 single shot with
 measurements, B2 visual-only feedback, PS the full loop, PS-noTemplate, PS-noJudge, PS-noHeightCorr, and the provider
 routing variants PS-open / PS-open-all (live only: in mock mode they are identical to PS).
 
@@ -55,15 +56,19 @@ REAL_DIR = REPO / "data" / "real"
 BENCH_HOME = REPO / "var" / "bench"  # PARTSMITH_HOME of bench jobs: keeps them out of the app's job list
 BENCH_N, BENCH_N_REF, BENCH_SEED = 60, 20, 7  # the frozen synthetic bench (eval/splits.lock)
 
-SUITES = ("synthetic", "reference_objects", "real_ruler")  # dimension-scored suites (tables never merged)
+SUITES = ("synthetic", "reference_objects", "real_ruler", "public_photos")  # dimension-scored, tables never merged
 GATE_SUITES = ("control", "redteam")  # expected-outcome suites: accept / reject / refuse
 ALL_SUITES = SUITES + GATE_SUITES
+# Reported under `separate_tables`, not `tables`: a web build made before a suite existed rejects a ground-truth value
+# it does not know, and that would break every page reading /bench, not just the new table.
+SEPARATE_SUITES = ("public_photos",)
 SUITES_DIR = REPO / "data" / "synthetic" / "suites"
 SUITE_SEED = 11
 GROUND_TRUTH = {
     "synthetic": "synthetic_exact",
     "reference_objects": "reference_spec",
     "real_ruler": "ruler",
+    "public_photos": "published_spec_pasted",
     "control": "expected_outcome",
     "redteam": "expected_outcome",
 }
@@ -71,12 +76,21 @@ GT_NOTE = {
     "synthetic": "exact: the template mesh the photo was rendered from",
     "reference_objects": "published spec (AA cell: loose spec)",
     "real_ruler": "school ruler, ±0.5 mm (never caliper accuracy)",
+    "public_photos": "published spec, pasted at known size",
 }
 PENDING_NOTE = {
     "synthetic": "no held-out runs stored",
     "reference_objects": "no held-out runs stored (real photos go in data/real/reference_objects/<object>/)",
     "real_ruler": "no real parts with ruler ground truth yet (data/real/<part>/gt.yaml, see eval/REPRODUCE.md)",
+    "public_photos": "no runs stored yet (data/public_photos/, see eval/REPRODUCE.md)",
 }
+PUBLIC_PHOTOS_LABEL = "public photos of real objects, cut out and pasted on a rendered mat"
+PUBLIC_PHOTOS_NOTE = (
+    "Not phone captures and not counted as real photos measured: each object is cut out of a public photograph by code "
+    "and pasted on our rendered screen mat, so the mat, the camera and the lighting on the mat are rendered. The paste "
+    "scale is set from one published dimension (the long side); that dimension is excluded from every error, so only "
+    "the other dimensions and features are held out. It says nothing about a phone photographing a laptop screen"
+)
 MOCK_TITLE = "pipeline check — deterministic mock providers, NOT model performance"
 CI_TEXT = "95 %: bootstrap over samples (2000 resamples, seeded) for mean errors; Wilson for rates"
 HEADLINE_CONFIG = "PS"
@@ -135,7 +149,7 @@ def load_splits(path: Path = SPLITS_LOCK) -> dict[str, Any]:
 def split_of(suite: str, sample_id: str, splits: Mapping[str, Any]) -> str:
     """held_out / dev / unassigned. The synthetic bench and the reference objects are never used for tuning, so they
     are held out; real parts follow the lists frozen in eval/splits.lock."""
-    if suite in ("synthetic", "reference_objects"):
+    if suite in ("synthetic", "reference_objects", "public_photos"):
         return "held_out"
     real = splits.get("real_parts") or {}
     if sample_id in (real.get("held_out") or []):
@@ -252,6 +266,15 @@ def collect_tasks(
         if not ruler:
             notes.append("real_ruler: no real parts with ruler ground truth yet (data/real/<part>/gt.yaml)")
         plan += [("real_ruler", p.name, str(p), "real", "real", None) for p in ruler]
+    if "public_photos" in suites:
+        from tools.public_photos import SAMPLES, ensure_samples, load_manifest
+
+        defs = load_manifest()
+        if defs:
+            ensure_samples(defs)
+            plan += [("public_photos", d.id, str(SAMPLES / d.id), "public_photo", d.object, None) for d in defs]
+        else:
+            notes.append("public_photos: no samples in data/public_photos/manifest.yaml")
     gate_plan: list[tuple[str, str, str, str, str, str | None]] = []
     for gs in (g for g in GATE_SUITES if g in suites):
         root = ensure_suite(gs)
@@ -298,6 +321,16 @@ def _job_inputs(task: Task) -> tuple[dict[str, bytes], Any, dict[str, Any]]:
             purpose="reference_check",
         )
         return {"top": Path(task.photo).read_bytes()}, ji, meta
+    if task.kind == "public_photo":  # never DataOrigin.real: the mat, camera and light on the mat are rendered
+        meta = json.loads((d / "meta.json").read_text())
+        ji = JobInput(
+            intent=str(meta["intent"]),
+            thickness_mm=float(meta["user_thickness_mm"]),
+            origin=DataOrigin.reference_object,
+            purpose="reference_check",
+            mat_kind="screen",
+        )
+        return {"top": (d / "top.jpg").read_bytes()}, ji, meta
     if task.kind == "real":
         raw = yaml.safe_load((d / "gt.yaml").read_text()) or {}  # only the user-known fields are used
         thick = raw.get("user_thickness_mm")
@@ -505,7 +538,7 @@ def failure_reason(score: Mapping[str, Any], events: Sequence[Mapping[str, Any]]
         return f"job {score['status']}: {score['retake_reason']}"
     if not score.get("valid"):
         return f"no valid final model ({score.get('valid_reason') or score.get('status')})"
-    worst = max(score.get("dims") or [], key=lambda d: abs(d["error_mm"]), default=None)
+    worst = max(scored_dims(score), key=lambda d: abs(d["error_mm"]), default=None)
     parts = []
     if worst is not None:
         parts.append(f"worst {worst['name']} {worst['error_mm']:+.2f} mm")
@@ -527,6 +560,8 @@ def gt_dims(task: Task) -> list[dict[str, Any]]:
         ref = get_reference_object(key)
         return [{"name": s.name, "value_mm": s.nominal_mm, "lo_mm": s.lo_mm, "hi_mm": s.hi_mm} for s in ref.dims]
     raw = yaml.safe_load((d / "gt.yaml").read_text()) or {}
+    if task.suite == "public_photos":  # rows carry `set_by_construction`; compare() leaves those out of the score
+        return [dict(x) for x in raw.get("dims") or []]
     if task.suite == "real_ruler":
         dims = raw.get("dims") or {}
         out = [{"name": k, "value_mm": float(dims[k])} for k in ("length", "width", "thickness") if k in dims]
@@ -583,6 +618,8 @@ def compare(gt: Sequence[Mapping[str, Any]], dims: Mapping[str, float], holes: S
             }
             if g.get("lo_mm") is not None:
                 row["within_spec"] = bool(float(g["lo_mm"]) <= v <= float(g["hi_mm"]))
+            if g.get("set_by_construction"):
+                row["set_by_construction"] = True
             rows.append(row)
         else:
             missed.append(name)
@@ -592,8 +629,8 @@ def compare(gt: Sequence[Mapping[str, Any]], dims: Mapping[str, float], holes: S
         v, gv = float(holes[j]), float(hg[i]["value_mm"])
         rows.append({"name": str(hg[i]["name"]), "gt_mm": gv, "model_mm": round(v, 4), "error_mm": round(v - gv, 4)})
     missed += [str(hg[i]["name"]) for i in miss_i]
-    errs = [abs(r["error_mm"]) for r in rows]
-    complete = not missed and bool(rows)
+    errs = [abs(r["error_mm"]) for r in rows if not r.get("set_by_construction")]
+    complete = not missed and bool(errs)
     return {
         "dims": rows,
         "missed": missed,
@@ -704,14 +741,17 @@ def _ci(c: Sequence[float], nd: int = 3) -> str:
     return "–" if any(not math.isfinite(v) for v in c) else f"[{c[0]:.{nd}f}, {c[1]:.{nd}f}]"
 
 
+def scored_dims(run: Mapping[str, Any]) -> list[dict[str, Any]]:
+    """A run's dimensions that count: a dimension that set the paste scale cannot measure anything."""
+    return [d for d in run.get("dims") or [] if not d.get("set_by_construction")]
+
+
 def config_row(cfg: str, runs: Sequence[Mapping[str, Any]], seed: int = 0) -> dict[str, Any]:
     runs = sorted(runs, key=lambda r: (str(r.get("suite")), str(r.get("sample_id"))))  # order-free bootstrap CIs
-    errs = [float(d["error_mm"]) for r in runs for d in r.get("dims") or []]
+    errs = [float(d["error_mm"]) for r in runs for d in scored_dims(r)]
     st = error_stats(errs, seed=seed)
     # dims of one part are correlated: the CI resamples whole runs, not single dimensions
-    mean_ci = cluster_bootstrap_mean(
-        [[abs(float(d["error_mm"])) for d in r.get("dims") or []] for r in runs], seed=seed
-    )
+    mean_ci = cluster_bootstrap_mean([[abs(float(d["error_mm"])) for d in scored_dims(r)] for r in runs], seed=seed)
     n = len(runs)
     ver = rate(sum(bool(r.get("verified")) for r in runs), n)
     # the verifier passed the part but it is more than 0.5 mm off the ground truth: the number that matters most
@@ -813,6 +853,9 @@ def build_tables(scores: Sequence[Mapping[str, Any]], mode: str, notes: Sequence
             if n_real == n_samples
             else (f"{n_real} real + {n_samples - n_real} synthetic renders" if n_real else "synthetic renders")
         )
+        if suite == "public_photos":
+            photos, note = PUBLIC_PHOTOS_LABEL, f"{PUBLIC_PHOTOS_NOTE}; {note}"
+        real_counted = {"counts_as_real_photos_measured": 0} if suite == "public_photos" else {}
         tables[suite] = {
             "title": title,
             "photos": photos,
@@ -835,6 +878,7 @@ def build_tables(scores: Sequence[Mapping[str, Any]], mode: str, notes: Sequence
             "mode": mode,
             "note": note,
             "mcnemar_B1_vs_PS": mcnemar_b1_ps(held),
+            **real_counted,
         }
     for gs in GATE_SUITES:
         tables[gs] = gate_table(gs, [s for s in scores if s["suite"] == gs], mode)
@@ -945,7 +989,7 @@ def run_summaries(scores: Sequence[Mapping[str, Any]]) -> dict[str, dict[str, li
     out: dict[str, dict[str, list[dict[str, Any]]]] = {}
     for s in scores:
         row = {k: s.get(k) for k in keep}
-        errs = [abs(float(d["error_mm"])) for d in s.get("dims") or []]
+        errs = [abs(float(d["error_mm"])) for d in scored_dims(s)]
         row["max_abs_err_mm"] = round(max(errs), 4) if errs else None
         out.setdefault(s["suite"], {}).setdefault(s["config"], []).append(row)
     return out
@@ -959,7 +1003,8 @@ def failures_gallery(
 
     gal = out_dir / "gallery"
     fails = [s for s in scores if not s.get("pass_0_5") and s["config"] == HEADLINE_CONFIG and s["suite"] in SUITES]
-    fails.sort(key=lambda s: (s.get("split") != "held_out", s["suite"], s["sample_id"]))
+    # public-photo failures come last, so that the gallery keeps showing the same runs of the other suites
+    fails.sort(key=lambda s: (s.get("split") != "held_out", s["suite"] == "public_photos", s["suite"], s["sample_id"]))
     out: list[dict[str, Any]] = []
     for s in fails[:limit]:
         src = RUNS_DIR / mode / s["suite"] / s["config"] / s["sample_id"] / "overlay.png"
@@ -1012,7 +1057,7 @@ def write_charts(scores: Sequence[Mapping[str, Any]], mode: str, out_dir: Path) 
         p.write_text(charts.convergence_svg(curves, f"{suite}: best verifier max error by iteration{tag}"))
         files.append(str(p.relative_to(out_dir)))
         hist = {
-            cfg: [abs(float(d["error_mm"])) for r in runs if r["config"] == cfg for d in r.get("dims") or []]
+            cfg: [abs(float(d["error_mm"])) for r in runs if r["config"] == cfg for d in scored_dims(r)]
             for cfg in ("B1", "PS")
             if any(r["config"] == cfg for r in runs)
         }
@@ -1041,9 +1086,37 @@ def latest_measure_only() -> dict[str, Any] | None:
     }
 
 
+def public_side_notes() -> str:
+    """One sentence each from the two model-free public-photo reports, read from their own JSON."""
+    out: list[str] = []
+    pm = REPORTS_DIR / "latest" / "public_photos_measure.json"
+    if pm.exists():
+        s = json.loads(pm.read_text())["summary"]
+        h = s["held_out"]
+        if h.get("n_dims"):
+            out.append(
+                f"Measure only, no model: capture gate passed {s['capture_gate_passed']}/{s['n_photos']}, held-out "
+                f"mean abs error {h['mean_abs_mm']} mm (95 % CI {h['ci95_mm'][0]} to {h['ci95_mm'][1]}), n = {h['n_dims']}"
+            )
+    ps = REPORTS_DIR / "latest" / "public_scale.json"
+    if ps.exists():
+        c = json.loads(ps.read_text())["summary"]
+        if c.get("status") == "ok":
+            out.append(
+                f"Flat-plane marker fit on real camera photos of printed boards: {c['mean_err_pct']} % of span on held-out "
+                f"corners (95 % CI {c['ci95_pct'][0]} to {c['ci95_pct'][1]}, n = {c['n_corners']}, {c['n_photos']} photos)"
+            )
+    return "; ".join(out)
+
+
 def build_report(scores: Sequence[Mapping[str, Any]], mode: str, notes: Sequence[str], out_dir: Path) -> dict[str, Any]:
     out_dir.mkdir(parents=True, exist_ok=True)
     git = runs_git(scores)
+    tables = build_tables(scores, mode, notes)
+    separate = {k: tables.pop(k) for k in SEPARATE_SUITES}
+    side = public_side_notes()
+    if side:
+        separate["public_photos"]["note"] = "; ".join(x for x in (separate["public_photos"]["note"], side) if x)
     return {
         "status": "ok",
         "generated_at": dt.datetime.now(dt.UTC).isoformat(timespec="seconds"),
@@ -1054,7 +1127,8 @@ def build_report(scores: Sequence[Mapping[str, Any]], mode: str, notes: Sequence
         "label": MOCK_TITLE if mode == "mock" else "live providers",
         "notes": list(notes),
         "configs": {k: {"description": c.description, "options": c.options, "env": c.env} for k, c in CONFIGS.items()},
-        "tables": build_tables(scores, mode, notes),
+        "tables": tables,
+        "separate_tables": separate,
         "runs": run_summaries(scores),
         "failures": failures_gallery(scores, mode, out_dir),
         "charts": write_charts(scores, mode, out_dir),
@@ -1091,7 +1165,7 @@ def to_markdown(rep: Mapping[str, Any]) -> str:
         "usd_per_job",
         "tokens_per_job",
     ]
-    for suite, t in rep["tables"].items():
+    for suite, t in {**rep["tables"], **rep.get("separate_tables", {})}.items():
         L += [
             "",
             f"## {t['title']}",
@@ -1188,7 +1262,12 @@ def write_report(
         (REPORTS_DIR / "latest").mkdir(parents=True, exist_ok=True)
         (REPORTS_DIR / "latest" / "report.json").write_text(text)
         targets.append(REPORTS_DIR / "latest")
-    run_dirs = [RUNS_DIR / str(s.get("mode")) / s["suite"] / s["config"] / s["sample_id"] for s in scores]
+    # the public-photo runs are a separate check: they stay out of the routing and token-share figures
+    run_dirs = [
+        RUNS_DIR / str(s.get("mode")) / s["suite"] / s["config"] / s["sample_id"]
+        for s in scores
+        if s["suite"] != "public_photos"
+    ]
     calls = open_weights.read_model_calls(run_dirs)
     prov = provenance.build(
         report="eval/run.py",
@@ -1336,7 +1415,7 @@ def main(argv: Sequence[str] | None = None) -> int:
     out = a.out or REPORTS_DIR / dt.date.today().isoformat()
     rep = build_report(scores, mode, notes, out)
     jp, mp = write_report(rep, out, scores, a.seed, latest=a.out is None)
-    for suite, t in rep["tables"].items():
+    for suite, t in {**rep["tables"], **rep["separate_tables"]}.items():
         if t["status"] != "ok":
             print(f"{suite:18s} pending — {t['note']}")
             continue

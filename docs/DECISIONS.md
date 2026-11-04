@@ -494,3 +494,23 @@ it calls usable is one the job will accept; the threshold-mask part check and th
 because the product segments with SAM 3.1. Intake keeps JPEG pixels as they are and rewrites the EXIF block to the
 orientation and focal-length tags only, for the same reason the upload path does not re-encode (accuracy), while still
 dropping location, dates and device fields.
+
+## Public photos as evidence, kept apart from real photos
+
+There are no phone photos of real parts yet, and the count of real photos measured stays what it is. Two checks use public photos instead, and neither feeds that count. A real-camera check fits the product's plane homography to the outer markers of printed boards and predicts the inner corners: it tests a flat-plane fit on real lenses, not phone-on-screen capture. The `public_photos` suite pastes real objects, cut out by code, on our rendered mat. It has its own ground-truth value (`published_spec_pasted`), its own table, `DataOrigin.reference_object` rather than `real`, and it stays out of `open_weights.json`. The paste scale needs one published size, so that size is marked `set_by_construction` and scored nowhere; without this rule the suite would grade its own input. We considered pasting at z = 0 and telling the job a thickness of zero, but the job's model would then be a sheet, so the cut-out sits on the plane at the stated thickness and the product's height correction applies. A board whose outer markers reject its documented layout is left out of the headline: that error would be a wrong layout, not a lens. The table sits under `separate_tables` in the report because the web schema rejects a ground-truth value it does not know: under `tables`, a build made before this suite would fail on every page that reads `/bench`. `make proof` writes test counts from machine output and labels what did not run.
+
+**2026-11-05 — Local-only files are excluded per clone, and the README counts every verified miss.** Working notes that never
+belong in the repository are listed in `.git/info/exclude`, not in the tracked `.gitignore`, so tracked files do not name them;
+the deploy allow-list keeps anything unlisted out of the image. The README headline now reads `verified_but_off` from
+`runs.*.PS` for every scored suite, because the two clean tables alone could be read as "no verified part was ever off", while
+intact parts with only a top photo were. `tools/readme.py` writes the audit table, the limits table with their meanings, the
+gates, the time table and the charts, and `eval/rebake.py` measures the knob-change wait rather than quoting it.
+
+## Scale evaluation stays apart from the frozen bench (2026-11-05)
+
+The large live evaluation is stored under `eval/runs/live_scale/` and summarised in `eval/reports/latest/scale.json`. The frozen
+60-sample bench in `eval/runs/live/` and its tables stay as they were, so earlier numbers can still be reproduced and no table
+silently changes meaning. It reuses the bench's own scoring code, on fresh samples (seed 20261105), with its plan written first
+in `eval/SCALE_PLAN.md`. All full-loop runs share one seeded shuffle, so stopping early at the spend or time limit still leaves
+an unbiased subset of each suite. The understanding figures come from the PartSpec each full run already logged rather than from
+200 separate calls. Muse Spark 1.3 stood in for the judge in these runs, because no Muse Glimmer endpoint is deployed.
