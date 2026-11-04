@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { REPO_URL } from "@/lib/site-links";
 import { Logo } from "./logo";
 
 const COLS = [
@@ -23,6 +24,7 @@ const COLS = [
       { href: "/models", label: "Which AI did what" },
       { href: "/lessons", label: "What it learned" },
       { href: "/judges", label: "Judge path" },
+      { href: "/deck/index.html", label: "Interactive deck" },
     ],
   },
   {
@@ -37,6 +39,7 @@ const COLS = [
   {
     title: "Developers",
     links: [
+      { href: REPO_URL, label: "Source code" },
       { href: "/agents", label: "REST + MCP" },
       { href: "/llms.txt", label: "llms.txt" },
       { href: "/prompt.txt", label: "prompt.txt" },
@@ -62,7 +65,7 @@ export function SiteFooter() {
             <ul className="mt-3 space-y-2">
               {c.links.map((l) => (
                 <li key={l.href}>
-                  {/\.(txt|json)$/.test(l.href) ? (
+                  {/\.(txt|json|html)$/.test(l.href) || /^https?:/.test(l.href) ? (
                     <a href={l.href} className="text-[13px] text-muted hover:text-fg">
                       {l.label}
                     </a>

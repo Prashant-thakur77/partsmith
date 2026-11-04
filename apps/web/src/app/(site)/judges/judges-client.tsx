@@ -9,6 +9,7 @@ import { TraceTimeline } from "@/components/jobs/trace-timeline";
 import { ReplayCard } from "@/components/jobs/replay-card";
 import { StageModelsTable } from "@/components/models/stage-models-table";
 import { LieCaught, reportFileUrl } from "@/components/judges/lie-caught";
+import { FilmEmbed } from "@/components/landing/film-embed";
 import { Container, PageHeader, Section } from "@/components/layout/page";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -20,6 +21,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Slider } from "@/components/ui/slider";
 import { VerifiedBadge } from "@/components/ui/verified-badge";
 import { api, artifactUrl } from "@/lib/api";
+import { DECK_PATH, REPO_URL } from "@/lib/site-links";
 import { distinctTitles, fmtNum, splitTitle } from "@/lib/format";
 import { STAGE_LABELS, summarizeEvents } from "@/lib/job-events";
 import type { JobEvent } from "@/lib/api-types";
@@ -38,7 +40,6 @@ const ConvergenceChart = dynamic(() => import("@/components/jobs/convergence-cha
   ),
 });
 
-const REPO_URL = process.env.NEXT_PUBLIC_REPO_URL ?? "";
 const MODEL_ROWS = 6;
 
 const FRAMES: { kind: string; caption: string }[] = [
@@ -325,17 +326,19 @@ export function JudgesClient() {
                 <FlaskConical aria-hidden /> Try a sample
               </Link>
             </Button>
-            {REPO_URL ? (
-              <Button asChild variant="outline">
-                <a href={REPO_URL} target="_blank" rel="noreferrer">
-                  Source code <ArrowRight aria-hidden />
-                </a>
-              </Button>
-            ) : null}
+            <Button asChild variant="outline">
+              <a href={DECK_PATH}>Interactive deck</a>
+            </Button>
+            <Button asChild variant="outline">
+              <a href={REPO_URL} target="_blank" rel="noreferrer">
+                Source code <ArrowRight aria-hidden />
+              </a>
+            </Button>
           </>
         }
       />
       <Container className="space-y-12 py-8">
+        <FilmEmbed className="mx-auto max-w-3xl" />
         <ol className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
           {steps.map((s) => (
             <li key={s.n}>

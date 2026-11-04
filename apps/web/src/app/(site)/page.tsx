@@ -1,12 +1,15 @@
-import { ArrowRight, Eye, FlaskConical, PenLine, ShieldCheck, SlidersHorizontal, Smartphone } from "lucide-react";
+import { ArrowRight, FlaskConical, PenLine, PlayCircle, SlidersHorizontal } from "lucide-react";
 import Link from "next/link";
 import { AgentsStrip } from "@/components/landing/agents-strip";
 import { BuyOrPrintStrip } from "@/components/landing/buy-or-print-strip";
 import { ClosingCta } from "@/components/landing/closing-cta";
+import { FilmEmbed } from "@/components/landing/film-embed";
 import { FiveSheets } from "@/components/landing/five-sheets";
 import { FixItself } from "@/components/landing/fix-itself";
 import { HeroFigure } from "@/components/landing/hero-figure";
+import { HeroModel } from "@/components/landing/hero-model";
 import { HeroTicker } from "@/components/landing/hero-ticker";
+import { JudgePath } from "@/components/landing/judge-path";
 import { LieStrip } from "@/components/landing/lie-strip";
 import { ProgramSection } from "@/components/landing/program-section";
 import { ProofStrip } from "@/components/landing/proof-strip";
@@ -33,12 +36,12 @@ export default async function HomePage() {
     <>
       <div className="relative overflow-hidden border-b border-border">
         <div className="pointer-events-none absolute inset-0 bg-paper [mask-image:radial-gradient(ellipse_80%_70%_at_60%_40%,black,transparent_85%)]" aria-hidden />
-        <Container className="relative py-8 sm:py-12 lg:py-14">
-          <div className="page-in mb-8 sm:mb-10">
+        <Container className="relative py-6 sm:py-8">
+          <div className="page-in mb-6 sm:mb-8">
             <HeroTicker stats={statsV} bench={benchV} />
           </div>
-          <div className="grid items-center gap-12 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.06fr)] lg:gap-14">
-            <div className="space-y-7 motion-safe:animate-fade-up">
+          <div className="grid items-center gap-8 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.06fr)] lg:gap-14">
+            <div className="space-y-6 motion-safe:animate-fade-up">
               {/* each arrow stays with the word after it, so a wrap never leaves an arrow alone at a line end */}
               <p className="flex flex-wrap gap-x-[0.6em] font-mono text-[11px] tracking-[0.1em] text-subtle uppercase sm:tracking-[0.16em]">
                 <span>Photo</span>
@@ -67,39 +70,46 @@ export default async function HomePage() {
                   </Link>
                 </Button>
                 <Button asChild variant="outline" size="lg">
-                  <Link href="/jobs/demo">
-                    <FlaskConical aria-hidden /> Try a sample
-                  </Link>
-                </Button>
-                <Button asChild variant="outline" size="lg">
-                  <Link href="/describe">
-                    <PenLine aria-hidden /> Describe a part
-                  </Link>
-                </Button>
-                <Button asChild variant="ghost" size="lg">
-                  <Link href="/playground">
-                    <SlidersHorizontal aria-hidden /> Playground
+                  <Link href="#film">
+                    <PlayCircle aria-hidden /> Watch the film
                   </Link>
                 </Button>
               </div>
-              <ul className="flex flex-col gap-2 pt-1 text-[13px] text-muted sm:flex-row sm:flex-wrap sm:gap-x-5">
-                <li className="inline-flex items-center gap-1.5">
-                  <Smartphone className="size-4 text-subtle" aria-hidden /> A phone and a screen: no caliper, no printer for the mat
-                </li>
-                <li className="inline-flex items-center gap-1.5">
-                  <ShieldCheck className="size-4 text-subtle" aria-hidden /> Code decides verified, not the AI
-                </li>
-                <li className="inline-flex items-center gap-1.5">
-                  <Eye className="size-4 text-subtle" aria-hidden /> Recorded runs and tests are labelled
-                </li>
-              </ul>
+              <p className="flex flex-wrap items-center gap-x-4 gap-y-1.5 text-[13px] text-muted">
+                <span>Or, with no part in hand:</span>
+                <Link href="/jobs/demo" className="inline-flex items-center gap-1 underline-offset-2 hover:text-fg hover:underline">
+                  <FlaskConical className="size-3.5" aria-hidden /> Try a sample
+                </Link>
+                <Link href="/describe" className="inline-flex items-center gap-1 underline-offset-2 hover:text-fg hover:underline">
+                  <PenLine className="size-3.5" aria-hidden /> Describe a part
+                </Link>
+                <Link href="/playground" className="inline-flex items-center gap-1 underline-offset-2 hover:text-fg hover:underline">
+                  <SlidersHorizontal className="size-3.5" aria-hidden /> Playground
+                </Link>
+              </p>
             </div>
-            <div className="min-w-0 page-in">
-              <HeroFigure sheet={{ n: n("hero"), of: OF }} />
+            <div id="try" className="min-w-0 scroll-mt-24 page-in">
+              <HeroModel />
             </div>
+          </div>
+          <div className="mt-7">
+            <JudgePath />
           </div>
         </Container>
       </div>
+
+      <Container className="pt-14 sm:pt-16">
+        <div id="film" className="grid scroll-mt-24 items-start gap-8 lg:grid-cols-2">
+          <div className="min-w-0 space-y-3">
+            <h2 className="text-[22px] font-semibold tracking-[-0.02em]">The film</h2>
+            <FilmEmbed />
+          </div>
+          <div className="min-w-0 space-y-3">
+            <h2 className="text-[22px] font-semibold tracking-[-0.02em]">One recorded run, as a drawing</h2>
+            <HeroFigure sheet={{ n: n("hero"), of: OF }} />
+          </div>
+        </div>
+      </Container>
 
       <Container className="space-y-28 py-16 sm:space-y-32 sm:py-20">
         <Sheet id="proof" n={n("proof")} of={OF} kicker="Proof" title="Measured, not claimed." description="Three numbers from this server's bench report. Each says how many cases it covers and what it was checked against.">
