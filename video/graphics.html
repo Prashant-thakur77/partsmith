@@ -575,8 +575,8 @@ const SCENES = {
     const cards = [
       [`${S.ps_pass} vs ${S.b1_pass}`, `of ${S.pairs} photos within ${F.limit_mm} mm: full loop vs single shot`, `same photos, paired, p = ${S.p}`, 0.2],
       [`${S.top_off}/${S.top_n} → ${S.side_off}/${S.side_n}`, "wrong passes: top photo alone → top and side", "verified, but over the limit on some size", L.t2.start],
-      [`${S.median_mm} mm`, "median error, rendered parts", `n = ${S.n}, exact ground truth`, L.t4.start],
-      [`${F.blocked}/${F.attempts}`, "lying-model attacks blocked", "scripted attacks on the real verifier", L.t4.start + 1.2],
+      [`${S.median_mm} mm`, "median error, rendered parts", `n = ${S.n}, exact ground truth`, L.t2.start + 1.2],
+      [`${F.blocked}/${F.attempts}`, "lying-model attacks blocked", "scripted attacks on the real verifier", L.t2.start + 2.2],
       [`${S.red_ok}/${S.red_n}`, "bad photos caught", "a hand in frame got through", L.t3.start - 1.2],
       [t.backend ? fmt(t.backend.passed) : `${S.calls}`, t.backend ? "backend tests passing" : "live model calls", `${fmt(S.calls)} live model calls in the evaluation`, L.t3.start],
     ];
