@@ -3,7 +3,7 @@
 **Photo of a broken part → a measured, verified, printable replacement. No caliper: your laptop screen is the ruler.**
 
 <!-- BEGIN:badges -->
-[![CI](https://github.com/Prashant-thakur77/partsmith/actions/workflows/ci.yml/badge.svg)](https://github.com/Prashant-thakur77/partsmith/actions/workflows/ci.yml) ![Python: 3.12](https://img.shields.io/badge/Python-3.12-3776ab) ![Next.js: 15](https://img.shields.io/badge/Next.js-15-1c2230) [![backend tests: 1023 passing](https://img.shields.io/badge/backend%20tests-1023%20passing-2e7d4f)](docs/PROOF.md) [![web unit tests: 153 passing](https://img.shields.io/badge/web%20unit%20tests-153%20passing-2e7d4f)](docs/PROOF.md) [![builder tokens on open weights: 100 percent](https://img.shields.io/badge/builder%20tokens%20on%20open%20weights-100%20percent-c2410c)](eval/reports/latest/open_weights.json) [![lying-model attacks blocked: 17 of 17](https://img.shields.io/badge/lying--model%20attacks%20blocked-17%20of%2017-2e7d4f)](eval/reports/latest/bypass.json)
+[![CI](https://github.com/Prashant-thakur77/partsmith/actions/workflows/ci.yml/badge.svg)](https://github.com/Prashant-thakur77/partsmith/actions/workflows/ci.yml) ![Python: 3.12](https://img.shields.io/badge/Python-3.12-3776ab) ![Next.js: 15](https://img.shields.io/badge/Next.js-15-1c2230) [![backend tests: 1120 passing](https://img.shields.io/badge/backend%20tests-1120%20passing-2e7d4f)](docs/PROOF.md) [![web unit tests: 180 passing](https://img.shields.io/badge/web%20unit%20tests-180%20passing-2e7d4f)](docs/PROOF.md) [![builder tokens on open weights: 100 percent](https://img.shields.io/badge/builder%20tokens%20on%20open%20weights-100%20percent-c2410c)](eval/reports/latest/open_weights.json) [![lying-model attacks blocked: 17 of 17](https://img.shields.io/badge/lying--model%20attacks%20blocked-17%20of%2017-2e7d4f)](eval/reports/latest/bypass.json)
 <!-- END:badges -->
 
 <!-- BEGIN:links -->
@@ -19,7 +19,7 @@
 <sub>Recorded from the web app replaying a stored live run (`make media`); the numbers are the stored run's own.</sub>
 
 <!-- BEGIN:status -->
-> **Status: live providers** · bench report 2026-11-04 at commit `1f77aad` plus uncommitted changes · real photos measured: 0 · real parts with ruler ground truth: 0 · real repairs logged: 0
+> **Status: live providers** · bench report 2026-11-05 at commit `0b63226` · real photos measured: 0 · real parts with ruler ground truth: 0 · real repairs logged: 0
 >
 > Numbers below come from live model calls on synthetic photos. Some stages ran as labelled mocks: see `provider_modes` in `eval/reports/latest/report.json`. Real-photo results are pending and say so in their tables. Public photos pasted on a rendered mat have their own table and are not counted as real photos.
 <!-- END:status -->
@@ -529,7 +529,7 @@ A live job on the battery cover after the fix measured from SAM's mask and verif
 library. `pass@0.5` means every size within 0.5 mm of the ground truth.
 
 <!-- BEGIN:bench -->
-Generated 2026-11-04T21:36:46+00:00 at commit `1f77aad30f748b303ab28a048e362a72929fe3d1` · mode **live**.
+Generated 2026-11-05T01:35:38+00:00 at commit `0b6322640b63e5a88efd518670290450f0af9464` · mode **live**.
 
 **Synthetic bench (exact ground truth)**
 
@@ -697,16 +697,16 @@ Before the public photos, the full loop verified **10** parts, and **4** of them
 ### Test gates
 
 <!-- BEGIN:gates -->
-Last run 2026-11-04T23:08 UTC. Details: [docs/PROOF.md](docs/PROOF.md).
+Last run 2026-11-05T01:33 UTC. Details: [docs/PROOF.md](docs/PROOF.md).
 
 | Gate | Command | Result | Took |
 |---|---|---|---|
-| Backend unit tests (pytest) | `make test` | **passed** (1023 passed) | 275 s |
-| Web unit tests (node --test) | `pnpm -s test (in apps/web)` | **passed** (153 passed) | 1 s |
-| Browser tests (Playwright) | `pnpm -s exec playwright test --workers=2 (after next build)` | **passed** (273 passed, 279 skipped) | 303 s |
+| Backend unit tests (pytest) | `make test` | **passed** (1120 passed) | 339 s |
+| Web unit tests (node --test) | `pnpm -s test (in apps/web)` | **passed** (180 passed) | 0 s |
+| Browser tests (Playwright) | `pnpm -s exec playwright test --workers=2 (after next build)` | **passed** (337 passed, 319 skipped) | 360 s |
 | Deploy configuration check | `make deploy-check` | **passed**  | 0 s |
 | Python lint and format (ruff) | `make lint` | **passed**  | 0 s |
-| Python types (mypy --strict) | `make typecheck` | **failed**  | 5 s |
+| Python types (mypy --strict) | `make typecheck` | **passed**  | 2 s |
 | Web types (tsc) | `pnpm -C apps/web -s typecheck` | **passed**  | 2 s |
 | Web lint (eslint) | `pnpm -C apps/web -s lint` | **passed**  | 4 s |
 <!-- END:gates -->
@@ -791,7 +791,7 @@ More: [docs/PROOF.md](docs/PROOF.md), [eval/REPRODUCE.md](eval/REPRODUCE.md).
 | **Impact**: who benefits, could people use it | A broken plastic part stops meaning a thrown-out appliance: no caliper, no CAD, no printer of your own. One stored run takes 7.45 min and about ₹2.93 of filament by estimate. Not yet shown: real phone photos and real prints | [The problem](#the-problem-and-who-it-serves), [Time](#how-long-it-takes-and-why-it-works), [Limitations](#limitations), `/requests`, `/shop` |
 | **Use of Meta AI tooling**: beyond a basic integration | SAM 3.1 asked first for the part mask, with a logged code fallback, and video tracking for heights; Muse Spark names features and points at pixels, and SAM 3.1 cuts them; Muse Spark Open writes programs and operates our tools (918 of 919 builder calls on open weights); Muse Wonder's citations are checked by code; Muse Image completions must leave the markers and intact part unchanged; Voice Transcribe hears Hindi and English mixed, with knob names as keywords | [Meta models](#what-was-not-possible-before-and-how-metas-models-made-it-possible), `eval/reports/latest/open_weights.json`, `/models` |
 | **Technical depth: real objects** | 16 public photos of real objects, pasted on a rendered mat: median error 0.308 mm against published sizes. Not phone captures | `eval/reports/latest/report.json` → `separate_tables.public_photos`, `eval/REPRODUCE.md` |
-| **Technical depth and execution** | A deterministic verifier is the only writer of `verified`; sandboxed CAD; one export gate; 1023 backend tests; 17/17 lying-model attacks blocked; mesh vs knob measured over 17 parts | [Verify it yourself](#verify-it-yourself), [Results](#results), [docs/DECISIONS.md](docs/DECISIONS.md) |
+| **Technical depth and execution** | A deterministic verifier is the only writer of `verified`; sandboxed CAD; one export gate; 1120 backend tests; 17/17 lying-model attacks blocked; mesh vs knob measured over 17 parts | [Verify it yourself](#verify-it-yourself), [Results](#results), [docs/DECISIONS.md](docs/DECISIONS.md) |
 | **Demo**: works, holds up live, good to watch | `/judges` replays a stored live run and shows a lying model being caught, with no login and no keys. The demo film walks the same flow | [Try it](#try-it-in-2-minutes), the link row at the top |
 | **Bonus: open weights** | Muse Spark Open on partner inference writes and fixes every program: 100 % of builder tokens. Muse Glimmer is wired for an own-GPU path but ran as a labelled mock in the stored bench, so it is not claimed | `eval/reports/latest/open_weights.json`, `infra/modal/` |
 | **Bonus: agentic** | The fix agent reads residuals, measures, renders candidates, runs tests and sets knobs within bounded rounds, and code judges the result | job page Agent tab, `services/agent/agent_loop.py` |
@@ -1006,20 +1006,20 @@ All code in this repository was written during the hackathon (from Oct 26 2026, 
 are computed from `git log`, so they stay true as the history grows.
 
 <!-- BEGIN:built -->
-**75 commits** between 2026-10-27 05:59 ET and 2026-11-04 20:02 ET; the hackathon started 2026-10-26 12:00 ET. Commits dated before the start: **0**.
+**79 commits** between 2026-10-27 05:59 ET and 2026-11-04 20:35 ET; the hackathon started 2026-10-26 12:00 ET. Commits dated before the start: **0**.
 
 | Area | Files added | Lines added: code and docs | Lines added: data, reports, lockfiles, generated | First commit | Last commit |
 |---|---|---|---|---|---|
-| `services/` (Python backend) | 310 | 62,347 | 0 | 2026-10-27 | 2026-11-04 |
-| `apps/web/` (web app) | 503 | 47,079 | 9,408 | 2026-10-27 | 2026-11-04 |
-| `eval/` (benches and reports) | 1,786 | 8,202 | 176,149 | 2026-10-27 | 2026-11-04 |
+| `services/` (Python backend) | 314 | 62,649 | 0 | 2026-10-27 | 2026-11-04 |
+| `apps/web/` (web app) | 503 | 47,143 | 9,420 | 2026-10-27 | 2026-11-04 |
+| `eval/` (benches and reports) | 1,788 | 8,517 | 176,164 | 2026-10-27 | 2026-11-04 |
 | `packages/` (typed contracts) | 12 | 1,440 | 5,679 | 2026-10-27 | 2026-11-04 |
-| `tools/` (synthetic data, mats, generators) | 41 | 8,794 | 0 | 2026-10-27 | 2026-11-04 |
+| `tools/` (synthetic data, mats, generators) | 41 | 8,851 | 0 | 2026-10-27 | 2026-11-04 |
 | `infra/` (Modal, deploy) | 17 | 1,142 | 101 | 2026-10-27 | 2026-11-04 |
-| `docs/` | 48 | 2,544 | 11,535 | 2026-10-27 | 2026-11-04 |
+| `docs/` | 48 | 2,551 | 11,535 | 2026-10-27 | 2026-11-04 |
 | `data/` (samples, replays) | 4,342 | 0 | 660,721 | 2026-10-27 | 2026-11-04 |
-| root files | 39 | 4,690 | 9,854 | 2026-10-27 | 2026-11-04 |
-| **Total** | **7,098** | **136,238** | **873,447** | | |
+| root files | 39 | 4,718 | 9,854 | 2026-10-27 | 2026-11-04 |
+| **Total** | **7,104** | **137,011** | **873,474** | | |
 
 <details><summary>Every commit since the start, oldest first</summary>
 
@@ -1100,6 +1100,10 @@ are computed from `git log`, so they stay true as the history grows.
 | 2026-11-04 19:56 ET | `afaf203` | feat(metrology): SAM 3.1 prompt names the part's colour, read by code, with a before-and-after measurement |
 | 2026-11-04 19:58 ET | `4a8c22f` | feat: the first recorded run measured by SAM 3.1, and the colour-prompt results in the README |
 | 2026-11-04 20:02 ET | `fd1064b` | fix(web): /fix no longer breaks hydration when the status reaches the page first |
+| 2026-11-04 20:12 ET | `00c53ac` | feat: four more part templates, and pages that say which templates no run has used and what drew each outline |
+| 2026-11-04 20:21 ET | `3f6ad89` | feat(eval): whole jobs on the same photos after SAM's prompt fix, with the evaluation above the fold |
+| 2026-11-04 20:34 ET | `d744cca` | test: all gates on the final code, and the after-fix run's first attempt recorded as invalid |
+| 2026-11-04 20:35 ET | `0b63226` | fix(eval): provenance takes the tree state the report read, not the report's own files |
 
 </details>
 

@@ -1,8 +1,8 @@
 {
  "status": "ok",
- "generated_at": "2026-11-04T21:36:46+00:00",
- "git_sha": "1f77aad30f748b303ab28a048e362a72929fe3d1",
- "git_dirty": true,
+ "generated_at": "2026-11-05T01:35:38+00:00",
+ "git_sha": "0b6322640b63e5a88efd518670290450f0af9464",
+ "git_dirty": false,
  "git_source": "current tree",
  "mode": "live",
  "label": "live providers",
