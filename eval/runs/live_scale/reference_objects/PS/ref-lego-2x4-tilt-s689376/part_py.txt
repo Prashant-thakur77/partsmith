@@ -1,0 +1,72 @@
+import cadquery as cq
+import math
+
+PARAMS = {
+    "brick_length": (31.6, 30.0, 34.0, 0.1, "mm", True, "Overall length X"),
+    "brick_width": (15.8, 14.0, 18.0, 0.1, "mm", True, "Overall width Y"),
+    "brick_height": (9.8, 8.0, 11.0, 0.1, "mm", False, "Body thickness Z"),
+    "stud_dia": (5.0, 4.0, 5.5, 0.1, "mm", True, "Stud outer diameter"),
+    "stud_height": (1.4, 1.2, 2.5, 0.1, "mm", False, "Stud height"),
+    "stud_pitch": (8.0, 7.5, 8.5, 0.1, "mm", True, "Stud pitch"),
+    "corner_chamfer": (0.7, 0.0, 1.5, 0.1, "mm", False, "Corner chamfer"),
+    "studs_x": (4, 1, 6, 1, "", False, "Studs along X"),
+    "studs_y": (2, 1, 4, 1, "", False, "Studs along Y"),
+}
+
+def build(p: dict) -> cq.Workplane:
+    L = float(p["brick_length"])
+    W = float(p["brick_width"])
+    H = float(p["brick_height"])
+    D = float(p["stud_dia"])
+    Sh = float(p["stud_height"])
+    Pitch = float(p["stud_pitch"])
+    C = float(p["corner_chamfer"])
+    nx = int(round(float(p["studs_x"])))
+    ny = int(round(float(p["studs_y"])))
+    nx = max(1, nx)
+    ny = max(1, ny)
+    max_c = min(L, W) * 0.4
+    if C > max_c:
+        C = max_c
+    if C < 0:
+        C = 0
+    L2 = L / 2.0
+    W2 = W / 2.0
+    if C < 1e-6:
+        pts = [
+            (-L2, -W2),
+            (L2, -W2),
+            (L2, W2),
+            (-L2, W2),
+        ]
+    else:
+        pts = [
+            (-L2 + C, -W2),
+            (L2 - C, -W2),
+            (L2, -W2 + C),
+            (L2, W2 - C),
+            (L2 - C, W2),
+            (-L2 + C, W2),
+            (-L2, W2 - C),
+            (-L2, -W2 + C),
+        ]
+    work = cq.Workplane("XY")
+    work = work.polyline(pts).close().extrude(H, combine=True)
+    studs = None
+    r = D / 2.0
+    for ix in range(nx):
+        x = (ix - (nx - 1) / 2.0) * Pitch
+        for iy in range(ny):
+            y = (iy - (ny - 1) / 2.0) * Pitch
+            cyl = cq.Workplane("XY").workplane(offset=H).moveTo(x, y).circle(r).extrude(Sh, combine=False)
+            if studs is None:
+                studs = cyl
+            else:
+                studs = studs.union(cyl)
+    if studs is not None:
+        result = work.union(studs)
+    else:
+        result = work
+    return result
+
+result = build({k: v[0] for k, v in PARAMS.items()})

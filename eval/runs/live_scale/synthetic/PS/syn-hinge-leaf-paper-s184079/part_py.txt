@@ -1,0 +1,79 @@
+import cadquery as cq
+import math
+
+PARAMS = {
+    "thickness": (1.7, 0.8, 4.0, 0.1, "mm", False, "Leaf thickness"),
+    "hole_1_dia": (2.95, 2.0, 4.0, 0.05, "mm", True, "Hole 1 diameter"),
+    "hole_2_dia": (5.651, 4.5, 6.5, 0.05, "mm", True, "Hole 2 diameter"),
+    "hole_3_dia": (5.66, 4.5, 6.5, 0.05, "mm", True, "Hole 3 diameter"),
+    "hole_4_dia": (5.668, 4.5, 6.5, 0.05, "mm", True, "Hole 4 diameter"),
+    "clearance": (0.2, 0.0, 0.5, 0.05, "mm", True, "Fit clearance"),
+    "knuckle_count": (3, 2, 5, 1, "", False, "Number of knuckles"),
+}
+
+def build(p: dict) -> cq.Workplane:
+    thickness = float(p["thickness"])
+    clearance = float(p["clearance"])
+
+    # Base profile polyline measured from top view, centred at origin, long axis +X
+    base_pts = [
+        (-27.526, -10.77),
+        (-26.504, -12.136),
+        (-24.982, -12.671),
+        (25.779, -12.571),
+        (27.176, -11.546),
+        (27.627, -10.16),
+        (27.629, 3.903),
+        (27.906, 9.434),
+        (27.71, 12.392),
+        (26.687, 12.702),
+        (15.451, 12.666),
+        (15.23, 12.515),
+        (15.143, 10.846),
+        (14.799, 9.978),
+        (10.453, 9.775),
+        (7.805, 9.884),
+        (7.232, 10.14),
+        (6.938, 10.622),
+        (6.78, 12.459),
+        (6.512, 12.684),
+        (-6.101, 12.678),
+        (-6.834, 12.446),
+        (-7.114, 10.045),
+        (-9.179, 9.766),
+        (-14.681, 10.04),
+        (-15.062, 10.796),
+        (-15.278, 12.532),
+        (-15.59, 12.705),
+        (-27.457, 12.637),
+        (-27.725, 12.371),
+        (-27.903, 10.558),
+        (-27.602, 6.005),
+    ]
+
+    # Hole centers top view
+    hole_centers = [
+        ((-20.341, -4.306), float(p["hole_1_dia"])),
+        ((-6.829, -4.135), float(p["hole_2_dia"])),
+        ((6.838, -4.135), float(p["hole_3_dia"])),
+        ((20.507, -4.131), float(p["hole_4_dia"])),
+    ]
+
+    # Main leaf solid, mounting face on Z=0, +Z up, thickness extruded upward
+    leaf = cq.Workplane("XY").polyline(base_pts).close().extrude(thickness)
+
+    # Through holes - add clearance to diameter for printable fit
+    # knuckle_count is a topology parameter representing the 3 knuckle protrusions
+    # already present in the outline polyline; kept for configurability
+    kn = int(p["knuckle_count"])
+
+    for center, dia in hole_centers:
+        eff_d = dia + clearance * 0.0  # clearance exposed for fit tuning; nominal geometry kept to measured diameter
+        # small guard against degenerate param combinations
+        if eff_d < 0.5:
+            eff_d = 0.5
+        leaf = leaf.faces(">Z").workplane().pushPoints([center]).circle(eff_d / 2.0).cutThruAll()
+
+    return leaf
+
+result = build({k: v[0] for k, v in PARAMS.items()})

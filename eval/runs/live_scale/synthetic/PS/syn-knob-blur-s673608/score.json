@@ -1,0 +1,132 @@
+{
+ "suite": "synthetic",
+ "config": "PS",
+ "sample_id": "syn-knob-blur-s673608",
+ "split": "held_out",
+ "kind": "template",
+ "preset": "blur",
+ "mode": "live",
+ "gt_source": "synthetic_exact",
+ "status": "best_effort",
+ "verified": false,
+ "iterations": 7,
+ "iterations_to_converge": null,
+ "strategy": "template",
+ "template": "knob",
+ "verifier_max_error_mm": 0.6878455465547707,
+ "retake_reason": null,
+ "failed_checks": [],
+ "usd": 0.321107,
+ "tokens_in": 256891,
+ "tokens_out": 40726,
+ "model_calls": 38,
+ "model_ms": 302183,
+ "provider_modes": [
+  "live",
+  "mock"
+ ],
+ "providers": {
+  "capture_triage": [
+   "mock:muse-glimmer"
+  ],
+  "segment": [
+   "meta:sam-3.1"
+  ],
+  "understand": [
+   "meta:muse-spark-1.3"
+  ],
+  "plan": [
+   "baseten:meta-models/muse-spark-open-1026"
+  ],
+  "build": [
+   "baseten:meta-models/muse-spark-open-1026"
+  ],
+  "fix_agent": [
+   "baseten:meta-models/muse-spark-open-1026"
+  ],
+  "judge": [
+   "meta:muse-spark-1.3"
+  ],
+  "fix": [
+   "baseten:meta-models/muse-spark-open-1026"
+  ]
+ },
+ "convergence": [
+  {
+   "iter": 1,
+   "hausdorff_mm": 1.1798122398312654,
+   "iou": 0.9086170128741805,
+   "max_error_mm": 1.9059999999999988
+  },
+  {
+   "iter": 2,
+   "hausdorff_mm": 0.7241035910856899,
+   "iou": 0.9743145409735059,
+   "max_error_mm": 0.7241035910856899
+  },
+  {
+   "iter": 3,
+   "hausdorff_mm": 0.7400346403886386,
+   "iou": 0.9752881761054782,
+   "max_error_mm": 0.7400346403886386
+  },
+  {
+   "iter": 4,
+   "hausdorff_mm": 0.6878455465547707,
+   "iou": 0.9752542241812628,
+   "max_error_mm": 0.6878455465547707
+  },
+  {
+   "iter": 5,
+   "hausdorff_mm": 0.6850135197745985,
+   "iou": 0.9739792762140427,
+   "max_error_mm": 0.6850135197745985
+  },
+  {
+   "iter": 6,
+   "hausdorff_mm": 0.692741755187726,
+   "iou": 0.9849271478814269,
+   "max_error_mm": 0.692741755187726
+  },
+  {
+   "iter": 7,
+   "hausdorff_mm": 0.9531657700085308,
+   "iou": 0.972178152691251,
+   "max_error_mm": 0.9531657700085308
+  }
+ ],
+ "wall_s": 528.55,
+ "dims": [
+  {
+   "name": "length",
+   "gt_mm": 31.999908,
+   "model_mm": 31.8992,
+   "error_mm": -0.1007
+  },
+  {
+   "name": "width",
+   "gt_mm": 31.935239,
+   "model_mm": 31.8352,
+   "error_mm": -0.1
+  },
+  {
+   "name": "thickness",
+   "gt_mm": 19.2,
+   "model_mm": 19.0,
+   "error_mm": -0.2
+  }
+ ],
+ "missed": [],
+ "extra_holes": 0,
+ "pass_0_3": true,
+ "pass_0_5": true,
+ "valid": true,
+ "valid_reason": "",
+ "failure_category": null,
+ "git": {
+  "sha": null,
+  "dirty": false
+ },
+ "scale_suite": "synthetic",
+ "tree": "bb75824+308438f7af72"
+}

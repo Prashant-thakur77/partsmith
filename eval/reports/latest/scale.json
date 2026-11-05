@@ -1,0 +1,710 @@
+{
+ "generated_at": "2026-11-05T00:27:01+00:00",
+ "label": "scale evaluation: live model calls on fresh synthetic renders, plan fixed before running (eval/SCALE_PLAN.md)",
+ "counts_as_real_photos_measured": 0,
+ "tree": [
+  "bb75824+308438f7af72"
+ ],
+ "stop": {
+  "stop_reason": "time",
+  "done": 349,
+  "not_started": 156,
+  "runs_usd": 69.47186399999998
+ },
+ "runs": {
+  "broken/PS": 16,
+  "control_side/PS": 27,
+  "control_top/PS": 26,
+  "redteam/PS": 30,
+  "reference_objects/PS": 39,
+  "synthetic/B1": 67,
+  "synthetic/PS": 144
+ },
+ "planned": {
+  "synthetic/PS": 200,
+  "synthetic/B1": 100,
+  "broken/PS": 30,
+  "reference_objects/PS": 60,
+  "control_top/PS": 40,
+  "control_side/PS": 40,
+  "redteam/PS": 40
+ },
+ "not_run": {
+  "synthetic/PS": 56,
+  "synthetic/B1": 33,
+  "broken/PS": 14,
+  "reference_objects/PS": 21,
+  "control_top/PS": 14,
+  "control_side/PS": 13,
+  "redteam/PS": 10
+ },
+ "statuses": {
+  "best_effort": 210,
+  "verified": 82,
+  "failed": 48,
+  "refused": 9
+ },
+ "usd": {
+  "runs": 69.47,
+  "stages": {
+   "sam": 2.565,
+   "wonder": 5.172207,
+   "voice": 0.8
+  },
+  "total": 78.01
+ },
+ "wall_s": {
+  "sum": 105828.6,
+  "median": 282.4
+ },
+ "models": {
+  "meta-models/muse-spark-open (live)": {
+   "calls": 8,
+   "tokens": 794182,
+   "usd": 2.5564,
+   "ms": 3909663
+  },
+  "meta-models/muse-spark-open-1026 (live)": {
+   "calls": 5370,
+   "tokens": 52943258,
+   "usd": 43.6003,
+   "ms": 31139452
+  },
+  "muse-glimmer (mock)": {
+   "calls": 63,
+   "tokens": 0,
+   "usd": 0.0,
+   "ms": 3
+  },
+  "muse-image-1.0 (live)": {
+   "calls": 14,
+   "tokens": 0,
+   "usd": 0.14,
+   "ms": 385757
+  },
+  "muse-spark-1.3 (live)": {
+   "calls": 597,
+   "tokens": 8581590,
+   "usd": 17.9501,
+   "ms": 30531287
+  },
+  "sam-3.1 (live)": {
+   "calls": 2092,
+   "tokens": 0,
+   "usd": 5.225,
+   "ms": 7159613
+  }
+ },
+ "tables": {
+  "synthetic": {
+   "n": 167,
+   "ground_truth": "synthetic_exact",
+   "ci": "95 %: bootstrap over samples (2000 resamples, seeded) for mean errors; Wilson for rates",
+   "rows": [
+    {
+     "config": "B1",
+     "description": "single shot with the mat measurements (no loop)",
+     "n": 67,
+     "dims": 249,
+     "median_abs_err_mm": 0.25,
+     "mean_abs_err_mm": 0.881,
+     "mean_ci95": "[0.637, 1.170]",
+     "p90_mm": 2.34,
+     "pass@0.3": 0.149,
+     "pass@0.5": 0.239,
+     "pass@0.5_ci95": "[0.15, 0.35]",
+     "verified_rate": 0.015,
+     "verified_ci95": "[0.00, 0.08]",
+     "verified_but_off": "0/1",
+     "valid_rate": 0.866,
+     "median_iters": 1.0,
+     "median_wall_s": 116.0,
+     "usd_per_job": 0.0736,
+     "tokens_per_job": 25629.0,
+     "provider_modes": "live,mock"
+    },
+    {
+     "config": "PS",
+     "description": "full PartSmith loop with numeric residuals",
+     "n": 144,
+     "dims": 594,
+     "median_abs_err_mm": 0.15,
+     "mean_abs_err_mm": 0.448,
+     "mean_ci95": "[0.338, 0.596]",
+     "p90_mm": 0.9,
+     "pass@0.3": 0.354,
+     "pass@0.5": 0.479,
+     "pass@0.5_ci95": "[0.40, 0.56]",
+     "verified_rate": 0.278,
+     "verified_ci95": "[0.21, 0.36]",
+     "verified_but_off": "5/40",
+     "valid_rate": 0.917,
+     "median_iters": 6.0,
+     "median_wall_s": 406.2,
+     "usd_per_job": 0.2608,
+     "tokens_per_job": 249512.0,
+     "provider_modes": "live,mock"
+    }
+   ],
+   "headline": {
+    "config": "PS",
+    "median_abs_err_mm": 0.15,
+    "mean_abs_err_mm": 0.448,
+    "pass_at_0_5": 0.479,
+    "verified_rate": 0.278,
+    "verified_but_off": "5/40",
+    "n": 144
+   },
+   "mcnemar_B1_vs_PS": {
+    "n_pairs": 44,
+    "b1_only": 1,
+    "ps_only": 14,
+    "p_value": 0.000977,
+    "metric": "pass@0.5"
+   }
+  },
+  "broken": {
+   "n": 16,
+   "ground_truth": "synthetic_exact",
+   "ci": "95 %: bootstrap over samples (2000 resamples, seeded) for mean errors; Wilson for rates",
+   "rows": [
+    {
+     "config": "PS",
+     "description": "full PartSmith loop with numeric residuals",
+     "n": 16,
+     "dims": 68,
+     "median_abs_err_mm": 0.103,
+     "mean_abs_err_mm": 0.574,
+     "mean_ci95": "[0.364, 0.804]",
+     "p90_mm": 1.799,
+     "pass@0.3": 0.062,
+     "pass@0.5": 0.188,
+     "pass@0.5_ci95": "[0.07, 0.43]",
+     "verified_rate": 0.125,
+     "verified_ci95": "[0.03, 0.36]",
+     "verified_but_off": "2/2",
+     "valid_rate": 1.0,
+     "median_iters": 5.0,
+     "median_wall_s": 495.3,
+     "usd_per_job": 0.3329,
+     "tokens_per_job": 320214.0,
+     "provider_modes": "live,mock"
+    }
+   ],
+   "headline": {
+    "config": "PS",
+    "median_abs_err_mm": 0.103,
+    "mean_abs_err_mm": 0.574,
+    "pass_at_0_5": 0.188,
+    "verified_rate": 0.125,
+    "verified_but_off": "2/2",
+    "n": 16
+   },
+   "mcnemar_B1_vs_PS": null
+  },
+  "reference_objects": {
+   "n": 39,
+   "ground_truth": "reference_spec",
+   "ci": "95 %: bootstrap over samples (2000 resamples, seeded) for mean errors; Wilson for rates",
+   "rows": [
+    {
+     "config": "PS",
+     "description": "full PartSmith loop with numeric residuals",
+     "n": 39,
+     "dims": 95,
+     "median_abs_err_mm": 0.04,
+     "mean_abs_err_mm": 0.211,
+     "mean_ci95": "[0.109, 0.351]",
+     "p90_mm": 0.522,
+     "pass@0.3": 0.641,
+     "pass@0.5": 0.692,
+     "pass@0.5_ci95": "[0.54, 0.81]",
+     "verified_rate": 0.436,
+     "verified_ci95": "[0.29, 0.59]",
+     "verified_but_off": "0/17",
+     "valid_rate": 0.872,
+     "median_iters": 2.0,
+     "median_wall_s": 152.1,
+     "usd_per_job": 0.1937,
+     "tokens_per_job": 167392.0,
+     "provider_modes": "live,mock"
+    }
+   ],
+   "headline": {
+    "config": "PS",
+    "median_abs_err_mm": 0.04,
+    "mean_abs_err_mm": 0.211,
+    "pass_at_0_5": 0.692,
+    "verified_rate": 0.436,
+    "verified_but_off": "0/17",
+    "n": 39
+   },
+   "mcnemar_B1_vs_PS": null
+  },
+  "control_top": {
+   "n": 26,
+   "headline": {
+    "correct": 26,
+    "n": 26,
+    "correct_rate": 1.0,
+    "ci95": "[0.87, 1.00]",
+    "false_reject_rate": 0.0,
+    "false_reject_ci95": "[0.00, 0.13]",
+    "pass_at_0_5": 0.231
+   },
+   "wrong": []
+  },
+  "control_side": {
+   "n": 27,
+   "headline": {
+    "correct": 27,
+    "n": 27,
+    "correct_rate": 1.0,
+    "ci95": "[0.88, 1.00]",
+    "false_reject_rate": 0.0,
+    "false_reject_ci95": "[0.00, 0.12]",
+    "pass_at_0_5": 0.667
+   },
+   "wrong": []
+  },
+  "redteam": {
+   "n": 30,
+   "headline": {
+    "correct": 27,
+    "n": 30,
+    "correct_rate": 0.9,
+    "ci95": "[0.74, 0.97]",
+    "reject_expected": 21,
+    "refuse_expected": 9,
+    "reject_correct": 18,
+    "refuse_correct": 9
+   },
+   "wrong": [
+    {
+     "case": "rt-hand-in-frame-k1",
+     "expected": "reject",
+     "expected_checks": "coverage,contrast",
+     "outcome": "reject",
+     "failed_checks": "scale",
+     "correct": false
+    },
+    {
+     "case": "rt-hand-in-frame-k2",
+     "expected": "reject",
+     "expected_checks": "coverage,contrast",
+     "outcome": "accept",
+     "failed_checks": "\u2013",
+     "correct": false
+    },
+    {
+     "case": "rt-hand-in-frame-k3",
+     "expected": "reject",
+     "expected_checks": "coverage,contrast",
+     "outcome": "reject",
+     "failed_checks": "scale",
+     "correct": false
+    }
+   ]
+  }
+ },
+ "paired_b1_vs_ps": {
+  "n_pairs": 44,
+  "metric": "pass@0.5",
+  "b1_pass": 11,
+  "ps_pass": 24,
+  "b1_only": 1,
+  "ps_only": 14,
+  "p_value": 0.000977
+ },
+ "verified_but_off": {
+  "all_ps": {
+   "k": 18,
+   "n": 81,
+   "rate": 0.2222,
+   "ci95": [
+    0.1454,
+    0.3242
+   ],
+   "off_in_height": 15,
+   "of_runs": 252
+  },
+  "top_only": {
+   "k": 10,
+   "n": 13,
+   "rate": 0.7692,
+   "ci95": [
+    0.4974,
+    0.9182
+   ],
+   "off_in_height": 10,
+   "of_runs": 26
+  },
+  "top_and_side": {
+   "k": 1,
+   "n": 9,
+   "rate": 0.1111,
+   "ci95": [
+    0.0199,
+    0.435
+   ],
+   "off_in_height": 0,
+   "of_runs": 27
+  },
+  "rule": "helpful only if lower and the intervals do not overlap",
+  "helpful_shown": true
+ },
+ "understanding": {
+  "family_correct": {
+   "k": 149,
+   "n": 149,
+   "rate": 1.0,
+   "ci95": [
+    0.9749,
+    1.0
+   ]
+  },
+  "template_chosen_correct": {
+   "k": 148,
+   "n": 148,
+   "rate": 1.0,
+   "ci95": [
+    0.9747,
+    1.0
+   ]
+  },
+  "broken_region_kept_on_broken": {
+   "k": 13,
+   "n": 16,
+   "rate": 0.8125,
+   "ci95": [
+    0.5699,
+    0.9341
+   ]
+  },
+  "broken_region_kept_on_intact": {
+   "k": 0,
+   "n": 144,
+   "rate": 0.0,
+   "ci95": [
+    0.0,
+    0.026
+   ]
+  },
+  "source": "run logs; a separate 200-call understand stage was not needed",
+  "note": "the sample's intent sentence names the part, so family accuracy is not a test of vision alone"
+ },
+ "mask_sources": {
+  "broken": {
+   "threshold": 14,
+   "sam-3.1": 2
+  },
+  "control_side": {
+   "threshold": 26,
+   "sam-3.1": 1
+  },
+  "control_top": {
+   "threshold": 25,
+   "sam-3.1": 1
+  },
+  "redteam": {
+   "threshold": 10,
+   "no measure line": 20
+  },
+  "reference_objects": {
+   "threshold": 35,
+   "no measure line": 4
+  },
+  "synthetic": {
+   "threshold": 172,
+   "no measure line": 20,
+   "sam-3.1": 19
+  }
+ },
+ "sam": {
+  "mask_returned": {
+   "k": 38,
+   "n": 494,
+   "rate": 0.0769,
+   "ci95": [
+    0.0566,
+    0.1038
+   ]
+  },
+  "when_returned": {
+   "n": 38,
+   "iou_median": 0.9717,
+   "iou_median_ci95": [
+    0.9638,
+    0.9754
+   ],
+   "iou_p10": 0.9338,
+   "iou_at_least_0_95": {
+    "k": 28,
+    "n": 38,
+    "rate": 0.7368,
+    "ci95": [
+     0.5799,
+     0.8503
+    ]
+   },
+   "boundary_mean_mm_median": 0.431,
+   "boundary_mean_mm_p90": 1.155
+  },
+  "all_photos": {
+   "n": 494,
+   "iou_median": 0.0,
+   "iou_median_ci95": [
+    0.0,
+    0.0
+   ],
+   "iou_p10": 0.0,
+   "iou_at_least_0_95": {
+    "k": 28,
+    "n": 494,
+    "rate": 0.0567,
+    "ci95": [
+     0.0395,
+     0.0807
+    ]
+   },
+   "boundary_mean_mm_median": 0.431,
+   "boundary_mean_mm_p90": 1.155
+  },
+  "errors": 0,
+  "planned": 500,
+  "ran": 494,
+  "calls": 1026,
+  "usd": 2.565,
+  "by_preset": {
+   "blur": {
+    "photos": 54,
+    "mask_returned": 1
+   },
+   "clean": {
+    "photos": 104,
+    "mask_returned": 10
+   },
+   "glare": {
+    "photos": 54,
+    "mask_returned": 5
+   },
+   "low-light": {
+    "photos": 54,
+    "mask_returned": 5
+   },
+   "moire": {
+    "photos": 55,
+    "mask_returned": 0
+   },
+   "paper": {
+    "photos": 74,
+    "mask_returned": 9
+   },
+   "tilt": {
+    "photos": 54,
+    "mask_returned": 8
+   },
+   "white-part": {
+    "photos": 45,
+    "mask_returned": 0
+   }
+  },
+  "by_suite": {
+   "broken": {
+    "photos": 26,
+    "mask_returned": 3
+   },
+   "control_top": {
+    "photos": 40,
+    "mask_returned": 3
+   },
+   "extra": {
+    "photos": 169,
+    "mask_returned": 15
+   },
+   "reference_objects": {
+    "photos": 60,
+    "mask_returned": 0
+   },
+   "synthetic": {
+    "photos": 199,
+    "mask_returned": 17
+   }
+  },
+  "note": "IoU 0 here means no mask cleared the product's confidence floor, with the threshold fallback switched off for this test"
+ },
+ "wonder": {
+  "accepted_with_citation": {
+   "k": 24,
+   "n": 30,
+   "rate": 0.8,
+   "ci95": [
+    0.6269,
+    0.9049
+   ]
+  },
+  "errors": 0,
+  "usd": 5.1722,
+  "page_check": {
+   "number_found_on_page": 7,
+   "number_not_found": 0,
+   "page_unreadable": 5
+  },
+  "note": "a citation is not a verified fact"
+ },
+ "voice": {
+  "speech": "synthesised speech from two narrator voices, not people",
+  "spoken": {
+   "k": 34,
+   "n": 40,
+   "rate": 0.85,
+   "ci95": [
+    0.7093,
+    0.9294
+   ]
+  },
+  "typed": {
+   "k": 39,
+   "n": 40,
+   "rate": 0.975,
+   "ci95": [
+    0.8712,
+    0.9956
+   ]
+  },
+  "rescored": "right recomputed from the stored answers with the rule's \u00b10.01 mm compared after rounding to 6 decimals; the first pass marked values exactly 0.01 off as wrong through floating point",
+  "wrong_typed": [
+   {
+    "line": "Cover ko do millimeter chhota karo.",
+    "edits": [],
+    "expected": {
+     "param": "length",
+     "to": 43.3
+    }
+   }
+  ],
+  "by_language": {
+   "english": {
+    "spoken": {
+     "k": 14,
+     "n": 14,
+     "rate": 1.0,
+     "ci95": [
+      0.7847,
+      1.0
+     ]
+    },
+    "typed": {
+     "k": 14,
+     "n": 14,
+     "rate": 1.0,
+     "ci95": [
+      0.7847,
+      1.0
+     ]
+    }
+   },
+   "hindi": {
+    "spoken": {
+     "k": 7,
+     "n": 12,
+     "rate": 0.5833,
+     "ci95": [
+      0.3195,
+      0.8067
+     ]
+    },
+    "typed": {
+     "k": 11,
+     "n": 12,
+     "rate": 0.9167,
+     "ci95": [
+      0.6461,
+      0.9851
+     ]
+    }
+   },
+   "mixed": {
+    "spoken": {
+     "k": 13,
+     "n": 14,
+     "rate": 0.9286,
+     "ci95": [
+      0.6853,
+      0.9873
+     ]
+    },
+    "typed": {
+     "k": 14,
+     "n": 14,
+     "rate": 1.0,
+     "ci95": [
+      0.7847,
+      1.0
+     ]
+    }
+   }
+  },
+  "wrong_spoken": [
+   {
+    "line": "Cover ko do millimeter chhota karo.",
+    "heard": "cover Kodo millimeter",
+    "edits": [],
+    "expected": {
+     "param": "length",
+     "to": 43.3
+    }
+   },
+   {
+    "line": "Chaudai ek millimeter badha do.",
+    "heard": "",
+    "edits": [],
+    "expected": {
+     "param": "width",
+     "to": 31.01
+    }
+   },
+   {
+    "line": "Kone ki golai teen millimeter kar do.",
+    "heard": "ten millimeter card dough.",
+    "edits": [],
+    "expected": {
+     "param": "corner_radius",
+     "to": 3.0
+    }
+   },
+   {
+    "line": "Latch ko do millimeter chauda karo.",
+    "heard": "\u0932\u093e\u0916\u094b\u0902 \u092e\u093f\u0932\u0940\u092e\u0940\u091f\u0930 \u091a\u094c\u0926\u0939 \u0915\u0930\u094b\u0964.",
+    "edits": [],
+    "expected": {
+     "param": "latch_width",
+     "to": 12.0
+    }
+   },
+   {
+    "line": "Tongue ki chaudai chhe millimeter kar do.",
+    "heard": "tungki chai dai three millimeter cardo,",
+    "edits": [
+     {
+      "param": "tongue_width",
+      "to": 3.0
+     }
+    ],
+    "expected": {
+     "param": "tongue_width",
+     "to": 6.0
+    }
+   },
+   {
+    "line": "Length ko one millimeter badha do.",
+    "heard": "\u0932\u0947\u0902\u0925 \u0915\u094b \u0935\u0928 \u092e\u093f\u0932\u0940\u092e\u0940\u091f\u0930 \u092c\u0924\u093e \u0926\u094b\u0964.",
+    "edits": [],
+    "expected": {
+     "param": "length",
+     "to": 46.3
+    }
+   }
+  ]
+ }
+}

@@ -1,0 +1,117 @@
+import cadquery as cq
+import math
+
+PARAMS = {
+    "card_length": (32.1, 30.0, 34.0, 0.1, "mm", True, "Overall Length X"),
+    "card_width": (24.1, 22.0, 26.0, 0.1, "mm", True, "Overall Width Y"),
+    "thickness": (2.15, 1.4, 3.0, 0.05, "mm", True, "Thickness Z"),
+    "clearance": (0.0, 0.0, 0.6, 0.05, "mm", True, "Fit Clearance"),
+    "chamfer_extra": (0.0, -0.5, 0.5, 0.05, "mm", False, "Chamfer Trim"),
+    "edge_fillet": (1.0, 0.0, 1.0, 0.1, "mm", False, "Top Edge Fillet"),
+    "segments": (4, 1, 4, 1, "", False, "Profile Smoothing Segments"),
+}
+
+# Measured polyline from PartSpec (mm) - Full-size SD card footprint
+BASE_POINTS = [
+    [15.907, 8.06],
+    [12.258, 11.779],
+    [11.714, 12.024],
+    [-15.806, 11.945],
+    [-16.016, 11.43],
+    [-15.943, -11.814],
+    [-14.455, -12.044],
+    [15.803, -11.944],
+    [16.027, -11.216],
+]
+
+def build(p: dict) -> cq.Workplane:
+    # compute bounds of base profile
+    xs = [pt[0] for pt in BASE_POINTS]
+    ys = [pt[1] for pt in BASE_POINTS]
+    xmin = min(xs)
+    xmax = max(xs)
+    ymin = min(ys)
+    ymax = max(ys)
+    base_len = xmax - xmin
+    base_wid = ymax - ymin
+    cx = (xmin + xmax) * 0.5
+    cy = (ymin + ymax) * 0.5
+
+    # effective size with clearance (shrink for fit)
+    eff_len = p["card_length"] - 2.0 * p["clearance"]
+    eff_wid = p["card_width"] - 2.0 * p["clearance"]
+    # guard against negative
+    if eff_len < 5:
+        eff_len = 5
+    if eff_wid < 5:
+        eff_wid = 5
+
+    sx = eff_len / base_len if base_len != 0 else 1.0
+    sy = eff_wid / base_wid if base_wid != 0 else 1.0
+
+    # transform points to be centered at origin and scaled to eff_len/eff_wid
+    # chamfer_extra allows slight parametric tweak of the diagonal corner
+    transformed = []
+    for x, y in BASE_POINTS:
+        nx = (x - cx) * sx
+        ny = (y - cy) * sy
+        transformed.append((nx, ny))
+
+    # apply chamfer_extra to the two chamfer points (index 1 is diagonal)
+    # shift point 1 outward along its normal approx to allow parametric control
+    if p["chamfer_extra"] != 0:
+        # move point 1 and slightly adjust neighbours
+        ce = p["chamfer_extra"]
+        # point index 1 is the chamfer diagonal point
+        x1, y1 = transformed[1]
+        # approximate direction ~ (-1,1) normalized
+        transformed[1] = (x1 - ce * 0.7071, y1 + ce * 0.7071)
+
+    # segments topology parameter: optionally subdivide long edges for smoothing
+    # when segments >1, we insert intermediate collinear points (no shape change but changes topology count)
+    segs = int(p["segments"])
+    if segs > 1:
+        subdivided = []
+        n = len(transformed)
+        for i in range(n):
+            a = transformed[i]
+            b = transformed[(i + 1) % n]
+            subdivided.append(a)
+            for s in range(1, segs):
+                t = s / float(segs)
+                # only subdivide long edges to keep chamfer sharp
+                ax, ay = a
+                bx, by = b
+                length = math.hypot(bx - ax, by - ay)
+                if length > 5.0:
+                    ix = ax + (bx - ax) * t
+                    iy = ay + (by - ay) * t
+                    subdivided.append((ix, iy))
+        profile_pts = subdivided
+    else:
+        profile_pts = transformed
+
+    th = p["thickness"]
+
+    # Build solid: polyline on XY plane, extruded from Z=0 upward
+    # Model centred at origin in XY, mounting face on Z=0, long axis +X
+    wp = cq.Workplane("XY")
+    # polyline closes automatically when close=True
+    wp = wp.polyline(profile_pts, includeCurrent=True)
+    wp = wp.close()
+    solid = wp.extrude(th, both=False)
+
+    # ensure base is on Z=0 (extrude from XY does that)
+    # optional top edge fillet - only on top face edges if requested and feasible
+    fil = float(p["edge_fillet"])
+    if fil > 0.01:
+        # fillet top perimeter edges: select edges at Z ~ th
+        try:
+            solid = solid.edges(cq.selectors.NearestToPointSelector((0, 0, th))).fillet(fil)
+        except Exception:
+            # if fillet fails due to small geometry, keep sharp
+            pass
+
+    return solid
+
+result = build({k: v[0] for k, v in PARAMS.items()})

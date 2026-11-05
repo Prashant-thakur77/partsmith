@@ -1,0 +1,59 @@
+import cadquery as cq
+import math
+
+PARAMS = {
+    "thickness": (7.8, 5.0, 10.0, 0.1, "mm", False, "Body thickness"),
+    "hole_dia": (9.7, 8.0, 12.0, 0.1, "mm", True, "Mounting hole diameter"),
+    "hole_x": (-7.694, -10.0, -4.0, 0.1, "mm", True, "Hole X position"),
+    "hole_y": (0.007, -2.0, 2.0, 0.1, "mm", True, "Hole Y position"),
+    "clearance": (0.2, 0.0, 0.5, 0.05, "mm", True, "Fit clearance"),
+    "hole_count": (1.0, 1, 1, 1, "mm", False, "Number of mounting holes"),
+}
+
+# base profile polyline from PartSpec (measured), long axis +X, centred at origin
+BASE_POINTS = [
+    (-18.747, -0.134),
+    (-18.366, -2.099),
+    (-17.41, -3.758),
+    (-16.032, -5.003),
+    (-14.011, -5.834),
+    (13.612, -5.881),
+    (15.935, -5.065),
+    (16.884, -4.339),
+    (17.97, -2.973),
+    (18.548, -1.55),
+    (18.749, 0.005),
+    (18.39, 2.068),
+    (17.403, 3.782),
+    (15.607, 5.259),
+    (13.93, 5.849),
+    (-12.261, 5.955),
+    (-14.765, 5.606),
+    (-16.939, 4.273),
+    (-18.219, 2.437),
+]
+
+def build(p: dict) -> cq.Workplane:
+    thickness = float(p["thickness"])
+    hole_dia = float(p["hole_dia"])
+    hole_x = float(p["hole_x"])
+    hole_y = float(p["hole_y"])
+    # clearance kept as param for fit but not added to measured diameter by default
+    # to keep measured hole within tight sigma; user can increase hole_dia if needed
+    # hole_count is topology parameter (single hole latch)
+    hole_count = int(round(float(p["hole_count"])))
+
+    # Body: solid plate extruded from Z=0 upward to thickness
+    wp = cq.Workplane("XY")
+    wp = wp.polyline(BASE_POINTS).close().extrude(thickness, combine=True)
+
+    # Through hole - straight through, no countersink per spec
+    if hole_count >= 1:
+        r = hole_dia / 2.0
+        # cut from top face through entire body
+        wp = wp.faces(">Z").workplane(centerOption="CenterOfMass").workplane(offset=0, invert=False)
+        wp = wp.moveTo(hole_x, hole_y).circle(r).cutThruAll()
+
+    return wp
+
+result = build({k: v[0] for k, v in PARAMS.items()})

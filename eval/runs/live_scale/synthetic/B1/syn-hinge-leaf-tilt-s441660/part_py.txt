@@ -1,0 +1,115 @@
+"""One leaf of a butt hinge: a flat leaf with countersunk screw holes and pin knuckles along one edge."""
+
+import cadquery as cq
+
+FAMILY = "hinge"
+TITLE = "Hinge leaf"
+SUMMARY = (
+    "Single butt-hinge leaf printed flat: countersunk screw holes in the leaf and knuckles with a pin hole along "
+    "one long edge, leaving gaps for the matching leaf's knuckles."
+)
+TAGS = ["hinge", "hinge leaf", "cabinet", "box", "door", "knuckle"]
+# Where each knob moves the outline (normalised model frame; see services/agent/templates/__init__.py).
+REGIONS = {
+    "knuckle_phase": [("xy", -1.0, 1.0, 0.45, 1.0, 0), ("xz", -1.0, 1.0, 0.35, 1.0, 0)],
+    "knuckle_offset": [("xy", -1.0, 1.0, 0.45, 1.0, 0), ("xz", -1.0, 1.0, 0.35, 1.0, 0)],
+    "knuckle_count": [("xy", -1.0, 1.0, 0.45, 1.0, 0), ("xz", -1.0, 1.0, 0.35, 1.0, 0)],
+    "knuckle_fill": [("xy", -1.0, 1.0, 0.45, 1.0, 1), ("xz", -1.0, 1.0, 0.35, 1.0, 1)],
+    "knuckle_gap": [("xy", -1.0, 1.0, 0.5, 1.0, -1), ("xz", -1.0, 1.0, 0.4, 1.0, -1)],
+    "knuckle_wall": [("xy", -1.0, 1.0, 0.7, 1.0, 1), ("yz", 0.4, 1.0, 0.0, 1.0, 1), ("xz", -1.0, 1.0, 0.7, 1.0, 1)],
+    "corner_radius": [("xy", -1.0, -0.75, -1.0, -0.6, -1), ("xy", 0.75, 1.0, -1.0, -0.6, -1)],
+}
+MEASURE_MAP = {
+    "length": "length",
+    "width": "leaf_width",
+    "thickness": "thickness",
+    "hole_1.diameter": "hole_d",
+    "pin.diameter": "pin_d",
+    "side.thickness": "pin_d",  # short side of the side photo's silhouette
+}
+
+PARAMS = {  # name: (default, min, max, step, unit, affects_fit, label)
+    "length": (54.25, 24.0, 120.0, 0.1, "mm", True, "Hinge length"),
+    "leaf_width": (31.18, 14.0, 60.0, 0.1, "mm", True, "Leaf width including the knuckle"),
+    "thickness": (2.0, 1.5, 5.0, 0.1, "mm", True, "Leaf thickness"),
+    "pin_d": (3.0, 1.5, 6.0, 0.05, "mm", True, "Pin hole diameter"),
+    "knuckle_wall": (1.6, 1.0, 3.0, 0.05, "mm", True, "Knuckle wall"),
+    "knuckle_count": (3, 1, 5, 1, "", True, "Knuckles on this leaf"),
+    "knuckle_gap": (0.5, 0.1, 1.0, 0.05, "mm", True, "Gap to the other leaf's knuckles"),
+    "knuckle_phase": (0, 0, 1, 1, "", True, "Knuckles at the ends (0) or set in from the ends (1, the mating leaf)"),
+    "knuckle_offset": (0.0, -15.0, 15.0, 0.1, "mm", True, "Knuckle pattern shift along the hinge axis"),
+    "knuckle_fill": (1.0, 0.4, 1.6, 0.05, "", True, "Knuckle length (x the automatic segment length)"),
+    "hole_d": (6.0, 2.0, 6.0, 0.05, "mm", True, "Screw hole diameter"),
+    "hole_count": (3, 1, 4, 1, "", False, "Screw holes"),
+    "corner_radius": (3.0, 0.0, 8.0, 0.1, "mm", False, "Free corner radius"),
+}
+
+
+def build(p: dict[str, float]) -> cq.Workplane:
+    length, wl, t = p["length"], p["leaf_width"], p["thickness"]
+    rk = p["pin_d"] / 2 + p["knuckle_wall"]  # knuckle outer radius
+    rk = min(rk, (wl - 6.0) / 2)
+    zk = max(rk, t / 2) + 0.2  # knuckle axis height (its bottom clears the bed by 0.2 mm: no tangent faces)
+    yk = wl / 2 - rk  # knuckle axis
+    y0 = -wl / 2
+    body_w = yk - y0
+
+    leaf = cq.Workplane("XY").center(0, (y0 + yk) / 2).rect(length, body_w).extrude(t)
+    rc = min(p["corner_radius"], body_w / 2 - 0.5, length / 4)
+    if rc > 0.2:
+        leaf = leaf.edges("|Z and <Y").fillet(rc)
+
+    n = int(p["hole_count"])
+    hole_d = min(p["hole_d"], body_w - 6.0)
+    csk = min(hole_d * 2.0, body_w - 3.0)
+    e = 7.0  # end hole centre from the leaf end: fixed, so holes stay put when their size changes
+    ys = y0 + (body_w - rk) / 2
+    xs = [0.0] if n == 1 else [-length / 2 + e + (length - 2 * e) * i / (n - 1) for i in range(n)]
+    leaf = leaf.faces(">Z").workplane(centerOption="ProjectedOrigin").pushPoints([(x, ys) for x in xs])
+    leaf = leaf.cskHole(hole_d, csk, 90)
+
+    k = int(p["knuckle_count"])
+    phase = int(p["knuckle_phase"])  # 1: the mating leaf, whose knuckles sit between the other leaf's
+    seg = length / (2 * k - 1 + 2 * phase)
+    gap = min(p["knuckle_gap"], seg * 0.3)
+    part = leaf
+    shift, half = p["knuckle_offset"], seg * p["knuckle_fill"] / 2
+    for i in range(k):
+        j = 2 * i + phase  # segment index of this knuckle
+        first, last = j == 0, j == 2 * k - 2 + 2 * phase
+        c = -length / 2 + (j + 0.5) * seg + shift
+        x_a = max(c - half + (0.0 if first else gap / 2), -length / 2)
+        x_b = min(c + half - (0.0 if last else gap / 2), length / 2)
+        if x_b - x_a < 1.0:
+            continue  # shifted off the leaf
+        knuckle = cq.Workplane("YZ", origin=(x_a, 0, 0)).center(yk, zk).circle(rk).extrude(x_b - x_a)
+        web = cq.Workplane("XY").box(x_b - x_a, 0.7 * rk, zk, centered=False).translate((x_a, yk - 0.7 * rk, 0))
+        part = part.union(knuckle).union(web)
+    pin = cq.Workplane("YZ", origin=(-length / 2 - 1, 0, 0)).center(yk, zk).circle(p["pin_d"] / 2)
+    return part.cut(pin.extrude(length + 2))
+
+
+def interfaces(p: dict[str, float]) -> list[dict[str, str | float | list[float]]]:
+    """Mating interfaces for the functional probes: the pin hole, probed inside the first knuckle."""
+    length, wl, t = p["length"], p["leaf_width"], p["thickness"]
+    rk = min(p["pin_d"] / 2 + p["knuckle_wall"], (wl - 6.0) / 2)
+    zk = max(rk, t / 2) + 0.2
+    yk = wl / 2 - rk
+    k, phase = int(p["knuckle_count"]), int(p["knuckle_phase"])
+    seg = length / (2 * k - 1 + 2 * phase)
+    half = seg * p["knuckle_fill"] / 2
+    for i in range(k):
+        c = -length / 2 + (2 * i + phase + 0.5) * seg + p["knuckle_offset"]
+        lo, hi = max(c - half, -length / 2), min(c + half, length / 2)
+        if hi - lo >= 1.0:
+            return [
+                {
+                    "id": "pin_hole", "label": "hinge pin hole", "mate_label": "pin",
+                    "at": [(lo + hi) / 2, yk, zk], "axis": [0.0, 1.0, 0.0],
+                    "mates": [1.5, 2.0, 2.5, 3.0, 4.0, 5.0, 6.0],
+                }
+            ]  # fmt: skip
+    return []
+
+
+result = build({k: v[0] for k, v in PARAMS.items()})

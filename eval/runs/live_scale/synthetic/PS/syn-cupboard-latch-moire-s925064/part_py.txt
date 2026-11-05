@@ -1,0 +1,65 @@
+import cadquery as cq
+import math
+
+PARAMS = {
+    "thickness": (7.0, 5.0, 9.0, 0.1, "mm", False, "Body thickness"),
+    "hole_dia": (8.136, 6.0, 10.0, 0.05, "mm", True, "Pivot hole diameter"),
+    "hole_x": (-8.847, -12.0, -5.0, 0.1, "mm", True, "Pivot hole X position"),
+    "hole_y": (0.021, -2.0, 2.0, 0.1, "mm", True, "Pivot hole Y position"),
+    "clearance": (0.2, 0.0, 0.5, 0.05, "mm", True, "Fit clearance"),
+    "num_holes": (1, 1, 1, 1, "", False, "Number of pivot holes"),
+}
+
+def build(p: dict) -> cq.Workplane:
+    pts = [
+        (-21.995, -0.196),
+        (-21.542, -2.424),
+        (-20.609, -4.103),
+        (-19.283, -5.418),
+        (-16.857, -6.565),
+        (-14.673, -6.764),
+        (15.522, -6.663),
+        (17.904, -6.131),
+        (19.523, -5.127),
+        (20.972, -3.476),
+        (21.77, -1.672),
+        (21.997, 0.021),
+        (21.537, 2.45),
+        (20.389, 4.346),
+        (18.619, 5.848),
+        (16.196, 6.698),
+        (-15.168, 6.77),
+        (-17.716, 6.278),
+        (-20.077, 4.691),
+        (-21.399, 2.737),
+        (-21.851, 1.332),
+    ]
+
+    thickness = float(p["thickness"])
+    hole_dia = float(p["hole_dia"])
+    hole_x = float(p["hole_x"])
+    hole_y = float(p["hole_y"])
+    num_holes = int(p["num_holes"])
+
+    wp = cq.Workplane("XY")
+    wp = wp.moveTo(pts[0][0], pts[0][1])
+    for x, y in pts[1:]:
+        wp = wp.lineTo(x, y)
+    wp = wp.close()
+    body = wp.extrude(thickness, combine=True)
+
+    hole_centers = [(hole_x, hole_y)]
+    hole_centers = hole_centers[:num_holes]
+
+    if hole_centers:
+        body = (
+            body.faces(">Z")
+            .workplane()
+            .pushPoints(hole_centers)
+            .circle(hole_dia / 2.0)
+            .cutThruAll()
+        )
+
+    return body
+
+result = build({k: v[0] for k, v in PARAMS.items()})

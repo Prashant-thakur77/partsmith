@@ -1,0 +1,110 @@
+import cadquery as cq
+import math
+
+PARAMS = {
+    "thickness": (19.0, 10.0, 30.0, 0.1, "mm", False, "Wheel thickness (width) Z"),
+    "hole1_dia": (9.951, 8.0, 12.0, 0.1, "mm", True, "Hole 1 diameter"),
+    "hole2_dia": (10.201, 8.0, 12.0, 0.1, "mm", True, "Hole 2 diameter"),
+    "hole3_dia": (9.935, 8.0, 12.0, 0.1, "mm", True, "Hole 3 diameter"),
+    "center_hole_dia": (7.704, 5.0, 10.0, 0.1, "mm", True, "Center axle hole diameter"),
+    "hole5_dia": (10.209, 8.0, 12.0, 0.1, "mm", True, "Hole 5 diameter"),
+    "hole6_dia": (9.924, 8.0, 12.0, 0.1, "mm", True, "Hole 6 diameter"),
+    "hole7_dia": (10.22, 8.0, 12.0, 0.1, "mm", True, "Hole 7 diameter"),
+    "clearance": (0.0, 0.0, 0.6, 0.05, "mm", True, "Print clearance added to holes"),
+    "num_outer_holes": (6, 3, 8, 1, "", False, "Number of outer lightening holes"),
+}
+
+def build(p: dict) -> cq.Workplane:
+    pts = [
+        (15.077, 24.721),
+        (12.782, 25.963),
+        (9.482, 27.315),
+        (3.822, 28.633),
+        (0.745, 28.878),
+        (-2.304, 28.8),
+        (-7.747, 27.854),
+        (-10.797, 26.851),
+        (-13.585, 25.561),
+        (-18.231, 22.518),
+        (-22.168, 18.646),
+        (-25.106, 14.434),
+        (-26.455, 11.733),
+        (-27.521, 8.927),
+        (-28.696, 3.669),
+        (-28.853, -1.887),
+        (-28.048, -7.064),
+        (-26.387, -11.796),
+        (-23.407, -16.932),
+        (-21.479, -19.313),
+        (-19.205, -21.581),
+        (-14.995, -24.682),
+        (-12.491, -26.039),
+        (-9.359, -27.315),
+        (-4.537, -28.512),
+        (0.82, -28.868),
+        (6.668, -28.108),
+        (11.44, -26.523),
+        (16.349, -23.826),
+        (18.576, -22.143),
+        (21.143, -19.727),
+        (24.458, -15.402),
+        (25.928, -12.799),
+        (27.035, -10.211),
+        (28.509, -4.784),
+        (28.887, 1.004),
+        (28.618, 4.146),
+        (28.034, 7.091),
+        (26.143, 12.376),
+        (23.232, 17.243),
+        (21.176, 19.743),
+        (19.312, 21.571),
+    ]
+
+    thickness = float(p["thickness"])
+    clearance = float(p["clearance"])
+    n_outer = int(p["num_outer_holes"])
+
+    try:
+        base = cq.Workplane("XY").spline(pts, periodic=True).close().extrude(thickness)
+    except TypeError:
+        base = cq.Workplane("XY").spline(pts).close().extrude(thickness)
+
+    spec_centers = [
+        (-16.235, 6.598),
+        (-13.884, -10.861),
+        (-2.323, 17.335),
+        (0.031, -0.093),
+        (2.367, -17.551),
+        (13.909, 10.633),
+        (16.289, -6.805),
+    ]
+    spec_dias = [
+        float(p["hole1_dia"]),
+        float(p["hole2_dia"]),
+        float(p["hole3_dia"]),
+        float(p["center_hole_dia"]),
+        float(p["hole5_dia"]),
+        float(p["hole6_dia"]),
+        float(p["hole7_dia"]),
+    ]
+
+    if n_outer == 6:
+        centers = spec_centers
+        dias = spec_dias
+    else:
+        r_outer = sum(math.hypot(x, y) for x, y in spec_centers if abs(x) > 1 or abs(y) > 1) / 6.0
+        avg_outer_dia = sum(spec_dias[i] for i in [0, 1, 2, 4, 5, 6]) / 6.0
+        centers = [(0.031, -0.093)]
+        dias = [float(p["center_hole_dia"])]
+        for i in range(n_outer):
+            ang = 2 * math.pi * i / n_outer
+            centers.append((r_outer * math.cos(ang), r_outer * math.sin(ang)))
+            dias.append(avg_outer_dia)
+
+    for (x, y), d in zip(centers, dias):
+        r = (d + clearance) * 0.5
+        base = base.faces(">Z").workplane().pushPoints([(x, y)]).circle(r).cutThruAll()
+
+    return base
+
+result = build({k: v[0] for k, v in PARAMS.items()})

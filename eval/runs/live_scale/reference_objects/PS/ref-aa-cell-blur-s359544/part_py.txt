@@ -1,0 +1,74 @@
+import cadquery as cq
+import math
+
+PARAMS = {
+    "length": (48.28, 46.0, 52.0, 0.1, "mm", True, "Overall length (X)"),
+    "width": (14.37, 13.0, 16.0, 0.1, "mm", True, "Overall width (Y) = cell diameter"),
+    "thickness": (14.5, 10.0, 18.0, 0.1, "mm", True, "Extrusion thickness (Z)"),
+    "nub_extra": (0.0, 0.0, 3.0, 0.1, "mm", False, "Extra nub length on +X end"),
+    "smoothing": (1, 1, 3, 1, "", False, "Smoothing passes (topology)"),
+}
+
+BASEPTS = [
+    [24.14,-6.78],[23.682,-6.788],[23.376,-6.287],[23.019,-3.411],[23.142,4.803],[23.485,6.584],[23.705,6.792],[24.097,6.591],[23.603,7.195],[-21.563,7.13],[-22.31,6.873],[-22.867,6.325],[-23.712,4.164],[-24.137,0.544],[-23.914,-3.145],[-23.16,-5.884],[-22.516,-6.76],[-21.876,-7.102],[23.877,-7.179]
+]
+
+def build(p: dict) -> cq.Workplane:
+    length = float(p["length"])
+    width = float(p["width"])
+    thickness = float(p["thickness"])
+    nubExtra = float(p["nub_extra"])
+    smoothing = int(p["smoothing"])
+
+    xs0 = [pt[0] for pt in BASEPTS]
+    ys0 = [pt[1] for pt in BASEPTS]
+    x0Min = min(xs0)
+    x0Max = max(xs0)
+    y0Min = min(ys0)
+    y0Max = max(ys0)
+    x0Range = x0Max - x0Min
+    y0Range = y0Max - y0Min
+    if x0Range < 1e-9:
+        x0Range = 1.0
+    if y0Range < 1e-9:
+        y0Range = 1.0
+
+    scaleX = length / x0Range
+    scaleY = width / y0Range
+
+    scaled = []
+    for pt in BASEPTS:
+        sx = pt[0] * scaleX
+        sy = pt[1] * scaleY
+        scaled.append((sx, sy))
+
+    for passIdx in range(smoothing - 1):
+        smoothed = []
+        n = len(scaled)
+        for i in range(n):
+            x0, y0 = scaled[i]
+            x1, y1 = scaled[(i - 1) % n]
+            x2, y2 = scaled[(i + 1) % n]
+            nx = 0.5 * x0 + 0.25 * x1 + 0.25 * x2
+            ny = 0.5 * y0 + 0.25 * y1 + 0.25 * y2
+            smoothed.append((nx, ny))
+        scaled = smoothed
+
+    xs = [pt[0] for pt in scaled]
+    ys = [pt[1] for pt in scaled]
+    cx = (min(xs) + max(xs)) * 0.5
+    cy = (min(ys) + max(ys)) * 0.5
+    centered = [(x - cx, y - cy) for x, y in scaled]
+
+    wp = cq.Workplane("XY")
+    body = wp.polyline(centered).close().extrude(thickness, combine=True)
+
+    if nubExtra > 0.01:
+        xMax = max([x for x, y in centered])
+        nubD = width * 0.38
+        nub = cq.Workplane("YZ").workplane(offset=xMax).moveTo(0, thickness * 0.5).circle(nubD * 0.5).extrude(nubExtra)
+        body = body.union(nub)
+
+    return body
+
+result = build({k: v[0] for k, v in PARAMS.items()})

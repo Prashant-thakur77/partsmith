@@ -1,0 +1,84 @@
+import cadquery as cq
+import math
+
+PARAMS = {
+    "thickness": (2.0, 1.0, 4.0, 0.1, "mm", False, "Leaf thickness"),
+    "hole_dia_1": (5.45, 3.0, 8.0, 0.01, "mm", True, "Hole 1 diameter"),
+    "hole_dia_2": (5.45, 3.0, 8.0, 0.01, "mm", True, "Hole 2 diameter"),
+    "hole_dia_3": (5.41, 3.0, 8.0, 0.01, "mm", True, "Hole 3 diameter"),
+    "hole_count": (3, 2, 5, 1, "", False, "Number of mounting holes"),
+    "pin_diameter": (3.5, 1.0, 6.0, 0.1, "mm", True, "Hinge pin diameter"),
+    "knuckle_od": (4.5, 2.0, 8.0, 0.1, "mm", True, "Knuckle outer diameter"),
+    "clearance": (0.1, 0.0, 0.6, 0.05, "mm", True, "Fit clearance"),
+}
+
+# base profile polyline from PartSpec (mm), centred at origin, long axis +X
+PROFILE_POINTS = [
+    (-26.635, -8.364),
+    (-25.704, -9.733),
+    (-24.255, -10.317),
+    (24.791, -10.226),
+    (26.19, -9.317),
+    (26.706, -8.03),
+    (26.727, 6.854),
+    (26.281, 7.035),
+    (19.957, 7.127),
+    (19.669, 10.2),
+    (19.384, 10.339),
+    (10.825, 10.29),
+    (10.555, 9.96),
+    (10.376, 7.151),
+    (4.744, 7.174),
+    (4.512, 7.688),
+    (4.354, 10.126),
+    (4.119, 10.326),
+    (-4.557, 10.288),
+    (-4.846, 9.752),
+    (-4.984, 7.204),
+    (-6.605, 7.065),
+    (-10.417, 7.144),
+    (-10.723, 7.592),
+    (-11.091, 10.321),
+    (-19.927, 10.276),
+    (-20.238, 9.693),
+    (-20.47, 7.13),
+    (-26.349, 7.028),
+    (-26.629, 6.839),
+]
+
+HOLE_CENTERS = [
+    (-19.688, -4.509),
+    (0.012, -4.509),
+    (19.692, -4.499),
+]
+
+def build(p: dict) -> cq.Workplane:
+    thickness = float(p["thickness"])
+    # apply clearance to hole diameters for FDM fit
+    clearance = float(p.get("clearance", 0.0))
+    d1 = float(p["hole_dia_1"]) + clearance
+    d2 = float(p["hole_dia_2"]) + clearance
+    d3 = float(p["hole_dia_3"]) + clearance
+    hole_dias = [d1, d2, d3]
+
+    hole_count = int(p["hole_count"])
+    hole_count = max(0, min(hole_count, len(HOLE_CENTERS)))
+
+    # build base leaf profile centred at origin
+    wp = cq.Workplane("XY")
+    wp = wp.moveTo(PROFILE_POINTS[0][0], PROFILE_POINTS[0][1])
+    for x, y in PROFILE_POINTS[1:]:
+        wp = wp.lineTo(x, y)
+    wp = wp.close()
+    # extrude +Z from mounting face Z=0 to thickness
+    leaf = wp.extrude(thickness, combine=True)
+
+    # cut through mounting holes
+    for i in range(hole_count):
+        cx, cy = HOLE_CENTERS[i]
+        d = hole_dias[i]
+        leaf = leaf.faces(">Z").workplane().pushPoints([(cx, cy)]).hole(d)
+
+    return leaf
+
+result = build({k: v[0] for k, v in PARAMS.items()})

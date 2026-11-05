@@ -1,0 +1,119 @@
+{
+ "suite": "synthetic",
+ "config": "PS",
+ "sample_id": "syn-knob-clean-s710711",
+ "split": "held_out",
+ "kind": "template",
+ "preset": "clean",
+ "mode": "live",
+ "gt_source": "synthetic_exact",
+ "status": "best_effort",
+ "verified": false,
+ "iterations": 6,
+ "iterations_to_converge": null,
+ "strategy": "template",
+ "template": "knob",
+ "verifier_max_error_mm": 0.5918122423866806,
+ "retake_reason": null,
+ "failed_checks": [],
+ "usd": 0.198577,
+ "tokens_in": 128519,
+ "tokens_out": 24039,
+ "model_calls": 27,
+ "model_ms": 196652,
+ "provider_modes": [
+  "live"
+ ],
+ "providers": {
+  "segment": [
+   "meta:sam-3.1"
+  ],
+  "understand": [
+   "meta:muse-spark-1.3"
+  ],
+  "plan": [
+   "baseten:meta-models/muse-spark-open-1026"
+  ],
+  "build": [
+   "baseten:meta-models/muse-spark-open-1026"
+  ],
+  "fix_agent": [
+   "baseten:meta-models/muse-spark-open-1026"
+  ],
+  "judge": [
+   "meta:muse-spark-1.3"
+  ]
+ },
+ "convergence": [
+  {
+   "iter": 1,
+   "hausdorff_mm": 6.325270556402747,
+   "iou": 0.6766042822659017,
+   "max_error_mm": 6.995000000000001
+  },
+  {
+   "iter": 2,
+   "hausdorff_mm": 4.457729711727823,
+   "iou": 0.7677502272656029,
+   "max_error_mm": 4.931000000000001
+  },
+  {
+   "iter": 3,
+   "hausdorff_mm": 2.256246852711566,
+   "iou": 0.8684933797326813,
+   "max_error_mm": 2.817
+  },
+  {
+   "iter": 4,
+   "hausdorff_mm": 0.6271747136652822,
+   "iou": 0.9654471544715447,
+   "max_error_mm": 0.8109999999999999
+  },
+  {
+   "iter": 5,
+   "hausdorff_mm": 0.5918122423866806,
+   "iou": 0.9844649972129895,
+   "max_error_mm": 0.5918122423866806
+  },
+  {
+   "iter": 6,
+   "hausdorff_mm": 0.7799784852224229,
+   "iou": 0.9853393406279053,
+   "max_error_mm": 0.7799784852224229
+  }
+ ],
+ "wall_s": 292.66,
+ "dims": [
+  {
+   "name": "length",
+   "gt_mm": 37.096156,
+   "model_mm": 36.8941,
+   "error_mm": -0.2021
+  },
+  {
+   "name": "width",
+   "gt_mm": 37.039363,
+   "model_mm": 36.8609,
+   "error_mm": -0.1785
+  },
+  {
+   "name": "thickness",
+   "gt_mm": 14.1,
+   "model_mm": 14.1,
+   "error_mm": 0.0
+  }
+ ],
+ "missed": [],
+ "extra_holes": 0,
+ "pass_0_3": true,
+ "pass_0_5": true,
+ "valid": true,
+ "valid_reason": "",
+ "failure_category": null,
+ "git": {
+  "sha": null,
+  "dirty": false
+ },
+ "scale_suite": "synthetic",
+ "tree": "bb75824+308438f7af72"
+}

@@ -1,0 +1,72 @@
+import cadquery as cq
+import math
+
+PARAMS = {
+    "thickness": (19.0, 10.0, 30.0, 0.1, "mm", False, "Knob height"),
+    "d_bore_dia": (6.0, 4.0, 8.0, 0.1, "mm", True, "D-shaft diameter"),
+    "flat_depth": (0.75, 0.2, 1.5, 0.05, "mm", True, "D flat depth"),
+    "clearance": (0.2, 0.0, 0.5, 0.05, "mm", True, "Fit clearance"),
+    "bore_depth": (12.0, 5.0, 18.5, 0.5, "mm", False, "Bore depth blind"),
+    "knurl_refine": (32, 8, 64, 1, "", False, "Knurl outline segments"),
+}
+
+def build(p: dict) -> cq.Workplane:
+    thickness = float(p["thickness"])
+    d_bore_dia = float(p["d_bore_dia"])
+    flat_depth = float(p["flat_depth"])
+    clearance = float(p["clearance"])
+    bore_depth = float(p["bore_depth"])
+
+    # effective printed diameter includes clearance
+    eff_d = d_bore_dia + clearance
+    r = eff_d * 0.5
+    # distance from centre to flat plane
+    flat_y = r - flat_depth
+    # clamp to valid range
+    if flat_y > r - 1e-6:
+        flat_y = r - 1e-6
+    if flat_y < -r + 1e-6:
+        flat_y = -r + 1e-6
+
+    # do not pierce top face, leave at least 0.4mm web
+    if bore_depth > thickness - 0.4:
+        bore_depth = thickness - 0.4
+    if bore_depth < 0.5:
+        bore_depth = 0.5
+
+    # measured outer polyline, closed
+    pts = [
+        [-8.544,-14.102],[-7.293,-14.698],[-6.369,-14.483],[-4.304,-15.803],[-2.864,-16.14],[-1.706,-16.214],[-0.805,-15.488],[-0.134,-15.354],[1.477,-16.215],[4.014,-15.757],[4.488,-14.81],[5.267,-14.35],[6.087,-14.315],[6.989,-14.665],[9.195,-13.357],[9.323,-12.405],[9.831,-11.685],[10.572,-11.304],[11.661,-11.271],[13.181,-9.513],[13.087,-8.388],[13.286,-7.506],[14.045,-6.799],[14.87,-6.477],[15.379,-5.35],[15.694,-4.111],[15.165,-3.121],[15.118,-2.404],[15.536,-1.519],[16.271,-0.869],[16.235,1.665],[15.115,3.612],[15.635,4.887],[14.889,6.948],[12.449,10.718],[11.619,11.499],[10.503,11.732],[9.483,13.316],[8.471,14.026],[6.961,14.766],[5.033,14.756],[4.145,15.748],[2.414,16.152],[1.407,16.214],[-0.213,15.658],[-1.626,16.195],[-4.2,15.706],[-5.245,14.815],[-7.176,14.615],[-8.92,13.658],[-10.187,11.942],[-11.664,11.33],[-13.281,9.426],[-13.64,7.794],[-14.928,6.542],[-15.718,4.288],[-15.447,2.837],[-16.246,1.193],[-16.207,-1.561],[-15.401,-2.623],[-15.703,-4.533],[-14.85,-6.875],[-13.349,-8.174],[-13.273,-9.51],[-12.968,-10.091],[-11.697,-11.551],[-9.551,-12.988],
+    ]
+
+    # solid body: extrude footprint from Z=0 upward, mounting face on Z=0
+    wp = cq.Workplane("XY").moveTo(pts[0][0], pts[0][1])
+    for x, y in pts[1:]:
+        wp = wp.lineTo(x, y)
+    body = wp.close().extrude(thickness, combine=True)
+
+    # D-shaft bore centred at origin, flat on +Y side
+    x0_sq = r * r - flat_y * flat_y
+    if x0_sq < 0:
+        x0_sq = 0
+    x0 = math.sqrt(x0_sq)
+
+    # D profile: chord at y=flat_y plus major arc through bottom
+    if x0 < 1e-6:
+        # circular if flat outside
+        cutter = cq.Workplane("XY").circle(r).extrude(bore_depth)
+    else:
+        cutter = (
+            cq.Workplane("XY")
+            .moveTo(x0, flat_y)
+            .lineTo(-x0, flat_y)
+            .threePointArc((0, -r), (x0, flat_y))
+            .close()
+            .extrude(bore_depth)
+        )
+
+    body = body.cut(cutter)
+
+    return body
+
+result = build({k: v[0] for k, v in PARAMS.items()})

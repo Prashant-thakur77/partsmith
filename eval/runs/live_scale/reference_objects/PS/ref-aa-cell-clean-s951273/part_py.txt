@@ -1,0 +1,73 @@
+import cadquery as cq
+import math
+
+PARAMS = {
+    "thickness": (14.8, 10.0, 20.0, 0.1, "mm", True, "Body thickness / AA diameter"),
+    "pip_dia": (5.5, 3.0, 7.0, 0.1, "mm", True, "Positive pip diameter"),
+    "pip_protrusion": (1.0, 0.5, 2.5, 0.1, "mm", False, "Positive pip protrusion beyond body"),
+    "pip_count": (0, 0, 1, 1, "", False, "Include positive pip (0/1)"),
+}
+
+# measured base profile polyline points_mm (AA cell lying on side, long axis X)
+PROFILE_POINTS = [
+    (-24.273, 6.593),
+    (-24.346, 4.056),
+    (-24.1, 3.262),
+    (-24.686, 2.655),
+    (-24.235, 2.484),
+    (-24.443, 1.487),
+    (-24.243, 0.445),
+    (-24.651, -0.271),
+    (-24.602, -1.033),
+    (-24.267, -1.018),
+    (-25.005, -1.79),
+    (-24.973, -2.038),
+    (-24.388, -2.199),
+    (-24.223, -6.035),
+    (-23.689, -6.681),
+    (23.956, -6.704),
+    (24.403, -5.47),
+    (24.965, -1.304),
+    (24.861, 3.029),
+    (24.207, 5.791),
+    (23.344, 6.657),
+]
+
+def build(p: dict) -> cq.Workplane:
+    thickness = float(p["thickness"])
+    pip_dia = float(p["pip_dia"])
+    pip_protrusion = float(p["pip_protrusion"])
+    pip_count = int(p["pip_count"])
+
+    # Base solid: extrude polyline footprint from Z=0 to Z=thickness
+    # Profile is already centered approx at origin, long axis X
+    wp = cq.Workplane("XY")
+    wp = wp.moveTo(PROFILE_POINTS[0][0], PROFILE_POINTS[0][1])
+    wp = wp.polyline(PROFILE_POINTS[1:])
+    wp = wp.close()
+    base = wp.extrude(thickness, both=False)
+
+    # Ensure mounting face is on Z=0 and solid is Z-positive (extrude already does)
+    # Center Z is thickness/2 for pip placement
+    result = base
+
+    if pip_count > 0 and pip_dia > 0 and pip_protrusion > 0:
+        # Positive terminal pip at the +X end, centered in Y and Z
+        # Estimated max X of profile is around 24.9 mm
+        x_end = 24.965
+        # clamp to slightly inside to ensure union
+        z_center = thickness / 2.0
+        # Y center ~ 0 for AA cell
+        y_center = 0.0
+        # Cylinder axis along +X, sitting on end face
+        # Work on YZ plane at x_end, circle in YZ, extrude in X
+        pip = (
+            cq.Workplane("YZ", origin=(x_end, y_center, z_center))
+            .circle(pip_dia / 2.0)
+            .extrude(pip_protrusion)
+        )
+        result = result.union(pip)
+
+    return result
+
+result = build({k: v[0] for k, v in PARAMS.items()})

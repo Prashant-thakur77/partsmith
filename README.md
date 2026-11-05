@@ -173,9 +173,10 @@ and nothing checked what it said.
 
 **What these models changed:**
 
-- **A phone becomes a measuring tool.** SAM 3.1's text-prompted masks are precise enough to measure from, so a mask plus the
-  screen's markers gives millimetres with an error bar. Point prompts cut out single holes and slots, and video tracking gives
-  heights from a walk-around clip.
+- **A phone becomes a measuring tool, with a fallback.** The screen's markers give the scale. SAM 3.1 is asked first for the part's
+  mask, from a text prompt and with no per-part training, and point prompts ask for single holes and slots. When SAM returns nothing
+  confident, code's threshold segmenter measures instead, and every run logs which one it used. On our rendered and pasted test
+  photos the fallback has measured most runs; see [Mask sources](#mask-sources).
 - **A photo becomes a structured description.** Muse Spark names the part and its features, finds the break and points at the
   pixel each hole is at, which SAM 3.1 then cuts and code measures.
 - **CAD can be written and corrected.** Muse Spark Open, on open weights, writes the program and runs a fix loop over our own
@@ -195,8 +196,8 @@ workspace shows them live. This table's file:line links are generated from the c
 <!-- BEGIN:meta-tooling -->
 | Meta model | How we run it | Role | Where |
 |---|---|---|---|
-| **SAM 3.1** | Meta Model API | The measuring instrument: text-prompted part masks, point-prompted feature cuts (holes, slots, tapped points) and video tracking of a walk-around clip. Code turns every mask into millimetres | [`services/agent/providers/routing.py:110`](services/agent/providers/routing.py#L110) · [`services/metrology/segment.py:664`](services/metrology/segment.py#L664) · [`services/agent/evidence.py:166`](services/agent/evidence.py#L166) · [`services/agent/evidence.py:239`](services/agent/evidence.py#L239) |
-| **Muse Spark 1.3** | Meta Model API | Understand stage: family, features, broken region, unknowns (strict PartSpec JSON), and the pixel it saw each hole or slot at, which SAM 3.1 then cuts and code measures. Watches and listens to a narrated walk-around clip and points at the features it hears about (frame and pixel), kept only if they land on the part. Turns a reviewer's notes into family rules the person ticks before they are kept, judges when Glimmer is not deployed, and turns a typed or spoken description with numbers into one template part whose numbers code then measures | [`services/agent/orchestrator.py:1233`](services/agent/orchestrator.py#L1233) · [`services/registry/describe.py:529`](services/registry/describe.py#L529) · [`services/review/rules.py:83`](services/review/rules.py#L83) · [`services/agent/evidence.py:57`](services/agent/evidence.py#L57) · [`services/agent/evidence.py:314`](services/agent/evidence.py#L314) |
+| **SAM 3.1** | Meta Model API | Asked first for the part mask on every photo, with point-prompted cuts for holes and slots and video tracking of a walk-around clip. When it returns no confident mask, code's threshold segmenter measures instead, and each run logs which one was used: on rendered and pasted photos the fallback has measured most runs (see Mask sources under Results) | [`services/agent/providers/routing.py:110`](services/agent/providers/routing.py#L110) · [`services/metrology/segment.py:696`](services/metrology/segment.py#L696) · [`services/agent/evidence.py:166`](services/agent/evidence.py#L166) · [`services/agent/evidence.py:239`](services/agent/evidence.py#L239) |
+| **Muse Spark 1.3** | Meta Model API | Understand stage: family, features, broken region, unknowns (strict PartSpec JSON), and the pixel it saw each hole or slot at, which SAM 3.1 then cuts and code measures. Watches and listens to a narrated walk-around clip and points at the features it hears about (frame and pixel), kept only if they land on the part. Turns a reviewer's notes into family rules the person ticks before they are kept, judges when Glimmer is not deployed, and turns a typed or spoken description with numbers into one template part whose numbers code then measures | [`services/agent/orchestrator.py:1233`](services/agent/orchestrator.py#L1233) · [`services/registry/describe.py:536`](services/registry/describe.py#L536) · [`services/review/rules.py:83`](services/review/rules.py#L83) · [`services/agent/evidence.py:57`](services/agent/evidence.py#L57) · [`services/agent/evidence.py:314`](services/agent/evidence.py#L314) |
 | **Muse Spark Open** | open weights (Baseten / Fireworks / Together) | CadQuery builder, and the fix agent that operates PartSmith's own tools (inspect residuals, measure, segment, render, run tests, set knobs) until the verifier agrees | [`services/agent/orchestrator.py:1903`](services/agent/orchestrator.py#L1903) · [`services/agent/agent_loop.py:493`](services/agent/agent_loop.py#L493) |
 | **Muse Glimmer 30B** | open weights (llama.cpp on a Modal GPU) | Independent judge: vetoes plus an advisory 1–5 scorecard (outline, features, printability, fit), shown the photos, the model's silhouettes, a shaded 3D view and crops zoomed on the verifier's worst spots. It can block, never pass | [`services/agent/orchestrator.py:2618`](services/agent/orchestrator.py#L2618) · [`infra/modal/glimmer.py:51`](infra/modal/glimmer.py#L51) |
 | **Muse Wonder** | Meta Model API | Finds a published spec for the named appliance with web search. Code accepts a value only if a search really ran and its URL is one the search returned; cited values fill unknowns and never override a measurement. Also finds the original part's price with search grounding for the buy-or-print card (a price is kept only with its source link and a quote showing it) and plans part families for the factory | [`services/agent/evidence.py:398`](services/agent/evidence.py#L398) · [`services/agent/providers/buy.py:294`](services/agent/providers/buy.py#L294) · [`services/agent/providers/spec.py:140`](services/agent/providers/spec.py#L140) · [`services/registry/steer.py:545`](services/registry/steer.py#L545) |
@@ -226,7 +227,7 @@ the product yet, so they are not counted above.
 flowchart TD
     photo["Photo or walk-around clip<br/>on the screen mat"] --> gate{"Capture gate (code)<br/>markers · blur · tilt · glare · one part"}
     gate -->|"fails"| retake["Retake, with a plain-words reason"]
-    gate -->|"passes"| metro["Metrology (code): ArUco pose + SAM 3.1 masks<br/>→ millimetres, each with ±σ and a source"]
+    gate -->|"passes"| metro["Metrology (code): ArUco pose + part mask<br/>(SAM 3.1 first, threshold fallback)<br/>→ millimetres, each with ±σ and a source"]
     metro --> understand["Understand: Muse Spark<br/>→ PartSpec JSON: family, features, break, unknowns"]
     understand -->|"unknowns"| ask["Ask the human"]
     ask --> plan
@@ -263,7 +264,7 @@ runtime layout (review, admin and spend-cap layers included), is in [`docs/ARCHI
 - **Screen mat.** The web app draws a ring of ArUco markers at true 1:1 scale on a laptop or tablet. You calibrate the scale once
   by matching an ID-1 bank card (85.60 × 53.98 mm). A plain-paper A4 mat PDF works too. Open the capture page on your phone with
   the QR code; the laptop follows the job live.
-- **Measurement.** Sub-pixel marker corners → homography and camera pose → SAM 3.1 mask → contour in mm with exact parallax
+- **Measurement.** Sub-pixel marker corners → homography and camera pose → part mask (SAM 3.1 first, threshold fallback) → contour in mm with exact parallax
   correction for the part's thickness, circle/slot fitting, see-through hole fitting for thick parts, and an uncertainty per
   value. A 5–10 s walk-around clip gives heights a single top photo cannot. Sizes the photo cannot see (a hidden depth) can
   be typed on `/fix`: they are labelled "stated by you", used by the builder and checked against the program, never verified.
@@ -419,7 +420,7 @@ never trusts what a model says about itself:
 
 | A model proposes … | … and code decides | Where |
 |---|---|---|
-| SAM 3.1 returns a mask | ArUco pose, parallax correction and sub-pixel edge fitting turn it into mm with an uncertainty per value; the capture gate rejects blurred, tilted, glary or multi-part photos | `services/metrology` |
+| A segmenter returns a mask (SAM 3.1, or the threshold fallback) | ArUco pose, parallax correction and sub-pixel edge fitting turn it into mm with an uncertainty per value; the capture gate rejects blurred, tilted, glary or multi-part photos | `services/metrology` |
 | Muse Spark names a feature and the pixel it is at | SAM 3.1 cuts that point out, code fits the circle or slot in mm | `services/metrology/points.py` |
 | Muse Spark Open writes and edits CadQuery | It runs in a sandbox (AST allowlist, rlimits, no network); guards cap each edit and refuse uniform rescaling | `services/geom_worker`, `services/agent/guards.py` |
 | The fix agent proposes a knob edit | Refused if it moves a knob out of a measured size test that already passes, unless a failing residual or a failing view's worst spot points at it; the rounds stop after two that make no progress | `services/agent/guards.py`, `services/agent/orchestrator.py` |
@@ -476,6 +477,42 @@ objects pasted on a rendered mat (published specs; not phone photos, and not cou
 ![Error distribution on public photos](docs/media/charts/errors_public_photos.svg)
 
 </details>
+
+### Evaluation at scale
+
+<!-- BEGIN:scale -->
+**349 of 510 planned full runs** finished before the time limit, on photos rendered from fresh seeds, with the sizes and rules fixed first in [`eval/SCALE_PLAN.md`](eval/SCALE_PLAN.md). Runs were shuffled, so each suite is an unbiased subset. That took 8,081 live model calls, 62 million tokens and $78.01. **None of these photos is a real phone capture.** Nothing was rerun. Source: `eval/reports/latest/scale.json`.
+
+| Suite | Config | n | Median error | Within 0.5 mm on every size | Verified | Verified but off |
+|---|---|---|---|---|---|---|
+| Rendered parts (exact ground truth) | B1 | 67 | 0.25 mm | 24 % [0.15, 0.35] | 2 % [0.00, 0.08] | 0/1 |
+| Rendered parts (exact ground truth) | PS | 144 | 0.15 mm | 48 % [0.40, 0.56] | 28 % [0.21, 0.36] | 5/40 |
+| Broken parts (exact ground truth) | PS | 16 | 0.103 mm | 19 % [0.07, 0.43] | 12 % [0.03, 0.36] | 2/2 |
+| Reference objects, rendered (published sizes) | PS | 39 | 0.04 mm | 69 % [0.54, 0.81] | 44 % [0.29, 0.59] | 0/17 |
+
+**The loop against a single shot, same photos:** 24 vs 11 of 44 pairs had every size within 0.5 mm (McNemar exact p = 0.0010).
+
+**What a side photo does for wrong passes:** verified but more than 0.5 mm off was 10/13 (77 %, 95 % CI 50-92) with a top photo only, and 1/9 (11 %, 95 % CI 2-44) with top and side. Across all full-loop runs it was 18/81 (22 %, 95 % CI 15-32), 15 of them in height. A verified part from a top photo alone says nothing about its height.
+
+**Expected outcomes:** intact parts handled correctly 26/26 (top only) and 27/27 (top and side); bad or unsuitable photos 27/30 (see the report).
+
+**Voice edits, synthesised speech, correct edit:** 34/40 (85 %, 95 % CI 71-93) spoken and 39/40 (98 %, 95 % CI 87-100) typed. By language, spoken: english 14/14, hindi 7/12, mixed 13/14. Pure Hindi is the weak spot.
+
+**Muse Wonder:** code accepted a cited value on 24/30 (80 %, 95 % CI 63-90). A citation is not a verified fact: of the pages checked, the number was found on 7, and 5 pages could not be read.
+
+#### Mask sources
+
+SAM 3.1 is asked first, and code's threshold segmenter takes over when it returns nothing confident. With the prompt "plastic part", SAM returned a usable mask on 38/494 (8 %, 95 % CI 6-10) of rendered top photos. When it did, the median overlap with ground truth was 0.97 and the median boundary error 0.43 mm.
+
+| Suite | Threshold measured | SAM 3.1 measured | No measurement (rejected) |
+|---|---:|---:|---:|
+| broken | 14 | 2 | 0 |
+| control_side | 26 | 1 | 0 |
+| control_top | 25 | 1 | 0 |
+| redteam | 10 | 0 | 20 |
+| reference_objects | 35 | 0 | 4 |
+| synthetic | 172 | 19 | 20 |
+<!-- END:scale -->
 
 ### Bench tables
 
@@ -743,7 +780,7 @@ More: [docs/PROOF.md](docs/PROOF.md), [eval/REPRODUCE.md](eval/REPRODUCE.md).
 | Criterion | What we claim | Check it here |
 |---|---|---|
 | **Impact**: who benefits, could people use it | A broken plastic part stops meaning a thrown-out appliance: no caliper, no CAD, no printer of your own. One stored run takes 7.45 min and about ₹2.93 of filament by estimate. Not yet shown: real phone photos and real prints | [The problem](#the-problem-and-who-it-serves), [Time](#how-long-it-takes-and-why-it-works), [Limitations](#limitations), `/requests`, `/shop` |
-| **Use of Meta AI tooling**: beyond a basic integration | SAM 3.1 as a measuring instrument (masks become millimetres, video tracking gives heights); Muse Spark names features and points at pixels, and SAM 3.1 cuts them; Muse Spark Open writes programs and operates our tools (918 of 919 builder calls on open weights); Muse Wonder's citations are checked by code; Muse Image completions must leave the markers and intact part unchanged; Voice Transcribe hears Hindi and English mixed, with knob names as keywords | [Meta models](#what-was-not-possible-before-and-how-metas-models-made-it-possible), `eval/reports/latest/open_weights.json`, `/models` |
+| **Use of Meta AI tooling**: beyond a basic integration | SAM 3.1 asked first for the part mask, with a logged code fallback, and video tracking for heights; Muse Spark names features and points at pixels, and SAM 3.1 cuts them; Muse Spark Open writes programs and operates our tools (918 of 919 builder calls on open weights); Muse Wonder's citations are checked by code; Muse Image completions must leave the markers and intact part unchanged; Voice Transcribe hears Hindi and English mixed, with knob names as keywords | [Meta models](#what-was-not-possible-before-and-how-metas-models-made-it-possible), `eval/reports/latest/open_weights.json`, `/models` |
 | **Technical depth: real objects** | 16 public photos of real objects, pasted on a rendered mat: median error 0.308 mm against published sizes. Not phone captures | `eval/reports/latest/report.json` → `separate_tables.public_photos`, `eval/REPRODUCE.md` |
 | **Technical depth and execution** | A deterministic verifier is the only writer of `verified`; sandboxed CAD; one export gate; 1023 backend tests; 17/17 lying-model attacks blocked; mesh vs knob measured over 17 parts | [Verify it yourself](#verify-it-yourself), [Results](#results), [docs/DECISIONS.md](docs/DECISIONS.md) |
 | **Demo**: works, holds up live, good to watch | `/judges` replays a stored live run and shows a lying model being caught, with no login and no keys. The demo film walks the same flow | [Try it](#try-it-in-2-minutes), the link row at the top |
@@ -960,20 +997,20 @@ All code in this repository was written during the hackathon (from Oct 26 2026, 
 are computed from `git log`, so they stay true as the history grows.
 
 <!-- BEGIN:built -->
-**58 commits** between 2026-10-27 05:59 ET and 2026-11-04 18:09 ET; the hackathon started 2026-10-26 12:00 ET. Commits dated before the start: **0**.
+**66 commits** between 2026-10-27 05:59 ET and 2026-11-04 19:26 ET; the hackathon started 2026-10-26 12:00 ET. Commits dated before the start: **0**.
 
 | Area | Files added | Lines added: code and docs | Lines added: data, reports, lockfiles, generated | First commit | Last commit |
 |---|---|---|---|---|---|
-| `services/` (Python backend) | 302 | 61,080 | 0 | 2026-10-27 | 2026-11-04 |
-| `apps/web/` (web app) | 468 | 43,455 | 9,359 | 2026-10-27 | 2026-11-04 |
-| `eval/` (benches and reports) | 668 | 7,538 | 92,899 | 2026-10-27 | 2026-11-04 |
+| `services/` (Python backend) | 310 | 62,207 | 0 | 2026-10-27 | 2026-11-04 |
+| `apps/web/` (web app) | 502 | 46,902 | 9,359 | 2026-10-27 | 2026-11-04 |
+| `eval/` (benches and reports) | 668 | 7,538 | 92,912 | 2026-10-27 | 2026-11-04 |
 | `packages/` (typed contracts) | 12 | 1,440 | 5,679 | 2026-10-27 | 2026-11-04 |
-| `tools/` (synthetic data, mats, generators) | 41 | 8,672 | 0 | 2026-10-27 | 2026-11-04 |
+| `tools/` (synthetic data, mats, generators) | 41 | 8,693 | 0 | 2026-10-27 | 2026-11-04 |
 | `infra/` (Modal, deploy) | 17 | 1,142 | 101 | 2026-10-27 | 2026-11-04 |
-| `docs/` | 36 | 2,494 | 357 | 2026-10-27 | 2026-11-04 |
+| `docs/` | 48 | 2,517 | 11,529 | 2026-10-27 | 2026-11-04 |
 | `data/` (samples, replays) | 4,307 | 0 | 656,602 | 2026-10-27 | 2026-11-04 |
-| root files | 39 | 4,427 | 9,840 | 2026-10-27 | 2026-11-04 |
-| **Total** | **5,890** | **130,248** | **774,837** | | |
+| root files | 39 | 4,534 | 9,840 | 2026-10-27 | 2026-11-04 |
+| **Total** | **5,944** | **134,973** | **786,022** | | |
 
 <details><summary>Every commit since the start, oldest first</summary>
 
@@ -1036,7 +1073,15 @@ are computed from `git log`, so they stay true as the history grows.
 | 2026-10-31 18:22 ET | `48e29ae` | fix: no claim that a person reviewed the scripted hinge chain; honest learning row and hero caption |
 | 2026-10-31 19:08 ET | `82c295a` | feat: fix-loop guardrails, one count vocabulary, visible fit check, grouped attempts |
 | 2026-11-02 16:24 ET | `1f77aad` | feat: photo-day tools, small-hole supports rule, refreshed README, docs and media |
-| 2026-11-04 18:09 ET | `b1b59ad` | feat: demo film from code, interactive deck, public-photo proof, test evidence, one-server deploy, realtime voice fixes |
+| 2026-11-04 18:09 ET | `fe38629` | feat: demo film from code, interactive deck, public-photo proof, test evidence, one-server deploy, realtime voice fixes |
+| 2026-11-04 18:23 ET | `ebf2d61` | fix: every README diagram renders on GitHub, with a test that catches a malformed node |
+| 2026-11-04 18:23 ET | `40eb498` | test: fix the Mermaid node check so it runs |
+| 2026-11-04 18:27 ET | `1b7ebde` | feat(web): real 3D hero with a real knob, the film on the landing and judge pages, one clear path for a first visit |
+| 2026-11-04 18:29 ET | `e15fb1f` | docs: README flowcharts drawn with Excalidraw, with editable sources |
+| 2026-11-04 18:43 ET | `7d4be80` | feat: /proof, /compare and /gallery pages, an evidence API, and honest publish controls for visitors |
+| 2026-11-04 18:54 ET | `f711d38` | fix(web): a photo chosen before the page hydrates is no longer lost; CI e2e waits on real state |
+| 2026-11-04 19:05 ET | `a137af2` | feat(web): /how walks through eight steps of a recorded run, and the job and results pages open in plain words |
+| 2026-11-04 19:26 ET | `58d16b0` | feat: six new part templates in the catalogue, with knob sweeps, plus browser tests for error, empty and keyboard states |
 
 </details>
 

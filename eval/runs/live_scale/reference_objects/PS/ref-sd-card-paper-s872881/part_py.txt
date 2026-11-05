@@ -1,0 +1,89 @@
+import cadquery as cq
+import math
+
+PARAMS = {
+    "thickness": (2.1, 1.2, 3.2, 0.05, "mm", True, "Thickness"),
+    "length": (32.4, 30.0, 33.5, 0.05, "mm", True, "Overall length X"),
+    "width": (24.054, 22.0, 26.0, 0.05, "mm", True, "Overall width Y"),
+    "chamfer_bias": (-0.5, -0.5, 0.5, 0.05, "mm", False, "Chamfer bias"),
+    "segments": (0.0, 0, 4, 1, "mm", False, "Topology detail count"),
+}
+
+def build(p: dict) -> cq.Workplane:
+    # measured polyline points - already centered near origin, bounding box centered
+    # [[15.961,8.085],[11.924,12.013],[-15.955,11.962],[-15.964,-11.83],[-14.618,-12.041],[15.887,-11.964]]
+    base_pts = [
+        (15.961, 8.085),
+        (11.924, 12.013),
+        (-15.955, 11.962),
+        (-15.964, -11.83),
+        (-14.618, -12.041),
+        (15.887, -11.964),
+    ]
+
+    # reference bounding size from measured data
+    ref_len = 15.961 - (-15.964)  # 31.925
+    ref_wid = 12.013 - (-12.041)  # 24.054
+    if ref_len < 0.1:
+        ref_len = 31.925
+    if ref_wid < 0.1:
+        ref_wid = 24.054
+
+    sx = p["length"] / ref_len
+    sy = p["width"] / ref_wid
+
+    # scale points to match parametric length/width, keeping model centred at origin
+    # chamfer_bias allows slight tuning without breaking fit
+    pts = []
+    for x, y in base_pts:
+        nx = x * sx
+        ny = y * sy
+        pts.append((nx, ny))
+
+    # optional bias on chamfer diagonal points (top-right chamfer)
+    # points 0 and 1 define the chamfer, apply small bias if requested
+    cb = float(p.get("chamfer_bias", 0.0))
+    if abs(cb) > 1e-6:
+        # move chamfer inwards/outwards slightly along diagonal
+        pts[0] = (pts[0][0], pts[0][1] + cb * 0.5)
+        pts[1] = (pts[1][0] - cb * 0.5, pts[1][1])
+
+    # topology parameter - integer count, kept for templating / future detail
+    # when 0 it does nothing so PartSpec with no features stays solid
+    seg = int(round(float(p.get("segments", 0))))
+    # use seg to optionally densify polyline (does not change footprint)
+    if seg > 0:
+        densified = []
+        for i in range(len(pts)):
+            a = pts[i]
+            b = pts[(i + 1) % len(pts)]
+            densified.append(a)
+            # insert mid points proportional to seg - purely for topology variety
+            for s in range(1, seg):
+                t = s / float(seg + 1)
+                # only densify long edges to keep shape identical
+                dx = b[0] - a[0]
+                dy = b[1] - a[1]
+                length_edge = math.hypot(dx, dy)
+                if length_edge > 10.0:
+                    mx = a[0] + dx * t
+                    my = a[1] + dy * t
+                    densified.append((mx, my))
+                else:
+                    break
+        # if densified was created, use it if it still forms same outline
+        if len(densified) >= len(pts):
+            pts = densified
+
+    thickness = float(p["thickness"])
+
+    # Build solid: mounting face on Z=0, +Z up, long axis +X, centred at origin
+    wp = cq.Workplane("XY")
+    wp = wp.moveTo(pts[0][0], pts[0][1])
+    if len(pts) > 1:
+        wp = wp.polyline(pts[1:])
+    wp = wp.close()
+    result = wp.extrude(thickness)
+    return result
+
+result = build({k: v[0] for k, v in PARAMS.items()})

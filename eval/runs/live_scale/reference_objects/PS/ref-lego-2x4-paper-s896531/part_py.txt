@@ -1,0 +1,45 @@
+import cadquery as cq
+import math
+
+PARAMS = {
+    "length": (31.8, 30.0, 34.0, 0.1, "mm", True, "Brick length X"),
+    "width": (15.8, 14.0, 17.0, 0.1, "mm", True, "Brick width Y"),
+    "thickness": (9.6, 8.0, 11.0, 0.1, "mm", False, "Body height"),
+    "stud_dia": (4.8, 4.0, 5.5, 0.1, "mm", True, "Stud outer diameter"),
+    "stud_height": (1.7, 1.2, 2.2, 0.1, "mm", False, "Stud height"),
+    "stud_pitch": (8.0, 7.0, 9.0, 0.1, "mm", True, "Stud pitch 8mm"),
+    "n_x": (4, 1, 6, 1, "", True, "Studs along X"),
+    "n_y": (2, 1, 4, 1, "", True, "Studs along Y"),
+}
+
+def build(p: dict) -> cq.Workplane:
+    length = float(p["length"])
+    width = float(p["width"])
+    thickness = float(p["thickness"])
+    stud_dia = float(p["stud_dia"])
+    stud_height = float(p["stud_height"])
+    stud_pitch = float(p["stud_pitch"])
+    n_x = int(p["n_x"])
+    n_y = int(p["n_y"])
+
+    base = cq.Workplane("XY").rect(length, width).extrude(thickness)
+
+    if n_x > 0 and n_y > 0 and stud_dia > 0 and stud_height > 0:
+        xs = [(i - (n_x - 1) / 2.0) * stud_pitch for i in range(n_x)]
+        ys = [(j - (n_y - 1) / 2.0) * stud_pitch for j in range(n_y)]
+        result = base
+        for x in xs:
+            for y in ys:
+                stud = (
+                    cq.Workplane("XY")
+                    .workplane(offset=thickness)
+                    .moveTo(x, y)
+                    .circle(stud_dia / 2.0)
+                    .extrude(stud_height)
+                )
+                result = result.union(stud)
+        return result
+    else:
+        return base
+
+result = build({k: v[0] for k, v in PARAMS.items()})

@@ -1,0 +1,62 @@
+import cadquery as cq
+import math
+
+PARAMS = {
+    "thickness": (6.5, 4.0, 10.0, 0.1, "mm", True, "Body thickness"),
+    "hole_dia": (8.349, 5.0, 12.0, 0.1, "mm", True, "Pivot hole diameter"),
+    "hole_x": (-6.767, -15.0, 0.0, 0.1, "mm", True, "Hole X offset"),
+    "hole_y": (0.083, -2.0, 2.0, 0.1, "mm", True, "Hole Y offset"),
+    "n_holes": (1, 1, 1, 1, "", False, "Number of pivot holes"),
+}
+
+def build(p: dict) -> cq.Workplane:
+    thickness = float(p["thickness"])
+    hole_dia = float(p["hole_dia"])
+    hole_x = float(p["hole_x"])
+    hole_y = float(p["hole_y"])
+    n_holes = int(p["n_holes"])
+
+    # Measured outer profile polyline, centred at origin, long axis +X
+    pts = [
+        (28.866, -0.165),
+        (28.523, 2.259),
+        (27.596, 4.169),
+        (25.929, 5.962),
+        (24.357, 6.889),
+        (21.793, 7.502),
+        (-21.294, 7.532),
+        (-22.995, 7.348),
+        (-25.521, 6.259),
+        (-27.354, 4.524),
+        (-28.432, 2.519),
+        (-28.867, -0.048),
+        (-28.687, -1.633),
+        (-27.956, -3.6),
+        (-27.043, -4.903),
+        (-25.608, -6.208),
+        (-24.237, -6.927),
+        (-22.56, -7.428),
+        (-18.888, -7.565),
+        (22.355, -7.431),
+        (24.023, -7.015),
+        (25.353, -6.357),
+        (27.317, -4.567),
+        (28.522, -2.263),
+    ]
+
+    # Base solid: extruded footprint from Z=0 to Z=thickness
+    base = cq.Workplane("XY").polyline(pts).close().extrude(thickness)
+
+    # Through hole(s) on mounting face
+    if n_holes >= 1 and hole_dia > 0:
+        base = (
+            base.faces(">Z")
+            .workplane()
+            .pushPoints([(hole_x, hole_y)])
+            .circle(hole_dia / 2.0)
+            .cutThruAll()
+        )
+
+    return base
+
+result = build({k: v[0] for k, v in PARAMS.items()})

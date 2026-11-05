@@ -148,7 +148,7 @@ const DIAGRAMS = {
       { id: "photo", text: "Phone photo on the screen mat", kind: "input", col: 1, row: 0 },
       { id: "gate", text: "Capture gate\nmarkers, blur, tilt, glare", shape: "diamond", col: 1, row: 1 },
       { id: "retake", text: "Retake, with the reason\nin plain words", kind: "bad", col: 0, row: 1 },
-      { id: "metro", text: "Marker scale + SAM 3.1 mask\nbecome millimetres", col: 1, row: 2 },
+      { id: "metro", text: "Marker scale + part mask become mm\nSAM 3.1 first, threshold fallback", col: 1, row: 2 },
       { id: "spark", text: "Muse Spark 1.3 names the part,\nfinds the break, points at holes", kind: "model", col: 1, row: 3 },
       { id: "wonder", text: "Muse Wonder:\ncited spec values", kind: "model", col: 0, row: 3 },
       { id: "build", text: "Muse Spark Open writes\na CadQuery program", kind: "model", col: 1, row: 4 },

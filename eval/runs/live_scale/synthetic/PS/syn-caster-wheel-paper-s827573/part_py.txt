@@ -1,0 +1,92 @@
+import cadquery as cq
+import math
+
+PARAMS = {
+    "thickness": (19.0, 12.0, 25.0, 0.1, "mm", False, "Wheel thickness (width)"),
+    "axle_dia": (7.718, 5.0, 10.0, 0.05, "mm", True, "Centre axle bore diameter"),
+    "hole1_dia": (7.371, 5.0, 10.0, 0.05, "mm", True, "Lightening hole 1 diameter"),
+    "hole2_dia": (6.528, 5.0, 10.0, 0.05, "mm", True, "Lightening hole 2 diameter"),
+    "hole4_dia": (7.348, 5.0, 10.0, 0.05, "mm", True, "Lightening hole 4 diameter"),
+    "hole5_dia": (7.382, 5.0, 10.0, 0.05, "mm", True, "Lightening hole 5 diameter"),
+    "hole6_dia": (7.359, 5.0, 10.0, 0.05, "mm", True, "Lightening hole 6 diameter"),
+    "clearance": (0.2, 0.0, 0.6, 0.05, "mm", True, "Print fit clearance (added to holes)"),
+    "num_peripheral_holes": (5, 3, 8, 1, "", False, "Number of lightening holes"),
+}
+
+def build(p: dict) -> cq.Workplane:
+    thickness = float(p["thickness"])
+    clearance = float(p["clearance"])
+    axle_dia = float(p["axle_dia"]) + float(clearance)
+    n = int(p["num_peripheral_holes"])
+
+    # base profile from PartSpec polyline (mm), centred near origin
+    pts = [
+        (-12.102, -19.003), (-10.064, -20.145), (-5.644, -21.55), (-3.077, -21.867),
+        (1.263, -21.869), (4.668, -21.544), (7.366, -20.746), (10.982, -19.141),
+        (15.219, -15.781), (15.553, -15.135), (18.083, -12.364), (20.081, -8.726),
+        (21.002, -5.983), (21.182, -4.532), (21.458, -4.018), (21.598, -1.584),
+        (21.882, -1.031), (21.827, 2.793), (21.527, 3.348), (21.309, 5.835),
+        (20.152, 9.361), (19.432, 10.356), (18.662, 12.303), (16.613, 14.853),
+        (13.335, 17.817), (9.5, 19.986), (5.673, 21.383), (3.623, 21.567),
+        (3.017, 21.856), (-2.496, 21.869), (-5.318, 21.403), (-10.266, 19.566),
+        (-11.103, 18.775), (-14.139, 16.803), (-17.452, 13.364), (-18.819, 11.451),
+        (-20.951, 6.863), (-21.767, 3.635), (-21.881, 2.06), (-21.499, -4.997),
+        (-20.175, -8.94), (-18.119, -12.837), (-16.624, -14.752),
+    ]
+
+    # solid wheel body: flat bottom at Z=0, top at Z=thickness, centred in XY
+    w = cq.Workplane("XY")
+    w = w.polyline(pts).close().extrude(thickness, both=False)
+
+    # hole definitions from PartSpec
+    spec_holes = [
+        ([-10.734, -6.768], float(p["hole1_dia"]) + clearance),
+        ([-9.745, 8.014], float(p["hole2_dia"]) + clearance),
+        ([3.055, -12.279], float(p["hole4_dia"]) + clearance),
+        ([4.633, 11.677], float(p["hole5_dia"]) + clearance),
+        ([12.556, -0.879], float(p["hole6_dia"]) + clearance),
+    ]
+    axle_center = [-0.055, -0.043]
+
+    # determine peripheral hole set - topology parameter
+    if n == 5:
+        periph = spec_holes
+    else:
+        # generate n equally spaced holes on mean radius of spec holes
+        rs = [math.hypot(c[0] - axle_center[0], c[1] - axle_center[1]) for c, d in spec_holes]
+        r_avg = sum(rs) / len(rs) if rs else 12.6
+        avg_d = sum(d for c, d in spec_holes) / len(spec_holes) if spec_holes else 7.3
+        # start angle from first spec hole to preserve orientation
+        a0 = math.atan2(spec_holes[0][0][1] - axle_center[1], spec_holes[0][0][0] - axle_center[0])
+        periph = []
+        for i in range(n):
+            ang = a0 + i * 2 * math.pi / n
+            cx = axle_center[0] + r_avg * math.cos(ang)
+            cy = axle_center[1] + r_avg * math.sin(ang)
+            periph.append(([cx, cy], avg_d))
+
+    # cut centre axle hole + peripheral lightening holes through thickness (Z)
+    all_pts = [axle_center]
+    all_dias = [axle_dia]
+    for c, d in periph:
+        all_pts.append(c)
+        all_dias.append(d)
+
+    # cut holes using pushPoints + hole for robust vertical cut
+    # do one by one to allow different diameters when n==5, else single diameter
+    if n == 5:
+        # individual diameters - cut sequentially
+        w = w.faces(">Z").workplane().pushPoints([tuple(axle_center)]).hole(axle_dia, clean=True)
+        for (c, d) in periph:
+            w = w.faces(">Z").workplane().pushPoints([tuple(c)]).hole(d, clean=True)
+    else:
+        # uniform diameter for generated pattern + axle separately
+        w = w.faces(">Z").workplane().pushPoints([tuple(axle_center)]).hole(axle_dia, clean=True)
+        periph_pts = [tuple(c) for c, d in periph]
+        periph_dia = periph[0][1] if periph else 7.0
+        if periph_pts:
+            w = w.faces(">Z").workplane().pushPoints(periph_pts).hole(periph_dia, clean=True)
+
+    return w
+
+result = build({k: v[0] for k, v in PARAMS.items()})

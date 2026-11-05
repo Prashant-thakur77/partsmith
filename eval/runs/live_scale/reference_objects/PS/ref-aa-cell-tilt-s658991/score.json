@@ -1,0 +1,112 @@
+{
+ "suite": "reference_objects",
+ "config": "PS",
+ "sample_id": "ref-aa-cell-tilt-s658991",
+ "split": "held_out",
+ "kind": "reference_object",
+ "preset": "tilt",
+ "mode": "live",
+ "gt_source": "reference_spec",
+ "status": "best_effort",
+ "verified": false,
+ "iterations": 4,
+ "iterations_to_converge": 2,
+ "strategy": "free_code",
+ "template": null,
+ "verifier_max_error_mm": 0.5937008337879917,
+ "retake_reason": null,
+ "failed_checks": [],
+ "usd": 0.23957,
+ "tokens_in": 202429,
+ "tokens_out": 36028,
+ "model_calls": 25,
+ "model_ms": 252474,
+ "provider_modes": [
+  "live",
+  "mock"
+ ],
+ "providers": {
+  "capture_triage": [
+   "mock:muse-glimmer"
+  ],
+  "segment": [
+   "meta:sam-3.1"
+  ],
+  "understand": [
+   "meta:muse-spark-1.3"
+  ],
+  "plan": [
+   "baseten:meta-models/muse-spark-open-1026"
+  ],
+  "build": [
+   "baseten:meta-models/muse-spark-open-1026"
+  ],
+  "fix_agent": [
+   "baseten:meta-models/muse-spark-open-1026"
+  ],
+  "judge": [
+   "meta:muse-spark-1.3"
+  ],
+  "fix": [
+   "baseten:meta-models/muse-spark-open-1026"
+  ]
+ },
+ "convergence": [
+  {
+   "iter": 1,
+   "hausdorff_mm": 0.5937008337879917,
+   "iou": 0.99415287072913,
+   "max_error_mm": 0.5937008337879917
+  },
+  {
+   "iter": 2,
+   "hausdorff_mm": 0.3596625596095194,
+   "iou": 0.9860127541133777,
+   "max_error_mm": 0.40400000000000347
+  },
+  {
+   "iter": 3,
+   "hausdorff_mm": 0.4535941885155752,
+   "iou": 0.9860122612923684,
+   "max_error_mm": 0.4540000000000006
+  },
+  {
+   "iter": 4,
+   "hausdorff_mm": 1.2977940911675165,
+   "iou": 0.9550755787322505,
+   "max_error_mm": 1.2977940911675165
+  }
+ ],
+ "wall_s": 297.27,
+ "dims": [
+  {
+   "name": "length",
+   "gt_mm": 50.5,
+   "model_mm": 49.4634,
+   "error_mm": -1.0366,
+   "within_spec": true
+  },
+  {
+   "name": "width",
+   "gt_mm": 14.5,
+   "model_mm": 14.1167,
+   "error_mm": -0.3833,
+   "within_spec": true
+  }
+ ],
+ "missed": [],
+ "extra_holes": 0,
+ "pass_0_3": false,
+ "pass_0_5": false,
+ "valid": true,
+ "valid_reason": "",
+ "failure_category": "judge_veto",
+ "overlay": "overlay.png",
+ "failure": "worst length -1.04 mm",
+ "git": {
+  "sha": null,
+  "dirty": false
+ },
+ "scale_suite": "reference_objects",
+ "tree": "bb75824+308438f7af72"
+}

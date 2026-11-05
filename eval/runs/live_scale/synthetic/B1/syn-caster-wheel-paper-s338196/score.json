@@ -1,0 +1,122 @@
+{
+ "suite": "synthetic",
+ "config": "B1",
+ "sample_id": "syn-caster-wheel-paper-s338196",
+ "split": "held_out",
+ "kind": "template",
+ "preset": "paper",
+ "mode": "live",
+ "gt_source": "synthetic_exact",
+ "status": "best_effort",
+ "verified": false,
+ "iterations": 1,
+ "iterations_to_converge": null,
+ "strategy": "template",
+ "template": "caster_wheel",
+ "verifier_max_error_mm": 1.9319930910114071,
+ "retake_reason": null,
+ "failed_checks": [],
+ "usd": 0.076873,
+ "tokens_in": 18881,
+ "tokens_out": 9348,
+ "model_calls": 15,
+ "model_ms": 80512,
+ "provider_modes": [
+  "live"
+ ],
+ "providers": {
+  "segment": [
+   "meta:sam-3.1"
+  ],
+  "understand": [
+   "meta:muse-spark-1.3"
+  ],
+  "segment_points": [
+   "meta:sam-3.1"
+  ],
+  "plan": [
+   "baseten:meta-models/muse-spark-open-1026"
+  ],
+  "build": [
+   "baseten:meta-models/muse-spark-open-1026"
+  ]
+ },
+ "convergence": [
+  {
+   "iter": 1,
+   "hausdorff_mm": 1.9319930910114071,
+   "iou": 0.9294029899147128,
+   "max_error_mm": 1.9319930910114071
+  }
+ ],
+ "wall_s": 110.04,
+ "dims": [
+  {
+   "name": "length",
+   "gt_mm": 61.79751,
+   "model_mm": 61.4975,
+   "error_mm": -0.3
+  },
+  {
+   "name": "width",
+   "gt_mm": 61.795021,
+   "model_mm": 61.495,
+   "error_mm": -0.3
+  },
+  {
+   "name": "thickness",
+   "gt_mm": 17.5,
+   "model_mm": 17.5,
+   "error_mm": 0.0
+  },
+  {
+   "name": "hole_1.diameter",
+   "gt_mm": 11.6,
+   "model_mm": 11.9695,
+   "error_mm": 0.3695
+  },
+  {
+   "name": "hole_2.diameter",
+   "gt_mm": 11.6,
+   "model_mm": 11.9695,
+   "error_mm": 0.3695
+  },
+  {
+   "name": "hole_3.diameter",
+   "gt_mm": 7.9,
+   "model_mm": 7.85,
+   "error_mm": -0.05
+  },
+  {
+   "name": "hole_4.diameter",
+   "gt_mm": 11.6,
+   "model_mm": 11.9695,
+   "error_mm": 0.3695
+  },
+  {
+   "name": "hole_5.diameter",
+   "gt_mm": 11.6,
+   "model_mm": 11.9695,
+   "error_mm": 0.3695
+  },
+  {
+   "name": "hole_6.diameter",
+   "gt_mm": 11.6,
+   "model_mm": 11.9695,
+   "error_mm": 0.3695
+  }
+ ],
+ "missed": [],
+ "extra_holes": 0,
+ "pass_0_3": false,
+ "pass_0_5": true,
+ "valid": true,
+ "valid_reason": "",
+ "failure_category": null,
+ "git": {
+  "sha": null,
+  "dirty": false
+ },
+ "scale_suite": "synthetic",
+ "tree": "bb75824+308438f7af72"
+}

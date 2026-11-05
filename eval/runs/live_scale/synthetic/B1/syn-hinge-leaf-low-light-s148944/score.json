@@ -1,0 +1,105 @@
+{
+ "suite": "synthetic",
+ "config": "B1",
+ "sample_id": "syn-hinge-leaf-low-light-s148944",
+ "split": "held_out",
+ "kind": "template",
+ "preset": "low-light",
+ "mode": "live",
+ "gt_source": "synthetic_exact",
+ "status": "best_effort",
+ "verified": false,
+ "iterations": 1,
+ "iterations_to_converge": null,
+ "strategy": "template",
+ "template": "hinge_leaf",
+ "verifier_max_error_mm": 3.542332119552181,
+ "retake_reason": null,
+ "failed_checks": [],
+ "usd": 0.111878,
+ "tokens_in": 24635,
+ "tokens_out": 15114,
+ "model_calls": 14,
+ "model_ms": 128760,
+ "provider_modes": [
+  "live"
+ ],
+ "providers": {
+  "segment": [
+   "meta:sam-3.1"
+  ],
+  "understand": [
+   "meta:muse-spark-1.3"
+  ],
+  "segment_points": [
+   "meta:sam-3.1"
+  ],
+  "plan": [
+   "baseten:meta-models/muse-spark-open-1026"
+  ],
+  "build": [
+   "baseten:meta-models/muse-spark-open-1026"
+  ]
+ },
+ "convergence": [
+  {
+   "iter": 1,
+   "hausdorff_mm": 3.542332119552181,
+   "iou": 0.8036238262910798,
+   "max_error_mm": 3.542332119552181
+  }
+ ],
+ "wall_s": 146.47,
+ "dims": [
+  {
+   "name": "length",
+   "gt_mm": 51.0,
+   "model_mm": 52.4,
+   "error_mm": 1.4
+  },
+  {
+   "name": "width",
+   "gt_mm": 22.499145,
+   "model_mm": 22.7594,
+   "error_mm": 0.2602
+  },
+  {
+   "name": "thickness",
+   "gt_mm": 7.049956,
+   "model_mm": 6.7998,
+   "error_mm": -0.2501
+  },
+  {
+   "name": "hole_1.diameter",
+   "gt_mm": 3.5,
+   "model_mm": 3.44,
+   "error_mm": -0.06
+  },
+  {
+   "name": "hole_2.diameter",
+   "gt_mm": 3.5,
+   "model_mm": 3.44,
+   "error_mm": -0.06
+  },
+  {
+   "name": "hole_3.diameter",
+   "gt_mm": 3.5,
+   "model_mm": 3.44,
+   "error_mm": -0.06
+  }
+ ],
+ "missed": [],
+ "extra_holes": 0,
+ "pass_0_3": false,
+ "pass_0_5": false,
+ "valid": true,
+ "valid_reason": "",
+ "failure_category": "dim_off",
+ "failure": "worst length +1.40 mm",
+ "git": {
+  "sha": null,
+  "dirty": false
+ },
+ "scale_suite": "synthetic",
+ "tree": "bb75824+308438f7af72"
+}

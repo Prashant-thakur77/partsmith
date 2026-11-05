@@ -1,0 +1,65 @@
+import cadquery as cq
+import math
+
+PARAMS = {
+    "length": (32.2, 28.0, 35.0, 0.01, "mm", True, "Overall length X"),
+    "width": (24.09, 20.0, 28.0, 0.01, "mm", True, "Overall width Y"),
+    "chamfer_dx": (4.12, 2.0, 6.0, 0.01, "mm", False, "Chamfer X size"),
+    "chamfer_dy": (4.01, 2.0, 6.0, 0.01, "mm", False, "Chamfer Y size"),
+    "thickness": (2.1, 0.8, 5.0, 0.01, "mm", True, "Plate thickness"),
+    "fillet_r": (0.0, 0.0, 2.0, 0.1, "mm", False, "Corner fillet radius"),
+    "hole_count": (0.0, 0, 4, 1, "mm", False, "Topology: center hole count"),
+}
+
+def build(p: dict) -> cq.Workplane:
+    length = float(p["length"])
+    width = float(p["width"])
+    chamfer_dx = float(p["chamfer_dx"])
+    chamfer_dy = float(p["chamfer_dy"])
+    thickness = float(p["thickness"])
+    fillet_r = float(p.get("fillet_r", 0.0))
+    hole_count = int(round(float(p.get("hole_count", 0))))
+
+    hx = length / 2.0
+    hy = width / 2.0
+
+    # clamp chamfer to stay inside footprint
+    chamfer_dx = min(chamfer_dx, length - 1.0)
+    chamfer_dy = min(chamfer_dy, width - 1.0)
+
+    # polyline points derived from measured base_profile
+    # A top-right, B top-left, C mid-left, D chamfer, E bottom-right
+    pts = [
+        (hx, hy),
+        (-hx, hy),
+        (-hx, -hy + chamfer_dy),
+        (-hx + chamfer_dx, -hy),
+        (hx, -hy),
+    ]
+
+    # solid plate, mounting face on Z=0, +Z up, centred at origin
+    base = cq.Workplane("XY").polyline(pts).close().extrude(thickness)
+
+    # optional corner fillet on vertical edges
+    if fillet_r > 0.01:
+        # fillet radius limited to avoid self-intersection
+        rmax = min(hx, hy, chamfer_dx, chamfer_dy) * 0.4
+        r = min(fillet_r, rmax)
+        if r > 0.01:
+            try:
+                base = base.edges("|Z").fillet(r)
+            except Exception:
+                pass
+
+    # optional topology feature: centred holes along X axis
+    if hole_count > 0:
+        # hole diameter derived from thickness for fit, but parametrised via thickness
+        hole_d = max(1.0, thickness * 1.0)
+        spacing = length / (hole_count + 1)
+        for i in range(hole_count):
+            x = -hx + spacing * (i + 1)
+            base = base.faces(">Z").workplane(centerOption="CenterOfMass").pushPoints([(x, 0)]).hole(hole_d)
+
+    return base
+
+result = build({k: v[0] for k, v in PARAMS.items()})

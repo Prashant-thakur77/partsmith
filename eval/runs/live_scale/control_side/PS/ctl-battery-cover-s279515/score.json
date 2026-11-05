@@ -1,0 +1,100 @@
+{
+ "suite": "control",
+ "config": "PS",
+ "sample_id": "ctl-battery-cover-s279515",
+ "split": "held_out",
+ "kind": "control",
+ "preset": "clean",
+ "mode": "live",
+ "gt_source": "expected_outcome",
+ "status": "verified",
+ "verified": true,
+ "iterations": 2,
+ "iterations_to_converge": 2,
+ "strategy": "template",
+ "template": "battery_cover",
+ "verifier_max_error_mm": 0.47064813300034697,
+ "retake_reason": null,
+ "failed_checks": [],
+ "usd": 0.116047,
+ "tokens_in": 56859,
+ "tokens_out": 14300,
+ "model_calls": 17,
+ "model_ms": 144382,
+ "provider_modes": [
+  "live"
+ ],
+ "providers": {
+  "segment": [
+   "meta:sam-3.1"
+  ],
+  "understand": [
+   "meta:muse-spark-1.3"
+  ],
+  "plan": [
+   "baseten:meta-models/muse-spark-open-1026"
+  ],
+  "build": [
+   "baseten:meta-models/muse-spark-open-1026"
+  ],
+  "fix_agent": [
+   "baseten:meta-models/muse-spark-open-1026"
+  ],
+  "judge": [
+   "meta:muse-spark-1.3"
+  ]
+ },
+ "convergence": [
+  {
+   "iter": 1,
+   "hausdorff_mm": 0.7705478259439533,
+   "iou": 0.9704534036674203,
+   "max_error_mm": 0.7705478259439533
+  },
+  {
+   "iter": 2,
+   "hausdorff_mm": 0.47064813300034697,
+   "iou": 0.9734194276400339,
+   "max_error_mm": 0.47064813300034697
+  }
+ ],
+ "wall_s": 179.11,
+ "dims": [
+  {
+   "name": "length",
+   "gt_mm": 66.6,
+   "model_mm": 66.7,
+   "error_mm": 0.1
+  },
+  {
+   "name": "width",
+   "gt_mm": 31.7,
+   "model_mm": 31.8,
+   "error_mm": 0.1
+  },
+  {
+   "name": "thickness",
+   "gt_mm": 6.2,
+   "model_mm": 6.1,
+   "error_mm": -0.1
+  }
+ ],
+ "missed": [],
+ "extra_holes": 0,
+ "pass_0_3": true,
+ "pass_0_5": true,
+ "valid": true,
+ "valid_reason": "",
+ "expected_outcome": "accept",
+ "expected_checks": [],
+ "expected_why": "intact part, normal photo",
+ "outcome": "accept",
+ "outcome_correct": true,
+ "failure_category": null,
+ "git": {
+  "sha": null,
+  "dirty": false
+ },
+ "scale_suite": "control_side",
+ "tree": "bb75824+308438f7af72"
+}

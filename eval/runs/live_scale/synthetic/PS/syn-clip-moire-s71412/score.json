@@ -1,0 +1,110 @@
+{
+ "suite": "synthetic",
+ "config": "PS",
+ "sample_id": "syn-clip-moire-s71412",
+ "split": "held_out",
+ "kind": "template",
+ "preset": "moire",
+ "mode": "live",
+ "gt_source": "synthetic_exact",
+ "status": "verified",
+ "verified": true,
+ "iterations": 2,
+ "iterations_to_converge": 2,
+ "strategy": "template",
+ "template": "clip",
+ "verifier_max_error_mm": 0.48099638271906103,
+ "retake_reason": null,
+ "failed_checks": [],
+ "usd": 0.119726,
+ "tokens_in": 43966,
+ "tokens_out": 19041,
+ "model_calls": 15,
+ "model_ms": 163038,
+ "provider_modes": [
+  "live",
+  "mock"
+ ],
+ "providers": {
+  "capture_triage": [
+   "mock:muse-glimmer"
+  ],
+  "segment": [
+   "meta:sam-3.1"
+  ],
+  "understand": [
+   "meta:muse-spark-1.3"
+  ],
+  "segment_points": [
+   "meta:sam-3.1"
+  ],
+  "plan": [
+   "baseten:meta-models/muse-spark-open-1026"
+  ],
+  "build": [
+   "baseten:meta-models/muse-spark-open-1026"
+  ],
+  "fix_agent": [
+   "baseten:meta-models/muse-spark-open-1026"
+  ],
+  "judge": [
+   "meta:muse-spark-1.3"
+  ]
+ },
+ "convergence": [
+  {
+   "iter": 1,
+   "hausdorff_mm": 1.2171104335563836,
+   "iou": 0.8958422631804543,
+   "max_error_mm": 1.2171104335563836
+  },
+  {
+   "iter": 2,
+   "hausdorff_mm": 0.48099638271906103,
+   "iou": 0.9828032979976443,
+   "max_error_mm": 0.48099638271906103
+  }
+ ],
+ "wall_s": 183.71,
+ "dims": [
+  {
+   "name": "length",
+   "gt_mm": 29.0,
+   "model_mm": 29.0,
+   "error_mm": 0.0
+  },
+  {
+   "name": "width",
+   "gt_mm": 18.4,
+   "model_mm": 18.7,
+   "error_mm": 0.3
+  },
+  {
+   "name": "thickness",
+   "gt_mm": 11.8,
+   "model_mm": 10.0,
+   "error_mm": -1.8
+  },
+  {
+   "name": "hole_1.diameter",
+   "gt_mm": 3.95,
+   "model_mm": 3.78,
+   "error_mm": -0.17
+  }
+ ],
+ "missed": [],
+ "extra_holes": 0,
+ "pass_0_3": false,
+ "pass_0_5": false,
+ "valid": true,
+ "valid_reason": "",
+ "failure_category": "dim_off",
+ "overlay": "overlay.png",
+ "failure": "worst thickness -1.80 mm",
+ "git": {
+  "sha": null,
+  "dirty": false
+ },
+ "scale_suite": "synthetic",
+ "tree": "bb75824+308438f7af72"
+}

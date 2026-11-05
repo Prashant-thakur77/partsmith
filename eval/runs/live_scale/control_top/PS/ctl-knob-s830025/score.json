@@ -1,0 +1,124 @@
+{
+ "suite": "control",
+ "config": "PS",
+ "sample_id": "ctl-knob-s830025",
+ "split": "held_out",
+ "kind": "control",
+ "preset": "clean",
+ "mode": "live",
+ "gt_source": "expected_outcome",
+ "status": "best_effort",
+ "verified": false,
+ "iterations": 6,
+ "iterations_to_converge": 6,
+ "strategy": "free_code",
+ "template": "knob",
+ "verifier_max_error_mm": 0.16357395581528564,
+ "retake_reason": null,
+ "failed_checks": [],
+ "usd": 0.24973,
+ "tokens_in": 207610,
+ "tokens_out": 32674,
+ "model_calls": 30,
+ "model_ms": 255642,
+ "provider_modes": [
+  "live"
+ ],
+ "providers": {
+  "segment": [
+   "meta:sam-3.1"
+  ],
+  "understand": [
+   "meta:muse-spark-1.3"
+  ],
+  "plan": [
+   "baseten:meta-models/muse-spark-open-1026"
+  ],
+  "build": [
+   "baseten:meta-models/muse-spark-open-1026"
+  ],
+  "fix_agent": [
+   "baseten:meta-models/muse-spark-open-1026"
+  ],
+  "judge": [
+   "meta:muse-spark-1.3"
+  ]
+ },
+ "convergence": [
+  {
+   "iter": 1,
+   "hausdorff_mm": 2.6488339119730915,
+   "iou": 0.8419286935929483,
+   "max_error_mm": 3.3659999999999997
+  },
+  {
+   "iter": 2,
+   "hausdorff_mm": 0.5642621160069762,
+   "iou": 0.960206707077755,
+   "max_error_mm": 1.0
+  },
+  {
+   "iter": 3,
+   "hausdorff_mm": 0.8708306894285085,
+   "iou": 0.9739983681882596,
+   "max_error_mm": 0.8708306894285085
+  },
+  {
+   "iter": 4,
+   "hausdorff_mm": 0.8239852446098227,
+   "iou": 0.973699502830209,
+   "max_error_mm": 0.8239852446098227
+  },
+  {
+   "iter": 5,
+   "hausdorff_mm": 0.9050141531875517,
+   "iou": 0.9752594117142612,
+   "max_error_mm": 0.9050141531875517
+  },
+  {
+   "iter": 6,
+   "hausdorff_mm": 0.16357395581528564,
+   "iou": 0.995254756177564,
+   "max_error_mm": 0.16357395581528564
+  }
+ ],
+ "wall_s": 311.95,
+ "dims": [
+  {
+   "name": "length",
+   "gt_mm": 33.0,
+   "model_mm": 32.5034,
+   "error_mm": -0.4966
+  },
+  {
+   "name": "width",
+   "gt_mm": 32.857455,
+   "model_mm": 32.4288,
+   "error_mm": -0.4287
+  },
+  {
+   "name": "thickness",
+   "gt_mm": 19.1,
+   "model_mm": 19.0,
+   "error_mm": -0.1
+  }
+ ],
+ "missed": [],
+ "extra_holes": 0,
+ "pass_0_3": false,
+ "pass_0_5": true,
+ "valid": true,
+ "valid_reason": "",
+ "expected_outcome": "accept",
+ "expected_checks": [],
+ "expected_why": "intact part, normal photo",
+ "outcome": "accept",
+ "outcome_correct": true,
+ "failure_category": null,
+ "git": {
+  "sha": null,
+  "dirty": false
+ },
+ "scale_suite": "control_top",
+ "tree": "bb75824+308438f7af72"
+}

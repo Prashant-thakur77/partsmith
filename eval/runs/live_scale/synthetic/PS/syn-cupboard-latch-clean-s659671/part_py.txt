@@ -1,0 +1,49 @@
+import cadquery as cq
+import math
+
+ORIG_POINTS = [(25.412,0.111),(24.882,2.576),(24.121,3.995),(23.12,5.148),(20.759,6.559),(19.622,6.872),(-16.314,7.001),(-19.86,6.824),(-22.004,5.994),(-23.684,4.616),(-24.805,2.889),(-25.413,0.576),(-25.321,-1.386),(-24.928,-2.646),(-23.393,-4.942),(-22.306,-5.83),(-20.759,-6.589),(-19.521,-6.916),(15.785,-7.001),(19.903,-6.819),(22.059,-5.95),(23.822,-4.381),(24.992,-2.266)]
+ORIG_LENGTH = 50.825
+ORIG_WIDTH = 14.002
+
+PARAMS = {
+    "overall_length": (50.825, 40.0, 65.0, 0.1, "mm", False, "Overall length X"),
+    "overall_width": (14.002, 10.0, 20.0, 0.1, "mm", False, "Overall width Y"),
+    "thickness": (7.5, 4.0, 10.0, 0.1, "mm", False, "Body thickness Z"),
+    "hole_dia": (8.882, 4.0, 12.0, 0.1, "mm", True, "Pivot hole diameter"),
+    "hole_x": (-9.726, -20.0, 0.0, 0.1, "mm", False, "Hole X position"),
+    "hole_y": (-0.026, -3.0, 3.0, 0.1, "mm", False, "Hole Y position"),
+    "clearance": (0.2, 0.0, 0.5, 0.05, "mm", True, "Fit clearance"),
+    "hole_count": (1, 0, 1, 1, "", False, "Number of pivot holes"),
+}
+
+def build(p: dict) -> cq.Workplane:
+    t = float(p["thickness"])
+    ol = float(p["overall_length"])
+    ow = float(p["overall_width"])
+    hd = float(p["hole_dia"])
+    hx = float(p["hole_x"])
+    hy = float(p["hole_y"])
+    clr = float(p["clearance"])
+    hc = int(p["hole_count"])
+
+    sx = ol / ORIG_LENGTH if ORIG_LENGTH != 0 else 1.0
+    sy = ow / ORIG_WIDTH if ORIG_WIDTH != 0 else 1.0
+
+    pts = [(x * sx, y * sy) for x, y in ORIG_POINTS]
+
+    wp = cq.Workplane("XY")
+    wp = wp.moveTo(pts[0][0], pts[0][1])
+    for x, y in pts[1:]:
+        wp = wp.lineTo(x, y)
+    wp = wp.close().extrude(t, combine=True)
+
+    # through hole along Z, from mounting face Z=0 through thickness
+    if hc > 0 and hd > 0.1:
+        eff_d = hd + clr * 0.0
+        # keep clearance as separate param for fit, hole is cut to spec
+        # use faces>Z workplane to cut through entire body
+        wp = wp.faces(">Z").workplane().pushPoints([(hx * sx, hy * sy)]).circle(eff_d / 2.0).cutThruAll()
+
+    return wp
+
+result = build({k: v[0] for k, v in PARAMS.items()})

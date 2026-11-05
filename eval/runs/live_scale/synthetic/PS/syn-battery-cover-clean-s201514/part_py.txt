@@ -1,0 +1,91 @@
+import cadquery as cq
+import math
+
+PARAMS = {
+    "thickness": (1.5, 1.0, 3.0, 0.1, "mm", True, "Cover thickness"),
+    "clearance": (0.2, 0.0, 0.6, 0.05, "mm", True, "XY clearance negative offset"),
+    "smooth_r": (0.6, 0.0, 1.2, 0.1, "mm", False, "Top edge fillet radius"),
+    "ridge_count": (0, 0, 5, 1, "", False, "Decorative ridges (0=none)"),
+}
+
+# measured polyline from PartSpec base_profile.points_mm
+PROFILE = [
+    (22.902, -17.66),
+    (23.11, -16.826),
+    (23.18, -11.607),
+    (23.536, -11.412),
+    (25.999, -11.356),
+    (26.18, -9.608),
+    (26.099, -5.606),
+    (23.681, -5.574),
+    (23.089, -5.221),
+    (23.09, 5.219),
+    (23.38, 5.645),
+    (26.112, 5.803),
+    (26.184, 9.05),
+    (26.028, 11.502),
+    (23.627, 11.524),
+    (23.133, 11.782),
+    (23.073, 17.289),
+    (22.7, 17.883),
+    (22.076, 18.148),
+    (-22.66, 18.143),
+    (-24.15, 17.797),
+    (-25.483, 16.74),
+    (-26.062, 15.478),
+    (-26.174, 14.194),
+    (-26.141, -14.841),
+    (-25.778, -16.263),
+    (-24.743, -17.49),
+    (-23.023, -18.114),
+    (20.938, -18.148),
+    (22.37, -18.051),
+]
+
+def build(p: dict) -> cq.Workplane:
+    thickness = float(p.get("thickness", 1.5))
+    clearance = float(p.get("clearance", 0.2))
+    smooth_r = float(p.get("smooth_r", 0.6))
+    ridge_count = int(p.get("ridge_count", 0))
+
+    pts = PROFILE
+    if clearance != 0:
+        scale_x = 1.0 - clearance / 52.0
+        scale_y = 1.0 - clearance / 36.5
+        pts = [(x * scale_x, y * scale_y) for x, y in PROFILE]
+
+    wp = cq.Workplane("XY")
+    wp = wp.moveTo(pts[0][0], pts[0][1])
+    for x, y in pts[1:]:
+        wp = wp.lineTo(x, y)
+    wp = wp.close()
+
+    solid = wp.extrude(thickness, combine=True)
+
+    if smooth_r > 1e-6:
+        try:
+            r = min(smooth_r, thickness * 0.49)
+            solid = solid.edges("|Z and >Z").fillet(r)
+        except Exception:
+            pass
+
+    if ridge_count > 0:
+        ridge_h = min(0.3, thickness * 0.2)
+        ridge_w = 0.8
+        x_min = -15.0
+        x_max = 15.0
+        if ridge_count == 1:
+            xs = [0.0]
+        else:
+            step = (x_max - x_min) / (ridge_count - 1) if ridge_count > 1 else 0
+            xs = [x_min + i * step for i in range(ridge_count)]
+        for xc in xs:
+            try:
+                ridge = cq.Workplane("XY").workplane(offset=thickness).moveTo(xc - ridge_w/2, -14).lineTo(xc + ridge_w/2, -14).lineTo(xc + ridge_w/2, 14).lineTo(xc - ridge_w/2, 14).close().extrude(ridge_h)
+                solid = solid.union(ridge)
+            except Exception:
+                pass
+
+    return solid
+
+result = build({k: v[0] for k, v in PARAMS.items()})

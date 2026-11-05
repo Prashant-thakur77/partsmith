@@ -1,0 +1,93 @@
+{
+ "suite": "synthetic",
+ "config": "B1",
+ "sample_id": "syn-cable-clip-paper-s718960",
+ "split": "held_out",
+ "kind": "template",
+ "preset": "paper",
+ "mode": "live",
+ "gt_source": "synthetic_exact",
+ "status": "best_effort",
+ "verified": false,
+ "iterations": 1,
+ "iterations_to_converge": null,
+ "strategy": "template",
+ "template": "cable_clip",
+ "verifier_max_error_mm": 4.932692912997594,
+ "retake_reason": null,
+ "failed_checks": [],
+ "usd": 0.082505,
+ "tokens_in": 17650,
+ "tokens_out": 11823,
+ "model_calls": 10,
+ "model_ms": 105919,
+ "provider_modes": [
+  "live"
+ ],
+ "providers": {
+  "segment": [
+   "meta:sam-3.1"
+  ],
+  "understand": [
+   "meta:muse-spark-1.3"
+  ],
+  "segment_points": [
+   "meta:sam-3.1"
+  ],
+  "plan": [
+   "baseten:meta-models/muse-spark-open-1026"
+  ],
+  "build": [
+   "baseten:meta-models/muse-spark-open-1026"
+  ]
+ },
+ "convergence": [
+  {
+   "iter": 1,
+   "hausdorff_mm": 4.932692912997594,
+   "iou": 0.7533742331288343,
+   "max_error_mm": 4.932692912997594
+  }
+ ],
+ "wall_s": 130.89,
+ "dims": [
+  {
+   "name": "length",
+   "gt_mm": 41.7,
+   "model_mm": 40.0,
+   "error_mm": -1.7
+  },
+  {
+   "name": "width",
+   "gt_mm": 9.5,
+   "model_mm": 10.0,
+   "error_mm": 0.5
+  },
+  {
+   "name": "thickness",
+   "gt_mm": 6.03635,
+   "model_mm": 7.6412,
+   "error_mm": 1.6049
+  },
+  {
+   "name": "hole_1.diameter",
+   "gt_mm": 2.8,
+   "model_mm": 2.525,
+   "error_mm": -0.275
+  }
+ ],
+ "missed": [],
+ "extra_holes": 1,
+ "pass_0_3": false,
+ "pass_0_5": false,
+ "valid": true,
+ "valid_reason": "",
+ "failure_category": "topology_wrong",
+ "failure": "worst length -1.70 mm",
+ "git": {
+  "sha": null,
+  "dirty": false
+ },
+ "scale_suite": "synthetic",
+ "tree": "bb75824+308438f7af72"
+}

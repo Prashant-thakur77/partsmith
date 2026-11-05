@@ -1,0 +1,102 @@
+{
+ "suite": "reference_objects",
+ "config": "PS",
+ "sample_id": "ref-id1-card-paper-s655962",
+ "split": "held_out",
+ "kind": "reference_object",
+ "preset": "paper",
+ "mode": "live",
+ "gt_source": "reference_spec",
+ "status": "verified",
+ "verified": true,
+ "iterations": 2,
+ "iterations_to_converge": 1,
+ "strategy": "free_code",
+ "template": null,
+ "verifier_max_error_mm": 0.20220465132685797,
+ "retake_reason": null,
+ "failed_checks": [],
+ "usd": 0.088587,
+ "tokens_in": 36220,
+ "tokens_out": 10903,
+ "model_calls": 13,
+ "model_ms": 100823,
+ "provider_modes": [
+  "live",
+  "mock"
+ ],
+ "providers": {
+  "capture_triage": [
+   "mock:muse-glimmer"
+  ],
+  "segment": [
+   "meta:sam-3.1"
+  ],
+  "understand": [
+   "meta:muse-spark-1.3"
+  ],
+  "plan": [
+   "baseten:meta-models/muse-spark-open-1026"
+  ],
+  "build": [
+   "baseten:meta-models/muse-spark-open-1026"
+  ],
+  "fix_agent": [
+   "baseten:meta-models/muse-spark-open-1026"
+  ],
+  "judge": [
+   "meta:muse-spark-1.3"
+  ]
+ },
+ "convergence": [
+  {
+   "iter": 1,
+   "hausdorff_mm": 0.1936550413542658,
+   "iou": 0.9982622805553797,
+   "max_error_mm": 0.1936550413542658
+  },
+  {
+   "iter": 2,
+   "hausdorff_mm": 0.20220465132685797,
+   "iou": 0.998342856156462,
+   "max_error_mm": 0.20220465132685797
+  }
+ ],
+ "wall_s": 114.11,
+ "dims": [
+  {
+   "name": "length",
+   "gt_mm": 85.6,
+   "model_mm": 85.5982,
+   "error_mm": -0.0018,
+   "within_spec": true
+  },
+  {
+   "name": "width",
+   "gt_mm": 53.98,
+   "model_mm": 53.98,
+   "error_mm": -0.0,
+   "within_spec": true
+  },
+  {
+   "name": "thickness",
+   "gt_mm": 0.76,
+   "model_mm": 0.8,
+   "error_mm": 0.04,
+   "within_spec": true
+  }
+ ],
+ "missed": [],
+ "extra_holes": 0,
+ "pass_0_3": true,
+ "pass_0_5": true,
+ "valid": true,
+ "valid_reason": "",
+ "failure_category": null,
+ "git": {
+  "sha": null,
+  "dirty": false
+ },
+ "scale_suite": "reference_objects",
+ "tree": "bb75824+308438f7af72"
+}

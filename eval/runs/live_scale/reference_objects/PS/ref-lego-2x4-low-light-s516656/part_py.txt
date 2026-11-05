@@ -1,0 +1,44 @@
+import cadquery as cq
+import math
+
+PARAMS = {
+    "brick_length": (31.8, 28.0, 35.0, 0.1, "mm", True, "Brick length X"),
+    "brick_width": (15.8, 14.0, 18.0, 0.1, "mm", True, "Brick width Y"),
+    "brick_height": (9.7, 7.0, 12.0, 0.1, "mm", True, "Brick body height"),
+    "stud_diameter": (4.7, 4.0, 5.5, 0.1, "mm", True, "Stud outer diameter"),
+    "stud_height": (1.7, 1.0, 2.5, 0.1, "mm", True, "Stud height"),
+    "stud_pitch": (8.0, 7.5, 8.5, 0.1, "mm", True, "Stud pitch"),
+    "num_studs_x": (4, 1, 8, 1, "", False, "Studs along X"),
+    "num_studs_y": (2, 1, 4, 1, "", False, "Studs along Y"),
+}
+
+def build(p: dict) -> cq.Workplane:
+    L = float(p["brick_length"])
+    W = float(p["brick_width"])
+    H = float(p["brick_height"])
+    sd = float(p["stud_diameter"])
+    sh = float(p["stud_height"])
+    pitch = float(p["stud_pitch"])
+    nx = int(p["num_studs_x"])
+    ny = int(p["num_studs_y"])
+
+    # Base brick body: solid extruded from mounting face Z=0, centered in XY
+    body = cq.Workplane("XY").rect(L, W).extrude(H)
+
+    # Studs on top face Z = H
+    # Centers symmetric about origin with pitch spacing
+    # For nx=4: x = -1.5*pitch, -0.5*pitch, 0.5*pitch, 1.5*pitch = -12,-4,4,12 when pitch=8
+    # For ny=2: y = -0.5*pitch, 0.5*pitch = -4,4 when pitch=8
+    if sd > 0 and sh > 0 and nx > 0 and ny > 0:
+        x0 = - (nx - 1) * pitch / 2.0
+        y0 = - (ny - 1) * pitch / 2.0
+        for ix in range(nx):
+            x = x0 + ix * pitch
+            for iy in range(ny):
+                y = y0 + iy * pitch
+                stud = cq.Workplane("XY").workplane(offset=H).center(x, y).circle(sd / 2.0).extrude(sh)
+                body = body.union(stud)
+
+    return body
+
+result = build({k: v[0] for k, v in PARAMS.items()})

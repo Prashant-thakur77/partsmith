@@ -1,0 +1,88 @@
+{
+ "suite": "synthetic",
+ "config": "B1",
+ "sample_id": "syn-battery-cover-blur-s309987",
+ "split": "held_out",
+ "kind": "template",
+ "preset": "blur",
+ "mode": "live",
+ "gt_source": "synthetic_exact",
+ "status": "best_effort",
+ "verified": false,
+ "iterations": 1,
+ "iterations_to_converge": null,
+ "strategy": "template",
+ "template": "battery_cover",
+ "verifier_max_error_mm": 2.074200177816622,
+ "retake_reason": null,
+ "failed_checks": [],
+ "usd": 0.069629,
+ "tokens_in": 19200,
+ "tokens_out": 9787,
+ "model_calls": 11,
+ "model_ms": 79204,
+ "provider_modes": [
+  "live",
+  "mock"
+ ],
+ "providers": {
+  "capture_triage": [
+   "mock:muse-glimmer"
+  ],
+  "segment": [
+   "meta:sam-3.1"
+  ],
+  "understand": [
+   "meta:muse-spark-1.3"
+  ],
+  "plan": [
+   "baseten:meta-models/muse-spark-open-1026"
+  ],
+  "build": [
+   "baseten:meta-models/muse-spark-open-1026"
+  ]
+ },
+ "convergence": [
+  {
+   "iter": 1,
+   "hausdorff_mm": 2.074200177816622,
+   "iou": 0.9500405350628294,
+   "max_error_mm": 2.074200177816622
+  }
+ ],
+ "wall_s": 106.48,
+ "dims": [
+  {
+   "name": "length",
+   "gt_mm": 47.7,
+   "model_mm": 47.76,
+   "error_mm": 0.06
+  },
+  {
+   "name": "width",
+   "gt_mm": 35.5,
+   "model_mm": 35.59,
+   "error_mm": 0.09
+  },
+  {
+   "name": "thickness",
+   "gt_mm": 5.8,
+   "model_mm": 3.7,
+   "error_mm": -2.1
+  }
+ ],
+ "missed": [],
+ "extra_holes": 0,
+ "pass_0_3": false,
+ "pass_0_5": false,
+ "valid": true,
+ "valid_reason": "",
+ "failure_category": "dim_off",
+ "failure": "worst thickness -2.10 mm",
+ "git": {
+  "sha": null,
+  "dirty": false
+ },
+ "scale_suite": "synthetic",
+ "tree": "bb75824+308438f7af72"
+}

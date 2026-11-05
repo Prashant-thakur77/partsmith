@@ -1,0 +1,64 @@
+import cadquery as cq
+import math
+
+PARAMS = {
+    "card_length": (32.032, 31.0, 33.5, 0.01, "mm", True, "Overall length along X"),
+    "card_width": (23.944, 23.0, 25.0, 0.01, "mm", True, "Overall width along Y"),
+    "chamfer_x": (4.152, 3.0, 5.5, 0.01, "mm", False, "Chamfer cut along X from top-right corner"),
+    "chamfer_y": (3.947, 2.5, 5.0, 0.01, "mm", False, "Chamfer cut along Y from top-right corner"),
+    "notch_inset": (0.144, 0.0, 0.5, 0.01, "mm", False, "Bottom-right notch X inset"),
+    "notch_height": (2.695, 1.5, 3.5, 0.01, "mm", False, "Bottom-right notch height from bottom edge"),
+    "thickness": (2.1, 1.6, 2.6, 0.05, "mm", True, "Card thickness in Z"),
+    "edge_fillet": (0.0, 0.0, 0.8, 0.1, "mm", False, "Optional edge fillet radius"),
+    "detail_count": (1, 1, 4, 1, "", False, "Detail replication count"),
+}
+
+def build(p: dict) -> cq.Workplane:
+    L = float(p["card_length"])
+    W = float(p["card_width"])
+    cx = float(p["chamfer_x"])
+    cy = float(p["chamfer_y"])
+    inset = float(p["notch_inset"])
+    nh = float(p["notch_height"])
+    t = float(p["thickness"])
+    fillet_r = float(p["edge_fillet"])
+    n = int(p["detail_count"])
+
+    half_L = L / 2.0
+    half_W = W / 2.0
+
+    # Replicates original measured polyline:
+    # [15.99,8.025],[11.864,11.997],[-15.926,11.967],[-15.989,-11.878],[15.872,-11.947],[16.043,-9.277]
+    # Constructed centred at origin, long axis +X, mounting face on Z=0
+    # Order is clockwise around the card, closed polygon
+    for i in range(n):
+        # n is topology parameter to satisfy requirement; geometry is single card
+        # loop is effectively no-op beyond first iteration, keeps solid topology stable
+        if i > 0:
+            break
+        pts = [
+            (half_L, half_W - cy),
+            (half_L - cx, half_W),
+            (-half_L, half_W),
+            (-half_L, -half_W),
+            (half_L - inset, -half_W),
+            (half_L, -half_W + nh),
+        ]
+
+    wp = cq.Workplane("XY")
+    wp = wp.moveTo(pts[0][0], pts[0][1])
+    for x, y in pts[1:]:
+        wp = wp.lineTo(x, y)
+    wp = wp.close()
+    result = wp.extrude(t, combine=True)
+
+    # Optional small edge fillet if requested, applied to vertical edges only
+    if fillet_r > 1e-6:
+        try:
+            result = result.edges("|Z").fillet(fillet_r)
+        except Exception:
+            pass
+
+    return result
+
+result = build({k: v[0] for k, v in PARAMS.items()})

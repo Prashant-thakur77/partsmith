@@ -1,0 +1,103 @@
+{
+ "suite": "reference_objects",
+ "config": "PS",
+ "sample_id": "ref-aa-cell-paper-s690216",
+ "split": "held_out",
+ "kind": "reference_object",
+ "preset": "paper",
+ "mode": "live",
+ "gt_source": "reference_spec",
+ "status": "best_effort",
+ "verified": false,
+ "iterations": 3,
+ "iterations_to_converge": null,
+ "strategy": "free_code",
+ "template": null,
+ "verifier_max_error_mm": 1.120936410569328,
+ "retake_reason": null,
+ "failed_checks": [],
+ "usd": 0.558093,
+ "tokens_in": 186623,
+ "tokens_out": 102740,
+ "model_calls": 27,
+ "model_ms": 804202,
+ "provider_modes": [
+  "live"
+ ],
+ "providers": {
+  "segment": [
+   "meta:sam-3.1"
+  ],
+  "understand": [
+   "meta:muse-spark-1.3"
+  ],
+  "plan": [
+   "baseten:meta-models/muse-spark-open-1026"
+  ],
+  "build": [
+   "baseten:meta-models/muse-spark-open-1026"
+  ],
+  "fix_agent": [
+   "baseten:meta-models/muse-spark-open-1026"
+  ],
+  "judge": [
+   "meta:muse-spark-1.3"
+  ],
+  "fix": [
+   "baseten:meta-models/muse-spark-open",
+   "meta:muse-spark-1.3"
+  ]
+ },
+ "convergence": [
+  {
+   "iter": 1,
+   "hausdorff_mm": 1.120936410569328,
+   "iou": 0.9941256052406722,
+   "max_error_mm": 1.120936410569328
+  },
+  {
+   "iter": 2,
+   "hausdorff_mm": 1.120936410569328,
+   "iou": 0.9941256052406722,
+   "max_error_mm": 1.120936410569328
+  },
+  {
+   "iter": 3,
+   "hausdorff_mm": 1.120936410569328,
+   "iou": 0.9941256052406722,
+   "max_error_mm": 1.120936410569328
+  }
+ ],
+ "wall_s": 834.75,
+ "dims": [
+  {
+   "name": "length",
+   "gt_mm": 50.5,
+   "model_mm": 49.4165,
+   "error_mm": -1.0835,
+   "within_spec": true
+  },
+  {
+   "name": "width",
+   "gt_mm": 14.5,
+   "model_mm": 14.3131,
+   "error_mm": -0.1869,
+   "within_spec": true
+  }
+ ],
+ "missed": [],
+ "extra_holes": 0,
+ "pass_0_3": false,
+ "pass_0_5": false,
+ "valid": true,
+ "valid_reason": "",
+ "failure_category": "judge_veto",
+ "overlay": "overlay.png",
+ "failure": "worst length -1.08 mm",
+ "git": {
+  "sha": null,
+  "dirty": false
+ },
+ "scale_suite": "reference_objects",
+ "tree": "bb75824+308438f7af72"
+}

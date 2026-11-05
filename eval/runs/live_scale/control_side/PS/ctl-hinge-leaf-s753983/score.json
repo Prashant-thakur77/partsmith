@@ -1,0 +1,127 @@
+{
+ "suite": "control",
+ "config": "PS",
+ "sample_id": "ctl-hinge-leaf-s753983",
+ "split": "held_out",
+ "kind": "control",
+ "preset": "paper",
+ "mode": "live",
+ "gt_source": "expected_outcome",
+ "status": "verified",
+ "verified": true,
+ "iterations": 2,
+ "iterations_to_converge": 2,
+ "strategy": "template",
+ "template": "hinge_leaf",
+ "verifier_max_error_mm": 0.23821363130034523,
+ "retake_reason": null,
+ "failed_checks": [],
+ "usd": 0.171134,
+ "tokens_in": 79930,
+ "tokens_out": 22662,
+ "model_calls": 23,
+ "model_ms": 202239,
+ "provider_modes": [
+  "live"
+ ],
+ "providers": {
+  "segment": [
+   "meta:sam-3.1"
+  ],
+  "understand": [
+   "meta:muse-spark-1.3"
+  ],
+  "segment_points": [
+   "meta:sam-3.1"
+  ],
+  "plan": [
+   "baseten:meta-models/muse-spark-open-1026"
+  ],
+  "build": [
+   "baseten:meta-models/muse-spark-open-1026"
+  ],
+  "fix_agent": [
+   "baseten:meta-models/muse-spark-open-1026"
+  ],
+  "judge": [
+   "meta:muse-spark-1.3"
+  ]
+ },
+ "convergence": [
+  {
+   "iter": 1,
+   "hausdorff_mm": 1.994963271897188,
+   "iou": 0.9273255813953488,
+   "max_error_mm": 1.994963271897188
+  },
+  {
+   "iter": 2,
+   "hausdorff_mm": 0.23821363130034523,
+   "iou": 0.9811935254793447,
+   "max_error_mm": 0.23821363130034523
+  }
+ ],
+ "wall_s": 284.1,
+ "dims": [
+  {
+   "name": "length",
+   "gt_mm": 75.7,
+   "model_mm": 75.6,
+   "error_mm": -0.1
+  },
+  {
+   "name": "width",
+   "gt_mm": 20.499687,
+   "model_mm": 20.3993,
+   "error_mm": -0.1004
+  },
+  {
+   "name": "thickness",
+   "gt_mm": 6.499283,
+   "model_mm": 6.5999,
+   "error_mm": 0.1006
+  },
+  {
+   "name": "hole_1.diameter",
+   "gt_mm": 2.75,
+   "model_mm": 2.7,
+   "error_mm": -0.05
+  },
+  {
+   "name": "hole_2.diameter",
+   "gt_mm": 2.75,
+   "model_mm": 2.7,
+   "error_mm": -0.05
+  },
+  {
+   "name": "hole_3.diameter",
+   "gt_mm": 2.75,
+   "model_mm": 2.7,
+   "error_mm": -0.05
+  },
+  {
+   "name": "hole_4.diameter",
+   "gt_mm": 2.75,
+   "model_mm": 2.7,
+   "error_mm": -0.05
+  }
+ ],
+ "missed": [],
+ "extra_holes": 0,
+ "pass_0_3": true,
+ "pass_0_5": true,
+ "valid": true,
+ "valid_reason": "",
+ "expected_outcome": "accept",
+ "expected_checks": [],
+ "expected_why": "intact part, normal photo",
+ "outcome": "accept",
+ "outcome_correct": true,
+ "failure_category": null,
+ "git": {
+  "sha": null,
+  "dirty": false
+ },
+ "scale_suite": "control_side",
+ "tree": "bb75824+308438f7af72"
+}

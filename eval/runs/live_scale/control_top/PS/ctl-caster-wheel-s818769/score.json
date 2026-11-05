@@ -1,0 +1,163 @@
+{
+ "suite": "control",
+ "config": "PS",
+ "sample_id": "ctl-caster-wheel-s818769",
+ "split": "held_out",
+ "kind": "control",
+ "preset": "paper",
+ "mode": "live",
+ "gt_source": "expected_outcome",
+ "status": "best_effort",
+ "verified": false,
+ "iterations": 5,
+ "iterations_to_converge": 4,
+ "strategy": "free_code",
+ "template": "caster_wheel",
+ "verifier_max_error_mm": 0.2535757480189373,
+ "retake_reason": null,
+ "failed_checks": [],
+ "usd": 0.40622,
+ "tokens_in": 280725,
+ "tokens_out": 53771,
+ "model_calls": 40,
+ "model_ms": 508538,
+ "provider_modes": [
+  "live"
+ ],
+ "providers": {
+  "segment": [
+   "meta:sam-3.1"
+  ],
+  "understand": [
+   "meta:muse-spark-1.3"
+  ],
+  "segment_points": [
+   "meta:sam-3.1"
+  ],
+  "plan": [
+   "baseten:meta-models/muse-spark-open-1026"
+  ],
+  "build": [
+   "baseten:meta-models/muse-spark-open-1026"
+  ],
+  "fix_agent": [
+   "baseten:meta-models/muse-spark-open-1026"
+  ],
+  "judge": [
+   "meta:muse-spark-1.3"
+  ]
+ },
+ "convergence": [
+  {
+   "iter": 1,
+   "hausdorff_mm": 1.386438042531636,
+   "iou": 0.9405984773977343,
+   "max_error_mm": 1.386438042531636
+  },
+  {
+   "iter": 2,
+   "hausdorff_mm": 0.8154016427596154,
+   "iou": 0.9567240706682272,
+   "max_error_mm": 0.9909999999999997
+  },
+  {
+   "iter": 3,
+   "hausdorff_mm": 6.603386575798386,
+   "iou": 0.8005312453884948,
+   "max_error_mm": 6.603386575798386
+  },
+  {
+   "iter": 4,
+   "hausdorff_mm": 0.373590374024847,
+   "iou": 0.9886686077780457,
+   "max_error_mm": 0.373590374024847
+  },
+  {
+   "iter": 5,
+   "hausdorff_mm": 0.2535757480189373,
+   "iou": 0.992595883311121,
+   "max_error_mm": 0.2535757480189373
+  }
+ ],
+ "wall_s": 711.65,
+ "dims": [
+  {
+   "name": "length",
+   "gt_mm": 57.9,
+   "model_mm": 57.8201,
+   "error_mm": -0.0799
+  },
+  {
+   "name": "width",
+   "gt_mm": 57.891818,
+   "model_mm": 57.7593,
+   "error_mm": -0.1326
+  },
+  {
+   "name": "thickness",
+   "gt_mm": 19.1,
+   "model_mm": 19.0,
+   "error_mm": -0.1
+  },
+  {
+   "name": "hole_1.diameter",
+   "gt_mm": 10.2,
+   "model_mm": 10.201,
+   "error_mm": 0.001
+  },
+  {
+   "name": "hole_2.diameter",
+   "gt_mm": 10.2,
+   "model_mm": 10.209,
+   "error_mm": 0.009
+  },
+  {
+   "name": "hole_3.diameter",
+   "gt_mm": 10.2,
+   "model_mm": 10.22,
+   "error_mm": 0.02
+  },
+  {
+   "name": "hole_4.diameter",
+   "gt_mm": 8.0,
+   "model_mm": 7.704,
+   "error_mm": -0.296
+  },
+  {
+   "name": "hole_5.diameter",
+   "gt_mm": 10.2,
+   "model_mm": 9.951,
+   "error_mm": -0.249
+  },
+  {
+   "name": "hole_6.diameter",
+   "gt_mm": 10.2,
+   "model_mm": 9.935,
+   "error_mm": -0.265
+  },
+  {
+   "name": "hole_7.diameter",
+   "gt_mm": 10.2,
+   "model_mm": 9.924,
+   "error_mm": -0.276
+  }
+ ],
+ "missed": [],
+ "extra_holes": 0,
+ "pass_0_3": true,
+ "pass_0_5": true,
+ "valid": true,
+ "valid_reason": "",
+ "expected_outcome": "accept",
+ "expected_checks": [],
+ "expected_why": "intact part, normal photo",
+ "outcome": "accept",
+ "outcome_correct": true,
+ "failure_category": null,
+ "git": {
+  "sha": null,
+  "dirty": false
+ },
+ "scale_suite": "control_top",
+ "tree": "bb75824+308438f7af72"
+}

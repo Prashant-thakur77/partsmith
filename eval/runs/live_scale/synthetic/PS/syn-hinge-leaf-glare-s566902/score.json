@@ -1,0 +1,116 @@
+{
+ "suite": "synthetic",
+ "config": "PS",
+ "sample_id": "syn-hinge-leaf-glare-s566902",
+ "split": "held_out",
+ "kind": "template",
+ "preset": "glare",
+ "mode": "live",
+ "gt_source": "synthetic_exact",
+ "status": "best_effort",
+ "verified": false,
+ "iterations": 4,
+ "iterations_to_converge": null,
+ "strategy": "template",
+ "template": "hinge_leaf",
+ "verifier_max_error_mm": 1.749480600526428,
+ "retake_reason": null,
+ "failed_checks": [],
+ "usd": 0.306094,
+ "tokens_in": 287555,
+ "tokens_out": 28236,
+ "model_calls": 32,
+ "model_ms": 234994,
+ "provider_modes": [
+  "live"
+ ],
+ "providers": {
+  "segment": [
+   "meta:sam-3.1"
+  ],
+  "understand": [
+   "meta:muse-spark-1.3"
+  ],
+  "segment_points": [
+   "meta:sam-3.1"
+  ],
+  "plan": [
+   "baseten:meta-models/muse-spark-open-1026"
+  ],
+  "build": [
+   "baseten:meta-models/muse-spark-open-1026"
+  ],
+  "fix_agent": [
+   "baseten:meta-models/muse-spark-open-1026"
+  ],
+  "judge": [
+   "meta:muse-spark-1.3"
+  ]
+ },
+ "convergence": [
+  {
+   "iter": 1,
+   "hausdorff_mm": 1.7664555331560585,
+   "iou": 0.9054495356669048,
+   "max_error_mm": 1.7664555331560585
+  },
+  {
+   "iter": 2,
+   "hausdorff_mm": 1.749480600526428,
+   "iou": 0.914568206395798,
+   "max_error_mm": 1.749480600526428
+  },
+  {
+   "iter": 3,
+   "hausdorff_mm": 2.262818175927036,
+   "iou": 0.8393624178440201,
+   "max_error_mm": 2.262818175927036
+  },
+  {
+   "iter": 4,
+   "hausdorff_mm": 2.5802563067797055,
+   "iou": 0.7619545335772145,
+   "max_error_mm": 2.5802563067797055
+  }
+ ],
+ "wall_s": 459.47,
+ "dims": [
+  {
+   "name": "length",
+   "gt_mm": 68.0,
+   "model_mm": 67.5,
+   "error_mm": -0.5
+  },
+  {
+   "name": "width",
+   "gt_mm": 20.499208,
+   "model_mm": 20.6396,
+   "error_mm": 0.1404
+  },
+  {
+   "name": "thickness",
+   "gt_mm": 6.299971,
+   "model_mm": 6.2996,
+   "error_mm": -0.0004
+  }
+ ],
+ "missed": [
+  "hole_1.diameter",
+  "hole_2.diameter",
+  "hole_3.diameter"
+ ],
+ "extra_holes": 0,
+ "pass_0_3": false,
+ "pass_0_5": false,
+ "valid": true,
+ "valid_reason": "",
+ "failure_category": "topology_wrong",
+ "overlay": "overlay.png",
+ "failure": "worst length -0.50 mm; missing hole_1.diameter, hole_2.diameter, hole_3.diameter",
+ "git": {
+  "sha": null,
+  "dirty": false
+ },
+ "scale_suite": "synthetic",
+ "tree": "bb75824+308438f7af72"
+}

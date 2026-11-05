@@ -1,0 +1,110 @@
+{
+ "suite": "reference_objects",
+ "config": "PS",
+ "sample_id": "ref-lego-2x4-paper-s802501",
+ "split": "held_out",
+ "kind": "reference_object",
+ "preset": "paper",
+ "mode": "live",
+ "gt_source": "reference_spec",
+ "status": "best_effort",
+ "verified": false,
+ "iterations": 4,
+ "iterations_to_converge": null,
+ "strategy": "free_code",
+ "template": null,
+ "verifier_max_error_mm": 0.7951712547795947,
+ "retake_reason": null,
+ "failed_checks": [],
+ "usd": 0.546692,
+ "tokens_in": 523570,
+ "tokens_out": 64555,
+ "model_calls": 61,
+ "model_ms": 491795,
+ "provider_modes": [
+  "live"
+ ],
+ "providers": {
+  "segment": [
+   "meta:sam-3.1"
+  ],
+  "understand": [
+   "meta:muse-spark-1.3"
+  ],
+  "plan": [
+   "baseten:meta-models/muse-spark-open-1026"
+  ],
+  "build": [
+   "baseten:meta-models/muse-spark-open-1026"
+  ],
+  "fix_agent": [
+   "baseten:meta-models/muse-spark-open-1026"
+  ],
+  "judge": [
+   "meta:muse-spark-1.3"
+  ]
+ },
+ "convergence": [
+  {
+   "iter": 1,
+   "hausdorff_mm": 0.9830269080878955,
+   "iou": 0.9577248270561107,
+   "max_error_mm": 0.9830269080878955
+  },
+  {
+   "iter": 2,
+   "hausdorff_mm": 1.0274856631330433,
+   "iou": 0.9367541766109785,
+   "max_error_mm": 1.0274856631330433
+  },
+  {
+   "iter": 3,
+   "hausdorff_mm": 0.843699811953642,
+   "iou": 0.9568612585291888,
+   "max_error_mm": 0.843699811953642
+  },
+  {
+   "iter": 4,
+   "hausdorff_mm": 0.7951712547795947,
+   "iou": 0.9570087798970632,
+   "max_error_mm": 0.7951712547795947
+  }
+ ],
+ "wall_s": 732.68,
+ "dims": [
+  {
+   "name": "length",
+   "gt_mm": 31.8,
+   "model_mm": 31.8,
+   "error_mm": 0.0,
+   "within_spec": true
+  },
+  {
+   "name": "width",
+   "gt_mm": 15.8,
+   "model_mm": 15.8,
+   "error_mm": 0.0,
+   "within_spec": true
+  },
+  {
+   "name": "thickness",
+   "gt_mm": 11.3,
+   "model_mm": 11.7,
+   "error_mm": 0.4,
+   "within_spec": false
+  }
+ ],
+ "missed": [],
+ "extra_holes": 0,
+ "pass_0_3": false,
+ "pass_0_5": true,
+ "valid": true,
+ "valid_reason": "",
+ "failure_category": null,
+ "git": {
+  "sha": null,
+  "dirty": false
+ },
+ "scale_suite": "reference_objects",
+ "tree": "bb75824+308438f7af72"
+}

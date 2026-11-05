@@ -1,0 +1,117 @@
+{
+ "suite": "control",
+ "config": "PS",
+ "sample_id": "ctl-cupboard-latch-s396988",
+ "split": "held_out",
+ "kind": "control",
+ "preset": "clean",
+ "mode": "live",
+ "gt_source": "expected_outcome",
+ "status": "verified",
+ "verified": true,
+ "iterations": 3,
+ "iterations_to_converge": 1,
+ "strategy": "template",
+ "template": "cupboard_latch",
+ "verifier_max_error_mm": 0.4142881476591027,
+ "retake_reason": null,
+ "failed_checks": [],
+ "usd": 0.168776,
+ "tokens_in": 105183,
+ "tokens_out": 22023,
+ "model_calls": 25,
+ "model_ms": 149373,
+ "provider_modes": [
+  "live"
+ ],
+ "providers": {
+  "segment": [
+   "meta:sam-3.1"
+  ],
+  "understand": [
+   "meta:muse-spark-1.3"
+  ],
+  "segment_points": [
+   "meta:sam-3.1"
+  ],
+  "plan": [
+   "baseten:meta-models/muse-spark-open-1026"
+  ],
+  "build": [
+   "baseten:meta-models/muse-spark-open-1026"
+  ],
+  "fix_agent": [
+   "baseten:meta-models/muse-spark-open-1026"
+  ],
+  "judge": [
+   "meta:muse-spark-1.3"
+  ]
+ },
+ "convergence": [
+  {
+   "iter": 1,
+   "hausdorff_mm": 0.3304054859259403,
+   "iou": 0.9833037909543142,
+   "max_error_mm": 0.3304054859259403
+  },
+  {
+   "iter": 2,
+   "hausdorff_mm": 0.4142881476591027,
+   "iou": 0.9817125277730302,
+   "max_error_mm": 0.4142881476591027
+  },
+  {
+   "iter": 3,
+   "hausdorff_mm": 0.3088776150863435,
+   "iou": 0.9836215782842744,
+   "max_error_mm": 0.3088776150863435
+  }
+ ],
+ "wall_s": 202.37,
+ "dims": [
+  {
+   "name": "length",
+   "gt_mm": 42.896612,
+   "model_mm": 42.7866,
+   "error_mm": -0.11
+  },
+  {
+   "name": "width",
+   "gt_mm": 10.9,
+   "model_mm": 10.88,
+   "error_mm": -0.02
+  },
+  {
+   "name": "thickness",
+   "gt_mm": 7.6,
+   "model_mm": 6.5,
+   "error_mm": -1.1
+  },
+  {
+   "name": "hole_1.diameter",
+   "gt_mm": 4.6,
+   "model_mm": 4.55,
+   "error_mm": -0.05
+  }
+ ],
+ "missed": [],
+ "extra_holes": 0,
+ "pass_0_3": false,
+ "pass_0_5": false,
+ "valid": true,
+ "valid_reason": "",
+ "expected_outcome": "accept",
+ "expected_checks": [],
+ "expected_why": "intact part, normal photo",
+ "outcome": "accept",
+ "outcome_correct": true,
+ "failure_category": "dim_off",
+ "overlay": "overlay.png",
+ "failure": "worst thickness -1.10 mm",
+ "git": {
+  "sha": null,
+  "dirty": false
+ },
+ "scale_suite": "control_top",
+ "tree": "bb75824+308438f7af72"
+}

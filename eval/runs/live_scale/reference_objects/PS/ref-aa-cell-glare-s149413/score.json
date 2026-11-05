@@ -1,0 +1,115 @@
+{
+ "suite": "reference_objects",
+ "config": "PS",
+ "sample_id": "ref-aa-cell-glare-s149413",
+ "split": "held_out",
+ "kind": "reference_object",
+ "preset": "glare",
+ "mode": "live",
+ "gt_source": "reference_spec",
+ "status": "best_effort",
+ "verified": false,
+ "iterations": 5,
+ "iterations_to_converge": null,
+ "strategy": "free_code",
+ "template": null,
+ "verifier_max_error_mm": 0.6170625668750966,
+ "retake_reason": null,
+ "failed_checks": [],
+ "usd": 0.751578,
+ "tokens_in": 404464,
+ "tokens_out": 125412,
+ "model_calls": 52,
+ "model_ms": 740933,
+ "provider_modes": [
+  "live"
+ ],
+ "providers": {
+  "segment": [
+   "meta:sam-3.1"
+  ],
+  "understand": [
+   "meta:muse-spark-1.3"
+  ],
+  "plan": [
+   "baseten:meta-models/muse-spark-open-1026"
+  ],
+  "build": [
+   "baseten:meta-models/muse-spark-open-1026"
+  ],
+  "fix_agent": [
+   "baseten:meta-models/muse-spark-open-1026"
+  ],
+  "judge": [
+   "meta:muse-spark-1.3"
+  ],
+  "fix": [
+   "baseten:meta-models/muse-spark-open",
+   "meta:muse-spark-1.3"
+  ]
+ },
+ "convergence": [
+  {
+   "iter": 1,
+   "hausdorff_mm": 0.6678811236031694,
+   "iou": 0.9919726213543371,
+   "max_error_mm": 0.6678811236031694
+  },
+  {
+   "iter": 2,
+   "hausdorff_mm": 0.6678811236031694,
+   "iou": 0.9919726213543371,
+   "max_error_mm": 0.6678811236031694
+  },
+  {
+   "iter": 3,
+   "hausdorff_mm": 0.6291693449716584,
+   "iou": 0.9856977388326534,
+   "max_error_mm": 0.6291693449716584
+  },
+  {
+   "iter": 4,
+   "hausdorff_mm": 0.6170625668750966,
+   "iou": 0.9861754633360194,
+   "max_error_mm": 0.6170625668750966
+  },
+  {
+   "iter": 5,
+   "hausdorff_mm": 0.6170625668750966,
+   "iou": 0.9861754633360194,
+   "max_error_mm": 0.6170625668750966
+  }
+ ],
+ "wall_s": 834.47,
+ "dims": [
+  {
+   "name": "length",
+   "gt_mm": 50.5,
+   "model_mm": 49.9909,
+   "error_mm": -0.5091,
+   "within_spec": true
+  },
+  {
+   "name": "width",
+   "gt_mm": 14.5,
+   "model_mm": 11.074,
+   "error_mm": -3.426,
+   "within_spec": false
+  }
+ ],
+ "missed": [],
+ "extra_holes": 0,
+ "pass_0_3": false,
+ "pass_0_5": false,
+ "valid": true,
+ "valid_reason": "",
+ "failure_category": "judge_veto",
+ "overlay": "overlay.png",
+ "failure": "worst width -3.43 mm",
+ "git": {
+  "sha": null,
+  "dirty": false
+ },
+ "scale_suite": "reference_objects",
+ "tree": "bb75824+308438f7af72"
+}

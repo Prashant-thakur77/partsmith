@@ -1,0 +1,117 @@
+import cadquery as cq
+import math
+
+PARAMS = {
+    "thickness": (19.5, 10.0, 30.0, 0.1, "mm", False, "Wheel axial thickness"),
+    "center_bore_dia": (7.882, 5.0, 10.0, 0.05, "mm", True, "Center axle bore diameter"),
+    "hole_1_dia": (12.117, 10.0, 14.0, 0.05, "mm", True, "Outer hole 1 diameter"),
+    "hole_2_dia": (12.147, 10.0, 14.0, 0.05, "mm", True, "Outer hole 2 diameter"),
+    "hole_4_dia": (12.11, 10.0, 14.0, 0.05, "mm", True, "Outer hole 4 diameter"),
+    "hole_5_dia": (12.143, 10.0, 14.0, 0.05, "mm", True, "Outer hole 5 diameter"),
+    "clearance": (0.2, 0.0, 0.6, 0.05, "mm", True, "Fit clearance"),
+    "outer_hole_count": (4.0, 2, 4, 1, "mm", False, "Number of outer lightening holes"),
+}
+
+# Base profile polyline from PartSpec (measured, sigma 0.084mm)
+PROFILE_POINTS = [
+    (-25.057, -16.064),
+    (-21.535, -20.456),
+    (-17.216, -24.125),
+    (-14.596, -25.774),
+    (-11.87, -27.099),
+    (-8.983, -28.173),
+    (-6.18, -28.904),
+    (-0.911, -29.538),
+    (4.995, -29.142),
+    (11.041, -27.462),
+    (15.959, -24.96),
+    (18.702, -23.001),
+    (20.972, -20.999),
+    (24.672, -16.646),
+    (27.143, -12.143),
+    (28.904, -6.829),
+    (29.624, -1.519),
+    (29.353, 4.142),
+    (27.805, 10.192),
+    (26.495, 13.179),
+    (25.04, 15.758),
+    (21.655, 20.133),
+    (17.36, 23.924),
+    (14.693, 25.643),
+    (12.123, 26.945),
+    (9.683, 27.922),
+    (6.236, 28.876),
+    (2.692, 29.424),
+    (0.033, 29.538),
+    (-5.443, 29.033),
+    (-10.746, 27.527),
+    (-16.127, 24.78),
+    (-20.449, 21.359),
+    (-24.275, 16.912),
+    (-26.126, 13.893),
+    (-27.332, 11.369),
+    (-28.998, 6.078),
+    (-29.549, 2.448),
+    (-29.566, -2.443),
+    (-29.058, -6.167),
+    (-27.509, -11.247),
+]
+
+# Hole centers from PartSpec
+HOLE_CENTERS = {
+    "hole_1": (-15.645, 8.567),
+    "hole_2": (-8.413, -15.496),
+    "hole_3": (0.0, 0.151),
+    "hole_4": (8.409, 15.795),
+    "hole_5": (15.639, -8.266),
+}
+
+def build(p: dict) -> cq.Workplane:
+    thickness = float(p["thickness"])
+    clearance = float(p["clearance"])
+    center_dia = float(p["center_bore_dia"]) + float(clearance)
+    # outer diameters include clearance for fit
+    h1_dia = float(p["hole_1_dia"]) + float(clearance)
+    h2_dia = float(p["hole_2_dia"]) + float(clearance)
+    h4_dia = float(p["hole_4_dia"]) + float(clearance)
+    h5_dia = float(p["hole_5_dia"]) + float(clearance)
+    outer_count = int(p["outer_hole_count"])
+
+    # Solid wheel body extruded from Z=0 to thickness, centred in X/Y by profile
+    base = (
+        cq.Workplane("XY")
+        .polyline(PROFILE_POINTS)
+        .close()
+        .extrude(thickness, combine=True)
+    )
+
+    # Center bore - through hole
+    cx, cy = HOLE_CENTERS["hole_3"]
+    base = (
+        base.faces(">Z").workplane()
+        .pushPoints([(cx, cy)])
+        .circle(center_dia / 2.0)
+        .cutThruAll()
+    )
+
+    # Outer holes list in order
+    outer_holes = [
+        (HOLE_CENTERS["hole_1"][0], HOLE_CENTERS["hole_1"][1], h1_dia),
+        (HOLE_CENTERS["hole_2"][0], HOLE_CENTERS["hole_2"][1], h2_dia),
+        (HOLE_CENTERS["hole_4"][0], HOLE_CENTERS["hole_4"][1], h4_dia),
+        (HOLE_CENTERS["hole_5"][0], HOLE_CENTERS["hole_5"][1], h5_dia),
+    ]
+
+    # Apply topology parameter: only first N outer holes
+    for i in range(min(outer_count, len(outer_holes))):
+        x, y, d = outer_holes[i]
+        base = (
+            base.faces(">Z").workplane()
+            .pushPoints([(x, y)])
+            .circle(d / 2.0)
+            .cutThruAll()
+        )
+
+    return base
+
+result = build({k: v[0] for k, v in PARAMS.items()})

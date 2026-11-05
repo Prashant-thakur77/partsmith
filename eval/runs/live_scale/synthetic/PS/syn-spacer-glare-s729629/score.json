@@ -1,0 +1,108 @@
+{
+ "suite": "synthetic",
+ "config": "PS",
+ "sample_id": "syn-spacer-glare-s729629",
+ "split": "held_out",
+ "kind": "template",
+ "preset": "glare",
+ "mode": "live",
+ "gt_source": "synthetic_exact",
+ "status": "verified",
+ "verified": true,
+ "iterations": 2,
+ "iterations_to_converge": 2,
+ "strategy": "template",
+ "template": "spacer",
+ "verifier_max_error_mm": 0.18005566695510022,
+ "retake_reason": null,
+ "failed_checks": [],
+ "usd": 0.117118,
+ "tokens_in": 43952,
+ "tokens_out": 16733,
+ "model_calls": 18,
+ "model_ms": 155632,
+ "provider_modes": [
+  "live",
+  "mock"
+ ],
+ "providers": {
+  "capture_triage": [
+   "mock:muse-glimmer"
+  ],
+  "segment": [
+   "meta:sam-3.1"
+  ],
+  "understand": [
+   "meta:muse-spark-1.3"
+  ],
+  "segment_points": [
+   "meta:sam-3.1"
+  ],
+  "plan": [
+   "baseten:meta-models/muse-spark-open-1026"
+  ],
+  "build": [
+   "baseten:meta-models/muse-spark-open-1026"
+  ],
+  "fix_agent": [
+   "baseten:meta-models/muse-spark-open-1026"
+  ],
+  "judge": [
+   "meta:muse-spark-1.3"
+  ]
+ },
+ "convergence": [
+  {
+   "iter": 1,
+   "hausdorff_mm": 0.8697926943728713,
+   "iou": 0.8970964987190435,
+   "max_error_mm": 0.8697926943728713
+  },
+  {
+   "iter": 2,
+   "hausdorff_mm": 0.18005566695510022,
+   "iou": 0.9761273209549072,
+   "max_error_mm": 0.18005566695510022
+  }
+ ],
+ "wall_s": 169.75,
+ "dims": [
+  {
+   "name": "length",
+   "gt_mm": 7.298806,
+   "model_mm": 7.3498,
+   "error_mm": 0.051
+  },
+  {
+   "name": "width",
+   "gt_mm": 6.3,
+   "model_mm": 6.3989,
+   "error_mm": 0.0989
+  },
+  {
+   "name": "thickness",
+   "gt_mm": 6.3,
+   "model_mm": 6.3989,
+   "error_mm": 0.0989
+  },
+  {
+   "name": "hole_1.diameter",
+   "gt_mm": 2.75,
+   "model_mm": 2.657,
+   "error_mm": -0.093
+  }
+ ],
+ "missed": [],
+ "extra_holes": 0,
+ "pass_0_3": true,
+ "pass_0_5": true,
+ "valid": true,
+ "valid_reason": "",
+ "failure_category": null,
+ "git": {
+  "sha": null,
+  "dirty": false
+ },
+ "scale_suite": "synthetic",
+ "tree": "bb75824+308438f7af72"
+}

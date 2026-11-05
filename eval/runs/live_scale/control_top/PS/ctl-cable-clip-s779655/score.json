@@ -1,0 +1,117 @@
+{
+ "suite": "control",
+ "config": "PS",
+ "sample_id": "ctl-cable-clip-s779655",
+ "split": "held_out",
+ "kind": "control",
+ "preset": "paper",
+ "mode": "live",
+ "gt_source": "expected_outcome",
+ "status": "verified",
+ "verified": true,
+ "iterations": 2,
+ "iterations_to_converge": 1,
+ "strategy": "template",
+ "template": "cable_clip",
+ "verifier_max_error_mm": 0.24914027391243998,
+ "retake_reason": null,
+ "failed_checks": [],
+ "usd": 0.085379,
+ "tokens_in": 35101,
+ "tokens_out": 11591,
+ "model_calls": 14,
+ "model_ms": 90862,
+ "provider_modes": [
+  "live"
+ ],
+ "providers": {
+  "segment": [
+   "meta:sam-3.1"
+  ],
+  "understand": [
+   "meta:muse-spark-1.3"
+  ],
+  "segment_points": [
+   "meta:sam-3.1"
+  ],
+  "plan": [
+   "baseten:meta-models/muse-spark-open-1026"
+  ],
+  "build": [
+   "baseten:meta-models/muse-spark-open-1026"
+  ],
+  "fix_agent": [
+   "baseten:meta-models/muse-spark-open-1026"
+  ],
+  "judge": [
+   "meta:muse-spark-1.3"
+  ]
+ },
+ "convergence": [
+  {
+   "iter": 1,
+   "hausdorff_mm": 0.3468705000151431,
+   "iou": 0.9550480769230769,
+   "max_error_mm": 0.4649999999999963
+  },
+  {
+   "iter": 2,
+   "hausdorff_mm": 0.24914027391243998,
+   "iou": 0.970973249857712,
+   "max_error_mm": 0.24914027391243998
+  }
+ ],
+ "wall_s": 109.56,
+ "dims": [
+  {
+   "name": "length",
+   "gt_mm": 39.6,
+   "model_mm": 39.2,
+   "error_mm": -0.4
+  },
+  {
+   "name": "width",
+   "gt_mm": 12.0,
+   "model_mm": 12.29,
+   "error_mm": 0.29
+  },
+  {
+   "name": "thickness",
+   "gt_mm": 9.22,
+   "model_mm": 5.6397,
+   "error_mm": -3.5803
+  },
+  {
+   "name": "hole_1.diameter",
+   "gt_mm": 3.9,
+   "model_mm": 3.81,
+   "error_mm": -0.09
+  },
+  {
+   "name": "hole_2.diameter",
+   "gt_mm": 3.9,
+   "model_mm": 3.81,
+   "error_mm": -0.09
+  }
+ ],
+ "missed": [],
+ "extra_holes": 0,
+ "pass_0_3": false,
+ "pass_0_5": false,
+ "valid": true,
+ "valid_reason": "",
+ "expected_outcome": "accept",
+ "expected_checks": [],
+ "expected_why": "intact part, normal photo",
+ "outcome": "accept",
+ "outcome_correct": true,
+ "failure_category": "dim_off",
+ "overlay": "overlay.png",
+ "failure": "worst thickness -3.58 mm",
+ "git": {
+  "sha": null,
+  "dirty": false
+ },
+ "scale_suite": "control_top",
+ "tree": "bb75824+308438f7af72"
+}

@@ -1,0 +1,126 @@
+{
+ "suite": "control",
+ "config": "PS",
+ "sample_id": "ctl-knob-s618029",
+ "split": "held_out",
+ "kind": "control",
+ "preset": "clean",
+ "mode": "live",
+ "gt_source": "expected_outcome",
+ "status": "best_effort",
+ "verified": false,
+ "iterations": 6,
+ "iterations_to_converge": 6,
+ "strategy": "free_code",
+ "template": "knob",
+ "verifier_max_error_mm": 0.4244467043966811,
+ "retake_reason": null,
+ "failed_checks": [],
+ "usd": 0.390873,
+ "tokens_in": 329352,
+ "tokens_out": 49852,
+ "model_calls": 43,
+ "model_ms": 346579,
+ "provider_modes": [
+  "live"
+ ],
+ "providers": {
+  "segment": [
+   "meta:sam-3.1"
+  ],
+  "understand": [
+   "meta:muse-spark-1.3"
+  ],
+  "plan": [
+   "baseten:meta-models/muse-spark-open-1026"
+  ],
+  "build": [
+   "baseten:meta-models/muse-spark-open-1026"
+  ],
+  "fix_agent": [
+   "baseten:meta-models/muse-spark-open-1026"
+  ],
+  "judge": [
+   "meta:muse-spark-1.3"
+  ]
+ },
+ "convergence": [
+  {
+   "iter": 1,
+   "hausdorff_mm": 0.6418874802003236,
+   "iou": 0.9706528963648449,
+   "max_error_mm": 0.6418874802003236
+  },
+  {
+   "iter": 2,
+   "hausdorff_mm": 0.6505278595832571,
+   "iou": 0.9709996413383204,
+   "max_error_mm": 0.6505278595832571
+  },
+  {
+   "iter": 3,
+   "hausdorff_mm": 0.5784522992050632,
+   "iou": 0.9704211657540556,
+   "max_error_mm": 0.5784522992050632
+  },
+  {
+   "iter": 4,
+   "hausdorff_mm": 0.6334660075441882,
+   "iou": 0.9703665726736734,
+   "max_error_mm": 0.6334660075441882
+  },
+  {
+   "iter": 5,
+   "hausdorff_mm": 0.560958760049417,
+   "iou": 0.9698399671727533,
+   "max_error_mm": 0.560958760049417
+  },
+  {
+   "iter": 6,
+   "hausdorff_mm": 0.4244467043966811,
+   "iou": 0.9905537966471168,
+   "max_error_mm": 0.4244467043966811
+  }
+ ],
+ "wall_s": 488.95,
+ "dims": [
+  {
+   "name": "length",
+   "gt_mm": 25.4,
+   "model_mm": 25.161,
+   "error_mm": -0.239
+  },
+  {
+   "name": "width",
+   "gt_mm": 25.29708,
+   "model_mm": 25.038,
+   "error_mm": -0.2591
+  },
+  {
+   "name": "thickness",
+   "gt_mm": 15.4,
+   "model_mm": 16.4,
+   "error_mm": 1.0
+  }
+ ],
+ "missed": [],
+ "extra_holes": 0,
+ "pass_0_3": false,
+ "pass_0_5": false,
+ "valid": true,
+ "valid_reason": "",
+ "expected_outcome": "accept",
+ "expected_checks": [],
+ "expected_why": "intact part, normal photo",
+ "outcome": "accept",
+ "outcome_correct": true,
+ "failure_category": "dim_off",
+ "overlay": "overlay.png",
+ "failure": "worst thickness +1.00 mm",
+ "git": {
+  "sha": null,
+  "dirty": false
+ },
+ "scale_suite": "control_top",
+ "tree": "bb75824+308438f7af72"
+}

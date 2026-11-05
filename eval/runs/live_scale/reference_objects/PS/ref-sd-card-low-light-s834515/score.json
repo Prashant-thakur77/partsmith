@@ -1,0 +1,98 @@
+{
+ "suite": "reference_objects",
+ "config": "PS",
+ "sample_id": "ref-sd-card-low-light-s834515",
+ "split": "held_out",
+ "kind": "reference_object",
+ "preset": "low-light",
+ "mode": "live",
+ "gt_source": "reference_spec",
+ "status": "verified",
+ "verified": true,
+ "iterations": 2,
+ "iterations_to_converge": 2,
+ "strategy": "free_code",
+ "template": null,
+ "verifier_max_error_mm": 0.2049999999999983,
+ "retake_reason": null,
+ "failed_checks": [],
+ "usd": 0.119459,
+ "tokens_in": 54161,
+ "tokens_out": 15358,
+ "model_calls": 16,
+ "model_ms": 128879,
+ "provider_modes": [
+  "live"
+ ],
+ "providers": {
+  "segment": [
+   "meta:sam-3.1"
+  ],
+  "understand": [
+   "meta:muse-spark-1.3"
+  ],
+  "plan": [
+   "baseten:meta-models/muse-spark-open-1026"
+  ],
+  "build": [
+   "baseten:meta-models/muse-spark-open-1026"
+  ],
+  "fix_agent": [
+   "baseten:meta-models/muse-spark-open-1026"
+  ],
+  "judge": [
+   "meta:muse-spark-1.3"
+  ]
+ },
+ "convergence": [
+  {
+   "iter": 1,
+   "hausdorff_mm": 1.1859720836881267,
+   "iou": 0.9575262866629773,
+   "max_error_mm": 1.1859720836881267
+  },
+  {
+   "iter": 2,
+   "hausdorff_mm": 0.17919094296208016,
+   "iou": 0.983402489626556,
+   "max_error_mm": 0.2049999999999983
+  }
+ ],
+ "wall_s": 159.52,
+ "dims": [
+  {
+   "name": "length",
+   "gt_mm": 32.0,
+   "model_mm": 32.2,
+   "error_mm": 0.2,
+   "within_spec": false
+  },
+  {
+   "name": "width",
+   "gt_mm": 24.0,
+   "model_mm": 24.09,
+   "error_mm": 0.09,
+   "within_spec": true
+  },
+  {
+   "name": "thickness",
+   "gt_mm": 2.1,
+   "model_mm": 2.1,
+   "error_mm": 0.0,
+   "within_spec": true
+  }
+ ],
+ "missed": [],
+ "extra_holes": 0,
+ "pass_0_3": true,
+ "pass_0_5": true,
+ "valid": true,
+ "valid_reason": "",
+ "failure_category": null,
+ "git": {
+  "sha": null,
+  "dirty": false
+ },
+ "scale_suite": "reference_objects",
+ "tree": "bb75824+308438f7af72"
+}

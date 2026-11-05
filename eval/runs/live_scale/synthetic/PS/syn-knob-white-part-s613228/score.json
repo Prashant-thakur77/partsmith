@@ -1,0 +1,130 @@
+{
+ "suite": "synthetic",
+ "config": "PS",
+ "sample_id": "syn-knob-white-part-s613228",
+ "split": "held_out",
+ "kind": "template",
+ "preset": "white-part",
+ "mode": "live",
+ "gt_source": "synthetic_exact",
+ "status": "best_effort",
+ "verified": false,
+ "iterations": 7,
+ "iterations_to_converge": null,
+ "strategy": "template",
+ "template": "knob",
+ "verifier_max_error_mm": 1.0059809909441622,
+ "retake_reason": null,
+ "failed_checks": [],
+ "usd": 0.242063,
+ "tokens_in": 132399,
+ "tokens_out": 30918,
+ "model_calls": 29,
+ "model_ms": 296008,
+ "provider_modes": [
+  "live"
+ ],
+ "providers": {
+  "segment": [
+   "meta:sam-3.1"
+  ],
+  "understand": [
+   "meta:muse-spark-1.3"
+  ],
+  "plan": [
+   "baseten:meta-models/muse-spark-open-1026"
+  ],
+  "build": [
+   "baseten:meta-models/muse-spark-open-1026"
+  ],
+  "fix_agent": [
+   "baseten:meta-models/muse-spark-open-1026"
+  ],
+  "judge": [
+   "meta:muse-spark-1.3"
+  ],
+  "fix": [
+   "baseten:meta-models/muse-spark-open-1026"
+  ]
+ },
+ "convergence": [
+  {
+   "iter": 1,
+   "hausdorff_mm": 7.29482748162241,
+   "iou": 0.581417460589119,
+   "max_error_mm": 7.29482748162241
+  },
+  {
+   "iter": 2,
+   "hausdorff_mm": 4.874219278446343,
+   "iou": 0.6773057499778506,
+   "max_error_mm": 4.874219278446343
+  },
+  {
+   "iter": 3,
+   "hausdorff_mm": 3.233578091320557,
+   "iou": 0.7577919825578514,
+   "max_error_mm": 3.233578091320557
+  },
+  {
+   "iter": 4,
+   "hausdorff_mm": 1.6444313032480655,
+   "iou": 0.8886564996368918,
+   "max_error_mm": 1.6444313032480655
+  },
+  {
+   "iter": 5,
+   "hausdorff_mm": 1.2011401320395159,
+   "iou": 0.9425522675103915,
+   "max_error_mm": 1.2011401320395159
+  },
+  {
+   "iter": 6,
+   "hausdorff_mm": 0.7600773121994258,
+   "iou": 0.9517599637876404,
+   "max_error_mm": 0.7600773121994258
+  },
+  {
+   "iter": 7,
+   "hausdorff_mm": 1.0059809909441622,
+   "iou": 0.9453668871881351,
+   "max_error_mm": 1.0059809909441622
+  }
+ ],
+ "wall_s": 377.56,
+ "dims": [
+  {
+   "name": "length",
+   "gt_mm": 23.792978,
+   "model_mm": 22.7955,
+   "error_mm": -0.9975
+  },
+  {
+   "name": "width",
+   "gt_mm": 23.677136,
+   "model_mm": 22.7319,
+   "error_mm": -0.9453
+  },
+  {
+   "name": "thickness",
+   "gt_mm": 19.2,
+   "model_mm": 19.0,
+   "error_mm": -0.2
+  }
+ ],
+ "missed": [],
+ "extra_holes": 0,
+ "pass_0_3": false,
+ "pass_0_5": false,
+ "valid": true,
+ "valid_reason": "",
+ "failure_category": "judge_veto",
+ "overlay": "overlay.png",
+ "failure": "worst length -1.00 mm",
+ "git": {
+  "sha": null,
+  "dirty": false
+ },
+ "scale_suite": "synthetic",
+ "tree": "bb75824+308438f7af72"
+}

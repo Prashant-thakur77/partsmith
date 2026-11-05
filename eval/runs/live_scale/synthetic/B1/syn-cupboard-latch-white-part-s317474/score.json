@@ -1,0 +1,93 @@
+{
+ "suite": "synthetic",
+ "config": "B1",
+ "sample_id": "syn-cupboard-latch-white-part-s317474",
+ "split": "held_out",
+ "kind": "template",
+ "preset": "white-part",
+ "mode": "live",
+ "gt_source": "synthetic_exact",
+ "status": "best_effort",
+ "verified": false,
+ "iterations": 1,
+ "iterations_to_converge": null,
+ "strategy": "template",
+ "template": "cupboard_latch",
+ "verifier_max_error_mm": 3.3840000000000003,
+ "retake_reason": null,
+ "failed_checks": [],
+ "usd": 0.087234,
+ "tokens_in": 18777,
+ "tokens_out": 13333,
+ "model_calls": 11,
+ "model_ms": 113628,
+ "provider_modes": [
+  "live"
+ ],
+ "providers": {
+  "segment": [
+   "meta:sam-3.1"
+  ],
+  "understand": [
+   "meta:muse-spark-1.3"
+  ],
+  "segment_points": [
+   "meta:sam-3.1"
+  ],
+  "plan": [
+   "baseten:meta-models/muse-spark-open-1026"
+  ],
+  "build": [
+   "baseten:meta-models/muse-spark-open-1026"
+  ]
+ },
+ "convergence": [
+  {
+   "iter": 1,
+   "hausdorff_mm": 2.6063626241020037,
+   "iou": 0.7819148936170213,
+   "max_error_mm": 3.3840000000000003
+  }
+ ],
+ "wall_s": 141.16,
+ "dims": [
+  {
+   "name": "length",
+   "gt_mm": 41.796301,
+   "model_mm": 41.4966,
+   "error_mm": -0.2997
+  },
+  {
+   "name": "width",
+   "gt_mm": 11.9,
+   "model_mm": 11.0,
+   "error_mm": -0.9
+  },
+  {
+   "name": "thickness",
+   "gt_mm": 7.174398,
+   "model_mm": 6.5,
+   "error_mm": -0.6744
+  },
+  {
+   "name": "hole_1.diameter",
+   "gt_mm": 4.75,
+   "model_mm": 6.0,
+   "error_mm": 1.25
+  }
+ ],
+ "missed": [],
+ "extra_holes": 0,
+ "pass_0_3": false,
+ "pass_0_5": false,
+ "valid": true,
+ "valid_reason": "",
+ "failure_category": "dim_off",
+ "failure": "worst hole_1.diameter +1.25 mm",
+ "git": {
+  "sha": null,
+  "dirty": false
+ },
+ "scale_suite": "synthetic",
+ "tree": "bb75824+308438f7af72"
+}

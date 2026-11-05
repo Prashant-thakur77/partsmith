@@ -1,0 +1,55 @@
+import cadquery as cq
+import math
+
+PARAMS = {
+    "card_length": (31.99, 31.0, 33.0, 0.01, "mm", True, "Overall length X (long axis)"),
+    "card_width": (23.96, 23.0, 25.0, 0.01, "mm", True, "Overall width Y (short axis)"),
+    "thickness": (2.1, 1.5, 2.8, 0.05, "mm", True, "Body thickness Z"),
+    "chamfer_dx": (3.85, 2.0, 6.0, 0.05, "mm", True, "Chamfer inset X from corner"),
+    "chamfer_dy": (4.0, 2.0, 6.0, 0.05, "mm", True, "Chamfer inset Y from corner"),
+    "clearance": (0.2, 0.0, 0.6, 0.05, "mm", True, "Fit clearance"),
+    "chamfer_corners": (1, 1, 1, 1, "", False, "Number of chamfered corners"),
+}
+
+def build(p: dict) -> cq.Workplane:
+    L = float(p["card_length"])
+    W = float(p["card_width"])
+    T = float(p["thickness"])
+    dx = float(p["chamfer_dx"])
+    dy = float(p["chamfer_dy"])
+    # centred at origin, long axis +X, mounting face Z=0
+    # Idealised Full-size SD outline: rectangle L x W with one diagonal chamfer
+    # at (-L/2, -W/2) corner. Order is CCW starting at +X,-Y.
+    # Measured polyline from PartSpec:
+    # [15.984,-11.955], [15.933,11.949], [-15.962,12.005], [-16.009,-7.948], [-12.159,-11.916]
+    # recentred to origin and parameterized by L,W,dx,dy.
+    hx = L / 2.0
+    hy = W / 2.0
+
+    # clamp chamfer to avoid self-intersection
+    dx = min(dx, L * 0.45)
+    dy = min(dy, W * 0.45)
+
+    p1 = (hx, -hy)
+    p2 = (hx, hy)
+    p3 = (-hx, hy)
+    p4 = (-hx, -hy + dy)
+    p5 = (-hx + dx, -hy)
+
+    wp = cq.Workplane("XY")
+    outline = (
+        wp.moveTo(p1[0], p1[1])
+        .lineTo(p2[0], p2[1])
+        .lineTo(p3[0], p3[1])
+        .lineTo(p4[0], p4[1])
+        .lineTo(p5[0], p5[1])
+        .close()
+        .extrude(T, combine=True)
+    )
+
+    # Solid body to thickness over most of footprint; mounting face is bottom at Z=0
+    # (extrude from XY plane upward already places bottom at Z=0 and top at Z=T)
+    result = outline.translate((0, 0, 0))
+    return result
+
+result = build({k: v[0] for k, v in PARAMS.items()})

@@ -1,0 +1,98 @@
+import cadquery as cq
+import math
+
+# LEGO 2x4 brick reference - solid body + 8 studs, no underside hollow
+PARAMS = {
+    "body_thickness": (9.7, 8.0, 11.0, 0.1, "mm", False, "Body thickness (Z)"),
+    "stud_dia": (4.7, 4.0, 5.2, 0.1, "mm", True, "Stud outer diameter"),
+    "stud_height": (1.4, 1.2, 2.5, 0.1, "mm", True, "Stud height above body"),
+    "clearance": (0.2, 0.0, 0.4, 0.05, "mm", True, "Fit clearance"),
+    "num_x": (4, 2, 6, 1, "", False, "Studs along X (length)"),
+    "num_y": (2, 1, 4, 1, "", False, "Studs along Y (width)"),
+    "pitch_x": (8.0, 7.5, 8.5, 0.1, "mm", True, "Stud pitch X"),
+    "pitch_y": (8.0, 7.5, 8.5, 0.1, "mm", True, "Stud pitch Y"),
+}
+
+# Measured polyline from PartSpec (already centred, bbox ~32x16)
+BASE_POINTS = [
+    (-15.931, 7.769),
+    (-15.823, -7.862),
+    (13.408, -7.951),
+    (15.859, -7.739),
+    (15.96, 3.719),
+    (15.75, 7.885),
+    (-12.726, 7.949),
+]
+
+# Nominal stud centres from PartSpec for 4x2 grid
+STUD_CENTRES_NOMINAL = [
+    (-12.0, -4.0),
+    (-12.0, 4.0),
+    (-4.0, -4.0),
+    (-4.0, 4.0),
+    (4.0, -4.0),
+    (4.0, 4.0),
+    (12.0, -4.0),
+    (12.0, 4.0),
+]
+
+def build(p: dict) -> cq.Workplane:
+    thickness = float(p["body_thickness"])
+    stud_dia = float(p["stud_dia"])
+    stud_h = float(p["stud_height"])
+    # clearance is for fit reference, not applied as cut to keep solid reference
+    # topology params
+    nx = int(round(float(p["num_x"])))
+    ny = int(round(float(p["num_y"])))
+    pitch_x = float(p["pitch_x"])
+    pitch_y = float(p["pitch_y"])
+
+    # Clamp counts to sane
+    nx = max(1, min(6, nx))
+    ny = max(1, min(4, ny))
+
+    stud_r = stud_dia / 2.0
+
+    # Build body from polyline, bottom face at Z=0, +Z up
+    wp = cq.Workplane("XY")
+    # use first point as moveTo, then lines
+    wp = wp.moveTo(BASE_POINTS[0][0], BASE_POINTS[0][1])
+    for (x, y) in BASE_POINTS[1:]:
+        wp = wp.lineTo(x, y)
+    wp = wp.close()
+    body = wp.extrude(thickness, combine=True)
+
+    # Generate stud centres: use nominal if counts match 4x2, otherwise generate grid centred
+    if nx == 4 and ny == 2:
+        centres = STUD_CENTRES_NOMINAL
+    else:
+        centres = []
+        # grid centred at origin
+        # total span = (n-1)*pitch
+        span_x = (nx - 1) * pitch_x
+        span_y = (ny - 1) * pitch_y
+        x0 = -span_x / 2.0
+        y0 = -span_y / 2.0
+        for ix in range(nx):
+            for iy in range(ny):
+                cx = x0 + ix * pitch_x
+                cy = y0 + iy * pitch_y
+                centres.append((cx, cy))
+
+    # Add studs on top face
+    result = body
+    for (cx, cy) in centres:
+        stud = (
+            cq.Workplane("XY")
+            .workplane(offset=thickness)
+            .moveTo(cx, cy)
+            .circle(stud_r)
+            .extrude(stud_h)
+        )
+        result = result.union(stud)
+
+    # Ensure mounting face is on Z=0 and model centred in XY (base points already centred)
+    # Long axis is +X (length ~32mm along X)
+    return result
+
+result = build({k: v[0] for k, v in PARAMS.items()})

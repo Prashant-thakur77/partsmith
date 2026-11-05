@@ -1,0 +1,106 @@
+{
+ "suite": "synthetic",
+ "config": "PS",
+ "sample_id": "syn-hook-clean-s600296",
+ "split": "held_out",
+ "kind": "template",
+ "preset": "clean",
+ "mode": "live",
+ "gt_source": "synthetic_exact",
+ "status": "verified",
+ "verified": true,
+ "iterations": 2,
+ "iterations_to_converge": 2,
+ "strategy": "template",
+ "template": "hook",
+ "verifier_max_error_mm": 0.39467290713194536,
+ "retake_reason": null,
+ "failed_checks": [],
+ "usd": 0.134744,
+ "tokens_in": 56206,
+ "tokens_out": 19612,
+ "model_calls": 17,
+ "model_ms": 189671,
+ "provider_modes": [
+  "live"
+ ],
+ "providers": {
+  "segment": [
+   "meta:sam-3.1"
+  ],
+  "understand": [
+   "meta:muse-spark-1.3"
+  ],
+  "segment_points": [
+   "meta:sam-3.1"
+  ],
+  "plan": [
+   "baseten:meta-models/muse-spark-open-1026"
+  ],
+  "build": [
+   "baseten:meta-models/muse-spark-open-1026"
+  ],
+  "fix_agent": [
+   "baseten:meta-models/muse-spark-open-1026"
+  ],
+  "judge": [
+   "meta:muse-spark-1.3"
+  ]
+ },
+ "convergence": [
+  {
+   "iter": 1,
+   "hausdorff_mm": 2.117158912061586,
+   "iou": 0.985204790003471,
+   "max_error_mm": 2.117158912061586
+  },
+  {
+   "iter": 2,
+   "hausdorff_mm": 0.39467290713194536,
+   "iou": 0.9933982613242696,
+   "max_error_mm": 0.39467290713194536
+  }
+ ],
+ "wall_s": 215.36,
+ "dims": [
+  {
+   "name": "length",
+   "gt_mm": 66.5,
+   "model_mm": 66.56,
+   "error_mm": 0.06
+  },
+  {
+   "name": "width",
+   "gt_mm": 22.7,
+   "model_mm": 22.72,
+   "error_mm": 0.02
+  },
+  {
+   "name": "thickness",
+   "gt_mm": 38.85,
+   "model_mm": 32.5,
+   "error_mm": -6.35
+  },
+  {
+   "name": "hole_1.diameter",
+   "gt_mm": 3.55,
+   "model_mm": 3.54,
+   "error_mm": -0.01
+  }
+ ],
+ "missed": [],
+ "extra_holes": 0,
+ "pass_0_3": false,
+ "pass_0_5": false,
+ "valid": true,
+ "valid_reason": "",
+ "failure_category": "dim_off",
+ "overlay": "overlay.png",
+ "failure": "worst thickness -6.35 mm",
+ "git": {
+  "sha": null,
+  "dirty": false
+ },
+ "scale_suite": "synthetic",
+ "tree": "bb75824+308438f7af72"
+}

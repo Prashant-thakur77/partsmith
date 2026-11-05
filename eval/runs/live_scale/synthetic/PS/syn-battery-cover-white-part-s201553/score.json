@@ -1,0 +1,95 @@
+{
+ "suite": "synthetic",
+ "config": "PS",
+ "sample_id": "syn-battery-cover-white-part-s201553",
+ "split": "held_out",
+ "kind": "template",
+ "preset": "white-part",
+ "mode": "live",
+ "gt_source": "synthetic_exact",
+ "status": "verified",
+ "verified": true,
+ "iterations": 2,
+ "iterations_to_converge": 2,
+ "strategy": "template",
+ "template": "battery_cover",
+ "verifier_max_error_mm": 0.4153308025488801,
+ "retake_reason": null,
+ "failed_checks": [],
+ "usd": 0.175345,
+ "tokens_in": 109476,
+ "tokens_out": 23590,
+ "model_calls": 20,
+ "model_ms": 189246,
+ "provider_modes": [
+  "live"
+ ],
+ "providers": {
+  "segment": [
+   "meta:sam-3.1"
+  ],
+  "understand": [
+   "meta:muse-spark-1.3"
+  ],
+  "plan": [
+   "baseten:meta-models/muse-spark-open-1026"
+  ],
+  "build": [
+   "baseten:meta-models/muse-spark-open-1026"
+  ],
+  "fix_agent": [
+   "baseten:meta-models/muse-spark-open-1026"
+  ],
+  "judge": [
+   "meta:muse-spark-1.3"
+  ]
+ },
+ "convergence": [
+  {
+   "iter": 1,
+   "hausdorff_mm": 1.1201622074992983,
+   "iou": 0.9764559819413092,
+   "max_error_mm": 1.1201622074992983
+  },
+  {
+   "iter": 2,
+   "hausdorff_mm": 0.4153308025488801,
+   "iou": 0.9862681744749596,
+   "max_error_mm": 0.4153308025488801
+  }
+ ],
+ "wall_s": 226.18,
+ "dims": [
+  {
+   "name": "length",
+   "gt_mm": 43.7,
+   "model_mm": 43.4,
+   "error_mm": -0.3
+  },
+  {
+   "name": "width",
+   "gt_mm": 31.0,
+   "model_mm": 30.7,
+   "error_mm": -0.3
+  },
+  {
+   "name": "thickness",
+   "gt_mm": 4.5,
+   "model_mm": 5.0,
+   "error_mm": 0.5
+  }
+ ],
+ "missed": [],
+ "extra_holes": 0,
+ "pass_0_3": false,
+ "pass_0_5": true,
+ "valid": true,
+ "valid_reason": "",
+ "failure_category": null,
+ "git": {
+  "sha": null,
+  "dirty": false
+ },
+ "scale_suite": "synthetic",
+ "tree": "bb75824+308438f7af72"
+}

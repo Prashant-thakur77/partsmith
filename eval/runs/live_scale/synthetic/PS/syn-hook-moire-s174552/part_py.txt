@@ -1,0 +1,98 @@
+import cadquery as cq
+import math
+
+PARAMS = {
+    "thickness": (4.5, 3.0, 6.0, 0.1, "mm", False, "Plate thickness"),
+    "hole1_dia": (9.237, 8.0, 11.0, 0.01, "mm", True, "Hole 1 diameter"),
+    "hole1_x": (-25.432, -27.0, -24.0, 0.01, "mm", False, "Hole 1 X"),
+    "hole1_y": (0.014, -1.0, 1.0, 0.01, "mm", False, "Hole 1 Y"),
+    "hole2_dia": (4.421, 3.5, 6.0, 0.01, "mm", True, "Hole 2 diameter"),
+    "hole2_x": (-0.501, -2.0, 2.0, 0.01, "mm", False, "Hole 2 X"),
+    "hole2_y": (-0.446, -1.5, 1.0, 0.01, "mm", False, "Hole 2 Y"),
+    "hook_height": (14.0, 10.0, 30.0, 0.5, "mm", False, "Total hook height from mounting face"),
+    "hook_width": (14.0, 8.0, 20.0, 0.5, "mm", False, "Hook width along Y"),
+    "hook_stem_t": (4.8, 3.0, 7.0, 0.1, "mm", False, "Hook stem thickness X"),
+    "hook_overhang": (8.0, 4.0, 12.0, 0.5, "mm", False, "Hook lip overhang toward -X"),
+    "hook_lip_t": (4.0, 2.5, 6.0, 0.1, "mm", False, "Hook lip thickness Z"),
+    "hook_count": (1, 1, 2, 1, "", False, "Number of hook prongs"),
+}
+
+def build(p: dict) -> cq.Workplane:
+    pts = [(-34.55,-7.431),(-34.109,-8.803),(-33.228,-10.007),(-31.812,-10.972),(-30.381,-11.324),(30.972,-11.243),(32.457,-10.641),(33.488,-9.749),(34.207,-8.596),(34.578,-7.242),(34.497,8.41),(32.705,10.468),(31.44,11.123),(30.281,11.351),(-30.908,11.267),(-32.062,10.856),(-33.141,10.107),(-33.976,9.038),(-34.473,7.786)]
+    
+    base = cq.Workplane("XY").polyline(pts).close().extrude(p["thickness"])
+
+    base = (
+        base.faces(">Z").workplane()
+        .pushPoints([(p["hole1_x"], p["hole1_y"])])
+        .circle(p["hole1_dia"] / 2.0)
+        .cutThruAll()
+    )
+    base = (
+        base.faces(">Z").workplane()
+        .pushPoints([(p["hole2_x"], p["hole2_y"])])
+        .circle(p["hole2_dia"] / 2.0)
+        .cutThruAll()
+    )
+
+    plate_max_x = 34.578
+    stem_x_center = plate_max_x - p["hook_stem_t"] / 2.0 - 0.2
+    stem_height = max(0.1, p["hook_height"] - p["thickness"])
+    hook_width = p["hook_width"]
+    stem_t = p["hook_stem_t"]
+    overhang = p["hook_overhang"]
+    lip_t = p["hook_lip_t"]
+
+    stem = (
+        cq.Workplane("XY")
+        .workplane(offset=p["thickness"])
+        .moveTo(stem_x_center, 0)
+        .rect(stem_t, hook_width)
+        .extrude(stem_height)
+    )
+
+    lip_x_center = stem_x_center - overhang / 2.0
+    lip_z_base = p["hook_height"] - lip_t
+    lip = (
+        cq.Workplane("XY")
+        .workplane(offset=lip_z_base)
+        .moveTo(lip_x_center, 0)
+        .rect(overhang, hook_width)
+        .extrude(lip_t)
+    )
+
+    tip_h = 3.0
+    tip_t = 2.2
+    tip_x_center = lip_x_center - overhang / 2.0 + tip_t / 2.0
+    tip = (
+        cq.Workplane("XY")
+        .workplane(offset=p["hook_height"])
+        .moveTo(tip_x_center, 0)
+        .rect(tip_t, hook_width)
+        .extrude(tip_h)
+    )
+
+    hook = stem.union(lip).union(tip)
+
+    if int(p["hook_count"]) == 2:
+        prong_w = hook_width * 0.42
+        gap = hook_width * 0.16
+        hook1_y = gap/2 + prong_w/2
+        hook2_y = -gap/2 - prong_w/2
+        def make_prong(y0):
+            s = cq.Workplane("XY").workplane(offset=p["thickness"]).moveTo(stem_x_center, y0).rect(stem_t, prong_w).extrude(stem_height)
+            l = cq.Workplane("XY").workplane(offset=lip_z_base).moveTo(lip_x_center, y0).rect(overhang, prong_w).extrude(lip_t)
+            t = cq.Workplane("XY").workplane(offset=p["hook_height"]).moveTo(tip_x_center, y0).rect(tip_t, prong_w).extrude(tip_h)
+            return s.union(l).union(t)
+        hook = make_prong(hook1_y).union(make_prong(hook2_y))
+
+    result = base.union(hook)
+
+    try:
+        result = result.edges("|Z").fillet(0.8)
+    except Exception:
+        pass
+
+    return result
+
+result = build({k: v[0] for k, v in PARAMS.items()})

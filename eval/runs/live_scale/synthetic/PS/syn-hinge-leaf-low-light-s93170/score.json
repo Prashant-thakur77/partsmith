@@ -1,0 +1,145 @@
+{
+ "suite": "synthetic",
+ "config": "PS",
+ "sample_id": "syn-hinge-leaf-low-light-s93170",
+ "split": "held_out",
+ "kind": "template",
+ "preset": "low-light",
+ "mode": "live",
+ "gt_source": "synthetic_exact",
+ "status": "best_effort",
+ "verified": false,
+ "iterations": 7,
+ "iterations_to_converge": null,
+ "strategy": "template",
+ "template": "hinge_leaf",
+ "verifier_max_error_mm": 1.9103514364403305,
+ "retake_reason": null,
+ "failed_checks": [],
+ "usd": 0.248082,
+ "tokens_in": 151712,
+ "tokens_out": 30223,
+ "model_calls": 33,
+ "model_ms": 301197,
+ "provider_modes": [
+  "live"
+ ],
+ "providers": {
+  "segment": [
+   "meta:sam-3.1"
+  ],
+  "understand": [
+   "meta:muse-spark-1.3"
+  ],
+  "segment_points": [
+   "meta:sam-3.1"
+  ],
+  "plan": [
+   "baseten:meta-models/muse-spark-open-1026"
+  ],
+  "build": [
+   "baseten:meta-models/muse-spark-open-1026"
+  ],
+  "fix_agent": [
+   "baseten:meta-models/muse-spark-open-1026"
+  ],
+  "judge": [
+   "meta:muse-spark-1.3"
+  ],
+  "fix": [
+   "baseten:meta-models/muse-spark-open-1026"
+  ]
+ },
+ "convergence": [
+  {
+   "iter": 1,
+   "hausdorff_mm": 8.838001004736359,
+   "iou": 0.7240788933022874,
+   "max_error_mm": 8.838001004736359
+  },
+  {
+   "iter": 2,
+   "hausdorff_mm": 9.260765574171035,
+   "iou": 0.7720341173429827,
+   "max_error_mm": 9.260765574171035
+  },
+  {
+   "iter": 3,
+   "hausdorff_mm": 8.374626784778664,
+   "iou": 0.8139980824544583,
+   "max_error_mm": 8.374626784778664
+  },
+  {
+   "iter": 4,
+   "hausdorff_mm": 8.362616535285532,
+   "iou": 0.820196024295969,
+   "max_error_mm": 8.362616535285532
+  },
+  {
+   "iter": 5,
+   "hausdorff_mm": 8.347884865408895,
+   "iou": 0.9089817663390111,
+   "max_error_mm": 8.347884865408895
+  },
+  {
+   "iter": 6,
+   "hausdorff_mm": 8.292070588468048,
+   "iou": 0.9114645858343338,
+   "max_error_mm": 8.292070588468048
+  },
+  {
+   "iter": 7,
+   "hausdorff_mm": 1.9103514364403305,
+   "iou": 0.9089817663390111,
+   "max_error_mm": 1.9103514364403305
+  }
+ ],
+ "wall_s": 379.58,
+ "dims": [
+  {
+   "name": "length",
+   "gt_mm": 55.6,
+   "model_mm": 55.5,
+   "error_mm": -0.1
+  },
+  {
+   "name": "width",
+   "gt_mm": 21.099604,
+   "model_mm": 20.9993,
+   "error_mm": -0.1003
+  },
+  {
+   "name": "thickness",
+   "gt_mm": 5.999604,
+   "model_mm": 5.2,
+   "error_mm": -0.7996
+  },
+  {
+   "name": "hole_1.diameter",
+   "gt_mm": 3.4,
+   "model_mm": 3.328,
+   "error_mm": -0.072
+  },
+  {
+   "name": "hole_2.diameter",
+   "gt_mm": 3.4,
+   "model_mm": 3.328,
+   "error_mm": -0.072
+  }
+ ],
+ "missed": [],
+ "extra_holes": 0,
+ "pass_0_3": false,
+ "pass_0_5": false,
+ "valid": true,
+ "valid_reason": "",
+ "failure_category": "judge_veto",
+ "overlay": "overlay.png",
+ "failure": "worst thickness -0.80 mm",
+ "git": {
+  "sha": null,
+  "dirty": false
+ },
+ "scale_suite": "synthetic",
+ "tree": "bb75824+308438f7af72"
+}

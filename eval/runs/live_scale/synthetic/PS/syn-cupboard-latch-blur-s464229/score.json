@@ -1,0 +1,139 @@
+{
+ "suite": "synthetic",
+ "config": "PS",
+ "sample_id": "syn-cupboard-latch-blur-s464229",
+ "split": "held_out",
+ "kind": "template",
+ "preset": "blur",
+ "mode": "live",
+ "gt_source": "synthetic_exact",
+ "status": "best_effort",
+ "verified": false,
+ "iterations": 7,
+ "iterations_to_converge": null,
+ "strategy": "free_code",
+ "template": "cupboard_latch",
+ "verifier_max_error_mm": 2.426865771681779,
+ "retake_reason": null,
+ "failed_checks": [],
+ "usd": 0.360721,
+ "tokens_in": 291765,
+ "tokens_out": 41248,
+ "model_calls": 45,
+ "model_ms": 347726,
+ "provider_modes": [
+  "live",
+  "mock"
+ ],
+ "providers": {
+  "capture_triage": [
+   "mock:muse-glimmer"
+  ],
+  "segment": [
+   "meta:sam-3.1"
+  ],
+  "understand": [
+   "meta:muse-spark-1.3"
+  ],
+  "segment_points": [
+   "meta:sam-3.1"
+  ],
+  "plan": [
+   "baseten:meta-models/muse-spark-open-1026"
+  ],
+  "build": [
+   "baseten:meta-models/muse-spark-open-1026"
+  ],
+  "fix_agent": [
+   "baseten:meta-models/muse-spark-open-1026"
+  ],
+  "judge": [
+   "meta:muse-spark-1.3"
+  ],
+  "fix": [
+   "baseten:meta-models/muse-spark-open-1026"
+  ]
+ },
+ "convergence": [
+  {
+   "iter": 1,
+   "hausdorff_mm": 2.4744182229871563,
+   "iou": 0.9548555377207063,
+   "max_error_mm": 2.4744182229871563
+  },
+  {
+   "iter": 2,
+   "hausdorff_mm": 1.8054782255157253,
+   "iou": 0.9546548956661316,
+   "max_error_mm": 2.2120000000000006
+  },
+  {
+   "iter": 3,
+   "hausdorff_mm": 1.4190530472555791,
+   "iou": 0.9628369362156391,
+   "max_error_mm": 2.197
+  },
+  {
+   "iter": 4,
+   "hausdorff_mm": 1.352378182212611,
+   "iou": 0.9670204953601709,
+   "max_error_mm": 2.2590000000000003
+  },
+  {
+   "iter": 5,
+   "hausdorff_mm": 1.352378182212611,
+   "iou": 0.9742819085351275,
+   "max_error_mm": 2.26
+  },
+  {
+   "iter": 6,
+   "hausdorff_mm": 2.426865771681779,
+   "iou": 0.9335664335664335,
+   "max_error_mm": 2.426865771681779
+  },
+  {
+   "iter": 7,
+   "hausdorff_mm": 2.4718899273793533,
+   "iou": 0.9211850195640022,
+   "max_error_mm": 2.4718899273793533
+  }
+ ],
+ "wall_s": 561.38,
+ "dims": [
+  {
+   "name": "length",
+   "gt_mm": 57.695369,
+   "model_mm": 57.7331,
+   "error_mm": 0.0377
+  },
+  {
+   "name": "width",
+   "gt_mm": 14.9,
+   "model_mm": 15.0953,
+   "error_mm": 0.1953
+  },
+  {
+   "name": "thickness",
+   "gt_mm": 7.408468,
+   "model_mm": 6.5,
+   "error_mm": -0.9085
+  }
+ ],
+ "missed": [
+  "hole_1.diameter"
+ ],
+ "extra_holes": 1,
+ "pass_0_3": false,
+ "pass_0_5": false,
+ "valid": true,
+ "valid_reason": "",
+ "failure_category": "topology_wrong",
+ "overlay": "overlay.png",
+ "failure": "worst thickness -0.91 mm; missing hole_1.diameter",
+ "git": {
+  "sha": null,
+  "dirty": false
+ },
+ "scale_suite": "synthetic",
+ "tree": "bb75824+308438f7af72"
+}

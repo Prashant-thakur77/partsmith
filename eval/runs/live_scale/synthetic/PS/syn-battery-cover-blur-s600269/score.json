@@ -1,0 +1,126 @@
+{
+ "suite": "synthetic",
+ "config": "PS",
+ "sample_id": "syn-battery-cover-blur-s600269",
+ "split": "held_out",
+ "kind": "template",
+ "preset": "blur",
+ "mode": "live",
+ "gt_source": "synthetic_exact",
+ "status": "best_effort",
+ "verified": false,
+ "iterations": 6,
+ "iterations_to_converge": null,
+ "strategy": "template",
+ "template": "battery_cover",
+ "verifier_max_error_mm": 0.9029000731046031,
+ "retake_reason": null,
+ "failed_checks": [],
+ "usd": 0.386609,
+ "tokens_in": 533208,
+ "tokens_out": 35329,
+ "model_calls": 48,
+ "model_ms": 284983,
+ "provider_modes": [
+  "live",
+  "mock"
+ ],
+ "providers": {
+  "capture_triage": [
+   "mock:muse-glimmer"
+  ],
+  "segment": [
+   "meta:sam-3.1"
+  ],
+  "understand": [
+   "meta:muse-spark-1.3"
+  ],
+  "plan": [
+   "baseten:meta-models/muse-spark-open-1026"
+  ],
+  "build": [
+   "baseten:meta-models/muse-spark-open-1026"
+  ],
+  "fix_agent": [
+   "baseten:meta-models/muse-spark-open-1026"
+  ],
+  "segment_points": [
+   "meta:sam-3.1"
+  ],
+  "judge": [
+   "meta:muse-spark-1.3"
+  ]
+ },
+ "convergence": [
+  {
+   "iter": 1,
+   "hausdorff_mm": 1.0842194536136642,
+   "iou": 0.9716530242267758,
+   "max_error_mm": 1.13
+  },
+  {
+   "iter": 2,
+   "hausdorff_mm": 0.959890935769885,
+   "iou": 0.9724594831362242,
+   "max_error_mm": 1.1389999999999998
+  },
+  {
+   "iter": 3,
+   "hausdorff_mm": 0.9400438229841492,
+   "iou": 0.973547291746536,
+   "max_error_mm": 1.1369999999999998
+  },
+  {
+   "iter": 4,
+   "hausdorff_mm": 0.9135798415841323,
+   "iou": 0.9738239964952631,
+   "max_error_mm": 0.9529999999999998
+  },
+  {
+   "iter": 5,
+   "hausdorff_mm": 0.9135798415841323,
+   "iou": 0.9754080403110965,
+   "max_error_mm": 0.9135798415841323
+  },
+  {
+   "iter": 6,
+   "hausdorff_mm": 0.9029000731046031,
+   "iou": 0.9748864693330416,
+   "max_error_mm": 0.9029000731046031
+  }
+ ],
+ "wall_s": 398.95,
+ "dims": [
+  {
+   "name": "length",
+   "gt_mm": 49.2,
+   "model_mm": 49.29,
+   "error_mm": 0.09
+  },
+  {
+   "name": "width",
+   "gt_mm": 23.7,
+   "model_mm": 23.84,
+   "error_mm": 0.14
+  },
+  {
+   "name": "thickness",
+   "gt_mm": 5.35,
+   "model_mm": 5.5,
+   "error_mm": 0.15
+  }
+ ],
+ "missed": [],
+ "extra_holes": 0,
+ "pass_0_3": true,
+ "pass_0_5": true,
+ "valid": true,
+ "valid_reason": "",
+ "failure_category": null,
+ "git": {
+  "sha": null,
+  "dirty": false
+ },
+ "scale_suite": "synthetic",
+ "tree": "bb75824+308438f7af72"
+}

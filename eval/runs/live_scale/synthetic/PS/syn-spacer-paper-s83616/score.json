@@ -1,0 +1,95 @@
+{
+ "suite": "synthetic",
+ "config": "PS",
+ "sample_id": "syn-spacer-paper-s83616",
+ "split": "held_out",
+ "kind": "template",
+ "preset": "paper",
+ "mode": "live",
+ "gt_source": "synthetic_exact",
+ "status": "verified",
+ "verified": true,
+ "iterations": 1,
+ "iterations_to_converge": 1,
+ "strategy": "template",
+ "template": "spacer",
+ "verifier_max_error_mm": 0.13861043494579323,
+ "retake_reason": null,
+ "failed_checks": [],
+ "usd": 0.091069,
+ "tokens_in": 22224,
+ "tokens_out": 11035,
+ "model_calls": 11,
+ "model_ms": 128575,
+ "provider_modes": [
+  "live"
+ ],
+ "providers": {
+  "segment": [
+   "meta:sam-3.1"
+  ],
+  "understand": [
+   "meta:muse-spark-1.3"
+  ],
+  "segment_points": [
+   "meta:sam-3.1"
+  ],
+  "plan": [
+   "baseten:meta-models/muse-spark-open-1026"
+  ],
+  "build": [
+   "baseten:meta-models/muse-spark-open-1026"
+  ],
+  "judge": [
+   "meta:muse-spark-1.3"
+  ]
+ },
+ "convergence": [
+  {
+   "iter": 1,
+   "hausdorff_mm": 0.13861043494579323,
+   "iou": 0.9819078947368421,
+   "max_error_mm": 0.13861043494579323
+  }
+ ],
+ "wall_s": 143.89,
+ "dims": [
+  {
+   "name": "length",
+   "gt_mm": 9.45,
+   "model_mm": 9.52,
+   "error_mm": 0.07
+  },
+  {
+   "name": "width",
+   "gt_mm": 9.447063,
+   "model_mm": 9.517,
+   "error_mm": 0.07
+  },
+  {
+   "name": "thickness",
+   "gt_mm": 9.45,
+   "model_mm": 9.52,
+   "error_mm": 0.07
+  },
+  {
+   "name": "hole_1.diameter",
+   "gt_mm": 3.55,
+   "model_mm": 3.33,
+   "error_mm": -0.22
+  }
+ ],
+ "missed": [],
+ "extra_holes": 0,
+ "pass_0_3": true,
+ "pass_0_5": true,
+ "valid": true,
+ "valid_reason": "",
+ "failure_category": null,
+ "git": {
+  "sha": null,
+  "dirty": false
+ },
+ "scale_suite": "synthetic",
+ "tree": "bb75824+308438f7af72"
+}

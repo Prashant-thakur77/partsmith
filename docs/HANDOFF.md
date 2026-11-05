@@ -228,7 +228,7 @@ English subtitle in brackets. Labels the app shows (REPLAY, SYNTHETIC, MOCK, AI 
 
 1. "Photo of a broken plastic part → a measured, verified, printable replacement. No caliper: your laptop screen is the
    ruler. Built for the Meta Global AI Developer Hackathon. [vertical cut]"
-2. "How: the screen shows a grid of known size, so the photo gives millimetres. Meta's SAM 3.1 outlines the part, Muse Spark
+2. "How: the screen shows a grid of known size, so the photo gives millimetres. SAM 3.1 is asked for the part's mask with a code fallback, Muse Spark
    writes parametric CAD, and a verifier compares the model with the photo. Export unlocks only within
    <HAUSDORFF_PASS_MM> mm." (fill from `eval/reports/latest/provenance.json` → `thresholds.HAUSDORFF_PASS_MM`)
 3. "We attacked our own verifier with a model that lies about passing: <blocked>/<attempts> fake passes blocked (from

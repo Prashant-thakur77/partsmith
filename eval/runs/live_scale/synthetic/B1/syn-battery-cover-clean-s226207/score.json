@@ -1,0 +1,84 @@
+{
+ "suite": "synthetic",
+ "config": "B1",
+ "sample_id": "syn-battery-cover-clean-s226207",
+ "split": "held_out",
+ "kind": "template",
+ "preset": "clean",
+ "mode": "live",
+ "gt_source": "synthetic_exact",
+ "status": "best_effort",
+ "verified": false,
+ "iterations": 1,
+ "iterations_to_converge": null,
+ "strategy": "template",
+ "template": "battery_cover",
+ "verifier_max_error_mm": 4.906489583179744,
+ "retake_reason": null,
+ "failed_checks": [],
+ "usd": 0.066077,
+ "tokens_in": 14922,
+ "tokens_out": 9580,
+ "model_calls": 9,
+ "model_ms": 68697,
+ "provider_modes": [
+  "live"
+ ],
+ "providers": {
+  "segment": [
+   "meta:sam-3.1"
+  ],
+  "understand": [
+   "meta:muse-spark-1.3"
+  ],
+  "plan": [
+   "baseten:meta-models/muse-spark-open-1026"
+  ],
+  "build": [
+   "baseten:meta-models/muse-spark-open-1026"
+  ]
+ },
+ "convergence": [
+  {
+   "iter": 1,
+   "hausdorff_mm": 4.906489583179744,
+   "iou": 0.832309778274047,
+   "max_error_mm": 4.906489583179744
+  }
+ ],
+ "wall_s": 93.64,
+ "dims": [
+  {
+   "name": "length",
+   "gt_mm": 47.7,
+   "model_mm": 52.0,
+   "error_mm": 4.3
+  },
+  {
+   "name": "width",
+   "gt_mm": 33.4,
+   "model_mm": 30.0,
+   "error_mm": -3.4
+  },
+  {
+   "name": "thickness",
+   "gt_mm": 5.05,
+   "model_mm": 5.5,
+   "error_mm": 0.45
+  }
+ ],
+ "missed": [],
+ "extra_holes": 0,
+ "pass_0_3": false,
+ "pass_0_5": false,
+ "valid": true,
+ "valid_reason": "",
+ "failure_category": "dim_off",
+ "failure": "worst length +4.30 mm",
+ "git": {
+  "sha": null,
+  "dirty": false
+ },
+ "scale_suite": "synthetic",
+ "tree": "bb75824+308438f7af72"
+}

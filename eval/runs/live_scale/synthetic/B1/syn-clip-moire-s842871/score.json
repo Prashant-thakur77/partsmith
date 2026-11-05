@@ -1,0 +1,50 @@
+{
+ "suite": "synthetic",
+ "config": "B1",
+ "sample_id": "syn-clip-moire-s842871",
+ "split": "held_out",
+ "kind": "template",
+ "preset": "moire",
+ "mode": "live",
+ "gt_source": "synthetic_exact",
+ "status": "failed",
+ "verified": false,
+ "iterations": 0,
+ "iterations_to_converge": null,
+ "strategy": "template",
+ "template": null,
+ "verifier_max_error_mm": null,
+ "retake_reason": "Wavy stripes from the screen are visible \u2014 move the phone a little further away or rotate it slightly.",
+ "failed_checks": [
+  "moire"
+ ],
+ "usd": 0,
+ "tokens_in": 0,
+ "tokens_out": 0,
+ "model_calls": 0,
+ "model_ms": 0,
+ "provider_modes": [],
+ "providers": {},
+ "convergence": [],
+ "wall_s": 1.53,
+ "valid": false,
+ "valid_reason": "no part program",
+ "dims": [],
+ "pass_0_3": false,
+ "pass_0_5": false,
+ "missed": [
+  "length",
+  "width",
+  "hole_1.diameter",
+  "thickness"
+ ],
+ "extra_holes": 0,
+ "failure_category": "capture_reject",
+ "failure": "job failed: Wavy stripes from the screen are visible \u2014 move the phone a little further away or rotate it slightly.",
+ "git": {
+  "sha": null,
+  "dirty": false
+ },
+ "scale_suite": "synthetic",
+ "tree": "bb75824+308438f7af72"
+}

@@ -1,0 +1,127 @@
+{
+ "suite": "control",
+ "config": "PS",
+ "sample_id": "ctl-hook-s878483",
+ "split": "held_out",
+ "kind": "control",
+ "preset": "clean",
+ "mode": "live",
+ "gt_source": "expected_outcome",
+ "status": "best_effort",
+ "verified": false,
+ "iterations": 5,
+ "iterations_to_converge": null,
+ "strategy": "template",
+ "template": "hook",
+ "verifier_max_error_mm": 1.6612607670225779,
+ "retake_reason": null,
+ "failed_checks": [],
+ "usd": 0.266703,
+ "tokens_in": 278818,
+ "tokens_out": 30429,
+ "model_calls": 33,
+ "model_ms": 247367,
+ "provider_modes": [
+  "live"
+ ],
+ "providers": {
+  "segment": [
+   "meta:sam-3.1"
+  ],
+  "understand": [
+   "meta:muse-spark-1.3"
+  ],
+  "segment_points": [
+   "meta:sam-3.1"
+  ],
+  "plan": [
+   "baseten:meta-models/muse-spark-open-1026"
+  ],
+  "build": [
+   "baseten:meta-models/muse-spark-open-1026"
+  ],
+  "fix_agent": [
+   "baseten:meta-models/muse-spark-open-1026"
+  ],
+  "judge": [
+   "meta:muse-spark-1.3"
+  ]
+ },
+ "convergence": [
+  {
+   "iter": 1,
+   "hausdorff_mm": 2.342906480166071,
+   "iou": 0.8195866141732283,
+   "max_error_mm": 4.420000000000002
+  },
+  {
+   "iter": 2,
+   "hausdorff_mm": 1.7714075187141352,
+   "iou": 0.9288397439288927,
+   "max_error_mm": 1.7714075187141352
+  },
+  {
+   "iter": 3,
+   "hausdorff_mm": 1.6612607670225779,
+   "iou": 0.9276834364915622,
+   "max_error_mm": 1.6612607670225779
+  },
+  {
+   "iter": 4,
+   "hausdorff_mm": 3.085399170791463,
+   "iou": 0.8809113789905948,
+   "max_error_mm": 4.064
+  },
+  {
+   "iter": 5,
+   "hausdorff_mm": 2.9229557833529998,
+   "iou": 0.8859608052973045,
+   "max_error_mm": 4.058
+  }
+ ],
+ "wall_s": 419.37,
+ "dims": [
+  {
+   "name": "length",
+   "gt_mm": 58.9,
+   "model_mm": 58.8,
+   "error_mm": -0.1
+  },
+  {
+   "name": "width",
+   "gt_mm": 18.8,
+   "model_mm": 18.85,
+   "error_mm": 0.05
+  },
+  {
+   "name": "thickness",
+   "gt_mm": 28.4,
+   "model_mm": 28.7,
+   "error_mm": 0.3
+  },
+  {
+   "name": "hole_1.diameter",
+   "gt_mm": 3.25,
+   "model_mm": 3.22,
+   "error_mm": -0.03
+  }
+ ],
+ "missed": [],
+ "extra_holes": 0,
+ "pass_0_3": true,
+ "pass_0_5": true,
+ "valid": true,
+ "valid_reason": "",
+ "expected_outcome": "accept",
+ "expected_checks": [],
+ "expected_why": "intact part, normal photo",
+ "outcome": "accept",
+ "outcome_correct": true,
+ "failure_category": null,
+ "git": {
+  "sha": null,
+  "dirty": false
+ },
+ "scale_suite": "control_side",
+ "tree": "bb75824+308438f7af72"
+}

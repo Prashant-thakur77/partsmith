@@ -1,0 +1,111 @@
+{
+ "suite": "control",
+ "config": "PS",
+ "sample_id": "ctl-spacer-s744295",
+ "split": "held_out",
+ "kind": "control",
+ "preset": "paper",
+ "mode": "live",
+ "gt_source": "expected_outcome",
+ "status": "verified",
+ "verified": true,
+ "iterations": 2,
+ "iterations_to_converge": 2,
+ "strategy": "template",
+ "template": "spacer",
+ "verifier_max_error_mm": 0.17524166762595458,
+ "retake_reason": null,
+ "failed_checks": [],
+ "usd": 0.078435,
+ "tokens_in": 33896,
+ "tokens_out": 10432,
+ "model_calls": 13,
+ "model_ms": 100336,
+ "provider_modes": [
+  "live"
+ ],
+ "providers": {
+  "segment": [
+   "meta:sam-3.1"
+  ],
+  "understand": [
+   "meta:muse-spark-1.3"
+  ],
+  "segment_points": [
+   "meta:sam-3.1"
+  ],
+  "plan": [
+   "baseten:meta-models/muse-spark-open-1026"
+  ],
+  "build": [
+   "baseten:meta-models/muse-spark-open-1026"
+  ],
+  "fix_agent": [
+   "baseten:meta-models/muse-spark-open-1026"
+  ],
+  "judge": [
+   "meta:muse-spark-1.3"
+  ]
+ },
+ "convergence": [
+  {
+   "iter": 1,
+   "hausdorff_mm": 0.9183798497949391,
+   "iou": 0.9010089991818926,
+   "max_error_mm": 0.9183798497949391
+  },
+  {
+   "iter": 2,
+   "hausdorff_mm": 0.17524166762595458,
+   "iou": 0.9686584651435266,
+   "max_error_mm": 0.17524166762595458
+  }
+ ],
+ "wall_s": 115.39,
+ "dims": [
+  {
+   "name": "length",
+   "gt_mm": 7.899622,
+   "model_mm": 7.9981,
+   "error_mm": 0.0984
+  },
+  {
+   "name": "width",
+   "gt_mm": 6.998788,
+   "model_mm": 7.2,
+   "error_mm": 0.2012
+  },
+  {
+   "name": "thickness",
+   "gt_mm": 8.0,
+   "model_mm": 7.2,
+   "error_mm": -0.8
+  },
+  {
+   "name": "hole_1.diameter",
+   "gt_mm": 4.2,
+   "model_mm": 4.23,
+   "error_mm": 0.03
+  }
+ ],
+ "missed": [],
+ "extra_holes": 0,
+ "pass_0_3": false,
+ "pass_0_5": false,
+ "valid": true,
+ "valid_reason": "",
+ "expected_outcome": "accept",
+ "expected_checks": [],
+ "expected_why": "intact part, normal photo",
+ "outcome": "accept",
+ "outcome_correct": true,
+ "failure_category": "dim_off",
+ "overlay": "overlay.png",
+ "failure": "worst thickness -0.80 mm",
+ "git": {
+  "sha": null,
+  "dirty": false
+ },
+ "scale_suite": "control_top",
+ "tree": "bb75824+308438f7af72"
+}

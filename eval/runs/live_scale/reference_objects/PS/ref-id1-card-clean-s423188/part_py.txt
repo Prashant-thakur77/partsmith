@@ -1,0 +1,94 @@
+import cadquery as cq
+import math
+
+PARAMS = {
+    "card_length": (85.624, 80.0, 90.0, 0.1, "mm", True, "Card length X"),
+    "card_width": (54.031, 50.0, 58.0, 0.1, "mm", True, "Card width Y"),
+    "thickness": (0.8, 0.4, 1.2, 0.05, "mm", True, "Card thickness Z"),
+    "edge_bevel": (0.0, 0.0, 0.3, 0.05, "mm", False, "Edge bevel size"),
+    "bevel_segments": (0, 0, 4, 1, "", False, "Bevel segments"),
+}
+
+# measured polyline from PartSpec (ID-1 outline, already centred)
+BASE_POINTS = [
+    (42.403, 25.355),
+    (41.249, 26.545),
+    (39.297, 27.017),
+    (-38.917, 27.012),
+    (-40.388, 26.888),
+    (-41.321, 26.5),
+    (-42.382, 25.393),
+    (-42.804, 23.958),
+    (-42.809, -23.993),
+    (-42.412, -25.359),
+    (-41.265, -26.549),
+    (-39.676, -27.014),
+    (39.533, -27.013),
+    (41.154, -26.615),
+    (42.365, -25.454),
+    (42.815, -23.864),
+    (42.768, 24.197),
+]
+
+def build(p: dict) -> cq.Workplane:
+    # base extents from measured points
+    xs = [pt[0] for pt in BASE_POINTS]
+    ys = [pt[1] for pt in BASE_POINTS]
+    base_len = max(xs) - min(xs)
+    base_wid = max(ys) - min(ys)
+    if base_len == 0:
+        base_len = 85.624
+    if base_wid == 0:
+        base_wid = 54.031
+    cx = (max(xs) + min(xs)) * 0.5
+    cy = (max(ys) + min(ys)) * 0.5
+
+    scale_x = p["card_length"] / base_len
+    scale_y = p["card_width"] / base_wid
+
+    # centre points and scale to PARAMS so PARAMS affects fit
+    scaled = []
+    for (x, y) in BASE_POINTS:
+        x0 = (x - cx) * scale_x
+        y0 = (y - cy) * scale_y
+        scaled.append((x0, y0))
+
+    # topology parameter: bevel_segments controls optional edge chamfer
+    # when 0 the card is a plain extruded solid (reference object)
+    th = p["thickness"]
+    bevel = p["edge_bevel"]
+    segs = int(p["bevel_segments"])
+
+    # clamp bevel to half thickness to keep solid valid on thin card
+    if bevel > th * 0.45:
+        bevel = th * 0.45
+
+    # build centred solid with mounting face on Z=0, +Z up, long axis +X
+    wp = cq.Workplane("XY")
+    # use polyline then close
+    wp = wp.moveTo(scaled[0][0], scaled[0][1])
+    for pt in scaled[1:]:
+        wp = wp.lineTo(pt[0], pt[1])
+    wp = wp.close()
+    solid = wp.extrude(th, combine=True)
+
+    # optional edge treatment controlled by topology param (integer count)
+    # applied only if requested; default 0 leaves pure ID-1 solid
+    if bevel > 0.001 and segs > 0:
+        # we use a small chamfer on top and bottom edges via edges filter
+        # do in steps loop to satisfy bevel_segments topology parameter
+        # each step is a successive small chamfer attempt; we keep it robust
+        for i in range(segs):
+            cur = bevel * (i + 1) / segs * 0.5 + 0.001
+            if cur >= th * 0.49:
+                continue
+            try:
+                solid = solid.edges("|Z").chamfer(cur)
+                break
+            except Exception:
+                continue
+
+    # ensure mounting face on Z=0 is flat (already), solid centred at origin in XY
+    return solid
+
+result = build({k: v[0] for k, v in PARAMS.items()})

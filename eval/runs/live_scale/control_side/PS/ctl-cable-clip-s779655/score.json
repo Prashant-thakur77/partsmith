@@ -1,0 +1,138 @@
+{
+ "suite": "control",
+ "config": "PS",
+ "sample_id": "ctl-cable-clip-s779655",
+ "split": "held_out",
+ "kind": "control",
+ "preset": "paper",
+ "mode": "live",
+ "gt_source": "expected_outcome",
+ "status": "best_effort",
+ "verified": false,
+ "iterations": 5,
+ "iterations_to_converge": null,
+ "strategy": "template",
+ "template": "cable_clip",
+ "verifier_max_error_mm": 3.320426289874156,
+ "retake_reason": null,
+ "failed_checks": [],
+ "usd": 0.298447,
+ "tokens_in": 264860,
+ "tokens_out": 31605,
+ "model_calls": 32,
+ "model_ms": 298379,
+ "provider_modes": [
+  "live"
+ ],
+ "providers": {
+  "segment": [
+   "meta:sam-3.1"
+  ],
+  "understand": [
+   "meta:muse-spark-1.3"
+  ],
+  "segment_points": [
+   "meta:sam-3.1"
+  ],
+  "plan": [
+   "baseten:meta-models/muse-spark-open-1026"
+  ],
+  "build": [
+   "baseten:meta-models/muse-spark-open-1026"
+  ],
+  "fix_agent": [
+   "baseten:meta-models/muse-spark-open-1026"
+  ],
+  "judge": [
+   "meta:muse-spark-1.3"
+  ],
+  "fix": [
+   "baseten:meta-models/muse-spark-open-1026"
+  ]
+ },
+ "convergence": [
+  {
+   "iter": 1,
+   "hausdorff_mm": 4.2020582068347565,
+   "iou": 0.6758813086482374,
+   "max_error_mm": 4.459
+  },
+  {
+   "iter": 2,
+   "hausdorff_mm": 3.320426289874156,
+   "iou": 0.7293788187372708,
+   "max_error_mm": 3.320426289874156
+  },
+  {
+   "iter": 3,
+   "hausdorff_mm": 5.419240972239796,
+   "iou": 0.625699713894763,
+   "max_error_mm": 5.419240972239796
+  },
+  {
+   "iter": 4,
+   "hausdorff_mm": 5.63918058844513,
+   "iou": 0.6423246999368288,
+   "max_error_mm": 5.63918058844513
+  },
+  {
+   "iter": 5,
+   "hausdorff_mm": 4.735520661023905,
+   "iou": 0.6619844208913294,
+   "max_error_mm": 4.962
+  }
+ ],
+ "wall_s": 405.24,
+ "dims": [
+  {
+   "name": "length",
+   "gt_mm": 39.6,
+   "model_mm": 39.3,
+   "error_mm": -0.3
+  },
+  {
+   "name": "width",
+   "gt_mm": 12.0,
+   "model_mm": 12.2,
+   "error_mm": 0.2
+  },
+  {
+   "name": "thickness",
+   "gt_mm": 9.22,
+   "model_mm": 7.2796,
+   "error_mm": -1.9404
+  },
+  {
+   "name": "hole_1.diameter",
+   "gt_mm": 3.9,
+   "model_mm": 3.81,
+   "error_mm": -0.09
+  },
+  {
+   "name": "hole_2.diameter",
+   "gt_mm": 3.9,
+   "model_mm": 3.81,
+   "error_mm": -0.09
+  }
+ ],
+ "missed": [],
+ "extra_holes": 0,
+ "pass_0_3": false,
+ "pass_0_5": false,
+ "valid": true,
+ "valid_reason": "",
+ "expected_outcome": "accept",
+ "expected_checks": [],
+ "expected_why": "intact part, normal photo",
+ "outcome": "accept",
+ "outcome_correct": true,
+ "failure_category": "judge_veto",
+ "overlay": "overlay.png",
+ "failure": "worst thickness -1.94 mm",
+ "git": {
+  "sha": null,
+  "dirty": false
+ },
+ "scale_suite": "control_side",
+ "tree": "bb75824+308438f7af72"
+}

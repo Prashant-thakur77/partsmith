@@ -1,0 +1,53 @@
+import cadquery as cq
+import math
+
+PARAMS = {
+    "body_length": (31.8, 30.0, 33.0, 0.1, "mm", False, "Body length X"),
+    "body_width": (15.8, 14.5, 16.5, 0.1, "mm", False, "Body width Y"),
+    "body_thickness": (9.6, 8.5, 10.5, 0.1, "mm", False, "Body thickness Z"),
+    "stud_dia": (4.8, 4.0, 5.2, 0.1, "mm", True, "Stud outer diameter"),
+    "stud_height": (1.8, 1.2, 2.2, 0.1, "mm", False, "Stud height"),
+    "pitch": (8.0, 7.5, 8.5, 0.1, "mm", True, "Stud pitch"),
+    "n_x": (4, 2, 6, 1, "", False, "Studs along X"),
+    "n_y": (2, 1, 4, 1, "", False, "Studs along Y"),
+    "clearance": (0.2, 0.0, 0.5, 0.05, "mm", True, "Fit clearance"),
+}
+
+def build(p: dict) -> cq.Workplane:
+    L = float(p["body_length"])
+    W = float(p["body_width"])
+    T = float(p["body_thickness"])
+    d = float(p["stud_dia"])
+    h = float(p["stud_height"])
+    pitch = float(p["pitch"])
+    n_x = int(round(float(p["n_x"])))
+    n_y = int(round(float(p["n_y"])))
+
+    # Body solid to thickness, centred at origin, mounting face Z=0, long axis X
+    body = cq.Workplane("XY").rect(L, W, centered=True).extrude(T, combine=True)
+
+    # Stud grid centred at origin on top face
+    # Total span = (count-1)*pitch
+    x_span = (n_x - 1) * pitch if n_x > 1 else 0.0
+    y_span = (n_y - 1) * pitch if n_y > 1 else 0.0
+
+    # Generate centers so that grid is centered at (0,0)
+    xs = [ -x_span/2 + i * pitch for i in range(n_x) ] if n_x > 0 else []
+    ys = [ -y_span/2 + j * pitch for j in range(n_y) ] if n_y > 0 else []
+
+    # Union all studs on top face Z=T
+    result = body
+    for x in xs:
+        for y in ys:
+            stud = (
+                cq.Workplane("XY")
+                .workplane(offset=T)
+                .moveTo(x, y)
+                .circle(d / 2.0)
+                .extrude(h)
+            )
+            result = result.union(stud)
+
+    return result
+
+result = build({k: v[0] for k, v in PARAMS.items()})

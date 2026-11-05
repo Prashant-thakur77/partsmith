@@ -1,0 +1,60 @@
+import cadquery as cq
+import math
+
+PARAMS = {
+    "length": (32.07, 28.0, 35.0, 0.01, "mm", True, "Card length (X)"),
+    "width": (24.08, 20.0, 28.0, 0.01, "mm", True, "Card width (Y)"),
+    "thickness": (2.15, 1.2, 3.0, 0.05, "mm", True, "Card thickness (Z)"),
+    "cut_x": (4.05, 2.0, 6.0, 0.01, "mm", False, "Corner chamfer X length"),
+    "cut_y": (3.93, 2.0, 6.0, 0.01, "mm", False, "Corner chamfer Y length"),
+    "edge_bevel": (0.25, 0.0, 0.6, 0.05, "mm", False, "Edge bevel / chamfer"),
+    "segments": (1, 1, 4, 1, "", False, "Chamfer segments"),
+}
+
+def build(p: dict) -> cq.Workplane:
+    length = float(p["length"])
+    width = float(p["width"])
+    thickness = float(p["thickness"])
+    cut_x = float(p["cut_x"])
+    cut_y = float(p["cut_y"])
+    edge_bevel = float(p["edge_bevel"])
+    segments = int(p["segments"])
+
+    hx = length * 0.5
+    hy = width * 0.5
+
+    # clamp cut to stay inside footprint
+    cut_x = min(cut_x, length * 0.45)
+    cut_y = min(cut_y, width * 0.45)
+
+    # base profile centred at origin, long axis +X, chamfer at +X +Y corner
+    # measured polyline: [-15.957,-11.929] -> [15.909,-12.014] -> [15.933,8.085] -> [11.883,12.016] -> [-15.999,11.968]
+    pts = [
+        (-hx, -hy),
+        (hx, -hy),
+        (hx, hy - cut_y),
+        (hx - cut_x, hy),
+        (-hx, hy),
+    ]
+
+    wp = cq.Workplane("XY")
+    wp = wp.moveTo(pts[0][0], pts[0][1])
+    for x, y in pts[1:]:
+        wp = wp.lineTo(x, y)
+    wp = wp.close()
+
+    # extrude solid from Z=0 upward - mounting face on Z=0, +Z up
+    result = wp.extrude(thickness, both=False)
+
+    # optional tiny top edge chamfer using edge_bevel if enabled
+    # keep body solid to thickness over most footprint
+    if edge_bevel > 0.001 and segments >= 1:
+        bevel = min(edge_bevel, thickness * 0.4)
+        try:
+            result = result.edges("|Z and >Z").chamfer(bevel)
+        except Exception:
+            pass
+
+    return result
+
+result = build({k: v[0] for k, v in PARAMS.items()})

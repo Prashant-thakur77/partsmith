@@ -1,0 +1,106 @@
+import cadquery as cq
+import math
+
+PARAMS = {
+    "thickness": (15.5, 10.0, 20.0, 0.1, "mm", False, "Body thickness (Z)"),
+    "bore_diameter": (6.0, 4.0, 8.0, 0.1, "mm", True, "D-shaft diameter"),
+    "bore_flat_depth": (1.0, 0.5, 2.0, 0.1, "mm", True, "D-shaft flat depth"),
+    "bore_depth": (11.0, 5.0, 15.0, 0.5, "mm", True, "Blind bore depth from Z=0"),
+    "clearance_mm": (0.2, 0.0, 0.5, 0.05, "mm", True, "Fit clearance (diametral)"),
+    "indicator_nubs": (1, 0, 2, 1, "", False, "Indicator nubs on top"),
+}
+
+# measured polyline footprint, X first, Y second, roughly centred at origin
+BASE_PTS = [
+    (1.373,12.536),(0.018,11.941),(-1.002,12.507),(-2.981,12.231),(-4.057,11.207),(-5.36,11.348),(-7.076,10.368),(-7.641,9.13),(-9.0,8.765),(-10.069,7.569),(-10.331,5.942),(-11.497,5.11),(-12.137,3.443),(-11.78,2.055),(-12.597,0.789),(-12.598,-0.996),(-12.152,-1.506),(-12.324,-2.003),(-11.802,-2.625),(-12.132,-3.447),(-11.515,-5.205),(-10.701,-5.697),(-10.286,-7.368),(-9.063,-8.789),(-7.787,-9.186),(-6.915,-10.579),(-5.508,-11.342),(-3.97,-11.366),(-3.245,-12.167),(-1.232,-12.531),(0.059,-12.053),(1.237,-12.531),(3.132,-12.192),(4.136,-11.336),(5.48,-11.343),(6.833,-10.598),(7.7,-9.311),(9.016,-8.796),(10.109,-7.556),(10.368,-6.191),(11.5,-5.174),(12.128,-3.521),(11.868,-2.113),(12.563,-0.993),(12.562,1.024),(11.874,2.073),(12.147,3.511),(11.492,5.261),(10.381,6.164),(10.164,7.55),(9.121,8.809),(7.48,9.587),(6.904,10.65),(5.632,11.333),(4.557,11.172),(4.052,11.782),(3.586,11.767),(3.213,12.248),
+]
+
+def build(p: dict) -> cq.Workplane:
+    thickness = float(p["thickness"])
+    bore_d = float(p["bore_diameter"])
+    flat_depth = float(p["bore_flat_depth"])
+    bore_depth = float(p["bore_depth"])
+    clearance = float(p["clearance_mm"])
+    nubs = int(p["indicator_nubs"])
+
+    # clamp bore depth to leave at least 0.8mm top skin
+    if bore_depth > thickness - 0.8:
+        bore_depth = thickness - 0.8
+    if bore_depth < 1.0:
+        bore_depth = 1.0
+
+    # base solid extruded from Z=0 up to thickness, centred XY
+    base = (
+        cq.Workplane("XY")
+        .moveTo(BASE_PTS[0][0], BASE_PTS[0][1])
+        .polyline(BASE_PTS[1:])
+        .close()
+        .extrude(thickness, combine=True)
+    )
+
+    # D-shaft bore cutter - blind from mounting face Z=0 upward
+    # effective radius includes clearance, flat depth stays as specified
+    R_eff = bore_d / 2.0 + clearance / 2.0
+    # flat chord at x = c, flat normal along +X (flat on +X side)
+    c = R_eff - flat_depth
+    # clamp c inside circle
+    if c >= R_eff:
+        c = R_eff - 0.1
+    if c <= -R_eff:
+        c = -R_eff + 0.1
+    # half angle to chord intersection
+    ratio = max(-1.0, min(1.0, c / R_eff))
+    theta = math.acos(ratio)
+    y0 = R_eff * math.sin(theta)
+
+    # D shape: line along flat then circular arc around remainder
+    # drawn on XY at Z=0
+    cutter = (
+        cq.Workplane("XY")
+        .moveTo(c, y0)
+        .lineTo(c, -y0)
+        .threePointArc((-R_eff, 0.0), (c, y0))
+        .close()
+        .extrude(bore_depth, combine=False)
+    )
+
+    # centre bore at origin (knob centre)
+    result = base.cut(cutter)
+
+    # top edge slight chamfer / fillet preparation via chamfer if possible
+    # use small chamfer on top perimeter for printability and feel
+    try:
+        # chamfer top face edges by ~0.6mm if geometry allows
+        result = result.edges(cq.selectors.Selector(lambda e: e.Center().z > thickness - 0.01)).chamfer(0.6)
+    except Exception:
+        pass
+
+    # indicator nub(s) on top face, +Y direction, topology integer param
+    if nubs > 0:
+        # place nub(s) near outer edge in +Y quadrant, on top face
+        # avoid going outside footprint: choose radius ~9.5mm
+        for i in range(nubs):
+            # spread slightly in X if two nubs
+            if nubs == 1:
+                off_x = 0.0
+                off_y = 9.5
+            else:
+                off_x = -4.0 + i * 8.0
+                off_y = 9.0
+            nub = (
+                cq.Workplane("XY")
+                .workplane(offset=thickness)
+                .moveTo(off_x, off_y)
+                .circle(1.1)
+                .extrude(0.9, combine=False)
+            )
+            # slight chamfer on nub top
+            try:
+                nub = nub.edges(cq.selectors.Selector(lambda e: e.Center().z > thickness + 0.4)).chamfer(0.3)
+            except Exception:
+                pass
+            result = result.union(nub)
+
+    return result
+
+result = build({k: v[0] for k, v in PARAMS.items()})

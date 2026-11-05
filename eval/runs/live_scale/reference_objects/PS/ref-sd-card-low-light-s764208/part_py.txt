@@ -1,0 +1,81 @@
+import cadquery as cq
+import math
+
+PARAMS = {
+    "overall_length": (31.92, 28.0, 35.0, 0.1, "mm", False, "Overall length X"),
+    "overall_width": (23.97, 20.0, 27.0, 0.1, "mm", False, "Overall width Y"),
+    "chamfer_len_x": (4.04, 2.0, 6.0, 0.05, "mm", False, "Chamfer cut X extent"),
+    "chamfer_len_y": (3.97, 2.0, 6.0, 0.05, "mm", False, "Chamfer cut Y extent"),
+    "thickness": (2.1, 1.0, 3.5, 0.1, "mm", False, "Body thickness Z"),
+    "edge_round": (0.6, 0.0, 1.5, 0.1, "mm", False, "Top edge fillet radius"),
+    "notch_count": (2.0, 0, 4, 1, "mm", False, "Notch count topology"),
+}
+
+def build(p: dict) -> cq.Workplane:
+    L = p["overall_length"]
+    W = p["overall_width"]
+    cx = p["chamfer_len_x"]
+    cy = p["chamfer_len_y"]
+    t = p["thickness"]
+    er = p["edge_round"]
+    n = int(p["notch_count"])
+
+    hx = L / 2.0
+    hy = W / 2.0
+
+    # Clamp chamfer to avoid degenerate geometry
+    cx = min(cx, L * 0.45)
+    cy = min(cy, W * 0.45)
+
+    # Define 5-point polyline with chamfer at -X,-Y (bottom-left)
+    # Order CCW starting at +X,+Y (top-right)
+    p1 = (hx, hy)
+    p2 = (-hx, hy)
+    p3 = (-hx, -hy + cy)
+    p4 = (-hx + cx, -hy)
+    p5 = (hx, -hy)
+
+    wp = cq.Workplane("XY")
+    base = (
+        wp.moveTo(p1[0], p1[1])
+        .lineTo(p2[0], p2[1])
+        .lineTo(p3[0], p3[1])
+        .lineTo(p4[0], p4[1])
+        .lineTo(p5[0], p5[1])
+        .close()
+        .extrude(t)
+    )
+
+    # Ensure mounting face is on Z=0 (extrude already from 0 to +t)
+    # Center is at origin by construction (hx, hy symmetric)
+
+    # Optional topology parameter usage: add small recess markings on top face
+    # to exercise integer count without creating hidden cavity; kept solid.
+    if n > 0:
+        # small shallow embossed rectangles near top edge, not through
+        mark_w = 2.0
+        mark_h = 0.8
+        mark_depth = 0.15
+        spacing = 4.0
+        # total width of group
+        total_span = n * mark_w + (n - 1) * spacing if n > 1 else mark_w
+        start_x = -total_span / 2.0
+        y_pos = hy - 3.0
+        for i in range(n):
+            x_pos = start_x + i * (mark_w + spacing) + mark_w / 2.0
+            # shallow cut on top surface to represent label area, keeps solid thickness
+            base = base.faces(">Z").workplane().moveTo(x_pos, y_pos).rect(mark_w, mark_h).cutBlind(-mark_depth)
+
+    # Fillet vertical edges for printability, keep solid
+    if er > 0.01:
+        try:
+            # fillet only vertical edges
+            base = base.edges("|Z").fillet(er * 0.5)
+            # small top edge round if possible
+            base = base.edges(">Z").fillet(min(er * 0.6, t * 0.4))
+        except Exception:
+            pass
+
+    return base
+
+result = build({k: v[0] for k, v in PARAMS.items()})

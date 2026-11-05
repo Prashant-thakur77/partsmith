@@ -61,8 +61,9 @@ USES: tuple[Use, ...] = (
     Use(
         "SAM 3.1",
         "Meta Model API",
-        "The measuring instrument: text-prompted part masks, point-prompted feature cuts (holes, slots, tapped points) and "
-        "video tracking of a walk-around clip. Code turns every mask into millimetres",
+        "Asked first for the part mask on every photo, with point-prompted cuts for holes and slots and video tracking of a "
+        "walk-around clip. When it returns no confident mask, code's threshold segmenter measures instead, and each run logs "
+        "which one was used: on rendered and pasted photos the fallback has measured most runs (see Mask sources under Results)",
         (
             ("services/agent/providers/routing.py", r"SAM_31 = Route"),
             ("services/metrology/segment.py", r"class ProviderSegmenter"),
@@ -764,7 +765,7 @@ def rubric() -> str:
         "| Criterion | What we claim | Check it here |",
         "|---|---|---|",
         f"| **Impact**: who benefits, could people use it | A broken plastic part stops meaning a thrown-out appliance: no caliper, no CAD, no printer of your own. One stored run takes {b['minutes']} min and about ₹{b['inr']:g} of filament by estimate. Not yet shown: real phone photos and real prints | [The problem](#the-problem-and-who-it-serves), [Time](#how-long-it-takes-and-why-it-works), [Limitations](#limitations), `/requests`, `/shop` |",
-        f"| **Use of Meta AI tooling**: beyond a basic integration | SAM 3.1 as a measuring instrument (masks become millimetres, video tracking gives heights); Muse Spark names features and points at pixels, and SAM 3.1 cuts them; Muse Spark Open writes programs and operates our tools ({w.get('calls_on_open_weights', '?')} of {w.get('calls', '?')} builder calls on open weights); Muse Wonder's citations are checked by code; Muse Image completions must leave the markers and intact part unchanged; Voice Transcribe hears Hindi and English mixed, with knob names as keywords | [Meta models](#what-was-not-possible-before-and-how-metas-models-made-it-possible), `eval/reports/latest/open_weights.json`, `/models` |",
+        f"| **Use of Meta AI tooling**: beyond a basic integration | SAM 3.1 asked first for the part mask, with a logged code fallback, and video tracking for heights; Muse Spark names features and points at pixels, and SAM 3.1 cuts them; Muse Spark Open writes programs and operates our tools ({w.get('calls_on_open_weights', '?')} of {w.get('calls', '?')} builder calls on open weights); Muse Wonder's citations are checked by code; Muse Image completions must leave the markers and intact part unchanged; Voice Transcribe hears Hindi and English mixed, with knob names as keywords | [Meta models](#what-was-not-possible-before-and-how-metas-models-made-it-possible), `eval/reports/latest/open_weights.json`, `/models` |",
         f"| **Technical depth and execution** | A deterministic verifier is the only writer of `verified`; sandboxed CAD; one export gate; {tests.get('passed', '?')} backend tests; {byp.get('blocked', '?')}/{byp.get('attempts', '?')} lying-model attacks blocked; mesh vs knob measured over {pvm.get('parts', '?')} parts | [Verify it yourself](#verify-it-yourself), [Results](#results), [docs/DECISIONS.md](docs/DECISIONS.md) |",
         "| **Demo**: works, holds up live, good to watch | `/judges` replays a stored live run and shows a lying model being caught, with no login and no keys. The demo film walks the same flow | [Try it](#try-it-in-2-minutes), the link row at the top |",
         f"| **Bonus: open weights** | Muse Spark Open on partner inference writes and fixes every program: {share} % of builder tokens. Muse Glimmer is wired for an own-GPU path but ran as a labelled mock in the stored bench, so it is not claimed | `eval/reports/latest/open_weights.json`, `infra/modal/` |",
@@ -885,6 +886,77 @@ def built() -> str:
     return "\n".join(out)
 
 
+def _rate(x: dict[str, Any]) -> str:
+    return f"{x['k']}/{x['n']} ({x['rate'] * 100:.0f} %, 95 % CI {x['ci95'][0] * 100:.0f}-{x['ci95'][1] * 100:.0f})"
+
+
+def scale() -> str:
+    """The large live evaluation: plan fixed first, fresh seeds, every number from eval/reports/latest/scale.json."""
+    s = _load("scale.json")
+    if not s:
+        return "Not run yet."
+    done, planned = s["stop"]["done"], sum(s["planned"].values())
+    calls = sum(m["calls"] for k, m in s["models"].items() if "(live)" in k)
+    tokens = sum(m["tokens"] for k, m in s["models"].items() if "(live)" in k)
+    pair = s["paired_b1_vs_ps"]
+    off = s["verified_but_off"]
+    rows = [
+        f"**{done} of {planned} planned full runs** finished before the time limit, on photos rendered from fresh seeds, with the sizes and "
+        f"rules fixed first in [`eval/SCALE_PLAN.md`](eval/SCALE_PLAN.md). Runs were shuffled, so each suite is an unbiased subset. "
+        f"That took {calls:,} live model calls, {tokens / 1e6:.0f} million tokens and ${s['usd']['total']:.2f}. "
+        "**None of these photos is a real phone capture.** Nothing was rerun. Source: `eval/reports/latest/scale.json`.\n",
+        "| Suite | Config | n | Median error | Within 0.5 mm on every size | Verified | Verified but off |",
+        "|---|---|---|---|---|---|---|",
+    ]
+    names = {
+        "synthetic": "Rendered parts (exact ground truth)",
+        "broken": "Broken parts (exact ground truth)",
+        "reference_objects": "Reference objects, rendered (published sizes)",
+    }
+    for key, name in names.items():
+        for r in s["tables"][key]["rows"]:
+            rows.append(
+                f"| {name} | {r['config']} | {r['n']} | {_fmt(r['median_abs_err_mm'])} mm | {r['pass@0.5'] * 100:.0f} % {r['pass@0.5_ci95']} "
+                f"| {r['verified_rate'] * 100:.0f} % {r['verified_ci95']} | {r['verified_but_off']} |"
+            )
+    ctl_t, ctl_s, red = (s["tables"][k]["headline"] for k in ("control_top", "control_side", "redteam"))
+    wrong = (
+        ", ".join(sorted({str(x.get("case", x)) for x in s["tables"]["redteam"].get("failures", [])}))
+        or "see the report"
+    )
+    rows += [
+        "",
+        f"**The loop against a single shot, same photos:** {pair['ps_pass']} vs {pair['b1_pass']} of {pair['n_pairs']} pairs had every size within 0.5 mm "
+        f"(McNemar exact p = {pair['p_value']:.4f}).",
+        "",
+        f"**What a side photo does for wrong passes:** verified but more than 0.5 mm off was {_rate(off['top_only'])} with a top photo only, and "
+        f"{_rate(off['top_and_side'])} with top and side. Across all full-loop runs it was {_rate(off['all_ps'])}, {off['all_ps']['off_in_height']} of them in height. "
+        "A verified part from a top photo alone says nothing about its height.",
+        "",
+        f"**Expected outcomes:** intact parts handled correctly {ctl_t['correct']}/{ctl_t['n']} (top only) and {ctl_s['correct']}/{ctl_s['n']} (top and side); "
+        f"bad or unsuitable photos {red['correct']}/{red['n']} ({wrong}).",
+        "",
+        f"**Voice edits, synthesised speech, correct edit:** {_rate(s['voice']['spoken'])} spoken and {_rate(s['voice']['typed'])} typed. By language, spoken: "
+        + ", ".join(f"{k} {v['spoken']['k']}/{v['spoken']['n']}" for k, v in s["voice"]["by_language"].items())
+        + ". Pure Hindi is the weak spot.",
+        "",
+        f"**Muse Wonder:** code accepted a cited value on {_rate(s['wonder']['accepted_with_citation'])}. A citation is not a verified fact: of the pages checked, "
+        f"the number was found on {s['wonder']['page_check']['number_found_on_page']}, and {s['wonder']['page_check']['page_unreadable']} pages could not be read.",
+        "",
+        "#### Mask sources",
+        "",
+        f'SAM 3.1 is asked first, and code\'s threshold segmenter takes over when it returns nothing confident. With the prompt "plastic part", SAM returned a usable mask on '
+        f"{_rate(s['sam']['mask_returned'])} of rendered top photos. When it did, the median overlap with ground truth was {s['sam']['when_returned']['iou_median']:.2f} and the median boundary "
+        f"error {s['sam']['when_returned']['boundary_mean_mm_median']:.2f} mm.",
+        "",
+        "| Suite | Threshold measured | SAM 3.1 measured | No measurement (rejected) |",
+        "|---|---:|---:|---:|",
+    ]
+    for key, v in s["mask_sources"].items():
+        rows.append(f"| {key} | {v.get('threshold', 0)} | {v.get('sam-3.1', 0)} | {v.get('no measure line', 0)} |")
+    return "\n".join(rows)
+
+
 BLOCKS: dict[str, Callable[[], str]] = {
     "links": links_row,
     "status": status_line,
@@ -897,6 +969,7 @@ BLOCKS: dict[str, Callable[[], str]] = {
     "film": film,
     "time": time_table,
     "audit": audit,
+    "scale": scale,
     "thresholds": thresholds,
     "failures": failures,
     "gates": gates,

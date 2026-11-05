@@ -1,0 +1,126 @@
+import cadquery as cq
+import math
+
+# Measured spline footprint of knurled knob (XY plane)
+OUTLINE_PTS = [
+    (13.017,-1.144),(12.968,-0.187),(12.261,0.907),(12.315,1.474),(12.821,2.358),
+    (12.328,4.048),(11.571,4.47),(11.266,5.011),(11.35,6.368),(10.666,7.587),
+    (9.108,8.26),(8.783,8.739),(8.583,9.805),(7.505,10.686),(5.895,10.817),
+    (5.104,11.93),(4.242,12.412),(3.158,12.554),(2.147,12.079),(0.715,13.014),
+    (-0.897,12.958),(-2.033,12.12),(-2.519,12.127),(-3.322,12.569),(-4.476,12.309),
+    (-5.117,11.937),(-5.474,11.079),(-5.889,10.728),(-7.451,10.698),(-8.504,9.885),
+    (-9.068,8.277),(-9.577,7.889),(-10.403,7.73),(-11.342,6.277),(-11.131,5.092),
+    (-11.573,4.409),(-12.435,3.825),(-12.773,2.366),(-12.19,0.898),(-13.017,-0.525),
+    (-12.858,-1.934),(-11.859,-3.105),(-12.215,-4.431),(-11.532,-6.073),(-10.66,-6.369),
+    (-10.231,-6.792),(-10.006,-7.359),(-10.083,-8.149),(-8.973,-9.475),(-7.53,-9.682),
+    (-6.926,-11.052),(-5.348,-11.878),(-4.034,-11.612),(-2.878,-12.776),(-1.384,-13.014),
+    (-0.033,-12.279),(0.579,-12.408),(1.309,-13.01),(2.844,-12.778),(3.936,-11.628),
+    (4.584,-11.569),(5.346,-11.834),(6.538,-11.361),(6.976,-10.972),(7.2,-10.135),
+    (7.656,-9.634),(9.141,-9.362),(10.101,-8.288),(10.062,-7.332),(10.356,-6.636),
+    (11.522,-6.083),(12.204,-4.424),(11.837,-3.521),(11.913,-2.991),(12.824,-2.061)
+]
+
+PARAMS = {
+    "thickness": (14.0, 8.0, 20.0, 0.5, "mm", False, "Body thickness"),
+    "bore_dia": (6.0, 3.0, 10.0, 0.1, "mm", True, "Mating D-shaft diameter"),
+    "bore_flat_depth": (1.0, 0.2, 2.5, 0.1, "mm", True, "Flat depth (chord height removed)"),
+    "bore_depth": (10.0, 5.0, 14.0, 0.5, "mm", True, "Bore depth from mounting face (14=through)"),
+    "clearance": (0.2, 0.0, 0.6, 0.05, "mm", True, "Diametric clearance for PLA FDM"),
+    "slot_length": (6.0, 3.0, 10.0, 0.1, "mm", True, "D-slot length (inferred)"),
+    "slot_width": (1.0, 0.4, 2.0, 0.1, "mm", True, "D-slot width (inferred)"),
+    "fillet_r": (1.0, 0.2, 2.0, 0.2, "mm", False, "Edge fillet radius"),
+    "knurl_smooth": (1, 0, 3, 1, "", False, "Topology smoothing iterations (integer)"),
+}
+
+def build(p: dict) -> cq.Workplane:
+    thickness = float(p["thickness"])
+    bore_dia = float(p["bore_dia"])
+    flat_depth = float(p["bore_flat_depth"])
+    bore_depth = float(p["bore_depth"])
+    clearance = float(p["clearance"])
+    fillet_r = float(p["fillet_r"])
+
+    # Effective bore radius with clearance
+    r = (bore_dia + clearance) / 2.0
+    # clamp flat depth
+    if flat_depth >= 2*r - 0.1:
+        flat_depth = 2*r - 0.2
+    if flat_depth < 0.05:
+        flat_depth = 0.05
+    flat_y = r - flat_depth  # flat line y = flat_y, cap y>flat_y removed
+    # intersection half width
+    # if flat_y exceeds r, no cut
+    if abs(flat_y) > r:
+        x_int = 0.0
+    else:
+        x_int = math.sqrt(max(0.0, r*r - flat_y*flat_y))
+
+    # Base solid: spline footprint extruded from Z=0 upward +Z, centered in XY
+    # Long axis +X is natural as profile is roughly symmetric
+    pts = OUTLINE_PTS
+    # close spline explicitly
+    body = cq.Workplane("XY").spline(pts, periodic=True).close().extrude(thickness, combine=True)
+
+    # Fillet top perimeter slightly for feel - fillet_all intent
+    # Use XY top edges
+    try:
+        if fillet_r > 0.05:
+            # fillet top and bottom outer edges; use edges with Z normals
+            body = body.edges(cq.selectors.BoxSelector(( -20,-20, thickness-0.1),(20,20,thickness+0.1))).fillet(min(fillet_r, 1.2))
+    except Exception:
+        pass
+    try:
+        if fillet_r > 0.05:
+            body = body.edges(cq.selectors.BoxSelector((-20,-20,-0.1),(20,20,0.1))).fillet(min(fillet_r, 0.8))
+    except Exception:
+        pass
+
+    # D-shaft bore: D profile centered at origin
+    # Build D wire: start at -x_int,flat_y -> +x_int,flat_y -> arc around bottom to close
+    # Angle for arc endpoints
+    if r > 1e-6 and abs(flat_y) <= r:
+        # use D shape
+        d_bore = (
+            cq.Workplane("XY")
+            .moveTo(-x_int, flat_y)
+            .lineTo(x_int, flat_y)
+            # threePointArc needs mid point at bottom
+            .threePointArc((0, -r), (-x_int, flat_y))
+            .close()
+            .extrude(bore_depth, combine=False)
+        )
+    else:
+        # fallback circular
+        d_bore = cq.Workplane("XY").circle(r).extrude(bore_depth, combine=False)
+
+    # Ensure bore sits from mounting face Z=0 upward: extrusion already from 0 to bore_depth
+    # If bore_depth >= thickness treat as through, ensure cut through
+    if bore_depth >= thickness - 1e-6:
+        # make slightly longer to guarantee through cut
+        if r > 1e-6 and abs(flat_y) <= r:
+            d_bore = (
+                cq.Workplane("XY")
+                .moveTo(-x_int, flat_y)
+                .lineTo(x_int, flat_y)
+                .threePointArc((0, -r), (-x_int, flat_y))
+                .close()
+                .extrude(thickness + 0.4, combine=False)
+            )
+        else:
+            d_bore = cq.Workplane("XY").circle(r).extrude(thickness + 0.4, combine=False)
+
+    # Cut bore from body
+    body = body.cut(d_bore)
+
+    # Bore mouth chamfer/fillet for printability (radius fillet_all id d_shaft_bore_1)
+    try:
+        if fillet_r > 0.05:
+            # select bore edges at Z=0
+            body = body.edges(cq.selectors.NearestToPointSelector((0,0,0))).fillet(min(fillet_r*0.6, 0.6))
+    except Exception:
+        pass
+
+    # Center at origin in XY already; ensure mounting face on Z=0 (already)
+    return body
+
+result = build({k: v[0] for k, v in PARAMS.items()})

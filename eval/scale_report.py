@@ -12,6 +12,7 @@ import argparse
 import datetime as dt
 import gzip
 import json
+import re
 import statistics
 from collections.abc import Mapping, Sequence
 from pathlib import Path
@@ -45,43 +46,93 @@ def load_scores(root: Path) -> list[dict[str, Any]]:
     return [json.loads(p.read_text()) for p in sorted(root.glob("*/*/*/score.json"))]
 
 
-def verified_but_off(scores: Sequence[Mapping[str, Any]], limit_mm: float = 0.5) -> dict[str, Any]:
+def worst_dim(score: Mapping[str, Any]) -> str:
+    """The scored dimension furthest from ground truth, for naming what a verified part got wrong."""
+    dims = bench.scored_dims(score)
+    return str(max(dims, key=lambda d: abs(float(d["error_mm"])))["name"]) if dims else ""
+
+
+def verified_but_off(scores: Sequence[Mapping[str, Any]]) -> dict[str, Any]:
+    """Parts the verifier passed that are more than 0.5 mm off ground truth, by the bench's own definition (`config_row`)."""
     ver = [s for s in scores if s.get("verified")]
-    off = [s for s in ver if float(s.get("max_abs_err_mm") or 0) > limit_mm]
-    height = [s for s in off if "thickness" in str(s.get("failure") or "")]
+    off = [s for s in ver if not s.get("pass_0_5")]
+    height = [s for s in off if "thickness" in worst_dim(s)]
     return {**rate(len(off), len(ver)), "off_in_height": len(height), "of_runs": len(scores)}
 
 
+def _events(root: Path, score: Mapping[str, Any]) -> list[dict[str, Any]]:
+    path = (
+        root / str(score.get("scale_suite")) / str(score.get("config")) / str(score.get("sample_id")) / "run.jsonl.gz"
+    )
+    if not path.exists():
+        return []
+    with gzip.open(path, "rt", encoding="utf-8") as fh:
+        return [json.loads(line) for line in fh]
+
+
 def understanding(scores: Sequence[Mapping[str, Any]], root: Path) -> dict[str, Any]:
-    """Muse Spark's family and broken-region answers, from each PS run's logged PartSpec, against the sample's template."""
+    """Muse Spark's family and whether a broken region was kept, read from each PS run's log against the sample's template.
+
+    The bench runs without packaging, so the PartSpec itself is not stored. The understand stage's closing label names the
+    family, and the job logs "broken region kept" when a broken region survives code's checks.
+    """
     from services.agent.templates import get_template
 
-    rows = []
-    for s in scores:
-        u = s.get("understood")
-        if s.get("config") != "PS" or not u or s.get("kind") != "template":
-            continue
-        rows.append((s, u))
-    fam_right = fam_n = 0
-    broken_said = broken_n = false_break = intact_n = 0
-    data = root.parent.parent.parent / "var" / "scale_data" / "manifest.json"
+    data = root / "dataset_manifest.json"
     template_of = {r["id"]: r.get("template") for r in json.loads(data.read_text())["samples"]} if data.exists() else {}
-    for s, u in rows:
-        name = template_of.get(s["sample_id"])
-        if name:
+    fam_right = fam_n = template_right = template_n = broken_said = broken_n = false_break = intact_n = 0
+    for s in scores:
+        name = template_of.get(str(s.get("sample_id")))
+        if s.get("config") != "PS" or s.get("kind") != "template" or not name:
+            continue
+        events = _events(root, s)
+        label = next(
+            (
+                str(e.get("label"))
+                for e in events
+                if e.get("t") == "stage" and e.get("stage") == "understand" and e.get("status") == "ok"
+            ),
+            "",
+        )
+        said = label.split(":", 1)[0].strip() if ":" in label else ""
+        if said:
             fam_n += 1
-            fam_right += str(get_template(name).family.value) == str(u.get("family"))
+            fam_right += said == str(get_template(name).family.value)
+        if s.get("template"):
+            template_n += 1
+            template_right += s.get("template") == name
+        kept = any("broken region kept" in str(e.get("msg") or "") for e in events)
         if s.get("scale_suite") == "broken":
             broken_n += 1
-            broken_said += bool(u.get("broken_region"))
+            broken_said += kept
         else:
             intact_n += 1
-            false_break += bool(u.get("broken_region"))
+            false_break += kept
     return {
         "family_correct": rate(fam_right, fam_n),
-        "broken_region_found": rate(broken_said, broken_n),
-        "false_break_on_intact": rate(false_break, intact_n),
+        "template_chosen_correct": rate(template_right, template_n),
+        "broken_region_kept_on_broken": rate(broken_said, broken_n),
+        "broken_region_kept_on_intact": rate(false_break, intact_n),
+        "source": "run logs; a separate 200-call understand stage was not needed",
+        "note": "the sample's intent sentence names the part, so family accuracy is not a test of vision alone",
     }
+
+
+def mask_sources(scores: Sequence[Mapping[str, Any]], root: Path) -> dict[str, dict[str, int]]:
+    """Which segmenter measured each run, from its own log line "(mask: ...)", per suite."""
+    out: dict[str, dict[str, int]] = {}
+    for s in scores:
+        suite = str(s.get("scale_suite"))
+        row = out.setdefault(suite, {})
+        found = None
+        for e in _events(root, s):
+            m = re.search(r"\(mask: ([^)]+)\)", str(e.get("msg") or e.get("label") or ""))
+            if m and str(e.get("msg") or e.get("label") or "").startswith("Measured"):
+                found = m.group(1)
+                break
+        key = found or "no measure line"
+        row[key] = row.get(key, 0) + 1
+    return out
 
 
 def model_totals(root: Path) -> dict[str, Any]:
@@ -122,14 +173,31 @@ def sam_summary(path: Path) -> dict[str, Any] | None:
         }
 
     presets = sorted({str(r.get("preset")) for r in good})
+    returned = [r for r in good if float(r["iou"]) > 0]
     return {
-        **stats(good),
+        "mask_returned": rate(len(returned), len(rows)),
+        "when_returned": stats(returned) if returned else None,
+        "all_photos": stats(good),
         "errors": len(rows) - len(good),
         "planned": 500,
         "ran": len(rows),
         "calls": sum(int(r.get("calls") or 0) for r in rows),
         "usd": round(sum(float(r.get("usd") or 0) for r in rows), 4),
-        "by_preset": {p: stats([r for r in good if str(r.get("preset")) == p]) for p in presets},
+        "by_preset": {
+            p: {
+                "photos": sum(str(r.get("preset")) == p for r in good),
+                "mask_returned": sum(str(r.get("preset")) == p for r in returned),
+            }
+            for p in presets
+        },
+        "by_suite": {
+            k: {
+                "photos": sum(r.get("suite") == k for r in rows),
+                "mask_returned": sum(r.get("suite") == k for r in returned),
+            }
+            for k in sorted({str(r.get("suite")) for r in rows})
+        },
+        "note": "IoU 0 here means no mask cleared the product's confidence floor, with the threshold fallback switched off for this test",
     }
 
 
@@ -169,6 +237,12 @@ def voice_summary(path: Path) -> dict[str, Any] | None:
         "speech": d.get("speech"),
         "spoken": part("spoken", rows),
         "typed": part("typed", rows),
+        "rescored": d.get("rescored"),
+        "wrong_typed": [
+            {"line": r["line"], "edits": r["typed"].get("edits"), "expected": r["typed"].get("expected")}
+            for r in rows
+            if r.get("typed") and not r["typed"].get("right")
+        ],
         "by_language": {
             la: {
                 "spoken": part("spoken", [r for r in rows if r["language"] == la]),
@@ -255,6 +329,7 @@ def build(root: Path = RUNS) -> dict[str, Any]:
         "label": "scale evaluation: live model calls on fresh synthetic renders, plan fixed before running (eval/SCALE_PLAN.md)",
         "counts_as_real_photos_measured": 0,
         "tree": sorted({str(s.get("tree")) for s in scores if s.get("tree")}),
+        "stop": json.loads((root / "run_end.json").read_text()) if (root / "run_end.json").exists() else None,
         "runs": counts,
         "planned": PLANNED,
         "not_run": {k: max(0, v - counts.get(k, 0)) for k, v in PLANNED.items()},
@@ -270,6 +345,7 @@ def build(root: Path = RUNS) -> dict[str, Any]:
         "paired_b1_vs_ps": paired(scores),
         "verified_but_off": {"all_ps": verified_but_off(all_ps), **side_question(scores)},
         "understanding": understanding(scores, root),
+        "mask_sources": mask_sources(scores, root),
         "sam": sam_summary(stages / "sam.json"),
         "wonder": wonder_summary(stages / "wonder.json"),
         "voice": voice_summary(stages / "voice.json"),

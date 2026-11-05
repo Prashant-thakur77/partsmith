@@ -1,0 +1,135 @@
+{
+ "suite": "synthetic",
+ "config": "PS",
+ "sample_id": "syn-hook-moire-s102744",
+ "split": "held_out",
+ "kind": "template",
+ "preset": "moire",
+ "mode": "live",
+ "gt_source": "synthetic_exact",
+ "status": "best_effort",
+ "verified": false,
+ "iterations": 6,
+ "iterations_to_converge": null,
+ "strategy": "template",
+ "template": "hook",
+ "verifier_max_error_mm": 5.722293245546604,
+ "retake_reason": null,
+ "failed_checks": [],
+ "usd": 0.336347,
+ "tokens_in": 303079,
+ "tokens_out": 43975,
+ "model_calls": 40,
+ "model_ms": 309377,
+ "provider_modes": [
+  "live",
+  "mock"
+ ],
+ "providers": {
+  "capture_triage": [
+   "mock:muse-glimmer"
+  ],
+  "segment": [
+   "meta:sam-3.1"
+  ],
+  "understand": [
+   "meta:muse-spark-1.3"
+  ],
+  "segment_points": [
+   "meta:sam-3.1"
+  ],
+  "plan": [
+   "baseten:meta-models/muse-spark-open-1026"
+  ],
+  "build": [
+   "baseten:meta-models/muse-spark-open-1026"
+  ],
+  "fix_agent": [
+   "baseten:meta-models/muse-spark-open-1026"
+  ],
+  "judge": [
+   "meta:muse-spark-1.3"
+  ],
+  "fix": [
+   "baseten:meta-models/muse-spark-open-1026"
+  ]
+ },
+ "convergence": [
+  {
+   "iter": 1,
+   "hausdorff_mm": 13.052069885638799,
+   "iou": 0.931550763830435,
+   "max_error_mm": 13.052069885638799
+  },
+  {
+   "iter": 2,
+   "hausdorff_mm": 5.94333870466191,
+   "iou": 0.948604151753758,
+   "max_error_mm": 5.94333870466191
+  },
+  {
+   "iter": 3,
+   "hausdorff_mm": 5.722293245546604,
+   "iou": 0.9507697270560405,
+   "max_error_mm": 5.722293245546604
+  },
+  {
+   "iter": 4,
+   "hausdorff_mm": 5.727030893506751,
+   "iou": 0.9484910248158478,
+   "max_error_mm": 5.727030893506751
+  },
+  {
+   "iter": 5,
+   "hausdorff_mm": 5.442657073709105,
+   "iou": 0.956169561695617,
+   "max_error_mm": 5.442657073709105
+  },
+  {
+   "iter": 6,
+   "hausdorff_mm": 5.439229189661666,
+   "iou": 0.9528141091196153,
+   "max_error_mm": 5.439229189661666
+  }
+ ],
+ "wall_s": 374.1,
+ "dims": [
+  {
+   "name": "length",
+   "gt_mm": 56.0,
+   "model_mm": 56.08,
+   "error_mm": 0.08
+  },
+  {
+   "name": "width",
+   "gt_mm": 26.1,
+   "model_mm": 26.2,
+   "error_mm": 0.1
+  },
+  {
+   "name": "thickness",
+   "gt_mm": 25.95,
+   "model_mm": 34.5,
+   "error_mm": 8.55
+  }
+ ],
+ "missed": [
+  "hole_1.diameter",
+  "hole_2.diameter",
+  "hole_3.diameter"
+ ],
+ "extra_holes": 2,
+ "pass_0_3": false,
+ "pass_0_5": false,
+ "valid": true,
+ "valid_reason": "",
+ "failure_category": "topology_wrong",
+ "overlay": "overlay.png",
+ "failure": "worst thickness +8.55 mm; missing hole_1.diameter, hole_2.diameter, hole_3.diameter",
+ "git": {
+  "sha": null,
+  "dirty": false
+ },
+ "scale_suite": "synthetic",
+ "tree": "bb75824+308438f7af72"
+}

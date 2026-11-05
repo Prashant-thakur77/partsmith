@@ -1,0 +1,116 @@
+{
+ "suite": "reference_objects",
+ "config": "PS",
+ "sample_id": "ref-lego-2x4-low-light-s719663",
+ "split": "held_out",
+ "kind": "reference_object",
+ "preset": "low-light",
+ "mode": "live",
+ "gt_source": "reference_spec",
+ "status": "best_effort",
+ "verified": false,
+ "iterations": 5,
+ "iterations_to_converge": null,
+ "strategy": "free_code",
+ "template": null,
+ "verifier_max_error_mm": 0.6978732963017388,
+ "retake_reason": null,
+ "failed_checks": [],
+ "usd": 0.266102,
+ "tokens_in": 288573,
+ "tokens_out": 34985,
+ "model_calls": 33,
+ "model_ms": 249344,
+ "provider_modes": [
+  "live"
+ ],
+ "providers": {
+  "segment": [
+   "meta:sam-3.1"
+  ],
+  "understand": [
+   "meta:muse-spark-1.3"
+  ],
+  "plan": [
+   "baseten:meta-models/muse-spark-open-1026"
+  ],
+  "build": [
+   "baseten:meta-models/muse-spark-open-1026"
+  ],
+  "fix_agent": [
+   "baseten:meta-models/muse-spark-open-1026"
+  ],
+  "judge": [
+   "meta:muse-spark-1.3"
+  ]
+ },
+ "convergence": [
+  {
+   "iter": 1,
+   "hausdorff_mm": 0.7622676009125555,
+   "iou": 0.9631551634665283,
+   "max_error_mm": 0.7622676009125555
+  },
+  {
+   "iter": 2,
+   "hausdorff_mm": 0.7091315779028731,
+   "iou": 0.9656464349530233,
+   "max_error_mm": 0.7091315779028731
+  },
+  {
+   "iter": 3,
+   "hausdorff_mm": 0.6978732963017388,
+   "iou": 0.96569250317662,
+   "max_error_mm": 0.6978732963017388
+  },
+  {
+   "iter": 4,
+   "hausdorff_mm": 0.8929983345718233,
+   "iou": 0.9561248359673646,
+   "max_error_mm": 0.8929983345718233
+  },
+  {
+   "iter": 5,
+   "hausdorff_mm": 0.7370697892486584,
+   "iou": 0.9675377468060394,
+   "max_error_mm": 0.7370697892486584
+  }
+ ],
+ "wall_s": 353.4,
+ "dims": [
+  {
+   "name": "length",
+   "gt_mm": 31.8,
+   "model_mm": 31.8,
+   "error_mm": 0.0,
+   "within_spec": true
+  },
+  {
+   "name": "width",
+   "gt_mm": 15.8,
+   "model_mm": 15.8,
+   "error_mm": 0.0,
+   "within_spec": true
+  },
+  {
+   "name": "thickness",
+   "gt_mm": 11.3,
+   "model_mm": 11.4,
+   "error_mm": 0.1,
+   "within_spec": false
+  }
+ ],
+ "missed": [],
+ "extra_holes": 0,
+ "pass_0_3": true,
+ "pass_0_5": true,
+ "valid": true,
+ "valid_reason": "",
+ "failure_category": null,
+ "git": {
+  "sha": null,
+  "dirty": false
+ },
+ "scale_suite": "reference_objects",
+ "tree": "bb75824+308438f7af72"
+}

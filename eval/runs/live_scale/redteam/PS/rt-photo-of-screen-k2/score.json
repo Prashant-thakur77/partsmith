@@ -1,0 +1,52 @@
+{
+ "suite": "redteam",
+ "config": "PS",
+ "sample_id": "rt-photo-of-screen-k2",
+ "split": "held_out",
+ "kind": "redteam",
+ "preset": "redteam",
+ "mode": "live",
+ "gt_source": "expected_outcome",
+ "status": "failed",
+ "verified": false,
+ "iterations": 0,
+ "iterations_to_converge": null,
+ "strategy": "template",
+ "template": null,
+ "verifier_max_error_mm": null,
+ "retake_reason": "Wavy stripes from the screen are visible \u2014 move the phone a little further away or rotate it slightly.",
+ "failed_checks": [
+  "moire"
+ ],
+ "usd": 0,
+ "tokens_in": 0,
+ "tokens_out": 0,
+ "model_calls": 0,
+ "model_ms": 0,
+ "provider_modes": [],
+ "providers": {},
+ "convergence": [],
+ "wall_s": 0.74,
+ "valid": false,
+ "dims": [],
+ "missed": [],
+ "extra_holes": 0,
+ "pass_0_3": false,
+ "pass_0_5": false,
+ "expected_outcome": "reject",
+ "expected_checks": [
+  "moire",
+  "blur",
+  "contrast"
+ ],
+ "expected_why": "a re-photographed screen: moir\u00e9, soft, low contrast",
+ "outcome": "reject",
+ "outcome_correct": true,
+ "failure_category": null,
+ "git": {
+  "sha": null,
+  "dirty": false
+ },
+ "scale_suite": "redteam",
+ "tree": "bb75824+308438f7af72"
+}

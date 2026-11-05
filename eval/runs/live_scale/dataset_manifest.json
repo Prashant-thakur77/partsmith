@@ -1,0 +1,4053 @@
+{
+ "seed": 20261105,
+ "samples": [
+  {
+   "suite": "synthetic",
+   "id": "syn-hook-moire-s174552",
+   "preset": "moire",
+   "template": "hook",
+   "kind": "template"
+  },
+  {
+   "suite": "synthetic",
+   "id": "syn-hinge-leaf-low-light-s148944",
+   "preset": "low-light",
+   "template": "hinge_leaf",
+   "kind": "template"
+  },
+  {
+   "suite": "synthetic",
+   "id": "syn-cupboard-latch-white-part-s89460",
+   "preset": "white-part",
+   "template": "cupboard_latch",
+   "kind": "template"
+  },
+  {
+   "suite": "synthetic",
+   "id": "syn-cable-clip-paper-s610890",
+   "preset": "paper",
+   "template": "cable_clip",
+   "kind": "template"
+  },
+  {
+   "suite": "synthetic",
+   "id": "syn-knob-clean-s710711",
+   "preset": "clean",
+   "template": "knob",
+   "kind": "template"
+  },
+  {
+   "suite": "synthetic",
+   "id": "syn-caster-wheel-tilt-s799718",
+   "preset": "tilt",
+   "template": "caster_wheel",
+   "kind": "template"
+  },
+  {
+   "suite": "synthetic",
+   "id": "syn-battery-cover-blur-s600269",
+   "preset": "blur",
+   "template": "battery_cover",
+   "kind": "template"
+  },
+  {
+   "suite": "synthetic",
+   "id": "syn-l-bracket-glare-s348159",
+   "preset": "glare",
+   "template": "l_bracket",
+   "kind": "template"
+  },
+  {
+   "suite": "synthetic",
+   "id": "syn-clip-moire-s863295",
+   "preset": "moire",
+   "template": "clip",
+   "kind": "template"
+  },
+  {
+   "suite": "synthetic",
+   "id": "syn-spacer-low-light-s503793",
+   "preset": "low-light",
+   "template": "spacer",
+   "kind": "template"
+  },
+  {
+   "suite": "synthetic",
+   "id": "syn-hook-white-part-s107935",
+   "preset": "white-part",
+   "template": "hook",
+   "kind": "template"
+  },
+  {
+   "suite": "synthetic",
+   "id": "syn-hinge-leaf-paper-s786038",
+   "preset": "paper",
+   "template": "hinge_leaf",
+   "kind": "template"
+  },
+  {
+   "suite": "synthetic",
+   "id": "syn-cupboard-latch-clean-s69711",
+   "preset": "clean",
+   "template": "cupboard_latch",
+   "kind": "template"
+  },
+  {
+   "suite": "synthetic",
+   "id": "syn-cable-clip-tilt-s296401",
+   "preset": "tilt",
+   "template": "cable_clip",
+   "kind": "template"
+  },
+  {
+   "suite": "synthetic",
+   "id": "syn-knob-blur-s944427",
+   "preset": "blur",
+   "template": "knob",
+   "kind": "template"
+  },
+  {
+   "suite": "synthetic",
+   "id": "syn-caster-wheel-glare-s538663",
+   "preset": "glare",
+   "template": "caster_wheel",
+   "kind": "template"
+  },
+  {
+   "suite": "synthetic",
+   "id": "syn-battery-cover-moire-s881212",
+   "preset": "moire",
+   "template": "battery_cover",
+   "kind": "template"
+  },
+  {
+   "suite": "synthetic",
+   "id": "syn-l-bracket-low-light-s205",
+   "preset": "low-light",
+   "template": "l_bracket",
+   "kind": "template"
+  },
+  {
+   "suite": "synthetic",
+   "id": "syn-clip-white-part-s174797",
+   "preset": "white-part",
+   "template": "clip",
+   "kind": "template"
+  },
+  {
+   "suite": "synthetic",
+   "id": "syn-spacer-paper-s980249",
+   "preset": "paper",
+   "template": "spacer",
+   "kind": "template"
+  },
+  {
+   "suite": "synthetic",
+   "id": "syn-hook-clean-s65998",
+   "preset": "clean",
+   "template": "hook",
+   "kind": "template"
+  },
+  {
+   "suite": "synthetic",
+   "id": "syn-hinge-leaf-tilt-s183481",
+   "preset": "tilt",
+   "template": "hinge_leaf",
+   "kind": "template"
+  },
+  {
+   "suite": "synthetic",
+   "id": "syn-cupboard-latch-blur-s89734",
+   "preset": "blur",
+   "template": "cupboard_latch",
+   "kind": "template"
+  },
+  {
+   "suite": "synthetic",
+   "id": "syn-cable-clip-glare-s55757",
+   "preset": "glare",
+   "template": "cable_clip",
+   "kind": "template"
+  },
+  {
+   "suite": "synthetic",
+   "id": "syn-knob-moire-s501308",
+   "preset": "moire",
+   "template": "knob",
+   "kind": "template"
+  },
+  {
+   "suite": "synthetic",
+   "id": "syn-caster-wheel-low-light-s609663",
+   "preset": "low-light",
+   "template": "caster_wheel",
+   "kind": "template"
+  },
+  {
+   "suite": "synthetic",
+   "id": "syn-battery-cover-white-part-s412147",
+   "preset": "white-part",
+   "template": "battery_cover",
+   "kind": "template"
+  },
+  {
+   "suite": "synthetic",
+   "id": "syn-l-bracket-paper-s911683",
+   "preset": "paper",
+   "template": "l_bracket",
+   "kind": "template"
+  },
+  {
+   "suite": "synthetic",
+   "id": "syn-clip-clean-s917695",
+   "preset": "clean",
+   "template": "clip",
+   "kind": "template"
+  },
+  {
+   "suite": "synthetic",
+   "id": "syn-spacer-tilt-s432483",
+   "preset": "tilt",
+   "template": "spacer",
+   "kind": "template"
+  },
+  {
+   "suite": "synthetic",
+   "id": "syn-hook-blur-s589705",
+   "preset": "blur",
+   "template": "hook",
+   "kind": "template"
+  },
+  {
+   "suite": "synthetic",
+   "id": "syn-hinge-leaf-glare-s580653",
+   "preset": "glare",
+   "template": "hinge_leaf",
+   "kind": "template"
+  },
+  {
+   "suite": "synthetic",
+   "id": "syn-cupboard-latch-moire-s925064",
+   "preset": "moire",
+   "template": "cupboard_latch",
+   "kind": "template"
+  },
+  {
+   "suite": "synthetic",
+   "id": "syn-cable-clip-low-light-s301443",
+   "preset": "low-light",
+   "template": "cable_clip",
+   "kind": "template"
+  },
+  {
+   "suite": "synthetic",
+   "id": "syn-knob-white-part-s630651",
+   "preset": "white-part",
+   "template": "knob",
+   "kind": "template"
+  },
+  {
+   "suite": "synthetic",
+   "id": "syn-caster-wheel-paper-s42872",
+   "preset": "paper",
+   "template": "caster_wheel",
+   "kind": "template"
+  },
+  {
+   "suite": "synthetic",
+   "id": "syn-battery-cover-clean-s226207",
+   "preset": "clean",
+   "template": "battery_cover",
+   "kind": "template"
+  },
+  {
+   "suite": "synthetic",
+   "id": "syn-l-bracket-tilt-s338032",
+   "preset": "tilt",
+   "template": "l_bracket",
+   "kind": "template"
+  },
+  {
+   "suite": "synthetic",
+   "id": "syn-clip-blur-s999682",
+   "preset": "blur",
+   "template": "clip",
+   "kind": "template"
+  },
+  {
+   "suite": "synthetic",
+   "id": "syn-spacer-glare-s937680",
+   "preset": "glare",
+   "template": "spacer",
+   "kind": "template"
+  },
+  {
+   "suite": "synthetic",
+   "id": "syn-hook-moire-s386617",
+   "preset": "moire",
+   "template": "hook",
+   "kind": "template"
+  },
+  {
+   "suite": "synthetic",
+   "id": "syn-hinge-leaf-low-light-s237142",
+   "preset": "low-light",
+   "template": "hinge_leaf",
+   "kind": "template"
+  },
+  {
+   "suite": "synthetic",
+   "id": "syn-cupboard-latch-white-part-s574380",
+   "preset": "white-part",
+   "template": "cupboard_latch",
+   "kind": "template"
+  },
+  {
+   "suite": "synthetic",
+   "id": "syn-cable-clip-paper-s718960",
+   "preset": "paper",
+   "template": "cable_clip",
+   "kind": "template"
+  },
+  {
+   "suite": "synthetic",
+   "id": "syn-knob-clean-s427193",
+   "preset": "clean",
+   "template": "knob",
+   "kind": "template"
+  },
+  {
+   "suite": "synthetic",
+   "id": "syn-caster-wheel-tilt-s522097",
+   "preset": "tilt",
+   "template": "caster_wheel",
+   "kind": "template"
+  },
+  {
+   "suite": "synthetic",
+   "id": "syn-battery-cover-blur-s17556",
+   "preset": "blur",
+   "template": "battery_cover",
+   "kind": "template"
+  },
+  {
+   "suite": "synthetic",
+   "id": "syn-l-bracket-glare-s830456",
+   "preset": "glare",
+   "template": "l_bracket",
+   "kind": "template"
+  },
+  {
+   "suite": "synthetic",
+   "id": "syn-clip-moire-s71412",
+   "preset": "moire",
+   "template": "clip",
+   "kind": "template"
+  },
+  {
+   "suite": "synthetic",
+   "id": "syn-spacer-low-light-s557831",
+   "preset": "low-light",
+   "template": "spacer",
+   "kind": "template"
+  },
+  {
+   "suite": "synthetic",
+   "id": "syn-hook-white-part-s743315",
+   "preset": "white-part",
+   "template": "hook",
+   "kind": "template"
+  },
+  {
+   "suite": "synthetic",
+   "id": "syn-hinge-leaf-paper-s891365",
+   "preset": "paper",
+   "template": "hinge_leaf",
+   "kind": "template"
+  },
+  {
+   "suite": "synthetic",
+   "id": "syn-cupboard-latch-clean-s732317",
+   "preset": "clean",
+   "template": "cupboard_latch",
+   "kind": "template"
+  },
+  {
+   "suite": "synthetic",
+   "id": "syn-cable-clip-tilt-s232548",
+   "preset": "tilt",
+   "template": "cable_clip",
+   "kind": "template"
+  },
+  {
+   "suite": "synthetic",
+   "id": "syn-knob-blur-s987653",
+   "preset": "blur",
+   "template": "knob",
+   "kind": "template"
+  },
+  {
+   "suite": "synthetic",
+   "id": "syn-caster-wheel-glare-s371345",
+   "preset": "glare",
+   "template": "caster_wheel",
+   "kind": "template"
+  },
+  {
+   "suite": "synthetic",
+   "id": "syn-battery-cover-moire-s187607",
+   "preset": "moire",
+   "template": "battery_cover",
+   "kind": "template"
+  },
+  {
+   "suite": "synthetic",
+   "id": "syn-l-bracket-low-light-s530182",
+   "preset": "low-light",
+   "template": "l_bracket",
+   "kind": "template"
+  },
+  {
+   "suite": "synthetic",
+   "id": "syn-clip-white-part-s423391",
+   "preset": "white-part",
+   "template": "clip",
+   "kind": "template"
+  },
+  {
+   "suite": "synthetic",
+   "id": "syn-spacer-paper-s590214",
+   "preset": "paper",
+   "template": "spacer",
+   "kind": "template"
+  },
+  {
+   "suite": "synthetic",
+   "id": "syn-hook-clean-s389065",
+   "preset": "clean",
+   "template": "hook",
+   "kind": "template"
+  },
+  {
+   "suite": "synthetic",
+   "id": "syn-hinge-leaf-tilt-s441660",
+   "preset": "tilt",
+   "template": "hinge_leaf",
+   "kind": "template"
+  },
+  {
+   "suite": "synthetic",
+   "id": "syn-cupboard-latch-blur-s831196",
+   "preset": "blur",
+   "template": "cupboard_latch",
+   "kind": "template"
+  },
+  {
+   "suite": "synthetic",
+   "id": "syn-cable-clip-glare-s339582",
+   "preset": "glare",
+   "template": "cable_clip",
+   "kind": "template"
+  },
+  {
+   "suite": "synthetic",
+   "id": "syn-knob-moire-s168885",
+   "preset": "moire",
+   "template": "knob",
+   "kind": "template"
+  },
+  {
+   "suite": "synthetic",
+   "id": "syn-caster-wheel-low-light-s332078",
+   "preset": "low-light",
+   "template": "caster_wheel",
+   "kind": "template"
+  },
+  {
+   "suite": "synthetic",
+   "id": "syn-battery-cover-white-part-s201553",
+   "preset": "white-part",
+   "template": "battery_cover",
+   "kind": "template"
+  },
+  {
+   "suite": "synthetic",
+   "id": "syn-l-bracket-paper-s369797",
+   "preset": "paper",
+   "template": "l_bracket",
+   "kind": "template"
+  },
+  {
+   "suite": "synthetic",
+   "id": "syn-clip-clean-s799895",
+   "preset": "clean",
+   "template": "clip",
+   "kind": "template"
+  },
+  {
+   "suite": "synthetic",
+   "id": "syn-spacer-tilt-s43405",
+   "preset": "tilt",
+   "template": "spacer",
+   "kind": "template"
+  },
+  {
+   "suite": "synthetic",
+   "id": "syn-hook-blur-s700811",
+   "preset": "blur",
+   "template": "hook",
+   "kind": "template"
+  },
+  {
+   "suite": "synthetic",
+   "id": "syn-hinge-leaf-glare-s374250",
+   "preset": "glare",
+   "template": "hinge_leaf",
+   "kind": "template"
+  },
+  {
+   "suite": "synthetic",
+   "id": "syn-cupboard-latch-moire-s44021",
+   "preset": "moire",
+   "template": "cupboard_latch",
+   "kind": "template"
+  },
+  {
+   "suite": "synthetic",
+   "id": "syn-cable-clip-low-light-s150067",
+   "error": "ValueError: cable_clip: top view does not fit mat screen-s"
+  },
+  {
+   "suite": "synthetic",
+   "id": "syn-knob-white-part-s967080",
+   "preset": "white-part",
+   "template": "knob",
+   "kind": "template"
+  },
+  {
+   "suite": "synthetic",
+   "id": "syn-caster-wheel-paper-s827573",
+   "preset": "paper",
+   "template": "caster_wheel",
+   "kind": "template"
+  },
+  {
+   "suite": "synthetic",
+   "id": "syn-battery-cover-clean-s703838",
+   "preset": "clean",
+   "template": "battery_cover",
+   "kind": "template"
+  },
+  {
+   "suite": "synthetic",
+   "id": "syn-l-bracket-tilt-s102892",
+   "preset": "tilt",
+   "template": "l_bracket",
+   "kind": "template"
+  },
+  {
+   "suite": "synthetic",
+   "id": "syn-clip-blur-s48049",
+   "preset": "blur",
+   "template": "clip",
+   "kind": "template"
+  },
+  {
+   "suite": "synthetic",
+   "id": "syn-spacer-glare-s624623",
+   "preset": "glare",
+   "template": "spacer",
+   "kind": "template"
+  },
+  {
+   "suite": "synthetic",
+   "id": "syn-hook-moire-s101983",
+   "preset": "moire",
+   "template": "hook",
+   "kind": "template"
+  },
+  {
+   "suite": "synthetic",
+   "id": "syn-hinge-leaf-low-light-s342147",
+   "preset": "low-light",
+   "template": "hinge_leaf",
+   "kind": "template"
+  },
+  {
+   "suite": "synthetic",
+   "id": "syn-cupboard-latch-white-part-s317474",
+   "preset": "white-part",
+   "template": "cupboard_latch",
+   "kind": "template"
+  },
+  {
+   "suite": "synthetic",
+   "id": "syn-cable-clip-paper-s752255",
+   "preset": "paper",
+   "template": "cable_clip",
+   "kind": "template"
+  },
+  {
+   "suite": "synthetic",
+   "id": "syn-knob-clean-s158165",
+   "preset": "clean",
+   "template": "knob",
+   "kind": "template"
+  },
+  {
+   "suite": "synthetic",
+   "id": "syn-caster-wheel-tilt-s476654",
+   "preset": "tilt",
+   "template": "caster_wheel",
+   "kind": "template"
+  },
+  {
+   "suite": "synthetic",
+   "id": "syn-battery-cover-blur-s250284",
+   "preset": "blur",
+   "template": "battery_cover",
+   "kind": "template"
+  },
+  {
+   "suite": "synthetic",
+   "id": "syn-l-bracket-glare-s779290",
+   "preset": "glare",
+   "template": "l_bracket",
+   "kind": "template"
+  },
+  {
+   "suite": "synthetic",
+   "id": "syn-clip-moire-s965844",
+   "preset": "moire",
+   "template": "clip",
+   "kind": "template"
+  },
+  {
+   "suite": "synthetic",
+   "id": "syn-spacer-low-light-s448832",
+   "preset": "low-light",
+   "template": "spacer",
+   "kind": "template"
+  },
+  {
+   "suite": "synthetic",
+   "id": "syn-hook-white-part-s99479",
+   "preset": "white-part",
+   "template": "hook",
+   "kind": "template"
+  },
+  {
+   "suite": "synthetic",
+   "id": "syn-hinge-leaf-paper-s184079",
+   "preset": "paper",
+   "template": "hinge_leaf",
+   "kind": "template"
+  },
+  {
+   "suite": "synthetic",
+   "id": "syn-cupboard-latch-clean-s624173",
+   "preset": "clean",
+   "template": "cupboard_latch",
+   "kind": "template"
+  },
+  {
+   "suite": "synthetic",
+   "id": "syn-cable-clip-tilt-s341727",
+   "preset": "tilt",
+   "template": "cable_clip",
+   "kind": "template"
+  },
+  {
+   "suite": "synthetic",
+   "id": "syn-knob-blur-s673608",
+   "preset": "blur",
+   "template": "knob",
+   "kind": "template"
+  },
+  {
+   "suite": "synthetic",
+   "id": "syn-caster-wheel-glare-s332903",
+   "preset": "glare",
+   "template": "caster_wheel",
+   "kind": "template"
+  },
+  {
+   "suite": "synthetic",
+   "id": "syn-battery-cover-moire-s938591",
+   "preset": "moire",
+   "template": "battery_cover",
+   "kind": "template"
+  },
+  {
+   "suite": "synthetic",
+   "id": "syn-l-bracket-low-light-s126518",
+   "preset": "low-light",
+   "template": "l_bracket",
+   "kind": "template"
+  },
+  {
+   "suite": "synthetic",
+   "id": "syn-clip-white-part-s941504",
+   "preset": "white-part",
+   "template": "clip",
+   "kind": "template"
+  },
+  {
+   "suite": "synthetic",
+   "id": "syn-spacer-paper-s557761",
+   "preset": "paper",
+   "template": "spacer",
+   "kind": "template"
+  },
+  {
+   "suite": "synthetic",
+   "id": "syn-hook-clean-s600296",
+   "preset": "clean",
+   "template": "hook",
+   "kind": "template"
+  },
+  {
+   "suite": "synthetic",
+   "id": "syn-hinge-leaf-tilt-s599342",
+   "preset": "tilt",
+   "template": "hinge_leaf",
+   "kind": "template"
+  },
+  {
+   "suite": "synthetic",
+   "id": "syn-cupboard-latch-blur-s467816",
+   "preset": "blur",
+   "template": "cupboard_latch",
+   "kind": "template"
+  },
+  {
+   "suite": "synthetic",
+   "id": "syn-cable-clip-glare-s249622",
+   "preset": "glare",
+   "template": "cable_clip",
+   "kind": "template"
+  },
+  {
+   "suite": "synthetic",
+   "id": "syn-knob-moire-s343977",
+   "preset": "moire",
+   "template": "knob",
+   "kind": "template"
+  },
+  {
+   "suite": "synthetic",
+   "id": "syn-caster-wheel-low-light-s430756",
+   "preset": "low-light",
+   "template": "caster_wheel",
+   "kind": "template"
+  },
+  {
+   "suite": "synthetic",
+   "id": "syn-battery-cover-white-part-s68304",
+   "preset": "white-part",
+   "template": "battery_cover",
+   "kind": "template"
+  },
+  {
+   "suite": "synthetic",
+   "id": "syn-l-bracket-paper-s936018",
+   "preset": "paper",
+   "template": "l_bracket",
+   "kind": "template"
+  },
+  {
+   "suite": "synthetic",
+   "id": "syn-clip-clean-s916219",
+   "preset": "clean",
+   "template": "clip",
+   "kind": "template"
+  },
+  {
+   "suite": "synthetic",
+   "id": "syn-spacer-tilt-s184391",
+   "preset": "tilt",
+   "template": "spacer",
+   "kind": "template"
+  },
+  {
+   "suite": "synthetic",
+   "id": "syn-hook-blur-s724934",
+   "preset": "blur",
+   "template": "hook",
+   "kind": "template"
+  },
+  {
+   "suite": "synthetic",
+   "id": "syn-hinge-leaf-glare-s826459",
+   "preset": "glare",
+   "template": "hinge_leaf",
+   "kind": "template"
+  },
+  {
+   "suite": "synthetic",
+   "id": "syn-cupboard-latch-moire-s441814",
+   "preset": "moire",
+   "template": "cupboard_latch",
+   "kind": "template"
+  },
+  {
+   "suite": "synthetic",
+   "id": "syn-cable-clip-low-light-s854081",
+   "preset": "low-light",
+   "template": "cable_clip",
+   "kind": "template"
+  },
+  {
+   "suite": "synthetic",
+   "id": "syn-knob-white-part-s613228",
+   "preset": "white-part",
+   "template": "knob",
+   "kind": "template"
+  },
+  {
+   "suite": "synthetic",
+   "id": "syn-caster-wheel-paper-s259564",
+   "preset": "paper",
+   "template": "caster_wheel",
+   "kind": "template"
+  },
+  {
+   "suite": "synthetic",
+   "id": "syn-battery-cover-clean-s530191",
+   "preset": "clean",
+   "template": "battery_cover",
+   "kind": "template"
+  },
+  {
+   "suite": "synthetic",
+   "id": "syn-l-bracket-tilt-s866600",
+   "preset": "tilt",
+   "template": "l_bracket",
+   "kind": "template"
+  },
+  {
+   "suite": "synthetic",
+   "id": "syn-clip-blur-s284351",
+   "preset": "blur",
+   "template": "clip",
+   "kind": "template"
+  },
+  {
+   "suite": "synthetic",
+   "id": "syn-spacer-glare-s729629",
+   "preset": "glare",
+   "template": "spacer",
+   "kind": "template"
+  },
+  {
+   "suite": "synthetic",
+   "id": "syn-hook-moire-s314865",
+   "preset": "moire",
+   "template": "hook",
+   "kind": "template"
+  },
+  {
+   "suite": "synthetic",
+   "id": "syn-hinge-leaf-low-light-s93170",
+   "preset": "low-light",
+   "template": "hinge_leaf",
+   "kind": "template"
+  },
+  {
+   "suite": "synthetic",
+   "id": "syn-cupboard-latch-white-part-s138953",
+   "preset": "white-part",
+   "template": "cupboard_latch",
+   "kind": "template"
+  },
+  {
+   "suite": "synthetic",
+   "id": "syn-cable-clip-paper-s377098",
+   "preset": "paper",
+   "template": "cable_clip",
+   "kind": "template"
+  },
+  {
+   "suite": "synthetic",
+   "id": "syn-knob-clean-s603095",
+   "preset": "clean",
+   "template": "knob",
+   "kind": "template"
+  },
+  {
+   "suite": "synthetic",
+   "id": "syn-caster-wheel-tilt-s240587",
+   "preset": "tilt",
+   "template": "caster_wheel",
+   "kind": "template"
+  },
+  {
+   "suite": "synthetic",
+   "id": "syn-battery-cover-blur-s309987",
+   "preset": "blur",
+   "template": "battery_cover",
+   "kind": "template"
+  },
+  {
+   "suite": "synthetic",
+   "id": "syn-l-bracket-glare-s448778",
+   "preset": "glare",
+   "template": "l_bracket",
+   "kind": "template"
+  },
+  {
+   "suite": "synthetic",
+   "id": "syn-clip-moire-s546082",
+   "preset": "moire",
+   "template": "clip",
+   "kind": "template"
+  },
+  {
+   "suite": "synthetic",
+   "id": "syn-spacer-low-light-s142789",
+   "preset": "low-light",
+   "template": "spacer",
+   "kind": "template"
+  },
+  {
+   "suite": "synthetic",
+   "id": "syn-hook-white-part-s238475",
+   "preset": "white-part",
+   "template": "hook",
+   "kind": "template"
+  },
+  {
+   "suite": "synthetic",
+   "id": "syn-hinge-leaf-paper-s226507",
+   "preset": "paper",
+   "template": "hinge_leaf",
+   "kind": "template"
+  },
+  {
+   "suite": "synthetic",
+   "id": "syn-cupboard-latch-clean-s53314",
+   "preset": "clean",
+   "template": "cupboard_latch",
+   "kind": "template"
+  },
+  {
+   "suite": "synthetic",
+   "id": "syn-cable-clip-tilt-s44257",
+   "preset": "tilt",
+   "template": "cable_clip",
+   "kind": "template"
+  },
+  {
+   "suite": "synthetic",
+   "id": "syn-knob-blur-s742738",
+   "preset": "blur",
+   "template": "knob",
+   "kind": "template"
+  },
+  {
+   "suite": "synthetic",
+   "id": "syn-caster-wheel-glare-s947775",
+   "preset": "glare",
+   "template": "caster_wheel",
+   "kind": "template"
+  },
+  {
+   "suite": "synthetic",
+   "id": "syn-battery-cover-moire-s766151",
+   "preset": "moire",
+   "template": "battery_cover",
+   "kind": "template"
+  },
+  {
+   "suite": "synthetic",
+   "id": "syn-l-bracket-low-light-s265309",
+   "preset": "low-light",
+   "template": "l_bracket",
+   "kind": "template"
+  },
+  {
+   "suite": "synthetic",
+   "id": "syn-clip-white-part-s551560",
+   "preset": "white-part",
+   "template": "clip",
+   "kind": "template"
+  },
+  {
+   "suite": "synthetic",
+   "id": "syn-spacer-paper-s534495",
+   "preset": "paper",
+   "template": "spacer",
+   "kind": "template"
+  },
+  {
+   "suite": "synthetic",
+   "id": "syn-hook-clean-s474287",
+   "preset": "clean",
+   "template": "hook",
+   "kind": "template"
+  },
+  {
+   "suite": "synthetic",
+   "id": "syn-hinge-leaf-tilt-s283513",
+   "preset": "tilt",
+   "template": "hinge_leaf",
+   "kind": "template"
+  },
+  {
+   "suite": "synthetic",
+   "id": "syn-cupboard-latch-blur-s204774",
+   "preset": "blur",
+   "template": "cupboard_latch",
+   "kind": "template"
+  },
+  {
+   "suite": "synthetic",
+   "id": "syn-cable-clip-glare-s279167",
+   "preset": "glare",
+   "template": "cable_clip",
+   "kind": "template"
+  },
+  {
+   "suite": "synthetic",
+   "id": "syn-knob-moire-s287698",
+   "preset": "moire",
+   "template": "knob",
+   "kind": "template"
+  },
+  {
+   "suite": "synthetic",
+   "id": "syn-caster-wheel-low-light-s889701",
+   "preset": "low-light",
+   "template": "caster_wheel",
+   "kind": "template"
+  },
+  {
+   "suite": "synthetic",
+   "id": "syn-battery-cover-white-part-s743208",
+   "preset": "white-part",
+   "template": "battery_cover",
+   "kind": "template"
+  },
+  {
+   "suite": "synthetic",
+   "id": "syn-l-bracket-paper-s388080",
+   "preset": "paper",
+   "template": "l_bracket",
+   "kind": "template"
+  },
+  {
+   "suite": "synthetic",
+   "id": "syn-clip-clean-s10954",
+   "preset": "clean",
+   "template": "clip",
+   "kind": "template"
+  },
+  {
+   "suite": "synthetic",
+   "id": "syn-spacer-tilt-s816269",
+   "preset": "tilt",
+   "template": "spacer",
+   "kind": "template"
+  },
+  {
+   "suite": "synthetic",
+   "id": "syn-hook-blur-s177787",
+   "preset": "blur",
+   "template": "hook",
+   "kind": "template"
+  },
+  {
+   "suite": "synthetic",
+   "id": "syn-hinge-leaf-glare-s61936",
+   "preset": "glare",
+   "template": "hinge_leaf",
+   "kind": "template"
+  },
+  {
+   "suite": "synthetic",
+   "id": "syn-cupboard-latch-moire-s614173",
+   "preset": "moire",
+   "template": "cupboard_latch",
+   "kind": "template"
+  },
+  {
+   "suite": "synthetic",
+   "id": "syn-cable-clip-low-light-s136540",
+   "preset": "low-light",
+   "template": "cable_clip",
+   "kind": "template"
+  },
+  {
+   "suite": "synthetic",
+   "id": "syn-knob-white-part-s524241",
+   "preset": "white-part",
+   "template": "knob",
+   "kind": "template"
+  },
+  {
+   "suite": "synthetic",
+   "id": "syn-caster-wheel-paper-s450446",
+   "preset": "paper",
+   "template": "caster_wheel",
+   "kind": "template"
+  },
+  {
+   "suite": "synthetic",
+   "id": "syn-battery-cover-clean-s125908",
+   "preset": "clean",
+   "template": "battery_cover",
+   "kind": "template"
+  },
+  {
+   "suite": "synthetic",
+   "id": "syn-l-bracket-tilt-s967156",
+   "preset": "tilt",
+   "template": "l_bracket",
+   "kind": "template"
+  },
+  {
+   "suite": "synthetic",
+   "id": "syn-clip-blur-s85407",
+   "preset": "blur",
+   "template": "clip",
+   "kind": "template"
+  },
+  {
+   "suite": "synthetic",
+   "id": "syn-spacer-glare-s47212",
+   "preset": "glare",
+   "template": "spacer",
+   "kind": "template"
+  },
+  {
+   "suite": "synthetic",
+   "id": "syn-hook-moire-s102744",
+   "preset": "moire",
+   "template": "hook",
+   "kind": "template"
+  },
+  {
+   "suite": "synthetic",
+   "id": "syn-hinge-leaf-low-light-s47774",
+   "preset": "low-light",
+   "template": "hinge_leaf",
+   "kind": "template"
+  },
+  {
+   "suite": "synthetic",
+   "id": "syn-cupboard-latch-white-part-s776742",
+   "preset": "white-part",
+   "template": "cupboard_latch",
+   "kind": "template"
+  },
+  {
+   "suite": "synthetic",
+   "id": "syn-cable-clip-paper-s557399",
+   "preset": "paper",
+   "template": "cable_clip",
+   "kind": "template"
+  },
+  {
+   "suite": "synthetic",
+   "id": "syn-knob-clean-s182463",
+   "preset": "clean",
+   "template": "knob",
+   "kind": "template"
+  },
+  {
+   "suite": "synthetic",
+   "id": "syn-caster-wheel-tilt-s586816",
+   "preset": "tilt",
+   "template": "caster_wheel",
+   "kind": "template"
+  },
+  {
+   "suite": "synthetic",
+   "id": "syn-battery-cover-blur-s891175",
+   "preset": "blur",
+   "template": "battery_cover",
+   "kind": "template"
+  },
+  {
+   "suite": "synthetic",
+   "id": "syn-l-bracket-glare-s475073",
+   "preset": "glare",
+   "template": "l_bracket",
+   "kind": "template"
+  },
+  {
+   "suite": "synthetic",
+   "id": "syn-clip-moire-s842871",
+   "preset": "moire",
+   "template": "clip",
+   "kind": "template"
+  },
+  {
+   "suite": "synthetic",
+   "id": "syn-spacer-low-light-s303140",
+   "preset": "low-light",
+   "template": "spacer",
+   "kind": "template"
+  },
+  {
+   "suite": "synthetic",
+   "id": "syn-hook-white-part-s257356",
+   "preset": "white-part",
+   "template": "hook",
+   "kind": "template"
+  },
+  {
+   "suite": "synthetic",
+   "id": "syn-hinge-leaf-paper-s984306",
+   "preset": "paper",
+   "template": "hinge_leaf",
+   "kind": "template"
+  },
+  {
+   "suite": "synthetic",
+   "id": "syn-cupboard-latch-clean-s659671",
+   "preset": "clean",
+   "template": "cupboard_latch",
+   "kind": "template"
+  },
+  {
+   "suite": "synthetic",
+   "id": "syn-cable-clip-tilt-s49934",
+   "preset": "tilt",
+   "template": "cable_clip",
+   "kind": "template"
+  },
+  {
+   "suite": "synthetic",
+   "id": "syn-knob-blur-s235776",
+   "preset": "blur",
+   "template": "knob",
+   "kind": "template"
+  },
+  {
+   "suite": "synthetic",
+   "id": "syn-caster-wheel-glare-s195464",
+   "preset": "glare",
+   "template": "caster_wheel",
+   "kind": "template"
+  },
+  {
+   "suite": "synthetic",
+   "id": "syn-battery-cover-moire-s323252",
+   "preset": "moire",
+   "template": "battery_cover",
+   "kind": "template"
+  },
+  {
+   "suite": "synthetic",
+   "id": "syn-l-bracket-low-light-s659747",
+   "preset": "low-light",
+   "template": "l_bracket",
+   "kind": "template"
+  },
+  {
+   "suite": "synthetic",
+   "id": "syn-clip-white-part-s252704",
+   "preset": "white-part",
+   "template": "clip",
+   "kind": "template"
+  },
+  {
+   "suite": "synthetic",
+   "id": "syn-spacer-paper-s83616",
+   "preset": "paper",
+   "template": "spacer",
+   "kind": "template"
+  },
+  {
+   "suite": "synthetic",
+   "id": "syn-hook-clean-s928825",
+   "preset": "clean",
+   "template": "hook",
+   "kind": "template"
+  },
+  {
+   "suite": "synthetic",
+   "id": "syn-hinge-leaf-tilt-s880180",
+   "preset": "tilt",
+   "template": "hinge_leaf",
+   "kind": "template"
+  },
+  {
+   "suite": "synthetic",
+   "id": "syn-cupboard-latch-blur-s464229",
+   "preset": "blur",
+   "template": "cupboard_latch",
+   "kind": "template"
+  },
+  {
+   "suite": "synthetic",
+   "id": "syn-cable-clip-glare-s612552",
+   "preset": "glare",
+   "template": "cable_clip",
+   "kind": "template"
+  },
+  {
+   "suite": "synthetic",
+   "id": "syn-knob-moire-s687462",
+   "preset": "moire",
+   "template": "knob",
+   "kind": "template"
+  },
+  {
+   "suite": "synthetic",
+   "id": "syn-caster-wheel-low-light-s51640",
+   "preset": "low-light",
+   "template": "caster_wheel",
+   "kind": "template"
+  },
+  {
+   "suite": "synthetic",
+   "id": "syn-battery-cover-white-part-s586609",
+   "preset": "white-part",
+   "template": "battery_cover",
+   "kind": "template"
+  },
+  {
+   "suite": "synthetic",
+   "id": "syn-l-bracket-paper-s35693",
+   "preset": "paper",
+   "template": "l_bracket",
+   "kind": "template"
+  },
+  {
+   "suite": "synthetic",
+   "id": "syn-clip-clean-s933937",
+   "preset": "clean",
+   "template": "clip",
+   "kind": "template"
+  },
+  {
+   "suite": "synthetic",
+   "id": "syn-spacer-tilt-s778289",
+   "preset": "tilt",
+   "template": "spacer",
+   "kind": "template"
+  },
+  {
+   "suite": "synthetic",
+   "id": "syn-hook-blur-s5615",
+   "preset": "blur",
+   "template": "hook",
+   "kind": "template"
+  },
+  {
+   "suite": "synthetic",
+   "id": "syn-hinge-leaf-glare-s566902",
+   "preset": "glare",
+   "template": "hinge_leaf",
+   "kind": "template"
+  },
+  {
+   "suite": "synthetic",
+   "id": "syn-cupboard-latch-moire-s921329",
+   "preset": "moire",
+   "template": "cupboard_latch",
+   "kind": "template"
+  },
+  {
+   "suite": "synthetic",
+   "id": "syn-cable-clip-low-light-s25909",
+   "preset": "low-light",
+   "template": "cable_clip",
+   "kind": "template"
+  },
+  {
+   "suite": "synthetic",
+   "id": "syn-knob-white-part-s675750",
+   "preset": "white-part",
+   "template": "knob",
+   "kind": "template"
+  },
+  {
+   "suite": "synthetic",
+   "id": "syn-caster-wheel-paper-s338196",
+   "preset": "paper",
+   "template": "caster_wheel",
+   "kind": "template"
+  },
+  {
+   "suite": "synthetic",
+   "id": "syn-battery-cover-clean-s201514",
+   "preset": "clean",
+   "template": "battery_cover",
+   "kind": "template"
+  },
+  {
+   "suite": "synthetic",
+   "id": "syn-l-bracket-tilt-s484446",
+   "preset": "tilt",
+   "template": "l_bracket",
+   "kind": "template"
+  },
+  {
+   "suite": "synthetic",
+   "id": "syn-clip-blur-s366064",
+   "preset": "blur",
+   "template": "clip",
+   "kind": "template"
+  },
+  {
+   "suite": "synthetic",
+   "id": "syn-spacer-glare-s953782",
+   "preset": "glare",
+   "template": "spacer",
+   "kind": "template"
+  },
+  {
+   "suite": "extra",
+   "id": "syn-hook-moire-s377493",
+   "preset": "moire",
+   "template": "hook",
+   "kind": "template"
+  },
+  {
+   "suite": "extra",
+   "id": "syn-hinge-leaf-low-light-s15929",
+   "preset": "low-light",
+   "template": "hinge_leaf",
+   "kind": "template"
+  },
+  {
+   "suite": "extra",
+   "id": "syn-cupboard-latch-white-part-s897919",
+   "error": "ValueError: cupboard_latch: top view does not fit mat screen-s"
+  },
+  {
+   "suite": "extra",
+   "id": "syn-cable-clip-paper-s756490",
+   "preset": "paper",
+   "template": "cable_clip",
+   "kind": "template"
+  },
+  {
+   "suite": "extra",
+   "id": "syn-knob-clean-s176432",
+   "preset": "clean",
+   "template": "knob",
+   "kind": "template"
+  },
+  {
+   "suite": "extra",
+   "id": "syn-caster-wheel-tilt-s678233",
+   "preset": "tilt",
+   "template": "caster_wheel",
+   "kind": "template"
+  },
+  {
+   "suite": "extra",
+   "id": "syn-battery-cover-blur-s243506",
+   "preset": "blur",
+   "template": "battery_cover",
+   "kind": "template"
+  },
+  {
+   "suite": "extra",
+   "id": "syn-l-bracket-glare-s520663",
+   "preset": "glare",
+   "template": "l_bracket",
+   "kind": "template"
+  },
+  {
+   "suite": "extra",
+   "id": "syn-clip-moire-s458108",
+   "preset": "moire",
+   "template": "clip",
+   "kind": "template"
+  },
+  {
+   "suite": "extra",
+   "id": "syn-spacer-low-light-s47965",
+   "preset": "low-light",
+   "template": "spacer",
+   "kind": "template"
+  },
+  {
+   "suite": "extra",
+   "id": "syn-hook-white-part-s615707",
+   "preset": "white-part",
+   "template": "hook",
+   "kind": "template"
+  },
+  {
+   "suite": "extra",
+   "id": "syn-hinge-leaf-paper-s581958",
+   "preset": "paper",
+   "template": "hinge_leaf",
+   "kind": "template"
+  },
+  {
+   "suite": "extra",
+   "id": "syn-cupboard-latch-clean-s855004",
+   "preset": "clean",
+   "template": "cupboard_latch",
+   "kind": "template"
+  },
+  {
+   "suite": "extra",
+   "id": "syn-cable-clip-tilt-s216098",
+   "preset": "tilt",
+   "template": "cable_clip",
+   "kind": "template"
+  },
+  {
+   "suite": "extra",
+   "id": "syn-knob-blur-s53837",
+   "preset": "blur",
+   "template": "knob",
+   "kind": "template"
+  },
+  {
+   "suite": "extra",
+   "id": "syn-caster-wheel-glare-s364014",
+   "preset": "glare",
+   "template": "caster_wheel",
+   "kind": "template"
+  },
+  {
+   "suite": "extra",
+   "id": "syn-battery-cover-moire-s242112",
+   "preset": "moire",
+   "template": "battery_cover",
+   "kind": "template"
+  },
+  {
+   "suite": "extra",
+   "id": "syn-l-bracket-low-light-s925515",
+   "preset": "low-light",
+   "template": "l_bracket",
+   "kind": "template"
+  },
+  {
+   "suite": "extra",
+   "id": "syn-clip-white-part-s337335",
+   "preset": "white-part",
+   "template": "clip",
+   "kind": "template"
+  },
+  {
+   "suite": "extra",
+   "id": "syn-spacer-paper-s738",
+   "preset": "paper",
+   "template": "spacer",
+   "kind": "template"
+  },
+  {
+   "suite": "extra",
+   "id": "syn-hook-clean-s853726",
+   "preset": "clean",
+   "template": "hook",
+   "kind": "template"
+  },
+  {
+   "suite": "extra",
+   "id": "syn-hinge-leaf-tilt-s902692",
+   "preset": "tilt",
+   "template": "hinge_leaf",
+   "kind": "template"
+  },
+  {
+   "suite": "extra",
+   "id": "syn-cupboard-latch-blur-s336599",
+   "preset": "blur",
+   "template": "cupboard_latch",
+   "kind": "template"
+  },
+  {
+   "suite": "extra",
+   "id": "syn-cable-clip-glare-s267791",
+   "preset": "glare",
+   "template": "cable_clip",
+   "kind": "template"
+  },
+  {
+   "suite": "extra",
+   "id": "syn-knob-moire-s848091",
+   "preset": "moire",
+   "template": "knob",
+   "kind": "template"
+  },
+  {
+   "suite": "extra",
+   "id": "syn-caster-wheel-low-light-s783349",
+   "preset": "low-light",
+   "template": "caster_wheel",
+   "kind": "template"
+  },
+  {
+   "suite": "extra",
+   "id": "syn-battery-cover-white-part-s108202",
+   "preset": "white-part",
+   "template": "battery_cover",
+   "kind": "template"
+  },
+  {
+   "suite": "extra",
+   "id": "syn-l-bracket-paper-s58432",
+   "preset": "paper",
+   "template": "l_bracket",
+   "kind": "template"
+  },
+  {
+   "suite": "extra",
+   "id": "syn-clip-clean-s554293",
+   "preset": "clean",
+   "template": "clip",
+   "kind": "template"
+  },
+  {
+   "suite": "extra",
+   "id": "syn-spacer-tilt-s62036",
+   "preset": "tilt",
+   "template": "spacer",
+   "kind": "template"
+  },
+  {
+   "suite": "extra",
+   "id": "syn-hook-blur-s850910",
+   "preset": "blur",
+   "template": "hook",
+   "kind": "template"
+  },
+  {
+   "suite": "extra",
+   "id": "syn-hinge-leaf-glare-s576455",
+   "preset": "glare",
+   "template": "hinge_leaf",
+   "kind": "template"
+  },
+  {
+   "suite": "extra",
+   "id": "syn-cupboard-latch-moire-s709510",
+   "preset": "moire",
+   "template": "cupboard_latch",
+   "kind": "template"
+  },
+  {
+   "suite": "extra",
+   "id": "syn-cable-clip-low-light-s290982",
+   "preset": "low-light",
+   "template": "cable_clip",
+   "kind": "template"
+  },
+  {
+   "suite": "extra",
+   "id": "syn-knob-white-part-s719144",
+   "preset": "white-part",
+   "template": "knob",
+   "kind": "template"
+  },
+  {
+   "suite": "extra",
+   "id": "syn-caster-wheel-paper-s801766",
+   "preset": "paper",
+   "template": "caster_wheel",
+   "kind": "template"
+  },
+  {
+   "suite": "extra",
+   "id": "syn-battery-cover-clean-s53045",
+   "preset": "clean",
+   "template": "battery_cover",
+   "kind": "template"
+  },
+  {
+   "suite": "extra",
+   "id": "syn-l-bracket-tilt-s246370",
+   "preset": "tilt",
+   "template": "l_bracket",
+   "kind": "template"
+  },
+  {
+   "suite": "extra",
+   "id": "syn-clip-blur-s144460",
+   "preset": "blur",
+   "template": "clip",
+   "kind": "template"
+  },
+  {
+   "suite": "extra",
+   "id": "syn-spacer-glare-s233988",
+   "preset": "glare",
+   "template": "spacer",
+   "kind": "template"
+  },
+  {
+   "suite": "extra",
+   "id": "syn-hook-moire-s130220",
+   "preset": "moire",
+   "template": "hook",
+   "kind": "template"
+  },
+  {
+   "suite": "extra",
+   "id": "syn-hinge-leaf-low-light-s87005",
+   "preset": "low-light",
+   "template": "hinge_leaf",
+   "kind": "template"
+  },
+  {
+   "suite": "extra",
+   "id": "syn-cupboard-latch-white-part-s124183",
+   "preset": "white-part",
+   "template": "cupboard_latch",
+   "kind": "template"
+  },
+  {
+   "suite": "extra",
+   "id": "syn-cable-clip-paper-s918175",
+   "preset": "paper",
+   "template": "cable_clip",
+   "kind": "template"
+  },
+  {
+   "suite": "extra",
+   "id": "syn-knob-clean-s469871",
+   "preset": "clean",
+   "template": "knob",
+   "kind": "template"
+  },
+  {
+   "suite": "extra",
+   "id": "syn-caster-wheel-tilt-s814022",
+   "preset": "tilt",
+   "template": "caster_wheel",
+   "kind": "template"
+  },
+  {
+   "suite": "extra",
+   "id": "syn-battery-cover-blur-s583342",
+   "preset": "blur",
+   "template": "battery_cover",
+   "kind": "template"
+  },
+  {
+   "suite": "extra",
+   "id": "syn-l-bracket-glare-s281993",
+   "preset": "glare",
+   "template": "l_bracket",
+   "kind": "template"
+  },
+  {
+   "suite": "extra",
+   "id": "syn-clip-moire-s520683",
+   "preset": "moire",
+   "template": "clip",
+   "kind": "template"
+  },
+  {
+   "suite": "extra",
+   "id": "syn-spacer-low-light-s659966",
+   "preset": "low-light",
+   "template": "spacer",
+   "kind": "template"
+  },
+  {
+   "suite": "extra",
+   "id": "syn-hook-white-part-s343104",
+   "preset": "white-part",
+   "template": "hook",
+   "kind": "template"
+  },
+  {
+   "suite": "extra",
+   "id": "syn-hinge-leaf-paper-s139746",
+   "preset": "paper",
+   "template": "hinge_leaf",
+   "kind": "template"
+  },
+  {
+   "suite": "extra",
+   "id": "syn-cupboard-latch-clean-s65358",
+   "preset": "clean",
+   "template": "cupboard_latch",
+   "kind": "template"
+  },
+  {
+   "suite": "extra",
+   "id": "syn-cable-clip-tilt-s951185",
+   "preset": "tilt",
+   "template": "cable_clip",
+   "kind": "template"
+  },
+  {
+   "suite": "extra",
+   "id": "syn-knob-blur-s815016",
+   "preset": "blur",
+   "template": "knob",
+   "kind": "template"
+  },
+  {
+   "suite": "extra",
+   "id": "syn-caster-wheel-glare-s863597",
+   "preset": "glare",
+   "template": "caster_wheel",
+   "kind": "template"
+  },
+  {
+   "suite": "extra",
+   "id": "syn-battery-cover-moire-s617454",
+   "preset": "moire",
+   "template": "battery_cover",
+   "kind": "template"
+  },
+  {
+   "suite": "extra",
+   "id": "syn-l-bracket-low-light-s106405",
+   "preset": "low-light",
+   "template": "l_bracket",
+   "kind": "template"
+  },
+  {
+   "suite": "extra",
+   "id": "syn-clip-white-part-s893142",
+   "preset": "white-part",
+   "template": "clip",
+   "kind": "template"
+  },
+  {
+   "suite": "extra",
+   "id": "syn-spacer-paper-s89944",
+   "preset": "paper",
+   "template": "spacer",
+   "kind": "template"
+  },
+  {
+   "suite": "extra",
+   "id": "syn-hook-clean-s947689",
+   "preset": "clean",
+   "template": "hook",
+   "kind": "template"
+  },
+  {
+   "suite": "extra",
+   "id": "syn-hinge-leaf-tilt-s364629",
+   "preset": "tilt",
+   "template": "hinge_leaf",
+   "kind": "template"
+  },
+  {
+   "suite": "extra",
+   "id": "syn-cupboard-latch-blur-s888972",
+   "preset": "blur",
+   "template": "cupboard_latch",
+   "kind": "template"
+  },
+  {
+   "suite": "extra",
+   "id": "syn-cable-clip-glare-s54023",
+   "preset": "glare",
+   "template": "cable_clip",
+   "kind": "template"
+  },
+  {
+   "suite": "extra",
+   "id": "syn-knob-moire-s799955",
+   "preset": "moire",
+   "template": "knob",
+   "kind": "template"
+  },
+  {
+   "suite": "extra",
+   "id": "syn-caster-wheel-low-light-s918512",
+   "preset": "low-light",
+   "template": "caster_wheel",
+   "kind": "template"
+  },
+  {
+   "suite": "extra",
+   "id": "syn-battery-cover-white-part-s567209",
+   "preset": "white-part",
+   "template": "battery_cover",
+   "kind": "template"
+  },
+  {
+   "suite": "extra",
+   "id": "syn-l-bracket-paper-s706402",
+   "preset": "paper",
+   "template": "l_bracket",
+   "kind": "template"
+  },
+  {
+   "suite": "extra",
+   "id": "syn-clip-clean-s461193",
+   "preset": "clean",
+   "template": "clip",
+   "kind": "template"
+  },
+  {
+   "suite": "extra",
+   "id": "syn-spacer-tilt-s212549",
+   "preset": "tilt",
+   "template": "spacer",
+   "kind": "template"
+  },
+  {
+   "suite": "extra",
+   "id": "syn-hook-blur-s768131",
+   "preset": "blur",
+   "template": "hook",
+   "kind": "template"
+  },
+  {
+   "suite": "extra",
+   "id": "syn-hinge-leaf-glare-s279623",
+   "preset": "glare",
+   "template": "hinge_leaf",
+   "kind": "template"
+  },
+  {
+   "suite": "extra",
+   "id": "syn-cupboard-latch-moire-s817783",
+   "preset": "moire",
+   "template": "cupboard_latch",
+   "kind": "template"
+  },
+  {
+   "suite": "extra",
+   "id": "syn-cable-clip-low-light-s720170",
+   "preset": "low-light",
+   "template": "cable_clip",
+   "kind": "template"
+  },
+  {
+   "suite": "extra",
+   "id": "syn-knob-white-part-s16671",
+   "preset": "white-part",
+   "template": "knob",
+   "kind": "template"
+  },
+  {
+   "suite": "extra",
+   "id": "syn-caster-wheel-paper-s702567",
+   "preset": "paper",
+   "template": "caster_wheel",
+   "kind": "template"
+  },
+  {
+   "suite": "extra",
+   "id": "syn-battery-cover-clean-s583287",
+   "preset": "clean",
+   "template": "battery_cover",
+   "kind": "template"
+  },
+  {
+   "suite": "extra",
+   "id": "syn-l-bracket-tilt-s354835",
+   "preset": "tilt",
+   "template": "l_bracket",
+   "kind": "template"
+  },
+  {
+   "suite": "extra",
+   "id": "syn-clip-blur-s952962",
+   "preset": "blur",
+   "template": "clip",
+   "kind": "template"
+  },
+  {
+   "suite": "extra",
+   "id": "syn-spacer-glare-s735856",
+   "preset": "glare",
+   "template": "spacer",
+   "kind": "template"
+  },
+  {
+   "suite": "extra",
+   "id": "syn-hook-moire-s59522",
+   "preset": "moire",
+   "template": "hook",
+   "kind": "template"
+  },
+  {
+   "suite": "extra",
+   "id": "syn-hinge-leaf-low-light-s559101",
+   "preset": "low-light",
+   "template": "hinge_leaf",
+   "kind": "template"
+  },
+  {
+   "suite": "extra",
+   "id": "syn-cupboard-latch-white-part-s495335",
+   "preset": "white-part",
+   "template": "cupboard_latch",
+   "kind": "template"
+  },
+  {
+   "suite": "extra",
+   "id": "syn-cable-clip-paper-s119773",
+   "preset": "paper",
+   "template": "cable_clip",
+   "kind": "template"
+  },
+  {
+   "suite": "extra",
+   "id": "syn-knob-clean-s116671",
+   "preset": "clean",
+   "template": "knob",
+   "kind": "template"
+  },
+  {
+   "suite": "extra",
+   "id": "syn-caster-wheel-tilt-s913826",
+   "preset": "tilt",
+   "template": "caster_wheel",
+   "kind": "template"
+  },
+  {
+   "suite": "extra",
+   "id": "syn-battery-cover-blur-s172104",
+   "preset": "blur",
+   "template": "battery_cover",
+   "kind": "template"
+  },
+  {
+   "suite": "extra",
+   "id": "syn-l-bracket-glare-s683127",
+   "preset": "glare",
+   "template": "l_bracket",
+   "kind": "template"
+  },
+  {
+   "suite": "extra",
+   "id": "syn-clip-moire-s193655",
+   "preset": "moire",
+   "template": "clip",
+   "kind": "template"
+  },
+  {
+   "suite": "extra",
+   "id": "syn-spacer-low-light-s110806",
+   "preset": "low-light",
+   "template": "spacer",
+   "kind": "template"
+  },
+  {
+   "suite": "extra",
+   "id": "syn-hook-white-part-s263714",
+   "preset": "white-part",
+   "template": "hook",
+   "kind": "template"
+  },
+  {
+   "suite": "extra",
+   "id": "syn-hinge-leaf-paper-s795348",
+   "preset": "paper",
+   "template": "hinge_leaf",
+   "kind": "template"
+  },
+  {
+   "suite": "extra",
+   "id": "syn-cupboard-latch-clean-s561492",
+   "preset": "clean",
+   "template": "cupboard_latch",
+   "kind": "template"
+  },
+  {
+   "suite": "extra",
+   "id": "syn-cable-clip-tilt-s42975",
+   "preset": "tilt",
+   "template": "cable_clip",
+   "kind": "template"
+  },
+  {
+   "suite": "extra",
+   "id": "syn-knob-blur-s917287",
+   "preset": "blur",
+   "template": "knob",
+   "kind": "template"
+  },
+  {
+   "suite": "extra",
+   "id": "syn-caster-wheel-glare-s49825",
+   "preset": "glare",
+   "template": "caster_wheel",
+   "kind": "template"
+  },
+  {
+   "suite": "extra",
+   "id": "syn-battery-cover-moire-s418827",
+   "preset": "moire",
+   "template": "battery_cover",
+   "kind": "template"
+  },
+  {
+   "suite": "extra",
+   "id": "syn-l-bracket-low-light-s41755",
+   "preset": "low-light",
+   "template": "l_bracket",
+   "kind": "template"
+  },
+  {
+   "suite": "extra",
+   "id": "syn-clip-white-part-s319911",
+   "preset": "white-part",
+   "template": "clip",
+   "kind": "template"
+  },
+  {
+   "suite": "extra",
+   "id": "syn-spacer-paper-s241973",
+   "preset": "paper",
+   "template": "spacer",
+   "kind": "template"
+  },
+  {
+   "suite": "extra",
+   "id": "syn-hook-clean-s260125",
+   "preset": "clean",
+   "template": "hook",
+   "kind": "template"
+  },
+  {
+   "suite": "extra",
+   "id": "syn-hinge-leaf-tilt-s852223",
+   "preset": "tilt",
+   "template": "hinge_leaf",
+   "kind": "template"
+  },
+  {
+   "suite": "extra",
+   "id": "syn-cupboard-latch-blur-s389409",
+   "preset": "blur",
+   "template": "cupboard_latch",
+   "kind": "template"
+  },
+  {
+   "suite": "extra",
+   "id": "syn-cable-clip-glare-s222256",
+   "preset": "glare",
+   "template": "cable_clip",
+   "kind": "template"
+  },
+  {
+   "suite": "extra",
+   "id": "syn-knob-moire-s452396",
+   "preset": "moire",
+   "template": "knob",
+   "kind": "template"
+  },
+  {
+   "suite": "extra",
+   "id": "syn-caster-wheel-low-light-s566857",
+   "preset": "low-light",
+   "template": "caster_wheel",
+   "kind": "template"
+  },
+  {
+   "suite": "extra",
+   "id": "syn-battery-cover-white-part-s592868",
+   "preset": "white-part",
+   "template": "battery_cover",
+   "kind": "template"
+  },
+  {
+   "suite": "extra",
+   "id": "syn-l-bracket-paper-s125025",
+   "preset": "paper",
+   "template": "l_bracket",
+   "kind": "template"
+  },
+  {
+   "suite": "extra",
+   "id": "syn-clip-clean-s804824",
+   "preset": "clean",
+   "template": "clip",
+   "kind": "template"
+  },
+  {
+   "suite": "extra",
+   "id": "syn-spacer-tilt-s369780",
+   "preset": "tilt",
+   "template": "spacer",
+   "kind": "template"
+  },
+  {
+   "suite": "extra",
+   "id": "syn-hook-blur-s897679",
+   "preset": "blur",
+   "template": "hook",
+   "kind": "template"
+  },
+  {
+   "suite": "extra",
+   "id": "syn-hinge-leaf-glare-s600656",
+   "preset": "glare",
+   "template": "hinge_leaf",
+   "kind": "template"
+  },
+  {
+   "suite": "extra",
+   "id": "syn-cupboard-latch-moire-s584679",
+   "preset": "moire",
+   "template": "cupboard_latch",
+   "kind": "template"
+  },
+  {
+   "suite": "extra",
+   "id": "syn-cable-clip-low-light-s548758",
+   "preset": "low-light",
+   "template": "cable_clip",
+   "kind": "template"
+  },
+  {
+   "suite": "extra",
+   "id": "syn-knob-white-part-s319197",
+   "preset": "white-part",
+   "template": "knob",
+   "kind": "template"
+  },
+  {
+   "suite": "extra",
+   "id": "syn-caster-wheel-paper-s648116",
+   "preset": "paper",
+   "template": "caster_wheel",
+   "kind": "template"
+  },
+  {
+   "suite": "extra",
+   "id": "syn-battery-cover-clean-s604003",
+   "preset": "clean",
+   "template": "battery_cover",
+   "kind": "template"
+  },
+  {
+   "suite": "extra",
+   "id": "syn-l-bracket-tilt-s201582",
+   "preset": "tilt",
+   "template": "l_bracket",
+   "kind": "template"
+  },
+  {
+   "suite": "extra",
+   "id": "syn-clip-blur-s776748",
+   "preset": "blur",
+   "template": "clip",
+   "kind": "template"
+  },
+  {
+   "suite": "extra",
+   "id": "syn-spacer-glare-s791949",
+   "preset": "glare",
+   "template": "spacer",
+   "kind": "template"
+  },
+  {
+   "suite": "extra",
+   "id": "syn-hook-moire-s24693",
+   "preset": "moire",
+   "template": "hook",
+   "kind": "template"
+  },
+  {
+   "suite": "extra",
+   "id": "syn-hinge-leaf-low-light-s513884",
+   "preset": "low-light",
+   "template": "hinge_leaf",
+   "kind": "template"
+  },
+  {
+   "suite": "extra",
+   "id": "syn-cupboard-latch-white-part-s203147",
+   "preset": "white-part",
+   "template": "cupboard_latch",
+   "kind": "template"
+  },
+  {
+   "suite": "extra",
+   "id": "syn-cable-clip-paper-s543009",
+   "preset": "paper",
+   "template": "cable_clip",
+   "kind": "template"
+  },
+  {
+   "suite": "extra",
+   "id": "syn-knob-clean-s762370",
+   "preset": "clean",
+   "template": "knob",
+   "kind": "template"
+  },
+  {
+   "suite": "extra",
+   "id": "syn-caster-wheel-tilt-s357495",
+   "preset": "tilt",
+   "template": "caster_wheel",
+   "kind": "template"
+  },
+  {
+   "suite": "extra",
+   "id": "syn-battery-cover-blur-s201950",
+   "preset": "blur",
+   "template": "battery_cover",
+   "kind": "template"
+  },
+  {
+   "suite": "extra",
+   "id": "syn-l-bracket-glare-s176091",
+   "preset": "glare",
+   "template": "l_bracket",
+   "kind": "template"
+  },
+  {
+   "suite": "extra",
+   "id": "syn-clip-moire-s555469",
+   "preset": "moire",
+   "template": "clip",
+   "kind": "template"
+  },
+  {
+   "suite": "extra",
+   "id": "syn-spacer-low-light-s882894",
+   "preset": "low-light",
+   "template": "spacer",
+   "kind": "template"
+  },
+  {
+   "suite": "extra",
+   "id": "syn-hook-white-part-s171996",
+   "preset": "white-part",
+   "template": "hook",
+   "kind": "template"
+  },
+  {
+   "suite": "extra",
+   "id": "syn-hinge-leaf-paper-s528489",
+   "preset": "paper",
+   "template": "hinge_leaf",
+   "kind": "template"
+  },
+  {
+   "suite": "extra",
+   "id": "syn-cupboard-latch-clean-s116853",
+   "preset": "clean",
+   "template": "cupboard_latch",
+   "kind": "template"
+  },
+  {
+   "suite": "extra",
+   "id": "syn-cable-clip-tilt-s23107",
+   "preset": "tilt",
+   "template": "cable_clip",
+   "kind": "template"
+  },
+  {
+   "suite": "extra",
+   "id": "syn-knob-blur-s115045",
+   "preset": "blur",
+   "template": "knob",
+   "kind": "template"
+  },
+  {
+   "suite": "extra",
+   "id": "syn-caster-wheel-glare-s464127",
+   "preset": "glare",
+   "template": "caster_wheel",
+   "kind": "template"
+  },
+  {
+   "suite": "extra",
+   "id": "syn-battery-cover-moire-s534041",
+   "preset": "moire",
+   "template": "battery_cover",
+   "kind": "template"
+  },
+  {
+   "suite": "extra",
+   "id": "syn-l-bracket-low-light-s4863",
+   "preset": "low-light",
+   "template": "l_bracket",
+   "kind": "template"
+  },
+  {
+   "suite": "extra",
+   "id": "syn-clip-white-part-s852888",
+   "preset": "white-part",
+   "template": "clip",
+   "kind": "template"
+  },
+  {
+   "suite": "extra",
+   "id": "syn-spacer-paper-s327118",
+   "preset": "paper",
+   "template": "spacer",
+   "kind": "template"
+  },
+  {
+   "suite": "extra",
+   "id": "syn-hook-clean-s710096",
+   "preset": "clean",
+   "template": "hook",
+   "kind": "template"
+  },
+  {
+   "suite": "extra",
+   "id": "syn-hinge-leaf-tilt-s584628",
+   "preset": "tilt",
+   "template": "hinge_leaf",
+   "kind": "template"
+  },
+  {
+   "suite": "extra",
+   "id": "syn-cupboard-latch-blur-s203644",
+   "preset": "blur",
+   "template": "cupboard_latch",
+   "kind": "template"
+  },
+  {
+   "suite": "extra",
+   "id": "syn-cable-clip-glare-s812753",
+   "preset": "glare",
+   "template": "cable_clip",
+   "kind": "template"
+  },
+  {
+   "suite": "extra",
+   "id": "syn-knob-moire-s161309",
+   "preset": "moire",
+   "template": "knob",
+   "kind": "template"
+  },
+  {
+   "suite": "extra",
+   "id": "syn-caster-wheel-low-light-s600570",
+   "preset": "low-light",
+   "template": "caster_wheel",
+   "kind": "template"
+  },
+  {
+   "suite": "extra",
+   "id": "syn-battery-cover-white-part-s425274",
+   "preset": "white-part",
+   "template": "battery_cover",
+   "kind": "template"
+  },
+  {
+   "suite": "extra",
+   "id": "syn-l-bracket-paper-s210279",
+   "preset": "paper",
+   "template": "l_bracket",
+   "kind": "template"
+  },
+  {
+   "suite": "extra",
+   "id": "syn-clip-clean-s103901",
+   "preset": "clean",
+   "template": "clip",
+   "kind": "template"
+  },
+  {
+   "suite": "extra",
+   "id": "syn-spacer-tilt-s673594",
+   "preset": "tilt",
+   "template": "spacer",
+   "kind": "template"
+  },
+  {
+   "suite": "extra",
+   "id": "syn-hook-blur-s528645",
+   "preset": "blur",
+   "template": "hook",
+   "kind": "template"
+  },
+  {
+   "suite": "extra",
+   "id": "syn-hinge-leaf-glare-s64306",
+   "preset": "glare",
+   "template": "hinge_leaf",
+   "kind": "template"
+  },
+  {
+   "suite": "extra",
+   "id": "syn-cupboard-latch-moire-s681808",
+   "preset": "moire",
+   "template": "cupboard_latch",
+   "kind": "template"
+  },
+  {
+   "suite": "extra",
+   "id": "syn-cable-clip-low-light-s394301",
+   "preset": "low-light",
+   "template": "cable_clip",
+   "kind": "template"
+  },
+  {
+   "suite": "extra",
+   "id": "syn-knob-white-part-s17764",
+   "preset": "white-part",
+   "template": "knob",
+   "kind": "template"
+  },
+  {
+   "suite": "extra",
+   "id": "syn-caster-wheel-paper-s53429",
+   "preset": "paper",
+   "template": "caster_wheel",
+   "kind": "template"
+  },
+  {
+   "suite": "extra",
+   "id": "syn-battery-cover-clean-s323469",
+   "preset": "clean",
+   "template": "battery_cover",
+   "kind": "template"
+  },
+  {
+   "suite": "extra",
+   "id": "syn-l-bracket-tilt-s511315",
+   "preset": "tilt",
+   "template": "l_bracket",
+   "kind": "template"
+  },
+  {
+   "suite": "extra",
+   "id": "syn-clip-blur-s204482",
+   "preset": "blur",
+   "template": "clip",
+   "kind": "template"
+  },
+  {
+   "suite": "extra",
+   "id": "syn-spacer-glare-s723455",
+   "preset": "glare",
+   "template": "spacer",
+   "kind": "template"
+  },
+  {
+   "suite": "extra",
+   "id": "syn-hook-moire-s71382",
+   "preset": "moire",
+   "template": "hook",
+   "kind": "template"
+  },
+  {
+   "suite": "extra",
+   "id": "syn-hinge-leaf-low-light-s233701",
+   "preset": "low-light",
+   "template": "hinge_leaf",
+   "kind": "template"
+  },
+  {
+   "suite": "extra",
+   "id": "syn-cupboard-latch-white-part-s387960",
+   "preset": "white-part",
+   "template": "cupboard_latch",
+   "kind": "template"
+  },
+  {
+   "suite": "extra",
+   "id": "syn-cable-clip-paper-s255008",
+   "preset": "paper",
+   "template": "cable_clip",
+   "kind": "template"
+  },
+  {
+   "suite": "extra",
+   "id": "syn-knob-clean-s613779",
+   "preset": "clean",
+   "template": "knob",
+   "kind": "template"
+  },
+  {
+   "suite": "extra",
+   "id": "syn-caster-wheel-tilt-s840721",
+   "preset": "tilt",
+   "template": "caster_wheel",
+   "kind": "template"
+  },
+  {
+   "suite": "extra",
+   "id": "syn-battery-cover-blur-s909388",
+   "preset": "blur",
+   "template": "battery_cover",
+   "kind": "template"
+  },
+  {
+   "suite": "extra",
+   "id": "syn-l-bracket-glare-s823328",
+   "preset": "glare",
+   "template": "l_bracket",
+   "kind": "template"
+  },
+  {
+   "suite": "extra",
+   "id": "syn-clip-moire-s866585",
+   "preset": "moire",
+   "template": "clip",
+   "kind": "template"
+  },
+  {
+   "suite": "extra",
+   "id": "syn-spacer-low-light-s659690",
+   "preset": "low-light",
+   "template": "spacer",
+   "kind": "template"
+  },
+  {
+   "suite": "reference_objects",
+   "id": "ref-id1-card-clean-s509162",
+   "preset": "clean",
+   "template": "id1_card",
+   "kind": "reference_object"
+  },
+  {
+   "suite": "reference_objects",
+   "id": "ref-sd-card-clean-s460131",
+   "preset": "clean",
+   "template": "sd_card",
+   "kind": "reference_object"
+  },
+  {
+   "suite": "reference_objects",
+   "id": "ref-lego-2x4-clean-s350484",
+   "preset": "clean",
+   "template": "lego_2x4",
+   "kind": "reference_object"
+  },
+  {
+   "suite": "reference_objects",
+   "id": "ref-aa-cell-clean-s648417",
+   "preset": "clean",
+   "template": "aa_cell",
+   "kind": "reference_object"
+  },
+  {
+   "suite": "reference_objects",
+   "id": "ref-id1-card-tilt-s559802",
+   "preset": "tilt",
+   "template": "id1_card",
+   "kind": "reference_object"
+  },
+  {
+   "suite": "reference_objects",
+   "id": "ref-sd-card-tilt-s660996",
+   "preset": "tilt",
+   "template": "sd_card",
+   "kind": "reference_object"
+  },
+  {
+   "suite": "reference_objects",
+   "id": "ref-lego-2x4-tilt-s689376",
+   "preset": "tilt",
+   "template": "lego_2x4",
+   "kind": "reference_object"
+  },
+  {
+   "suite": "reference_objects",
+   "id": "ref-aa-cell-tilt-s46014",
+   "preset": "tilt",
+   "template": "aa_cell",
+   "kind": "reference_object"
+  },
+  {
+   "suite": "reference_objects",
+   "id": "ref-id1-card-blur-s119613",
+   "preset": "blur",
+   "template": "id1_card",
+   "kind": "reference_object"
+  },
+  {
+   "suite": "reference_objects",
+   "id": "ref-sd-card-blur-s428557",
+   "preset": "blur",
+   "template": "sd_card",
+   "kind": "reference_object"
+  },
+  {
+   "suite": "reference_objects",
+   "id": "ref-lego-2x4-blur-s151611",
+   "preset": "blur",
+   "template": "lego_2x4",
+   "kind": "reference_object"
+  },
+  {
+   "suite": "reference_objects",
+   "id": "ref-aa-cell-blur-s359544",
+   "preset": "blur",
+   "template": "aa_cell",
+   "kind": "reference_object"
+  },
+  {
+   "suite": "reference_objects",
+   "id": "ref-id1-card-glare-s264427",
+   "preset": "glare",
+   "template": "id1_card",
+   "kind": "reference_object"
+  },
+  {
+   "suite": "reference_objects",
+   "id": "ref-sd-card-glare-s289988",
+   "preset": "glare",
+   "template": "sd_card",
+   "kind": "reference_object"
+  },
+  {
+   "suite": "reference_objects",
+   "id": "ref-lego-2x4-glare-s570918",
+   "preset": "glare",
+   "template": "lego_2x4",
+   "kind": "reference_object"
+  },
+  {
+   "suite": "reference_objects",
+   "id": "ref-aa-cell-glare-s149413",
+   "preset": "glare",
+   "template": "aa_cell",
+   "kind": "reference_object"
+  },
+  {
+   "suite": "reference_objects",
+   "id": "ref-id1-card-moire-s267093",
+   "preset": "moire",
+   "template": "id1_card",
+   "kind": "reference_object"
+  },
+  {
+   "suite": "reference_objects",
+   "id": "ref-sd-card-moire-s470277",
+   "preset": "moire",
+   "template": "sd_card",
+   "kind": "reference_object"
+  },
+  {
+   "suite": "reference_objects",
+   "id": "ref-lego-2x4-moire-s695633",
+   "preset": "moire",
+   "template": "lego_2x4",
+   "kind": "reference_object"
+  },
+  {
+   "suite": "reference_objects",
+   "id": "ref-aa-cell-moire-s777403",
+   "preset": "moire",
+   "template": "aa_cell",
+   "kind": "reference_object"
+  },
+  {
+   "suite": "reference_objects",
+   "id": "ref-id1-card-low-light-s322966",
+   "preset": "low-light",
+   "template": "id1_card",
+   "kind": "reference_object"
+  },
+  {
+   "suite": "reference_objects",
+   "id": "ref-sd-card-low-light-s764208",
+   "preset": "low-light",
+   "template": "sd_card",
+   "kind": "reference_object"
+  },
+  {
+   "suite": "reference_objects",
+   "id": "ref-lego-2x4-low-light-s719663",
+   "preset": "low-light",
+   "template": "lego_2x4",
+   "kind": "reference_object"
+  },
+  {
+   "suite": "reference_objects",
+   "id": "ref-aa-cell-low-light-s721220",
+   "preset": "low-light",
+   "template": "aa_cell",
+   "kind": "reference_object"
+  },
+  {
+   "suite": "reference_objects",
+   "id": "ref-id1-card-paper-s882399",
+   "preset": "paper",
+   "template": "id1_card",
+   "kind": "reference_object"
+  },
+  {
+   "suite": "reference_objects",
+   "id": "ref-sd-card-paper-s622199",
+   "preset": "paper",
+   "template": "sd_card",
+   "kind": "reference_object"
+  },
+  {
+   "suite": "reference_objects",
+   "id": "ref-lego-2x4-paper-s802501",
+   "preset": "paper",
+   "template": "lego_2x4",
+   "kind": "reference_object"
+  },
+  {
+   "suite": "reference_objects",
+   "id": "ref-aa-cell-paper-s690216",
+   "preset": "paper",
+   "template": "aa_cell",
+   "kind": "reference_object"
+  },
+  {
+   "suite": "reference_objects",
+   "id": "ref-id1-card-clean-s423188",
+   "preset": "clean",
+   "template": "id1_card",
+   "kind": "reference_object"
+  },
+  {
+   "suite": "reference_objects",
+   "id": "ref-sd-card-clean-s238703",
+   "preset": "clean",
+   "template": "sd_card",
+   "kind": "reference_object"
+  },
+  {
+   "suite": "reference_objects",
+   "id": "ref-lego-2x4-clean-s612943",
+   "preset": "clean",
+   "template": "lego_2x4",
+   "kind": "reference_object"
+  },
+  {
+   "suite": "reference_objects",
+   "id": "ref-aa-cell-clean-s951273",
+   "preset": "clean",
+   "template": "aa_cell",
+   "kind": "reference_object"
+  },
+  {
+   "suite": "reference_objects",
+   "id": "ref-id1-card-tilt-s640563",
+   "preset": "tilt",
+   "template": "id1_card",
+   "kind": "reference_object"
+  },
+  {
+   "suite": "reference_objects",
+   "id": "ref-sd-card-tilt-s77646",
+   "preset": "tilt",
+   "template": "sd_card",
+   "kind": "reference_object"
+  },
+  {
+   "suite": "reference_objects",
+   "id": "ref-lego-2x4-tilt-s78815",
+   "preset": "tilt",
+   "template": "lego_2x4",
+   "kind": "reference_object"
+  },
+  {
+   "suite": "reference_objects",
+   "id": "ref-aa-cell-tilt-s658991",
+   "preset": "tilt",
+   "template": "aa_cell",
+   "kind": "reference_object"
+  },
+  {
+   "suite": "reference_objects",
+   "id": "ref-id1-card-blur-s884972",
+   "preset": "blur",
+   "template": "id1_card",
+   "kind": "reference_object"
+  },
+  {
+   "suite": "reference_objects",
+   "id": "ref-sd-card-blur-s163754",
+   "preset": "blur",
+   "template": "sd_card",
+   "kind": "reference_object"
+  },
+  {
+   "suite": "reference_objects",
+   "id": "ref-lego-2x4-blur-s636769",
+   "preset": "blur",
+   "template": "lego_2x4",
+   "kind": "reference_object"
+  },
+  {
+   "suite": "reference_objects",
+   "id": "ref-aa-cell-blur-s767586",
+   "preset": "blur",
+   "template": "aa_cell",
+   "kind": "reference_object"
+  },
+  {
+   "suite": "reference_objects",
+   "id": "ref-id1-card-glare-s245906",
+   "preset": "glare",
+   "template": "id1_card",
+   "kind": "reference_object"
+  },
+  {
+   "suite": "reference_objects",
+   "id": "ref-sd-card-glare-s329436",
+   "preset": "glare",
+   "template": "sd_card",
+   "kind": "reference_object"
+  },
+  {
+   "suite": "reference_objects",
+   "id": "ref-lego-2x4-glare-s498520",
+   "preset": "glare",
+   "template": "lego_2x4",
+   "kind": "reference_object"
+  },
+  {
+   "suite": "reference_objects",
+   "id": "ref-aa-cell-glare-s823426",
+   "preset": "glare",
+   "template": "aa_cell",
+   "kind": "reference_object"
+  },
+  {
+   "suite": "reference_objects",
+   "id": "ref-id1-card-moire-s390132",
+   "preset": "moire",
+   "template": "id1_card",
+   "kind": "reference_object"
+  },
+  {
+   "suite": "reference_objects",
+   "id": "ref-sd-card-moire-s150155",
+   "preset": "moire",
+   "template": "sd_card",
+   "kind": "reference_object"
+  },
+  {
+   "suite": "reference_objects",
+   "id": "ref-lego-2x4-moire-s413295",
+   "preset": "moire",
+   "template": "lego_2x4",
+   "kind": "reference_object"
+  },
+  {
+   "suite": "reference_objects",
+   "id": "ref-aa-cell-moire-s628896",
+   "preset": "moire",
+   "template": "aa_cell",
+   "kind": "reference_object"
+  },
+  {
+   "suite": "reference_objects",
+   "id": "ref-id1-card-low-light-s693023",
+   "preset": "low-light",
+   "template": "id1_card",
+   "kind": "reference_object"
+  },
+  {
+   "suite": "reference_objects",
+   "id": "ref-sd-card-low-light-s834515",
+   "preset": "low-light",
+   "template": "sd_card",
+   "kind": "reference_object"
+  },
+  {
+   "suite": "reference_objects",
+   "id": "ref-lego-2x4-low-light-s516656",
+   "preset": "low-light",
+   "template": "lego_2x4",
+   "kind": "reference_object"
+  },
+  {
+   "suite": "reference_objects",
+   "id": "ref-aa-cell-low-light-s362756",
+   "preset": "low-light",
+   "template": "aa_cell",
+   "kind": "reference_object"
+  },
+  {
+   "suite": "reference_objects",
+   "id": "ref-id1-card-paper-s655962",
+   "preset": "paper",
+   "template": "id1_card",
+   "kind": "reference_object"
+  },
+  {
+   "suite": "reference_objects",
+   "id": "ref-sd-card-paper-s872881",
+   "preset": "paper",
+   "template": "sd_card",
+   "kind": "reference_object"
+  },
+  {
+   "suite": "reference_objects",
+   "id": "ref-lego-2x4-paper-s896531",
+   "preset": "paper",
+   "template": "lego_2x4",
+   "kind": "reference_object"
+  },
+  {
+   "suite": "reference_objects",
+   "id": "ref-aa-cell-paper-s891088",
+   "preset": "paper",
+   "template": "aa_cell",
+   "kind": "reference_object"
+  },
+  {
+   "suite": "reference_objects",
+   "id": "ref-id1-card-clean-s132113",
+   "preset": "clean",
+   "template": "id1_card",
+   "kind": "reference_object"
+  },
+  {
+   "suite": "reference_objects",
+   "id": "ref-sd-card-clean-s5426",
+   "preset": "clean",
+   "template": "sd_card",
+   "kind": "reference_object"
+  },
+  {
+   "suite": "reference_objects",
+   "id": "ref-lego-2x4-clean-s512963",
+   "preset": "clean",
+   "template": "lego_2x4",
+   "kind": "reference_object"
+  },
+  {
+   "suite": "reference_objects",
+   "id": "ref-aa-cell-clean-s792104",
+   "preset": "clean",
+   "template": "aa_cell",
+   "kind": "reference_object"
+  },
+  {
+   "suite": "broken",
+   "id": "syn-battery-cover-clean-s1105",
+   "preset": "clean",
+   "template": "battery_cover",
+   "kind": "template"
+  },
+  {
+   "suite": "broken",
+   "id": "syn-cable-clip-clean-s1106",
+   "preset": "clean",
+   "template": "cable_clip",
+   "kind": "template"
+  },
+  {
+   "suite": "broken",
+   "id": "syn-caster-wheel-clean-s1107",
+   "preset": "clean",
+   "template": "caster_wheel",
+   "kind": "template"
+  },
+  {
+   "suite": "broken",
+   "id": "syn-clip-clean-s1108",
+   "preset": "clean",
+   "template": "clip",
+   "kind": "template"
+  },
+  {
+   "suite": "broken",
+   "id": "syn-cupboard-latch-clean-s1109",
+   "preset": "clean",
+   "template": "cupboard_latch",
+   "kind": "template"
+  },
+  {
+   "suite": "broken",
+   "id": "syn-hinge-leaf-clean-s1110",
+   "preset": "clean",
+   "template": "hinge_leaf",
+   "kind": "template"
+  },
+  {
+   "suite": "broken",
+   "id": "syn-hook-clean-s1111",
+   "preset": "clean",
+   "template": "hook",
+   "kind": "template"
+  },
+  {
+   "suite": "broken",
+   "id": "syn-knob-clean-s1112",
+   "preset": "clean",
+   "template": "knob",
+   "kind": "template"
+  },
+  {
+   "suite": "broken",
+   "id": "syn-l-bracket-clean-s1113",
+   "preset": "clean",
+   "template": "l_bracket",
+   "kind": "template"
+  },
+  {
+   "suite": "broken",
+   "id": "syn-spacer-clean-s1114",
+   "error": "ValueError: the part has nothing tall enough to snap off"
+  },
+  {
+   "suite": "broken",
+   "id": "syn-battery-cover-clean-s1115",
+   "preset": "clean",
+   "template": "battery_cover",
+   "kind": "template"
+  },
+  {
+   "suite": "broken",
+   "id": "syn-cable-clip-clean-s1116",
+   "preset": "clean",
+   "template": "cable_clip",
+   "kind": "template"
+  },
+  {
+   "suite": "broken",
+   "id": "syn-caster-wheel-clean-s1117",
+   "error": "ValueError: the part has nothing tall enough to snap off"
+  },
+  {
+   "suite": "broken",
+   "id": "syn-clip-clean-s1118",
+   "preset": "clean",
+   "template": "clip",
+   "kind": "template"
+  },
+  {
+   "suite": "broken",
+   "id": "syn-cupboard-latch-clean-s1119",
+   "preset": "clean",
+   "template": "cupboard_latch",
+   "kind": "template"
+  },
+  {
+   "suite": "broken",
+   "id": "syn-hinge-leaf-clean-s1120",
+   "preset": "clean",
+   "template": "hinge_leaf",
+   "kind": "template"
+  },
+  {
+   "suite": "broken",
+   "id": "syn-hook-clean-s1121",
+   "preset": "clean",
+   "template": "hook",
+   "kind": "template"
+  },
+  {
+   "suite": "broken",
+   "id": "syn-knob-clean-s1122",
+   "preset": "clean",
+   "template": "knob",
+   "kind": "template"
+  },
+  {
+   "suite": "broken",
+   "id": "syn-l-bracket-clean-s1123",
+   "preset": "clean",
+   "template": "l_bracket",
+   "kind": "template"
+  },
+  {
+   "suite": "broken",
+   "id": "syn-spacer-clean-s1124",
+   "preset": "clean",
+   "template": "spacer",
+   "kind": "template"
+  },
+  {
+   "suite": "broken",
+   "id": "syn-battery-cover-clean-s1125",
+   "preset": "clean",
+   "template": "battery_cover",
+   "kind": "template"
+  },
+  {
+   "suite": "broken",
+   "id": "syn-cable-clip-clean-s1126",
+   "preset": "clean",
+   "template": "cable_clip",
+   "kind": "template"
+  },
+  {
+   "suite": "broken",
+   "id": "syn-caster-wheel-clean-s1127",
+   "preset": "clean",
+   "template": "caster_wheel",
+   "kind": "template"
+  },
+  {
+   "suite": "broken",
+   "id": "syn-clip-clean-s1128",
+   "preset": "clean",
+   "template": "clip",
+   "kind": "template"
+  },
+  {
+   "suite": "broken",
+   "id": "syn-cupboard-latch-clean-s1129",
+   "error": "ValueError: the part has nothing tall enough to snap off"
+  },
+  {
+   "suite": "broken",
+   "id": "syn-hinge-leaf-clean-s1130",
+   "preset": "clean",
+   "template": "hinge_leaf",
+   "kind": "template"
+  },
+  {
+   "suite": "broken",
+   "id": "syn-hook-clean-s1131",
+   "preset": "clean",
+   "template": "hook",
+   "kind": "template"
+  },
+  {
+   "suite": "broken",
+   "id": "syn-knob-clean-s1132",
+   "error": "ValueError: the part has nothing tall enough to snap off"
+  },
+  {
+   "suite": "broken",
+   "id": "syn-l-bracket-clean-s1133",
+   "preset": "clean",
+   "template": "l_bracket",
+   "kind": "template"
+  },
+  {
+   "suite": "broken",
+   "id": "syn-spacer-clean-s1134",
+   "preset": "clean",
+   "template": "spacer",
+   "kind": "template"
+  },
+  {
+   "suite": "control_top",
+   "id": "ctl-knob-s618029",
+   "preset": "clean",
+   "template": "knob",
+   "kind": "template"
+  },
+  {
+   "suite": "control_side",
+   "id": "ctl-knob-s618029",
+   "preset": "clean",
+   "template": "knob",
+   "kind": "template"
+  },
+  {
+   "suite": "control_top",
+   "id": "ctl-caster-wheel-s818769",
+   "preset": "paper",
+   "template": "caster_wheel",
+   "kind": "template"
+  },
+  {
+   "suite": "control_side",
+   "id": "ctl-caster-wheel-s818769",
+   "preset": "paper",
+   "template": "caster_wheel",
+   "kind": "template"
+  },
+  {
+   "suite": "control_top",
+   "id": "ctl-cupboard-latch-s95183",
+   "preset": "clean",
+   "template": "cupboard_latch",
+   "kind": "template"
+  },
+  {
+   "suite": "control_side",
+   "id": "ctl-cupboard-latch-s95183",
+   "preset": "clean",
+   "template": "cupboard_latch",
+   "kind": "template"
+  },
+  {
+   "suite": "control_top",
+   "id": "ctl-l-bracket-s616977",
+   "preset": "paper",
+   "template": "l_bracket",
+   "kind": "template"
+  },
+  {
+   "suite": "control_side",
+   "id": "ctl-l-bracket-s616977",
+   "preset": "paper",
+   "template": "l_bracket",
+   "kind": "template"
+  },
+  {
+   "suite": "control_top",
+   "id": "ctl-battery-cover-s925058",
+   "preset": "clean",
+   "template": "battery_cover",
+   "kind": "template"
+  },
+  {
+   "suite": "control_side",
+   "id": "ctl-battery-cover-s925058",
+   "preset": "clean",
+   "template": "battery_cover",
+   "kind": "template"
+  },
+  {
+   "suite": "control_top",
+   "id": "ctl-cable-clip-s346858",
+   "preset": "paper",
+   "template": "cable_clip",
+   "kind": "template"
+  },
+  {
+   "suite": "control_side",
+   "id": "ctl-cable-clip-s346858",
+   "preset": "paper",
+   "template": "cable_clip",
+   "kind": "template"
+  },
+  {
+   "suite": "control_top",
+   "id": "ctl-clip-s841536",
+   "preset": "clean",
+   "template": "clip",
+   "kind": "template"
+  },
+  {
+   "suite": "control_side",
+   "id": "ctl-clip-s841536",
+   "preset": "clean",
+   "template": "clip",
+   "kind": "template"
+  },
+  {
+   "suite": "control_top",
+   "id": "ctl-hinge-leaf-s753983",
+   "preset": "paper",
+   "template": "hinge_leaf",
+   "kind": "template"
+  },
+  {
+   "suite": "control_side",
+   "id": "ctl-hinge-leaf-s753983",
+   "preset": "paper",
+   "template": "hinge_leaf",
+   "kind": "template"
+  },
+  {
+   "suite": "control_top",
+   "id": "ctl-hook-s878483",
+   "preset": "clean",
+   "template": "hook",
+   "kind": "template"
+  },
+  {
+   "suite": "control_side",
+   "id": "ctl-hook-s878483",
+   "preset": "clean",
+   "template": "hook",
+   "kind": "template"
+  },
+  {
+   "suite": "control_top",
+   "id": "ctl-spacer-s753868",
+   "preset": "paper",
+   "template": "spacer",
+   "kind": "template"
+  },
+  {
+   "suite": "control_side",
+   "id": "ctl-spacer-s753868",
+   "preset": "paper",
+   "template": "spacer",
+   "kind": "template"
+  },
+  {
+   "suite": "control_top",
+   "id": "ctl-knob-s823603",
+   "preset": "clean",
+   "template": "knob",
+   "kind": "template"
+  },
+  {
+   "suite": "control_side",
+   "id": "ctl-knob-s823603",
+   "preset": "clean",
+   "template": "knob",
+   "kind": "template"
+  },
+  {
+   "suite": "control_top",
+   "id": "ctl-caster-wheel-s997694",
+   "preset": "paper",
+   "template": "caster_wheel",
+   "kind": "template"
+  },
+  {
+   "suite": "control_side",
+   "id": "ctl-caster-wheel-s997694",
+   "preset": "paper",
+   "template": "caster_wheel",
+   "kind": "template"
+  },
+  {
+   "suite": "control_top",
+   "id": "ctl-cupboard-latch-s852167",
+   "preset": "clean",
+   "template": "cupboard_latch",
+   "kind": "template"
+  },
+  {
+   "suite": "control_side",
+   "id": "ctl-cupboard-latch-s852167",
+   "preset": "clean",
+   "template": "cupboard_latch",
+   "kind": "template"
+  },
+  {
+   "suite": "control_top",
+   "id": "ctl-l-bracket-s119347",
+   "preset": "paper",
+   "template": "l_bracket",
+   "kind": "template"
+  },
+  {
+   "suite": "control_side",
+   "id": "ctl-l-bracket-s119347",
+   "preset": "paper",
+   "template": "l_bracket",
+   "kind": "template"
+  },
+  {
+   "suite": "control_top",
+   "id": "ctl-battery-cover-s279515",
+   "preset": "clean",
+   "template": "battery_cover",
+   "kind": "template"
+  },
+  {
+   "suite": "control_side",
+   "id": "ctl-battery-cover-s279515",
+   "preset": "clean",
+   "template": "battery_cover",
+   "kind": "template"
+  },
+  {
+   "suite": "control_top",
+   "id": "ctl-cable-clip-s384723",
+   "preset": "paper",
+   "template": "cable_clip",
+   "kind": "template"
+  },
+  {
+   "suite": "control_side",
+   "id": "ctl-cable-clip-s384723",
+   "preset": "paper",
+   "template": "cable_clip",
+   "kind": "template"
+  },
+  {
+   "suite": "control_top",
+   "id": "ctl-clip-s288504",
+   "preset": "clean",
+   "template": "clip",
+   "kind": "template"
+  },
+  {
+   "suite": "control_side",
+   "id": "ctl-clip-s288504",
+   "preset": "clean",
+   "template": "clip",
+   "kind": "template"
+  },
+  {
+   "suite": "control_top",
+   "id": "ctl-hinge-leaf-s811987",
+   "preset": "paper",
+   "template": "hinge_leaf",
+   "kind": "template"
+  },
+  {
+   "suite": "control_side",
+   "id": "ctl-hinge-leaf-s811987",
+   "preset": "paper",
+   "template": "hinge_leaf",
+   "kind": "template"
+  },
+  {
+   "suite": "control_top",
+   "id": "ctl-hook-s511809",
+   "preset": "clean",
+   "template": "hook",
+   "kind": "template"
+  },
+  {
+   "suite": "control_side",
+   "id": "ctl-hook-s511809",
+   "preset": "clean",
+   "template": "hook",
+   "kind": "template"
+  },
+  {
+   "suite": "control_top",
+   "id": "ctl-spacer-s162895",
+   "preset": "paper",
+   "template": "spacer",
+   "kind": "template"
+  },
+  {
+   "suite": "control_side",
+   "id": "ctl-spacer-s162895",
+   "preset": "paper",
+   "template": "spacer",
+   "kind": "template"
+  },
+  {
+   "suite": "control_top",
+   "id": "ctl-knob-s830025",
+   "preset": "clean",
+   "template": "knob",
+   "kind": "template"
+  },
+  {
+   "suite": "control_side",
+   "id": "ctl-knob-s830025",
+   "preset": "clean",
+   "template": "knob",
+   "kind": "template"
+  },
+  {
+   "suite": "control_top",
+   "id": "ctl-caster-wheel-s658563",
+   "preset": "paper",
+   "template": "caster_wheel",
+   "kind": "template"
+  },
+  {
+   "suite": "control_side",
+   "id": "ctl-caster-wheel-s658563",
+   "preset": "paper",
+   "template": "caster_wheel",
+   "kind": "template"
+  },
+  {
+   "suite": "control_top",
+   "id": "ctl-cupboard-latch-s396988",
+   "preset": "clean",
+   "template": "cupboard_latch",
+   "kind": "template"
+  },
+  {
+   "suite": "control_side",
+   "id": "ctl-cupboard-latch-s396988",
+   "preset": "clean",
+   "template": "cupboard_latch",
+   "kind": "template"
+  },
+  {
+   "suite": "control_top",
+   "id": "ctl-l-bracket-s834353",
+   "preset": "paper",
+   "template": "l_bracket",
+   "kind": "template"
+  },
+  {
+   "suite": "control_side",
+   "id": "ctl-l-bracket-s834353",
+   "preset": "paper",
+   "template": "l_bracket",
+   "kind": "template"
+  },
+  {
+   "suite": "control_top",
+   "id": "ctl-battery-cover-s959243",
+   "preset": "clean",
+   "template": "battery_cover",
+   "kind": "template"
+  },
+  {
+   "suite": "control_side",
+   "id": "ctl-battery-cover-s959243",
+   "preset": "clean",
+   "template": "battery_cover",
+   "kind": "template"
+  },
+  {
+   "suite": "control_top",
+   "id": "ctl-cable-clip-s779655",
+   "preset": "paper",
+   "template": "cable_clip",
+   "kind": "template"
+  },
+  {
+   "suite": "control_side",
+   "id": "ctl-cable-clip-s779655",
+   "preset": "paper",
+   "template": "cable_clip",
+   "kind": "template"
+  },
+  {
+   "suite": "control_top",
+   "id": "ctl-clip-s195627",
+   "preset": "clean",
+   "template": "clip",
+   "kind": "template"
+  },
+  {
+   "suite": "control_side",
+   "id": "ctl-clip-s195627",
+   "preset": "clean",
+   "template": "clip",
+   "kind": "template"
+  },
+  {
+   "suite": "control_top",
+   "id": "ctl-hinge-leaf-s172535",
+   "preset": "paper",
+   "template": "hinge_leaf",
+   "kind": "template"
+  },
+  {
+   "suite": "control_side",
+   "id": "ctl-hinge-leaf-s172535",
+   "preset": "paper",
+   "template": "hinge_leaf",
+   "kind": "template"
+  },
+  {
+   "suite": "control_top",
+   "id": "ctl-hook-s797040",
+   "preset": "clean",
+   "template": "hook",
+   "kind": "template"
+  },
+  {
+   "suite": "control_side",
+   "id": "ctl-hook-s797040",
+   "preset": "clean",
+   "template": "hook",
+   "kind": "template"
+  },
+  {
+   "suite": "control_top",
+   "id": "ctl-spacer-s744295",
+   "preset": "paper",
+   "template": "spacer",
+   "kind": "template"
+  },
+  {
+   "suite": "control_side",
+   "id": "ctl-spacer-s744295",
+   "preset": "paper",
+   "template": "spacer",
+   "kind": "template"
+  },
+  {
+   "suite": "control_top",
+   "id": "ctl-knob-s43928",
+   "preset": "clean",
+   "template": "knob",
+   "kind": "template"
+  },
+  {
+   "suite": "control_side",
+   "id": "ctl-knob-s43928",
+   "preset": "clean",
+   "template": "knob",
+   "kind": "template"
+  },
+  {
+   "suite": "control_top",
+   "id": "ctl-caster-wheel-s35631",
+   "preset": "paper",
+   "template": "caster_wheel",
+   "kind": "template"
+  },
+  {
+   "suite": "control_side",
+   "id": "ctl-caster-wheel-s35631",
+   "preset": "paper",
+   "template": "caster_wheel",
+   "kind": "template"
+  },
+  {
+   "suite": "control_top",
+   "id": "ctl-cupboard-latch-s58097",
+   "preset": "clean",
+   "template": "cupboard_latch",
+   "kind": "template"
+  },
+  {
+   "suite": "control_side",
+   "id": "ctl-cupboard-latch-s58097",
+   "preset": "clean",
+   "template": "cupboard_latch",
+   "kind": "template"
+  },
+  {
+   "suite": "control_top",
+   "id": "ctl-l-bracket-s580537",
+   "preset": "paper",
+   "template": "l_bracket",
+   "kind": "template"
+  },
+  {
+   "suite": "control_side",
+   "id": "ctl-l-bracket-s580537",
+   "preset": "paper",
+   "template": "l_bracket",
+   "kind": "template"
+  },
+  {
+   "suite": "control_top",
+   "id": "ctl-battery-cover-s72686",
+   "preset": "clean",
+   "template": "battery_cover",
+   "kind": "template"
+  },
+  {
+   "suite": "control_side",
+   "id": "ctl-battery-cover-s72686",
+   "preset": "clean",
+   "template": "battery_cover",
+   "kind": "template"
+  },
+  {
+   "suite": "control_top",
+   "id": "ctl-cable-clip-s715591",
+   "preset": "paper",
+   "template": "cable_clip",
+   "kind": "template"
+  },
+  {
+   "suite": "control_side",
+   "id": "ctl-cable-clip-s715591",
+   "preset": "paper",
+   "template": "cable_clip",
+   "kind": "template"
+  },
+  {
+   "suite": "control_top",
+   "id": "ctl-clip-s908923",
+   "preset": "clean",
+   "template": "clip",
+   "kind": "template"
+  },
+  {
+   "suite": "control_side",
+   "id": "ctl-clip-s908923",
+   "preset": "clean",
+   "template": "clip",
+   "kind": "template"
+  },
+  {
+   "suite": "control_top",
+   "id": "ctl-hinge-leaf-s12647",
+   "preset": "paper",
+   "template": "hinge_leaf",
+   "kind": "template"
+  },
+  {
+   "suite": "control_side",
+   "id": "ctl-hinge-leaf-s12647",
+   "preset": "paper",
+   "template": "hinge_leaf",
+   "kind": "template"
+  },
+  {
+   "suite": "control_top",
+   "id": "ctl-hook-s711538",
+   "preset": "clean",
+   "template": "hook",
+   "kind": "template"
+  },
+  {
+   "suite": "control_side",
+   "id": "ctl-hook-s711538",
+   "preset": "clean",
+   "template": "hook",
+   "kind": "template"
+  },
+  {
+   "suite": "control_top",
+   "id": "ctl-spacer-s616336",
+   "preset": "paper",
+   "template": "spacer",
+   "kind": "template"
+  },
+  {
+   "suite": "control_side",
+   "id": "ctl-spacer-s616336",
+   "preset": "paper",
+   "template": "spacer",
+   "kind": "template"
+  },
+  {
+   "suite": "redteam",
+   "id": "rt-no-part-k0",
+   "dir": "redteam/k0/rt-no-part",
+   "preset": "redteam",
+   "kind": "redteam"
+  },
+  {
+   "suite": "redteam",
+   "id": "rt-photo-of-screen-k0",
+   "dir": "redteam/k0/rt-photo-of-screen",
+   "preset": "redteam",
+   "kind": "redteam"
+  },
+  {
+   "suite": "redteam",
+   "id": "rt-hand-in-frame-k0",
+   "dir": "redteam/k0/rt-hand-in-frame",
+   "preset": "redteam",
+   "kind": "redteam"
+  },
+  {
+   "suite": "redteam",
+   "id": "rt-partial-mat-k0",
+   "dir": "redteam/k0/rt-partial-mat",
+   "preset": "redteam",
+   "kind": "redteam"
+  },
+  {
+   "suite": "redteam",
+   "id": "rt-wrong-mat-k0",
+   "dir": "redteam/k0/rt-wrong-mat",
+   "preset": "redteam",
+   "kind": "redteam"
+  },
+  {
+   "suite": "redteam",
+   "id": "rt-organic-object-k0",
+   "dir": "redteam/k0/rt-organic-object",
+   "preset": "redteam",
+   "kind": "redteam"
+  },
+  {
+   "suite": "redteam",
+   "id": "rt-flexible-object-k0",
+   "dir": "redteam/k0/rt-flexible-object",
+   "preset": "redteam",
+   "kind": "redteam"
+  },
+  {
+   "suite": "redteam",
+   "id": "rt-two-parts-k0",
+   "dir": "redteam/k0/rt-two-parts",
+   "preset": "redteam",
+   "kind": "redteam"
+  },
+  {
+   "suite": "redteam",
+   "id": "rt-part-off-stage-k0",
+   "dir": "redteam/k0/rt-part-off-stage",
+   "preset": "redteam",
+   "kind": "redteam"
+  },
+  {
+   "suite": "redteam",
+   "id": "rt-safety-part-k0",
+   "dir": "redteam/k0/rt-safety-part",
+   "preset": "redteam",
+   "kind": "redteam"
+  },
+  {
+   "suite": "redteam",
+   "id": "rt-no-part-k1",
+   "dir": "redteam/k1/rt-no-part",
+   "preset": "redteam",
+   "kind": "redteam"
+  },
+  {
+   "suite": "redteam",
+   "id": "rt-photo-of-screen-k1",
+   "dir": "redteam/k1/rt-photo-of-screen",
+   "preset": "redteam",
+   "kind": "redteam"
+  },
+  {
+   "suite": "redteam",
+   "id": "rt-hand-in-frame-k1",
+   "dir": "redteam/k1/rt-hand-in-frame",
+   "preset": "redteam",
+   "kind": "redteam"
+  },
+  {
+   "suite": "redteam",
+   "id": "rt-partial-mat-k1",
+   "dir": "redteam/k1/rt-partial-mat",
+   "preset": "redteam",
+   "kind": "redteam"
+  },
+  {
+   "suite": "redteam",
+   "id": "rt-wrong-mat-k1",
+   "dir": "redteam/k1/rt-wrong-mat",
+   "preset": "redteam",
+   "kind": "redteam"
+  },
+  {
+   "suite": "redteam",
+   "id": "rt-organic-object-k1",
+   "dir": "redteam/k1/rt-organic-object",
+   "preset": "redteam",
+   "kind": "redteam"
+  },
+  {
+   "suite": "redteam",
+   "id": "rt-flexible-object-k1",
+   "dir": "redteam/k1/rt-flexible-object",
+   "preset": "redteam",
+   "kind": "redteam"
+  },
+  {
+   "suite": "redteam",
+   "id": "rt-two-parts-k1",
+   "dir": "redteam/k1/rt-two-parts",
+   "preset": "redteam",
+   "kind": "redteam"
+  },
+  {
+   "suite": "redteam",
+   "id": "rt-part-off-stage-k1",
+   "dir": "redteam/k1/rt-part-off-stage",
+   "preset": "redteam",
+   "kind": "redteam"
+  },
+  {
+   "suite": "redteam",
+   "id": "rt-safety-part-k1",
+   "dir": "redteam/k1/rt-safety-part",
+   "preset": "redteam",
+   "kind": "redteam"
+  },
+  {
+   "suite": "redteam",
+   "id": "rt-no-part-k2",
+   "dir": "redteam/k2/rt-no-part",
+   "preset": "redteam",
+   "kind": "redteam"
+  },
+  {
+   "suite": "redteam",
+   "id": "rt-photo-of-screen-k2",
+   "dir": "redteam/k2/rt-photo-of-screen",
+   "preset": "redteam",
+   "kind": "redteam"
+  },
+  {
+   "suite": "redteam",
+   "id": "rt-hand-in-frame-k2",
+   "dir": "redteam/k2/rt-hand-in-frame",
+   "preset": "redteam",
+   "kind": "redteam"
+  },
+  {
+   "suite": "redteam",
+   "id": "rt-partial-mat-k2",
+   "dir": "redteam/k2/rt-partial-mat",
+   "preset": "redteam",
+   "kind": "redteam"
+  },
+  {
+   "suite": "redteam",
+   "id": "rt-wrong-mat-k2",
+   "dir": "redteam/k2/rt-wrong-mat",
+   "preset": "redteam",
+   "kind": "redteam"
+  },
+  {
+   "suite": "redteam",
+   "id": "rt-organic-object-k2",
+   "dir": "redteam/k2/rt-organic-object",
+   "preset": "redteam",
+   "kind": "redteam"
+  },
+  {
+   "suite": "redteam",
+   "id": "rt-flexible-object-k2",
+   "dir": "redteam/k2/rt-flexible-object",
+   "preset": "redteam",
+   "kind": "redteam"
+  },
+  {
+   "suite": "redteam",
+   "id": "rt-two-parts-k2",
+   "dir": "redteam/k2/rt-two-parts",
+   "preset": "redteam",
+   "kind": "redteam"
+  },
+  {
+   "suite": "redteam",
+   "id": "rt-part-off-stage-k2",
+   "dir": "redteam/k2/rt-part-off-stage",
+   "preset": "redteam",
+   "kind": "redteam"
+  },
+  {
+   "suite": "redteam",
+   "id": "rt-safety-part-k2",
+   "dir": "redteam/k2/rt-safety-part",
+   "preset": "redteam",
+   "kind": "redteam"
+  },
+  {
+   "suite": "redteam",
+   "id": "rt-no-part-k3",
+   "dir": "redteam/k3/rt-no-part",
+   "preset": "redteam",
+   "kind": "redteam"
+  },
+  {
+   "suite": "redteam",
+   "id": "rt-photo-of-screen-k3",
+   "dir": "redteam/k3/rt-photo-of-screen",
+   "preset": "redteam",
+   "kind": "redteam"
+  },
+  {
+   "suite": "redteam",
+   "id": "rt-hand-in-frame-k3",
+   "dir": "redteam/k3/rt-hand-in-frame",
+   "preset": "redteam",
+   "kind": "redteam"
+  },
+  {
+   "suite": "redteam",
+   "id": "rt-partial-mat-k3",
+   "dir": "redteam/k3/rt-partial-mat",
+   "preset": "redteam",
+   "kind": "redteam"
+  },
+  {
+   "suite": "redteam",
+   "id": "rt-wrong-mat-k3",
+   "dir": "redteam/k3/rt-wrong-mat",
+   "preset": "redteam",
+   "kind": "redteam"
+  },
+  {
+   "suite": "redteam",
+   "id": "rt-organic-object-k3",
+   "dir": "redteam/k3/rt-organic-object",
+   "preset": "redteam",
+   "kind": "redteam"
+  },
+  {
+   "suite": "redteam",
+   "id": "rt-flexible-object-k3",
+   "dir": "redteam/k3/rt-flexible-object",
+   "preset": "redteam",
+   "kind": "redteam"
+  },
+  {
+   "suite": "redteam",
+   "id": "rt-two-parts-k3",
+   "dir": "redteam/k3/rt-two-parts",
+   "preset": "redteam",
+   "kind": "redteam"
+  },
+  {
+   "suite": "redteam",
+   "id": "rt-part-off-stage-k3",
+   "dir": "redteam/k3/rt-part-off-stage",
+   "preset": "redteam",
+   "kind": "redteam"
+  },
+  {
+   "suite": "redteam",
+   "id": "rt-safety-part-k3",
+   "dir": "redteam/k3/rt-safety-part",
+   "preset": "redteam",
+   "kind": "redteam"
+  }
+ ]
+}

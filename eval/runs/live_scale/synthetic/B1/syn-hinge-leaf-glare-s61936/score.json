@@ -1,0 +1,110 @@
+{
+ "suite": "synthetic",
+ "config": "B1",
+ "sample_id": "syn-hinge-leaf-glare-s61936",
+ "split": "held_out",
+ "kind": "template",
+ "preset": "glare",
+ "mode": "live",
+ "gt_source": "synthetic_exact",
+ "status": "best_effort",
+ "verified": false,
+ "iterations": 1,
+ "iterations_to_converge": null,
+ "strategy": "template",
+ "template": "hinge_leaf",
+ "verifier_max_error_mm": 1.1365271627419042,
+ "retake_reason": null,
+ "failed_checks": [],
+ "usd": 0.113734,
+ "tokens_in": 23313,
+ "tokens_out": 15115,
+ "model_calls": 14,
+ "model_ms": 107009,
+ "provider_modes": [
+  "live"
+ ],
+ "providers": {
+  "segment": [
+   "meta:sam-3.1"
+  ],
+  "understand": [
+   "meta:muse-spark-1.3"
+  ],
+  "segment_points": [
+   "meta:sam-3.1"
+  ],
+  "plan": [
+   "baseten:meta-models/muse-spark-open-1026"
+  ],
+  "build": [
+   "baseten:meta-models/muse-spark-open-1026"
+  ]
+ },
+ "convergence": [
+  {
+   "iter": 1,
+   "hausdorff_mm": 1.1365271627419042,
+   "iou": 0.9035450516986706,
+   "max_error_mm": 1.1365271627419042
+  }
+ ],
+ "wall_s": 135.49,
+ "dims": [
+  {
+   "name": "length",
+   "gt_mm": 55.5,
+   "model_mm": 55.5,
+   "error_mm": 0.0
+  },
+  {
+   "name": "width",
+   "gt_mm": 31.599633,
+   "model_mm": 31.3993,
+   "error_mm": -0.2003
+  },
+  {
+   "name": "thickness",
+   "gt_mm": 5.599628,
+   "model_mm": 5.2,
+   "error_mm": -0.3996
+  },
+  {
+   "name": "hole_1.diameter",
+   "gt_mm": 4.2,
+   "model_mm": 4.15,
+   "error_mm": -0.05
+  },
+  {
+   "name": "hole_2.diameter",
+   "gt_mm": 4.2,
+   "model_mm": 4.15,
+   "error_mm": -0.05
+  },
+  {
+   "name": "hole_3.diameter",
+   "gt_mm": 4.2,
+   "model_mm": 4.15,
+   "error_mm": -0.05
+  },
+  {
+   "name": "hole_4.diameter",
+   "gt_mm": 4.2,
+   "model_mm": 4.15,
+   "error_mm": -0.05
+  }
+ ],
+ "missed": [],
+ "extra_holes": 0,
+ "pass_0_3": false,
+ "pass_0_5": true,
+ "valid": true,
+ "valid_reason": "",
+ "failure_category": null,
+ "git": {
+  "sha": null,
+  "dirty": false
+ },
+ "scale_suite": "synthetic",
+ "tree": "bb75824+308438f7af72"
+}

@@ -1,0 +1,123 @@
+{
+ "suite": "synthetic",
+ "config": "PS",
+ "sample_id": "syn-knob-blur-s235776",
+ "split": "held_out",
+ "kind": "template",
+ "preset": "blur",
+ "mode": "live",
+ "gt_source": "synthetic_exact",
+ "status": "best_effort",
+ "verified": false,
+ "iterations": 6,
+ "iterations_to_converge": 6,
+ "strategy": "free_code",
+ "template": "knob",
+ "verifier_max_error_mm": 0.3077271369714591,
+ "retake_reason": null,
+ "failed_checks": [],
+ "usd": 0.3351,
+ "tokens_in": 287734,
+ "tokens_out": 44195,
+ "model_calls": 43,
+ "model_ms": 307549,
+ "provider_modes": [
+  "live",
+  "mock"
+ ],
+ "providers": {
+  "capture_triage": [
+   "mock:muse-glimmer"
+  ],
+  "segment": [
+   "meta:sam-3.1"
+  ],
+  "understand": [
+   "meta:muse-spark-1.3"
+  ],
+  "plan": [
+   "baseten:meta-models/muse-spark-open-1026"
+  ],
+  "build": [
+   "baseten:meta-models/muse-spark-open-1026"
+  ],
+  "fix_agent": [
+   "baseten:meta-models/muse-spark-open-1026"
+  ],
+  "judge": [
+   "meta:muse-spark-1.3"
+  ]
+ },
+ "convergence": [
+  {
+   "iter": 1,
+   "hausdorff_mm": 0.8722624763298769,
+   "iou": 0.9652290383069917,
+   "max_error_mm": 0.8722624763298769
+  },
+  {
+   "iter": 2,
+   "hausdorff_mm": 0.8339044784695083,
+   "iou": 0.9670542635658915,
+   "max_error_mm": 0.8339044784695083
+  },
+  {
+   "iter": 3,
+   "hausdorff_mm": 0.8032196064886489,
+   "iou": 0.9670406732117812,
+   "max_error_mm": 0.8032196064886489
+  },
+  {
+   "iter": 4,
+   "hausdorff_mm": 0.8377944082835105,
+   "iou": 0.9655005642431082,
+   "max_error_mm": 0.8377944082835105
+  },
+  {
+   "iter": 5,
+   "hausdorff_mm": 0.8032196064886489,
+   "iou": 0.9667421302285468,
+   "max_error_mm": 0.8032196064886489
+  },
+  {
+   "iter": 6,
+   "hausdorff_mm": 0.3077271369714591,
+   "iou": 0.9917969610218014,
+   "max_error_mm": 0.3077271369714591
+  }
+ ],
+ "wall_s": 511.42,
+ "dims": [
+  {
+   "name": "length",
+   "gt_mm": 27.698149,
+   "model_mm": 27.5552,
+   "error_mm": -0.143
+  },
+  {
+   "name": "width",
+   "gt_mm": 27.634661,
+   "model_mm": 27.3759,
+   "error_mm": -0.2588
+  },
+  {
+   "name": "thickness",
+   "gt_mm": 13.6,
+   "model_mm": 13.5,
+   "error_mm": -0.1
+  }
+ ],
+ "missed": [],
+ "extra_holes": 0,
+ "pass_0_3": true,
+ "pass_0_5": true,
+ "valid": true,
+ "valid_reason": "",
+ "failure_category": null,
+ "git": {
+  "sha": null,
+  "dirty": false
+ },
+ "scale_suite": "synthetic",
+ "tree": "bb75824+308438f7af72"
+}

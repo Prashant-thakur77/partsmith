@@ -1,0 +1,101 @@
+import cadquery as cq
+import math
+
+BASEPOINTS = [
+    [28.86, 16.76],
+    [28.313, 17.054],
+    [-25.035, 17.134],
+    [-29.05, 17.117],
+    [-30.168, 16.717],
+    [-30.91, 15.962],
+    [-31.238, 14.914],
+    [-31.262, -14.579],
+    [-30.968, -16.002],
+    [-30.138, -16.777],
+    [-28.897, -17.141],
+    [28.43, -17.008],
+    [28.876, -16.557],
+    [29.001, -2.972],
+    [29.259, -2.739],
+    [31.141, -2.657],
+    [31.287, -1.873],
+    [31.269, 2.777],
+    [29.806, 2.859],
+    [28.985, 3.61],
+]
+
+BXMIN = min(p[0] for p in BASEPOINTS)
+BXMAX = max(p[0] for p in BASEPOINTS)
+BYMIN = min(p[1] for p in BASEPOINTS)
+BYMAX = max(p[1] for p in BASEPOINTS)
+BXLEN = BXMAX - BXMIN
+BYLEN = BYMAX - BYMIN
+BXC = (BXMAX + BXMIN) * 0.5
+BYC = (BYMAX + BYMIN) * 0.5
+
+PARAMS = {
+    "cover_length": (62.55, 55.0, 70.0, 0.1, "mm", True, "Overall length X long axis"),
+    "cover_width": (34.28, 30.0, 40.0, 0.1, "mm", True, "Overall width Y"),
+    "thickness": (2.0, 1.0, 4.0, 0.1, "mm", True, "Cover thickness Z"),
+    "clearance": (0.2, 0.0, 0.6, 0.05, "mm", True, "XY fit clearance undersize"),
+    "edge_chamfer": (0.4, 0.0, 1.2, 0.1, "mm", False, "Top edge chamfer"),
+    "grip_ridges": (0.0, 0, 5, 1, "mm", False, "Number of grip ridges on top"),
+}
+
+def build(p: dict) -> cq.Workplane:
+    length = float(p.get("cover_length", PARAMS["cover_length"][0]))
+    width = float(p.get("cover_width", PARAMS["cover_width"][0]))
+    thickness = float(p.get("thickness", PARAMS["thickness"][0]))
+    clearance = float(p.get("clearance", PARAMS["clearance"][0]))
+    edgeChamfer = float(p.get("edge_chamfer", PARAMS["edge_chamfer"][0]))
+    gripRidges = int(p.get("grip_ridges", PARAMS["grip_ridges"][0]))
+
+    effLength = max(0.1, length - 2.0 * clearance)
+    effWidth = max(0.1, width - 2.0 * clearance)
+
+    sx = effLength / BXLEN if BXLEN != 0 else 1.0
+    sy = effWidth / BYLEN if BYLEN != 0 else 1.0
+
+    pts = []
+    for x, y in BASEPOINTS:
+        nx = (x - BXC) * sx
+        ny = (y - BYC) * sy
+        pts.append((nx, ny))
+
+    wp = cq.Workplane("XY")
+    wp = wp.moveTo(pts[0][0], pts[0][1])
+    for x, y in pts[1:]:
+        wp = wp.lineTo(x, y)
+    wp = wp.close()
+    solid = wp.extrude(thickness, both=False)
+
+    if edgeChamfer > 0.01:
+        try:
+            solid = solid.edges("|Z and >Z").chamfer(edgeChamfer)
+        except Exception:
+            pass
+
+    if gripRidges > 0:
+        ridgeH = 0.6
+        ridgeW = 1.2
+        availLen = effLength * 0.55
+        startX = -effLength * 0.25
+        xs = []
+        if gripRidges == 1:
+            xs = [startX]
+        else:
+            pitch = availLen / (gripRidges - 1) if gripRidges > 1 else availLen
+            for i in range(gripRidges):
+                xs.append(startX - availLen * 0.5 + i * pitch)
+        for rx in xs:
+            rwLen = effWidth * 0.75
+            ridge = cq.Workplane("XY").workplane(offset=thickness).moveTo(rx - ridgeW * 0.5, -rwLen * 0.5).rect(ridgeW, rwLen).extrude(ridgeH)
+            try:
+                ridge = ridge.edges("|Y and >Z").fillet(0.3)
+            except Exception:
+                pass
+            solid = solid.union(ridge)
+
+    return solid
+
+result = build({k: v[0] for k, v in PARAMS.items()})

@@ -1,0 +1,135 @@
+{
+ "suite": "reference_objects",
+ "config": "PS",
+ "sample_id": "ref-sd-card-blur-s163754",
+ "split": "held_out",
+ "kind": "reference_object",
+ "preset": "blur",
+ "mode": "live",
+ "gt_source": "reference_spec",
+ "status": "best_effort",
+ "verified": false,
+ "iterations": 7,
+ "iterations_to_converge": null,
+ "strategy": "free_code",
+ "template": null,
+ "verifier_max_error_mm": 9.904063658048372,
+ "retake_reason": null,
+ "failed_checks": [],
+ "usd": 0.446149,
+ "tokens_in": 502941,
+ "tokens_out": 51529,
+ "model_calls": 50,
+ "model_ms": 367579,
+ "provider_modes": [
+  "live",
+  "mock"
+ ],
+ "providers": {
+  "capture_triage": [
+   "mock:muse-glimmer"
+  ],
+  "segment": [
+   "meta:sam-3.1"
+  ],
+  "understand": [
+   "meta:muse-spark-1.3"
+  ],
+  "plan": [
+   "baseten:meta-models/muse-spark-open-1026"
+  ],
+  "build": [
+   "baseten:meta-models/muse-spark-open-1026"
+  ],
+  "fix_agent": [
+   "baseten:meta-models/muse-spark-open-1026"
+  ],
+  "judge": [
+   "meta:muse-spark-1.3"
+  ],
+  "fix": [
+   "baseten:meta-models/muse-spark-open-1026"
+  ]
+ },
+ "convergence": [
+  {
+   "iter": 1,
+   "hausdorff_mm": 12.106297534386272,
+   "iou": 0.7771485033980816,
+   "max_error_mm": 12.106297534386272
+  },
+  {
+   "iter": 2,
+   "hausdorff_mm": 12.106083918190354,
+   "iou": 0.903444286437369,
+   "max_error_mm": 12.106083918190354
+  },
+  {
+   "iter": 3,
+   "hausdorff_mm": 11.734980154981988,
+   "iou": 0.9375527222771204,
+   "max_error_mm": 11.734980154981988
+  },
+  {
+   "iter": 4,
+   "hausdorff_mm": 11.34679189922755,
+   "iou": 0.953551122675147,
+   "max_error_mm": 11.34679189922755
+  },
+  {
+   "iter": 5,
+   "hausdorff_mm": 10.415011515551488,
+   "iou": 0.9578683506471595,
+   "max_error_mm": 10.415011515551488
+  },
+  {
+   "iter": 6,
+   "hausdorff_mm": 9.904063658048372,
+   "iou": 0.9598467137451495,
+   "max_error_mm": 9.904063658048372
+  },
+  {
+   "iter": 7,
+   "hausdorff_mm": 11.32400703178703,
+   "iou": 0.941165128106245,
+   "max_error_mm": 11.32400703178703
+  }
+ ],
+ "wall_s": 480.52,
+ "dims": [
+  {
+   "name": "length",
+   "gt_mm": 32.0,
+   "model_mm": 32.0286,
+   "error_mm": 0.0286,
+   "within_spec": true
+  },
+  {
+   "name": "width",
+   "gt_mm": 24.0,
+   "model_mm": 24.025,
+   "error_mm": 0.025,
+   "within_spec": true
+  },
+  {
+   "name": "thickness",
+   "gt_mm": 2.1,
+   "model_mm": 2.15,
+   "error_mm": 0.05,
+   "within_spec": true
+  }
+ ],
+ "missed": [],
+ "extra_holes": 0,
+ "pass_0_3": true,
+ "pass_0_5": true,
+ "valid": true,
+ "valid_reason": "",
+ "failure_category": null,
+ "git": {
+  "sha": null,
+  "dirty": false
+ },
+ "scale_suite": "reference_objects",
+ "tree": "bb75824+308438f7af72"
+}

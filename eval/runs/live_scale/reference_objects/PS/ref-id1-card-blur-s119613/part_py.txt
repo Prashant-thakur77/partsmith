@@ -1,0 +1,66 @@
+import cadquery as cq
+import math
+
+BASE_POINTS = [
+    (42.363, 25.419), (41.762, 26.159), (40.837, 26.741), (39.043, 27.018),
+    (-39.898, 26.978), (-41.186, 26.575), (-42.389, 25.371), (-42.812, 23.846),
+    (-42.732, -24.496), (-42.344, -25.461), (-41.286, -26.525), (-39.576, -27.009),
+    (39.268, -27.013), (40.47, -26.865), (41.378, -26.463), (42.484, -25.199),
+    (42.808, -23.676), (42.768, 24.278)
+]
+
+baseXs = [p[0] for p in BASE_POINTS]
+baseYs = [p[1] for p in BASE_POINTS]
+baseLen = max(baseXs) - min(baseXs)
+baseWid = max(baseYs) - min(baseYs)
+
+PARAMS = {
+    "card_length": (85.6, 80.0, 90.0, 0.1, "mm", True, "Card length X"),
+    "card_width": (53.98, 50.0, 60.0, 0.1, "mm", True, "Card width Y"),
+    "thickness": (0.8, 0.3, 2.0, 0.01, "mm", True, "Thickness Z"),
+    "corner_fade": (1.0, 0.8, 1.2, 0.01, "", False, "Corner scale tweak"),
+    "n_markers": (0, 0, 4, 1, "", False, "Calibration markers count"),
+}
+
+def build(p: dict) -> cq.Workplane:
+    cardLength = float(p["card_length"])
+    cardWidth = float(p["card_width"])
+    thickness = float(p["thickness"])
+    cornerFade = float(p["corner_fade"])
+    nMarkers = int(p.get("n_markers", 0))
+
+    sx = cardLength / baseLen
+    sy = cardWidth / baseWid
+
+    def transform(pt):
+        x, y = pt
+        xs = x * sx
+        ys = y * sy
+        if cornerFade != 1.0:
+            r = math.hypot(x / (baseLen / 2), y / (baseWid / 2))
+            f = 1.0 + (cornerFade - 1.0) * max(0.0, (r - 0.7) / 0.3) * 0.05
+            xs *= f
+            ys *= f
+        return (xs, ys)
+
+    pts = [transform(pt) for pt in BASE_POINTS]
+
+    wp = cq.Workplane("XY")
+    wp = wp.moveTo(pts[0][0], pts[0][1])
+    for x, y in pts[1:]:
+        wp = wp.lineTo(x, y)
+    wp = wp.close()
+    card = wp.extrude(thickness, combine=True)
+
+    if nMarkers > 0:
+        spacing = (cardLength * 0.6) / max(1, nMarkers)
+        startX = -(nMarkers - 1) * spacing / 2
+        for i in range(nMarkers):
+            cx = startX + i * spacing
+            cy = 0
+            marker = cq.Workplane("XY").workplane(offset=thickness).moveTo(cx, cy).circle(1.0).extrude(0.08)
+            card = card.union(marker)
+
+    return card
+
+result = build({k: v[0] for k, v in PARAMS.items()})

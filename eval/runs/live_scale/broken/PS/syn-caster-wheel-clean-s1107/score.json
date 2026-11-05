@@ -1,0 +1,157 @@
+{
+ "suite": "synthetic",
+ "config": "PS",
+ "sample_id": "syn-caster-wheel-clean-s1107",
+ "split": "held_out",
+ "kind": "template",
+ "preset": "clean",
+ "mode": "live",
+ "gt_source": "synthetic_exact",
+ "status": "best_effort",
+ "verified": false,
+ "iterations": 5,
+ "iterations_to_converge": null,
+ "strategy": "template",
+ "template": "caster_wheel",
+ "verifier_max_error_mm": 14.467463295254806,
+ "retake_reason": null,
+ "failed_checks": [],
+ "usd": 0.340624,
+ "tokens_in": 307907,
+ "tokens_out": 35120,
+ "model_calls": 40,
+ "model_ms": 342242,
+ "provider_modes": [
+  "live"
+ ],
+ "providers": {
+  "segment": [
+   "meta:sam-3.1"
+  ],
+  "understand": [
+   "meta:muse-spark-1.3"
+  ],
+  "segment_points": [
+   "meta:sam-3.1"
+  ],
+  "reconstruct": [
+   "meta:muse-image-1.0"
+  ],
+  "plan": [
+   "baseten:meta-models/muse-spark-open-1026"
+  ],
+  "build": [
+   "baseten:meta-models/muse-spark-open-1026"
+  ],
+  "fix_agent": [
+   "baseten:meta-models/muse-spark-open-1026"
+  ],
+  "judge": [
+   "meta:muse-spark-1.3"
+  ]
+ },
+ "convergence": [
+  {
+   "iter": 1,
+   "hausdorff_mm": 15.115409889525957,
+   "iou": 0.7884437852808087,
+   "max_error_mm": 15.115409889525957
+  },
+  {
+   "iter": 2,
+   "hausdorff_mm": 14.59225387107273,
+   "iou": 0.7882194661800637,
+   "max_error_mm": 14.59225387107273
+  },
+  {
+   "iter": 3,
+   "hausdorff_mm": 14.683584049403192,
+   "iou": 0.7652605678419354,
+   "max_error_mm": 14.683584049403192
+  },
+  {
+   "iter": 4,
+   "hausdorff_mm": 14.467463295254806,
+   "iou": 0.7858827179646293,
+   "max_error_mm": 14.467463295254806
+  },
+  {
+   "iter": 5,
+   "hausdorff_mm": 14.59225387107273,
+   "iou": 0.7882194661800637,
+   "max_error_mm": 14.59225387107273
+  }
+ ],
+ "wall_s": 1270.11,
+ "dims": [
+  {
+   "name": "length",
+   "gt_mm": 61.1,
+   "model_mm": 59.2932,
+   "error_mm": -1.8068
+  },
+  {
+   "name": "width",
+   "gt_mm": 61.090041,
+   "model_mm": 59.2918,
+   "error_mm": -1.7982
+  },
+  {
+   "name": "thickness",
+   "gt_mm": 21.9,
+   "model_mm": 22.0,
+   "error_mm": 0.1
+  },
+  {
+   "name": "hole_1.diameter",
+   "gt_mm": 12.6,
+   "model_mm": 12.4973,
+   "error_mm": -0.1027
+  },
+  {
+   "name": "hole_2.diameter",
+   "gt_mm": 12.6,
+   "model_mm": 12.4973,
+   "error_mm": -0.1027
+  },
+  {
+   "name": "hole_3.diameter",
+   "gt_mm": 8.1,
+   "model_mm": 8.05,
+   "error_mm": -0.05
+  },
+  {
+   "name": "hole_4.diameter",
+   "gt_mm": 12.6,
+   "model_mm": 12.4973,
+   "error_mm": -0.1027
+  },
+  {
+   "name": "hole_5.diameter",
+   "gt_mm": 12.6,
+   "model_mm": 12.4973,
+   "error_mm": -0.1027
+  },
+  {
+   "name": "hole_6.diameter",
+   "gt_mm": 12.6,
+   "model_mm": 12.4973,
+   "error_mm": -0.1027
+  }
+ ],
+ "missed": [],
+ "extra_holes": 0,
+ "pass_0_3": false,
+ "pass_0_5": false,
+ "valid": true,
+ "valid_reason": "",
+ "failure_category": "dim_off",
+ "overlay": "overlay.png",
+ "failure": "worst length -1.81 mm",
+ "git": {
+  "sha": null,
+  "dirty": false
+ },
+ "scale_suite": "broken",
+ "tree": "bb75824+308438f7af72"
+}

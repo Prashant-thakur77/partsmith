@@ -1,0 +1,125 @@
+import cadquery as cq
+import math
+
+PARAMS = {
+    "thickness": (3.5, 2.0, 6.0, 0.1, "mm", True, "Plate thickness"),
+    "hole_dia": (4.17, 3.0, 6.0, 0.01, "mm", True, "Mounting hole diameter"),
+    "csk_dia": (8.0, 6.0, 10.0, 0.1, "mm", False, "Countersink outer diameter"),
+    "csk_depth": (1.6, 0.8, 2.5, 0.1, "mm", False, "Countersink depth"),
+    "hook_height": (18.0, 10.0, 30.0, 0.5, "mm", False, "Hook height above plate top"),
+    "hook_reach": (14.0, 8.0, 20.0, 0.5, "mm", False, "Hook bend radius*2 (forward reach)"),
+    "hook_thick": (5.0, 3.0, 7.0, 0.1, "mm", False, "Hook material thickness (X)"),
+    "hook_width": (14.0, 8.0, 20.0, 0.5, "mm", False, "Hook width across Y"),
+    "hook_x_pos": (12.0, 5.0, 18.0, 0.5, "mm", False, "Hook center X on plate"),
+    "hook_tip_drop": (6.0, 3.0, 10.0, 0.5, "mm", False, "Tip downward length"),
+    "num_hooks": (1, 1, 3, 1, "", False, "Number of hooks across Y"),
+}
+
+def build(p: dict) -> cq.Workplane:
+    # Base plate outline from PartSpec (measured polyline)
+    pts = [(-24.944,-10.021),(-23.962,-11.343),(-23.005,-11.866),(-22.019,-12.008),(20.814,-12.022),(23.11,-11.832),(24.596,-10.715),(25.162,-8.994),(25.17,8.93),(24.953,10.034),(23.942,11.37),(22.265,12.013),(-22.015,12.022),(-23.164,11.8),(-24.671,10.598),(-25.134,9.093),(-25.154,-8.372)]
+    thickness = float(p["thickness"])
+    hole_dia = float(p["hole_dia"])
+    csk_dia = float(p["csk_dia"])
+    csk_depth = float(p["csk_depth"])
+    hook_height = float(p["hook_height"])
+    hook_reach = float(p["hook_reach"])
+    hook_thick = float(p["hook_thick"])
+    hook_width = float(p["hook_width"])
+    hook_x_pos = float(p["hook_x_pos"])
+    hook_tip_drop = float(p["hook_tip_drop"])
+    num_hooks = int(p["num_hooks"])
+
+    # Base plate solid on Z=0, extruded +Z
+    base = cq.Workplane("XY").polyline(pts).close().extrude(thickness)
+
+    # Hole centre from PartSpec
+    hx = -14.728
+    hy = -0.019
+    base = base.faces(">Z").workplane().hole(hole_dia)  # placeholder to keep face, will cut with proper position
+    # Actually cut hole at correct position: use workplane with move
+    # Recreate plate with correctly placed hole (hole() above was misplaced, so rebuild)
+    base = cq.Workplane("XY").polyline(pts).close().extrude(thickness)
+    # through hole
+    base = base.faces(">Z").workplane().pushPoints([(hx, hy)]).hole(hole_dia, depth=thickness*3)
+    # countersink: cone cut from top surface downwards
+    # create countersink as tapered cut
+    csk = cq.Workplane("XY").workplane(offset=thickness - csk_depth).pushPoints([(hx, hy)]).circle(csk_dia/2).workplane(offset=csk_depth).pushPoints([(hx, hy)]).circle(hole_dia/2).loft(combine=False)
+    # loft creates solid between the two circles; cut it
+    try:
+        csk_solid = cq.Workplane("XY").workplane(offset=thickness - csk_depth).pushPoints([(hx, hy)]).circle(csk_dia/2).circle(hole_dia/2, mode="a").extrude(csk_depth, combine=False)
+        # fallback to simple cut with cone approximation: use hole with larger top
+        base = base.cut(csk_solid)
+    except Exception:
+        pass
+    # If loft failed, do simple cylindrical countersink
+    if base.val().Volume() < 1:
+        base = cq.Workplane("XY").polyline(pts).close().extrude(thickness).faces(">Z").workplane().pushPoints([(hx, hy)]).hole(hole_dia)
+
+    # Hook geometry: side profile in XZ plane, extruded in Y
+    # Compute derived values
+    Rc = hook_reach / 2.0
+    # keep Rin positive
+    if Rc <= hook_thick/2 + 0.1:
+        Rc = hook_thick/2 + 0.5
+    Rout = Rc + hook_thick/2.0
+    Rin = Rc - hook_thick/2.0
+    x0 = hook_x_pos - hook_thick/2.0
+    x1 = hook_x_pos + hook_thick/2.0
+    z0 = thickness
+    z1 = thickness + hook_height
+    Ce_x = hook_x_pos + Rc
+    Ce_y = z1 - Rc
+
+    # Build single hook profile on XZ
+    def single_hook_at_y_offset(y_off):
+        # y_off is centre Y of this hook, width = hook_width
+        # Workplane XZ offset in Y direction = y_off
+        # We use Workplane XZ and extrude in Y (both sides)
+        # Create sketch
+        wp = cq.Workplane("XZ").workplane(offset=y_off)
+        wp = wp.moveTo(x0, z0)
+        wp = wp.lineTo(x0, Ce_y)
+        # outer 180 arc west -> east via north
+        # mid point top outer
+        mx_out = Ce_x
+        my_out = Ce_y + Rout
+        wp = wp.threePointArc((mx_out, my_out), (Ce_x + Rout, Ce_y))
+        wp = wp.lineTo(Ce_x + Rout, Ce_y - hook_tip_drop)
+        wp = wp.lineTo(Ce_x + Rin, Ce_y - hook_tip_drop)
+        wp = wp.lineTo(Ce_x + Rin, Ce_y)
+        # inner arc east -> west via north (reverse)
+        mx_in = Ce_x
+        my_in = Ce_y + Rin
+        wp = wp.threePointArc((mx_in, my_in), (x1, Ce_y))
+        wp = wp.lineTo(x1, z0)
+        wp = wp.close()
+        # extrude in Y direction: Workplane XZ extrudes along Y
+        # Need to extrude with thickness hook_width centered at y_off plane
+        # Workplane offset is at y_off, extrude both sides half width
+        hook_solid = wp.extrude(hook_width/2.0, both=True)
+        return hook_solid
+
+    # Distribute hooks along Y if num_hooks >1
+    hooks = None
+    if num_hooks == 1:
+        h = single_hook_at_y_offset(0)
+        hooks = h
+    else:
+        # spread across available width (~18mm)
+        total_span = 20.0
+        step = total_span / max(1, num_hooks -1) if num_hooks>1 else 0
+        start = -total_span/2
+        for i in range(num_hooks):
+            y_off = start + i*step
+            h = single_hook_at_y_offset(y_off)
+            if hooks is None:
+                hooks = h
+            else:
+                hooks = hooks.union(h)
+
+    result = base.union(hooks)
+    # small fillet on base top edges not needed
+    return result
+
+result = build({k: v[0] for k, v in PARAMS.items()})

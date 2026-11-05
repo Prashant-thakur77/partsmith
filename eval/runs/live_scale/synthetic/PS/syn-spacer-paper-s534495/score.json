@@ -1,0 +1,116 @@
+{
+ "suite": "synthetic",
+ "config": "PS",
+ "sample_id": "syn-spacer-paper-s534495",
+ "split": "held_out",
+ "kind": "template",
+ "preset": "paper",
+ "mode": "live",
+ "gt_source": "synthetic_exact",
+ "status": "verified",
+ "verified": true,
+ "iterations": 4,
+ "iterations_to_converge": 3,
+ "strategy": "template",
+ "template": "spacer",
+ "verifier_max_error_mm": 0.24800000000000022,
+ "retake_reason": null,
+ "failed_checks": [],
+ "usd": 0.171798,
+ "tokens_in": 112476,
+ "tokens_out": 20013,
+ "model_calls": 25,
+ "model_ms": 196532,
+ "provider_modes": [
+  "live"
+ ],
+ "providers": {
+  "segment": [
+   "meta:sam-3.1"
+  ],
+  "understand": [
+   "meta:muse-spark-1.3"
+  ],
+  "segment_points": [
+   "meta:sam-3.1"
+  ],
+  "plan": [
+   "baseten:meta-models/muse-spark-open-1026"
+  ],
+  "build": [
+   "baseten:meta-models/muse-spark-open-1026"
+  ],
+  "fix_agent": [
+   "baseten:meta-models/muse-spark-open-1026"
+  ],
+  "judge": [
+   "meta:muse-spark-1.3"
+  ]
+ },
+ "convergence": [
+  {
+   "iter": 1,
+   "hausdorff_mm": 4.000059934187084,
+   "iou": 0.9432933478735005,
+   "max_error_mm": 4.000059934187084
+  },
+  {
+   "iter": 2,
+   "hausdorff_mm": 3.986684595855404,
+   "iou": 0.9716466739367503,
+   "max_error_mm": 3.986684595855404
+  },
+  {
+   "iter": 3,
+   "hausdorff_mm": 0.1697175074251681,
+   "iou": 0.9750982961992136,
+   "max_error_mm": 0.24800000000000022
+  },
+  {
+   "iter": 4,
+   "hausdorff_mm": 0.13016689262587428,
+   "iou": 0.9803536345776032,
+   "max_error_mm": 0.1869999999999994
+  }
+ ],
+ "wall_s": 233.76,
+ "dims": [
+  {
+   "name": "length",
+   "gt_mm": 8.0,
+   "model_mm": 7.9,
+   "error_mm": -0.1
+  },
+  {
+   "name": "width",
+   "gt_mm": 7.997513,
+   "model_mm": 7.8975,
+   "error_mm": -0.1
+  },
+  {
+   "name": "thickness",
+   "gt_mm": 8.0,
+   "model_mm": 7.9,
+   "error_mm": -0.1
+  },
+  {
+   "name": "hole_1.diameter",
+   "gt_mm": 2.8,
+   "model_mm": 2.55,
+   "error_mm": -0.25
+  }
+ ],
+ "missed": [],
+ "extra_holes": 0,
+ "pass_0_3": true,
+ "pass_0_5": true,
+ "valid": true,
+ "valid_reason": "",
+ "failure_category": null,
+ "git": {
+  "sha": null,
+  "dirty": false
+ },
+ "scale_suite": "synthetic",
+ "tree": "bb75824+308438f7af72"
+}

@@ -1,0 +1,103 @@
+import cadquery as cq
+import math
+
+PARAMS = {
+    "thickness": (23.0, 18.0, 28.0, 0.1, "mm", True, "Wheel thickness"),
+    "hole1_d": (8.756, 7.0, 10.5, 0.01, "mm", True, "Hole 1 diameter"),
+    "hole2_d": (8.843, 7.0, 10.5, 0.01, "mm", True, "Hole 2 diameter"),
+    "hole3_d": (7.635, 5.5, 9.5, 0.01, "mm", True, "Center axle bore diameter"),
+    "hole4_d": (8.779, 7.0, 10.5, 0.01, "mm", True, "Hole 4 diameter"),
+    "hole5_d": (8.794, 7.0, 10.5, 0.01, "mm", True, "Hole 5 diameter"),
+    "hole6_d": (8.787, 7.0, 10.5, 0.01, "mm", True, "Hole 6 diameter"),
+    "clearance": (0.2, 0.0, 0.6, 0.05, "mm", True, "Fit clearance"),
+    "outer_scale": (1.0, 0.95, 1.05, 0.01, "", False, "Outer profile scale"),
+    "num_outer_holes": (5, 3, 8, 1, "", False, "Number of outer lightening holes"),
+}
+
+# measured outer profile polyline (XY plane, mm) - centered at origin
+OUTLINE = [
+    (9.639, 23.148), (4.728, 24.608), (0.46, 25.053), (-4.932, 24.576),
+    (-9.554, 23.166), (-13.943, 20.819), (-17.694, 17.752), (-19.523, 15.724),
+    (-21.208, 13.376), (-23.113, 9.698), (-24.528, 5.128), (-25.055, 0.142),
+    (-24.554, -4.969), (-23.041, -9.85), (-20.601, -14.262), (-17.496, -17.945),
+    (-13.519, -21.111), (-9.306, -23.275), (-4.207, -24.7), (0.48, -25.053),
+    (5.076, -24.54), (9.815, -23.058), (14.022, -20.768), (16.397, -18.947),
+    (18.42, -17.001), (21.419, -13.015), (23.447, -8.871), (24.664, -4.418),
+    (25.055, 0.249), (24.512, 5.202), (23.132, 9.646), (20.771, 14.027),
+    (17.785, 17.65), (14.46, 20.475),
+]
+
+# measured outer hole centers for default 5-hole configuration
+MEASURED_OUTER = [
+    (-14.093, -5.114),
+    (-9.193, 11.906),
+    (0.556, -15.04),
+    (8.505, 12.48),
+    (14.529, -4.17),
+]
+MEASURED_OUTER_D_KEYS = ["hole1_d", "hole2_d", "hole4_d", "hole5_d", "hole6_d"]
+
+CENTER = (0.052, 0.01)
+
+def build(p: dict) -> cq.Workplane:
+    thickness = float(p["thickness"])
+    scale = float(p["outer_scale"])
+    n_outer = int(p["num_outer_holes"])
+
+    # apply scale to outline
+    pts = [(x * scale, y * scale) for x, y in OUTLINE]
+
+    # solid body: extrude from Z=0 up to thickness (mounting face on Z=0)
+    # centered at origin in XY, +Z up, long axis +X
+    base = (
+        cq.Workplane("XY")
+        .polyline(pts)
+        .close()
+        .extrude(thickness, combine=True)
+    )
+
+    # prepare hole list (center + outers)
+    # center axle hole
+    d_center = float(p["hole3_d"])
+    # ensure clearance is not negatively affecting - diameters already include fit, just use as is
+    # build outer holes
+    outer_holes = []
+    if n_outer == 5:
+        # use measured positions to match PartSpec
+        for ck, pt in zip(MEASURED_OUTER_D_KEYS, MEASURED_OUTER):
+            d = float(p[ck])
+            outer_holes.append((pt[0] * scale, pt[1] * scale, d))
+    else:
+        # parametric evenly spaced ring for topology variation
+        # radius approximated from measured outer holes average distance from center
+        r_avg = sum(math.hypot(x - CENTER[0], y - CENTER[1]) for x, y in MEASURED_OUTER) / len(MEASURED_OUTER)
+        r_avg *= scale
+        # distribute diameters cyclically from available params
+        d_pool = [float(p[k]) for k in MEASURED_OUTER_D_KEYS]
+        for i in range(n_outer):
+            ang = 2 * math.pi * i / n_outer
+            x = CENTER[0] * scale + r_avg * math.cos(ang)
+            y = CENTER[1] * scale + r_avg * math.sin(ang)
+            d = d_pool[i % len(d_pool)]
+            outer_holes.append((x, y, d))
+
+    # cut center hole
+    base = (
+        base.faces(">Z").workplane()
+        .pushPoints([(CENTER[0] * scale, CENTER[1] * scale)])
+        .circle(d_center / 2.0)
+        .cutThruAll()
+    )
+
+    # cut outer holes one by one (different diameters)
+    for x, y, d in outer_holes:
+        base = (
+            base.faces(">Z").workplane()
+            .pushPoints([(x, y)])
+            .circle(d / 2.0)
+            .cutThruAll()
+        )
+
+    return base
+
+result = build({k: v[0] for k, v in PARAMS.items()})

@@ -14,7 +14,7 @@ accepts only after a check. Boxes that name a model are model calls through `ser
 flowchart TD
     photo["Photo or walk-around clip<br/>on the screen mat"] --> gate{"Capture gate (code)<br/>markers · blur · tilt · glare · one part"}
     gate -->|"fails"| retake["Retake, with a plain-words reason"]
-    gate -->|"passes"| metro["Metrology (code): ArUco pose + SAM 3.1 masks<br/>→ millimetres, each with ±σ and a source"]
+    gate -->|"passes"| metro["Metrology (code): ArUco pose + part mask<br/>(SAM 3.1 first, threshold fallback)<br/>→ millimetres, each with ±σ and a source"]
     metro --> understand["Understand: Muse Spark<br/>→ PartSpec JSON: family, features, break, unknowns"]
     understand -->|"unknowns"| ask["Ask the human"]
     ask --> plan

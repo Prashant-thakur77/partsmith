@@ -1,0 +1,87 @@
+import cadquery as cq
+import math
+
+PARAMS = {
+    "thickness": (2.0, 1.0, 4.0, 0.1, "mm", False, "Leaf thickness"),
+    "clearance_mm": (0.2, 0.0, 0.6, 0.05, "mm", True, "Hole clearance for fit"),
+    "num_holes": (4, 1, 4, 1, "", False, "Number of mounting holes"),
+    "hole_1_dia": (2.84, 2.0, 4.5, 0.01, "mm", True, "Hole 1 diameter"),
+    "hole_1_x": (-20.067, -25.0, -15.0, 0.01, "mm", False, "Hole 1 X"),
+    "hole_1_y": (4.152, 0.0, 8.0, 0.01, "mm", False, "Hole 1 Y"),
+    "hole_2_dia": (5.93, 4.0, 8.0, 0.01, "mm", True, "Hole 2 diameter"),
+    "hole_2_x": (-6.762, -10.0, -2.0, 0.01, "mm", False, "Hole 2 X"),
+    "hole_2_y": (4.218, 0.0, 8.0, 0.01, "mm", False, "Hole 2 Y"),
+    "hole_3_dia": (5.93, 4.0, 8.0, 0.01, "mm", True, "Hole 3 diameter"),
+    "hole_3_x": (6.638, 2.0, 10.0, 0.01, "mm", False, "Hole 3 X"),
+    "hole_3_y": (4.209, 0.0, 8.0, 0.01, "mm", False, "Hole 3 Y"),
+    "hole_4_dia": (5.92, 4.0, 8.0, 0.01, "mm", True, "Hole 4 diameter"),
+    "hole_4_x": (20.042, 15.0, 25.0, 0.01, "mm", False, "Hole 4 X"),
+    "hole_4_y": (4.195, 0.0, 8.0, 0.01, "mm", False, "Hole 4 Y"),
+}
+
+# Base profile polyline points from PartSpec, measured, centred at origin
+BASE_POINTS = [
+    (-27.102, -12.8),
+    (-25.291, -13.051),
+    (-19.963, -12.973),
+    (-19.715, -12.507),
+    (-19.51, -10.402),
+    (-16.453, -10.197),
+    (-11.68, -10.373),
+    (-11.45, -10.833),
+    (-11.401, -12.744),
+    (-11.089, -13.005),
+    (-4.532, -12.991),
+    (-4.21, -12.704),
+    (-3.96, -10.408),
+    (0.308, -10.195),
+    (3.901, -10.381),
+    (4.165, -12.752),
+    (4.401, -12.994),
+    (10.931, -13.015),
+    (11.374, -12.724),
+    (11.66, -10.323),
+    (15.615, -10.198),
+    (19.395, -10.395),
+    (19.674, -12.489),
+    (19.97, -13.032),
+    (26.91, -12.95),
+    (27.192, -12.087),
+    (27.144, 9.264),
+    (26.778, 10.948),
+    (25.492, 12.427),
+    (23.685, 13.039),
+    (-23.958, 13.033),
+    (-25.14, 12.672),
+    (-26.655, 11.303),
+    (-27.18, 9.553),
+]
+
+def build(p: dict) -> cq.Workplane:
+    thickness = float(p.get("thickness", 2.0))
+    clearance = float(p.get("clearance_mm", 0.2))
+    n = int(round(float(p.get("num_holes", 4))))
+
+    # Solid leaf body extruded from Z=0 up to thickness, long axis +X
+    # Base profile is closed polyline in XY plane
+    base = cq.Workplane("XY").polyline(BASE_POINTS).close().extrude(thickness)
+
+    # Collect hole definitions
+    holes = [
+        (float(p["hole_1_x"]), float(p["hole_1_y"]), float(p["hole_1_dia"])),
+        (float(p["hole_2_x"]), float(p["hole_2_y"]), float(p["hole_2_dia"])),
+        (float(p["hole_3_x"]), float(p["hole_3_y"]), float(p["hole_3_dia"])),
+        (float(p["hole_4_x"]), float(p["hole_4_y"]), float(p["hole_4_dia"])),
+    ]
+
+    # Through holes along -Z, clearance added to diameter for fit
+    # Workplane on top face at Z=thickness cutting downward
+    for i in range(min(n, len(holes))):
+        hx, hy, hd = holes[i]
+        d = hd + clearance
+        # cutThruAll works from top face; ensure cutter goes through entire thickness
+        base = base.faces(">Z").workplane().pushPoints([(hx, hy)]).hole(d)
+
+    return base
+
+result = build({k: v[0] for k, v in PARAMS.items()})

@@ -1,0 +1,66 @@
+import cadquery as cq
+import math
+
+BASE_POINTS = [
+    (-15.98, -11.87),
+    (-15.41, -12.023),
+    (15.995, -11.965),
+    (15.946, 8.061),
+    (11.883, 12.002),
+    (-15.965, 11.954),
+]
+
+DEF_X_MIN = min(p[0] for p in BASE_POINTS)
+DEF_X_MAX = max(p[0] for p in BASE_POINTS)
+DEF_Y_MIN = min(p[1] for p in BASE_POINTS)
+DEF_Y_MAX = max(p[1] for p in BASE_POINTS)
+DEF_W = DEF_X_MAX - DEF_X_MIN
+DEF_H = DEF_Y_MAX - DEF_Y_MIN
+DEF_CX = sum(p[0] for p in BASE_POINTS) / len(BASE_POINTS)
+DEF_CY = sum(p[1] for p in BASE_POINTS) / len(BASE_POINTS)
+
+PARAMS = {
+    "card_width": (31.975, 31.0, 33.0, 0.01, "mm", True, "Card width along X (long axis)"),
+    "card_depth": (24.025, 23.0, 25.0, 0.01, "mm", True, "Card depth along Y"),
+    "thickness": (2.0, 1.2, 3.0, 0.01, "mm", True, "Card thickness along Z"),
+    "corner_cut_keepout": (0.0, 0.0, 0.8, 0.1, "mm", False, "Visual keepout inset for corner cut (non-fit)"),
+    "detail_level": (1, 0, 2, 1, "", False, "Topology detail level (0=plain solid)"),
+}
+
+def build(p: dict) -> cq.Workplane:
+    w = float(p["card_width"])
+    h = float(p["card_depth"])
+    t = float(p["thickness"])
+    keepout = float(p.get("corner_cut_keepout", 0.0))
+    detailLevel = int(p.get("detail_level", 0))
+
+    sx = w / DEF_W if DEF_W != 0 else 1.0
+    sy = h / DEF_H if DEF_H != 0 else 1.0
+
+    scaledPts = []
+    for x, y in BASE_POINTS:
+        xs = DEF_CX + (x - DEF_CX) * sx
+        ys = DEF_CY + (y - DEF_CY) * sy
+        scaledPts.append((xs, ys))
+
+    cx = sum(pt[0] for pt in scaledPts) / len(scaledPts)
+    cy = sum(pt[1] for pt in scaledPts) / len(scaledPts)
+    centeredPts = [(x - cx, y - cy) for x, y in scaledPts]
+
+    wp = cq.Workplane("XY")
+    solid = wp.polyline(centeredPts).close().extrude(t)
+
+    if detailLevel >= 1 and keepout > 0.001:
+        markerR = min(keepout * 0.4, 0.5)
+        mx = max(pt[0] for pt in centeredPts) - 2.0
+        my = max(pt[1] for pt in centeredPts) - 2.0
+        marker = cq.Workplane("XY").workplane(offset=t - 0.2).moveTo(mx, my).circle(markerR).extrude(0.2)
+        if detailLevel == 1:
+            solid = solid.union(marker)
+        elif detailLevel >= 2:
+            marker2 = cq.Workplane("XY").workplane(offset=t - 0.2).moveTo(mx - 1.5, my).circle(markerR * 0.8).extrude(0.2)
+            solid = solid.union(marker).union(marker2)
+
+    return solid
+
+result = build({k: v[0] for k, v in PARAMS.items()})

@@ -1,0 +1,63 @@
+{
+ "suite": "redteam",
+ "config": "PS",
+ "sample_id": "rt-partial-mat-k0",
+ "split": "held_out",
+ "kind": "redteam",
+ "preset": "redteam",
+ "mode": "live",
+ "gt_source": "expected_outcome",
+ "status": "failed",
+ "verified": false,
+ "iterations": 0,
+ "iterations_to_converge": null,
+ "strategy": "template",
+ "template": null,
+ "verifier_max_error_mm": null,
+ "retake_reason": "The part runs off the edge of the photo \u2014 step back so all of it is visible.",
+ "failed_checks": [
+  "coverage",
+  "contrast"
+ ],
+ "usd": 0.005,
+ "tokens_in": 0,
+ "tokens_out": 0,
+ "model_calls": 3,
+ "model_ms": 10504,
+ "provider_modes": [
+  "live",
+  "mock"
+ ],
+ "providers": {
+  "capture_triage": [
+   "mock:muse-glimmer"
+  ],
+  "segment": [
+   "meta:sam-3.1"
+  ]
+ },
+ "convergence": [],
+ "wall_s": 15.85,
+ "valid": false,
+ "dims": [],
+ "missed": [],
+ "extra_holes": 0,
+ "pass_0_3": false,
+ "pass_0_5": false,
+ "expected_outcome": "reject",
+ "expected_checks": [
+  "markers",
+  "coverage",
+  "reprojection"
+ ],
+ "expected_why": "too few markers / part cut off",
+ "outcome": "reject",
+ "outcome_correct": true,
+ "failure_category": null,
+ "git": {
+  "sha": null,
+  "dirty": false
+ },
+ "scale_suite": "redteam",
+ "tree": "bb75824+308438f7af72"
+}

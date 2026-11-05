@@ -1,0 +1,132 @@
+{
+ "suite": "synthetic",
+ "config": "PS",
+ "sample_id": "syn-caster-wheel-tilt-s476654",
+ "split": "held_out",
+ "kind": "template",
+ "preset": "tilt",
+ "mode": "live",
+ "gt_source": "synthetic_exact",
+ "status": "verified",
+ "verified": true,
+ "iterations": 2,
+ "iterations_to_converge": 2,
+ "strategy": "template",
+ "template": "caster_wheel",
+ "verifier_max_error_mm": 0.4741699029338812,
+ "retake_reason": null,
+ "failed_checks": [],
+ "usd": 0.169093,
+ "tokens_in": 73749,
+ "tokens_out": 19738,
+ "model_calls": 24,
+ "model_ms": 191720,
+ "provider_modes": [
+  "live",
+  "mock"
+ ],
+ "providers": {
+  "capture_triage": [
+   "mock:muse-glimmer"
+  ],
+  "segment": [
+   "meta:sam-3.1"
+  ],
+  "understand": [
+   "meta:muse-spark-1.3"
+  ],
+  "segment_points": [
+   "meta:sam-3.1"
+  ],
+  "plan": [
+   "baseten:meta-models/muse-spark-open-1026"
+  ],
+  "build": [
+   "baseten:meta-models/muse-spark-open-1026"
+  ],
+  "fix_agent": [
+   "baseten:meta-models/muse-spark-open-1026"
+  ],
+  "judge": [
+   "meta:muse-spark-1.3"
+  ]
+ },
+ "convergence": [
+  {
+   "iter": 1,
+   "hausdorff_mm": 0.7019722454880819,
+   "iou": 0.9667908232118758,
+   "max_error_mm": 0.7019722454880819
+  },
+  {
+   "iter": 2,
+   "hausdorff_mm": 0.4741699029338812,
+   "iou": 0.9876789426538441,
+   "max_error_mm": 0.4741699029338812
+  }
+ ],
+ "wall_s": 255.97,
+ "dims": [
+  {
+   "name": "length",
+   "gt_mm": 62.897523,
+   "model_mm": 62.7975,
+   "error_mm": -0.1
+  },
+  {
+   "name": "width",
+   "gt_mm": 62.895046,
+   "model_mm": 62.7951,
+   "error_mm": -0.1
+  },
+  {
+   "name": "thickness",
+   "gt_mm": 14.1,
+   "model_mm": 14.0,
+   "error_mm": -0.1
+  },
+  {
+   "name": "hole_1.diameter",
+   "gt_mm": 14.16,
+   "model_mm": 13.92,
+   "error_mm": -0.24
+  },
+  {
+   "name": "hole_2.diameter",
+   "gt_mm": 14.16,
+   "model_mm": 13.92,
+   "error_mm": -0.24
+  },
+  {
+   "name": "hole_3.diameter",
+   "gt_mm": 7.55,
+   "model_mm": 7.5,
+   "error_mm": -0.05
+  },
+  {
+   "name": "hole_4.diameter",
+   "gt_mm": 14.16,
+   "model_mm": 13.92,
+   "error_mm": -0.24
+  },
+  {
+   "name": "hole_5.diameter",
+   "gt_mm": 14.16,
+   "model_mm": 13.92,
+   "error_mm": -0.24
+  }
+ ],
+ "missed": [],
+ "extra_holes": 0,
+ "pass_0_3": true,
+ "pass_0_5": true,
+ "valid": true,
+ "valid_reason": "",
+ "failure_category": null,
+ "git": {
+  "sha": null,
+  "dirty": false
+ },
+ "scale_suite": "synthetic",
+ "tree": "bb75824+308438f7af72"
+}

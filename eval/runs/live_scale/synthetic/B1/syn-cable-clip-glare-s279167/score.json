@@ -1,0 +1,57 @@
+{
+ "suite": "synthetic",
+ "config": "B1",
+ "sample_id": "syn-cable-clip-glare-s279167",
+ "split": "held_out",
+ "kind": "template",
+ "preset": "glare",
+ "mode": "live",
+ "gt_source": "synthetic_exact",
+ "status": "failed",
+ "verified": false,
+ "iterations": 0,
+ "iterations_to_converge": null,
+ "strategy": "template",
+ "template": null,
+ "verifier_max_error_mm": null,
+ "retake_reason": "The part blends into the background \u2014 switch the screen mat to the dark stage (or use a darker surface).",
+ "failed_checks": [
+  "contrast"
+ ],
+ "usd": 0.0075,
+ "tokens_in": 0,
+ "tokens_out": 0,
+ "model_calls": 3,
+ "model_ms": 9662,
+ "provider_modes": [
+  "live"
+ ],
+ "providers": {
+  "segment": [
+   "meta:sam-3.1"
+  ]
+ },
+ "convergence": [],
+ "wall_s": 19.6,
+ "valid": false,
+ "valid_reason": "no part program",
+ "dims": [],
+ "pass_0_3": false,
+ "pass_0_5": false,
+ "missed": [
+  "length",
+  "width",
+  "hole_1.diameter",
+  "hole_2.diameter",
+  "thickness"
+ ],
+ "extra_holes": 0,
+ "failure_category": "seg_fail",
+ "failure": "job failed: The part blends into the background \u2014 switch the screen mat to the dark stage (or use a darker surface).",
+ "git": {
+  "sha": null,
+  "dirty": false
+ },
+ "scale_suite": "synthetic",
+ "tree": "bb75824+308438f7af72"
+}

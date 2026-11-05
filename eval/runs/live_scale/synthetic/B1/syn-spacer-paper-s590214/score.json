@@ -1,0 +1,92 @@
+{
+ "suite": "synthetic",
+ "config": "B1",
+ "sample_id": "syn-spacer-paper-s590214",
+ "split": "held_out",
+ "kind": "template",
+ "preset": "paper",
+ "mode": "live",
+ "gt_source": "synthetic_exact",
+ "status": "best_effort",
+ "verified": false,
+ "iterations": 1,
+ "iterations_to_converge": null,
+ "strategy": "template",
+ "template": "spacer",
+ "verifier_max_error_mm": 4.904388146373863,
+ "retake_reason": null,
+ "failed_checks": [],
+ "usd": 0.0698,
+ "tokens_in": 15606,
+ "tokens_out": 7749,
+ "model_calls": 10,
+ "model_ms": 69413,
+ "provider_modes": [
+  "live"
+ ],
+ "providers": {
+  "segment": [
+   "meta:sam-3.1"
+  ],
+  "understand": [
+   "meta:muse-spark-1.3"
+  ],
+  "segment_points": [
+   "meta:sam-3.1"
+  ],
+  "plan": [
+   "baseten:meta-models/muse-spark-open-1026"
+  ],
+  "build": [
+   "baseten:meta-models/muse-spark-open-1026"
+  ]
+ },
+ "convergence": [
+  {
+   "iter": 1,
+   "hausdorff_mm": 4.904388146373863,
+   "iou": 0.9724722075172049,
+   "max_error_mm": 4.904388146373863
+  }
+ ],
+ "wall_s": 89.17,
+ "dims": [
+  {
+   "name": "length",
+   "gt_mm": 9.85,
+   "model_mm": 9.8,
+   "error_mm": -0.05
+  },
+  {
+   "name": "width",
+   "gt_mm": 9.846938,
+   "model_mm": 9.797,
+   "error_mm": -0.05
+  },
+  {
+   "name": "thickness",
+   "gt_mm": 9.85,
+   "model_mm": 9.8,
+   "error_mm": -0.05
+  },
+  {
+   "name": "hole_1.diameter",
+   "gt_mm": 2.9,
+   "model_mm": 3.2,
+   "error_mm": 0.3
+  }
+ ],
+ "missed": [],
+ "extra_holes": 0,
+ "pass_0_3": true,
+ "pass_0_5": true,
+ "valid": true,
+ "valid_reason": "",
+ "failure_category": null,
+ "git": {
+  "sha": null,
+  "dirty": false
+ },
+ "scale_suite": "synthetic",
+ "tree": "bb75824+308438f7af72"
+}

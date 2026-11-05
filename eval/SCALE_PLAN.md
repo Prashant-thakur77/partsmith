@@ -39,3 +39,10 @@ Scoring is the existing `eval/run.py` code: `score_model`, `config_row`, `gate_t
 ## If budget and time remain
 
 Run the seed path on fresh samples into a separate home folder, publishing only what the existing gate publishes. Otherwise reported as not run.
+
+## What changed once it ran (added afterwards, 2026-11-05)
+
+- **Stopped by the time limit:** 349 of 505 full-loop runs finished by the 05:40 IST rule. The shared shuffle keeps each suite an unbiased subset. `not_run` in `scale.json` counts the rest. Six samples could not be rendered (a part too big for its mat, or nothing tall enough to snap off), so the SAM set is 494 photos, not 500. The seed path did not run.
+- **Understanding:** the bench runs without packaging, so the PartSpec is not stored. Family comes from the understand stage's closing label, and broken region from the log line "broken region kept". The sample's intent sentence names the part, so family accuracy here is not a test of vision alone.
+- **Voice scoring:** a floating-point edge marked values exactly 0.01 mm off as wrong. The stored answers were re-scored with the same ±0.01 rule compared after rounding; 11 answers changed, and no model was called again. `voice.json` records this. The voice cost is an upper estimate, not metered.
+- **SAM:** with the threshold fallback switched off, most photos returned no mask, so `scale.json` reports how often a mask came back, and quality only where one did. `mask_sources` counts which segmenter measured each full run.

@@ -1,0 +1,68 @@
+import cadquery as cq
+import math
+
+BASEPOINTS = [
+    (15.841, -11.782),
+    (16.081, -10.666),
+    (16.01, 11.383),
+    (15.712, 11.926),
+    (-12.285, 12.085),
+    (-15.372, 11.979),
+    (-15.851, 11.709),
+    (-16.093, 9.233),
+    (-16.001, -7.578),
+    (-15.506, -8.529),
+    (-12.337, -11.689),
+    (-11.369, -12.073),
+    (14.906, -12.082),
+]
+
+NOMINALLENGTH = 32.174
+NOMINALWIDTH = 24.167
+
+PARAMS = {
+    "card_length": (32.174, 30.0, 34.5, 0.1, "mm", True, "Card length X"),
+    "card_width": (24.167, 22.0, 26.0, 0.1, "mm", True, "Card width Y"),
+    "thickness": (2.1, 1.2, 3.0, 0.05, "mm", True, "Thickness"),
+    "edge_chamfer": (0.3, 0.0, 0.8, 0.05, "mm", False, "Edge chamfer"),
+    "notch_count": (0, 0, 2, 1, "", False, "Reference notches"),
+}
+
+def build(p: dict) -> cq.Workplane:
+    length = float(p["card_length"])
+    width = float(p["card_width"])
+    thickness = float(p["thickness"])
+    edgeChamfer = float(p["edge_chamfer"])
+    notchCount = int(p["notch_count"])
+
+    sx = length / NOMINALLENGTH
+    sy = width / NOMINALWIDTH
+
+    pts = [(x * sx, y * sy) for x, y in BASEPOINTS]
+
+    wp = cq.Workplane("XY")
+    wp = wp.polyline(pts).close()
+    solid = wp.extrude(thickness, combine=True)
+
+    if notchCount > 0 and notchCount <= 2:
+        for i in range(notchCount):
+            yOff = -4.0 + i * 8.0
+            xEdge = max(x for x, y in pts)
+            cutter = (
+                cq.Workplane("XY")
+                .workplane(offset=0)
+                .moveTo(xEdge - 0.6, yOff - 0.75)
+                .rect(1.2, 1.5)
+                .extrude(thickness)
+            )
+            solid = solid.cut(cutter)
+
+    if edgeChamfer > 0.01:
+        try:
+            solid = solid.edges("|Z and >Z").chamfer(edgeChamfer * 0.6)
+        except Exception:
+            pass
+
+    return solid
+
+result = build({k: v[0] for k, v in PARAMS.items()})

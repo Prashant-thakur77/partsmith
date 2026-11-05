@@ -1,0 +1,85 @@
+import cadquery as cq
+import math
+
+# ID-1 card reference footprint measured (approx 85.6 x 54.05)
+BASE_POINTS = [
+    [-42.181, -25.723],
+    [-40.98, -26.707],
+    [-39.648, -27.012],
+    [39.175, -27.028],
+    [40.977, -26.72],
+    [42.184, -25.717],
+    [42.829, -24.035],
+    [42.77, 24.318],
+    [42.233, 25.657],
+    [41.667, 26.282],
+    [40.775, 26.777],
+    [38.62, 27.026],
+    [-39.61, 27.017],
+    [-41.262, 26.556],
+    [-42.368, 25.421],
+    [-42.829, 23.733],
+    [-42.839, -22.667],
+    [-42.695, -24.712],
+]
+
+PARAMS = {
+    "card_length": (85.6, 80.0, 90.0, 0.1, "mm", True, "Length X long axis"),
+    "card_width": (53.98, 50.0, 60.0, 0.1, "mm", True, "Width Y short axis"),
+    "thickness": (0.8, 0.4, 1.5, 0.02, "mm", True, "Thickness Z"),
+    "corner_subdiv": (1, 1, 4, 1, "", False, "Corner subdivisions"),
+}
+
+def build(p: dict) -> cq.Workplane:
+    # compute bbox of base polyline
+    xs = [pt[0] for pt in BASE_POINTS]
+    ys = [pt[1] for pt in BASE_POINTS]
+    min_x = min(xs)
+    max_x = max(xs)
+    min_y = min(ys)
+    max_y = max(ys)
+    base_len = max_x - min_x
+    base_wid = max_y - min_y
+    cx = (min_x + max_x) * 0.5
+    cy = (min_y + max_y) * 0.5
+
+    target_len = float(p["card_length"])
+    target_wid = float(p["card_width"])
+    thk = float(p["thickness"])
+    subdiv = int(p["corner_subdiv"])
+    if subdiv < 1:
+        subdiv = 1
+
+    scale_x = target_len / base_len if base_len != 0 else 1.0
+    scale_y = target_wid / base_wid if base_wid != 0 else 1.0
+
+    # scale about center to meet requested length/width while staying centred at origin
+    scaled = []
+    for x, y in BASE_POINTS:
+        sx = cx + (x - cx) * scale_x
+        sy = cy + (y - cy) * scale_y
+        scaled.append((sx, sy))
+
+    # topology parameter: subdivide each edge into N linear segments (shape unchanged, vertex count changes)
+    pts = []
+    n = len(scaled)
+    for i in range(n):
+        x0, y0 = scaled[i]
+        x1, y1 = scaled[(i + 1) % n]
+        for s in range(subdiv):
+            t = s / float(subdiv)
+            # for s=0 we emit start point, for internal subdiv we emit interpolated points
+            # last edge's end point is not duplicated because polyline will close
+            xi = x0 + (x1 - x0) * t
+            yi = y0 + (y1 - y0) * t
+            pts.append((xi, yi))
+
+    # build solid centred at origin, mounting face on Z=0, +Z up, long axis +X
+    wp = cq.Workplane("XY")
+    wp = wp.moveTo(pts[0][0], pts[0][1])
+    for x, y in pts[1:]:
+        wp = wp.lineTo(x, y)
+    wp = wp.close().extrude(thk, combine=True)
+    return wp
+
+result = build({k: v[0] for k, v in PARAMS.items()})

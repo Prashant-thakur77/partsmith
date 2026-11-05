@@ -1,0 +1,74 @@
+import cadquery as cq
+import math
+
+PARAMS = {
+    "thickness": (14.8, 10.0, 18.0, 0.1, "mm", False, "Body thickness Z height"),
+    "length_adj": (0.2, -3.0, 3.0, 0.1, "mm", True, "Length adjustment X"),
+    "width_adj": (0.2, -3.0, 3.0, 0.1, "mm", True, "Width adjustment Y"),
+    "profile_segments": (23, 8, 64, 1, "", False, "Profile smoothing segments"),
+}
+
+BASEPOINTS = [
+    (24.387, 6.235),
+    (21.931, 6.448),
+    (-24.592, 6.419),
+    (-24.822, 3.42),
+    (-24.456, 0.753),
+    (-24.201, -5.835),
+    (-23.922, -6.37),
+    (23.842, -6.369),
+    (24.384, -5.675),
+    (24.622, -1.747),
+    (24.441, 1.703),
+    (24.822, 2.529),
+    (24.781, 3.576),
+    (24.542, 3.618),
+]
+
+def build(p: dict) -> cq.Workplane:
+    xs = [pt[0] for pt in BASEPOINTS]
+    ys = [pt[1] for pt in BASEPOINTS]
+    nominalLength = max(xs) - min(xs)
+    nominalWidth = max(ys) - min(ys)
+    if nominalLength < 1e-6:
+        nominalLength = 49.644
+    if nominalWidth < 1e-6:
+        nominalWidth = 12.818
+    xScale = (nominalLength + float(p["length_adj"])) / nominalLength
+    yScale = (nominalWidth + float(p["width_adj"])) / nominalWidth
+    thickness = float(p["thickness"])
+    pts = [(x * xScale, y * yScale) for (x, y) in BASEPOINTS]
+    seg = int(p["profile_segments"])
+    n = len(pts)
+    refined = []
+    if seg > n and n > 0:
+        edgeLens = []
+        for i in range(n):
+            x1, y1 = pts[i]
+            x2, y2 = pts[(i + 1) % n]
+            edgeLens.append(math.hypot(x2 - x1, y2 - y1))
+        total = sum(edgeLens)
+        for i in range(n):
+            x1, y1 = pts[i]
+            x2, y2 = pts[(i + 1) % n]
+            alloc = max(1, int(round(seg * edgeLens[i] / total))) if total > 1e-9 else 1
+            for k in range(alloc):
+                t = k / alloc
+                ix = x1 * (1 - t) + x2 * t
+                iy = y1 * (1 - t) + y2 * t
+                refined.append((ix, iy))
+        if len(refined) > seg:
+            step = len(refined) / seg
+            refined = [refined[int(idx * step)] for idx in range(seg)]
+        ptsToUse = refined
+    else:
+        ptsToUse = pts
+    wp = cq.Workplane("XY")
+    wp = wp.moveTo(ptsToUse[0][0], ptsToUse[0][1])
+    if len(ptsToUse) > 1:
+        wp = wp.polyline(ptsToUse[1:])
+    wp = wp.close()
+    result = wp.extrude(thickness, combine=True)
+    return result
+
+result = build({k: v[0] for k, v in PARAMS.items()})

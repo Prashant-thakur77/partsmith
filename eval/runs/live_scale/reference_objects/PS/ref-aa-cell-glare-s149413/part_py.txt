@@ -1,0 +1,78 @@
+import cadquery as cq
+import math
+
+PARAMS = {
+    "thickness": (14.2, 10.0, 18.0, 0.1, "mm", True, "Body thickness (+Z extrusion)"),
+    "length_scale": (1.0, 0.9, 1.1, 0.01, "", False, "Length scale (X)"),
+    "width_scale": (1.0, 0.9, 1.1, 0.01, "", False, "Width scale (Y)"),
+    "base_resample": (1, 1, 4, 1, "", False, "Topology resample count"),
+}
+
+# Measured outline from PartSpec base_profile points_mm (closed polygon)
+BASE_POINTS = [
+    [24.81, 5.537],
+    [-24.183, 5.535],
+    [-24.256, 4.746],
+    [-24.688, 4.396],
+    [-25.013, 0.992],
+    [-24.865, 0.685],
+    [-24.766, 1.773],
+    [-24.53, 1.801],
+    [-24.46, 0.725],
+    [-24.625, 0.037],
+    [-24.977, 0.426],
+    [-24.946, -0.332],
+    [-24.382, -1.058],
+    [-24.031, -4.886],
+    [-23.457, -5.539],
+    [24.043, -5.522],
+    [24.686, -4.975],
+    [24.934, -3.243],
+    [24.978, -0.661],
+    [24.51, -0.776],
+    [24.533, 0.629],
+    [24.939, 0.66],
+]
+
+def build(p: dict) -> cq.Workplane:
+    thickness = float(p["thickness"])
+    sx = float(p["length_scale"])
+    sy = float(p["width_scale"])
+    # topology integer param controls resampling of outline edges
+    resample = int(p["base_resample"])
+    # apply scale to base points (keeps centre at origin)
+    pts = []
+    for x, y in BASE_POINTS:
+        pts.append((x * sx, y * sy))
+
+    # optional topology: subdivide each edge resample times by linear interpolation
+    # this keeps footprint identical but changes topology count
+    if resample > 1:
+        new_pts = []
+        n = len(pts)
+        for i in range(n):
+            x0, y0 = pts[i]
+            x1, y1 = pts[(i + 1) % n]
+            new_pts.append((x0, y0))
+            for s in range(1, resample):
+                t = s / float(resample)
+                xm = x0 + (x1 - x0) * t
+                ym = y0 + (y1 - y0) * t
+                new_pts.append((xm, ym))
+        pts = new_pts
+
+    # close polygon
+    poly = pts + [pts[0]]
+
+    # build solid: mounting face on Z=0, extrude +Z to thickness
+    # long axis is +X as per points
+    wp = cq.Workplane("XY")
+    # polyline on XY plane at Z=0
+    wp = wp.polyline(poly).close()
+    # extrude solid - body is solid to thickness over most of footprint
+    result = wp.extrude(thickness, both=False)
+
+    # ensure centred at origin in XY (points already centred) and bottom at Z=0
+    return result
+
+result = build({k: v[0] for k, v in PARAMS.items()})

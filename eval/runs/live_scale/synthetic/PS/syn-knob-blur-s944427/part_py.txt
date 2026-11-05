@@ -1,0 +1,81 @@
+import cadquery as cq
+import math
+
+PARAMS = {
+    "thickness": (15.0, 8.0, 20.0, 0.1, "mm", False, "Body thickness"),
+    "bore_dia": (6.0, 4.0, 8.0, 0.1, "mm", True, "D-shaft diameter"),
+    "flat_depth": (1.0, 0.5, 2.0, 0.1, "mm", True, "Flat depth from circle"),
+    "clearance": (0.2, 0.0, 0.5, 0.05, "mm", True, "Diametral fit clearance"),
+    "bore_depth": (10.0, 5.0, 14.5, 0.5, "mm", True, "Blind bore depth from Z=0"),
+    "top_bevel": (0.6, 0.0, 1.5, 0.1, "mm", False, "Top edge chamfer"),
+    "resolve_n": (32, 8, 64, 1, "", False, "Arc resolution steps"),
+}
+
+BASE_POINTS = [
+    (8.079, 11.04),(4.709, 12.813),(3.919, 12.974),(2.89, 12.554),(0.989, 13.52),
+    (-0.488, 13.499),(-1.306, 12.679),(-1.875, 12.451),(-3.626, 13.0),(-4.956, 12.494),
+    (-5.447, 11.475),(-5.902, 11.062),(-7.466, 11.118),(-8.018, 10.863),(-8.832, 10.126),
+    (-8.938, 9.049),(-9.298, 8.45),(-10.746, 8.029),(-11.23, 7.531),(-11.729, 6.607),
+    (-11.531, 5.05),(-11.92, 4.512),(-12.875, 4.005),(-13.206, 3.15),(-13.321, 2.226),
+    (-12.652, 0.759),(-13.58, -0.58),(-13.519, -2.008),(-12.437, -4.0),(-12.735, -4.923),
+    (-12.558, -5.64),(-10.968, -8.266),(-9.635, -9.739),(-8.434, -10.131),(-7.211, -11.643),
+    (-5.812, -12.342),(-4.283, -12.21),(-3.416, -13.127),(-2.731, -13.406),(-1.456, -13.547),
+    (0.165, -12.949),(1.242, -13.537),(3.009, -13.274),(4.1, -12.325),(5.722, -12.344),
+    (7.18, -11.53),(7.844, -10.353),(9.437, -9.825),(10.39, -8.813),(10.754, -7.277),
+    (12.008, -6.332),(12.693, -4.807),(12.515, -3.357),(13.469, -1.968),(13.592, -0.404),
+    (12.873, 0.966),(13.37, 2.641),(12.936, 4.182),(11.81, 5.185),(11.872, 6.545),
+    (11.526, 7.326),(10.774, 8.323),(9.358, 9.277),(9.021, 10.239)
+]
+
+def build(p: dict) -> cq.Workplane:
+    thickness = float(p["thickness"])
+    bore_dia = float(p["bore_dia"])
+    flat_depth = float(p["flat_depth"])
+    clearance = float(p["clearance"])
+    bore_depth = float(p["bore_depth"])
+    top_bevel = float(p["top_bevel"])
+    resolve_n = int(p["resolve_n"])
+
+    max_bore = max(0.5, thickness - 0.8)
+    bore_depth = min(bore_depth, max_bore)
+
+    pts = BASE_POINTS
+    if resolve_n > 40:
+        refined = []
+        for i in range(len(pts)):
+            a = pts[i]
+            b = pts[(i+1) % len(pts)]
+            refined.append(a)
+            if math.hypot(b[0]-a[0], b[1]-a[1]) > 2.0:
+                refined.append(((a[0]+b[0])*0.5, (a[1]+b[1])*0.5))
+        pts = refined
+
+    body = cq.Workplane("XY").polyline(pts).close().extrude(thickness)
+
+    r_eff = (bore_dia + clearance) * 0.5
+    flat_depth = max(0.1, min(flat_depth, r_eff * 1.6))
+    fd = r_eff - flat_depth
+    fd = max(-r_eff + 0.2, min(fd, r_eff - 0.1))
+    x0_sq = r_eff * r_eff - fd * fd
+    x0 = math.sqrt(max(0.0, x0_sq))
+
+    if x0 > 0.05 and bore_depth > 0.2:
+        d_shape = (
+            cq.Workplane("XY")
+            .moveTo(x0, fd)
+            .lineTo(-x0, fd)
+            .threePointArc((0, -r_eff), (x0, fd))
+            .close()
+            .extrude(bore_depth)
+        )
+        body = body.cut(d_shape)
+
+    if top_bevel > 0.01:
+        try:
+            body = body.faces(">Z").chamfer(top_bevel)
+        except Exception:
+            pass
+
+    return body
+
+result = build({k: v[0] for k, v in PARAMS.items()})

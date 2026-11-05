@@ -1,0 +1,130 @@
+{
+ "suite": "synthetic",
+ "config": "PS",
+ "sample_id": "syn-battery-cover-clean-s201514",
+ "split": "held_out",
+ "kind": "template",
+ "preset": "clean",
+ "mode": "live",
+ "gt_source": "synthetic_exact",
+ "status": "best_effort",
+ "verified": false,
+ "iterations": 7,
+ "iterations_to_converge": null,
+ "strategy": "free_code",
+ "template": "battery_cover",
+ "verifier_max_error_mm": 2.848647112223932,
+ "retake_reason": null,
+ "failed_checks": [],
+ "usd": 0.233225,
+ "tokens_in": 142597,
+ "tokens_out": 30403,
+ "model_calls": 30,
+ "model_ms": 260214,
+ "provider_modes": [
+  "live"
+ ],
+ "providers": {
+  "segment": [
+   "meta:sam-3.1"
+  ],
+  "understand": [
+   "meta:muse-spark-1.3"
+  ],
+  "plan": [
+   "baseten:meta-models/muse-spark-open-1026"
+  ],
+  "build": [
+   "baseten:meta-models/muse-spark-open-1026"
+  ],
+  "fix_agent": [
+   "baseten:meta-models/muse-spark-open-1026"
+  ],
+  "judge": [
+   "meta:muse-spark-1.3"
+  ],
+  "fix": [
+   "baseten:meta-models/muse-spark-open-1026"
+  ]
+ },
+ "convergence": [
+  {
+   "iter": 1,
+   "hausdorff_mm": 2.851769961164135,
+   "iou": 0.8744313792807484,
+   "max_error_mm": 2.851769961164135
+  },
+  {
+   "iter": 2,
+   "hausdorff_mm": 2.830647866551507,
+   "iou": 0.882490677304657,
+   "max_error_mm": 2.830647866551507
+  },
+  {
+   "iter": 3,
+   "hausdorff_mm": 2.830647866551507,
+   "iou": 0.8927602206075462,
+   "max_error_mm": 2.830647866551507
+  },
+  {
+   "iter": 4,
+   "hausdorff_mm": 2.796122972162276,
+   "iou": 0.8970368416424865,
+   "max_error_mm": 2.796122972162276
+  },
+  {
+   "iter": 5,
+   "hausdorff_mm": 2.7775869028566107,
+   "iou": 0.9012084325659345,
+   "max_error_mm": 2.7775869028566107
+  },
+  {
+   "iter": 6,
+   "hausdorff_mm": 2.848647112223932,
+   "iou": 0.9082782048989809,
+   "max_error_mm": 2.848647112223932
+  },
+  {
+   "iter": 7,
+   "hausdorff_mm": 2.8606362860949206,
+   "iou": 0.8668158461793469,
+   "max_error_mm": 2.8606362860949206
+  }
+ ],
+ "wall_s": 324.4,
+ "dims": [
+  {
+   "name": "length",
+   "gt_mm": 52.3,
+   "model_mm": 52.1561,
+   "error_mm": -0.1439
+  },
+  {
+   "name": "width",
+   "gt_mm": 36.2,
+   "model_mm": 36.097,
+   "error_mm": -0.103
+  },
+  {
+   "name": "thickness",
+   "gt_mm": 5.35,
+   "model_mm": 1.5,
+   "error_mm": -3.85
+  }
+ ],
+ "missed": [],
+ "extra_holes": 0,
+ "pass_0_3": false,
+ "pass_0_5": false,
+ "valid": true,
+ "valid_reason": "",
+ "failure_category": "judge_veto",
+ "overlay": "overlay.png",
+ "failure": "worst thickness -3.85 mm",
+ "git": {
+  "sha": null,
+  "dirty": false
+ },
+ "scale_suite": "synthetic",
+ "tree": "bb75824+308438f7af72"
+}

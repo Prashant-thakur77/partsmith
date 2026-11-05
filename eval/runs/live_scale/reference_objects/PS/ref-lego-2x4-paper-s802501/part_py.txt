@@ -1,0 +1,43 @@
+import cadquery as cq
+import math
+
+PARAMS = {
+    "brick_length": (31.8, 28.0, 35.0, 0.1, "mm", True, "Brick length X"),
+    "brick_width": (15.8, 14.0, 18.0, 0.1, "mm", True, "Brick width Y"),
+    "brick_height": (9.9, 8.0, 11.0, 0.1, "mm", True, "Brick body height"),
+    "stud_diameter": (5.0, 4.0, 5.5, 0.1, "mm", True, "Stud outer diameter"),
+    "stud_height": (1.8, 1.0, 2.5, 0.1, "mm", False, "Stud height"),
+    "stud_pitch_x": (8.0, 7.0, 9.0, 0.1, "mm", True, "Stud pitch X"),
+    "stud_pitch_y": (8.0, 7.0, 9.0, 0.1, "mm", True, "Stud pitch Y"),
+    "stud_count_x": (4, 1, 6, 1, "", False, "Stud count X"),
+    "stud_count_y": (2, 1, 4, 1, "", False, "Stud count Y"),
+}
+
+def build(p: dict) -> cq.Workplane:
+    L = p["brick_length"]
+    W = p["brick_width"]
+    H = p["brick_height"]
+    d = p["stud_diameter"]
+    h = p["stud_height"]
+    px = p["stud_pitch_x"]
+    py = p["stud_pitch_y"]
+    nx = int(p["stud_count_x"])
+    ny = int(p["stud_count_y"])
+
+    # Solid body, mounting face on Z=0, centred at origin, long axis X
+    base = cq.Workplane("XY").rect(L, W).extrude(H)
+
+    # Stud array centred at origin (2x4 = 8 studs)
+    x0 = (nx - 1) * px / 2.0
+    y0 = (ny - 1) * py / 2.0
+
+    for i in range(nx):
+        for j in range(ny):
+            x = -x0 + i * px
+            y = -y0 + j * py
+            stud = cq.Workplane("XY").workplane(offset=H).moveTo(x, y).circle(d / 2.0).extrude(h)
+            base = base.union(stud)
+
+    return base
+
+result = build({k: v[0] for k, v in PARAMS.items()})

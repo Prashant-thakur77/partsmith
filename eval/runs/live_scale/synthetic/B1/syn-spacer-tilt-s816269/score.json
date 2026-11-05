@@ -1,0 +1,92 @@
+{
+ "suite": "synthetic",
+ "config": "B1",
+ "sample_id": "syn-spacer-tilt-s816269",
+ "split": "held_out",
+ "kind": "template",
+ "preset": "tilt",
+ "mode": "live",
+ "gt_source": "synthetic_exact",
+ "status": "best_effort",
+ "verified": false,
+ "iterations": 1,
+ "iterations_to_converge": 1,
+ "strategy": "template",
+ "template": "spacer",
+ "verifier_max_error_mm": 0.3110000000000017,
+ "retake_reason": null,
+ "failed_checks": [],
+ "usd": 0.078718,
+ "tokens_in": 13968,
+ "tokens_out": 12313,
+ "model_calls": 10,
+ "model_ms": 128430,
+ "provider_modes": [
+  "live"
+ ],
+ "providers": {
+  "segment": [
+   "meta:sam-3.1"
+  ],
+  "understand": [
+   "meta:muse-spark-1.3"
+  ],
+  "segment_points": [
+   "meta:sam-3.1"
+  ],
+  "plan": [
+   "baseten:meta-models/muse-spark-open-1026"
+  ],
+  "build": [
+   "baseten:meta-models/muse-spark-open-1026"
+  ]
+ },
+ "convergence": [
+  {
+   "iter": 1,
+   "hausdorff_mm": 0.23180455553616233,
+   "iou": 0.9656501927795303,
+   "max_error_mm": 0.3110000000000017
+  }
+ ],
+ "wall_s": 147.0,
+ "dims": [
+  {
+   "name": "length",
+   "gt_mm": 9.45,
+   "model_mm": 9.4,
+   "error_mm": -0.05
+  },
+  {
+   "name": "width",
+   "gt_mm": 9.447063,
+   "model_mm": 9.3971,
+   "error_mm": -0.05
+  },
+  {
+   "name": "thickness",
+   "gt_mm": 8.7,
+   "model_mm": 8.5,
+   "error_mm": -0.2
+  },
+  {
+   "name": "hole_1.diameter",
+   "gt_mm": 4.0,
+   "model_mm": 4.026,
+   "error_mm": 0.026
+  }
+ ],
+ "missed": [],
+ "extra_holes": 0,
+ "pass_0_3": true,
+ "pass_0_5": true,
+ "valid": true,
+ "valid_reason": "",
+ "failure_category": null,
+ "git": {
+  "sha": null,
+  "dirty": false
+ },
+ "scale_suite": "synthetic",
+ "tree": "bb75824+308438f7af72"
+}

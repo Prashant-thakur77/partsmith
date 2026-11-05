@@ -1,0 +1,62 @@
+import cadquery as cq
+import math
+
+PARAMS = {
+    "card_length": (85.6, 84.0, 87.0, 0.1, "mm", False, "Length X"),
+    "card_width": (53.98, 52.0, 55.0, 0.1, "mm", False, "Width Y"),
+    "thickness": (0.8, 0.3, 2.0, 0.05, "mm", False, "Thickness Z"),
+    "corner_radius": (3.18, 2.0, 4.5, 0.02, "mm", False, "Corner radius"),
+    "clearance": (0.2, 0.0, 0.5, 0.05, "mm", True, "Fit clearance"),
+    "detail_level": (3, 1, 5, 1, "", False, "Outline detail level"),
+}
+
+def build(p: dict) -> cq.Workplane:
+    length = float(p["card_length"])
+    width = float(p["card_width"])
+    thk = float(p["thickness"])
+    # reference footprint size from base_profile polyline
+    ref_len = 85.668
+    ref_wid = 54.038
+
+    sx = length / ref_len
+    sy = width / ref_wid
+
+    base_pts = [
+        (42.367, 25.422),
+        (41.713, 26.233),
+        (40.998, 26.687),
+        (38.994, 27.011),
+        (-40.225, 26.963),
+        (-41.198, 26.606),
+        (-42.377, 25.437),
+        (-42.819, 23.954),
+        (-42.833, -23.403),
+        (-42.721, -24.646),
+        (-42.389, -25.4),
+        (-41.271, -26.561),
+        (-39.412, -27.024),
+        (39.191, -27.027),
+        (41.159, -26.615),
+        (42.435, -25.348),
+        (42.822, -23.739),
+        (42.835, 23.391),
+        (42.706, 24.671),
+    ]
+
+    pts = [(x * sx, y * sy) for x, y in base_pts]
+
+    dl = int(p.get("detail_level", 3))
+    if dl <= 1:
+        hx = length / 2.0
+        hy = width / 2.0
+        pts = [(hx, hy), (-hx, hy), (-hx, -hy), (hx, -hy)]
+    elif dl == 2:
+        pts = pts[::2]
+
+    # Solid body extruded from mounting face Z=0 upward to thickness
+    # Model centred at origin, long axis +X
+    solid = cq.Workplane("XY").polyline(pts).close().extrude(thk)
+
+    return solid
+
+result = build({k: v[0] for k, v in PARAMS.items()})

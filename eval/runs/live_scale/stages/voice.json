@@ -1,0 +1,1428 @@
+{
+"speech": "synthesised speech from two narrator voices, not people",
+"rows": [
+{
+"i": 0,
+"line": "Make the cover one millimetre longer.",
+"language": "english",
+"speech": "synthesised",
+"typed": {
+"transcript": "Make the cover one millimetre longer.",
+"edits": [
+{
+"param": "length",
+"to": 46.3
+}
+],
+"expected": {
+"param": "length",
+"to": 46.3
+},
+"right": true,
+"not_understood": []
+},
+"spoken": {
+"transcript": "make the cover one millimeter longer.",
+"edits": [
+{
+"param": "length",
+"to": 46.3
+}
+],
+"expected": {
+"param": "length",
+"to": 46.3
+},
+"right": true,
+"not_understood": []
+}
+},
+{
+"i": 1,
+"line": "Make the cover two millimetres shorter.",
+"language": "english",
+"speech": "synthesised",
+"typed": {
+"transcript": "Make the cover two millimetres shorter.",
+"edits": [
+{
+"param": "length",
+"to": 43.3
+}
+],
+"expected": {
+"param": "length",
+"to": 43.3
+},
+"right": true,
+"not_understood": []
+},
+"spoken": {
+"transcript": "Make the cover two millimeters shorter.",
+"edits": [
+{
+"param": "length",
+"to": 43.3
+}
+],
+"expected": {
+"param": "length",
+"to": 43.3
+},
+"right": true,
+"not_understood": []
+}
+},
+{
+"i": 2,
+"line": "Set the overall length to fifty millimetres.",
+"language": "english",
+"speech": "synthesised",
+"typed": {
+"transcript": "Set the overall length to fifty millimetres.",
+"edits": [
+{
+"param": "length",
+"to": 50.0
+}
+],
+"expected": {
+"param": "length",
+"to": 50.0
+},
+"right": true,
+"not_understood": []
+},
+"spoken": {
+"transcript": "set the the overall length to 50 millimeters..",
+"edits": [
+{
+"param": "length",
+"to": 50.0
+}
+],
+"expected": {
+"param": "length",
+"to": 50.0
+},
+"right": true,
+"not_understood": []
+}
+},
+{
+"i": 3,
+"line": "Make it one millimetre wider.",
+"language": "english",
+"speech": "synthesised",
+"typed": {
+"transcript": "Make it one millimetre wider.",
+"edits": [
+{
+"param": "width",
+"to": 31.0
+}
+],
+"expected": {
+"param": "width",
+"to": 31.01
+},
+"right": true,
+"not_understood": []
+},
+"spoken": {
+"transcript": "make it one millimeter wider.",
+"edits": [
+{
+"param": "width",
+"to": 31.0
+}
+],
+"expected": {
+"param": "width",
+"to": 31.01
+},
+"right": true,
+"not_understood": []
+}
+},
+{
+"i": 4,
+"line": "Reduce the width by two millimetres.",
+"language": "english",
+"speech": "synthesised",
+"typed": {
+"transcript": "Reduce the width by two millimetres.",
+"edits": [
+{
+"param": "width",
+"to": 28.0
+}
+],
+"expected": {
+"param": "width",
+"to": 28.01
+},
+"right": true,
+"not_understood": []
+},
+"spoken": {
+"transcript": "reduce the width by two millimeters.",
+"edits": [
+{
+"param": "width",
+"to": 28.0
+}
+],
+"expected": {
+"param": "width",
+"to": 28.01
+},
+"right": true,
+"not_understood": []
+}
+},
+{
+"i": 5,
+"line": "Set the width to thirty two millimetres.",
+"language": "english",
+"speech": "synthesised",
+"typed": {
+"transcript": "Set the width to thirty two millimetres.",
+"edits": [
+{
+"param": "width",
+"to": 32.0
+}
+],
+"expected": {
+"param": "width",
+"to": 32.0
+},
+"right": true,
+"not_understood": []
+},
+"spoken": {
+"transcript": "set the width to 32 millimeters.",
+"edits": [
+{
+"param": "width",
+"to": 32.0
+}
+],
+"expected": {
+"param": "width",
+"to": 32.0
+},
+"right": true,
+"not_understood": []
+}
+},
+{
+"i": 6,
+"line": "Make the door two millimetres thick.",
+"language": "english",
+"speech": "synthesised",
+"typed": {
+"transcript": "Make the door two millimetres thick.",
+"edits": [
+{
+"param": "thickness",
+"to": 2.0
+}
+],
+"expected": {
+"param": "thickness",
+"to": 2.0
+},
+"right": true,
+"not_understood": []
+},
+"spoken": {
+"transcript": "make the the door two millimeters thick.",
+"edits": [
+{
+"param": "thickness",
+"to": 2.0
+}
+],
+"expected": {
+"param": "thickness",
+"to": 2.0
+},
+"right": true,
+"not_understood": []
+}
+},
+{
+"i": 7,
+"line": "Increase the door thickness by half a millimetre.",
+"language": "english",
+"speech": "synthesised",
+"typed": {
+"transcript": "Increase the door thickness by half a millimetre.",
+"edits": [
+{
+"param": "thickness",
+"to": 2.0
+}
+],
+"expected": {
+"param": "thickness",
+"to": 2.0
+},
+"right": true,
+"not_understood": []
+},
+"spoken": {
+"transcript": "increase the door thickness by half a millimeter.",
+"edits": [
+{
+"param": "thickness",
+"to": 2.0
+}
+],
+"expected": {
+"param": "thickness",
+"to": 2.0
+},
+"right": true,
+"not_understood": []
+}
+},
+{
+"i": 8,
+"line": "Make the corner radius three millimetres.",
+"language": "english",
+"speech": "synthesised",
+"typed": {
+"transcript": "Make the corner radius three millimetres.",
+"edits": [
+{
+"param": "corner_radius",
+"to": 3.0
+}
+],
+"expected": {
+"param": "corner_radius",
+"to": 3.0
+},
+"right": true,
+"not_understood": []
+},
+"spoken": {
+"transcript": "make the corner corner radius three millimeters.",
+"edits": [
+{
+"param": "corner_radius",
+"to": 3.0
+}
+],
+"expected": {
+"param": "corner_radius",
+"to": 3.0
+},
+"right": true,
+"not_understood": []
+}
+},
+{
+"i": 9,
+"line": "Increase the corner radius by one millimetre.",
+"language": "english",
+"speech": "synthesised",
+"typed": {
+"transcript": "Increase the corner radius by one millimetre.",
+"edits": [
+{
+"param": "corner_radius",
+"to": 2.9
+}
+],
+"expected": {
+"param": "corner_radius",
+"to": 2.9
+},
+"right": true,
+"not_understood": []
+},
+"spoken": {
+"transcript": "increase the corner radius by one millimeter.",
+"edits": [
+{
+"param": "corner_radius",
+"to": 2.9
+}
+],
+"expected": {
+"param": "corner_radius",
+"to": 2.9
+},
+"right": true,
+"not_understood": []
+}
+},
+{
+"i": 10,
+"line": "Make the latch two millimetres wider.",
+"language": "english",
+"speech": "synthesised",
+"typed": {
+"transcript": "Make the latch two millimetres wider.",
+"edits": [
+{
+"param": "latch_width",
+"to": 12.0
+}
+],
+"expected": {
+"param": "latch_width",
+"to": 12.0
+},
+"right": true,
+"not_understood": []
+},
+"spoken": {
+"transcript": "Make the latch two millimeters wider..\u3002",
+"edits": [
+{
+"param": "latch_width",
+"to": 12.0
+}
+],
+"expected": {
+"param": "latch_width",
+"to": 12.0
+},
+"right": true,
+"not_understood": []
+}
+},
+{
+"i": 11,
+"line": "Set the latch height to four millimetres.",
+"language": "english",
+"speech": "synthesised",
+"typed": {
+"transcript": "Set the latch height to four millimetres.",
+"edits": [
+{
+"param": "latch_height",
+"to": 4.0
+}
+],
+"expected": {
+"param": "latch_height",
+"to": 4.0
+},
+"right": true,
+"not_understood": []
+},
+"spoken": {
+"transcript": "set the latch height to four millimeters",
+"edits": [
+{
+"param": "latch_height",
+"to": 4.0
+}
+],
+"expected": {
+"param": "latch_height",
+"to": 4.0
+},
+"right": true,
+"not_understood": []
+}
+},
+{
+"i": 12,
+"line": "Make the tongue one millimetre longer.",
+"language": "english",
+"speech": "synthesised",
+"typed": {
+"transcript": "Make the tongue one millimetre longer.",
+"edits": [
+{
+"param": "tongue_length",
+"to": 4.0
+}
+],
+"expected": {
+"param": "tongue_length",
+"to": 4.0
+},
+"right": true,
+"not_understood": []
+},
+"spoken": {
+"transcript": "Make the tongue one millimeter longer..",
+"edits": [
+{
+"param": "tongue_length",
+"to": 4.0
+}
+],
+"expected": {
+"param": "tongue_length",
+"to": 4.0
+},
+"right": true,
+"not_understood": []
+}
+},
+{
+"i": 13,
+"line": "Set the tongue width to six millimetres.",
+"language": "english",
+"speech": "synthesised",
+"typed": {
+"transcript": "Set the tongue width to six millimetres.",
+"edits": [
+{
+"param": "tongue_width",
+"to": 6.0
+}
+],
+"expected": {
+"param": "tongue_width",
+"to": 6.0
+},
+"right": true,
+"not_understood": []
+},
+"spoken": {
+"transcript": "Set the tongue width to six millimeters.",
+"edits": [
+{
+"param": "tongue_width",
+"to": 6.0
+}
+],
+"expected": {
+"param": "tongue_width",
+"to": 6.0
+},
+"right": true,
+"not_understood": []
+}
+},
+{
+"i": 14,
+"line": "Cover ko ek millimeter lamba karo.",
+"language": "hindi",
+"speech": "synthesised",
+"typed": {
+"transcript": "Cover ko ek millimeter lamba karo.",
+"edits": [
+{
+"param": "length",
+"to": 46.3
+}
+],
+"expected": {
+"param": "length",
+"to": 46.3
+},
+"right": true,
+"not_understood": []
+},
+"spoken": {
+"transcript": "\u0915\u0935\u0930 \u0915\u094b \u090f\u0915 \u092e\u093f\u0932\u0940\u092e\u0940\u091f\u0930 \u0932\u0902\u092c\u093e \u0915\u0930\u094b\u0964",
+"edits": [
+{
+"param": "length",
+"to": 46.3
+}
+],
+"expected": {
+"param": "length",
+"to": 46.3
+},
+"right": true,
+"not_understood": []
+}
+},
+{
+"i": 15,
+"line": "Cover ko do millimeter chhota karo.",
+"language": "hindi",
+"speech": "synthesised",
+"typed": {
+"transcript": "Cover ko do millimeter chhota karo.",
+"edits": [],
+"expected": {
+"param": "length",
+"to": 43.3
+},
+"right": false,
+"not_understood": [
+"Cover ko do millimeter chhota karo"
+]
+},
+"spoken": {
+"transcript": "cover Kodo millimeter",
+"edits": [],
+"expected": {
+"param": "length",
+"to": 43.3
+},
+"right": false,
+"not_understood": [
+"cover Kodo millimeter"
+]
+}
+},
+{
+"i": 16,
+"line": "Lambai pachaas millimeter kar do.",
+"language": "hindi",
+"speech": "synthesised",
+"typed": {
+"transcript": "Lambai pachaas millimeter kar do.",
+"edits": [
+{
+"param": "length",
+"to": 50.0
+}
+],
+"expected": {
+"param": "length",
+"to": 50.0
+},
+"right": true,
+"not_understood": []
+},
+"spoken": {
+"transcript": "\u0932\u0902\u092c\u093e\u0908 \u092a\u091a\u093e\u0938 \u092e\u093f\u0932\u0940\u092e\u0940\u091f\u0930 cardo.",
+"edits": [
+{
+"param": "length",
+"to": 50.0
+}
+],
+"expected": {
+"param": "length",
+"to": 50.0
+},
+"right": true,
+"not_understood": []
+}
+},
+{
+"i": 17,
+"line": "Chaudai ek millimeter badha do.",
+"language": "hindi",
+"speech": "synthesised",
+"typed": {
+"transcript": "Chaudai ek millimeter badha do.",
+"edits": [
+{
+"param": "width",
+"to": 31.0
+}
+],
+"expected": {
+"param": "width",
+"to": 31.01
+},
+"right": true,
+"not_understood": []
+},
+"spoken": {
+"transcript": "",
+"edits": [],
+"expected": {
+"param": "width",
+"to": 31.01
+},
+"right": false,
+"not_understood": []
+}
+},
+{
+"i": 18,
+"line": "Chaudai do millimeter kam karo.",
+"language": "hindi",
+"speech": "synthesised",
+"typed": {
+"transcript": "Chaudai do millimeter kam karo.",
+"edits": [
+{
+"param": "width",
+"to": 28.0
+}
+],
+"expected": {
+"param": "width",
+"to": 28.01
+},
+"right": true,
+"not_understood": []
+},
+"spoken": {
+"transcript": "chao \u0111\u00e1y \u0921\u094b \u092e\u093f\u0932\u0940\u092e\u0940\u091f\u0930 \u0915\u092e \u0915\u0930\u094b\u0964",
+"edits": [
+{
+"param": "width",
+"to": 28.0
+}
+],
+"expected": {
+"param": "width",
+"to": 28.01
+},
+"right": true,
+"not_understood": []
+}
+},
+{
+"i": 19,
+"line": "Motai do millimeter kar do.",
+"language": "hindi",
+"speech": "synthesised",
+"typed": {
+"transcript": "Motai do millimeter kar do.",
+"edits": [
+{
+"param": "thickness",
+"to": 2.0
+}
+],
+"expected": {
+"param": "thickness",
+"to": 2.0
+},
+"right": true,
+"not_understood": []
+},
+"spoken": {
+"transcript": "Motai do millimeter car do",
+"edits": [
+{
+"param": "thickness",
+"to": 2.0
+}
+],
+"expected": {
+"param": "thickness",
+"to": 2.0
+},
+"right": true,
+"not_understood": []
+}
+},
+{
+"i": 20,
+"line": "Motai aadha millimeter badha do.",
+"language": "hindi",
+"speech": "synthesised",
+"typed": {
+"transcript": "Motai aadha millimeter badha do.",
+"edits": [
+{
+"param": "thickness",
+"to": 2.0
+}
+],
+"expected": {
+"param": "thickness",
+"to": 2.0
+},
+"right": true,
+"not_understood": []
+},
+"spoken": {
+"transcript": "\u092e\u0924\u093e\u092f \u0906\u0927\u093e \u092e\u093f\u0932\u0940\u092e\u0940\u091f\u0930 \u092d\u093e\u0927\u093e \u0926\u094b\u0964.",
+"edits": [
+{
+"param": "thickness",
+"to": 2.0
+}
+],
+"expected": {
+"param": "thickness",
+"to": 2.0
+},
+"right": true,
+"not_understood": []
+}
+},
+{
+"i": 21,
+"line": "Kone ki golai teen millimeter kar do.",
+"language": "hindi",
+"speech": "synthesised",
+"typed": {
+"transcript": "Kone ki golai teen millimeter kar do.",
+"edits": [
+{
+"param": "corner_radius",
+"to": 3.0
+}
+],
+"expected": {
+"param": "corner_radius",
+"to": 3.0
+},
+"right": true,
+"not_understood": []
+},
+"spoken": {
+"transcript": "ten millimeter card dough.",
+"edits": [],
+"expected": {
+"param": "corner_radius",
+"to": 3.0
+},
+"right": false,
+"not_understood": [
+"ten millimeter card dough"
+]
+}
+},
+{
+"i": 22,
+"line": "Latch ko do millimeter chauda karo.",
+"language": "hindi",
+"speech": "synthesised",
+"typed": {
+"transcript": "Latch ko do millimeter chauda karo.",
+"edits": [
+{
+"param": "latch_width",
+"to": 12.0
+}
+],
+"expected": {
+"param": "latch_width",
+"to": 12.0
+},
+"right": true,
+"not_understood": []
+},
+"spoken": {
+"transcript": "\u0932\u093e\u0916\u094b\u0902 \u092e\u093f\u0932\u0940\u092e\u0940\u091f\u0930 \u091a\u094c\u0926\u0939 \u0915\u0930\u094b\u0964.",
+"edits": [],
+"expected": {
+"param": "latch_width",
+"to": 12.0
+},
+"right": false,
+"not_understood": [
+"\u0932\u093e\u0916\u094b\u0902 \u092e\u093f\u0932\u0940\u092e\u0940\u091f\u0930 \u091a\u094c\u0926\u0939 \u0915\u0930\u094b"
+]
+}
+},
+{
+"i": 23,
+"line": "Latch ki unchai chaar millimeter kar do.",
+"language": "hindi",
+"speech": "synthesised",
+"typed": {
+"transcript": "Latch ki unchai chaar millimeter kar do.",
+"edits": [
+{
+"param": "latch_height",
+"to": 4.0
+}
+],
+"expected": {
+"param": "latch_height",
+"to": 4.0
+},
+"right": true,
+"not_understood": []
+},
+"spoken": {
+"transcript": "\u0932\u091a\u0915\u0940 \u090a\u0902\u091a\u093e\u0908 \u091a\u093e\u0930 \u092e\u093f\u0932\u0940\u092e\u0940\u091f\u0930 \u0915\u093e\u0930 \u0926\u094b\u0964",
+"edits": [
+{
+"param": "latch_height",
+"to": 4.0
+}
+],
+"expected": {
+"param": "latch_height",
+"to": 4.0
+},
+"right": true,
+"not_understood": []
+}
+},
+{
+"i": 24,
+"line": "Tongue ko ek millimeter lamba karo.",
+"language": "hindi",
+"speech": "synthesised",
+"typed": {
+"transcript": "Tongue ko ek millimeter lamba karo.",
+"edits": [
+{
+"param": "tongue_length",
+"to": 4.0
+}
+],
+"expected": {
+"param": "tongue_length",
+"to": 4.0
+},
+"right": true,
+"not_understood": []
+},
+"spoken": {
+"transcript": "\u091f\u0902\u0917 \u0915\u094b \u090f\u0915 \u092e\u093f\u0932\u0940\u092e\u0940\u091f\u0930 \u0932\u0902\u092c\u093e \u0915\u0930\u094b\u0964\u0964",
+"edits": [
+{
+"param": "tongue_length",
+"to": 4.0
+}
+],
+"expected": {
+"param": "tongue_length",
+"to": 4.0
+},
+"right": true,
+"not_understood": []
+}
+},
+{
+"i": 25,
+"line": "Tongue ki chaudai chhe millimeter kar do.",
+"language": "hindi",
+"speech": "synthesised",
+"typed": {
+"transcript": "Tongue ki chaudai chhe millimeter kar do.",
+"edits": [
+{
+"param": "tongue_width",
+"to": 6.0
+}
+],
+"expected": {
+"param": "tongue_width",
+"to": 6.0
+},
+"right": true,
+"not_understood": []
+},
+"spoken": {
+"transcript": "tungki chai dai three millimeter cardo,",
+"edits": [
+{
+"param": "tongue_width",
+"to": 3.0
+}
+],
+"expected": {
+"param": "tongue_width",
+"to": 6.0
+},
+"right": false,
+"not_understood": []
+}
+},
+{
+"i": 26,
+"line": "Length ko one millimeter badha do.",
+"language": "mixed",
+"speech": "synthesised",
+"typed": {
+"transcript": "Length ko one millimeter badha do.",
+"edits": [
+{
+"param": "length",
+"to": 46.3
+}
+],
+"expected": {
+"param": "length",
+"to": 46.3
+},
+"right": true,
+"not_understood": []
+},
+"spoken": {
+"transcript": "\u0932\u0947\u0902\u0925 \u0915\u094b \u0935\u0928 \u092e\u093f\u0932\u0940\u092e\u0940\u091f\u0930 \u092c\u0924\u093e \u0926\u094b\u0964.",
+"edits": [],
+"expected": {
+"param": "length",
+"to": 46.3
+},
+"right": false,
+"not_understood": [
+"\u0932\u0947\u0902\u0925 \u0915\u094b \u0935\u0928 \u092e\u093f\u0932\u0940\u092e\u0940\u091f\u0930 \u092c\u0924\u093e \u0926\u094b"
+]
+}
+},
+{
+"i": 27,
+"line": "Length ko two millimeter reduce karo.",
+"language": "mixed",
+"speech": "synthesised",
+"typed": {
+"transcript": "Length ko two millimeter reduce karo.",
+"edits": [
+{
+"param": "length",
+"to": 43.3
+}
+],
+"expected": {
+"param": "length",
+"to": 43.3
+},
+"right": true,
+"not_understood": []
+},
+"spoken": {
+"transcript": "Length code two millimeter reduce",
+"edits": [
+{
+"param": "length",
+"to": 43.3
+}
+],
+"expected": {
+"param": "length",
+"to": 43.3
+},
+"right": true,
+"not_understood": []
+}
+},
+{
+"i": 28,
+"line": "Overall length fifty millimeter set kar do.",
+"language": "mixed",
+"speech": "synthesised",
+"typed": {
+"transcript": "Overall length fifty millimeter set kar do.",
+"edits": [
+{
+"param": "length",
+"to": 50.0
+}
+],
+"expected": {
+"param": "length",
+"to": 50.0
+},
+"right": true,
+"not_understood": []
+},
+"spoken": {
+"transcript": "Overall lent 50 millimeter set cardo.",
+"edits": [
+{
+"param": "length",
+"to": 50.0
+}
+],
+"expected": {
+"param": "length",
+"to": 50.0
+},
+"right": true,
+"not_understood": []
+}
+},
+{
+"i": 29,
+"line": "Width ko one millimeter increase karo.",
+"language": "mixed",
+"speech": "synthesised",
+"typed": {
+"transcript": "Width ko one millimeter increase karo.",
+"edits": [
+{
+"param": "width",
+"to": 31.0
+}
+],
+"expected": {
+"param": "width",
+"to": 31.01
+},
+"right": true,
+"not_understood": []
+},
+"spoken": {
+"transcript": "with co one millimeter increase cado.",
+"edits": [
+{
+"param": "width",
+"to": 31.0
+}
+],
+"expected": {
+"param": "width",
+"to": 31.01
+},
+"right": true,
+"not_understood": []
+}
+},
+{
+"i": 30,
+"line": "Width thoda kam karo, two millimeter.",
+"language": "mixed",
+"speech": "synthesised",
+"typed": {
+"transcript": "Width thoda kam karo, two millimeter.",
+"edits": [
+{
+"param": "width",
+"to": 28.0
+}
+],
+"expected": {
+"param": "width",
+"to": 28.01
+},
+"right": true,
+"not_understood": []
+},
+"spoken": {
+"transcript": "\u0935\u093f\u091f \u0925\u094b\u0926\u093e \u0915\u092e \u0915\u0930\u094b 2 \u092e\u093f\u0932\u0940\u092e\u0940\u091f\u0930\u0964.",
+"edits": [
+{
+"param": "width",
+"to": 28.0
+}
+],
+"expected": {
+"param": "width",
+"to": 28.01
+},
+"right": true,
+"not_understood": []
+}
+},
+{
+"i": 31,
+"line": "Thickness two millimeter kar do.",
+"language": "mixed",
+"speech": "synthesised",
+"typed": {
+"transcript": "Thickness two millimeter kar do.",
+"edits": [
+{
+"param": "thickness",
+"to": 2.0
+}
+],
+"expected": {
+"param": "thickness",
+"to": 2.0
+},
+"right": true,
+"not_understood": []
+},
+"spoken": {
+"transcript": "Thickness, two millimeter car do.",
+"edits": [
+{
+"param": "thickness",
+"to": 2.0
+}
+],
+"expected": {
+"param": "thickness",
+"to": 2.0
+},
+"right": true,
+"not_understood": []
+}
+},
+{
+"i": 32,
+"line": "Door thickness half millimeter badha do.",
+"language": "mixed",
+"speech": "synthesised",
+"typed": {
+"transcript": "Door thickness half millimeter badha do.",
+"edits": [
+{
+"param": "thickness",
+"to": 2.0
+}
+],
+"expected": {
+"param": "thickness",
+"to": 2.0
+},
+"right": true,
+"not_understood": []
+},
+"spoken": {
+"transcript": "do thickness thickness half millimeter baddhaadu.",
+"edits": [
+{
+"param": "thickness",
+"to": 2.0
+}
+],
+"expected": {
+"param": "thickness",
+"to": 2.0
+},
+"right": true,
+"not_understood": []
+}
+},
+{
+"i": 33,
+"line": "Corner radius three millimeter kar do.",
+"language": "mixed",
+"speech": "synthesised",
+"typed": {
+"transcript": "Corner radius three millimeter kar do.",
+"edits": [
+{
+"param": "corner_radius",
+"to": 3.0
+}
+],
+"expected": {
+"param": "corner_radius",
+"to": 3.0
+},
+"right": true,
+"not_understood": []
+},
+"spoken": {
+"transcript": "corner radius three millimeter card dough",
+"edits": [
+{
+"param": "corner_radius",
+"to": 3.0
+}
+],
+"expected": {
+"param": "corner_radius",
+"to": 3.0
+},
+"right": true,
+"not_understood": [
+"card dough"
+]
+}
+},
+{
+"i": 34,
+"line": "Corner radius ko one millimeter badhao.",
+"language": "mixed",
+"speech": "synthesised",
+"typed": {
+"transcript": "Corner radius ko one millimeter badhao.",
+"edits": [
+{
+"param": "corner_radius",
+"to": 2.9
+}
+],
+"expected": {
+"param": "corner_radius",
+"to": 2.9
+},
+"right": true,
+"not_understood": []
+},
+"spoken": {
+"transcript": "corner radius, co one millimeter, \u092c\u0922\u093c\u093e\u0913.",
+"edits": [
+{
+"param": "corner_radius",
+"to": 2.9
+}
+],
+"expected": {
+"param": "corner_radius",
+"to": 2.9
+},
+"right": true,
+"not_understood": []
+}
+},
+{
+"i": 35,
+"line": "Latch width two millimeter badha do.",
+"language": "mixed",
+"speech": "synthesised",
+"typed": {
+"transcript": "Latch width two millimeter badha do.",
+"edits": [
+{
+"param": "latch_width",
+"to": 12.0
+}
+],
+"expected": {
+"param": "latch_width",
+"to": 12.0
+},
+"right": true,
+"not_understood": []
+},
+"spoken": {
+"transcript": "Latchwit two millimeter Bata do.",
+"edits": [
+{
+"param": "latch_width",
+"to": 12.0
+}
+],
+"expected": {
+"param": "latch_width",
+"to": 12.0
+},
+"right": true,
+"not_understood": []
+}
+},
+{
+"i": 36,
+"line": "Latch height four millimeter set karo.",
+"language": "mixed",
+"speech": "synthesised",
+"typed": {
+"transcript": "Latch height four millimeter set karo.",
+"edits": [
+{
+"param": "latch_height",
+"to": 4.0
+}
+],
+"expected": {
+"param": "latch_height",
+"to": 4.0
+},
+"right": true,
+"not_understood": []
+},
+"spoken": {
+"transcript": "latch height, four millimeter set \u0915\u0930\u094b.",
+"edits": [
+{
+"param": "latch_height",
+"to": 4.0
+}
+],
+"expected": {
+"param": "latch_height",
+"to": 4.0
+},
+"right": true,
+"not_understood": []
+}
+},
+{
+"i": 37,
+"line": "Tongue length one millimeter increase kar do.",
+"language": "mixed",
+"speech": "synthesised",
+"typed": {
+"transcript": "Tongue length one millimeter increase kar do.",
+"edits": [
+{
+"param": "tongue_length",
+"to": 4.0
+}
+],
+"expected": {
+"param": "tongue_length",
+"to": 4.0
+},
+"right": true,
+"not_understood": []
+},
+"spoken": {
+"transcript": "tongue length one millimeter increase",
+"edits": [
+{
+"param": "tongue_length",
+"to": 4.0
+}
+],
+"expected": {
+"param": "tongue_length",
+"to": 4.0
+},
+"right": true,
+"not_understood": []
+}
+},
+{
+"i": 38,
+"line": "Tongue width six millimeter kar do.",
+"language": "mixed",
+"speech": "synthesised",
+"typed": {
+"transcript": "Tongue width six millimeter kar do.",
+"edits": [
+{
+"param": "tongue_width",
+"to": 6.0
+}
+],
+"expected": {
+"param": "tongue_width",
+"to": 6.0
+},
+"right": true,
+"not_understood": []
+},
+"spoken": {
+"transcript": "\u091f\u0902\u0917 \u0935\u093f\u0921\u094d\u0925 6 \u092e\u093f\u0932\u0940\u092e\u0940\u091f\u0930 \u0915\u093e do.",
+"edits": [
+{
+"param": "tongue_width",
+"to": 6.0
+}
+],
+"expected": {
+"param": "tongue_width",
+"to": 6.0
+},
+"right": true,
+"not_understood": []
+}
+},
+{
+"i": 39,
+"line": "Hinge tongue ki length four millimeter karo.",
+"language": "mixed",
+"speech": "synthesised",
+"typed": {
+"transcript": "Hinge tongue ki length four millimeter karo.",
+"edits": [
+{
+"param": "tongue_length",
+"to": 4.0
+}
+],
+"expected": {
+"param": "tongue_length",
+"to": 4.0
+},
+"right": true,
+"not_understood": []
+},
+"spoken": {
+"transcript": "hinge tongue key link four millimeter",
+"edits": [
+{
+"param": "tongue_length",
+"to": 4.0
+}
+],
+"expected": {
+"param": "tongue_length",
+"to": 4.0
+},
+"right": true,
+"not_understood": []
+}
+}
+],
+"rescored": "right recomputed from the stored answers with the rule's \u00b10.01 mm compared after rounding to 6 decimals; the first pass marked values exactly 0.01 off as wrong through floating point"
+}

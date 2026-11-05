@@ -1,0 +1,75 @@
+import cadquery as cq
+import math
+
+# Base outline measured from top view (closed polyline)
+BASE_POINTS = [
+    [-30.753, -10.837], [-29.689, -11.513], [-28.051, -11.488], [-25.397, -11.866],
+    [-22.503, -11.7], [-21.328, -11.412], [-18.421, -11.55], [-17.515, -11.064],
+    [-16.538, -8.359], [-14.698, -8.023], [-11.213, -8.186], [-9.301, -8.725],
+    [-6.938, -11.717], [-5.713, -12.019], [-4.512, -11.82], [-3.183, -12.089],
+    [-0.44, -11.676], [1.514, -11.878], [4.594, -11.709], [5.339, -11.889],
+    [6.221, -11.72], [7.722, -10.772], [8.632, -8.559], [13.972, -8.086],
+    [15.646, -8.51], [16.371, -8.985], [16.911, -10.008], [16.865, -10.651],
+    [17.124, -11.219], [19.397, -11.88], [22.051, -11.642], [24.559, -12.024],
+    [26.686, -11.746], [28.97, -11.849], [30.499, -11.059], [30.982, -8.764],
+    [30.297, -5.556], [30.445, -3.981], [30.019, -1.748], [30.334, -0.151],
+    [30.163, 0.859], [30.401, 2.161], [30.226, 4.409], [30.461, 5.764],
+    [30.117, 7.874], [30.255, 8.67], [29.593, 10.371], [28.101, 11.604],
+    [24.789, 11.891], [22.605, 11.585], [15.994, 11.98], [13.522, 11.684],
+    [11.535, 11.861], [8.781, 11.645], [2.928, 11.948], [2.396, 11.797],
+    [1.054, 12.048], [-3.005, 12.089], [-3.644, 11.857], [-8.698, 11.829],
+    [-9.621, 12.075], [-12.712, 11.87], [-18.972, 12.089], [-21.347, 11.799],
+    [-22.647, 12.045], [-23.77, 11.823], [-26.805, 12.009], [-28.249, 11.558],
+    [-28.867, 11.613], [-30.427, 10.176], [-30.434, 9.081], [-30.739, 8.033],
+    [-30.595, -6.172], [-30.983, -8.771],
+]
+
+# Hole centers from PartSpec
+HOLE1_CENTER = [-23.907, 5.22]
+HOLE2_CENTER = [22.848, 5.093]
+
+PARAMS = {
+    "thickness": (3.0, 1.0, 5.0, 0.1, "mm", False, "Leaf thickness"),
+    "hole1_dia": (3.618, 2.5, 5.0, 0.01, "mm", True, "Hole 1 diameter"),
+    "hole2_dia": (3.37, 2.5, 5.0, 0.01, "mm", True, "Hole 2 diameter"),
+    "csk_dia": (6.8, 5.0, 9.0, 0.1, "mm", True, "Countersink head diameter"),
+    "csk_angle_deg": (90.0, 60.0, 120.0, 1.0, "deg", True, "Countersink angle"),
+    "mount_hole_count": (2, 1, 2, 1, "", False, "Number of mounting holes"),
+}
+
+def build(p: dict) -> cq.Workplane:
+    # Workplane on mounting face Z=0, +Z up
+    wp = cq.Workplane("XY")
+    # Build closed polyline from measured points
+    wp = wp.moveTo(BASE_POINTS[0][0], BASE_POINTS[0][1])
+    for pt in BASE_POINTS[1:]:
+        wp = wp.lineTo(pt[0], pt[1])
+    wp = wp.close()
+    # Extrude solid to thickness - body is solid over full footprint
+    solid = wp.extrude(p["thickness"], combine=True)
+
+    # Decide which holes to create based on topology parameter
+    n = int(p["mount_hole_count"])
+    centers = []
+    dias = []
+    if n >= 1:
+        centers.append(HOLE1_CENTER)
+        dias.append(p["hole1_dia"])
+    if n >= 2:
+        centers.append(HOLE2_CENTER)
+        dias.append(p["hole2_dia"])
+
+    # Cut through holes with countersink on top face (+Z)
+    # Using cskHole for countersunk mounting screws
+    result = solid
+    for ctr, dia in zip(centers, dias):
+        result = (
+            result.faces(">Z")
+            .workplane()
+            .pushPoints([tuple(ctr)])
+            .cskHole(dia, p["csk_dia"], p["csk_angle_deg"])
+        )
+
+    return result
+
+result = build({k: v[0] for k, v in PARAMS.items()})

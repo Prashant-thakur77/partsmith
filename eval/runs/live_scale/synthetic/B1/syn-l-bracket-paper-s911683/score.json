@@ -1,0 +1,105 @@
+{
+ "suite": "synthetic",
+ "config": "B1",
+ "sample_id": "syn-l-bracket-paper-s911683",
+ "split": "held_out",
+ "kind": "template",
+ "preset": "paper",
+ "mode": "live",
+ "gt_source": "synthetic_exact",
+ "status": "best_effort",
+ "verified": false,
+ "iterations": 1,
+ "iterations_to_converge": null,
+ "strategy": "template",
+ "template": "l_bracket",
+ "verifier_max_error_mm": 6.413525432859501,
+ "retake_reason": null,
+ "failed_checks": [],
+ "usd": 0.094518,
+ "tokens_in": 17664,
+ "tokens_out": 13179,
+ "model_calls": 13,
+ "model_ms": 122980,
+ "provider_modes": [
+  "live"
+ ],
+ "providers": {
+  "segment": [
+   "meta:sam-3.1"
+  ],
+  "understand": [
+   "meta:muse-spark-1.3"
+  ],
+  "segment_points": [
+   "meta:sam-3.1"
+  ],
+  "plan": [
+   "baseten:meta-models/muse-spark-open-1026"
+  ],
+  "build": [
+   "baseten:meta-models/muse-spark-open-1026"
+  ]
+ },
+ "convergence": [
+  {
+   "iter": 1,
+   "hausdorff_mm": 6.413525432859501,
+   "iou": 0.7252846557021507,
+   "max_error_mm": 6.413525432859501
+  }
+ ],
+ "wall_s": 143.14,
+ "dims": [
+  {
+   "name": "length",
+   "gt_mm": 37.4,
+   "model_mm": 42.3,
+   "error_mm": 4.9
+  },
+  {
+   "name": "width",
+   "gt_mm": 21.8,
+   "model_mm": 22.0,
+   "error_mm": 0.2
+  },
+  {
+   "name": "thickness",
+   "gt_mm": 32.6,
+   "model_mm": 32.6,
+   "error_mm": 0.0
+  },
+  {
+   "name": "hole_1.diameter",
+   "gt_mm": 4.0,
+   "model_mm": 3.65,
+   "error_mm": -0.35
+  },
+  {
+   "name": "hole_2.diameter",
+   "gt_mm": 4.0,
+   "model_mm": 3.65,
+   "error_mm": -0.35
+  },
+  {
+   "name": "hole_3.diameter",
+   "gt_mm": 4.0,
+   "model_mm": 3.65,
+   "error_mm": -0.35
+  }
+ ],
+ "missed": [],
+ "extra_holes": 0,
+ "pass_0_3": false,
+ "pass_0_5": false,
+ "valid": true,
+ "valid_reason": "",
+ "failure_category": "dim_off",
+ "failure": "worst length +4.90 mm",
+ "git": {
+  "sha": null,
+  "dirty": false
+ },
+ "scale_suite": "synthetic",
+ "tree": "bb75824+308438f7af72"
+}

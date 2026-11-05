@@ -1,0 +1,59 @@
+import cadquery as cq
+import math
+
+PARAMS = {
+    "thickness": (20.0, 10.0, 30.0, 0.1, "mm", False, "Wheel axial thickness"),
+    "axle_dia": (8.714, 6.0, 12.0, 0.01, "mm", True, "Central axle bore diameter"),
+    "axle_cx": (-0.099, -1.0, 1.0, 0.01, "mm", False, "Axle hole center X"),
+    "axle_cy": (-0.11, -1.0, 1.0, 0.01, "mm", False, "Axle hole center Y"),
+    "lightening_dia": (4.195, 2.0, 6.0, 0.01, "mm", False, "Lightening hole diameter"),
+    "lightening_pcd_radius": (12.15, 10.0, 14.0, 0.01, "mm", False, "Lightening holes PCD radius"),
+    "lightening_count": (6, 2, 8, 1, "", False, "Number of lightening holes"),
+    "lightening_angle_offset_deg": (-4.6, -30.0, 30.0, 0.1, "deg", False, "Angular offset for first lightening hole"),
+    "profile_scale": (1.0, 0.9, 1.1, 0.01, "", False, "Outer profile scale"),
+}
+
+# base profile polyline measured (closed)
+PROFILE_POINTS = [
+    (19.221,7.68),(17.283,11.307),(14.69,14.47),(11.592,17.055),(8.086,19.0),(4.061,20.275),(0.142,20.729),(-4.058,20.41),(-8.091,19.264),(-11.448,17.518),(-14.439,15.096),(-17.098,11.947),(-19.181,8.12),(-20.362,4.25),(-20.778,0.287),(-20.473,-3.469),(-19.437,-7.29),(-17.565,-11.025),(-15.217,-14.067),(-12.278,-16.696),(-8.491,-18.903),(-4.785,-20.166),(-0.486,-20.734),(3.602,-20.445),(7.78,-19.277),(11.679,-17.21),(14.633,-14.808),(17.054,-12.009),(19.394,-7.766),(20.519,-3.753),(20.777,0.26),(20.27,4.367)
+]
+
+def build(p: dict) -> cq.Workplane:
+    thickness = float(p["thickness"])
+    axle_dia = float(p["axle_dia"])
+    axle_cx = float(p["axle_cx"])
+    axle_cy = float(p["axle_cy"])
+    lightening_dia = float(p["lightening_dia"])
+    lightening_pcd_radius = float(p["lightening_pcd_radius"])
+    lightening_count = int(round(float(p["lightening_count"])))
+    angle_off_deg = float(p["lightening_angle_offset_deg"])
+    scale = float(p["profile_scale"])
+
+    # scale profile about origin
+    pts = [(x*scale, y*scale) for x, y in PROFILE_POINTS]
+
+    # solid body extruded from Z=0 upward (mounting face on Z=0)
+    wp = cq.Workplane("XY").moveTo(pts[0][0], pts[0][1])
+    # polyline expects list of points after start
+    wp = wp.polyline(pts[1:]).close().extrude(thickness, combine=True)
+
+    # ensure solid is centered at origin in XY (already) and Z at 0..thickness
+
+    # central axle through hole
+    if axle_dia > 0.1:
+        wp = wp.faces(">Z").workplane(origin=(0,0,0)).moveTo(axle_cx, axle_cy).circle(axle_dia/2.0).cutThruAll()
+
+    # peripheral lightening holes - circular pattern around centre
+    if lightening_count > 0 and lightening_dia > 0.1:
+        r = lightening_pcd_radius
+        base_ang = math.radians(angle_off_deg)
+        step = 2*math.pi / lightening_count
+        for i in range(lightening_count):
+            ang = base_ang + i*step
+            cx = r*math.cos(ang)
+            cy = r*math.sin(ang)
+            wp = wp.faces(">Z").workplane(origin=(0,0,0)).moveTo(cx, cy).circle(lightening_dia/2.0).cutThruAll()
+
+    return wp
+
+result = build({k: v[0] for k, v in PARAMS.items()})

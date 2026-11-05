@@ -1,0 +1,61 @@
+import cadquery as cq
+import math
+
+PARAMS = {
+    "card_length": (85.2, 80.0, 90.0, 0.1, "mm", True, "Length"),
+    "card_width": (54.0, 50.0, 60.0, 0.1, "mm", True, "Width"),
+    "thickness": (0.8, 0.4, 1.5, 0.05, "mm", True, "Thickness"),
+    "corner_segments": (2, 1, 3, 1, "", False, "Corner detail"),
+}
+
+def build(p: dict) -> cq.Workplane:
+    # Measured polyline from PartSpec (ID-1 outline)
+    raw_pts = [
+        (-42.325, -25.519), (-41.308, -26.518), (-39.52, -27.017),
+        (40.297, -26.942), (41.28, -26.55), (42.433, -25.341),
+        (42.817, -23.594), (42.826, 23.406), (42.714, 24.602),
+        (42.272, 25.612), (40.763, 26.802), (39.166, 27.028),
+        (-39.419, 27.026), (-41.286, 26.556), (-42.452, 25.319),
+        (-42.816, 23.879), (-42.791, -24.264)
+    ]
+
+    # Reference bbox from measured data
+    L0 = 42.826 - (-42.325)  # 85.151
+    W0 = 27.028 - (-27.017)  # 54.045
+
+    sx = p["card_length"] / L0
+    sy = p["card_width"] / W0
+
+    # scale to parametric size
+    scaled = [(x * sx, y * sy) for x, y in raw_pts]
+
+    # re-center at origin after scaling
+    xs = [v[0] for v in scaled]
+    ys = [v[1] for v in scaled]
+    cx = (max(xs) + min(xs)) * 0.5
+    cy = (max(ys) + min(ys)) * 0.5
+    centered = [(x - cx, y - cy) for x, y in scaled]
+
+    # topology param: corner_segments controls optional intermediate point insertion
+    # (keeps solid body but allows integer variation for testing)
+    n = int(p["corner_segments"])
+    pts = []
+    if n <= 1:
+        pts = centered
+    else:
+        # subdivide each edge into n segments by linear interpolation
+        for i in range(len(centered)):
+            a = centered[i]
+            b = centered[(i + 1) % len(centered)]
+            for k in range(n):
+                t = k / float(n)
+                pts.append((a[0] * (1 - t) + b[0] * t, a[1] * (1 - t) + b[1] * t))
+
+    # mounting face on Z=0, +Z up, long axis +X, centred at origin
+    # Workplane XY is at Z=0, extrude positive Z gives solid to thickness
+    s = cq.Workplane("XY").polyline(pts).close().extrude(p["thickness"])
+
+    # ensure flat top/bottom (extrude already flat)
+    return s
+
+result = build({k: v[0] for k, v in PARAMS.items()})

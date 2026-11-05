@@ -1,0 +1,66 @@
+import cadquery as cq
+import math
+
+PARAMS = {
+    "thickness": (14.7, 10.0, 20.0, 0.1, "mm", False, "Thickness (Z height)"),
+    "length_scale": (1.0, 0.8, 1.2, 0.01, "", False, "Length scale X"),
+    "width_scale": (1.02, 0.8, 1.2, 0.01, "", False, "Width scale Y"),
+    "clearance": (0.2, 0.0, 1.0, 0.05, "mm", True, "Fit clearance"),
+    "bevel_n": (0, 0, 4, 1, "", False, "Bevel steps (topology)"),
+}
+
+def build(p: dict) -> cq.Workplane:
+    # Base profile measured from PartSpec, polyline points in mm (XY plane)
+    base_pts = [
+        [-24.464, -6.099],
+        [-10.333, -6.28],
+        [0.098, -6.106],
+        [3.565, -6.3],
+        [24.322, -6.121],
+        [24.556, -5.175],
+        [24.522, 0.601],
+        [24.722, 1.322],
+        [24.36, 5.588],
+        [23.956, 6.168],
+        [23.041, 6.281],
+        [-23.8, 6.201],
+        [-24.354, 5.727],
+        [-24.614, 4.539],
+        [-24.718, 1.209],
+        [-24.425, -0.561],
+        [-24.394, -3.215],
+        [-24.632, -3.573],
+    ]
+
+    ls = float(p["length_scale"])
+    ws = float(p["width_scale"])
+    th = float(p["thickness"])
+    bn = int(p["bevel_n"])
+
+    # Apply scaling centered at origin (keeps model centred at origin, long axis +X)
+    pts = [(x * ls, y * ws) for x, y in base_pts]
+
+    # Build closed wire on XY plane (mounting face on Z=0) and extrude solid +Z
+    wp = cq.Workplane("XY")
+    wp = wp.moveTo(pts[0][0], pts[0][1])
+    for x, y in pts[1:]:
+        wp = wp.lineTo(x, y)
+    wp = wp.close()
+
+    # Extrude to thickness - solid body over most of footprint
+    solid = wp.extrude(th, both=False)
+
+    # Optional topology-driven edge treatment (kept minimal for robustness)
+    # bn controls a small chamfer attempt if requested, otherwise leave sharp
+    if bn > 0:
+        try:
+            # small chamfer size proportional to thickness, limited to avoid breakage
+            cham = min(0.4 * bn, th * 0.18, 0.8)
+            # chamfer top edges only - select top horizontal edges
+            solid = solid.edges("|Z and >Z").chamfer(cham)
+        except Exception:
+            pass
+
+    return solid
+
+result = build({k: v[0] for k, v in PARAMS.items()})

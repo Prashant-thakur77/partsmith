@@ -1,0 +1,91 @@
+import cadquery as cq
+import math
+
+PARAMS = {
+    "card_length": (85.6, 80.0, 90.0, 0.1, "mm", True, "Card length X"),
+    "card_width": (54.0, 50.0, 60.0, 0.1, "mm", True, "Card width Y"),
+    "thickness": (0.8, 0.5, 1.5, 0.01, "mm", True, "Card thickness Z"),
+    "marker_count": (0, 0, 5, 1, "", False, "Reference markers count"),
+    "marker_dia": (3.0, 1.0, 6.0, 0.5, "mm", False, "Marker diameter"),
+}
+
+def build(p: dict) -> cq.Workplane:
+    card_length = float(p["card_length"])
+    card_width = float(p["card_width"])
+    thickness = float(p["thickness"])
+    marker_count = int(p["marker_count"])
+    marker_dia = float(p["marker_dia"])
+
+    # measured polyline from PartSpec (ID-1 outline)
+    base_pts = [
+        (-42.233, 25.674),
+        (-42.651, 24.868),
+        (-42.847, 23.594),
+        (-42.846, -23.676),
+        (-42.454, -25.313),
+        (-41.333, -26.56),
+        (-40.375, -26.938),
+        (-38.794, -27.048),
+        (39.66, -27.057),
+        (41.154, -26.641),
+        (42.376, -25.509),
+        (42.841, -23.647),
+        (42.842, 23.518),
+        (42.518, 25.163),
+        (41.521, 26.387),
+        (40.043, 27.007),
+        (-38.61, 27.066),
+        (-40.733, 26.835),
+    ]
+
+    # original measured extents
+    orig_length = 42.842 - (-42.847)  # ~85.689 average, use computed from pts
+    # more accurate: maxX - minX
+    xs = [pt[0] for pt in base_pts]
+    ys = [pt[1] for pt in base_pts]
+    orig_length_calc = max(xs) - min(xs)
+    orig_width_calc = max(ys) - min(ys)
+    # fallback to nominal if calc zero
+    if orig_length_calc == 0:
+        orig_length_calc = 85.493
+    if orig_width_calc == 0:
+        orig_width_calc = 54.123
+
+    sx = card_length / orig_length_calc
+    sy = card_width / orig_width_calc
+
+    # scale about origin (profile is already centred at origin)
+    scaled_pts = [(x * sx, y * sy) for x, y in base_pts]
+
+    # build solid card: mounting face on Z=0, +Z up, centred at origin, long axis +X
+    wp = cq.Workplane("XY")
+    wp = wp.moveTo(scaled_pts[0][0], scaled_pts[0][1])
+    for pt in scaled_pts[1:]:
+        wp = wp.lineTo(pt[0], pt[1])
+    wp = wp.close()
+    card = wp.extrude(thickness, combine=True)
+
+    # topology parameter: optional reference markers on top face (default 0 -> pure card)
+    if marker_count > 0:
+        # place markers evenly along central X axis, recessed slightly as shallow emboss
+        # they sit on top face so base thickness is preserved over most of footprint
+        spacing = 0.0
+        if marker_count > 1:
+            usable = card_length * 0.6
+            spacing = usable / (marker_count - 1)
+            start_x = -usable / 2.0
+        else:
+            start_x = 0.0
+        for i in range(marker_count):
+            if marker_count == 1:
+                cx = 0.0
+            else:
+                cx = start_x + i * spacing
+            cy = 0.0
+            # shallow cylinder on top surface
+            marker = cq.Workplane("XY").workplane(offset=thickness).moveTo(cx, cy).circle(marker_dia / 2.0).extrude(0.15)
+            card = card.union(marker)
+
+    return card
+
+result = build({k: v[0] for k, v in PARAMS.items()})
