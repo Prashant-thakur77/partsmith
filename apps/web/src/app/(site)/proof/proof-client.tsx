@@ -8,7 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { CopyButton } from "@/components/ui/copy-button";
 import { ErrorState } from "@/components/ui/error-state";
 import { Skeleton } from "@/components/ui/skeleton";
-import { proofApi, rateText, type Proof, type ProofEntry, type ScaleReport } from "@/lib/api-proof";
+import { maskSourceTotals, proofApi, rateText, type Proof, type ProofEntry, type ScaleReport } from "@/lib/api-proof";
 import { REPO_URL } from "@/lib/site-links";
 
 const fileUrl = (path: string) => `${REPO_URL}/blob/main/${path}`;
@@ -192,17 +192,21 @@ function Scale({ s }: { s: ScaleReport }) {
   const paired = s.paired_b1_vs_ps;
   const off = s.verified_but_off;
   const family = rateText(s.understanding?.family_correct);
-  const broken = rateText(s.understanding?.broken_region_found);
+  const brokenKept = rateText(s.understanding?.broken_region_kept_on_broken);
+  const falseBreak = rateText(s.understanding?.broken_region_kept_on_intact);
+  const samMask = rateText(s.sam?.mask_returned);
+  const whenMask = s.sam?.when_returned;
+  const sources = maskSourceTotals(s.mask_sources);
   const wonder = rateText(s.wonder?.accepted_with_citation);
   const spoken = rateText(s.voice?.spoken);
-  const presets = Object.entries(s.sam?.by_preset ?? {});
   const top = rateText(off?.top_only);
   const side = rateText(off?.top_and_side);
   return (
     <div className="space-y-3">
       <p className="max-w-3xl text-[13.5px] leading-6 text-muted">
         Fresh live runs on new rendered samples, with sizes fixed in a written plan before anything ran: {runs} of {planned} planned runs
-        finished{s.usd?.total != null ? ` for $${s.usd.total}` : ""}. Failures stay in. None of this is a phone capture.
+        finished{s.usd?.total != null ? ` for $${s.usd.total}` : ""}
+        {s.stop?.stop_reason === "time" ? ", then the time limit stopped it" : ""}. Failures stay in. None of this is a phone capture.
       </p>
       <ul className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-3">
         <ScaleRow
@@ -218,15 +222,18 @@ function Scale({ s }: { s: ScaleReport }) {
         <ScaleRow what="verified but off, intact parts, top photo only" headline={top?.headline} ci={top?.ci} />
         <ScaleRow what="verified but off, intact parts, top and side photos" headline={side?.headline} ci={side?.ci} />
         <ScaleRow what="Muse Spark named the right part family" headline={family?.headline} ci={family?.ci} />
-        <ScaleRow what="Muse Spark found the break on broken parts" headline={broken?.headline} ci={broken?.ci} />
-        {presets.slice(0, 3).map(([name, p]) => (
-          <ScaleRow
-            key={name}
-            what={`SAM 3.1 median overlap with true mask, ${name.replaceAll("_", " ")}, n = ${p.n}`}
-            headline={p.iou_median != null ? String(p.iou_median) : null}
-            note={p.boundary_mean_mm_median != null ? `median boundary error ${p.boundary_mean_mm_median} mm` : null}
-          />
-        ))}
+        <ScaleRow what="Muse Spark kept a broken region on broken parts" headline={brokenKept?.headline} ci={brokenKept?.ci} />
+        <ScaleRow what="Muse Spark wrongly kept a broken region on intact parts" headline={falseBreak?.headline} ci={falseBreak?.ci} />
+        <ScaleRow
+          what="rendered photos where SAM 3.1 returned a mask above the confidence floor, asked for “plastic part”"
+          headline={samMask?.headline}
+          ci={samMask?.ci}
+          note={`${whenMask?.iou_median != null ? `When it did, its median overlap with the true mask was ${whenMask.iou_median}. ` : ""}The threshold fallback was off for this test.`}
+        />
+        <ScaleRow
+          what="full-loop runs that measured from a SAM 3.1 mask; the rest used the colour-threshold fallback"
+          headline={sources ? `${sources.sam} of ${sources.measured}` : null}
+        />
         <ScaleRow what="Muse Wonder lookups where code accepted a cited value" headline={wonder?.headline} ci={wonder?.ci} />
         <ScaleRow what="spoken Hindi and English edits that made the right change" headline={spoken?.headline} ci={spoken?.ci} note={s.voice?.speech ? `Speech: ${s.voice.speech}` : null} />
       </ul>

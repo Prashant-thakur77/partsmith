@@ -1,4 +1,5 @@
 import { expect, test, type Page } from "@playwright/test";
+import { status } from "./fixtures/api";
 import { expectAccessible, realErrors, setup } from "./helpers";
 
 const contentProject = (name: string) => name.startsWith("desktop-light") || name.startsWith("mobile-dark");
@@ -108,4 +109,30 @@ test("/gallery holds off the 3D until a card is near the screen", async ({ page 
   const cards = await page.locator('a[href^="/playground?t="], a[href^="/parts/"]').count();
   expect(cards).toBeGreaterThan(6);
   await expect.poll(() => page.locator("canvas").count()).toBeLessThan(cards);
+});
+
+test("no model keys: /fix and /describe say so beside the button, and a live server says nothing", async ({ page }) => {
+  const { errors } = await setup(page); // the mock server reports mode "mock"
+  await page.goto("/fix");
+  const note = page.getByTestId("no-keys");
+  await expect(note).toContainText("This server has no model keys.");
+  await expect(note.getByRole("link", { name: "a recorded live run" })).toHaveAttribute("href", "/judges");
+  await page.goto("/describe");
+  await expect(note).toContainText("runs on simple rules");
+  await expectAccessible(page);
+  await page.route("**/api/v1/status", (route) => route.fulfill({ json: { ...status, mode: "live" } }));
+  await page.goto("/fix");
+  await expect(page.getByLabel("Upload Top view photo")).toBeAttached();
+  await expect(page.getByRole("button", { name: "Start the fix" })).toBeVisible();
+  await expect(note).toHaveCount(0);
+  expect(realErrors(errors)).toEqual([]);
+});
+
+test("/proof: the large evaluation shows how often SAM 3.1's mask was used, not only when it worked", async ({ page }) => {
+  await setup(page);
+  await page.goto("/proof");
+  const scale = page.getByRole("region", { name: "The large evaluation" });
+  await expect(scale).toContainText("38 of 494");
+  await expect(scale).toContainText("19 of 191");
+  await expect(scale).toContainText("the time limit stopped it");
 });

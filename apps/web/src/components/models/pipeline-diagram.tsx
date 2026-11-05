@@ -8,7 +8,7 @@ type Step = { stage: string; what: string } | { code: string; what: string } | {
 
 export const FIX_PIPELINE: Step[] = [
   { person: "Photo on the mat", what: "A phone photo of the part on the laptop screen" },
-  { stage: "segment", what: "Cuts the part out of the photo" },
+  { stage: "segment", what: "Cuts the part out of the photo, when its mask clears the confidence floor" },
   { code: "Markers → millimetres", what: "Screen markers set the scale; code measures" },
   { stage: "understand", what: "Names the part and its features" },
   { stage: "plan", what: "Picks a part program and its knobs" },

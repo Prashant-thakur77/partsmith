@@ -26,6 +26,7 @@ const job = (over = {}) => ({
   recorded: false,
   sample: false,
   mock: false,
+  standIn: false,
   ...over,
 });
 
@@ -105,6 +106,7 @@ test("the label says recorded, rendered or mock, and stays quiet on a real live 
   assert.equal(jobPlain(job({ sample: true })).label, "Rendered sample photo, not a phone capture.");
   assert.match(jobPlain(job({ recorded: true, sample: true })).label, /^Recorded run on a rendered sample photo: played back/);
   assert.match(jobPlain(job({ mock: true })).label, /^Mock run/);
+  assert.match(jobPlain(job({ standIn: true })).label, /says nothing about your part\.$/);
 });
 
 test("results in plain words: four answers from the report's own headlines, and real parts stay at not measured", () => {
@@ -135,6 +137,16 @@ test("how: eight steps, each with plain words and a reason, and every picture is
   }
   // the one step without a picture shows the program's own lines
   assert.deepEqual(FLOW_STEPS.filter((s) => !s.images.length).map((s) => s.id), ["program"]);
+});
+
+test("how: the outline step says what the recorded run really measured from", () => {
+  const run = DECK.run.id;
+  const stored = JSON.parse(readFileSync(new URL(`../../../data/replays/${run}/measurements.json`, import.meta.url), "utf8"));
+  const source = (stored.top ?? stored).mask_source;
+  const step = FLOW_STEPS.find((s) => s.id === "outline");
+  assert.equal(source, "threshold", "if the showcased run changes, this step's words must change with it");
+  assert.match(step.plain, /the threshold drew this outline/);
+  assert.match(step.images[0].caption, /colour-threshold fallback, not SAM 3\.1/);
 });
 
 test("how: the steps' numbers are the run's own, nothing typed", () => {

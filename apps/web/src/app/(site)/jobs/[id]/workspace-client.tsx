@@ -516,6 +516,7 @@ export function WorkspaceClient({ id }: { id: string }) {
     recorded: replay,
     sample: sum.origin === "synthetic",
     mock: sum.provider_mode === "mock" && !replay,
+    standIn: sum.provider_mode === "replay" && !replay,
   });
 
   return (

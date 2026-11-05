@@ -165,7 +165,7 @@ function PeopleUse({ table }: { table: Landscape }) {
         <Link href="/proof" className="underline underline-offset-2 hover:text-fg">
           not tested yet
         </Link>
-        . What makes that row possible is SAM 3.1 used as a measuring instrument and Muse Spark Open writing the program on open weights:{" "}
+        . What makes that row possible is millimetres read from the mat&apos;s markers and an outline, and Muse Spark Open writing the program on open weights:{" "}
         <Link href="/models" className="underline underline-offset-2 hover:text-fg">
           which AI did what
         </Link>

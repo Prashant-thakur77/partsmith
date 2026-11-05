@@ -26,6 +26,8 @@ export type JobPlainInput = {
   recorded: boolean;
   sample: boolean;
   mock: boolean;
+  /** A new job on a server with no model keys: its model steps ran on recorded or stand-in answers. */
+  standIn: boolean;
 };
 
 export type JobPlain = { tone: PlainTone; happened: string; why: string[]; next: string; actions: PlainAction[]; label: string | null };
@@ -37,8 +39,9 @@ function roundsLine(gaps: readonly number[]): string | null {
   return null;
 }
 
-function runLabel(i: Pick<JobPlainInput, "recorded" | "sample" | "mock">): string | null {
+function runLabel(i: Pick<JobPlainInput, "recorded" | "sample" | "mock" | "standIn">): string | null {
   if (i.mock) return "Mock run: stand-in answers instead of a model, to show the flow.";
+  if (i.standIn) return "This server has no model keys, so the model steps used recorded or stand-in answers. This result says nothing about your part.";
   if (i.recorded) return `Recorded run${i.sample ? " on a rendered sample photo" : ""}: played back from its log, so no model is called now.`;
   return i.sample ? "Rendered sample photo, not a phone capture." : null;
 }

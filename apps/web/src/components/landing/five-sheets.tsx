@@ -33,7 +33,7 @@ const STEPS: { key: Key; title: string; body: string }[] = [
   {
     key: "mm",
     title: "The photo becomes millimetres",
-    body: "Code finds the markers and flattens the photo; an image model traces the outline. Every length from here on is measured by code, in millimetres.",
+    body: "Code finds the markers and flattens the photo; an image model traces the outline, or a plain colour threshold does when its mask is not confident enough. Every length from here on is measured by code, in millimetres.",
   },
   {
     key: "code",

@@ -6,6 +6,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import * as React from "react";
 import { MATE_TAP_KINDS, PhotoSlot, type SlotValue, type TapPoint } from "@/components/fix/photo-slot";
+import { NoKeysNote } from "@/components/shell/no-keys-note";
 import { HiddenDimsField } from "@/components/fix/hidden-dims-field";
 import { hiddenDimsPayload, type HiddenRow } from "@/lib/hidden-dims";
 import { VideoSlot } from "@/components/fix/video-slot";
@@ -384,6 +385,7 @@ export function FixClient() {
             ) : null}
             {start.isError && !refusal ? <ErrorState error={start.error} compact what="the job" /> : null}
             {noteProblem && whyNot !== noteProblem ? <p className="text-[12px] text-bad">{noteProblem}</p> : null}
+            <NoKeysNote what="The photo checks are real code, but the model steps would use recorded or stand-in answers, so the result would say nothing about your part." />
             <Button variant="primary" size="lg" className="w-full" disabled={!canStart} onClick={() => start.mutate()} aria-describedby={whyNot ? "fix-why" : undefined}>
               {start.isPending ? <Spinner className="text-accent-fg" label="Starting" /> : null}
               {start.isPending ? t("fix.starting") : t("fix.start")}

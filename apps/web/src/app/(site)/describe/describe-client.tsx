@@ -10,6 +10,7 @@ import { PrintItPanel } from "@/components/product/print-it-panel";
 import { TemplateAckNotice, TemplateExport } from "@/components/product/template-export";
 import { useTemplateBake } from "@/components/product/use-template-bake";
 import { KnobPanel } from "@/components/registry/knob-panel";
+import { NoKeysNote } from "@/components/shell/no-keys-note";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -86,6 +87,7 @@ function DescribeForm({ initial = "" }: { initial?: string }) {
           </button>
         ))}
       </div>
+      <NoKeysNote what="Code still picks the template and rebuilds it for real, but the step that reads your words runs on simple rules instead of a model." />
       <div className="flex flex-wrap items-center gap-3">
         <Button type="submit" variant="primary" disabled={!ok || run.isPending}>
           {run.isPending ? <Spinner className="text-accent-fg" label="Working" /> : <Sparkles aria-hidden />}

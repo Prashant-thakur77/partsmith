@@ -31,7 +31,7 @@ const GateSchema = z.object({
 const RateSchema = z.object({ k: z.number(), n: z.number(), rate: z.nullish(z.number()), ci95: z.nullish(z.array(z.number())) });
 export type Rate = z.output<typeof RateSchema>;
 
-const ScaleSchema = z.object({
+export const ScaleSchema = z.object({
   generated_at: z.nullish(z.string()),
   label: z.nullish(z.string()),
   runs: z.nullish(z.record(z.string(), z.number())),
@@ -48,13 +48,24 @@ const ScaleSchema = z.object({
       helpful_shown: z.nullish(z.boolean()),
     }),
   ),
-  understanding: z.nullish(z.object({ family_correct: z.nullish(RateSchema), broken_region_found: z.nullish(RateSchema), false_break_on_intact: z.nullish(RateSchema) })),
+  stop: z.nullish(z.object({ stop_reason: z.nullish(z.string()), done: z.nullish(z.number()), not_started: z.nullish(z.number()) })),
+  understanding: z.nullish(
+    z.object({
+      family_correct: z.nullish(RateSchema),
+      template_chosen_correct: z.nullish(RateSchema),
+      broken_region_kept_on_broken: z.nullish(RateSchema),
+      broken_region_kept_on_intact: z.nullish(RateSchema),
+    }),
+  ),
+  /** Per suite, how many full-loop runs measured from each outline source ("threshold", "sam-3.1", "no measure line"). */
+  mask_sources: z.nullish(z.record(z.string(), z.record(z.string(), z.number()))),
   sam: z.nullish(
     z.object({
       ran: z.nullish(z.number()),
       planned: z.nullish(z.number()),
       errors: z.nullish(z.number()),
-      by_preset: z.nullish(z.record(z.string(), z.object({ n: z.number(), iou_median: z.nullish(z.number()), boundary_mean_mm_median: z.nullish(z.number()) }))),
+      mask_returned: z.nullish(RateSchema),
+      when_returned: z.nullish(z.object({ n: z.nullish(z.number()), iou_median: z.nullish(z.number()), boundary_mean_mm_median: z.nullish(z.number()) })),
     }),
   ),
   wonder: z.nullish(z.object({ accepted_with_citation: z.nullish(RateSchema) })),
@@ -84,6 +95,20 @@ export const ProofSchema = z.object({
 export type Proof = z.output<typeof ProofSchema>;
 
 /** A rate as "k of n", with its interval when the report has one. */
+/** Across every suite: runs measured from a SAM 3.1 mask, and runs that reached measuring at all. Null when the report has none. */
+export function maskSourceTotals(sources: Record<string, Record<string, number>> | null | undefined): { sam: number; measured: number } | null {
+  let sam = 0;
+  let measured = 0;
+  for (const suite of Object.values(sources ?? {})) {
+    for (const [source, count] of Object.entries(suite)) {
+      if (source === "no measure line") continue;
+      measured += count;
+      if (source.startsWith("sam")) sam += count;
+    }
+  }
+  return measured ? { sam, measured } : null;
+}
+
 export function rateText(r: Rate | null | undefined): { headline: string; ci: string | null } | null {
   if (!r) return null;
   const ci = r.ci95 && r.ci95.length === 2 ? `[${r.ci95[0]}, ${r.ci95[1]}]` : null;

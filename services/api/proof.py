@@ -271,7 +271,7 @@ def _scale() -> dict[str, Any] | None:
     if not s:
         return None
     keep = ("generated_at", "label", "runs", "planned", "not_run", "statuses", "usd", "wall_s", "tables", "paired_b1_vs_ps",
-            "verified_but_off", "understanding", "sam", "wonder", "voice")  # fmt: skip
+            "verified_but_off", "understanding", "mask_sources", "sam", "wonder", "voice", "stop")  # fmt: skip
     return {k: s.get(k) for k in keep} | {
         "source": f"{LATEST}/scale.json",
         "command": "uv run python -m eval.scale_report",
