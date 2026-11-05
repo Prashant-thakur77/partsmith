@@ -1,0 +1,218 @@
+{
+  "top": {
+    "view": "top",
+    "origin": "synthetic",
+    "outline_mm": [
+      [
+        -19.677,
+        -14.351
+      ],
+      [
+        -18.948,
+        -14.79
+      ],
+      [
+        -12.118,
+        -14.722
+      ],
+      [
+        -7.921,
+        -14.904
+      ],
+      [
+        -6.121,
+        -14.752
+      ],
+      [
+        15.46,
+        -14.908
+      ],
+      [
+        16.392,
+        -14.713
+      ],
+      [
+        19.792,
+        -14.846
+      ],
+      [
+        20.915,
+        -14.496
+      ],
+      [
+        21.928,
+        -13.592
+      ],
+      [
+        22.512,
+        -11.646
+      ],
+      [
+        22.572,
+        -4.709
+      ],
+      [
+        22.309,
+        -1.516
+      ],
+      [
+        22.456,
+        11.922
+      ],
+      [
+        21.968,
+        13.502
+      ],
+      [
+        20.652,
+        14.514
+      ],
+      [
+        19.195,
+        14.837
+      ],
+      [
+        -18.46,
+        14.849
+      ],
+      [
+        -19.656,
+        14.488
+      ],
+      [
+        -19.922,
+        14.015
+      ],
+      [
+        -20.052,
+        11.417
+      ],
+      [
+        -19.986,
+        2.689
+      ],
+      [
+        -20.387,
+        2.386
+      ],
+      [
+        -21.382,
+        2.383
+      ],
+      [
+        -22.48,
+        1.976
+      ],
+      [
+        -22.572,
+        -1.036
+      ],
+      [
+        -22.395,
+        -2.139
+      ],
+      [
+        -21.507,
+        -2.422
+      ],
+      [
+        -20.394,
+        -2.259
+      ],
+      [
+        -19.958,
+        -3.369
+      ],
+      [
+        -19.956,
+        -13.49
+      ]
+    ],
+    "holes": [],
+    "slots": [],
+    "length": {
+      "value": 45.145,
+      "source": "measured",
+      "sigma_mm": 0.22,
+      "evidence": {
+        "view": "top",
+        "pixels": [
+          [
+            1053.28,
+            724.61
+          ],
+          [
+            1008.88,
+            883.07
+          ]
+        ],
+        "note": "long side of the footprint's minimum-area rectangle; mask confidence 0.84 (sam-3.1): \u00b1\u03c3 \u00d7 1.33",
+        "citation": null
+      },
+      "bound_mm": [
+        45.145,
+        45.316
+      ]
+    },
+    "width": {
+      "value": 29.824,
+      "source": "measured",
+      "sigma_mm": 0.218,
+      "evidence": {
+        "view": "top",
+        "pixels": [
+          [
+            978.78,
+            789.13
+          ],
+          [
+            1083.47,
+            818.54
+          ]
+        ],
+        "note": "short side of the footprint's minimum-area rectangle; mask confidence 0.84 (sam-3.1): \u00b1\u03c3 \u00d7 1.33",
+        "citation": null
+      },
+      "bound_mm": [
+        29.824,
+        29.937
+      ]
+    },
+    "thickness": {
+      "value": 1.5,
+      "source": "user_stated",
+      "sigma_mm": 0.3,
+      "evidence": null,
+      "bound_mm": null
+    },
+    "area_mm2": 1263.46,
+    "symmetry_axis_deg": 0.02,
+    "symmetry_score": 0.9935,
+    "height_correction_scale": 0.996232,
+    "part_to_mat": [
+      [
+        0.36483375752850833,
+        0.9310726767377666,
+        130.48654174804688
+      ],
+      [
+        0.9310726767377666,
+        -0.36483375752850833,
+        69.10772705078125
+      ],
+      [
+        0.0,
+        0.0,
+        1.0
+      ]
+    ],
+    "mask_source": "sam-3.1",
+    "mask_confidence": 0.8359,
+    "notes": [
+      "camera intrinsics: exif; camera 398 mm above the mat, tilt 1.2\u00b0",
+      "mask re-segmented on a full-resolution crop",
+      "height-corrected for a 1.50 mm top face: outline mapped onto the mat plane and the top-face plane (scale 0.9962 about the camera nadir) and intersected; through-holes fitted as vertical cylinders to the region where the mat shows through",
+      "top view at 1.5 mm: read with every edge at the stated height; an end or side that sits lower reads short, so this photo alone allows length 45.15\u201345.32 mm, width 29.82\u201329.94 mm (a side photo settles it)"
+    ]
+  }
+}

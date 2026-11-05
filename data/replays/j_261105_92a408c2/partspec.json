@@ -1,0 +1,169 @@
+{
+  "family": "cover",
+  "units": "mm",
+  "title": "Battery compartment cover",
+  "base_profile": {
+    "kind": "polyline",
+    "points_mm": [
+      [
+        -19.677,
+        -14.351
+      ],
+      [
+        -18.948,
+        -14.79
+      ],
+      [
+        -12.118,
+        -14.722
+      ],
+      [
+        -7.921,
+        -14.904
+      ],
+      [
+        -6.121,
+        -14.752
+      ],
+      [
+        15.46,
+        -14.908
+      ],
+      [
+        16.392,
+        -14.713
+      ],
+      [
+        19.792,
+        -14.846
+      ],
+      [
+        20.915,
+        -14.496
+      ],
+      [
+        21.928,
+        -13.592
+      ],
+      [
+        22.512,
+        -11.646
+      ],
+      [
+        22.572,
+        -4.709
+      ],
+      [
+        22.309,
+        -1.516
+      ],
+      [
+        22.456,
+        11.922
+      ],
+      [
+        21.968,
+        13.502
+      ],
+      [
+        20.652,
+        14.514
+      ],
+      [
+        19.195,
+        14.837
+      ],
+      [
+        -18.46,
+        14.849
+      ],
+      [
+        -19.656,
+        14.488
+      ],
+      [
+        -19.922,
+        14.015
+      ],
+      [
+        -20.052,
+        11.417
+      ],
+      [
+        -19.986,
+        2.689
+      ],
+      [
+        -20.387,
+        2.386
+      ],
+      [
+        -21.382,
+        2.383
+      ],
+      [
+        -22.48,
+        1.976
+      ],
+      [
+        -22.572,
+        -1.036
+      ],
+      [
+        -22.395,
+        -2.139
+      ],
+      [
+        -21.507,
+        -2.422
+      ],
+      [
+        -20.394,
+        -2.259
+      ],
+      [
+        -19.958,
+        -3.369
+      ],
+      [
+        -19.956,
+        -13.49
+      ]
+    ],
+    "source": "measured",
+    "sigma_mm": 0.22
+  },
+  "thickness": {
+    "value": 1.5,
+    "source": "user_stated",
+    "sigma_mm": 0.3,
+    "evidence": null,
+    "bound_mm": null
+  },
+  "features": [],
+  "broken_region": null,
+  "fit": {
+    "clearance_mm": 0.2,
+    "material": "PLA",
+    "printer": "FDM_0_4"
+  },
+  "unknowns": [
+    {
+      "id": "underside_latch",
+      "question": "What do the underside latch, ribs or screw posts look like? Please provide underside and side photos with heights.",
+      "expects": "text",
+      "default": null,
+      "choices": null
+    },
+    {
+      "id": "mating_opening",
+      "question": "What are the battery compartment opening dimensions and clearance needed for a sliding/snap fit?",
+      "expects": "text",
+      "default": null,
+      "choices": null
+    }
+  ],
+  "intent": "Make a replacement for this broken battery compartment cover.",
+  "refusal": null,
+  "template_hint": "battery_cover"
+}

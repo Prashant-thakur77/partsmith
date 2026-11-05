@@ -1,0 +1,28 @@
+{
+  "model": "muse-spark-1.3",
+  "mode": "live",
+  "scores": [
+    {
+      "criterion": "outline",
+      "score": 5,
+      "reason": "Outline with end tab and rounded corners opposite tab follows the photo."
+    },
+    {
+      "criterion": "features",
+      "score": 5,
+      "reason": "Single locating tab is present in correct place for outline-only part."
+    },
+    {
+      "criterion": "printability",
+      "score": 5,
+      "reason": "Flat plate with solid tab has flat face and no thin walls."
+    },
+    {
+      "criterion": "fit",
+      "score": 4,
+      "reason": "Covers compartment opening shape as a replacement cover."
+    }
+  ],
+  "vetoes": [],
+  "notes": "Top outline with end tab matches photo; small edge irregularities are sub-mm. Underside latch rib seen in 3D cannot be verified from top photo but does not alter outline."
+}

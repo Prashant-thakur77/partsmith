@@ -1,0 +1,16 @@
+{
+  "id": "j_261105_92a408c2",
+  "kind": "fix",
+  "status": "done",
+  "created_at": 1793839841.3974524,
+  "updated_at": 1793840113.6371121,
+  "title": "Battery compartment cover (synthetic, clean)",
+  "origin": "synthetic",
+  "provider_mode": "live",
+  "verified": true,
+  "max_error_mm": 0.2492413377485576,
+  "iterations": 2,
+  "cost_usd": 0.23238,
+  "part_slug": null,
+  "is_replay": false
+}

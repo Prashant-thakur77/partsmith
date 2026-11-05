@@ -175,8 +175,9 @@ and nothing checked what it said.
 
 - **A phone becomes a measuring tool, with a fallback.** The screen's markers give the scale. SAM 3.1 is asked first for the part's
   mask, from a text prompt and with no per-part training, and point prompts ask for single holes and slots. When SAM returns nothing
-  confident, code's threshold segmenter measures instead, and every run logs which one it used. On our rendered and pasted test
-  photos the fallback has measured most runs; see [Mask sources](#mask-sources).
+  confident, code's threshold segmenter measures instead, and every run logs which one it used. In the stored runs the fallback
+  measured most of them; a colour-aware prompt added afterwards raised SAM's usable masks from 5 to 91 of 147 photos. See
+  [Mask sources](#mask-sources).
 - **A photo becomes a structured description.** Muse Spark names the part and its features, finds the break and points at the
   pixel each hole is at, which SAM 3.1 then cuts and code measures.
 - **CAD can be written and corrected.** Muse Spark Open, on open weights, writes the program and runs a fix loop over our own
@@ -196,8 +197,8 @@ workspace shows them live. This table's file:line links are generated from the c
 <!-- BEGIN:meta-tooling -->
 | Meta model | How we run it | Role | Where |
 |---|---|---|---|
-| **SAM 3.1** | Meta Model API | Asked first for the part mask on every photo, with point-prompted cuts for holes and slots and video tracking of a walk-around clip. When it returns no confident mask, code's threshold segmenter measures instead, and each run logs which one was used: on rendered and pasted photos the fallback has measured most runs (see Mask sources under Results) | [`services/agent/providers/routing.py:110`](services/agent/providers/routing.py#L110) · [`services/metrology/segment.py:696`](services/metrology/segment.py#L696) · [`services/agent/evidence.py:166`](services/agent/evidence.py#L166) · [`services/agent/evidence.py:239`](services/agent/evidence.py#L239) |
-| **Muse Spark 1.3** | Meta Model API | Understand stage: family, features, broken region, unknowns (strict PartSpec JSON), and the pixel it saw each hole or slot at, which SAM 3.1 then cuts and code measures. Watches and listens to a narrated walk-around clip and points at the features it hears about (frame and pixel), kept only if they land on the part. Turns a reviewer's notes into family rules the person ticks before they are kept, judges when Glimmer is not deployed, and turns a typed or spoken description with numbers into one template part whose numbers code then measures | [`services/agent/orchestrator.py:1233`](services/agent/orchestrator.py#L1233) · [`services/registry/describe.py:536`](services/registry/describe.py#L536) · [`services/review/rules.py:83`](services/review/rules.py#L83) · [`services/agent/evidence.py:57`](services/agent/evidence.py#L57) · [`services/agent/evidence.py:314`](services/agent/evidence.py#L314) |
+| **SAM 3.1** | Meta Model API | Asked first for the part mask on every photo, with point-prompted cuts for holes and slots and video tracking of a walk-around clip. When it returns no confident mask, code's threshold segmenter measures instead, and each run logs which one was used: on rendered and pasted photos the fallback has measured most runs (see Mask sources under Results) | [`services/agent/providers/routing.py:110`](services/agent/providers/routing.py#L110) · [`services/metrology/segment.py:700`](services/metrology/segment.py#L700) · [`services/agent/evidence.py:166`](services/agent/evidence.py#L166) · [`services/agent/evidence.py:239`](services/agent/evidence.py#L239) |
+| **Muse Spark 1.3** | Meta Model API | Understand stage: family, features, broken region, unknowns (strict PartSpec JSON), and the pixel it saw each hole or slot at, which SAM 3.1 then cuts and code measures. Watches and listens to a narrated walk-around clip and points at the features it hears about (frame and pixel), kept only if they land on the part. Turns a reviewer's notes into family rules the person ticks before they are kept, judges when Glimmer is not deployed, and turns a typed or spoken description with numbers into one template part whose numbers code then measures | [`services/agent/orchestrator.py:1233`](services/agent/orchestrator.py#L1233) · [`services/registry/describe.py:540`](services/registry/describe.py#L540) · [`services/review/rules.py:83`](services/review/rules.py#L83) · [`services/agent/evidence.py:57`](services/agent/evidence.py#L57) · [`services/agent/evidence.py:314`](services/agent/evidence.py#L314) |
 | **Muse Spark Open** | open weights (Baseten / Fireworks / Together) | CadQuery builder, and the fix agent that operates PartSmith's own tools (inspect residuals, measure, segment, render, run tests, set knobs) until the verifier agrees | [`services/agent/orchestrator.py:1903`](services/agent/orchestrator.py#L1903) · [`services/agent/agent_loop.py:493`](services/agent/agent_loop.py#L493) |
 | **Muse Glimmer 30B** | open weights (llama.cpp on a Modal GPU) | Independent judge: vetoes plus an advisory 1–5 scorecard (outline, features, printability, fit), shown the photos, the model's silhouettes, a shaded 3D view and crops zoomed on the verifier's worst spots. It can block, never pass | [`services/agent/orchestrator.py:2618`](services/agent/orchestrator.py#L2618) · [`infra/modal/glimmer.py:51`](infra/modal/glimmer.py#L51) |
 | **Muse Wonder** | Meta Model API | Finds a published spec for the named appliance with web search. Code accepts a value only if a search really ran and its URL is one the search returned; cited values fill unknowns and never override a measurement. Also finds the original part's price with search grounding for the buy-or-print card (a price is kept only with its source link and a quote showing it) and plans part families for the factory | [`services/agent/evidence.py:398`](services/agent/evidence.py#L398) · [`services/agent/providers/buy.py:294`](services/agent/providers/buy.py#L294) · [`services/agent/providers/spec.py:140`](services/agent/providers/spec.py#L140) · [`services/registry/steer.py:545`](services/registry/steer.py#L545) |
@@ -512,6 +513,10 @@ SAM 3.1 is asked first, and code's threshold segmenter takes over when it return
 | redteam | 10 | 0 | 20 |
 | reference_objects | 35 | 0 | 4 |
 | synthetic | 172 | 19 | 20 |
+
+**The fix, after that evaluation.** The phrase was the problem: code now reads the part's colour and asks for, say, "orange plastic part" first. On 147 photos (`eval/reports/latest/sam_prompts.json`) SAM returned a usable mask on 5 before and 91 after. Its median overlap with the exact mask is 0.982, against 0.956 for the threshold. It still measures a little worse: median length and width error 0.196 mm against 0.152 mm, and hole diameter 0.238 mm against 0.128 mm. Public photos of real objects barely moved, 1 of 16. These photos are rendered or pasted; real phone photos are untested. The evaluation above ran before this change, so its mask counts describe the old prompt.
+
+A live job on the battery cover after the fix measured from SAM's mask and verified at 0.25 mm in 2 rounds, for $0.23: the stored run is `data/replays/j_261105_92a408c2`, and `/jobs/j_261105_92a408c2` on the site.
 <!-- END:scale -->
 
 ### Bench tables
@@ -997,20 +1002,20 @@ All code in this repository was written during the hackathon (from Oct 26 2026, 
 are computed from `git log`, so they stay true as the history grows.
 
 <!-- BEGIN:built -->
-**66 commits** between 2026-10-27 05:59 ET and 2026-11-04 19:26 ET; the hackathon started 2026-10-26 12:00 ET. Commits dated before the start: **0**.
+**73 commits** between 2026-10-27 05:59 ET and 2026-11-04 19:56 ET; the hackathon started 2026-10-26 12:00 ET. Commits dated before the start: **0**.
 
 | Area | Files added | Lines added: code and docs | Lines added: data, reports, lockfiles, generated | First commit | Last commit |
 |---|---|---|---|---|---|
-| `services/` (Python backend) | 310 | 62,207 | 0 | 2026-10-27 | 2026-11-04 |
-| `apps/web/` (web app) | 502 | 46,902 | 9,359 | 2026-10-27 | 2026-11-04 |
-| `eval/` (benches and reports) | 668 | 7,538 | 92,912 | 2026-10-27 | 2026-11-04 |
+| `services/` (Python backend) | 310 | 62,347 | 0 | 2026-10-27 | 2026-11-04 |
+| `apps/web/` (web app) | 503 | 47,058 | 9,408 | 2026-10-27 | 2026-11-04 |
+| `eval/` (benches and reports) | 1,786 | 8,202 | 176,149 | 2026-10-27 | 2026-11-04 |
 | `packages/` (typed contracts) | 12 | 1,440 | 5,679 | 2026-10-27 | 2026-11-04 |
-| `tools/` (synthetic data, mats, generators) | 41 | 8,693 | 0 | 2026-10-27 | 2026-11-04 |
+| `tools/` (synthetic data, mats, generators) | 41 | 8,770 | 0 | 2026-10-27 | 2026-11-04 |
 | `infra/` (Modal, deploy) | 17 | 1,142 | 101 | 2026-10-27 | 2026-11-04 |
-| `docs/` | 48 | 2,517 | 11,529 | 2026-10-27 | 2026-11-04 |
+| `docs/` | 48 | 2,544 | 11,535 | 2026-10-27 | 2026-11-04 |
 | `data/` (samples, replays) | 4,307 | 0 | 656,602 | 2026-10-27 | 2026-11-04 |
-| root files | 39 | 4,534 | 9,840 | 2026-10-27 | 2026-11-04 |
-| **Total** | **5,944** | **134,973** | **786,022** | | |
+| root files | 39 | 4,666 | 9,854 | 2026-10-27 | 2026-11-04 |
+| **Total** | **7,063** | **136,169** | **869,328** | | |
 
 <details><summary>Every commit since the start, oldest first</summary>
 
@@ -1082,6 +1087,13 @@ are computed from `git log`, so they stay true as the history grows.
 | 2026-11-04 18:54 ET | `f711d38` | fix(web): a photo chosen before the page hydrates is no longer lost; CI e2e waits on real state |
 | 2026-11-04 19:05 ET | `a137af2` | feat(web): /how walks through eight steps of a recorded run, and the job and results pages open in plain words |
 | 2026-11-04 19:26 ET | `58d16b0` | feat: six new part templates in the catalogue, with knob sweeps, plus browser tests for error, empty and keyboard states |
+| 2026-11-04 19:32 ET | `1790639` | feat(eval): large live evaluation, and a correction: SAM 3.1 is asked first, but the fallback measured most runs |
+| 2026-11-04 19:40 ET | `873e4ec` | fix(web): the site says what really drew the outline, /proof reads the real scale report, and buttons say when no model can run |
+| 2026-11-04 19:41 ET | `1d58b86` | fix(deck): true SAM wording, and the live evaluation on the proof slide |
+| 2026-11-04 19:42 ET | `cc5353b` | fix(video): the film states what SAM 3.1 really did and uses the live evaluation's numbers |
+| 2026-11-04 19:45 ET | `a91f52f` | fix(video): the corrected film stays under three minutes |
+| 2026-11-04 19:55 ET | `99e9e1c` | docs(video): storyboard for the corrected film |
+| 2026-11-04 19:56 ET | `afaf203` | feat(metrology): SAM 3.1 prompt names the part's colour, read by code, with a before-and-after measurement |
 
 </details>
 

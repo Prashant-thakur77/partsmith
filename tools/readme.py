@@ -954,6 +954,30 @@ def scale() -> str:
     ]
     for key, v in s["mask_sources"].items():
         rows.append(f"| {key} | {v.get('threshold', 0)} | {v.get('sam-3.1', 0)} | {v.get('no measure line', 0)} |")
+    fix = _load("sam_prompts.json")
+    if fix:
+        old, new = fix["mask_rate"]["old"], fix["mask_rate"]["new"]
+        lw = fix["measures_paired"]["new_length_width"]
+        holes = fix["measures_paired"]["new_hole_diameter"]
+        pub = fix["mask_rate_by_suite"]["public"]["new"]
+        rows += [
+            "",
+            "**The fix, after that evaluation.** The phrase was the problem: code now reads the part's colour and asks for, say, "
+            f'"orange plastic part" first. On {fix["photos"]} photos (`eval/reports/latest/sam_prompts.json`) SAM returned a usable mask on '
+            f"{old['k']} before and {new['k']} after. Its median overlap with the exact mask is {fix['iou_new_vs_exact']['median']:.3f}, against "
+            f"{fix['iou_threshold_vs_exact']['median']:.3f} for the threshold. It still measures a little worse: median length and width error "
+            f"{lw['sam']['median']:.3f} mm against {lw['threshold']['median']:.3f} mm, and hole diameter {holes['sam']['median']:.3f} mm against "
+            f"{holes['threshold']['median']:.3f} mm. Public photos of real objects barely moved, {pub['k']} of {pub['n']}. These photos are rendered or "
+            "pasted; real phone photos are untested. The evaluation above ran before this change, so its mask counts describe the old prompt.",
+        ]
+        run = ROOT / "data/replays/j_261105_92a408c2/summary.json"
+        if run.exists():
+            job = json.loads(run.read_text())
+            rows += [
+                "",
+                f"A live job on the battery cover after the fix measured from SAM's mask and verified at {job['max_error_mm']:.2f} mm in "
+                f"{job['iterations']} rounds, for ${job['cost_usd']:.2f}: the stored run is `data/replays/{job['id']}`, and `/jobs/{job['id']}` on the site.",
+            ]
     return "\n".join(rows)
 
 
