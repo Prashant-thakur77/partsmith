@@ -82,6 +82,7 @@ test("results: four plain answers from the report come first, and real parts say
   await expect(plain.getByRole("term")).toHaveText(["How close does it get?", "On photos of real objects?", "Does it turn bad input away?", "On real broken parts?"]);
   await expect(plain.getByRole("link", { name: "See the table" })).toHaveCount(4);
   await expect(plain).toContainText("Not measured yet.");
+  await expect(plain.getByRole("link", { name: "the test evidence page" })).toHaveAttribute("href", "/proof#scale");
   await expectAccessible(page);
   expect(realErrors(errors)).toEqual([]);
 });

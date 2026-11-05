@@ -22,9 +22,11 @@ PRODUCT_NAMES = {
     "battery_cover": "Battery cover",
     "cable_clip": "Cable clip",
     "caster_wheel": "Caster wheel",
+    "chair_glide": "Chair leg cap",
     "clip": "Shelf panel clip",
     "cupboard_latch": "Cupboard door latch",
     "curtain_ring": "Curtain ring",
+    "desk_grommet": "Desk cable grommet",
     "drawer_runner": "Drawer runner",
     "hinge_leaf": "Hinge leaf",
     "hinge_pin_bracket": "Hinge pin bracket",
@@ -33,8 +35,10 @@ PRODUCT_NAMES = {
     "l_bracket": "L-bracket",
     "lug_cap": "Screw cap",
     "pointer_knob": "Pointer knob",
+    "shelf_pin": "Shelf support pin",
     "sliding_battery_door": "Sliding battery door",
     "spacer": "Spacer",
+    "spur_gear": "Spur gear",
 }
 _NOISE = re.compile(r"\s*\((?:[^)]*synthetic[^)]*|test sample|[^)]*sample[^)]*)\)", re.I)
 

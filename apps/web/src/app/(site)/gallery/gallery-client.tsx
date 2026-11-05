@@ -103,7 +103,7 @@ export function GalleryClient() {
             </ul>
           )}
         </Section>
-        <Section id="templates" title="Templates" description="The families the agent can start from. Open one to drag every knob and see the program change.">
+        <Section id="templates" title="Templates" description="Open one to drag every knob and see the program change. The agent plans from the bench's set; the newer ones can be built here or from a description, and no run has used them yet.">
           {templates.isPending ? (
             <div role="status" aria-label="Loading the templates">
               <Skeleton className="h-[290px]" />
@@ -123,7 +123,10 @@ export function GalleryClient() {
                     />
                     <div className="space-y-1.5 border-t border-border p-3">
                       <p className="text-[14px] font-medium">{t.title}</p>
-                      <Badge tone="neutral">Template · not checked against a real part</Badge>
+                      <div className="flex flex-wrap gap-1.5">
+                        <Badge tone="neutral">Template · not checked against a real part</Badge>
+                        {t.in_bench === false ? <Badge tone="outline">Newer · no run has used it</Badge> : null}
+                      </div>
                       <p className="text-[12px] text-muted">{t.params.length} knobs</p>
                     </div>
                   </Link>

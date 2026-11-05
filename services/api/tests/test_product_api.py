@@ -30,7 +30,7 @@ def test_templates_list_detail_and_unknown(client: TestClient) -> None:
     r = client.get(f"{API}/templates")
     assert r.status_code == 200, r.text
     cards = r.json()
-    assert len(cards) == 16 and {c["name"] for c in cards} >= {"cable_clip", "spacer", "knob", "drawer_runner"}
+    assert len(cards) == 20 and {c["name"] for c in cards} >= {"cable_clip", "spacer", "knob", "drawer_runner"}
     clip = next(c for c in cards if c["name"] == "cable_clip")
     assert [p["title"] for p in clip["presets"]][:2] == ["M3 screw", "M4 screw"]
     assert clip["thumbnail_url"] == f"{API}/templates/cable_clip/thumbnail.png" and clip["coupon"] is True
@@ -63,6 +63,8 @@ def test_template_bake_print_plan_clamp_and_gate(client: TestClient) -> None:
 
 
 def test_newer_template_bakes_at_its_knob_but_stays_a_template_at_the_export_gate(client: TestClient) -> None:
+    cards = {c["name"]: c for c in client.get(f"{API}/templates").json()}
+    assert cards["knob"]["in_bench"] is True and cards["drawer_runner"]["in_bench"] is False
     detail = client.get(f"{API}/templates/drawer_runner").json()
     assert detail["family"] == "bracket" and {p["name"] for p in detail["params"]} >= {"length", "hole_count"}
     r = client.get(f"{API}/templates/drawer_runner/bake", params={"length": 150, "hole_count": 4, "format": "view"})
@@ -137,7 +139,7 @@ def test_describe_clamped_and_no_fit(client: TestClient) -> None:
     item = next(i for i in d["checks"]["items"] if i["param"] == "cable_d")
     assert item["status"] == "clamped" and item["stated"] == 30 and item["set"] == 16 and "2–16 mm" in item["note"]
     assert d["checks"]["status"] == "partial"
-    n = client.post(f"{API}/describe", json={"text": "a gear with 20 teeth, module 1"}).json()
+    n = client.post(f"{API}/describe", json={"text": "a propeller with three blades"}).json()
     assert n["status"] == "no_fit" and n["template"] is None and n["bake"] is None
     assert {x["href"] for x in n["no_fit"]["next"]} == {"/fix", "/requests"}
     _err(client.post(f"{API}/describe", json={"text": "a"}), 422, "validation_error")

@@ -18,6 +18,8 @@ export type JobPlainInput = {
   uncheckedCount: number;
   /** The check that failed, in words ("side outline"), when the record names one. */
   failingCheck: string | null;
+  /** What drew the outline it measured from: the measurement record's `mask_source`. */
+  outlineFrom: string | null;
   /** The verifier's first finding, or the job's stated reason, already in plain words. */
   finding: string | null;
   refusal: string | null;
@@ -39,6 +41,19 @@ function roundsLine(gaps: readonly number[]): string | null {
   return null;
 }
 
+const OUTLINE_FROM: Record<string, string> = {
+  "sam-3.1": "The outline it measured from is SAM 3.1's mask.",
+  "sam3-open": "The outline it measured from is the open-weights SAM 3 mask.",
+  threshold: "The outline it measured from came from the colour-threshold fallback, not SAM 3.1.",
+  "mock-threshold": "The outline came from a stand-in threshold; no segmentation model ran.",
+  "synthetic-gt": "The outline is the test's exact mask, not a model's.",
+};
+
+function outlineLine(source: string | null): string[] {
+  const line = source ? OUTLINE_FROM[source] : null;
+  return line ? [line] : [];
+}
+
 function runLabel(i: Pick<JobPlainInput, "recorded" | "sample" | "mock" | "standIn">): string | null {
   if (i.mock) return "Mock run: stand-in answers instead of a model, to show the flow.";
   if (i.standIn) return "This server has no model keys, so the model steps used recorded or stand-in answers. This result says nothing about your part.";
@@ -52,6 +67,7 @@ function verifiedWhy(i: JobPlainInput): string[] {
   if (rounds) why.push(rounds);
   else if (i.gaps.length === 1) why.push("It passed on the first build.");
   if (i.views.length) why.push(`Overlap with the photo (IoU): ${i.views.map((v) => `${v.view} ${v.iou.toFixed(3)}`).join(", ")}.`);
+  why.push(...outlineLine(i.outlineFrom));
   if (i.tests.length) why.push(`${i.tests.filter((t) => t.passed).length} of ${i.tests.length} part tests passed.`);
   if (i.uncheckedCount) {
     why.push(i.uncheckedCount === 1 ? "One size had no photo to check it against; it is listed below." : `${i.uncheckedCount} sizes had no photo to check them against; they are listed below.`);
@@ -96,7 +112,7 @@ export function jobPlain(i: JobPlainInput): JobPlain {
         ...base,
         tone: "warn",
         happened: bestEffortHappened(i),
-        why: [i.finding, roundsLine(i.gaps)].filter((x): x is string => !!x),
+        why: [i.finding, roundsLine(i.gaps), ...outlineLine(i.outlineFrom)].filter((x): x is string => !!x),
         next: bestEffortNext(i),
         actions: i.inReview ? ["review", "fix", "model"] : ["fix", "model"],
       };

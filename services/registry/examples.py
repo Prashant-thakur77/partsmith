@@ -18,7 +18,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
-from services.agent.templates import Template, all_templates, get_template
+from services.agent.templates import BENCH_TEMPLATES, Template, all_templates, get_template
 from services.common.paths import sub
 from services.geom_worker import bake as geom_bake
 from services.geom_worker.program import clamp
@@ -152,6 +152,28 @@ PRESETS: dict[str, tuple[Preset, ...]] = {
         Preset("round-6", "Round 6 mm shaft", "a 6 mm bore with no flat", {"bore_d": 6.0, "flat_depth": 0.0}),
         Preset("wide", "Wide skirt", "a bigger skirt and pointer", {"skirt_d": 50.0, "pointer_length": 7.0}),
     ),
+    "spur_gear": (
+        Preset("d-shaft-5", "5 mm D-shaft", "a 5 mm bore with a 1 mm flat", {"bore_d": 5.0, "flat_depth": 1.0}),
+        Preset(
+            "small-12", "Small 12-tooth pinion", "a small driving gear", {"pitch_d": 18.0, "teeth": 12, "hub_d": 8.0}
+        ),
+        Preset("flat", "No hub", "a flat gear", {"hub_height": 0.0}),
+    ),
+    "shelf_pin": (
+        Preset("peg-5", "5 mm hole", "for a 5 mm hole, with a little clearance", {"peg_d": 4.9}),
+        Preset("peg-6", "6 mm hole", "for a 6 mm hole, with a little clearance", {"peg_d": 5.9}),
+        Preset("no-lip", "No lip", "a plain flat rest", {"lip_height": 0.0}),
+    ),
+    "chair_glide": (
+        Preset("leg-19", "19 mm leg", "a cap for a 19 mm leg", {"leg_d": 19.0}),
+        Preset("leg-25", "25 mm leg", "a cap for a 25 mm leg", {"leg_d": 25.0, "sole_d": 38.0}),
+        Preset("no-ribs", "No ribs", "a smooth inside", {"rib_count": 0}),
+    ),
+    "desk_grommet": (
+        Preset("hole-60", "60 mm hole", "for a 60 mm hole in the desk", {"hole_d": 59.5, "flange_d": 72.0}),
+        Preset("hole-80", "80 mm hole", "for an 80 mm hole in the desk", {"hole_d": 79.5, "flange_d": 92.0}),
+        Preset("no-notch", "No notches", "a plain sleeve", {"notch_count": 0}),
+    ),
     "lug_cap": (
         Preset("small-28", "28 mm cap", "a 28 mm cap", {"outer_d": 28.0, "height": 12.0}),
         Preset("jar-63", "63 mm jar lid", "a wide, low lid", {"outer_d": 63.0, "height": 14.0, "lug_count": 6}),
@@ -192,6 +214,7 @@ def template_card(t: Template) -> dict[str, Any]:
         "thumbnail_url": f"{API}/templates/{t.name}/thumbnail.png",
         "thumbnail_2x_url": f"{API}/templates/{t.name}/thumbnail.png?scale=2",
         "coupon": bool(coupon_features(t, t.defaults)),
+        "in_bench": t.name in BENCH_TEMPLATES,
     }
 
 

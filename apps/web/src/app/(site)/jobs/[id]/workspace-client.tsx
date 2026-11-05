@@ -510,6 +510,7 @@ export function WorkspaceClient({ id }: { id: string }) {
     tests: verification?.tests ?? [],
     uncheckedCount: verification?.unchecked.length ?? 0,
     failingCheck: failingCheckWord(whyText),
+    outlineFrom: measurements?.mask_source ?? null,
     finding: veto ? `The ${veto.text}.` : whyText ? plainTerms(whyText) : null,
     refusal: d.partspec?.refusal ?? null,
     inReview: !!d.review,

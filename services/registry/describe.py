@@ -96,6 +96,10 @@ _EXTRA_WORDS: dict[str, tuple[str, ...]] = {
     "curtain_ring": ("curtain", "drapery", "glider"),
     "pointer_knob": ("fan knob", "cooler knob", "regulator", "pointer"),
     "lug_cap": ("bottle", "jar", "cap"),
+    "spur_gear": ("cogwheel", "toothed wheel"),
+    "shelf_pin": ("shelf pin", "shelf peg", "shelf stud"),
+    "chair_glide": ("chair leg", "chair foot", "table leg", "furniture foot", "leg cap", "stopper"),
+    "desk_grommet": ("grommet", "cable hole", "wire hole"),
 }
 
 

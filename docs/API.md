@@ -415,7 +415,7 @@ content-addressed bake cache) without a registry record. `services/registry/exam
 | GET | `/templates/{name}/bake?<param>=<value>&format=&download=&ack=` | `BakeResult` (`part_slug` = the template name) + `facts_notes`, `print_plan` (below), `downloads` (file URLs at these values) and `ship`. Clamping, `unknown_param` and caching as for part bakes. **Export gate:** nothing compared a template bake with a real part, so printable files (`stl`, `3mf`, `step`, also by their `/bakes/<key>/<file>` link) are best effort: `409 needs_ack` with the plain-words reason until `ack=1`; `view`, `glb` and `py` stay open |
 | GET | `/templates/{name}/coupon.stl?<params>` | fit-test coupon STL for the template's screw hole / pivot / bore at these values (−0.2, 0, +0.2 mm); `404 no_coupon` when it has none. Not gated: it is the recommended first print |
 
-`TemplateCard = {"name","family","title","summary","tags","params": [ParamSpec],"defaults","presets": [{"id","title","note","values": {knob: number}}],"topology_knobs","thumbnail_url","thumbnail_2x_url","coupon": bool}`.
+`TemplateCard = {"name","family","title","summary","tags","params": [ParamSpec],"defaults","presets": [{"id","title","note","values": {knob: number}}],"topology_knobs","thumbnail_url","thumbnail_2x_url","coupon": bool,"in_bench": bool}`; `in_bench` is false for a newer template no stored run has used.
 Presets (2–3 per template, e.g. "M3 screw" = ISO 273 medium clearance 3.4 mm) are defined in `examples.PRESETS`; a
 test checks every preset names real knobs inside their PARAMS ranges, and a slow test bakes each one.
 

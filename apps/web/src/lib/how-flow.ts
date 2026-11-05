@@ -8,6 +8,8 @@ import { z } from "zod/mini";
 export const FlowDataSchema = z.object({
   limit_mm: z.number(),
   bypass: z.object({ attempts: z.number(), blocked: z.number() }),
+  /** The colour-prompt test and the later run measured from SAM 3.1's mask, once the deck data has them. */
+  sam_fix: z.nullish(z.object({ photos: z.number(), old: z.number(), new: z.number(), run_id: z.string() })),
   run: z.object({
     id: z.string(),
     params: z.array(z.string()),
@@ -155,6 +157,10 @@ export function stepFacts(id: string, data: FlowData): string[] {
   const rounds = data.run.rounds_detail;
   const first = rounds[0];
   switch (id) {
+    case "outline":
+      return data.sam_fix
+        ? [`Since this run, the prompt names the part's colour. On ${data.sam_fix.photos} test photos SAM 3.1 returned a mask for ${data.sam_fix.new}, up from ${data.sam_fix.old}, and a later recorded run (${data.sam_fix.run_id}) measured from one.`]
+        : [];
     case "program":
       return [`Shown here: ${data.run.params.length} of the final program's knobs, each with its range.`];
     case "check":

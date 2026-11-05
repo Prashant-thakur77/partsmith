@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import math
 from collections.abc import Callable, Iterator
 from concurrent.futures import ThreadPoolExecutor
 
@@ -14,7 +15,10 @@ BENCH_NAMES = {
     "clip", "knob", "l_bracket", "hook", "spacer", "battery_cover", "caster_wheel", "cupboard_latch", "cable_clip",
     "hinge_leaf",
 }  # fmt: skip
-NEWER_NAMES = {"sliding_battery_door", "drawer_runner", "hinge_pin_bracket", "curtain_ring", "pointer_knob", "lug_cap"}
+NEWER_NAMES = {
+    "sliding_battery_door", "drawer_runner", "hinge_pin_bracket", "curtain_ring", "pointer_knob", "lug_cap", "spur_gear",
+    "shelf_pin", "chair_glide", "desk_grommet",
+}  # fmt: skip
 NAMES = BENCH_NAMES | NEWER_NAMES
 WORKERS = 2
 
@@ -39,7 +43,7 @@ def _run_many(pool: WarmPool, jobs: list[tuple[Template, dict[str, float]]]) -> 
 
 def test_registry_has_the_ten_families() -> None:
     assert {t.name for t in all_templates()} == NAMES
-    assert len({t.family for t in all_templates()}) == 10
+    assert len({t.family for t in all_templates()}) == 11
     assert sorted(t.name for t in for_family("bracket")) == ["drawer_runner", "l_bracket"]
     assert get_template("knob").family == Family.knob
     with pytest.raises(KeyError, match="closest: knob"):
@@ -121,6 +125,7 @@ def test_declared_interfaces_are_measured_on_the_solid(tpool: WarmPool) -> None:
         "hinge_leaf": ("pin_hole", lambda p: p["pin_d"]),
         "hinge_pin_bracket": ("pin_hole", lambda p: p["pin_d"]),
         "pointer_knob": ("shaft_bore", lambda p: p["bore_d"]),
+        "spur_gear": ("shaft_bore", lambda p: p["bore_d"]),
     }  # fmt: skip
     ts = [get_template(n) for n in expected]
     results = []
@@ -164,6 +169,16 @@ SWEEPS: list[tuple[str, str, int, Callable[[float], float], dict[str, float]]] =
     ("pointer_knob", "height", 2, lambda v: v, {}),
     ("lug_cap", "outer_d", 0, lambda v: v, {"grip_count": 0}),
     ("lug_cap", "height", 2, lambda v: v, {}),
+    # the tips of the two teeth on the x axis, each turned off the axis by half the width of its tip
+    ("spur_gear", "pitch_d", 0, lambda v: v * (1 + 2 / 24) * math.cos(0.13 * 2 * math.pi / 24), {}),
+    ("spur_gear", "thickness", 2, lambda v: v + 4.0, {}),
+    ("shelf_pin", "rest_length", 0, lambda v: v, {}),
+    ("shelf_pin", "rest_width", 1, lambda v: v, {}),
+    ("shelf_pin", "peg_length", 2, lambda v: v + 2.5, {}),
+    ("chair_glide", "sole_d", 0, lambda v: v, {}),
+    ("chair_glide", "height", 2, lambda v: v, {}),
+    ("desk_grommet", "flange_d", 0, lambda v: v, {}),
+    ("desk_grommet", "sleeve_depth", 2, lambda v: v + 2.5, {}),
 ]
 
 

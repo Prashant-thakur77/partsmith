@@ -53,6 +53,13 @@ function PlainAnswers({ tables, separate }: { tables: Record<string, BenchTable 
         <Term k="verifier" />
         <Term k="mat" />
       </p>
+      <p className="text-[12.5px] text-muted">
+        A larger evaluation, with its plan fixed first and its failures left in, is on{" "}
+        <Link href="/proof#scale" className="font-medium text-accent-text hover:underline">
+          the test evidence page
+        </Link>
+        .
+      </p>
     </section>
   );
 }

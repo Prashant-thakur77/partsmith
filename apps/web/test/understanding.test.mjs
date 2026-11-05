@@ -20,6 +20,7 @@ const job = (over = {}) => ({
   tests: [{ passed: true }, { passed: true }],
   uncheckedCount: 0,
   failingCheck: null,
+  outlineFrom: null,
   finding: null,
   refusal: null,
   inReview: false,
@@ -62,6 +63,14 @@ test("verified: says it passed with the record's numbers and keeps the sizes not
   assert.ok(plain.why.includes("6 sizes had no photo to check them against; they are listed below."));
   assert.deepEqual(plain.actions, ["fit", "model"]);
   assert.equal(jobPlain(job({ gaps: [0.3] })).why[1], "It passed on the first build.");
+});
+
+test("the summary names what drew the outline, and an unknown source stays silent", () => {
+  assert.ok(jobPlain(job({ outlineFrom: "threshold" })).why.includes("The outline it measured from came from the colour-threshold fallback, not SAM 3.1."));
+  assert.ok(jobPlain(job({ outlineFrom: "sam-3.1" })).why.includes("The outline it measured from is SAM 3.1's mask."));
+  assert.ok(jobPlain(job({ finished: "best_effort", outlineFrom: "mock-threshold" })).why.some((line) => line.includes("no segmentation model ran")));
+  const lines = jobPlain(job()).why.length;
+  assert.equal(jobPlain(job({ outlineFrom: "something new" })).why.length, lines);
 });
 
 test("not verified: never reads as a pass, and names what failed", () => {
@@ -164,4 +173,9 @@ test("how: the steps' numbers are the run's own, nothing typed", () => {
   assert.ok(review[0].includes(`${data.run.minutes_to_file} minutes`), review[0]);
   assert.ok(review[1].includes("It has not been printed."), review[1]);
   assert.deepEqual(stepFacts("photo", data), []);
+  const samFix = { photos: 147, old: 5, new: 91, run_id: "j_later" };
+  const outline = stepFacts("outline", FlowDataSchema.parse({ ...DECK, sam_fix: samFix }));
+  assert.ok(outline[0].includes("On 147 test photos SAM 3.1 returned a mask for 91, up from 5"), outline[0]);
+  assert.ok(outline[0].includes("(j_later)"), outline[0]);
+  assert.deepEqual(stepFacts("outline", FlowDataSchema.parse({ ...DECK, sam_fix: null })), []);
 });

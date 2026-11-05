@@ -168,7 +168,7 @@ Runtime data lives in `$PARTSMITH_HOME` (default `./var`, gitignored): `blobs/` 
 - `providers/` — every model call: `complete(stage, req)`, `segment`, `generate_image`, `transcribe`, `status()`,
   `job_context(job_id, emit)`, `register_mock(stage, handler)`; `PROVIDER_MODE=live|mock|replay`, auto-mock on a missing key (logged
   and shown on `/status`), `model_call` events with tokens, ms and $.
-- `templates/` — 10 family templates (`PARAMS` + `build(p)`), each with a topology knob.
+- `templates/` — family templates (`PARAMS` + `build(p)`), each with a topology knob: the bench's ten (`list_templates()`) and the newer ones in the catalogue (`all_templates()`).
 - `prompts/` — versioned prompt files.
 - `orchestrator.py` — capture → measure → understand → ask → plan → build → execute → verify → fix (≤ 6) → judge → package → learn.
 - `jobs.py` — job state machine, pause/resume on questions, event bus, `run.jsonl`, replay.

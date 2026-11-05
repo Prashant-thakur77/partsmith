@@ -136,7 +136,7 @@ def product() -> None:
     t = get_template("cable_clip")
     (OUT / "view-describe.json").write_text(json.dumps(view_json(shape(cable_clip, {**t.defaults, **done["bake"]["params"]})), separators=(",", ":")))
     asks = describe.start("a cable clip for a 6 mm cable, 20 mm wide")
-    nofit = describe.start("a gear with 20 teeth")
+    nofit = describe.start("a propeller with three blades")
     example = describe.example()
     bake = examples.bake_template("cable_clip", {}, ("view",))
     out = {

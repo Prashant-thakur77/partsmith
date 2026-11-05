@@ -1,4 +1,5 @@
 import { expect, test } from "@playwright/test";
+import { product } from "./fixtures/api";
 import { expectAccessible, realErrors, setup } from "./helpers";
 
 const contentProject = (name: string) => name.startsWith("desktop-light") || name.startsWith("mobile-light");
@@ -64,6 +65,13 @@ test("/gallery shows parts and templates with their status, and labels templates
   await expect(page.getByText("Template · not checked against a real part").first()).toBeVisible();
   await expect(page.getByRole("link", { name: /L-bracket/ }).first()).toHaveAttribute("href", /\/parts\//);
   await pageIsClean(page, errors);
+  // a newer template says no run has used it, and one from the bench does not
+  await page.route("**/api/v1/templates", async (route) => {
+    const cards = product.templates.map((t, i) => ({ ...t, in_bench: i !== 0 }));
+    await route.fulfill({ json: cards });
+  });
+  await page.reload();
+  await expect(page.getByText("Newer · no run has used it")).toHaveCount(1);
   // a template opens on its own knobs, not on the list of examples
   await page.locator('a[href="/playground?t=cable_clip"]').click();
   await expect(page.getByRole("heading", { name: "Cable clip", level: 1 })).toBeVisible();

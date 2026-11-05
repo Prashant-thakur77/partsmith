@@ -1413,6 +1413,8 @@ export const TemplateCardSchema = z.object({
   thumbnail_url: z.string(),
   thumbnail_2x_url: z.string(),
   coupon: z._default(z.boolean(), false),
+  /** False for a newer template: the agent does not plan from it yet and no stored run has used it. */
+  in_bench: z.nullish(z.boolean()),
 });
 export type TemplateCard = z.output<typeof TemplateCardSchema>;
 

@@ -82,6 +82,11 @@ def test_pick_template_prefers_longer_phrases() -> None:
         ("fan regulator knob, 6 mm shaft", "pointer_knob"),
         ("knob 30 mm on a 6mm shaft", "knob"),
         ("bottle cap for an oil can", "lug_cap"),
+        ("a gear with 24 teeth for my mixer", "spur_gear"),
+        ("shelf pin for a 5 mm hole", "shelf_pin"),
+        ("a cap for a chair leg, 22 mm", "chair_glide"),
+        ("cable grommet for a desk", "desk_grommet"),
+        ("spacer 10 mm long", "spacer"),
     ],
 )
 def test_newer_families_are_found_by_their_words_and_old_words_keep_their_meaning(text: str, name: str) -> None:
