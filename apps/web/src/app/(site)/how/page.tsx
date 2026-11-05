@@ -57,7 +57,7 @@ export default async function HowPage() {
         <Section
           id="steps"
           title="The eight steps"
-          description="Click a step to see what happened in one recorded run: its real files and numbers, what the step does, and why it can't be faked."
+          description="The landing page's five steps, with the measuring and the fixing opened up. Click a step to see what happened in one recorded run: its real files and numbers, what the step does, and why it can't be faked."
         >
           <FlowExplorer />
         </Section>

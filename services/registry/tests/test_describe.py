@@ -6,7 +6,7 @@ from typing import Any
 
 import pytest
 
-from services.agent.templates import get_template, list_templates
+from services.agent.templates import all_templates, get_template
 from services.registry import describe as D
 from services.registry import examples as E
 
@@ -66,6 +66,26 @@ def test_pick_template_prefers_longer_phrases() -> None:
     assert D.pick_template("a retaining clip for a 3 mm panel").name == "clip"
     assert D.pick_template("standoff for a pcb").name == "spacer"
     assert D.pick_template("a thing") is None
+
+
+@pytest.mark.parametrize(
+    ("text", "name"),
+    [
+        ("a sliding battery door for my tv remote", "sliding_battery_door"),
+        ("battery cover for a remote control", "battery_cover"),
+        ("drawer runner for a wardrobe", "drawer_runner"),
+        ("a bracket for a shelf", "l_bracket"),
+        ("hinge bracket with an 8 mm pin", "hinge_pin_bracket"),
+        ("a hinge for a box", "hinge_leaf"),
+        ("curtain ring for a 25 mm rod", "curtain_ring"),
+        ("a hook for a towel", "hook"),
+        ("fan regulator knob, 6 mm shaft", "pointer_knob"),
+        ("knob 30 mm on a 6mm shaft", "knob"),
+        ("bottle cap for an oil can", "lug_cap"),
+    ],
+)
+def test_newer_families_are_found_by_their_words_and_old_words_keep_their_meaning(text: str, name: str) -> None:
+    assert D.pick_template(text).name == name
 
 
 def test_check_plan_maps_names_clamps_and_downgrades_made_up_quotes() -> None:
@@ -132,7 +152,7 @@ def test_build_reports_a_number_the_template_cannot_reach() -> None:
     assert rec["checks"]["status"] == "partial" and rec["print_plan"]["layer_mm"] == 0.2
 
 
-@pytest.mark.parametrize("name", [t.name for t in list_templates()])
+@pytest.mark.parametrize("name", [t.name for t in all_templates()])
 def test_presets_name_real_knobs_inside_their_ranges(name: str) -> None:
     t = get_template(name)
     presets = E.presets_for(name)
@@ -150,7 +170,7 @@ def test_presets_name_real_knobs_inside_their_ranges(name: str) -> None:
 
 def test_template_cards_and_coupon_features() -> None:
     cards = E.all_cards()
-    assert len(cards) == len(list_templates()) and all(c["presets"] for c in cards)
+    assert len(cards) == len(all_templates()) and all(c["presets"] for c in cards)
     feats = E.coupon_features(get_template("knob"), {})
     assert [(f.kind, f.diameter_mm, f.flat_depth_mm) for f in feats] == [("d_bore", 6.0, 1.5)]
     assert [f.kind for f in E.coupon_features(get_template("spacer"), {"flat_count": 2})] == ["hole"]
@@ -160,7 +180,7 @@ def test_template_cards_and_coupon_features() -> None:
 
 
 @pytest.mark.slow
-@pytest.mark.parametrize("name", [t.name for t in list_templates()])
+@pytest.mark.parametrize("name", [t.name for t in all_templates()])
 def test_every_preset_builds_in_the_sandbox(name: str) -> None:
     t = get_template(name)
     for preset in E.presets_for(name):

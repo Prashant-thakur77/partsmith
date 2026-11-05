@@ -45,6 +45,8 @@ export type FlowStep = {
   proof: string;
   images: FlowImage[];
   links: FlowLink[];
+  /** The run's numbers belong on this step (`stepFacts`), so it says so when they don't load. */
+  numbers?: boolean;
 };
 
 const img = (name: string) => `/deck/img/${name}.jpg`;
@@ -103,6 +105,7 @@ export const FLOW_STEPS: readonly FlowStep[] = [
   },
   {
     id: "check",
+    numbers: true,
     short: "Check",
     title: "The verifier compares it with the photo",
     plain: "Plain code draws the model from the camera's view, lays its outline over the photo's outline and measures the biggest gap.",
@@ -115,6 +118,7 @@ export const FLOW_STEPS: readonly FlowStep[] = [
   },
   {
     id: "fix",
+    numbers: true,
     short: "Fix",
     title: "The agent reads the gap and fixes the program",
     plain: "The agent sees where the gap is, edits the program and rebuilds, and the verifier measures again. This repeats until the gap is inside the limit or the agent runs out of rounds.",
@@ -124,6 +128,7 @@ export const FLOW_STEPS: readonly FlowStep[] = [
   },
   {
     id: "review",
+    numbers: true,
     short: "Review",
     title: "A person reviews it, then you export",
     plain: "A person can compare the photo and the model and send it back with pins on the photo. Then you download STL, 3MF or STEP for a printer.",

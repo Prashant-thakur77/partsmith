@@ -94,7 +94,7 @@ export function FlowExplorer() {
                     ))}
                   </ul>
                 ) : null}
-                {data.isError && !facts.length ? <p className="text-[12.5px] text-subtle">The run&apos;s numbers did not load. The pictures are still the run&apos;s own.</p> : null}
+                {data.isError && step.numbers ? <p className="text-[12.5px] text-subtle">The run&apos;s numbers did not load. The pictures are still the run&apos;s own.</p> : null}
                 <div className="rounded-lg border border-ok-border bg-ok-soft/40 p-3">
                   <p className="flex items-center gap-1.5 text-[12.5px] font-semibold text-fg">
                     <ShieldCheck className="size-3.5 shrink-0 text-ok" aria-hidden /> Why this step can&apos;t be faked

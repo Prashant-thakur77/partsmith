@@ -514,3 +514,12 @@ silently changes meaning. It reuses the bench's own scoring code, on fresh sampl
 in `eval/SCALE_PLAN.md`. All full-loop runs share one seeded shuffle, so stopping early at the spend or time limit still leaves
 an unbiased subset of each suite. The understanding figures come from the PartSpec each full run already logged rather than from
 200 separate calls. Muse Spark 1.3 stood in for the judge in these runs, because no Muse Glimmer endpoint is deployed.
+
+## New part templates stay out of the seeded suites (2026-11-05)
+
+Six newer templates (sliding battery door, drawer runner, hinge pin bracket, curtain ring, pointer knob, screw cap with lugs)
+join the catalogue people browse: `/templates`, the playground, the gallery and describe. They pass the same self-check and knob
+sweeps as the others, but no stored run has verified one, so the export gate treats them as templates. `list_templates()` stays
+the bench's ten, because a seeded suite picks its parts by position in that list: one more name would change which samples a seed
+produces, and every stored run would stop matching its suite. `all_templates()` is the full catalogue. The agent keeps planning
+with the ten until the bench is rerun with the larger list.

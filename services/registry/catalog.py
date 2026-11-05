@@ -13,7 +13,7 @@ from functools import cache
 
 from partsmith_schemas import PartRecord
 
-from services.agent.templates import Template, list_templates
+from services.agent.templates import Template, all_templates
 from services.geom_worker.program import module_literals
 from services.registry.publish import program_identity, publish_part, values_of
 from services.registry.store import ROLE_REFERENCE_TAG, Registry, get_registry
@@ -24,10 +24,16 @@ PRODUCT_NAMES = {
     "caster_wheel": "Caster wheel",
     "clip": "Shelf panel clip",
     "cupboard_latch": "Cupboard door latch",
+    "curtain_ring": "Curtain ring",
+    "drawer_runner": "Drawer runner",
     "hinge_leaf": "Hinge leaf",
+    "hinge_pin_bracket": "Hinge pin bracket",
     "hook": "Wall hook",
     "knob": "Control knob",
     "l_bracket": "L-bracket",
+    "lug_cap": "Screw cap",
+    "pointer_knob": "Pointer knob",
+    "sliding_battery_door": "Sliding battery door",
     "spacer": "Spacer",
 }
 _NOISE = re.compile(r"\s*\((?:[^)]*synthetic[^)]*|test sample|[^)]*sample[^)]*)\)", re.I)
@@ -39,7 +45,7 @@ def is_reference(part: PartRecord) -> bool:
 
 @cache
 def _templates_by_identity() -> dict[str, Template]:
-    return {program_identity(t.code): t for t in list_templates()}
+    return {program_identity(t.code): t for t in all_templates()}
 
 
 def template_of(part: PartRecord) -> Template | None:
@@ -52,7 +58,7 @@ def template_of(part: PartRecord) -> Template | None:
         title = module_literals(part.code, ("TITLE",)).get("TITLE")
     except (SyntaxError, ValueError):
         return None
-    return next((x for x in list_templates() if x.title == title), None) if title else None
+    return next((x for x in all_templates() if x.title == title), None) if title else None
 
 
 def _slugify(text: str) -> str:

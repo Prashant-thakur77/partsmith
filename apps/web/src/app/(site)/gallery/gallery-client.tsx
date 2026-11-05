@@ -114,7 +114,7 @@ export function GalleryClient() {
             <ul className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
               {templates.data.map((t) => (
                 <li key={t.name}>
-                  <Link href={`/playground?template=${encodeURIComponent(t.name)}`} className={cardCls}>
+                  <Link href={`/playground?t=${encodeURIComponent(t.name)}`} className={cardCls}>
                     <Live
                       queryKey={["gallery-template", t.name]}
                       bake={(signal) => productApi.templateBake(t.name, {}, signal)}

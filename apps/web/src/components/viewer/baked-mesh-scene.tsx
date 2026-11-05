@@ -118,7 +118,7 @@ export default function BakedMeshScene({
   const spin = turning && !touched;
   const box = geometry?.boundingBox;
   // framed by the mesh's diagonal, so a tall part fits as well as a flat one
-  const frame = sizeMm ?? (box ? Math.hypot(box.max.x - box.min.x, box.max.y - box.min.y, box.max.z - box.min.z) * 0.92 : null);
+  const frame = sizeMm ?? (box ? Math.hypot(box.max.x - box.min.x, box.max.y - box.min.y, box.max.z - box.min.z) * 1.08 : null);
   return (
     <Canvas
       camera={{ fov: 34 }}

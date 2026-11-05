@@ -409,7 +409,7 @@ content-addressed bake cache) without a registry record. `services/registry/exam
 
 | Method | Path | Returns |
 |---|---|---|
-| GET | `/templates` | `[TemplateCard]` — all 10 templates |
+| GET | `/templates` | `[TemplateCard]` — every template, the bench's ten and the newer ones not yet in a stored run |
 | GET | `/templates/{name}` | `TemplateCard + {"code": part.py, "code_sha", "measure_map"}`; unknown → `404 template_not_found` + closest |
 | GET | `/templates/{name}/thumbnail.png?scale=1\|2` | isometric PNG at the defaults (rendered once per program version) |
 | GET | `/templates/{name}/bake?<param>=<value>&format=&download=&ack=` | `BakeResult` (`part_slug` = the template name) + `facts_notes`, `print_plan` (below), `downloads` (file URLs at these values) and `ship`. Clamping, `unknown_param` and caching as for part bakes. **Export gate:** nothing compared a template bake with a real part, so printable files (`stl`, `3mf`, `step`, also by their `/bakes/<key>/<file>` link) are best effort: `409 needs_ack` with the plain-words reason until `ack=1`; `view`, `glb` and `py` stay open |

@@ -20,6 +20,22 @@ from services.geom_worker.program import code_sha, module_literals, parse_params
 
 TEMPLATE_DIR = Path(__file__).resolve().parent
 _META = ("FAMILY", "TITLE", "SUMMARY", "TAGS", "MEASURE_MAP")
+# A seeded suite picks its parts by position in this list, so a new template here would change which samples a seed
+# produces and every stored run would stop matching its suite. Newer templates stay out until the bench is rerun.
+BENCH_TEMPLATES = frozenset(
+    {
+        "battery_cover",
+        "cable_clip",
+        "caster_wheel",
+        "clip",
+        "cupboard_latch",
+        "hinge_leaf",
+        "hook",
+        "knob",
+        "l_bracket",
+        "spacer",
+    }
+)
 
 
 @dataclass(frozen=True)
@@ -104,7 +120,12 @@ def knobs_at(template: Template, plane: str, a: float, b: float, margin: float =
 
 
 def list_templates() -> list[Template]:
-    """Every template, sorted by name."""
+    """The bench's ten templates, sorted by name: what the agent plans with and what the seeded suites draw from."""
+    return [t for t in _all().values() if t.name in BENCH_TEMPLATES]
+
+
+def all_templates() -> list[Template]:
+    """Every template, sorted by name: the catalogue people browse, bake and describe parts from."""
     return list(_all().values())
 
 
@@ -123,4 +144,13 @@ def for_family(family: Family | str) -> list[Template]:
     return [t for t in _all().values() if t.family == fam]
 
 
-__all__ = ["TEMPLATE_DIR", "Template", "for_family", "get_template", "knobs_at", "list_templates"]
+__all__ = [
+    "BENCH_TEMPLATES",
+    "TEMPLATE_DIR",
+    "Template",
+    "all_templates",
+    "for_family",
+    "get_template",
+    "knobs_at",
+    "list_templates",
+]

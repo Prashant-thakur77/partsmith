@@ -64,6 +64,10 @@ test("/gallery shows parts and templates with their status, and labels templates
   await expect(page.getByText("Template · not checked against a real part").first()).toBeVisible();
   await expect(page.getByRole("link", { name: /L-bracket/ }).first()).toHaveAttribute("href", /\/parts\//);
   await pageIsClean(page, errors);
+  // a template opens on its own knobs, not on the list of examples
+  await page.locator('a[href="/playground?t=cable_clip"]').click();
+  await expect(page.getByRole("heading", { name: "Cable clip", level: 1 })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "This is the program" })).toBeVisible();
 });
 
 test("the header and footer lead to the new pages", async ({ page }, info) => {

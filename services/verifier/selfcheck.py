@@ -14,7 +14,7 @@ import sys
 import time
 from dataclasses import dataclass
 
-from services.agent.templates import Template, list_templates
+from services.agent.templates import Template, all_templates
 from services.geom_worker.sandbox import WarmPool, run_program
 from services.verifier.align import Rigid2D
 from services.verifier.synthetic import synthetic_top_measurement
@@ -95,7 +95,7 @@ def check_template(t: Template, pool: WarmPool | None = None, px_per_mm: float =
 
 
 def run(pool: WarmPool | None = None) -> list[Row]:
-    return [check_template(t, pool) for t in list_templates()]
+    return [check_template(t, pool) for t in all_templates()]
 
 
 def format_table(rows: list[Row]) -> str:

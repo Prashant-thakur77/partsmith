@@ -30,7 +30,7 @@ def test_templates_list_detail_and_unknown(client: TestClient) -> None:
     r = client.get(f"{API}/templates")
     assert r.status_code == 200, r.text
     cards = r.json()
-    assert len(cards) == 10 and {c["name"] for c in cards} >= {"cable_clip", "spacer", "knob"}
+    assert len(cards) == 16 and {c["name"] for c in cards} >= {"cable_clip", "spacer", "knob", "drawer_runner"}
     clip = next(c for c in cards if c["name"] == "cable_clip")
     assert [p["title"] for p in clip["presets"]][:2] == ["M3 screw", "M4 screw"]
     assert clip["thumbnail_url"] == f"{API}/templates/cable_clip/thumbnail.png" and clip["coupon"] is True
@@ -60,6 +60,18 @@ def test_template_bake_print_plan_clamp_and_gate(client: TestClient) -> None:
     stl = client.get(f"{API}/templates/spacer/bake", params={"format": "stl"}).json()["artifacts"]["stl"]
     _err(client.get(stl), 409, "needs_ack")
     assert client.get(stl + "?ack=1").status_code == 200
+
+
+def test_newer_template_bakes_at_its_knob_but_stays_a_template_at_the_export_gate(client: TestClient) -> None:
+    detail = client.get(f"{API}/templates/drawer_runner").json()
+    assert detail["family"] == "bracket" and {p["name"] for p in detail["params"]} >= {"length", "hole_count"}
+    r = client.get(f"{API}/templates/drawer_runner/bake", params={"length": 150, "hole_count": 4, "format": "view"})
+    assert r.status_code == 200, r.text
+    b = r.json()
+    assert b["clamped"] == {} and b["artifacts"]["view"]
+    assert b["ship"]["status"] == "best_effort" and b["ship"]["needs_ack"] is True
+    assert "nothing compared it with a photo" in b["ship"]["reason"]
+    _err(client.get(f"{API}/templates/drawer_runner/bake", params={"format": "stl", "download": 1}), 409, "needs_ack")
 
 
 def test_template_thumbnail_and_coupon(client: TestClient) -> None:

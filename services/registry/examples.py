@@ -18,7 +18,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
-from services.agent.templates import Template, get_template, list_templates
+from services.agent.templates import Template, all_templates, get_template
 from services.common.paths import sub
 from services.geom_worker import bake as geom_bake
 from services.geom_worker.program import clamp
@@ -127,6 +127,36 @@ PRESETS: dict[str, tuple[Preset, ...]] = {
             "washer", "Thin washer", "a 2 mm washer, the thinnest the knob allows", {"height": 2.0, "outer_d": 10.0}
         ),
     ),
+    "sliding_battery_door": (
+        Preset("small", "Smaller door", "a shorter, narrower door", {"length": 40.0, "width": 28.0}),
+        Preset("thin", "Thin door", "for a tight groove", {"thickness": 1.2, "rail_thickness": 0.7}),
+        Preset("no-grooves", "No grip grooves", "a plain outer face", {"groove_count": 0}),
+    ),
+    "drawer_runner": (
+        _screw("hole_d", "3"),
+        _screw("hole_d", "4"),
+        Preset("long", "Long runner", "180 mm with four screws", {"length": 180.0, "hole_count": 4}),
+    ),
+    "hinge_pin_bracket": (
+        _screw("hole_d", "3"),
+        _screw("hole_d", "4"),
+        Preset("pin-8", "8 mm pin", "a thicker pin and lugs", {"pin_d": 8.0, "lug_thickness": 5.0}),
+    ),
+    "curtain_ring": (
+        Preset("rod-19", "19 mm rod", "a 22 mm bore for a 19 mm rod", {"inner_d": 22.0}),
+        Preset("rod-25", "25 mm rod", "a 29 mm bore for a 25 mm rod", {"inner_d": 29.0}),
+        Preset("no-eyelet", "No eyelet", "a plain ring", {"eyelet_count": 0}),
+    ),
+    "pointer_knob": (
+        Preset("d-shaft-6", "6 mm D-shaft", "a 6 mm bore with a 1.5 mm flat", {"bore_d": 6.0, "flat_depth": 1.5}),
+        Preset("round-6", "Round 6 mm shaft", "a 6 mm bore with no flat", {"bore_d": 6.0, "flat_depth": 0.0}),
+        Preset("wide", "Wide skirt", "a bigger skirt and pointer", {"skirt_d": 50.0, "pointer_length": 7.0}),
+    ),
+    "lug_cap": (
+        Preset("small-28", "28 mm cap", "a 28 mm cap", {"outer_d": 28.0, "height": 12.0}),
+        Preset("jar-63", "63 mm jar lid", "a wide, low lid", {"outer_d": 63.0, "height": 14.0, "lug_count": 6}),
+        Preset("no-seal", "No sealing ring", "a plain underside", {"seal_height": 0.0}),
+    ),
 }
 
 
@@ -171,7 +201,7 @@ def template_detail(t: Template) -> dict[str, Any]:
 
 
 def all_cards() -> list[dict[str, Any]]:
-    return [template_card(t) for t in list_templates()]
+    return [template_card(t) for t in all_templates()]
 
 
 def bake_template(

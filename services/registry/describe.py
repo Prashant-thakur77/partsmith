@@ -32,7 +32,7 @@ from partsmith_schemas.verification import ParamSpec
 
 from services.agent import providers
 from services.agent.providers import ModelRequest
-from services.agent.templates import Template, get_template, list_templates
+from services.agent.templates import BENCH_TEMPLATES, Template, all_templates, get_template
 from services.common.paths import sub
 from services.geom_worker.program import closest_names
 from services.media.voice import snap_clamp
@@ -90,6 +90,12 @@ _EXTRA_WORDS: dict[str, tuple[str, ...]] = {
     "hook": ("hook", "hanger"),
     "l_bracket": ("bracket", "l-bracket", "angle bracket"),
     "clip": ("clip", "retainer", "retaining clip"),
+    "sliding_battery_door": ("sliding battery", "slide cover", "remote back cover"),
+    "drawer_runner": ("drawer", "runner", "slide rail"),
+    "hinge_pin_bracket": ("hinge bracket", "clevis"),
+    "curtain_ring": ("curtain", "drapery", "glider"),
+    "pointer_knob": ("fan knob", "cooler knob", "regulator", "pointer"),
+    "lug_cap": ("bottle", "jar", "cap"),
 }
 
 
@@ -107,7 +113,8 @@ def pick_template(text: str, templates: Sequence[Template] | None = None) -> Tem
     """The template whose title/tags appear in the words (longer phrases weigh more), or None."""
     low = text.lower()
     best: tuple[int, str] | None = None
-    for t in templates or list_templates():
+    # the established families first, so a bare "hook" or "bracket" keeps meaning them on a tie
+    for t in templates or sorted(all_templates(), key=lambda x: x.name not in BENCH_TEMPLATES):
         score = sum(2 * len(p.split()) for p in _phrases(t) if _has(low, p))
         if score and (best is None or score > best[0]):
             best = (score, t.name)
@@ -209,7 +216,7 @@ def _plan_mock(req: ModelRequest) -> dict[str, Any]:
 
 def _templates_table() -> str:
     rows = []
-    for t in list_templates():
+    for t in all_templates():
         knobs = ", ".join(f"{p.name} ({p.label}) [{p.min:g}..{p.max:g}{p.unit}]" for p in t.params)
         rows.append(f"\n- {t.name}: {t.title}. {t.summary} Params: {knobs}")
     return "".join(rows)
@@ -245,7 +252,7 @@ def _value_row(spec: ParamSpec, value: float, source: str, quote: str = "", note
 def check_plan(raw: Mapping[str, Any], text: str) -> tuple[Template | None, list[dict[str, Any]], list[str]]:
     """Code side of the plan. Returns (template or None when nothing fits, one row per knob, notes)."""
     notes: list[str] = []
-    names = [t.name for t in list_templates()]
+    names = [t.name for t in all_templates()]
     tname = str(raw.get("template") or "").strip()
     if not tname or tname.lower() == "none":
         return None, [], notes
@@ -500,7 +507,7 @@ def recent(limit: int = 5) -> list[str]:
 def _no_fit(rec: dict[str, Any], reason: str) -> None:
     rec.update(status="no_fit", no_fit={
         "reason": reason or "none of the family templates can make this part from its knobs",
-        "templates": [t.title for t in list_templates()],
+        "templates": [t.title for t in all_templates()],
         "next": [{"href": "/fix", "label": "Photograph the part on the mat instead"},
                  {"href": "/requests", "label": "Ask for this part on the requests board"}],
     })  # fmt: skip

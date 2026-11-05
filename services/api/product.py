@@ -18,7 +18,7 @@ from pydantic import BaseModel, Field
 from services.admin import audit
 from services.agent import buy_or_print as bop
 from services.agent import providers
-from services.agent.templates import get_template, list_templates
+from services.agent.templates import all_templates, get_template
 from services.api.auth import require_admin
 from services.api.common import API, EXTENSIONS, RESERVED_QUERY, _file, _float, _formats, _job, job_decision
 from services.api.errors import ApiError
@@ -46,7 +46,7 @@ def _template(name: str) -> Any:
     except KeyError as exc:
         import difflib
 
-        names = [t.name for t in list_templates()]
+        names = [t.name for t in all_templates()]
         raise ApiError(
             404, "template_not_found", f"no template {name!r}", difflib.get_close_matches(name, names, n=3, cutoff=0.3)
         ) from exc

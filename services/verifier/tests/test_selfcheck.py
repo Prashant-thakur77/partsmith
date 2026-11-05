@@ -11,7 +11,7 @@ def test_phase2_exit_gate(vpool: WarmPool) -> None:
     """Self-consistency < 0.15 mm and +/-1 mm perturbations detected with the right sign."""
     rows = run(vpool)
     table = format_table(rows)
-    assert len(rows) == 10, table
+    assert len(rows) == 16, table
     for r in rows:
         assert r.self_hausdorff_mm < SELF_HAUSDORFF_MAX_MM, table
         assert r.plus_delta_mm is not None and r.plus_delta_mm > 0.5, table
