@@ -40,7 +40,7 @@ def test_side_counts_verified_but_off_and_takes_the_median_per_size() -> None:
     rows = [
         _score("a", passed=True, verified=True, err=0.1),
         _score("b", passed=False, verified=True, err=0.9),
-        _score("c", passed=False, verified=False, err=0.3),
+        _score("c", passed=False, verified=False, err=-0.3),
     ]
     side = after_fix._side(rows)
     assert side == {"n": 3, "median_error_mm": 0.3, "pass_0_5": 1, "verified": 2, "verified_but_off": 1, "usd": 0.6}

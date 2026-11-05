@@ -1,0 +1,65 @@
+import cadquery as cq
+import math
+
+BASE_POINTS = [
+    [31.862,-12.576],[31.89,-7.854],[31.297,-7.48],[28.85,-7.327],[28.56,-6.441],
+    [28.425,-4.221],[28.598,-3.266],[28.981,-2.692],[31.356,-2.584],[31.944,-1.989],
+    [31.799,2.378],[31.544,2.595],[29.55,2.677],[28.688,3.025],[28.492,3.716],
+    [28.577,7.135],[28.869,7.487],[30.853,7.488],[31.802,7.872],[31.983,11.837],
+    [31.801,12.588],[31.49,12.844],[28.765,12.99],[28.374,15.472],[27.766,15.988],
+    [23.877,16.223],[-29.397,16.118],[-30.822,15.684],[-31.605,14.821],[-31.88,13.21],
+    [-31.99,7.233],[-31.884,-13.76],[-31.319,-15.223],[-30.229,-15.95],[-27.413,-16.193],
+    [27.181,-16.189],[28.022,-15.978],[28.39,-15.461],[28.69,-13.056],[29.131,-12.832],[30.973,-12.857]
+]
+
+L0 = 63.973
+W0 = 32.416
+
+PARAMS = {
+    "cover_length": (63.97, 58.0, 70.0, 0.1, "mm", True, "Overall length X"),
+    "cover_width": (32.42, 30.0, 36.0, 0.1, "mm", True, "Overall width Y"),
+    "thickness": (1.5, 0.8, 3.0, 0.1, "mm", False, "Cover thickness Z"),
+    "clearance": (0.2, 0.0, 0.6, 0.05, "mm", True, "Fit clearance"),
+    "edge_fillet": (0.6, 0.0, 1.2, 0.1, "mm", False, "Top edge fillet radius"),
+    "grip_grooves": (0, 0, 3, 1, "", False, "Grip groove count"),
+}
+
+def build(p: dict) -> cq.Workplane:
+    sx = p["cover_length"] / L0
+    sy = p["cover_width"] / W0
+    pts = [(x * sx, y * sy) for x, y in BASE_POINTS]
+    if p["clearance"] > 1e-6:
+        fx = 1.0 - (2 * p["clearance"] / p["cover_length"])
+        fy = 1.0 - (2 * p["clearance"] / p["cover_width"])
+        fx = max(0.92, fx)
+        fy = max(0.92, fy)
+        pts = [(x * fx, y * fy) for x, y in pts]
+    wp = cq.Workplane("XY")
+    wp = wp.moveTo(pts[0][0], pts[0][1])
+    for x, y in pts[1:]:
+        wp = wp.lineTo(x, y)
+    wp = wp.close()
+    solid = wp.extrude(p["thickness"], combine=True)
+    gc = int(p["grip_grooves"])
+    if gc > 0:
+        grooveWidth = 1.6
+        grooveDepth = 0.6
+        grooveLen = p["cover_width"] * 0.55
+        grooveDepth = min(grooveDepth, p["thickness"] - 0.4)
+        if grooveDepth > 0.1:
+            baseX = p["cover_length"] * 0.34
+            spacing = 2.8
+            for i in range(gc):
+                gx = baseX - i * spacing
+                cutter = cq.Workplane("XY").workplane(offset=p["thickness"] - grooveDepth).moveTo(gx - grooveWidth/2, -grooveLen/2).lineTo(gx + grooveWidth/2, -grooveLen/2).lineTo(gx + grooveWidth/2, grooveLen/2).lineTo(gx - grooveWidth/2, grooveLen/2).close().extrude(grooveDepth, combine=False)
+                solid = solid.cut(cutter)
+    ef = float(p["edge_fillet"])
+    if ef > 0.05:
+        try:
+            ef = min(ef, p["thickness"] * 0.45)
+            solid = solid.edges(">Z").fillet(ef)
+        except Exception:
+            pass
+    return solid
+
+result = build({k: v[0] for k, v in PARAMS.items()})

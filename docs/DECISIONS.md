@@ -546,3 +546,7 @@ the cause is not established), and 8 of 26 on parts read as black. And 56 of the
 back to the threshold. Every photo here is rendered or pasted on a rendered mat, so real phone photos remain untested. Stored runs
 and bench tables predate this change and still measured mostly with the threshold; they are not re-labelled.
 
+Whole jobs afterwards (`eval/after_fix.py`, `eval/reports/latest/after_fix.json`): the same rendered photos ran the full loop again.
+SAM now measured most of them, but fewer passed, and the fixed rule (p < 0.05) can't call a difference on so few pairs. The
+direction is the wrong way, so the fix is a better mask rate and not yet a better job. The plan said no product change follows
+from this run, so none did; the next step is the hole and outline error SAM's mask adds, then real phone photos.

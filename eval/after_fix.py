@@ -164,7 +164,7 @@ def mask_of(run_dir: Path) -> str:
 
 
 def _side(rows: Sequence[Mapping[str, Any]]) -> dict[str, Any]:
-    errors = [float(d["error_mm"]) for r in rows for d in r.get("dims") or [] if d.get("error_mm") is not None]
+    errors = [abs(float(d["error_mm"])) for r in rows for d in r.get("dims") or [] if d.get("error_mm") is not None]
     verified = [r for r in rows if r.get("verified")]
     return {
         "n": len(rows),
@@ -196,7 +196,13 @@ def report(out: Path) -> dict[str, Any]:
     rendered = (
         json.loads((DATA.parent / "rendered.json").read_text()) if (DATA.parent / "rendered.json").exists() else []
     )
+    thrown_out = [json.loads(p.read_text()) for p in (DATA.parent / "attempt1_no_sam_parser").glob("*/score.json")]
     out_doc = {
+        "discarded_attempt": {
+            "why": "built without meta-sam-parser, so every SAM call failed and it tested nothing about the fix",
+            "runs": len(thrown_out),
+            "usd": round(sum(float(r.get("usd") or 0) for r in thrown_out), 2),
+        },
         "planned": len(planned),
         "paired": len(pairs),
         "not_run": [s for s in planned if not _score(out, s)],

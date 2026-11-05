@@ -1,7 +1,7 @@
 {
- "generated_at": "2026-11-04T21:36:46+00:00",
- "report_date": "2026-11-04",
- "git_sha": "fd1064b",
+ "generated_at": "2026-11-05T01:35:38+00:00",
+ "report_date": "2026-11-05",
+ "git_sha": "6e72bbd",
  "git_first": "2026-10-27",
  "limit_mm": 0.5,
  "run": {
@@ -270,13 +270,13 @@
  },
  "tests": {
   "backend": {
-   "passed": 1023
+   "passed": 1120
   },
   "web_unit": {
-   "passed": 153
+   "passed": 180
   },
   "browser": {
-   "passed": 273
+   "passed": 337
   }
  },
  "control": [
@@ -331,7 +331,85 @@
   "old": 5,
   "new": 91,
   "run_id": "j_261105_92a408c2",
-  "run_error_mm": 0.25
+  "run_error_mm": 0.25,
+  "after_fix": {
+   "discarded_attempt": {
+    "why": "built without meta-sam-parser, so every SAM call failed and it tested nothing about the fix",
+    "runs": 20,
+    "usd": 5.03
+   },
+   "planned": 20,
+   "paired": 14,
+   "not_run": [
+    "syn-clip-clean-s916219",
+    "syn-hinge-leaf-tilt-s441660",
+    "syn-hook-clean-s389065",
+    "syn-battery-cover-blur-s17556",
+    "syn-cupboard-latch-moire-s925064",
+    "syn-spacer-glare-s729629"
+   ],
+   "not_rendered": [],
+   "masks": {
+    "before": {
+     "threshold": 13,
+     "no measure line": 1
+    },
+    "after": {
+     "threshold": 3,
+     "sam-3.1": 10,
+     "no measure line": 1
+    }
+   },
+   "before": {
+    "n": 14,
+    "median_error_mm": 0.141,
+    "pass_0_5": 9,
+    "verified": 2,
+    "verified_but_off": 1,
+    "usd": 3.61
+   },
+   "after": {
+    "n": 14,
+    "median_error_mm": 0.2,
+    "pass_0_5": 5,
+    "verified": 4,
+    "verified_but_off": 1,
+    "usd": 3.6
+   },
+   "after_by_mask": {
+    "no measure line": {
+     "n": 1,
+     "median_error_mm": null,
+     "pass_0_5": 0,
+     "verified": 0,
+     "verified_but_off": 0,
+     "usd": 0.0
+    },
+    "sam-3.1": {
+     "n": 10,
+     "median_error_mm": 0.2,
+     "pass_0_5": 3,
+     "verified": 3,
+     "verified_but_off": 1,
+     "usd": 2.95
+    },
+    "threshold": {
+     "n": 3,
+     "median_error_mm": 0.132,
+     "pass_0_5": 2,
+     "verified": 1,
+     "verified_but_off": 0,
+     "usd": 0.65
+    }
+   },
+   "discordant": {
+    "before_only": 6,
+    "after_only": 2
+   },
+   "mcnemar_p": 0.2890625,
+   "note": "Same rendered photos and scoring as the scale evaluation's runs. Nothing here is a real phone photo.",
+   "source": "uv run python -m eval.after_fix report"
+  }
  },
  "audit": {
   "verified": 16,

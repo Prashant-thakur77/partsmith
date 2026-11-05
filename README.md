@@ -521,6 +521,8 @@ SAM 3.1 is asked first, and code's threshold segmenter takes over when it return
 **The fix, after that evaluation.** The phrase was the problem: code now reads the part's colour and asks for, say, "orange plastic part" first. On 147 photos (`eval/reports/latest/sam_prompts.json`) SAM returned a usable mask on 5 before and 91 after. Its median overlap with the exact mask is 0.982, against 0.956 for the threshold. It still measures a little worse: median length and width error 0.196 mm against 0.152 mm, and hole diameter 0.238 mm against 0.128 mm. Public photos of real objects barely moved, 1 of 16. These photos are rendered or pasted; real phone photos are untested. The evaluation above ran before this change, so its mask counts describe the old prompt.
 
 A live job on the battery cover after the fix measured from SAM's mask and verified at 0.25 mm in 2 rounds, for $0.23: the stored run is `data/replays/j_261105_92a408c2`, and `/jobs/j_261105_92a408c2` on the site.
+
+**The same photos, whole jobs.** 14 of 20 of the evaluation's runs, chosen by a fixed seed before running, finished the full loop again with the fix before the stop time (`eval/after_fix.py`, `eval/reports/latest/after_fix.json`). SAM measured 10 of them, against 0 the first time. Every size within 0.5 mm: 5 after and 9 before. Median error per size 0.2 mm after and 0.141 mm before. Verified: 4 after and 2 before; verified but off: 1 after and 1 before. The rule fixed before the run reads no measured difference (McNemar p = 0.29, 2 pairs improved and 6 got worse), but the direction is the wrong way, so **a better mask rate is not yet a better whole job**. Cost $3.60. Not started by the stop time: 6, in seeded order. A first attempt was thrown out and not counted: it was built without meta-sam-parser, so every SAM call failed and it tested nothing about the fix ($5.03).
 <!-- END:scale -->
 
 ### Bench tables
@@ -1006,20 +1008,20 @@ All code in this repository was written during the hackathon (from Oct 26 2026, 
 are computed from `git log`, so they stay true as the history grows.
 
 <!-- BEGIN:built -->
-**79 commits** between 2026-10-27 05:59 ET and 2026-11-04 20:35 ET; the hackathon started 2026-10-26 12:00 ET. Commits dated before the start: **0**.
+**80 commits** between 2026-10-27 05:59 ET and 2026-11-04 20:35 ET; the hackathon started 2026-10-26 12:00 ET. Commits dated before the start: **0**.
 
 | Area | Files added | Lines added: code and docs | Lines added: data, reports, lockfiles, generated | First commit | Last commit |
 |---|---|---|---|---|---|
 | `services/` (Python backend) | 314 | 62,649 | 0 | 2026-10-27 | 2026-11-04 |
 | `apps/web/` (web app) | 503 | 47,143 | 9,420 | 2026-10-27 | 2026-11-04 |
-| `eval/` (benches and reports) | 1,788 | 8,517 | 176,164 | 2026-10-27 | 2026-11-04 |
+| `eval/` (benches and reports) | 1,788 | 8,517 | 176,182 | 2026-10-27 | 2026-11-04 |
 | `packages/` (typed contracts) | 12 | 1,440 | 5,679 | 2026-10-27 | 2026-11-04 |
 | `tools/` (synthetic data, mats, generators) | 41 | 8,851 | 0 | 2026-10-27 | 2026-11-04 |
 | `infra/` (Modal, deploy) | 17 | 1,142 | 101 | 2026-10-27 | 2026-11-04 |
 | `docs/` | 48 | 2,551 | 11,535 | 2026-10-27 | 2026-11-04 |
 | `data/` (samples, replays) | 4,342 | 0 | 660,721 | 2026-10-27 | 2026-11-04 |
-| root files | 39 | 4,718 | 9,854 | 2026-10-27 | 2026-11-04 |
-| **Total** | **7,104** | **137,011** | **873,474** | | |
+| root files | 39 | 4,739 | 9,854 | 2026-10-27 | 2026-11-04 |
+| **Total** | **7,104** | **137,032** | **873,492** | | |
 
 <details><summary>Every commit since the start, oldest first</summary>
 
@@ -1104,6 +1106,7 @@ are computed from `git log`, so they stay true as the history grows.
 | 2026-11-04 20:21 ET | `3f6ad89` | feat(eval): whole jobs on the same photos after SAM's prompt fix, with the evaluation above the fold |
 | 2026-11-04 20:34 ET | `d744cca` | test: all gates on the final code, and the after-fix run's first attempt recorded as invalid |
 | 2026-11-04 20:35 ET | `0b63226` | fix(eval): provenance takes the tree state the report read, not the report's own files |
+| 2026-11-04 20:35 ET | `6e72bbd` | docs: reports rebuilt from stored runs on the final code |
 
 </details>
 

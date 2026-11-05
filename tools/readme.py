@@ -1008,13 +1008,15 @@ def scale() -> str:
             )
             rows += [
                 "",
-                f"**The same photos, whole jobs.** {doc['paired']} of the evaluation's runs, chosen by a fixed seed before running, went through the "
-                f"full loop again with the fix (`eval/after_fix.py`, `eval/reports/latest/after_fix.json`). SAM measured {sam} of them, against "
+                f"**The same photos, whole jobs.** {doc['paired']} of {doc['planned']} of the evaluation's runs, chosen by a fixed seed before running, finished the "
+                f"full loop again with the fix before the stop time (`eval/after_fix.py`, `eval/reports/latest/after_fix.json`). SAM measured {sam} of them, against "
                 f"{sam_before} the first time. Every size within 0.5 mm: {now['pass_0_5']} after and {was['pass_0_5']} before. Median error per size "
                 f"{now['median_error_mm']} mm after and {was['median_error_mm']} mm before. Verified: {now['verified']} after and {was['verified']} before; "
-                f"verified but off: {now['verified_but_off']} after and {was['verified_but_off']} before. The paired test on pass@0.5 reads {call} "
-                f"(McNemar p = {doc['mcnemar_p']:.2f}, {d['after_only']} pairs improved and {d['before_only']} got worse), and {doc['paired']} pairs can only "
-                f"show a large change. Cost ${now['usd']:.2f}. Not run: {len(doc['not_run'])}.",
+                f"verified but off: {now['verified_but_off']} after and {was['verified_but_off']} before. The rule fixed before the run reads {call} "
+                f"(McNemar p = {doc['mcnemar_p']:.2f}, {d['after_only']} pairs improved and {d['before_only']} got worse), but the direction is "
+                f"{'the wrong way' if d['before_only'] > d['after_only'] else 'not against the fix'}, so **a better mask rate is not yet a better whole job**. "
+                f"Cost ${now['usd']:.2f}. Not started by the stop time: {len(doc['not_run'])}, in seeded order. "
+                f"A first attempt was thrown out and not counted: it was {doc['discarded_attempt']['why']} (${doc['discarded_attempt']['usd']:.2f}).",
             ]
     return "\n".join(rows)
 

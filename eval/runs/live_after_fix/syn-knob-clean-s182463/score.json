@@ -1,0 +1,107 @@
+{
+ "suite": "synthetic",
+ "config": "PS",
+ "sample_id": "syn-knob-clean-s182463",
+ "split": "held_out",
+ "kind": "template",
+ "preset": "clean",
+ "mode": "live",
+ "gt_source": "synthetic_exact",
+ "status": "verified",
+ "verified": true,
+ "iterations": 4,
+ "iterations_to_converge": 4,
+ "strategy": "template",
+ "template": "knob",
+ "verifier_max_error_mm": 0.49454616588596173,
+ "retake_reason": null,
+ "failed_checks": [],
+ "usd": 0.162305,
+ "tokens_in": 108842,
+ "tokens_out": 18898,
+ "model_calls": 23,
+ "model_ms": 199034,
+ "provider_modes": [
+  "live"
+ ],
+ "providers": {
+  "segment": [
+   "meta:sam-3.1"
+  ],
+  "understand": [
+   "meta:muse-spark-1.3"
+  ],
+  "plan": [
+   "baseten:meta-models/muse-spark-open-1026"
+  ],
+  "build": [
+   "baseten:meta-models/muse-spark-open-1026"
+  ],
+  "fix_agent": [
+   "baseten:meta-models/muse-spark-open-1026"
+  ],
+  "judge": [
+   "meta:muse-spark-1.3"
+  ]
+ },
+ "convergence": [
+  {
+   "iter": 1,
+   "hausdorff_mm": 2.777561095072648,
+   "iou": 0.832949002217295,
+   "max_error_mm": 2.777561095072648
+  },
+  {
+   "iter": 2,
+   "hausdorff_mm": 0.9501833179993625,
+   "iou": 0.9478225765756674,
+   "max_error_mm": 0.9501833179993625
+  },
+  {
+   "iter": 3,
+   "hausdorff_mm": 0.5668395839293516,
+   "iou": 0.9701033808326348,
+   "max_error_mm": 0.5668395839293516
+  },
+  {
+   "iter": 4,
+   "hausdorff_mm": 0.49454616588596173,
+   "iou": 0.9802538044336792,
+   "max_error_mm": 0.49454616588596173
+  }
+ ],
+ "wall_s": 252.27,
+ "dims": [
+  {
+   "name": "length",
+   "gt_mm": 28.099989,
+   "model_mm": 27.4,
+   "error_mm": -0.7
+  },
+  {
+   "name": "width",
+   "gt_mm": 28.053037,
+   "model_mm": 27.3915,
+   "error_mm": -0.6616
+  },
+  {
+   "name": "thickness",
+   "gt_mm": 20.4,
+   "model_mm": 20.2,
+   "error_mm": -0.2
+  }
+ ],
+ "missed": [],
+ "extra_holes": 0,
+ "pass_0_3": false,
+ "pass_0_5": false,
+ "valid": true,
+ "valid_reason": "",
+ "failure_category": "dim_off",
+ "overlay": "overlay.png",
+ "failure": "worst length -0.70 mm",
+ "git": {
+  "sha": null,
+  "dirty": false
+ }
+}
