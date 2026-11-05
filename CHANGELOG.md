@@ -3,6 +3,21 @@
 Dates are Eastern Time, and each version points at the commit it describes. Everything was built during the hackathon, which
 started on 2026-10-26 at 12:00 ET.
 
+## v1.1.0 — 2026-11-05: the live evaluation, SAM's prompt, and a corrected film
+
+Added since v1.0.0:
+
+- A large live evaluation with its plan fixed first (`eval/SCALE_PLAN.md`, `eval/reports/latest/scale.json`).
+- A correction that evaluation forced: SAM 3.1 is asked first, but the threshold segmenter measured most runs. The site, README,
+  deck and film now say so.
+- SAM 3.1's prompt names the part's colour, read by code (`eval/sam_prompts.py`), and `eval/after_fix.py` runs the same photos
+  through whole jobs again.
+- A recorded run measured from SAM's mask, `data/replays/j_261105_92a408c2`.
+- `/proof`, `/compare` and `/gallery` pages, an evidence API, `/how` walking through a recorded run, and a real 3D hero with a real knob.
+- Ten more part templates, with pages that say which ones no run has used yet.
+- README flowcharts drawn in Excalidraw, with their sources in `docs/diagrams`, and a test for malformed Mermaid nodes.
+- Fixes: a photo chosen before the page hydrates is no longer lost, and `/fix` no longer breaks hydration.
+
 ## v1.0.0 — the submission
 
 Added since v0.8.0:

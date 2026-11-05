@@ -1,7 +1,7 @@
 {
  "generated_at": "2026-11-04T21:36:46+00:00",
  "report_date": "2026-11-04",
- "git_sha": "873e4ec",
+ "git_sha": "fd1064b",
  "git_first": "2026-10-27",
  "limit_mm": 0.5,
  "run": {
@@ -326,6 +326,13 @@
   "red_ok": 27,
   "red_n": 30
  },
+ "sam_fix": {
+  "photos": 147,
+  "old": 5,
+  "new": 91,
+  "run_id": "j_261105_92a408c2",
+  "run_error_mm": 0.25
+ },
  "audit": {
   "verified": 16,
   "within": 10,
@@ -351,7 +358,7 @@
    "calls": 2092,
    "where": [
     "services/agent/providers/routing.py:110",
-    "services/metrology/segment.py:696",
+    "services/metrology/segment.py:700",
     "services/agent/evidence.py:166"
    ]
   },
@@ -361,7 +368,7 @@
    "calls": 597,
    "where": [
     "services/agent/orchestrator.py:1233",
-    "services/registry/describe.py:536",
+    "services/registry/describe.py:540",
     "services/review/rules.py:83"
    ]
   },

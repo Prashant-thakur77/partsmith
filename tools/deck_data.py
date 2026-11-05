@@ -185,6 +185,23 @@ def table_row(table: dict[str, Any], config: str = "PS") -> dict[str, Any]:
     return next(r for r in table["rows"] if r.get("config") == config)
 
 
+def sam_fix() -> dict[str, Any]:
+    """The colour prompt's before and after, and the paired full-loop run once it exists: only stored numbers."""
+    report = json.loads((ROOT / "eval/reports/latest/sam_prompts.json").read_text())
+    job = json.loads((ROOT / "data/replays/j_261105_92a408c2/summary.json").read_text())
+    out: dict[str, Any] = {
+        "photos": report["photos"],
+        "old": report["mask_rate"]["old"]["k"],
+        "new": report["mask_rate"]["new"]["k"],
+        "run_id": job["id"],
+        "run_error_mm": round(job["max_error_mm"], 2),
+    }
+    after = ROOT / "eval/reports/latest/after_fix.json"
+    if after.exists():
+        out["after_fix"] = json.loads(after.read_text())
+    return out
+
+
 def build() -> dict[str, Any]:
     f = _facts()
     report = load("eval/reports/latest/report.json")
@@ -260,6 +277,7 @@ def build() -> dict[str, Any]:
         },
         "scale": f.public_scale(),
         "evaluation": f.scale_eval(),
+        "sam_fix": sam_fix(),
         "audit": f.verified_audit(report),
         "real_parts": tables["real_ruler"].get("n") or 0,
         "mesh": {

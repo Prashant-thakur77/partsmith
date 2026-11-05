@@ -11,7 +11,7 @@ export const STRINGS = {
 
     "fix.eyebrow": "Fix a broken part",
     "fix.title": "From photo to verified part",
-    "fix.privacy": "Your photos, clip and voice note are sent to Meta's model API to be measured and read (GPS is removed first). While this site runs on hackathon credits, Meta may use that content to improve its models, so don't include faces or anything private.",
+    "fix.privacy": "On a server with model keys, your photos, clip and voice note are sent to Meta's model API to be measured and read (GPS is removed first). While that runs on hackathon credits, Meta may use that content to improve its models, so don't include faces or anything private.",
     "fix.lead": "Three steps, about two minutes. You can watch every measurement and every model iteration live once the job starts.",
     "fix.trySample": "Try a synthetic sample",
     "fix.step1": "Choose your mat",
@@ -256,7 +256,7 @@ export const STRINGS = {
 
     "fix.eyebrow": "Toota part theek karo",
     "fix.title": "Photo se verified part tak",
-    "fix.privacy": "Aapki photos, clip aur voice note Meta ke model API ko bheje jaate hain (GPS pehle hata diya jaata hai). Jab tak yeh site hackathon credits par chal rahi hai, Meta is content se apne models behtar kar sakta hai, isliye chehre ya koi private cheez mat daaliye.",
+    "fix.privacy": "Model keys wale server par aapki photos, clip aur voice note Meta ke model API ko bheje jaate hain (GPS pehle hata diya jaata hai). Jab tak yeh hackathon credits par chal raha hai, Meta is content se apne models behtar kar sakta hai, isliye chehre ya koi private cheez mat daaliye.",
     "fix.lead": "Teen steps, lagbhag do minute. Job start hote hi har measurement aur model ka har round live dikhega.",
     "fix.trySample": "Synthetic sample try karo",
     "fix.step1": "Mat chuno",

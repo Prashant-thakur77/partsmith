@@ -425,6 +425,22 @@ def status_line() -> str:
     return f"{head}\n>\n> {body}"
 
 
+def evaluation_line() -> str:
+    """The large evaluation in one paragraph above the fold; the table under it is the smaller frozen bench."""
+    s = _load("scale.json")
+    if not s:
+        return ""
+    pair = s["paired_b1_vs_ps"]
+    calls = sum(m["calls"] for k, m in s["models"].items() if "(live)" in k)
+    ps = next(r for r in s["tables"]["synthetic"]["rows"] if r["config"] == "PS")
+    return (
+        f"**Largest test so far:** {s['stop']['done']} full runs and {calls:,} live model calls on freshly rendered photos, with the rules fixed "
+        f"first and nothing rerun. On the same photos, the fix loop got every size within 0.5 mm in {pair['ps_pass']} of {pair['n_pairs']} pairs "
+        f"against {pair['b1_pass']} for a single shot (p = {pair['p_value']:.3f}). Median error per size {_fmt(ps['median_abs_err_mm'])} mm, n = {ps['n']} runs. "
+        "Real phone photos are not tested yet. [Full tables](#evaluation-at-scale). The table below is the smaller frozen bench."
+    )
+
+
 def headline() -> str:
     """Four numbers above the fold, each with the file it is read from and the provider mode behind it."""
     rep = _load("report.json") or {}
@@ -978,12 +994,35 @@ def scale() -> str:
                 f"A live job on the battery cover after the fix measured from SAM's mask and verified at {job['max_error_mm']:.2f} mm in "
                 f"{job['iterations']} rounds, for ${job['cost_usd']:.2f}: the stored run is `data/replays/{job['id']}`, and `/jobs/{job['id']}` on the site.",
             ]
+        after = ROOT / "eval/reports/latest/after_fix.json"
+        if after.exists():
+            doc = json.loads(after.read_text())
+            was, now = doc["before"], doc["after"]
+            sam = doc["masks"]["after"].get("sam-3.1", 0)
+            sam_before = doc["masks"]["before"].get("sam-3.1", 0)
+            d = doc["discordant"]
+            call = (
+                "no measured difference"
+                if doc["mcnemar_p"] >= 0.05
+                else ("better" if d["after_only"] > d["before_only"] else "worse")
+            )
+            rows += [
+                "",
+                f"**The same photos, whole jobs.** {doc['paired']} of the evaluation's runs, chosen by a fixed seed before running, went through the "
+                f"full loop again with the fix (`eval/after_fix.py`, `eval/reports/latest/after_fix.json`). SAM measured {sam} of them, against "
+                f"{sam_before} the first time. Every size within 0.5 mm: {now['pass_0_5']} after and {was['pass_0_5']} before. Median error per size "
+                f"{now['median_error_mm']} mm after and {was['median_error_mm']} mm before. Verified: {now['verified']} after and {was['verified']} before; "
+                f"verified but off: {now['verified_but_off']} after and {was['verified_but_off']} before. The paired test on pass@0.5 reads {call} "
+                f"(McNemar p = {doc['mcnemar_p']:.2f}, {d['after_only']} pairs improved and {d['before_only']} got worse), and {doc['paired']} pairs can only "
+                f"show a large change. Cost ${now['usd']:.2f}. Not run: {len(doc['not_run'])}.",
+            ]
     return "\n".join(rows)
 
 
 BLOCKS: dict[str, Callable[[], str]] = {
     "links": links_row,
     "status": status_line,
+    "evaluation-line": evaluation_line,
     "headline": headline,
     "meta-tooling": meta_table,
     "bench": bench_tables,

@@ -24,6 +24,10 @@
 > Numbers below come from live model calls on synthetic photos. Some stages ran as labelled mocks: see `provider_modes` in `eval/reports/latest/report.json`. Real-photo results are pending and say so in their tables. Public photos pasted on a rendered mat have their own table and are not counted as real photos.
 <!-- END:status -->
 
+<!-- BEGIN:evaluation-line -->
+**Largest test so far:** 349 full runs and 8,081 live model calls on freshly rendered photos, with the rules fixed first and nothing rerun. On the same photos, the fix loop got every size within 0.5 mm in 24 of 44 pairs against 11 for a single shot (p = 0.001). Median error per size 0.15 mm, n = 144 runs. Real phone photos are not tested yet. [Full tables](#evaluation-at-scale). The table below is the smaller frozen bench.
+<!-- END:evaluation-line -->
+
 <!-- BEGIN:headline -->
 | Number | What it counts | Source |
 |---|---|---|
@@ -1002,20 +1006,20 @@ All code in this repository was written during the hackathon (from Oct 26 2026, 
 are computed from `git log`, so they stay true as the history grows.
 
 <!-- BEGIN:built -->
-**73 commits** between 2026-10-27 05:59 ET and 2026-11-04 19:56 ET; the hackathon started 2026-10-26 12:00 ET. Commits dated before the start: **0**.
+**75 commits** between 2026-10-27 05:59 ET and 2026-11-04 20:02 ET; the hackathon started 2026-10-26 12:00 ET. Commits dated before the start: **0**.
 
 | Area | Files added | Lines added: code and docs | Lines added: data, reports, lockfiles, generated | First commit | Last commit |
 |---|---|---|---|---|---|
 | `services/` (Python backend) | 310 | 62,347 | 0 | 2026-10-27 | 2026-11-04 |
-| `apps/web/` (web app) | 503 | 47,058 | 9,408 | 2026-10-27 | 2026-11-04 |
+| `apps/web/` (web app) | 503 | 47,079 | 9,408 | 2026-10-27 | 2026-11-04 |
 | `eval/` (benches and reports) | 1,786 | 8,202 | 176,149 | 2026-10-27 | 2026-11-04 |
 | `packages/` (typed contracts) | 12 | 1,440 | 5,679 | 2026-10-27 | 2026-11-04 |
-| `tools/` (synthetic data, mats, generators) | 41 | 8,770 | 0 | 2026-10-27 | 2026-11-04 |
+| `tools/` (synthetic data, mats, generators) | 41 | 8,794 | 0 | 2026-10-27 | 2026-11-04 |
 | `infra/` (Modal, deploy) | 17 | 1,142 | 101 | 2026-10-27 | 2026-11-04 |
 | `docs/` | 48 | 2,544 | 11,535 | 2026-10-27 | 2026-11-04 |
-| `data/` (samples, replays) | 4,307 | 0 | 656,602 | 2026-10-27 | 2026-11-04 |
-| root files | 39 | 4,666 | 9,854 | 2026-10-27 | 2026-11-04 |
-| **Total** | **7,063** | **136,169** | **869,328** | | |
+| `data/` (samples, replays) | 4,342 | 0 | 660,721 | 2026-10-27 | 2026-11-04 |
+| root files | 39 | 4,690 | 9,854 | 2026-10-27 | 2026-11-04 |
+| **Total** | **7,098** | **136,238** | **873,447** | | |
 
 <details><summary>Every commit since the start, oldest first</summary>
 
@@ -1094,6 +1098,8 @@ are computed from `git log`, so they stay true as the history grows.
 | 2026-11-04 19:45 ET | `a91f52f` | fix(video): the corrected film stays under three minutes |
 | 2026-11-04 19:55 ET | `99e9e1c` | docs(video): storyboard for the corrected film |
 | 2026-11-04 19:56 ET | `afaf203` | feat(metrology): SAM 3.1 prompt names the part's colour, read by code, with a before-and-after measurement |
+| 2026-11-04 19:58 ET | `4a8c22f` | feat: the first recorded run measured by SAM 3.1, and the colour-prompt results in the README |
+| 2026-11-04 20:02 ET | `fd1064b` | fix(web): /fix no longer breaks hydration when the status reaches the page first |
 
 </details>
 
