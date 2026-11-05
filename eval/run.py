@@ -1276,8 +1276,8 @@ def write_report(
         seeds={"synthetic_bench": BENCH_SEED, "subset": seed, "suites": SUITE_SEED},
         extra={"configs": rep.get("configs"), "n_runs": len(scores)},
     )
-    if rep.get("git_source") == "runs":  # the code the runs were made with, not the tree that rebuilt the tables
-        prov["git_sha"], prov["git_dirty"] = rep["git_sha"], rep["git_dirty"]
+    # What the report read before writing itself: the runs' code, or the tree. Asking git now would count this report's own files.
+    prov["git_sha"], prov["git_dirty"] = rep["git_sha"], rep["git_dirty"]
     provenance.write(prov, *(t / "provenance.json" for t in targets))
     rows = {k: t.get("rows") or [] for k, t in rep["tables"].items() if k in SUITES}
     ow = {
