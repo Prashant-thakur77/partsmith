@@ -73,6 +73,8 @@ export function ConvergenceChart({ data, threshold, height = 160, keptIter = nul
             <Tooltip
               cursor={{ stroke: "var(--border-strong)" }}
               contentStyle={{ background: "var(--surface)", border: "1px solid var(--border)", borderRadius: 6, fontSize: 12 }}
+              labelStyle={{ color: "var(--fg)" }}
+              itemStyle={{ color: "var(--fg)" }}
               labelFormatter={(v) => `iteration ${v}${tag(Number(v))}`}
               formatter={(v) => [`${fmtNum(Number(v))} mm`, "outline gap (Hausdorff)"]}
             />

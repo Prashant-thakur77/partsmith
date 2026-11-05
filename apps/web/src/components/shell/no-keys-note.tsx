@@ -3,8 +3,11 @@
 import { useQuery } from "@tanstack/react-query";
 import { Info } from "lucide-react";
 import Link from "next/link";
+import * as React from "react";
 import { api } from "@/lib/api";
 import { cn } from "@/lib/utils";
+
+const noSubscribe = () => () => {};
 
 /**
  * Says so beside a button that would ask a model for something this server can't really ask: with no model keys, the
@@ -12,7 +15,9 @@ import { cn } from "@/lib/utils";
  */
 export function NoKeysNote({ what, className }: { what: string; className?: string }) {
   const status = useQuery({ queryKey: ["status"], queryFn: api.status, refetchInterval: 60_000, retry: false });
-  const mode = status.data?.mode;
+  // The layout asks for the status too, so it can reach the cache before this page hydrates: answer like the server until then.
+  const hydrated = React.useSyncExternalStore(noSubscribe, () => true, () => false);
+  const mode = hydrated ? status.data?.mode : undefined;
   if (mode !== "replay" && mode !== "mock") return null;
   return (
     <p role="note" data-testid="no-keys" className={cn("flex items-start gap-2 rounded-md border border-warn-border bg-warn-soft px-3 py-2 text-[12.5px] leading-5 text-fg", className)}>

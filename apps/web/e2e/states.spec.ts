@@ -128,6 +128,19 @@ test("no model keys: /fix and /describe say so beside the button, and a live ser
   expect(realErrors(errors)).toEqual([]);
 });
 
+test("no model keys: the note still hydrates cleanly when the status arrives before the page's own script", async ({ page }) => {
+  const { errors } = await setup(page);
+  // the layout asks for the status as it hydrates; holding back this page's script makes that answer land first
+  await page.route(/\/_next\/static\/chunks\/app\/.*fix.*page.*\.js/, async (route) => {
+    await new Promise((resolve) => setTimeout(resolve, 1_500));
+    await route.continue();
+  });
+  await page.goto("/fix");
+  await expect(page.getByTestId("no-keys")).toBeVisible();
+  await page.waitForLoadState("networkidle");
+  expect(realErrors(errors)).toEqual([]);
+});
+
 test("/proof: the large evaluation shows how often SAM 3.1's mask was used, not only when it worked", async ({ page }) => {
   await setup(page);
   await page.goto("/proof");
