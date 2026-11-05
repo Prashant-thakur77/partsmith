@@ -21,12 +21,15 @@ export function Tooltip({
   side = "top",
   className,
   delay = 200,
+  tap = false,
 }: {
   content: React.ReactNode;
   children: React.ReactNode;
   side?: Side;
   className?: string;
   delay?: number;
+  /** A touch on the trigger opens and closes it, since a phone has no hover. */
+  tap?: boolean;
 }) {
   const id = React.useId();
   const anchor = React.useRef<HTMLSpanElement>(null);
@@ -69,11 +72,17 @@ export function Tooltip({
     if (!open) return;
     const onKey = (e: KeyboardEvent) => e.key === "Escape" && hide(0);
     const onScroll = () => hide(0);
+    const onDown = (e: PointerEvent) => {
+      const target = e.target as Node;
+      if (!anchor.current?.contains(target) && !tip.current?.contains(target)) hide(0);
+    };
     window.addEventListener("keydown", onKey);
     window.addEventListener("scroll", onScroll, true);
+    window.addEventListener("pointerdown", onDown);
     return () => {
       window.removeEventListener("keydown", onKey);
       window.removeEventListener("scroll", onScroll, true);
+      window.removeEventListener("pointerdown", onDown);
     };
   }, [open]);
 
@@ -86,7 +95,8 @@ export function Tooltip({
       ref={anchor}
       className="inline-flex max-w-full"
       onPointerEnter={(e) => e.pointerType === "mouse" && show(delay)}
-      onPointerLeave={() => hide()}
+      onPointerLeave={(e) => e.pointerType === "mouse" && hide()}
+      onPointerUp={(e) => tap && e.pointerType !== "mouse" && setOpen((was) => !was)}
       onFocusCapture={(e) => (e.target as HTMLElement).matches(":focus-visible") && show(0)}
       onBlurCapture={() => hide(0)}
     >

@@ -10,6 +10,7 @@ import { CouponFit } from "@/components/jobs/coupon-fit";
 import { EditPanel } from "@/components/jobs/edit-panel";
 import { BoundNote, NarratedBadge, NarrationPanel, UncheckedList } from "@/components/jobs/evidence-notes";
 import { ExportMenu, PreviewDialog } from "@/components/jobs/export-menu";
+import { JobPlainSummary } from "@/components/jobs/job-plain-summary";
 import { FixHistoryStrip } from "@/components/jobs/fix-history-strip";
 import { chartSizeNote, roundsFromEvents } from "@/lib/fix-rounds";
 import { SourceSwatch, sourceColor } from "@/components/jobs/source-key";
@@ -43,12 +44,14 @@ import { Spinner } from "@/components/ui/spinner";
 import { StatusDot } from "@/components/ui/status-dot";
 import { toast } from "@/components/ui/toast";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { TermText } from "@/components/ui/term";
 import { VerifiedBadge } from "@/components/ui/verified-badge";
 import { ApiError, api, artifactUrl } from "@/lib/api";
 import { couponFeatures } from "@/lib/coupon-fit";
 import type { ArtifactEvent, BakeResult, JobDetail, JobEvent, Measured, Measurements, PartTest } from "@/lib/api-types";
 import { isNarrated } from "@/lib/evidence-notes";
-import { plainTerms, splitNotes } from "@/lib/plain-terms";
+import { jobPlain } from "@/lib/plain-summary";
+import { failingCheckWord, plainTerms, splitNotes } from "@/lib/plain-terms";
 import { runModes } from "@/lib/job-cost";
 import { fmtNum, fmtUsd, paramLabel, splitTitle } from "@/lib/format";
 import { useBake, useCountTo, useJobBake } from "@/lib/hooks";
@@ -209,7 +212,7 @@ function VerifierNotes({ reasons, className, label }: { reasons: string[]; class
       {findings.length ? (
         <ul className="list-disc space-y-0.5 pl-4 text-muted" aria-label={label}>
           {findings.map((r) => (
-            <li key={r}>{plainTerms(r)}</li>
+            <li key={r}><TermText text={plainTerms(r)} /></li>
           ))}
         </ul>
       ) : null}
@@ -496,6 +499,24 @@ export function WorkspaceClient({ id }: { id: string }) {
   const boxNote = boxVsPhotoNote(verification);
   const thicknessNote = statedThicknessNote(verification, (d.partspec?.thickness ?? measurements?.thickness)?.source);
   const focusPoint = manualFocus ?? autoFocus;
+  const whyText = d.status_reason ?? verification?.reasons[0] ?? null;
+  const plain = jobPlain({
+    status: sum.status,
+    finished: doneStatus ?? null,
+    maxErrorMm: finalErrMm,
+    limitMm: threshold,
+    gaps: measured.map((c) => c.hausdorff_mm!),
+    views: verification?.views ?? [],
+    tests: verification?.tests ?? [],
+    uncheckedCount: verification?.unchecked.length ?? 0,
+    failingCheck: failingCheckWord(whyText),
+    finding: veto ? `The ${veto.text}.` : whyText ? plainTerms(whyText) : null,
+    refusal: d.partspec?.refusal ?? null,
+    inReview: !!d.review,
+    recorded: replay,
+    sample: sum.origin === "synthetic",
+    mock: sum.provider_mode === "mock" && !replay,
+  });
 
   return (
     <I18nRegion className="pb-10">
@@ -550,6 +571,10 @@ export function WorkspaceClient({ id }: { id: string }) {
             <JobActions id={id} summary={sum} />
           </div>
         </div>
+      </div>
+
+      <div className="px-4 pt-4 sm:px-6">
+        <JobPlainSummary plain={plain} jobId={id} />
       </div>
 
       {verification?.verified && VOTE_ENABLED ? (
@@ -758,8 +783,8 @@ export function WorkspaceClient({ id }: { id: string }) {
                         <thead>
                           <tr className="text-left text-[11px] text-subtle">
                             <th scope="col" className="py-1 font-sans font-medium">View</th>
-                            <th scope="col" className="py-1 text-right font-sans font-medium">Overlap (IoU)</th>
-                            <th scope="col" className="py-1 text-right font-sans font-medium">Largest gap</th>
+                            <th scope="col" className="py-1 text-right font-sans font-medium"><TermText text="Overlap (IoU)" /></th>
+                            <th scope="col" className="py-1 text-right font-sans font-medium"><TermText text="Largest gap" /></th>
                             <th scope="col" className="py-1 text-right font-sans font-medium">Average gap</th>
                           </tr>
                         </thead>

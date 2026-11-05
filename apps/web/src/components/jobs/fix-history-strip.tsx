@@ -9,6 +9,7 @@
  */
 import { CircleCheck, CircleDashed, CircleX, ImageOff, TriangleAlert } from "lucide-react";
 import * as React from "react";
+import { Term } from "@/components/ui/term";
 import { artifactUrl } from "@/lib/api";
 import type { JobEvent } from "@/lib/api-types";
 import { editsText, keepLine, keepReason, roundsFromEvents, sizeSetsMaxError, type FixRound, type RoundVerdict } from "@/lib/fix-rounds";
@@ -171,7 +172,7 @@ function RoundDetail({ r, limit }: { r: FixRound; limit: number | null }) {
     <div className="mt-2 space-y-2 border-t border-border pt-2 text-[12px]">
       <div className="flex flex-wrap gap-x-4 gap-y-1 text-muted">
         <span>
-          <span className="text-subtle">Verifier: </span>
+          <span className="text-subtle"><Term k="verifier">Verifier</Term>: </span>
           <span className="text-fg">{r.verdictText || "no verify result recorded"}</span>
         </span>
         {r.testsTotal ? (

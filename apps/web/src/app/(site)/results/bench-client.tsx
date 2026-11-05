@@ -10,9 +10,10 @@ import { EmptyState } from "@/components/ui/empty-state";
 import { ErrorState } from "@/components/ui/error-state";
 import { ModeBadge } from "@/components/ui/provenance";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Term, TermText } from "@/components/ui/term";
 import { api, ApiError, artifactUrl } from "@/lib/api";
 import type { BenchTable } from "@/lib/api-types";
-import { BENCH_TABLES, EXTRA_TITLES, benchCell, benchHeadline, benchSentence, benchVerified, caseLabel, passVsVerifiedNote, cellText, columnLabel, configLabel, gtLabel, KEY_COLUMNS, plainBench, splitCaseTitle } from "@/lib/bench";
+import { BENCH_TABLES, EXTRA_TITLES, benchCell, benchHeadline, benchSentence, benchVerified, caseLabel, passVsVerifiedNote, resultsPlain, cellText, columnLabel, configLabel, gtLabel, KEY_COLUMNS, plainBench, splitCaseTitle } from "@/lib/bench";
 import { PRODUCT, productApi } from "@/lib/api-product";
 import { useCapabilities } from "@/lib/capabilities";
 import { titleCase } from "@/lib/format";
@@ -23,6 +24,37 @@ function useTemplateTitles(): Record<string, string> {
   const caps = useCapabilities();
   const q = useQuery({ queryKey: ["templates"], queryFn: productApi.templates, enabled: caps.has("get", PRODUCT.templates), staleTime: 300_000, retry: false });
   return React.useMemo(() => Object.fromEntries((q.data ?? []).map((t) => [t.name, t.title])), [q.data]);
+}
+
+/** The page's answer before its tables, in four questions and in the tables' own numbers. */
+function PlainAnswers({ tables, separate }: { tables: Record<string, BenchTable | undefined>; separate: Record<string, BenchTable | undefined> }) {
+  return (
+    <section aria-label="In plain words" data-testid="results-plain" className="space-y-3">
+      <dl className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+        {resultsPlain(tables, separate).map((row) => (
+          <div key={row.key} className="flex flex-col gap-1.5 rounded-lg border border-border bg-surface p-4">
+            <dt className="text-[13.5px] font-semibold text-fg">{row.question}</dt>
+            <dd className="flex-1 text-[13px] leading-[1.5] text-muted">
+              <TermText text={row.answer} />
+            </dd>
+            <dd>
+              <a href={`#${row.key}`} className="text-[12.5px] font-medium text-accent-text hover:underline">
+                See the table
+              </a>
+            </dd>
+          </div>
+        ))}
+      </dl>
+      <p className="flex flex-wrap items-center gap-x-3 gap-y-1 text-[12.5px] text-muted">
+        <span className="text-subtle">Words on this page:</span>
+        <Term k="hausdorff" />
+        <Term k="iou" />
+        <Term k="parametric" />
+        <Term k="verifier" />
+        <Term k="mat" />
+      </p>
+    </section>
+  );
 }
 
 function TableView({ t, only, label }: { t: BenchTable; only?: readonly string[]; label?: string }) {
@@ -38,7 +70,7 @@ function TableView({ t, only, label }: { t: BenchTable; only?: readonly string[]
           <tr>
             {cols.map((c) => (
               <th key={c} scope="col" title={c} className="px-3 py-2 font-medium whitespace-nowrap">
-                {columnLabel(c)}
+                <TermText text={columnLabel(c)} />
               </th>
             ))}
           </tr>
@@ -154,6 +186,7 @@ export function BenchClient() {
           <ErrorState error={q.error} what="the bench report" onRetry={() => void q.refetch()} />
         ) : (
           <>
+            {r ? <PlainAnswers tables={r.tables} separate={r.separate_tables} /> : null}
             {missing ? (
               <EmptyState icon={Hourglass} title="No bench report has been generated yet">
                 The tables are built by the eval scripts from stored runs. Until they run there are no accuracy numbers to show — on

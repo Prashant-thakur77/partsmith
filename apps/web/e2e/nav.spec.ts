@@ -39,16 +39,18 @@ test("header: at most six items, the Fix a part button always in view, the rest 
   }
 });
 
-test("/how explains the five steps, links each to where it can be seen, and defines the words", async ({ page }, info) => {
+test("/how walks through the eight steps, links them to where they can be seen, and defines the words", async ({ page }, info) => {
   test.skip(!info.project.name.startsWith("desktop-light") && !info.project.name.startsWith("mobile-light"), "content check, light themes");
   await setup(page);
   await page.goto("/how");
-  const steps = page.getByRole("region", { name: "The five steps" }).getByRole("listitem");
-  await expect(steps).toHaveCount(5);
+  const steps = page.getByRole("region", { name: "The eight steps" });
+  await expect(steps.getByRole("tab")).toHaveCount(8);
+  await steps.getByRole("tab", { name: "Millimetres" }).click();
   await expect(page.getByRole("link", { name: "Watch a recorded run" })).toHaveAttribute("href", "/judges");
+  await steps.getByRole("tab", { name: "Outline" }).click();
   await expect(page.getByRole("link", { name: "Which AI did what" }).first()).toHaveAttribute("href", "/models");
   await expect(page.getByRole("heading", { name: "The model proposes, code decides" })).toBeVisible();
-  for (const term of ["Hausdorff (the gap)", "IoU", "Residual", "Verified", "Best effort", "Recorded run (replay)", "Mock", "Synthetic"]) {
+  for (const term of ["Hausdorff (the gap)", "IoU", "Parametric", "Verifier", "Screen mat", "Residual", "Verified", "Best effort", "Recorded run (replay)", "Mock", "Synthetic"]) {
     await expect(page.getByRole("term").filter({ hasText: term }).first()).toBeVisible();
   }
 });

@@ -212,6 +212,21 @@ export function benchSentence(key: string, t: BenchTable): string | null {
   return `${parts[0]}${tail.length ? `; ${tail.join(", and ")}` : ""}.`;
 }
 
+/** The four questions a first-time reader has about this page, each answered from the tables' own headlines. */
+export type PlainAnswer = { key: string; question: string; answer: string };
+
+export function resultsPlain(tables: Record<string, BenchTable | undefined>, separate: Record<string, BenchTable | undefined> = {}): PlainAnswer[] {
+  const say = (key: string, t: BenchTable | undefined) => (t ? benchSentence(key, t) : null);
+  const handled = [say("redteam", tables.redteam), say("control", tables.control)].filter(Boolean).join(" ");
+  const real = tables.real_ruler;
+  return [
+    { key: "synthetic", question: "How close does it get?", answer: say("synthetic", tables.synthetic) ?? "This suite has not run yet." },
+    { key: "public_photos", question: "On photos of real objects?", answer: say("public_photos", separate.public_photos) ?? "This suite has not run yet." },
+    { key: "redteam", question: "Does it turn bad input away?", answer: handled || "These suites have not run yet." },
+    { key: "real_ruler", question: "On real broken parts?", answer: (real?.n ? say("real_ruler", real) : null) ?? "Not measured yet. No real broken part has been photographed on the mat and checked with a ruler." },
+  ];
+}
+
 // ── rates and case names in words ─────────────────────────────────────────────
 /** Columns whose values are shares of the row's cases (0–1), shown as counts: "2/12 (17%)". */
 export function isRateColumn(col: string): boolean {
