@@ -259,6 +259,7 @@ def build() -> dict[str, Any]:
             "verified_but_off": public["verified_but_off"],
         },
         "scale": f.public_scale(),
+        "evaluation": f.scale_eval(),
         "audit": f.verified_audit(report),
         "real_parts": tables["real_ruler"].get("n") or 0,
         "mesh": {

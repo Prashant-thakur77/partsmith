@@ -1,7 +1,7 @@
 {
  "generated_at": "2026-11-04T21:36:46+00:00",
  "report_date": "2026-11-04",
- "git_sha": "1f77aad",
+ "git_sha": "873e4ec",
  "git_first": "2026-10-27",
  "limit_mm": 0.5,
  "run": {
@@ -270,10 +270,13 @@
  },
  "tests": {
   "backend": {
-   "passed": 1007
+   "passed": 1023
   },
   "web_unit": {
-   "passed": 152
+   "passed": 153
+  },
+  "browser": {
+   "passed": 273
   }
  },
  "control": [
@@ -302,6 +305,27 @@
   "photos": 2,
   "corners": 48
  },
+ "evaluation": {
+  "done": 349,
+  "calls": 8081,
+  "sam_calls": 2092,
+  "spark_calls": 597,
+  "open_calls": 5378,
+  "pairs": 44,
+  "ps_pass": 24,
+  "b1_pass": 11,
+  "p": 0.001,
+  "top_off": 10,
+  "top_n": 13,
+  "side_off": 1,
+  "side_n": 9,
+  "median_mm": 0.15,
+  "n": 144,
+  "minutes": 7,
+  "usd_per_job": 0.2608,
+  "red_ok": 27,
+  "red_n": 30
+ },
  "audit": {
   "verified": 16,
   "within": 10,
@@ -323,28 +347,28 @@
  "models": [
   {
    "name": "SAM 3.1",
-   "job": "Measuring instrument: masks that become millimetres",
-   "calls": 355,
+   "job": "Asked first for the part mask; code falls back if unsure",
+   "calls": 2092,
    "where": [
     "services/agent/providers/routing.py:110",
-    "services/metrology/segment.py:664",
+    "services/metrology/segment.py:696",
     "services/agent/evidence.py:166"
    ]
   },
   {
    "name": "Muse Spark 1.3",
    "job": "Names the part, finds the break, points at each hole",
-   "calls": 63,
+   "calls": 597,
    "where": [
     "services/agent/orchestrator.py:1233",
-    "services/registry/describe.py:529",
+    "services/registry/describe.py:536",
     "services/review/rules.py:83"
    ]
   },
   {
    "name": "Muse Spark Open",
    "job": "Open weights: writes and fixes the CadQuery program",
-   "calls": 918,
+   "calls": 5378,
    "where": [
     "services/agent/orchestrator.py:1903",
     "services/agent/agent_loop.py:493"
@@ -539,12 +563,14 @@
   "printers_period": "Q1 2025",
   "printers_source": "CONTEXT, entry-level 3D printers (under $2,500)",
   "printers_url": "https://www.tctmagazine.com/additive-manufacturing-3d-printing-news/tariffs-fears-push-entry-level-3d-printer-shipments-in-q1-to-1-million/",
+  "others_source": "Category summary from public reviews and product docs, Nov 2026 (including All3DP's AI generator tests)",
+  "others_url": "https://all3dp.com/1/do-free-text-to-3d-model-generators-really-work-we-tested-3-of-them",
   "repair_law": "EU Directive 2024/1799",
   "repair_url": "https://cm.twobirds.com/en/insights/2024/germany/recht-auf-reparatur-richtlinie-veroeffentlicht-auswirkungen-fuer-wirtschaftsakteure-in-der-eu"
  },
  "links": {
-  "site": "",
-  "video": "",
+  "site": "https://partsmith-52-204-199-249.sslip.io",
+  "video": "https://youtu.be/bdMTeAaa7dY",
   "repo": "https://github.com/Prashant-thakur77/partsmith"
  }
 }
