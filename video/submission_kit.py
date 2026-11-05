@@ -48,7 +48,7 @@ Indie Developer track · Push the Frontier
 **What it does.** You lay the part on your laptop screen, which draws markers at true size after a one-time match against a bank card, and take a phone photo. SAM 3.1 outlines the part and plain code turns that outline into millimetres. Muse Spark Open writes a real CadQuery program with named knobs, not a mesh. A deterministic verifier lays the model over the photo and reports the gap. The agent reads the gap and fixes the program until it is inside {f['limit_mm']} mm. Only then does the export unlock. Verified parts join an open registry that people and coding agents can search over REST and MCP.
 
 **How Meta's models make it possible.**
-- SAM 3.1 becomes a measuring instrument: its masks turn into millimetres ({sam} live calls in the stored bench).
+- SAM 3.1 is asked first for the part's mask; when it isn't confident, code's threshold segmenter takes over, which has been most runs on rendered photos ({sam} live calls).
 - Muse Spark 1.3 names the part, finds the break and points at each hole ({spark} live calls).
 - Muse Spark Open writes and fixes the program on open weights ({f['open_calls']} of {f['builder_calls']} builder calls).
 - Muse Wonder finds a published spec; code keeps a value only if it is cited.
@@ -101,7 +101,7 @@ Built for the Meta Global AI Developer Hackathon, Indie track.
 ## X post
 Photo of a broken plastic part → a measured, verified, printable replacement.
 
-No caliper: your laptop screen is the ruler. Meta's SAM 3.1 outlines it, Muse Spark Open writes the CAD, and code checks it against the photo. A model that lies gets caught: {f['blocked']}/{f['attempts']}.
+No caliper: your laptop screen is the ruler. Meta's SAM 3.1 looks for the part, Muse Spark Open writes the CAD, and code checks it against the photo. A model that lies gets caught: {f['blocked']}/{f['attempts']}.
 
 Built solo for the Meta Global AI Developer Hackathon. Got a broken part? Send it in.
 

@@ -125,8 +125,9 @@ def main() -> None:
         "commits": int(git("rev-list", "--count", "HEAD")),
         "tests": tests(),
         "public": public_photos(report),
+        "scale": scale_eval(),
         "time": time_saved(report),
-        "scale": public_scale(),
+        "marker_scale": public_scale(),
         "site": links.get("live_site") or "",
         "video": links.get("video") or "",
         **OUTSIDE,
@@ -136,14 +137,43 @@ def main() -> None:
     print(json.dumps(facts, indent=1))
 
 
+def scale_eval() -> dict:
+    """The large live evaluation (eval/reports/latest/scale.json): fresh renders, plan fixed first, nothing rerun."""
+    s = load("eval/reports/latest/scale.json")
+    live = {k: v for k, v in s["models"].items() if "(live)" in k}
+    ps = next(r for r in s["tables"]["synthetic"]["rows"] if r["config"] == "PS")
+    off, pair, red = s["verified_but_off"], s["paired_b1_vs_ps"], s["tables"]["redteam"]["headline"]
+    return {
+        "done": s["stop"]["done"],
+        "calls": sum(v["calls"] for v in live.values()),
+        "sam_calls": sum(v["calls"] for k, v in live.items() if "sam" in k),
+        "spark_calls": sum(v["calls"] for k, v in live.items() if "spark-1.3" in k),
+        "open_calls": sum(v["calls"] for k, v in live.items() if "spark-open" in k),
+        "pairs": pair["n_pairs"],
+        "ps_pass": pair["ps_pass"],
+        "b1_pass": pair["b1_pass"],
+        "p": round(pair["p_value"], 3),
+        "top_off": off["top_only"]["k"],
+        "top_n": off["top_only"]["n"],
+        "side_off": off["top_and_side"]["k"],
+        "side_n": off["top_and_side"]["n"],
+        "median_mm": ps["median_abs_err_mm"],
+        "n": ps["n"],
+        "minutes": round(ps["median_wall_s"] / 60),
+        "usd_per_job": ps["usd_per_job"],
+        "red_ok": red["correct"],
+        "red_n": red["n"],
+    }
+
+
 def meta_models(weights: dict) -> list[dict]:
-    """The Meta models the stored runs really called, with their live call counts where the bench logged them."""
-    stages = weights["stages"]
+    """The Meta models, with their live call counts in the large evaluation where it logged them."""
+    calls = scale_eval()
 
     return [
-        {"name": "SAM 3.1", "job": "Measuring instrument: masks that become millimetres", "calls": sum(m["calls"] for s in ("segment", "segment_points") for m in stages[s]["models"])},
-        {"name": "Muse Spark 1.3", "job": "Names the part, finds the break, points at each hole", "calls": sum(m["calls"] for m in stages["understand"]["models"])},
-        {"name": "Muse Spark Open", "job": "Open weights: writes and fixes the CadQuery program", "calls": weights["builder"]["calls_on_open_weights"]},
+        {"name": "SAM 3.1", "job": "Asked first for the part mask; code falls back if unsure", "calls": calls["sam_calls"]},
+        {"name": "Muse Spark 1.3", "job": "Names the part, finds the break, points at each hole", "calls": calls["spark_calls"]},
+        {"name": "Muse Spark Open", "job": "Open weights: writes and fixes the CadQuery program", "calls": calls["open_calls"]},
         {"name": "Muse Wonder", "job": "Finds a published spec; code keeps only cited values", "calls": None},
         {"name": "Muse Image", "job": "In-place repair preview, always labelled AI", "calls": None},
         {"name": "Voice Transcribe", "job": "Hindi and English voice edits, mapped to knobs", "calls": None},
@@ -155,7 +185,7 @@ def time_saved(report: dict) -> dict:
     path = f"data/replays/{RUN}"
     events = [json.loads(line) for line in open(f"{ROOT}/{path}/run.jsonl")]
     first_file = next(e["ts"] for e in events if e.get("t") == "artifact" and e.get("kind") == "threemf")
-    synthetic = next(r for r in report["tables"]["synthetic"]["rows"] if r["config"] == "PS")
+    synthetic = next(r for r in load("eval/reports/latest/scale.json")["tables"]["synthetic"]["rows"] if r["config"] == "PS")
     public = next(r for r in report["separate_tables"]["public_photos"]["rows"] if r["config"] == "PS")
     return {
         "run_minutes": round((first_file - load(f"{path}/summary.json")["created_at"]) / 60, 1),

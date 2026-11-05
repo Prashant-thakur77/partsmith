@@ -122,7 +122,7 @@
   #others tr.us td:first-child { border-color: var(--accent); color: var(--accent); }
   #others tr.us td:last-child { border-color: var(--accent); }
   #others tr.dim { opacity: .5 !important; }
-  #others .src { position: absolute; left: 90px; top: 884px; font: 500 24px 'Geist Mono', monospace; color: var(--muted); }
+  #others .src { position: absolute; left: 90px; top: 830px; font: 500 24px 'Geist Mono', monospace; color: var(--muted); }
 
   /* before and now */
   #before .col { position: absolute; top: 120px; width: 800px; }
@@ -415,7 +415,7 @@ const SCENES = {
     });
     $("#mh").textContent = `${F.meta.length} Meta models, one job each`;
     later(0.05, () => on($("#mh")));
-    $("#mnote").textContent = "Call counts: stored bench runs · eval/reports/latest/open_weights.json";
+    $("#mnote").textContent = "Call counts: the live evaluation · eval/reports/latest/scale.json";
     later(0.6, () => on($("#mnote")));
     const lit = (i, t) => later(t, () => { [...rows.children].forEach((x) => x.classList.remove("lit")); rows.children[i].classList.add("lit"); });
     [...rows.children].forEach((x, i) => later(0.05, () => {}));
@@ -475,7 +475,7 @@ const SCENES = {
     const items = [
       ["The photo", "as taken, on the mat", "flow-photo.jpg", 0.1],
       ["Flattened to true scale", "markers → plane → millimetres", "see-rect.jpg", L.v2.start],
-      ["SAM 3.1 outline", "text prompt → part mask", "see-mask.jpg", L.v3.start],
+      ["The part's mask", "SAM 3.1 first · this run: code's fallback", "see-mask.jpg", L.v3.start],
       ["Measured in code", "every size with an error bar", "see-measure.jpg", L.v4.start],
     ];
     later(0.1, () => on($("#stag")));
@@ -571,13 +571,14 @@ const SCENES = {
     const t = F.tests || {};
     later(0.05, () => on($("#th")));
     const fmt = (n) => n.toLocaleString("en");
+    const S = F.scale;
     const cards = [
-      [`${F.b1_median_mm} → ${F.synthetic_median_mm} mm`, "median error, single shot to full loop", `rendered photos, exact ground truth, n = ${F.synthetic_n}`, 0.2],
-      [`${F.blocked}/${F.attempts}`, "lying-model attacks blocked", "scripted attacks on the real verifier", L.t2.start],
-      [`${F.redteam[0]}/${F.redteam[1]}`, "bad photos caught", `and ${F.control[0]}/${F.control[1]} intact parts accepted`, word("t2", /bad/i) - 0.2],
-      [`${F.public.median_mm} mm`, "median error on real objects", `${F.public.n} public photos pasted on a rendered mat, against published sizes`, L.t4.start],
-      [`${F.scale.mm_per_100} mm`, "marker scale drift per 100 mm", `${F.scale.corners} corners on ${F.scale.photos} real camera photos of printed boards`, L.t4.start + 2],
-      [t.backend ? fmt(t.backend.passed) : `${F.control[0]}/${F.control[1]}`, t.backend ? "backend tests passing" : "intact parts accepted", t.web_unit ? `plus ${fmt(t.web_unit.passed)} web unit tests, from make proof` : "", L.t3.start],
+      [`${S.ps_pass} vs ${S.b1_pass}`, `of ${S.pairs} photos within ${F.limit_mm} mm: full loop vs single shot`, `same photos, paired, p = ${S.p}`, 0.2],
+      [`${S.top_off}/${S.top_n} → ${S.side_off}/${S.side_n}`, "wrong passes: top photo alone → top and side", "verified, but over the limit on some size", L.t2.start],
+      [`${S.median_mm} mm`, "median error, rendered parts", `n = ${S.n}, exact ground truth`, L.t4.start],
+      [`${F.blocked}/${F.attempts}`, "lying-model attacks blocked", "scripted attacks on the real verifier", L.t4.start + 1.2],
+      [`${S.red_ok}/${S.red_n}`, "bad photos caught", "a hand in frame got through", L.t3.start - 1.2],
+      [t.backend ? fmt(t.backend.passed) : `${S.calls}`, t.backend ? "backend tests passing" : "live model calls", `${fmt(S.calls)} live model calls in the evaluation`, L.t3.start],
     ];
     const grid = $("#tgrid");
     cards.forEach(([big, txt, small, at]) => {
