@@ -10,6 +10,7 @@ from services.metrology.segment import (
     ProviderSegmenter,
     SegContext,
     ThresholdSegmenter,
+    colour_word,
     fill_holes,
     mask_contour_subpx,
     mask_iou,
@@ -173,3 +174,83 @@ def test_provider_downscales_and_refines_on_crop() -> None:
     small = ProviderSegmenter(_fake_call({"plastic part": [(gt, 0.9)]}, log2), max_side_px=800, crop_refine=False)
     small.segment(sc.image)
     assert log2[0].endswith(":800x600")
+
+
+def _solid(bgr: tuple[int, int, int]) -> tuple[np.ndarray, np.ndarray]:
+    img = np.full((60, 60, 3), bgr, np.uint8)
+    return img, np.ones((60, 60), bool)
+
+
+@pytest.mark.parametrize(
+    ("bgr", "word"),
+    [
+        ((20, 110, 240), "orange"),
+        ((30, 30, 220), "red"),
+        ((40, 200, 230), "yellow"),
+        ((60, 170, 60), "green"),
+        ((200, 90, 40), "blue"),
+        ((170, 50, 120), "purple"),
+        ((180, 130, 240), "pink"),
+        ((30, 70, 110), "brown"),
+        ((170, 205, 225), "beige"),
+        ((240, 240, 240), "white"),
+        ((130, 130, 130), "grey"),
+        ((20, 20, 20), "black"),
+    ],
+)
+def test_colour_word_names_the_masked_pixels(bgr: tuple[int, int, int], word: str) -> None:
+    img, mask = _solid(bgr)
+    assert colour_word(img, mask) == word
+
+
+def test_colour_word_needs_a_mask_and_a_colour_image() -> None:
+    img, mask = _solid((20, 110, 240))
+    assert colour_word(img, np.zeros_like(mask)) is None
+    assert colour_word(img[:, :, 0], mask) is None
+
+
+def test_colour_word_ignores_the_stage_around_the_part() -> None:
+    img, _ = _solid((245, 245, 245))
+    img[20:40, 20:40] = (20, 110, 240)
+    mask = np.zeros(img.shape[:2], bool)
+    mask[18:42, 18:42] = True  # a little stage inside the mask's edge: eroded away
+    assert colour_word(img, mask) == "orange"
+
+
+def test_ladder_starts_with_the_colour_read_by_code_and_stops_on_a_mask() -> None:
+    sc = _scene(PART)
+    det = detect_mat(sc.image)
+    word = colour_word(sc.image, ThresholdSegmenter().segment(sc.image, context=SegContext(det)).mask)
+    assert word
+    log: list[str] = []
+    table = {f"{word} plastic part": [(sc.mask, 0.7)]}
+    seg = ProviderSegmenter(_fake_call(table, log), crop_refine=False)
+    res = seg.segment(sc.image, context=SegContext(det))
+    assert res.source == "sam-3.1" and res.prompt == f"{word} plastic part"
+    assert [a["prompt"] for a in res.attempts] == [f"{word} plastic part"]  # no further calls after a plausible mask
+    assert mask_iou(res.mask, sc.mask) > 0.98
+
+
+def test_ladder_goes_on_and_falls_back_when_the_colour_phrase_finds_nothing() -> None:
+    sc = _scene(PART)
+    det = detect_mat(sc.image)
+    log: list[str] = []
+    seg = ProviderSegmenter(_fake_call({}, log), family_word="clip", crop_refine=False)
+    res = seg.segment(sc.image, context=SegContext(det))
+    prompts = [a["prompt"] for a in res.attempts]
+    assert prompts[0].endswith(" plastic part") and prompts[1:] == ["plastic part", "broken plastic piece", "clip"]
+    assert res.source == "threshold" and any("deterministic fallback" in n for n in res.notes)
+
+
+def test_no_colour_word_without_a_mat_or_when_switched_off() -> None:
+    sc = _scene(PART)
+    det = detect_mat(sc.image)
+    log: list[str] = []
+    table = {"plastic part": [(sc.mask, 0.9)]}
+    assert (
+        ProviderSegmenter(_fake_call(table, log), fallback=None, crop_refine=False).segment(sc.image).prompt
+        == "plastic part"
+    )
+    off = ProviderSegmenter(_fake_call(table, log), fallback=None, crop_refine=False, colour_prompt=False)
+    res = off.segment(sc.image, context=SegContext(det))
+    assert res.prompt == "plastic part" and len(res.attempts) == 1

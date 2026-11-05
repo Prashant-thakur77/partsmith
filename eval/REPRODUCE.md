@@ -215,3 +215,17 @@ PROVIDER_MODE=live uv run python -m eval.scale_stages sam|wonder|voice
 ```
 
 These are live model calls on rendered photos with exact ground truth. They are not phone captures and never count as real photos measured.
+
+## SAM 3.1 prompts
+
+Whether naming the part's colour makes SAM 3.1 answer, and whether its masks measure as well as the threshold mask. The measures
+and the decision rule are in the docstring of `eval/sam_prompts.py`, written before the run. It needs a Meta key, costs about
+$1.35 for 147 photos, and refuses to run twice over the same rows file, so a number is never re-rolled. Photos are rendered or
+pasted on a rendered mat; none is a phone capture.
+
+```sh
+uv run python -m eval.sam_prompts render                    # 14 fresh renders with exact masks, into var/sam_prompts
+PROVIDER_MODE=live uv run python -m eval.sam_prompts run --max-usd 8
+uv run python -m eval.sam_prompts report                    # rebuilds eval/reports/latest/sam_prompts.json; no model calls
+```
+

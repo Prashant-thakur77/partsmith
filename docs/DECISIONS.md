@@ -517,9 +517,32 @@ an unbiased subset of each suite. The understanding figures come from the PartSp
 
 ## New part templates stay out of the seeded suites (2026-11-05)
 
-Six newer templates (sliding battery door, drawer runner, hinge pin bracket, curtain ring, pointer knob, screw cap with lugs)
-join the catalogue people browse: `/templates`, the playground, the gallery and describe. They pass the same self-check and knob
+Ten newer templates (sliding battery door, drawer runner, hinge pin bracket, curtain ring, pointer knob, screw cap with lugs,
+spur gear, shelf support pin, chair leg cap, desk cable grommet) join the catalogue people browse: `/templates`, the playground, the gallery and describe. They pass the same self-check and knob
 sweeps as the others, but no stored run has verified one, so the export gate treats them as templates. `list_templates()` stays
 the bench's ten, because a seeded suite picks its parts by position in that list: one more name would change which samples a seed
 produces, and every stored run would stop matching its suite. `all_templates()` is the full catalogue. The agent keeps planning
 with the ten until the bench is rerun with the larger list.
+
+## SAM 3.1 gets the part's colour in its prompt, and stays the measuring mask when it answers (2026-11-05)
+
+The stored runs measured almost everything with the threshold segmenter: SAM 3.1 was called on every photo and usually returned
+no mask for "plastic part", so the fallback took over (282 of 305 scale runs, and 20 of 22 stored replays). A live check on one
+photo showed the phrase was the problem: five plain phrases returned nothing and "orange plastic part" returned the part.
+`ProviderSegmenter` now starts its ladder with "<colour> plastic part". Code reads the colour from the threshold mask's median
+hue, saturation and value; no model is asked. A plausible mask from that phrase ends the ladder.
+
+`eval/sam_prompts.py` fixed its measures and its rule before running, on 147 rendered or pasted photos, once
+(`eval/reports/latest/sam_prompts.json`). Masks above the floor went from 5 of 147 to 91 of 147 (McNemar: 86 gained, 0 lost). On
+14 fresh renders with exact masks, SAM's median IoU was 0.982 (n = 12) and the threshold's 0.956 (n = 14). Paired on length and
+width, SAM's median absolute error was 0.196 mm and the threshold's 0.152 mm, n = 143 dimensions. That 0.044 mm gap is inside the
+rule's 0.05 mm, so SAM stays the measuring mask whenever it clears the floor, which is what the code already did. `mask_source`
+names what measured, per view.
+
+Three limits. The rule passed narrowly, and SAM is not better at measuring here: the threshold's median is lower on both outline
+and holes. Hole diameters are worse with SAM's mask, 0.238 mm against 0.128 mm (n = 89), and the worst outline gaps are round
+parts on blur and paper presets, up to 0.8 mm. The mask rate is uneven: 1 of 16 on public photos of real objects (cards, coins, a battery;
+the cause is not established), and 8 of 26 on parts read as black. And 56 of the 147 photos still fall
+back to the threshold. Every photo here is rendered or pasted on a rendered mat, so real phone photos remain untested. Stored runs
+and bench tables predate this change and still measured mostly with the threshold; they are not re-labelled.
+

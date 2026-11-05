@@ -1,0 +1,5525 @@
+{
+"scope": "Rendered photos and public photos pasted on a rendered mat. Real phone photos are untested.",
+"photos": 147,
+"scored": 147,
+"skipped": [],
+"errors": [],
+"mask_rate": {
+"old": {
+"k": 5,
+"n": 147,
+"rate": 0.034,
+"ci95": [
+0.015,
+0.077
+]
+},
+"new": {
+"k": 91,
+"n": 147,
+"rate": 0.619,
+"ci95": [
+0.538,
+0.694
+]
+},
+"mcnemar": {
+"old_only": 0,
+"new_only": 86,
+"p": 0.0
+}
+},
+"mask_rate_by_suite": {
+"bench": {
+"old": {
+"k": 3,
+"n": 86,
+"rate": 0.0349,
+"ci95": [
+0.012,
+0.098
+]
+},
+"new": {
+"k": 58,
+"n": 86,
+"rate": 0.6744,
+"ci95": [
+0.57,
+0.764
+]
+}
+},
+"control": {
+"old": {
+"k": 1,
+"n": 6,
+"rate": 0.1667,
+"ci95": [
+0.03,
+0.564
+]
+},
+"new": {
+"k": 6,
+"n": 6,
+"rate": 1.0,
+"ci95": [
+0.61,
+1.0
+]
+}
+},
+"fresh": {
+"old": {
+"k": 0,
+"n": 14,
+"rate": 0.0,
+"ci95": [
+0.0,
+0.215
+]
+},
+"new": {
+"k": 12,
+"n": 14,
+"rate": 0.8571,
+"ci95": [
+0.601,
+0.96
+]
+}
+},
+"public": {
+"old": {
+"k": 0,
+"n": 16,
+"rate": 0.0,
+"ci95": [
+0.0,
+0.194
+]
+},
+"new": {
+"k": 1,
+"n": 16,
+"rate": 0.0625,
+"ci95": [
+0.011,
+0.283
+]
+}
+},
+"redteam": {
+"old": {
+"k": 0,
+"n": 5,
+"rate": 0.0,
+"ci95": [
+0.0,
+0.434
+]
+},
+"new": {
+"k": 2,
+"n": 5,
+"rate": 0.4,
+"ci95": [
+0.118,
+0.769
+]
+}
+},
+"samples": {
+"old": {
+"k": 1,
+"n": 20,
+"rate": 0.05,
+"ci95": [
+0.009,
+0.236
+]
+},
+"new": {
+"k": 12,
+"n": 20,
+"rate": 0.6,
+"ci95": [
+0.387,
+0.781
+]
+}
+}
+},
+"iou_new_vs_threshold": {
+"n": 91,
+"median": 0.9354,
+"ci95": [
+0.9245,
+0.9419
+]
+},
+"iou_new_vs_exact": {
+"n": 12,
+"median": 0.9817,
+"ci95": [
+0.9759,
+0.9844
+]
+},
+"iou_threshold_vs_exact": {
+"n": 14,
+"median": 0.9555,
+"ci95": [
+0.9262,
+0.9734
+]
+},
+"new_score": {
+"n": 91,
+"median": 0.9024,
+"ci95": [
+0.8788,
+0.914
+]
+},
+"measures_paired": {
+"old_length_width": {
+"sam": {
+"n": 10,
+"median": 0.261,
+"ci95": [
+0.1,
+1.055
+]
+},
+"threshold": {
+"n": 10,
+"median": 0.286,
+"ci95": [
+0.196,
+1.311
+]
+},
+"sam_minus_threshold_median_mm": -0.025
+},
+"new_length_width": {
+"sam": {
+"n": 143,
+"median": 0.1959,
+"ci95": [
+0.161,
+0.31
+]
+},
+"threshold": {
+"n": 143,
+"median": 0.152,
+"ci95": [
+0.129,
+0.207
+]
+},
+"sam_minus_threshold_median_mm": 0.0439
+},
+"old_hole_diameter": {
+"sam": {
+"n": 7,
+"median": 0.831,
+"ci95": [
+0.238,
+0.978
+]
+},
+"threshold": {
+"n": 7,
+"median": 0.091,
+"ci95": [
+0.074,
+0.223
+]
+},
+"sam_minus_threshold_median_mm": 0.74
+},
+"new_hole_diameter": {
+"sam": {
+"n": 89,
+"median": 0.238,
+"ci95": [
+0.192,
+0.31
+]
+},
+"threshold": {
+"n": 89,
+"median": 0.128,
+"ci95": [
+0.091,
+0.192
+]
+},
+"sam_minus_threshold_median_mm": 0.11
+}
+},
+"accepted_by_capture_gate": {
+"threshold": 121,
+"old": 5,
+"new": 77
+},
+"new_mask_rejected_where_threshold_accepted": 0,
+"iou_new_vs_threshold_below_0_9": {
+"k": 16,
+"n": 91,
+"min": 0.6109
+},
+"colours": {
+"beige": 6,
+"black": 26,
+"blue": 20,
+"brown": 9,
+"green": 16,
+"grey": 14,
+"orange": 18,
+"red": 17,
+"white": 7,
+"yellow": 14
+},
+"new_mask_by_colour": {
+"beige": {
+"k": 5,
+"n": 6,
+"rate": 0.8333,
+"ci95": [
+0.436,
+0.97
+]
+},
+"black": {
+"k": 8,
+"n": 26,
+"rate": 0.3077,
+"ci95": [
+0.165,
+0.5
+]
+},
+"blue": {
+"k": 12,
+"n": 20,
+"rate": 0.6,
+"ci95": [
+0.387,
+0.781
+]
+},
+"brown": {
+"k": 2,
+"n": 9,
+"rate": 0.2222,
+"ci95": [
+0.063,
+0.547
+]
+},
+"green": {
+"k": 14,
+"n": 16,
+"rate": 0.875,
+"ci95": [
+0.64,
+0.965
+]
+},
+"grey": {
+"k": 6,
+"n": 14,
+"rate": 0.4286,
+"ci95": [
+0.214,
+0.674
+]
+},
+"orange": {
+"k": 15,
+"n": 18,
+"rate": 0.8333,
+"ci95": [
+0.608,
+0.942
+]
+},
+"red": {
+"k": 15,
+"n": 17,
+"rate": 0.8824,
+"ci95": [
+0.657,
+0.967
+]
+},
+"white": {
+"k": 2,
+"n": 7,
+"rate": 0.2857,
+"ci95": [
+0.082,
+0.641
+]
+},
+"yellow": {
+"k": 12,
+"n": 14,
+"rate": 0.8571,
+"ci95": [
+0.601,
+0.96
+]
+}
+},
+"rule": "SAM stays the measuring mask if its paired median length/width error is within 0.05 mm of the threshold's",
+"within_rule": true,
+"usd": 1.3425,
+"rows": [
+{
+"suite": "samples",
+"id": "demo-battery-cover",
+"colour": "orange",
+"threshold": {
+"mask": true,
+"accepted": true,
+"errors": {
+"length": 0.105,
+"width": 0.133
+},
+"failed_checks": []
+},
+"old": {
+"mask": false,
+"score": 0.0,
+"phrase": null,
+"seconds": 11.9,
+"calls": 2
+},
+"new": {
+"mask": true,
+"score": 0.8359,
+"phrase": "orange plastic part",
+"seconds": 7.3,
+"iou_threshold": 0.9385,
+"accepted": true,
+"errors": {
+"length": 0.155,
+"width": 0.076
+},
+"failed_checks": [],
+"calls": 1
+}
+},
+{
+"suite": "samples",
+"id": "demo-broken-cover-tab",
+"colour": "orange",
+"threshold": {
+"mask": true,
+"accepted": true,
+"errors": {
+"length": 0.043,
+"width": 0.101
+},
+"failed_checks": []
+},
+"old": {
+"mask": false,
+"score": 0.0,
+"phrase": null,
+"seconds": 12.9,
+"calls": 2
+},
+"new": {
+"mask": true,
+"score": 0.9259,
+"phrase": "orange plastic part",
+"seconds": 10.2,
+"iou_threshold": 0.9325,
+"accepted": true,
+"errors": {
+"length": 0.307,
+"width": 0.107
+},
+"failed_checks": [],
+"calls": 1
+}
+},
+{
+"suite": "samples",
+"id": "demo-broken-hook-tip",
+"colour": "green",
+"threshold": {
+"mask": true,
+"accepted": true,
+"errors": {
+"length": 0.128,
+"width": 0.135,
+"hole_1.diameter": 0.059
+},
+"failed_checks": []
+},
+"old": {
+"mask": false,
+"score": 0.0,
+"phrase": null,
+"seconds": 13.3,
+"calls": 2
+},
+"new": {
+"mask": true,
+"score": 0.8672,
+"phrase": "green plastic part",
+"seconds": 9.6,
+"iou_threshold": 0.9245,
+"accepted": true,
+"errors": {
+"length": 0.068,
+"width": 0.031,
+"hole_1.diameter": 0.009
+},
+"failed_checks": [],
+"calls": 1
+}
+},
+{
+"suite": "samples",
+"id": "demo-broken-latch-corner",
+"colour": "orange",
+"threshold": {
+"mask": true,
+"accepted": true,
+"errors": {
+"length": 3.7137,
+"width": 0.3,
+"hole_1.diameter": 0.223
+},
+"failed_checks": []
+},
+"old": {
+"mask": true,
+"score": 0.5461,
+"phrase": "broken plastic piece",
+"seconds": 15.9,
+"iou_threshold": 0.9009,
+"accepted": true,
+"errors": {
+"length": 4.1767,
+"width": 0.084,
+"hole_1.diameter": 1.045
+},
+"failed_checks": [],
+"calls": 2
+},
+"new": {
+"mask": true,
+"score": 0.9494,
+"phrase": "orange plastic part",
+"seconds": 10.0,
+"iou_threshold": 0.8893,
+"accepted": true,
+"errors": {
+"length": 4.0657,
+"width": 0.282,
+"hole_1.diameter": 0.404
+},
+"failed_checks": [],
+"calls": 1
+}
+},
+{
+"suite": "samples",
+"id": "demo-cable-clip",
+"colour": "black",
+"threshold": {
+"mask": true,
+"accepted": true,
+"errors": {
+"length": 0.147,
+"width": 0.407,
+"hole_1.diameter": 0.183,
+"hole_2.diameter": 0.151
+},
+"failed_checks": []
+},
+"old": {
+"mask": false,
+"score": 0.0,
+"phrase": null,
+"seconds": 12.6,
+"calls": 2
+},
+"new": {
+"mask": true,
+"score": 0.8947,
+"phrase": "black plastic part",
+"seconds": 7.2,
+"iou_threshold": 0.844,
+"accepted": true,
+"errors": {
+"length": 0.173,
+"width": 0.178,
+"hole_1.diameter": 0.268,
+"hole_2.diameter": 0.316
+},
+"failed_checks": [],
+"calls": 1
+}
+},
+{
+"suite": "samples",
+"id": "demo-caster-wheel",
+"colour": "red",
+"threshold": {
+"mask": true,
+"accepted": true,
+"errors": {
+"length": 0.561,
+"width": 0.6005,
+"hole_1.diameter": 0.103,
+"hole_2.diameter": 0.101,
+"hole_3.diameter": 0.117,
+"hole_4.diameter": 0.092,
+"hole_5.diameter": 0.086,
+"hole_6.diameter": 0.089
+},
+"failed_checks": []
+},
+"old": {
+"mask": false,
+"score": 0.0,
+"phrase": null,
+"seconds": 11.7,
+"calls": 2
+},
+"new": {
+"mask": false,
+"score": 0.0,
+"phrase": null,
+"seconds": 5.9,
+"calls": 3
+}
+},
+{
+"suite": "samples",
+"id": "demo-clip-tilt",
+"colour": "blue",
+"threshold": {
+"mask": true,
+"accepted": true,
+"errors": {
+"length": 0.177,
+"width": 2.199,
+"hole_1.diameter": 0.154
+},
+"failed_checks": []
+},
+"old": {
+"mask": false,
+"score": 0.0,
+"phrase": null,
+"seconds": 11.1,
+"calls": 2
+},
+"new": {
+"mask": true,
+"score": 0.9336,
+"phrase": "blue plastic part",
+"seconds": 7.7,
+"iou_threshold": 0.908,
+"accepted": true,
+"errors": {
+"length": 0.058,
+"width": 1.88,
+"hole_1.diameter": 0.175
+},
+"failed_checks": [],
+"calls": 1
+}
+},
+{
+"suite": "samples",
+"id": "demo-cupboard-latch",
+"colour": "yellow",
+"threshold": {
+"mask": true,
+"accepted": true,
+"errors": {
+"length": 0.2121,
+"width": 0.059,
+"hole_1.diameter": 0.112
+},
+"failed_checks": []
+},
+"old": {
+"mask": false,
+"score": 0.0,
+"phrase": null,
+"seconds": 11.8,
+"calls": 2
+},
+"new": {
+"mask": true,
+"score": 0.9532,
+"phrase": "yellow plastic part",
+"seconds": 8.6,
+"iou_threshold": 0.9051,
+"accepted": true,
+"errors": {
+"length": 0.5821,
+"width": 0.31,
+"hole_1.diameter": 0.443
+},
+"failed_checks": [],
+"calls": 1
+}
+},
+{
+"suite": "samples",
+"id": "demo-hard-glare-clip",
+"colour": "orange",
+"threshold": {
+"mask": true,
+"accepted": false,
+"errors": {
+"length": 0.121,
+"width": 1.605,
+"hole_1.diameter": 0.157
+},
+"failed_checks": [
+"contrast"
+]
+},
+"old": {
+"mask": false,
+"score": 0.0,
+"phrase": null,
+"seconds": 10.7,
+"calls": 2
+},
+"new": {
+"mask": true,
+"score": 0.8672,
+"phrase": "orange plastic part",
+"seconds": 7.9,
+"iou_threshold": 0.8694,
+"accepted": true,
+"errors": {
+"length": 0.042,
+"width": 1.372,
+"hole_1.diameter": 0.195
+},
+"failed_checks": [],
+"calls": 1
+}
+},
+{
+"suite": "samples",
+"id": "demo-hard-white-cover",
+"colour": "white",
+"threshold": {
+"mask": true,
+"accepted": true,
+"errors": {
+"length": 0.038,
+"width": 0.134
+},
+"failed_checks": []
+},
+"old": {
+"mask": false,
+"score": 0.0,
+"phrase": null,
+"seconds": 23.4,
+"calls": 2
+},
+"new": {
+"mask": false,
+"score": 0.0,
+"phrase": null,
+"seconds": 5.6,
+"calls": 3
+}
+},
+{
+"suite": "samples",
+"id": "demo-hard-white-on-light",
+"colour": "beige",
+"threshold": {
+"mask": true,
+"accepted": true,
+"errors": {
+"length": 0.291,
+"width": 0.337
+},
+"failed_checks": []
+},
+"old": {
+"mask": false,
+"score": 0.0,
+"phrase": null,
+"seconds": 11.7,
+"calls": 2
+},
+"new": {
+"mask": true,
+"score": 0.922,
+"phrase": "beige plastic part",
+"seconds": 9.8,
+"iou_threshold": 0.9645,
+"accepted": true,
+"errors": {
+"length": 0.25,
+"width": 0.169
+},
+"failed_checks": [],
+"calls": 1
+}
+},
+{
+"suite": "samples",
+"id": "demo-hinge-leaf",
+"colour": "orange",
+"threshold": {
+"mask": true,
+"accepted": true,
+"errors": {
+"length": 0.143,
+"width": 0.2662,
+"hole_1.diameter": 0.084,
+"hole_2.diameter": 0.102,
+"hole_3.diameter": 0.131,
+"hole_4.diameter": 0.116
+},
+"failed_checks": []
+},
+"old": {
+"mask": false,
+"score": 0.0,
+"phrase": null,
+"seconds": 11.5,
+"calls": 2
+},
+"new": {
+"mask": true,
+"score": 0.8904,
+"phrase": "orange plastic part",
+"seconds": 8.1,
+"iou_threshold": 0.9051,
+"accepted": true,
+"errors": {
+"length": 0.147,
+"width": 0.0948,
+"hole_1.diameter": 0.061,
+"hole_2.diameter": 0.167,
+"hole_3.diameter": 0.146,
+"hole_4.diameter": 0.107
+},
+"failed_checks": [],
+"calls": 1
+}
+},
+{
+"suite": "samples",
+"id": "demo-hook",
+"colour": "black",
+"threshold": {
+"mask": true,
+"accepted": true,
+"errors": {
+"length": 0.129,
+"width": 1.972,
+"hole_1.diameter": 0.052,
+"hole_2.diameter": 0.04
+},
+"failed_checks": []
+},
+"old": {
+"mask": false,
+"score": 0.0,
+"phrase": null,
+"seconds": 12.1,
+"calls": 2
+},
+"new": {
+"mask": true,
+"score": 0.8552,
+"phrase": "black plastic part",
+"seconds": 7.8,
+"iou_threshold": 0.9098,
+"accepted": true,
+"errors": {
+"length": 0.12,
+"width": 1.575,
+"hole_1.diameter": 0.37,
+"hole_2.diameter": 0.431
+},
+"failed_checks": [],
+"calls": 1
+}
+},
+{
+"suite": "samples",
+"id": "demo-knob",
+"colour": "grey",
+"threshold": {
+"mask": true,
+"accepted": true,
+"errors": {
+"length": 0.1848,
+"width": 0.2177
+},
+"failed_checks": []
+},
+"old": {
+"mask": false,
+"score": 0.0,
+"phrase": null,
+"seconds": 11.5,
+"calls": 2
+},
+"new": {
+"mask": false,
+"score": 0.0,
+"phrase": null,
+"seconds": 5.8,
+"calls": 3
+}
+},
+{
+"suite": "samples",
+"id": "demo-l-bracket",
+"colour": "black",
+"threshold": {
+"mask": true,
+"accepted": true,
+"errors": {
+"length": 0.666,
+"width": 6.532,
+"hole_1.diameter": 0.052,
+"hole_2.diameter": 0.061
+},
+"failed_checks": []
+},
+"old": {
+"mask": false,
+"score": 0.0,
+"phrase": null,
+"seconds": 13.1,
+"calls": 2
+},
+"new": {
+"mask": false,
+"score": 0.0,
+"phrase": null,
+"seconds": 5.8,
+"calls": 3
+}
+},
+{
+"suite": "samples",
+"id": "demo-ref-aa-cell",
+"colour": "brown",
+"threshold": {
+"mask": true,
+"accepted": true,
+"errors": {
+"length": 0.574,
+"width": 0.146
+},
+"failed_checks": []
+},
+"old": {
+"mask": false,
+"score": 0.0,
+"phrase": null,
+"seconds": 12.2,
+"calls": 2
+},
+"new": {
+"mask": false,
+"score": 0.0,
+"phrase": null,
+"seconds": 5.7,
+"calls": 3
+}
+},
+{
+"suite": "samples",
+"id": "demo-ref-id1-card",
+"colour": "blue",
+"threshold": {
+"mask": true,
+"accepted": true,
+"errors": {
+"length": 0.095,
+"width": 0.101
+},
+"failed_checks": []
+},
+"old": {
+"mask": false,
+"score": 0.0,
+"phrase": null,
+"seconds": 10.7,
+"calls": 2
+},
+"new": {
+"mask": false,
+"score": 0.0,
+"phrase": null,
+"seconds": 7.2,
+"calls": 3
+}
+},
+{
+"suite": "samples",
+"id": "demo-ref-lego-2x4",
+"colour": "red",
+"threshold": {
+"mask": true,
+"accepted": true,
+"errors": {
+"length": 0.239,
+"width": 0.225
+},
+"failed_checks": []
+},
+"old": {
+"mask": false,
+"score": 0.0,
+"phrase": null,
+"seconds": 12.7,
+"calls": 2
+},
+"new": {
+"mask": true,
+"score": 0.8947,
+"phrase": "red plastic part",
+"seconds": 8.2,
+"iou_threshold": 0.882,
+"accepted": true,
+"errors": {
+"length": 0.029,
+"width": 0.1
+},
+"failed_checks": [],
+"calls": 1
+}
+},
+{
+"suite": "samples",
+"id": "demo-ref-sd-card",
+"colour": "black",
+"threshold": {
+"mask": true,
+"accepted": true,
+"errors": {
+"length": 0.081,
+"width": 0.073
+},
+"failed_checks": []
+},
+"old": {
+"mask": false,
+"score": 0.0,
+"phrase": null,
+"seconds": 12.4,
+"calls": 2
+},
+"new": {
+"mask": false,
+"score": 0.0,
+"phrase": null,
+"seconds": 4.9,
+"calls": 3
+}
+},
+{
+"suite": "samples",
+"id": "demo-spacer",
+"colour": "orange",
+"threshold": {
+"mask": true,
+"accepted": true,
+"errors": {
+"length": 0.023,
+"width": 0.0375,
+"hole_1.diameter": 0.001
+},
+"failed_checks": []
+},
+"old": {
+"mask": false,
+"score": 0.0,
+"phrase": null,
+"seconds": 10.5,
+"calls": 2
+},
+"new": {
+"mask": false,
+"score": 0.0,
+"phrase": null,
+"seconds": 6.5,
+"calls": 3
+}
+},
+{
+"suite": "control",
+"id": "ctl-cable-clip-s447475",
+"colour": "yellow",
+"threshold": {
+"mask": true,
+"accepted": true,
+"errors": {
+"length": 0.208,
+"width": 0.422,
+"hole_1.diameter": 0.404,
+"hole_2.diameter": 0.413
+},
+"failed_checks": []
+},
+"old": {
+"mask": false,
+"score": 0.0,
+"phrase": null,
+"seconds": 10.4,
+"calls": 2
+},
+"new": {
+"mask": true,
+"score": 0.9179,
+"phrase": "yellow plastic part",
+"seconds": 11.8,
+"iou_threshold": 0.8803,
+"accepted": true,
+"errors": {
+"length": 0.147,
+"width": 0.123,
+"hole_1.diameter": 0.166,
+"hole_2.diameter": 0.06
+},
+"failed_checks": [],
+"calls": 1
+}
+},
+{
+"suite": "control",
+"id": "ctl-clip-s55909",
+"colour": "orange",
+"threshold": {
+"mask": true,
+"accepted": true,
+"errors": {
+"length": 0.272,
+"width": 1.555,
+"hole_1.diameter": 0.338
+},
+"failed_checks": []
+},
+"old": {
+"mask": true,
+"score": 0.6751,
+"phrase": "broken plastic piece",
+"seconds": 14.2,
+"iou_threshold": 0.9143,
+"accepted": true,
+"errors": {
+"length": 0.357,
+"width": 1.581,
+"hole_1.diameter": 0.978
+},
+"failed_checks": [],
+"calls": 2
+},
+"new": {
+"mask": true,
+"score": 0.9259,
+"phrase": "orange plastic part",
+"seconds": 9.6,
+"iou_threshold": 0.8963,
+"accepted": true,
+"errors": {
+"length": 0.122,
+"width": 1.313,
+"hole_1.diameter": 0.217
+},
+"failed_checks": [],
+"calls": 1
+}
+},
+{
+"suite": "control",
+"id": "ctl-cupboard-latch-s844149",
+"colour": "green",
+"threshold": {
+"mask": true,
+"accepted": true,
+"errors": {
+"length": 0.2184,
+"width": 0.027,
+"hole_1.diameter": 0.05
+},
+"failed_checks": []
+},
+"old": {
+"mask": false,
+"score": 0.0,
+"phrase": null,
+"seconds": 13.1,
+"calls": 2
+},
+"new": {
+"mask": true,
+"score": 0.9336,
+"phrase": "green plastic part",
+"seconds": 10.4,
+"iou_threshold": 0.9045,
+"accepted": true,
+"errors": {
+"length": 0.6144,
+"width": 0.197,
+"hole_1.diameter": 0.42
+},
+"failed_checks": [],
+"calls": 1
+}
+},
+{
+"suite": "control",
+"id": "ctl-hook-s21548",
+"colour": "green",
+"threshold": {
+"mask": true,
+"accepted": true,
+"errors": {
+"length": 0.675,
+"width": 0.228,
+"hole_1.diameter": 0.004
+},
+"failed_checks": []
+},
+"old": {
+"mask": false,
+"score": 0.0,
+"phrase": null,
+"seconds": 15.6,
+"calls": 2
+},
+"new": {
+"mask": true,
+"score": 0.9298,
+"phrase": "green plastic part",
+"seconds": 12.5,
+"iou_threshold": 0.9369,
+"accepted": true,
+"errors": {
+"length": 0.435,
+"width": 0.083,
+"hole_1.diameter": 0.205
+},
+"failed_checks": [],
+"calls": 1
+}
+},
+{
+"suite": "control",
+"id": "ctl-knob-s936521",
+"colour": "red",
+"threshold": {
+"mask": true,
+"accepted": true,
+"errors": {
+"length": 0.387,
+"width": 0.4146
+},
+"failed_checks": []
+},
+"old": {
+"mask": false,
+"score": 0.0,
+"phrase": null,
+"seconds": 11.1,
+"calls": 2
+},
+"new": {
+"mask": true,
+"score": 0.8242,
+"phrase": "red plastic part",
+"seconds": 9.6,
+"iou_threshold": 0.9633,
+"accepted": true,
+"errors": {
+"length": 0.577,
+"width": 0.7326
+},
+"failed_checks": [],
+"calls": 1
+}
+},
+{
+"suite": "control",
+"id": "ctl-spacer-s435219",
+"colour": "yellow",
+"threshold": {
+"mask": true,
+"accepted": true,
+"errors": {
+"length": 0.024,
+"width": 0.0464,
+"hole_1.diameter": 0.06
+},
+"failed_checks": []
+},
+"old": {
+"mask": false,
+"score": 0.0,
+"phrase": null,
+"seconds": 13.9,
+"calls": 2
+},
+"new": {
+"mask": true,
+"score": 0.68,
+"phrase": "yellow plastic part",
+"seconds": 22.3,
+"iou_threshold": 0.7821,
+"accepted": true,
+"errors": {
+"length": 0.101,
+"width": 0.3034,
+"hole_1.diameter": 0.779
+},
+"failed_checks": [],
+"calls": 1
+}
+},
+{
+"suite": "bench",
+"id": "ref-aa-cell-blur-s182717",
+"colour": "brown",
+"threshold": {
+"mask": true,
+"accepted": true,
+"errors": {
+"length": 0.583,
+"width": 0.236
+},
+"failed_checks": []
+},
+"old": {
+"mask": false,
+"score": 0.0,
+"phrase": null,
+"seconds": 12.4,
+"calls": 2
+},
+"new": {
+"mask": false,
+"score": 0.0,
+"phrase": null,
+"seconds": 7.0,
+"calls": 3
+}
+},
+{
+"suite": "bench",
+"id": "ref-aa-cell-clean-s23585",
+"colour": "brown",
+"threshold": {
+"mask": true,
+"accepted": true,
+"errors": {
+"length": 0.559,
+"width": 0.089
+},
+"failed_checks": []
+},
+"old": {
+"mask": false,
+"score": 0.0,
+"phrase": null,
+"seconds": 11.7,
+"calls": 2
+},
+"new": {
+"mask": false,
+"score": 0.0,
+"phrase": null,
+"seconds": 6.5,
+"calls": 3
+}
+},
+{
+"suite": "bench",
+"id": "ref-aa-cell-glare-s425689",
+"colour": "brown",
+"threshold": {
+"mask": true,
+"accepted": false,
+"errors": {
+"length": 0.749,
+"width": 0.1
+},
+"failed_checks": [
+"contrast"
+]
+},
+"old": {
+"mask": false,
+"score": 0.0,
+"phrase": null,
+"seconds": 12.2,
+"calls": 2
+},
+"new": {
+"mask": false,
+"score": 0.0,
+"phrase": null,
+"seconds": 5.0,
+"calls": 3
+}
+},
+{
+"suite": "bench",
+"id": "ref-aa-cell-moire-s66264",
+"colour": "brown",
+"threshold": {
+"mask": true,
+"accepted": false,
+"errors": {
+"length": 0.257,
+"width": 0.048
+},
+"failed_checks": [
+"moire"
+]
+},
+"old": {
+"mask": false,
+"score": 0.0,
+"phrase": null,
+"seconds": 12.1,
+"calls": 2
+},
+"new": {
+"mask": false,
+"score": 0.0,
+"phrase": null,
+"seconds": 5.8,
+"calls": 3
+}
+},
+{
+"suite": "bench",
+"id": "ref-aa-cell-tilt-s903698",
+"colour": "brown",
+"threshold": {
+"mask": true,
+"accepted": true,
+"errors": {
+"length": 1.312,
+"width": 0.076
+},
+"failed_checks": []
+},
+"old": {
+"mask": false,
+"score": 0.0,
+"phrase": null,
+"seconds": 12.9,
+"calls": 2
+},
+"new": {
+"mask": false,
+"score": 0.0,
+"phrase": null,
+"seconds": 9.1,
+"calls": 3
+}
+},
+{
+"suite": "bench",
+"id": "ref-id1-card-blur-s722466",
+"colour": "blue",
+"threshold": {
+"mask": true,
+"accepted": true,
+"errors": {
+"length": 0.207,
+"width": 0.153
+},
+"failed_checks": []
+},
+"old": {
+"mask": false,
+"score": 0.0,
+"phrase": null,
+"seconds": 9.2,
+"calls": 2
+},
+"new": {
+"mask": true,
+"score": 0.6364,
+"phrase": "blue plastic part",
+"seconds": 9.2,
+"iou_threshold": 0.9595,
+"accepted": true,
+"errors": {
+"length": 0.183,
+"width": 0.139
+},
+"failed_checks": [],
+"calls": 1
+}
+},
+{
+"suite": "bench",
+"id": "ref-id1-card-clean-s787514",
+"colour": "blue",
+"threshold": {
+"mask": true,
+"accepted": true,
+"errors": {
+"length": 0.19,
+"width": 0.164
+},
+"failed_checks": []
+},
+"old": {
+"mask": false,
+"score": 0.0,
+"phrase": null,
+"seconds": 12.0,
+"calls": 2
+},
+"new": {
+"mask": true,
+"score": 0.7037,
+"phrase": "blue plastic part",
+"seconds": 9.7,
+"iou_threshold": 0.9719,
+"accepted": true,
+"errors": {
+"length": 0.102,
+"width": 0.164
+},
+"failed_checks": [],
+"calls": 1
+}
+},
+{
+"suite": "bench",
+"id": "ref-id1-card-glare-s759563",
+"colour": "blue",
+"threshold": {
+"mask": true,
+"accepted": true,
+"errors": {
+"length": 0.025,
+"width": 0.048
+},
+"failed_checks": []
+},
+"old": {
+"mask": false,
+"score": 0.0,
+"phrase": null,
+"seconds": 10.2,
+"calls": 2
+},
+"new": {
+"mask": true,
+"score": 0.629,
+"phrase": "blue plastic part",
+"seconds": 12.8,
+"iou_threshold": 0.9841,
+"accepted": true,
+"errors": {
+"length": 0.116,
+"width": 0.064
+},
+"failed_checks": [],
+"calls": 1
+}
+},
+{
+"suite": "bench",
+"id": "ref-id1-card-moire-s231112",
+"colour": "blue",
+"threshold": {
+"mask": true,
+"accepted": false,
+"errors": {
+"length": 0.061,
+"width": 0.077
+},
+"failed_checks": [
+"moire"
+]
+},
+"old": {
+"mask": false,
+"score": 0.0,
+"phrase": null,
+"seconds": 13.8,
+"calls": 2
+},
+"new": {
+"mask": false,
+"score": 0.0,
+"phrase": null,
+"seconds": 8.2,
+"calls": 3
+}
+},
+{
+"suite": "bench",
+"id": "ref-id1-card-tilt-s330647",
+"colour": "blue",
+"threshold": {
+"mask": true,
+"accepted": true,
+"errors": {
+"length": 0.081,
+"width": 0.087
+},
+"failed_checks": []
+},
+"old": {
+"mask": false,
+"score": 0.0,
+"phrase": null,
+"seconds": 14.9,
+"calls": 2
+},
+"new": {
+"mask": true,
+"score": 0.5586,
+"phrase": "blue plastic part",
+"seconds": 7.9,
+"iou_threshold": 0.977,
+"accepted": true,
+"errors": {
+"length": 0.118,
+"width": 0.255
+},
+"failed_checks": [],
+"calls": 1
+}
+},
+{
+"suite": "bench",
+"id": "ref-lego-2x4-blur-s527147",
+"colour": "red",
+"threshold": {
+"mask": true,
+"accepted": true,
+"errors": {
+"length": 0.314,
+"width": 0.272
+},
+"failed_checks": []
+},
+"old": {
+"mask": false,
+"score": 0.0,
+"phrase": null,
+"seconds": 10.3,
+"calls": 2
+},
+"new": {
+"mask": true,
+"score": 0.8987,
+"phrase": "red plastic part",
+"seconds": 7.5,
+"iou_threshold": 0.9027,
+"accepted": true,
+"errors": {
+"length": 0.137,
+"width": 0.156
+},
+"failed_checks": [],
+"calls": 1
+}
+},
+{
+"suite": "bench",
+"id": "ref-lego-2x4-clean-s496628",
+"colour": "red",
+"threshold": {
+"mask": true,
+"accepted": true,
+"errors": {
+"length": 0.054,
+"width": 0.058
+},
+"failed_checks": []
+},
+"old": {
+"mask": false,
+"score": 0.0,
+"phrase": null,
+"seconds": 12.3,
+"calls": 2
+},
+"new": {
+"mask": true,
+"score": 0.9024,
+"phrase": "red plastic part",
+"seconds": 10.3,
+"iou_threshold": 0.9431,
+"accepted": true,
+"errors": {
+"length": 0.066,
+"width": 0.054
+},
+"failed_checks": [],
+"calls": 1
+}
+},
+{
+"suite": "bench",
+"id": "ref-lego-2x4-glare-s431248",
+"colour": "red",
+"threshold": {
+"mask": true,
+"accepted": true,
+"errors": {
+"length": 0.067,
+"width": 0.072
+},
+"failed_checks": []
+},
+"old": {
+"mask": false,
+"score": 0.0,
+"phrase": null,
+"seconds": 12.5,
+"calls": 2
+},
+"new": {
+"mask": true,
+"score": 0.9179,
+"phrase": "red plastic part",
+"seconds": 8.6,
+"iou_threshold": 0.9463,
+"accepted": true,
+"errors": {
+"length": 0.153,
+"width": 0.102
+},
+"failed_checks": [],
+"calls": 1
+}
+},
+{
+"suite": "bench",
+"id": "ref-lego-2x4-moire-s713065",
+"colour": "red",
+"threshold": {
+"mask": true,
+"accepted": false,
+"errors": {
+"length": 0.054,
+"width": 0.077
+},
+"failed_checks": [
+"moire"
+]
+},
+"old": {
+"mask": false,
+"score": 0.0,
+"phrase": null,
+"seconds": 12.7,
+"calls": 2
+},
+"new": {
+"mask": true,
+"score": 0.9179,
+"phrase": "red plastic part",
+"seconds": 9.3,
+"iou_threshold": 0.9722,
+"accepted": false,
+"errors": {
+"length": 0.098,
+"width": 0.108
+},
+"failed_checks": [
+"moire"
+],
+"calls": 1
+}
+},
+{
+"suite": "bench",
+"id": "ref-lego-2x4-tilt-s785064",
+"colour": "red",
+"threshold": {
+"mask": true,
+"accepted": true,
+"errors": {
+"length": 0.069,
+"width": 0.097
+},
+"failed_checks": []
+},
+"old": {
+"mask": false,
+"score": 0.0,
+"phrase": null,
+"seconds": 12.8,
+"calls": 2
+},
+"new": {
+"mask": true,
+"score": 0.914,
+"phrase": "red plastic part",
+"seconds": 7.7,
+"iou_threshold": 0.9335,
+"accepted": true,
+"errors": {
+"length": 0.124,
+"width": 0.057
+},
+"failed_checks": [],
+"calls": 1
+}
+},
+{
+"suite": "bench",
+"id": "ref-sd-card-blur-s233099",
+"colour": "black",
+"threshold": {
+"mask": true,
+"accepted": false,
+"errors": {
+"length": 0.058,
+"width": 0.055
+},
+"failed_checks": [
+"blur"
+]
+},
+"old": {
+"mask": false,
+"score": 0.0,
+"phrase": null,
+"seconds": 11.8,
+"calls": 2
+},
+"new": {
+"mask": false,
+"score": 0.0,
+"phrase": null,
+"seconds": 6.5,
+"calls": 3
+}
+},
+{
+"suite": "bench",
+"id": "ref-sd-card-clean-s596360",
+"colour": "black",
+"threshold": {
+"mask": true,
+"accepted": true,
+"errors": {
+"length": 0.05,
+"width": 0.046
+},
+"failed_checks": []
+},
+"old": {
+"mask": false,
+"score": 0.0,
+"phrase": null,
+"seconds": 10.8,
+"calls": 2
+},
+"new": {
+"mask": false,
+"score": 0.0,
+"phrase": null,
+"seconds": 6.7,
+"calls": 3
+}
+},
+{
+"suite": "bench",
+"id": "ref-sd-card-glare-s535973",
+"colour": "black",
+"threshold": {
+"mask": true,
+"accepted": true,
+"errors": {
+"length": 0.042,
+"width": 0.046
+},
+"failed_checks": []
+},
+"old": {
+"mask": false,
+"score": 0.0,
+"phrase": null,
+"seconds": 14.2,
+"calls": 2
+},
+"new": {
+"mask": false,
+"score": 0.0,
+"phrase": null,
+"seconds": 8.1,
+"calls": 3
+}
+},
+{
+"suite": "bench",
+"id": "ref-sd-card-moire-s61153",
+"colour": "black",
+"threshold": {
+"mask": true,
+"accepted": true,
+"errors": {
+"length": 0.078,
+"width": 0.076
+},
+"failed_checks": []
+},
+"old": {
+"mask": false,
+"score": 0.0,
+"phrase": null,
+"seconds": 10.6,
+"calls": 2
+},
+"new": {
+"mask": false,
+"score": 0.0,
+"phrase": null,
+"seconds": 7.2,
+"calls": 3
+}
+},
+{
+"suite": "bench",
+"id": "ref-sd-card-tilt-s997355",
+"colour": "grey",
+"threshold": {
+"mask": true,
+"accepted": true,
+"errors": {
+"length": 0.047,
+"width": 0.032
+},
+"failed_checks": []
+},
+"old": {
+"mask": false,
+"score": 0.0,
+"phrase": null,
+"seconds": 13.6,
+"calls": 2
+},
+"new": {
+"mask": false,
+"score": 0.0,
+"phrase": null,
+"seconds": 6.3,
+"calls": 3
+}
+},
+{
+"suite": "bench",
+"id": "syn-battery-cover-glare-s261884",
+"colour": "yellow",
+"threshold": {
+"mask": true,
+"accepted": true,
+"errors": {
+"length": 0.054,
+"width": 0.075
+},
+"failed_checks": []
+},
+"old": {
+"mask": false,
+"score": 0.0,
+"phrase": null,
+"seconds": 11.6,
+"calls": 2
+},
+"new": {
+"mask": true,
+"score": 0.9101,
+"phrase": "yellow plastic part",
+"seconds": 8.9,
+"iou_threshold": 0.9681,
+"accepted": true,
+"errors": {
+"length": 0.15,
+"width": 0.068
+},
+"failed_checks": [],
+"calls": 1
+}
+},
+{
+"suite": "bench",
+"id": "syn-battery-cover-low-light-s4171",
+"colour": "brown",
+"threshold": {
+"mask": true,
+"accepted": true,
+"errors": {
+"length": 0.094,
+"width": 0.123
+},
+"failed_checks": []
+},
+"old": {
+"mask": false,
+"score": 0.0,
+"phrase": null,
+"seconds": 12.7,
+"calls": 2
+},
+"new": {
+"mask": false,
+"score": 0.0,
+"phrase": null,
+"seconds": 7.8,
+"calls": 3
+}
+},
+{
+"suite": "bench",
+"id": "syn-battery-cover-low-light-s790551",
+"colour": "green",
+"threshold": {
+"mask": true,
+"accepted": true,
+"errors": {
+"length": 0.047,
+"width": 0.09
+},
+"failed_checks": []
+},
+"old": {
+"mask": false,
+"score": 0.0,
+"phrase": null,
+"seconds": 10.7,
+"calls": 2
+},
+"new": {
+"mask": true,
+"score": 0.9101,
+"phrase": "green plastic part",
+"seconds": 10.5,
+"iou_threshold": 0.9848,
+"accepted": true,
+"errors": {
+"length": 0.049,
+"width": 0.014
+},
+"failed_checks": [],
+"calls": 1
+}
+},
+{
+"suite": "bench",
+"id": "syn-battery-cover-paper-s587967",
+"colour": "blue",
+"threshold": {
+"mask": true,
+"accepted": true,
+"errors": {
+"length": 0.085,
+"width": 0.103
+},
+"failed_checks": []
+},
+"old": {
+"mask": false,
+"score": 0.0,
+"phrase": null,
+"seconds": 11.8,
+"calls": 2
+},
+"new": {
+"mask": true,
+"score": 0.922,
+"phrase": "blue plastic part",
+"seconds": 7.8,
+"iou_threshold": 0.9398,
+"accepted": true,
+"errors": {
+"length": 0.093,
+"width": 0.127
+},
+"failed_checks": [],
+"calls": 1
+}
+},
+{
+"suite": "bench",
+"id": "syn-battery-cover-paper-s983936",
+"colour": "black",
+"threshold": {
+"mask": true,
+"accepted": true,
+"errors": {
+"length": 0.094,
+"width": 0.138
+},
+"failed_checks": []
+},
+"old": {
+"mask": false,
+"score": 0.0,
+"phrase": null,
+"seconds": 11.9,
+"calls": 2
+},
+"new": {
+"mask": false,
+"score": 0.0,
+"phrase": null,
+"seconds": 7.5,
+"calls": 3
+}
+},
+{
+"suite": "bench",
+"id": "syn-battery-cover-tilt-s148826",
+"colour": "blue",
+"threshold": {
+"mask": true,
+"accepted": true,
+"errors": {
+"length": 0.027,
+"width": 0.047
+},
+"failed_checks": []
+},
+"old": {
+"mask": false,
+"score": 0.0,
+"phrase": null,
+"seconds": 12.9,
+"calls": 2
+},
+"new": {
+"mask": true,
+"score": 0.8632,
+"phrase": "blue plastic part",
+"seconds": 8.7,
+"iou_threshold": 0.9518,
+"accepted": true,
+"errors": {
+"length": 0.176,
+"width": 0.097
+},
+"failed_checks": [],
+"calls": 1
+}
+},
+{
+"suite": "bench",
+"id": "syn-battery-cover-white-on-light-s983167",
+"colour": "grey",
+"threshold": {
+"mask": true,
+"accepted": false,
+"errors": {
+"length": 17.146,
+"width": 34.055
+},
+"failed_checks": [
+"contrast"
+]
+},
+"old": {
+"mask": false,
+"score": 0.0,
+"phrase": null,
+"seconds": 14.9,
+"calls": 2
+},
+"new": {
+"mask": false,
+"score": 0.0,
+"phrase": null,
+"seconds": 6.9,
+"calls": 3
+}
+},
+{
+"suite": "bench",
+"id": "syn-cable-clip-blur-s223605",
+"colour": "green",
+"threshold": {
+"mask": true,
+"accepted": true,
+"errors": {
+"length": 0.19,
+"width": 1.311,
+"hole_1.diameter": 0.429,
+"hole_2.diameter": 0.426
+},
+"failed_checks": []
+},
+"old": {
+"mask": true,
+"score": 0.5345,
+"phrase": "broken plastic piece",
+"seconds": 11.9,
+"iou_threshold": 0.8677,
+"accepted": true,
+"errors": {
+"length": 0.129,
+"width": 1.003
+},
+"failed_checks": [],
+"calls": 2
+},
+"new": {
+"mask": true,
+"score": 0.9101,
+"phrase": "green plastic part",
+"seconds": 9.3,
+"iou_threshold": 0.8381,
+"accepted": true,
+"errors": {
+"length": 0.131,
+"width": 0.715,
+"hole_1.diameter": 0.081,
+"hole_2.diameter": 0.004
+},
+"failed_checks": [],
+"calls": 1
+}
+},
+{
+"suite": "bench",
+"id": "syn-cable-clip-blur-s254152",
+"colour": "black",
+"threshold": {
+"mask": true,
+"accepted": true,
+"errors": {
+"length": 0.155,
+"width": 0.403,
+"hole_1.diameter": 0.21,
+"hole_2.diameter": 0.2
+},
+"failed_checks": []
+},
+"old": {
+"mask": false,
+"score": 0.0,
+"phrase": null,
+"seconds": 56.1,
+"calls": 2
+},
+"new": {
+"mask": false,
+"score": 0.0,
+"phrase": null,
+"seconds": 5.3,
+"calls": 3
+}
+},
+{
+"suite": "bench",
+"id": "syn-cable-clip-clean-s494216",
+"colour": "black",
+"threshold": {
+"mask": true,
+"accepted": true,
+"errors": {
+"length": 0.062,
+"width": 0.722,
+"hole_1.diameter": 0.061,
+"hole_2.diameter": 0.068
+},
+"failed_checks": []
+},
+"old": {
+"mask": false,
+"score": 0.0,
+"phrase": null,
+"seconds": 11.5,
+"calls": 2
+},
+"new": {
+"mask": false,
+"score": 0.0,
+"phrase": null,
+"seconds": 8.2,
+"calls": 3
+}
+},
+{
+"suite": "bench",
+"id": "syn-cable-clip-clean-s679832",
+"colour": "green",
+"threshold": {
+"mask": true,
+"accepted": true,
+"errors": {
+"length": 0.081,
+"width": 1.019,
+"hole_1.diameter": 0.091,
+"hole_2.diameter": 0.086
+},
+"failed_checks": []
+},
+"old": {
+"mask": true,
+"score": 0.5277,
+"phrase": "broken plastic piece",
+"seconds": 13.4,
+"iou_threshold": 0.871,
+"accepted": true,
+"errors": {
+"length": 0.061,
+"width": 1.055,
+"hole_1.diameter": 0.875,
+"hole_2.diameter": 0.831
+},
+"failed_checks": [],
+"calls": 2
+},
+"new": {
+"mask": true,
+"score": 0.9336,
+"phrase": "green plastic part",
+"seconds": 9.5,
+"iou_threshold": 0.8616,
+"accepted": true,
+"errors": {
+"length": 0.055,
+"width": 0.775,
+"hole_1.diameter": 0.006,
+"hole_2.diameter": 0.014
+},
+"failed_checks": [],
+"calls": 1
+}
+},
+{
+"suite": "bench",
+"id": "syn-cable-clip-moire-s62281",
+"colour": "orange",
+"threshold": {
+"mask": true,
+"accepted": false,
+"errors": {
+"length": 0.009,
+"width": 0.582,
+"hole_1.diameter": 0.016,
+"hole_2.diameter": 0.048
+},
+"failed_checks": [
+"moire"
+]
+},
+"old": {
+"mask": false,
+"score": 0.0,
+"phrase": null,
+"seconds": 16.7,
+"calls": 2
+},
+"new": {
+"mask": true,
+"score": 0.875,
+"phrase": "orange plastic part",
+"seconds": 11.6,
+"iou_threshold": 0.9691,
+"accepted": false,
+"errors": {
+"length": 0.206,
+"width": 0.438,
+"hole_1.diameter": 0.274,
+"hole_2.diameter": 0.135
+},
+"failed_checks": [
+"moire"
+],
+"calls": 1
+}
+},
+{
+"suite": "bench",
+"id": "syn-cable-clip-white-part-s236478",
+"colour": "white",
+"threshold": {
+"mask": true,
+"accepted": true,
+"errors": {
+"length": 0.026,
+"width": 0.217,
+"hole_1.diameter": 0.067,
+"hole_2.diameter": 0.003
+},
+"failed_checks": []
+},
+"old": {
+"mask": false,
+"score": 0.0,
+"phrase": null,
+"seconds": 12.2,
+"calls": 2
+},
+"new": {
+"mask": false,
+"score": 0.0,
+"phrase": null,
+"seconds": 5.3,
+"calls": 3
+}
+},
+{
+"suite": "bench",
+"id": "syn-caster-wheel-glare-s452643",
+"colour": "black",
+"threshold": {
+"mask": true,
+"accepted": true,
+"errors": {
+"length": 0.2635,
+"width": 0.467,
+"hole_1.diameter": 0.066,
+"hole_2.diameter": 0.065,
+"hole_3.diameter": 0.065,
+"hole_4.diameter": 0.062,
+"hole_5.diameter": 0.059,
+"hole_6.diameter": 0.064
+},
+"failed_checks": []
+},
+"old": {
+"mask": false,
+"score": 0.0,
+"phrase": null,
+"seconds": 14.0,
+"calls": 2
+},
+"new": {
+"mask": false,
+"score": 0.0,
+"phrase": null,
+"seconds": 7.5,
+"calls": 3
+}
+},
+{
+"suite": "bench",
+"id": "syn-caster-wheel-low-light-s520989",
+"colour": "green",
+"threshold": {
+"mask": true,
+"accepted": true,
+"errors": {
+"length": 0.12,
+"width": 0.1271,
+"hole_1.diameter": 0.034,
+"hole_2.diameter": 0.024,
+"hole_3.diameter": 0.043,
+"hole_4.diameter": 0.045,
+"hole_5.diameter": 0.067,
+"hole_6.diameter": 0.055,
+"hole_7.diameter": 0.038
+},
+"failed_checks": []
+},
+"old": {
+"mask": false,
+"score": 0.0,
+"phrase": null,
+"seconds": 12.5,
+"calls": 2
+},
+"new": {
+"mask": true,
+"score": 0.8519,
+"phrase": "green plastic part",
+"seconds": 9.6,
+"iou_threshold": 0.9478,
+"accepted": true,
+"errors": {
+"length": 0.473,
+"width": 0.4651,
+"hole_1.diameter": 0.437,
+"hole_2.diameter": 0.352,
+"hole_3.diameter": 0.311,
+"hole_4.diameter": 0.311,
+"hole_5.diameter": 0.156,
+"hole_6.diameter": 0.344,
+"hole_7.diameter": 0.242
+},
+"failed_checks": [],
+"calls": 1
+}
+},
+{
+"suite": "bench",
+"id": "syn-caster-wheel-paper-s594413",
+"colour": "orange",
+"threshold": {
+"mask": true,
+"accepted": true,
+"errors": {
+"length": 0.0805,
+"width": 0.4671,
+"hole_1.diameter": 0.261,
+"hole_2.diameter": 0.287,
+"hole_3.diameter": 0.264,
+"hole_4.diameter": 0.274,
+"hole_5.diameter": 0.286,
+"hole_6.diameter": 0.284
+},
+"failed_checks": []
+},
+"old": {
+"mask": false,
+"score": 0.0,
+"phrase": null,
+"seconds": 11.6,
+"calls": 2
+},
+"new": {
+"mask": true,
+"score": 0.9298,
+"phrase": "orange plastic part",
+"seconds": 11.4,
+"iou_threshold": 0.9111,
+"accepted": true,
+"errors": {
+"length": 0.7505,
+"width": 0.9601,
+"hole_1.diameter": 0.242,
+"hole_2.diameter": 0.238,
+"hole_3.diameter": 0.44,
+"hole_4.diameter": 0.183,
+"hole_5.diameter": 0.242,
+"hole_6.diameter": 0.228
+},
+"failed_checks": [],
+"calls": 1
+}
+},
+{
+"suite": "bench",
+"id": "syn-caster-wheel-paper-s721064",
+"colour": "yellow",
+"threshold": {
+"mask": true,
+"accepted": true,
+"errors": {
+"length": 0.08,
+"width": 0.1941,
+"hole_1.diameter": 0.273,
+"hole_2.diameter": 0.285,
+"hole_3.diameter": 0.31,
+"hole_4.diameter": 0.27,
+"hole_5.diameter": 0.264,
+"hole_6.diameter": 0.282,
+"hole_7.diameter": 0.265
+},
+"failed_checks": []
+},
+"old": {
+"mask": false,
+"score": 0.0,
+"phrase": null,
+"seconds": 9.5,
+"calls": 2
+},
+"new": {
+"mask": true,
+"score": 0.9532,
+"phrase": "yellow plastic part",
+"seconds": 7.3,
+"iou_threshold": 0.9005,
+"accepted": true,
+"errors": {
+"length": 0.587,
+"width": 0.7671,
+"hole_1.diameter": 0.203,
+"hole_2.diameter": 0.159,
+"hole_3.diameter": 0.161,
+"hole_4.diameter": 0.154,
+"hole_5.diameter": 0.191,
+"hole_6.diameter": 0.18,
+"hole_7.diameter": 0.214
+},
+"failed_checks": [],
+"calls": 1
+}
+},
+{
+"suite": "bench",
+"id": "syn-caster-wheel-tilt-s108404",
+"colour": "black",
+"threshold": {
+"mask": true,
+"accepted": true,
+"errors": {
+"length": 0.5995,
+"width": 0.6081,
+"hole_4.diameter": 0.179
+},
+"failed_checks": []
+},
+"old": {
+"mask": false,
+"score": 0.0,
+"phrase": null,
+"seconds": 12.6,
+"calls": 2
+},
+"new": {
+"mask": true,
+"score": 0.7621,
+"phrase": "black plastic part",
+"seconds": 7.9,
+"iou_threshold": 0.9568,
+"accepted": true,
+"errors": {
+"length": 0.7525,
+"width": 1.0061
+},
+"failed_checks": [],
+"calls": 1
+}
+},
+{
+"suite": "bench",
+"id": "syn-caster-wheel-tilt-s847482",
+"colour": "green",
+"threshold": {
+"mask": true,
+"accepted": true,
+"errors": {
+"length": 0.5865,
+"width": 0.795,
+"hole_1.diameter": 0.038,
+"hole_2.diameter": 0.026,
+"hole_3.diameter": 0.043,
+"hole_4.diameter": 0.067,
+"hole_5.diameter": 0.033,
+"hole_6.diameter": 0.063
+},
+"failed_checks": []
+},
+"old": {
+"mask": false,
+"score": 0.0,
+"phrase": null,
+"seconds": 11.8,
+"calls": 2
+},
+"new": {
+"mask": true,
+"score": 0.8552,
+"phrase": "green plastic part",
+"seconds": 7.5,
+"iou_threshold": 0.9512,
+"accepted": true,
+"errors": {
+"length": 1.0055,
+"width": 1.056,
+"hole_1.diameter": 0.07,
+"hole_2.diameter": 0.019,
+"hole_3.diameter": 0.012,
+"hole_4.diameter": 0.225,
+"hole_5.diameter": 0.191,
+"hole_6.diameter": 0.803
+},
+"failed_checks": [],
+"calls": 1
+}
+},
+{
+"suite": "bench",
+"id": "syn-caster-wheel-white-on-light-s502554",
+"colour": "grey",
+"threshold": {
+"mask": true,
+"accepted": false,
+"errors": {
+"length": 0.3345,
+"width": 23.135
+},
+"failed_checks": [
+"contrast"
+]
+},
+"old": {
+"mask": false,
+"score": 0.0,
+"phrase": null,
+"seconds": 12.2,
+"calls": 2
+},
+"new": {
+"mask": true,
+"score": 0.9064,
+"phrase": "grey plastic part",
+"seconds": 8.1,
+"iou_threshold": 0.6109,
+"accepted": false,
+"errors": {
+"length": 0.7745,
+"width": 0.821,
+"hole_1.diameter": 0.707,
+"hole_2.diameter": 1.189,
+"hole_3.diameter": 1.089,
+"hole_4.diameter": 1.382,
+"hole_5.diameter": 1.784,
+"hole_6.diameter": 1.699,
+"hole_7.diameter": 2.02
+},
+"failed_checks": [
+"contrast"
+],
+"calls": 1
+}
+},
+{
+"suite": "bench",
+"id": "syn-clip-blur-s395024",
+"colour": "black",
+"threshold": {
+"mask": true,
+"accepted": true,
+"errors": {
+"length": 0.096,
+"width": 3.588,
+"hole_1.diameter": 0.219
+},
+"failed_checks": []
+},
+"old": {
+"mask": false,
+"score": 0.0,
+"phrase": null,
+"seconds": 15.0,
+"calls": 2
+},
+"new": {
+"mask": false,
+"score": 0.0,
+"phrase": null,
+"seconds": 7.6,
+"calls": 3
+}
+},
+{
+"suite": "bench",
+"id": "syn-clip-clean-s412512",
+"colour": "yellow",
+"threshold": {
+"mask": true,
+"accepted": true,
+"errors": {
+"length": 0.148,
+"width": 1.021,
+"hole_1.diameter": 0.096
+},
+"failed_checks": []
+},
+"old": {
+"mask": false,
+"score": 0.0,
+"phrase": null,
+"seconds": 12.7,
+"calls": 2
+},
+"new": {
+"mask": true,
+"score": 0.9259,
+"phrase": "yellow plastic part",
+"seconds": 11.3,
+"iou_threshold": 0.9327,
+"accepted": true,
+"errors": {
+"length": 0.033,
+"width": 0.841,
+"hole_1.diameter": 0.159
+},
+"failed_checks": [],
+"calls": 1
+}
+},
+{
+"suite": "bench",
+"id": "syn-clip-clean-s657276",
+"colour": "grey",
+"threshold": {
+"mask": true,
+"accepted": true,
+"errors": {
+"length": 0.061,
+"width": 0.795,
+"hole_1.diameter": 0.05
+},
+"failed_checks": []
+},
+"old": {
+"mask": false,
+"score": 0.0,
+"phrase": null,
+"seconds": 14.5,
+"calls": 2
+},
+"new": {
+"mask": false,
+"score": 0.0,
+"phrase": null,
+"seconds": 8.1,
+"calls": 3
+}
+},
+{
+"suite": "bench",
+"id": "syn-clip-moire-s830875",
+"colour": "orange",
+"threshold": {
+"mask": true,
+"accepted": false,
+"errors": {
+"length": 0.104,
+"width": 0.527,
+"hole_1.diameter": 0.118
+},
+"failed_checks": [
+"moire"
+]
+},
+"old": {
+"mask": false,
+"score": 0.0,
+"phrase": null,
+"seconds": 12.4,
+"calls": 2
+},
+"new": {
+"mask": true,
+"score": 0.773,
+"phrase": "orange plastic part",
+"seconds": 10.1,
+"iou_threshold": 0.9674,
+"accepted": false,
+"errors": {
+"length": 0.109,
+"width": 0.27,
+"hole_1.diameter": 0.141
+},
+"failed_checks": [
+"moire"
+],
+"calls": 1
+}
+},
+{
+"suite": "bench",
+"id": "syn-clip-white-on-light-s768016",
+"colour": "grey",
+"threshold": {
+"mask": true,
+"accepted": false,
+"errors": {
+"length": 11.448,
+"width": 12.754
+},
+"failed_checks": [
+"contrast"
+]
+},
+"old": {
+"mask": false,
+"score": 0.0,
+"phrase": null,
+"seconds": 12.9,
+"calls": 2
+},
+"new": {
+"mask": false,
+"score": 0.0,
+"phrase": null,
+"seconds": 6.9,
+"calls": 3
+}
+},
+{
+"suite": "bench",
+"id": "syn-clip-white-part-s310572",
+"colour": "beige",
+"threshold": {
+"mask": true,
+"accepted": true,
+"errors": {
+"length": 0.081,
+"width": 1.786,
+"hole_1.diameter": 0.43
+},
+"failed_checks": []
+},
+"old": {
+"mask": false,
+"score": 0.0,
+"phrase": null,
+"seconds": 11.2,
+"calls": 2
+},
+"new": {
+"mask": true,
+"score": 0.8788,
+"phrase": "beige plastic part",
+"seconds": 8.8,
+"iou_threshold": 0.9501,
+"accepted": true,
+"errors": {
+"length": 0.025,
+"width": 2.076,
+"hole_1.diameter": 0.466
+},
+"failed_checks": [],
+"calls": 1
+}
+},
+{
+"suite": "bench",
+"id": "syn-clip-white-part-s468432",
+"colour": "white",
+"threshold": {
+"mask": true,
+"accepted": true,
+"errors": {
+"length": 0.075,
+"width": 0.589,
+"hole_1.diameter": 0.199
+},
+"failed_checks": []
+},
+"old": {
+"mask": false,
+"score": 0.0,
+"phrase": null,
+"seconds": 11.6,
+"calls": 2
+},
+"new": {
+"mask": false,
+"score": 0.0,
+"phrase": null,
+"seconds": 6.8,
+"calls": 3
+}
+},
+{
+"suite": "bench",
+"id": "syn-cupboard-latch-glare-s672122",
+"colour": "red",
+"threshold": {
+"mask": true,
+"accepted": true,
+"errors": {
+"length": 0.0688,
+"width": 0.004,
+"hole_1.diameter": 0.071
+},
+"failed_checks": []
+},
+"old": {
+"mask": false,
+"score": 0.0,
+"phrase": null,
+"seconds": 11.0,
+"calls": 2
+},
+"new": {
+"mask": true,
+"score": 0.914,
+"phrase": "red plastic part",
+"seconds": 8.4,
+"iou_threshold": 0.939,
+"accepted": true,
+"errors": {
+"length": 0.3648,
+"width": 0.194,
+"hole_1.diameter": 0.341
+},
+"failed_checks": [],
+"calls": 1
+}
+},
+{
+"suite": "bench",
+"id": "syn-cupboard-latch-glare-s937121",
+"colour": "red",
+"threshold": {
+"mask": true,
+"accepted": true,
+"errors": {
+"length": 0.0109,
+"width": 0.106,
+"hole_1.diameter": 0.06
+},
+"failed_checks": []
+},
+"old": {
+"mask": false,
+"score": 0.0,
+"phrase": null,
+"seconds": 11.2,
+"calls": 2
+},
+"new": {
+"mask": true,
+"score": 0.871,
+"phrase": "red plastic part",
+"seconds": 7.8,
+"iou_threshold": 0.9354,
+"accepted": true,
+"errors": {
+"length": 0.2991,
+"width": 0.139
+},
+"failed_checks": [],
+"calls": 1
+}
+},
+{
+"suite": "bench",
+"id": "syn-cupboard-latch-low-light-s65175",
+"colour": "green",
+"threshold": {
+"mask": true,
+"accepted": true,
+"errors": {
+"length": 0.12,
+"width": 0.04,
+"hole_1.diameter": 0.192
+},
+"failed_checks": []
+},
+"old": {
+"mask": false,
+"score": 0.0,
+"phrase": null,
+"seconds": 14.1,
+"calls": 2
+},
+"new": {
+"mask": true,
+"score": 0.957,
+"phrase": "green plastic part",
+"seconds": 12.4,
+"iou_threshold": 0.9633,
+"accepted": true,
+"errors": {
+"length": 0.44,
+"width": 0.186,
+"hole_1.diameter": 0.395
+},
+"failed_checks": [],
+"calls": 1
+}
+},
+{
+"suite": "bench",
+"id": "syn-cupboard-latch-paper-s572177",
+"colour": "yellow",
+"threshold": {
+"mask": true,
+"accepted": true,
+"errors": {
+"length": 0.0452,
+"width": 0.394,
+"hole_1.diameter": 0.408
+},
+"failed_checks": []
+},
+"old": {
+"mask": false,
+"score": 0.0,
+"phrase": null,
+"seconds": 70.7,
+"calls": 2
+},
+"new": {
+"mask": true,
+"score": 0.9649,
+"phrase": "yellow plastic part",
+"seconds": 8.1,
+"iou_threshold": 0.8995,
+"accepted": true,
+"errors": {
+"length": 0.3588,
+"width": 0.157,
+"hole_1.diameter": 0.143
+},
+"failed_checks": [],
+"calls": 1
+}
+},
+{
+"suite": "bench",
+"id": "syn-cupboard-latch-tilt-s499291",
+"colour": "green",
+"threshold": {
+"mask": true,
+"accepted": true,
+"errors": {
+"length": 0.2099,
+"width": 0.037,
+"hole_1.diameter": 0.327
+},
+"failed_checks": []
+},
+"old": {
+"mask": false,
+"score": 0.0,
+"phrase": null,
+"seconds": 10.9,
+"calls": 2
+},
+"new": {
+"mask": true,
+"score": 0.9452,
+"phrase": "green plastic part",
+"seconds": 8.9,
+"iou_threshold": 0.9279,
+"accepted": true,
+"errors": {
+"length": 0.4899,
+"width": 0.29,
+"hole_1.diameter": 0.597
+},
+"failed_checks": [],
+"calls": 1
+}
+},
+{
+"suite": "bench",
+"id": "syn-cupboard-latch-tilt-s522860",
+"colour": "grey",
+"threshold": {
+"mask": true,
+"accepted": true,
+"errors": {
+"length": 0.135,
+"width": 0.152,
+"hole_1.diameter": 0.262
+},
+"failed_checks": []
+},
+"old": {
+"mask": false,
+"score": 0.0,
+"phrase": null,
+"seconds": 12.4,
+"calls": 2
+},
+"new": {
+"mask": true,
+"score": 0.8865,
+"phrase": "grey plastic part",
+"seconds": 8.0,
+"iou_threshold": 0.9213,
+"accepted": true,
+"errors": {
+"length": 0.353,
+"width": 0.332,
+"hole_1.diameter": 0.626
+},
+"failed_checks": [],
+"calls": 1
+}
+},
+{
+"suite": "bench",
+"id": "syn-hinge-leaf-blur-s212286",
+"colour": "black",
+"threshold": {
+"mask": true,
+"accepted": true,
+"errors": {
+"length": 0.523,
+"width": 0.0587,
+"hole_1.diameter": 0.032,
+"hole_2.diameter": 0.084,
+"hole_3.diameter": 0.076
+},
+"failed_checks": []
+},
+"old": {
+"mask": false,
+"score": 0.0,
+"phrase": null,
+"seconds": 13.4,
+"calls": 2
+},
+"new": {
+"mask": true,
+"score": 0.8788,
+"phrase": "black plastic part",
+"seconds": 14.3,
+"iou_threshold": 0.9007,
+"accepted": true,
+"errors": {
+"length": 0.124,
+"width": 0.3633,
+"hole_1.diameter": 0.287,
+"hole_2.diameter": 0.124,
+"hole_3.diameter": 0.077
+},
+"failed_checks": [],
+"calls": 1
+}
+},
+{
+"suite": "bench",
+"id": "syn-hinge-leaf-blur-s889433",
+"colour": "yellow",
+"threshold": {
+"mask": true,
+"accepted": false,
+"errors": {
+"length": 0.667,
+"width": 0.1497,
+"hole_1.diameter": 0.252,
+"hole_2.diameter": 0.305,
+"hole_3.diameter": 0.323
+},
+"failed_checks": [
+"blur"
+]
+},
+"old": {
+"mask": false,
+"score": 0.0,
+"phrase": null,
+"seconds": 11.2,
+"calls": 2
+},
+"new": {
+"mask": true,
+"score": 0.9532,
+"phrase": "yellow plastic part",
+"seconds": 7.3,
+"iou_threshold": 0.9093,
+"accepted": false,
+"errors": {
+"length": 0.164,
+"width": 0.6173,
+"hole_1.diameter": 1.239
+},
+"failed_checks": [
+"blur"
+],
+"calls": 1
+}
+},
+{
+"suite": "bench",
+"id": "syn-hinge-leaf-clean-s641354",
+"colour": "grey",
+"threshold": {
+"mask": true,
+"accepted": true,
+"errors": {
+"length": 0.922,
+"width": 0.0287,
+"hole_1.diameter": 0.006,
+"hole_2.diameter": 0.108
+},
+"failed_checks": []
+},
+"old": {
+"mask": false,
+"score": 0.0,
+"phrase": null,
+"seconds": 11.5,
+"calls": 2
+},
+"new": {
+"mask": true,
+"score": 0.6133,
+"phrase": "grey plastic part",
+"seconds": 8.9,
+"iou_threshold": 0.9528,
+"accepted": true,
+"errors": {
+"length": 1.405,
+"width": 0.1477,
+"hole_1.diameter": 0.725,
+"hole_2.diameter": 0.552
+},
+"failed_checks": [],
+"calls": 1
+}
+},
+{
+"suite": "bench",
+"id": "syn-hinge-leaf-clean-s976102",
+"colour": "orange",
+"threshold": {
+"mask": true,
+"accepted": true,
+"errors": {
+"length": 0.839,
+"width": 0.2883,
+"hole_1.diameter": 0.22,
+"hole_2.diameter": 0.263,
+"hole_3.diameter": 0.21
+},
+"failed_checks": []
+},
+"old": {
+"mask": false,
+"score": 0.0,
+"phrase": null,
+"seconds": 13.8,
+"calls": 2
+},
+"new": {
+"mask": true,
+"score": 0.922,
+"phrase": "orange plastic part",
+"seconds": 11.9,
+"iou_threshold": 0.9096,
+"accepted": true,
+"errors": {
+"length": 0.533,
+"width": 0.0407,
+"hole_1.diameter": 0.009,
+"hole_2.diameter": 0.034,
+"hole_3.diameter": 0.092
+},
+"failed_checks": [],
+"calls": 1
+}
+},
+{
+"suite": "bench",
+"id": "syn-hinge-leaf-moire-s207046",
+"colour": "grey",
+"threshold": {
+"mask": true,
+"accepted": false,
+"errors": {
+"length": 0.868,
+"width": 0.2638,
+"hole_1.diameter": 0.019,
+"hole_2.diameter": 0.055,
+"hole_3.diameter": 0.139
+},
+"failed_checks": [
+"moire"
+]
+},
+"old": {
+"mask": false,
+"score": 0.0,
+"phrase": null,
+"seconds": 11.8,
+"calls": 2
+},
+"new": {
+"mask": true,
+"score": 0.5661,
+"phrase": "grey plastic part",
+"seconds": 10.3,
+"iou_threshold": 0.9313,
+"accepted": false,
+"errors": {
+"length": 0.957,
+"width": 0.2478,
+"hole_1.diameter": 0.056,
+"hole_2.diameter": 0.033,
+"hole_3.diameter": 0.047
+},
+"failed_checks": [
+"moire"
+],
+"calls": 1
+}
+},
+{
+"suite": "bench",
+"id": "syn-hinge-leaf-white-on-light-s939262",
+"colour": "grey",
+"threshold": {
+"mask": true,
+"accepted": false,
+"errors": {
+"length": 0.94,
+"width": 0.2523,
+"hole_1.diameter": 0.194,
+"hole_2.diameter": 0.155,
+"hole_3.diameter": 0.051
+},
+"failed_checks": [
+"contrast"
+]
+},
+"old": {
+"mask": false,
+"score": 0.0,
+"phrase": null,
+"seconds": 10.0,
+"calls": 2
+},
+"new": {
+"mask": true,
+"score": 0.9336,
+"phrase": "grey plastic part",
+"seconds": 10.8,
+"iou_threshold": 0.9633,
+"accepted": false,
+"errors": {
+"length": 0.538,
+"width": 0.1397,
+"hole_1.diameter": 0.654,
+"hole_3.diameter": 0.321
+},
+"failed_checks": [
+"contrast"
+],
+"calls": 1
+}
+},
+{
+"suite": "bench",
+"id": "syn-hinge-leaf-white-part-s529109",
+"colour": "white",
+"threshold": {
+"mask": true,
+"accepted": true,
+"errors": {
+"length": 0.439,
+"width": 0.0823
+},
+"failed_checks": []
+},
+"old": {
+"mask": false,
+"score": 0.0,
+"phrase": null,
+"seconds": 12.6,
+"calls": 2
+},
+"new": {
+"mask": false,
+"score": 0.0,
+"phrase": null,
+"seconds": 5.5,
+"calls": 3
+}
+},
+{
+"suite": "bench",
+"id": "syn-hook-glare-s235877",
+"colour": "yellow",
+"threshold": {
+"mask": true,
+"accepted": true,
+"errors": {
+"length": 1.376,
+"width": 0.127,
+"hole_1.diameter": 0.133,
+"hole_2.diameter": 0.128
+},
+"failed_checks": []
+},
+"old": {
+"mask": false,
+"score": 0.0,
+"phrase": null,
+"seconds": 10.5,
+"calls": 2
+},
+"new": {
+"mask": true,
+"score": 0.9101,
+"phrase": "yellow plastic part",
+"seconds": 10.9,
+"iou_threshold": 0.9622,
+"accepted": true,
+"errors": {
+"length": 1.105,
+"width": 0.161,
+"hole_1.diameter": 0.318,
+"hole_2.diameter": 0.323
+},
+"failed_checks": [],
+"calls": 1
+}
+},
+{
+"suite": "bench",
+"id": "syn-hook-glare-s409132",
+"colour": "green",
+"threshold": {
+"mask": true,
+"accepted": false,
+"errors": {
+"length": 0.047,
+"width": 4.956,
+"hole_1.diameter": 0.449
+},
+"failed_checks": [
+"contrast"
+]
+},
+"old": {
+"mask": false,
+"score": 0.0,
+"phrase": null,
+"seconds": 11.7,
+"calls": 2
+},
+"new": {
+"mask": true,
+"score": 0.8596,
+"phrase": "green plastic part",
+"seconds": 11.4,
+"iou_threshold": 0.9419,
+"accepted": true,
+"errors": {
+"length": 0.191,
+"width": 4.724,
+"hole_1.diameter": 0.584
+},
+"failed_checks": [],
+"calls": 1
+}
+},
+{
+"suite": "bench",
+"id": "syn-hook-low-light-s905959",
+"colour": "blue",
+"threshold": {
+"mask": true,
+"accepted": true,
+"errors": {
+"length": 1.382,
+"width": 0.087,
+"hole_1.diameter": 0.014,
+"hole_2.diameter": 0.119
+},
+"failed_checks": []
+},
+"old": {
+"mask": false,
+"score": 0.0,
+"phrase": null,
+"seconds": 14.3,
+"calls": 2
+},
+"new": {
+"mask": true,
+"score": 0.9064,
+"phrase": "blue plastic part",
+"seconds": 11.7,
+"iou_threshold": 0.9821,
+"accepted": true,
+"errors": {
+"length": 1.198,
+"width": 0.111,
+"hole_1.diameter": 0.137,
+"hole_2.diameter": 0.266
+},
+"failed_checks": [],
+"calls": 1
+}
+},
+{
+"suite": "bench",
+"id": "syn-hook-paper-s411102",
+"colour": "orange",
+"threshold": {
+"mask": true,
+"accepted": true,
+"errors": {
+"length": 0.21,
+"width": 0.196,
+"hole_1.diameter": 0.018,
+"hole_2.diameter": 0.074,
+"hole_3.diameter": 0.13
+},
+"failed_checks": []
+},
+"old": {
+"mask": true,
+"score": 0.7265,
+"phrase": "broken plastic piece",
+"seconds": 14.6,
+"iou_threshold": 0.9161,
+"accepted": true,
+"errors": {
+"length": 0.1,
+"width": 0.165,
+"hole_1.diameter": 0.165,
+"hole_2.diameter": 0.238,
+"hole_3.diameter": 0.296
+},
+"failed_checks": [],
+"calls": 2
+},
+"new": {
+"mask": true,
+"score": 0.9452,
+"phrase": "orange plastic part",
+"seconds": 9.4,
+"iou_threshold": 0.9149,
+"accepted": true,
+"errors": {
+"length": 0.098,
+"width": 0.12,
+"hole_1.diameter": 0.31,
+"hole_2.diameter": 0.392,
+"hole_3.diameter": 0.409
+},
+"failed_checks": [],
+"calls": 1
+}
+},
+{
+"suite": "bench",
+"id": "syn-hook-tilt-s563265",
+"colour": "black",
+"threshold": {
+"mask": true,
+"accepted": false,
+"errors": {
+"length": 14.799,
+"width": 7.086,
+"hole_1.diameter": 0.815,
+"hole_2.diameter": 0.752
+},
+"failed_checks": [
+"coverage"
+]
+},
+"old": {
+"mask": false,
+"score": 0.0,
+"phrase": null,
+"seconds": 10.8,
+"calls": 2
+},
+"new": {
+"mask": true,
+"score": 0.7621,
+"phrase": "black plastic part",
+"seconds": 8.4,
+"iou_threshold": 0.9118,
+"accepted": false,
+"errors": {
+"length": 14.159,
+"width": 6.764,
+"hole_1.diameter": 1.169,
+"hole_2.diameter": 1.059
+},
+"failed_checks": [
+"coverage"
+],
+"calls": 1
+}
+},
+{
+"suite": "bench",
+"id": "syn-hook-tilt-s656341",
+"colour": "blue",
+"threshold": {
+"mask": true,
+"accepted": true,
+"errors": {
+"length": 0.152,
+"width": 2.613,
+"hole_1.diameter": 0.266
+},
+"failed_checks": []
+},
+"old": {
+"mask": false,
+"score": 0.0,
+"phrase": null,
+"seconds": 13.7,
+"calls": 2
+},
+"new": {
+"mask": true,
+"score": 0.9336,
+"phrase": "blue plastic part",
+"seconds": 9.8,
+"iou_threshold": 0.9425,
+"accepted": true,
+"errors": {
+"length": 0.179,
+"width": 2.238,
+"hole_1.diameter": 0.604
+},
+"failed_checks": [],
+"calls": 1
+}
+},
+{
+"suite": "bench",
+"id": "syn-knob-glare-s198000",
+"colour": "yellow",
+"threshold": {
+"mask": true,
+"accepted": false,
+"errors": {
+"length": 0.051,
+"width": 0.1708
+},
+"failed_checks": [
+"contrast"
+]
+},
+"old": {
+"mask": false,
+"score": 0.0,
+"phrase": null,
+"seconds": 9.5,
+"calls": 2
+},
+"new": {
+"mask": true,
+"score": 0.9532,
+"phrase": "yellow plastic part",
+"seconds": 8.7,
+"iou_threshold": 0.9385,
+"accepted": true,
+"errors": {
+"length": 0.446,
+"width": 0.6508
+},
+"failed_checks": [],
+"calls": 1
+}
+},
+{
+"suite": "bench",
+"id": "syn-knob-glare-s390629",
+"colour": "yellow",
+"threshold": {
+"mask": true,
+"accepted": true,
+"errors": {
+"length": 0.2526,
+"width": 0.2123
+},
+"failed_checks": []
+},
+"old": {
+"mask": false,
+"score": 0.0,
+"phrase": null,
+"seconds": 12.5,
+"calls": 2
+},
+"new": {
+"mask": true,
+"score": 0.9416,
+"phrase": "yellow plastic part",
+"seconds": 7.8,
+"iou_threshold": 0.9541,
+"accepted": true,
+"errors": {
+"length": 0.5846,
+"width": 0.5953
+},
+"failed_checks": [],
+"calls": 1
+}
+},
+{
+"suite": "bench",
+"id": "syn-knob-low-light-s207283",
+"colour": "black",
+"threshold": {
+"mask": true,
+"accepted": true,
+"errors": {
+"length": 0.2595,
+"width": 0.2311
+},
+"failed_checks": []
+},
+"old": {
+"mask": false,
+"score": 0.0,
+"phrase": null,
+"seconds": 12.4,
+"calls": 2
+},
+"new": {
+"mask": false,
+"score": 0.0,
+"phrase": null,
+"seconds": 6.9,
+"calls": 3
+}
+},
+{
+"suite": "bench",
+"id": "syn-knob-low-light-s27778",
+"colour": "orange",
+"threshold": {
+"mask": true,
+"accepted": true,
+"errors": {
+"length": 0.3539,
+"width": 0.3345
+},
+"failed_checks": []
+},
+"old": {
+"mask": false,
+"score": 0.0,
+"phrase": null,
+"seconds": 10.1,
+"calls": 2
+},
+"new": {
+"mask": true,
+"score": 0.8947,
+"phrase": "orange plastic part",
+"seconds": 8.4,
+"iou_threshold": 0.9785,
+"accepted": true,
+"errors": {
+"length": 0.4969,
+"width": 0.7505
+},
+"failed_checks": [],
+"calls": 1
+}
+},
+{
+"suite": "bench",
+"id": "syn-knob-paper-s518661",
+"colour": "yellow",
+"threshold": {
+"mask": true,
+"accepted": true,
+"errors": {
+"length": 0.2368,
+"width": 0.2782
+},
+"failed_checks": []
+},
+"old": {
+"mask": false,
+"score": 0.0,
+"phrase": null,
+"seconds": 12.3,
+"calls": 2
+},
+"new": {
+"mask": true,
+"score": 0.957,
+"phrase": "yellow plastic part",
+"seconds": 7.8,
+"iou_threshold": 0.9581,
+"accepted": true,
+"errors": {
+"length": 0.5798,
+"width": 0.8652
+},
+"failed_checks": [],
+"calls": 1
+}
+},
+{
+"suite": "bench",
+"id": "syn-knob-tilt-s880232",
+"colour": "green",
+"threshold": {
+"mask": true,
+"accepted": true,
+"errors": {
+"length": 0.1355,
+"width": 0.0906
+},
+"failed_checks": []
+},
+"old": {
+"mask": false,
+"score": 0.0,
+"phrase": null,
+"seconds": 9.9,
+"calls": 2
+},
+"new": {
+"mask": true,
+"score": 0.84,
+"phrase": "green plastic part",
+"seconds": 9.0,
+"iou_threshold": 0.9474,
+"accepted": true,
+"errors": {
+"length": 0.4805,
+"width": 0.5446
+},
+"failed_checks": [],
+"calls": 1
+}
+},
+{
+"suite": "bench",
+"id": "syn-knob-white-on-light-s695298",
+"colour": "grey",
+"threshold": {
+"mask": true,
+"accepted": false,
+"errors": {
+"length": 10.8592,
+"width": 0.7449
+},
+"failed_checks": [
+"contrast"
+]
+},
+"old": {
+"mask": false,
+"score": 0.0,
+"phrase": null,
+"seconds": 11.1,
+"calls": 2
+},
+"new": {
+"mask": true,
+"score": 0.9259,
+"phrase": "grey plastic part",
+"seconds": 8.5,
+"iou_threshold": 0.6813,
+"accepted": false,
+"errors": {
+"length": 0.6418,
+"width": 0.6891
+},
+"failed_checks": [
+"contrast"
+],
+"calls": 1
+}
+},
+{
+"suite": "bench",
+"id": "syn-l-bracket-blur-s785210",
+"colour": "green",
+"threshold": {
+"mask": true,
+"accepted": false,
+"errors": {
+"length": 0.268,
+"width": 3.558,
+"hole_1.diameter": 0.339
+},
+"failed_checks": [
+"blur"
+]
+},
+"old": {
+"mask": false,
+"score": 0.0,
+"phrase": null,
+"seconds": 10.6,
+"calls": 2
+},
+"new": {
+"mask": true,
+"score": 0.8632,
+"phrase": "green plastic part",
+"seconds": 8.4,
+"iou_threshold": 0.8754,
+"accepted": false,
+"errors": {
+"length": 0.222,
+"width": 2.681,
+"hole_1.diameter": 0.411
+},
+"failed_checks": [
+"blur"
+],
+"calls": 1
+}
+},
+{
+"suite": "bench",
+"id": "syn-l-bracket-blur-s816483",
+"colour": "blue",
+"threshold": {
+"mask": true,
+"accepted": true,
+"errors": {
+"length": 5.316,
+"width": 3.928,
+"hole_1.diameter": 0.269,
+"hole_2.diameter": 0.262,
+"hole_3.diameter": 0.25
+},
+"failed_checks": []
+},
+"old": {
+"mask": false,
+"score": 0.0,
+"phrase": null,
+"seconds": 12.5,
+"calls": 2
+},
+"new": {
+"mask": true,
+"score": 0.961,
+"phrase": "blue plastic part",
+"seconds": 11.0,
+"iou_threshold": 0.8636,
+"accepted": true,
+"errors": {
+"length": 4.924,
+"width": 3.354,
+"hole_1.diameter": 0.349,
+"hole_2.diameter": 0.38,
+"hole_3.diameter": 0.327
+},
+"failed_checks": [],
+"calls": 1
+}
+},
+{
+"suite": "bench",
+"id": "syn-l-bracket-clean-s827225",
+"colour": "red",
+"threshold": {
+"mask": true,
+"accepted": true,
+"errors": {
+"length": 1.443,
+"width": 3.036,
+"hole_1.diameter": 0.086
+},
+"failed_checks": []
+},
+"old": {
+"mask": false,
+"score": 0.0,
+"phrase": null,
+"seconds": 12.2,
+"calls": 2
+},
+"new": {
+"mask": true,
+"score": 0.8947,
+"phrase": "red plastic part",
+"seconds": 12.4,
+"iou_threshold": 0.9403,
+"accepted": true,
+"errors": {
+"length": 1.265,
+"width": 2.806,
+"hole_1.diameter": 0.212
+},
+"failed_checks": [],
+"calls": 1
+}
+},
+{
+"suite": "bench",
+"id": "syn-l-bracket-moire-s114398",
+"colour": "black",
+"threshold": {
+"mask": true,
+"accepted": false,
+"errors": {
+"length": 0.045,
+"width": 2.337,
+"hole_1.diameter": 0.038,
+"hole_2.diameter": 0.029,
+"hole_3.diameter": 0.037
+},
+"failed_checks": [
+"moire"
+]
+},
+"old": {
+"mask": false,
+"score": 0.0,
+"phrase": null,
+"seconds": 13.5,
+"calls": 2
+},
+"new": {
+"mask": false,
+"score": 0.0,
+"phrase": null,
+"seconds": 6.9,
+"calls": 3
+}
+},
+{
+"suite": "bench",
+"id": "syn-l-bracket-moire-s928384",
+"colour": "blue",
+"threshold": {
+"mask": true,
+"accepted": true,
+"errors": {
+"length": 0.077,
+"width": 1.735,
+"hole_1.diameter": 0.057
+},
+"failed_checks": []
+},
+"old": {
+"mask": false,
+"score": 0.0,
+"phrase": null,
+"seconds": 11.5,
+"calls": 2
+},
+"new": {
+"mask": true,
+"score": 0.9416,
+"phrase": "blue plastic part",
+"seconds": 8.1,
+"iou_threshold": 0.9735,
+"accepted": true,
+"errors": {
+"length": 0.135,
+"width": 1.603,
+"hole_1.diameter": 0.254
+},
+"failed_checks": [],
+"calls": 1
+}
+},
+{
+"suite": "bench",
+"id": "syn-l-bracket-white-part-s103059",
+"colour": "white",
+"threshold": {
+"mask": true,
+"accepted": true,
+"errors": {
+"length": 3.611,
+"width": 0.559,
+"hole_1.diameter": 0.089,
+"hole_2.diameter": 0.069,
+"hole_3.diameter": 0.045
+},
+"failed_checks": []
+},
+"old": {
+"mask": false,
+"score": 0.0,
+"phrase": null,
+"seconds": 11.1,
+"calls": 2
+},
+"new": {
+"mask": false,
+"score": 0.0,
+"phrase": null,
+"seconds": 6.5,
+"calls": 3
+}
+},
+{
+"suite": "bench",
+"id": "syn-spacer-blur-s21267",
+"colour": "grey",
+"threshold": {
+"mask": true,
+"accepted": true,
+"errors": {
+"length": 0.058,
+"width": 0.0212,
+"hole_1.diameter": 0.089
+},
+"failed_checks": []
+},
+"old": {
+"mask": false,
+"score": 0.0,
+"phrase": null,
+"seconds": 14.0,
+"calls": 2
+},
+"new": {
+"mask": false,
+"score": 0.0,
+"phrase": null,
+"seconds": 7.5,
+"calls": 3
+}
+},
+{
+"suite": "bench",
+"id": "syn-spacer-clean-s318180",
+"colour": "red",
+"threshold": {
+"mask": true,
+"accepted": true,
+"errors": {
+"length": 0.132,
+"width": 0.094,
+"hole_1.diameter": 0.124
+},
+"failed_checks": []
+},
+"old": {
+"mask": false,
+"score": 0.0,
+"phrase": null,
+"seconds": 13.6,
+"calls": 2
+},
+"new": {
+"mask": true,
+"score": 0.5776,
+"phrase": "red plastic part",
+"seconds": 7.3,
+"iou_threshold": 0.9106,
+"accepted": true,
+"errors": {
+"length": 0.017,
+"width": 0.109,
+"hole_1.diameter": 0.574
+},
+"failed_checks": [],
+"calls": 1
+}
+},
+{
+"suite": "bench",
+"id": "syn-spacer-moire-s143272",
+"colour": "orange",
+"threshold": {
+"mask": true,
+"accepted": false,
+"errors": {
+"length": 0.115,
+"width": 0.1974,
+"hole_1.diameter": 0.164
+},
+"failed_checks": [
+"moire"
+]
+},
+"old": {
+"mask": false,
+"score": 0.0,
+"phrase": null,
+"seconds": 14.3,
+"calls": 2
+},
+"new": {
+"mask": true,
+"score": 0.5661,
+"phrase": "orange plastic part",
+"seconds": 8.9,
+"iou_threshold": 0.9349,
+"accepted": false,
+"errors": {
+"length": 0.015,
+"width": 0.3214,
+"hole_1.diameter": 0.126
+},
+"failed_checks": [
+"moire"
+],
+"calls": 1
+}
+},
+{
+"suite": "bench",
+"id": "syn-spacer-moire-s601695",
+"colour": "brown",
+"threshold": {
+"mask": true,
+"accepted": false,
+"errors": {
+"length": 0.077,
+"width": 0.0947
+},
+"failed_checks": [
+"moire"
+]
+},
+"old": {
+"mask": false,
+"score": 0.0,
+"phrase": null,
+"seconds": 13.7,
+"calls": 2
+},
+"new": {
+"mask": true,
+"score": 0.871,
+"phrase": "brown plastic part",
+"seconds": 7.6,
+"iou_threshold": 0.9397,
+"accepted": false,
+"errors": {
+"length": 0.283,
+"width": 0.3447,
+"hole_1.diameter": 0.138
+},
+"failed_checks": [
+"moire"
+],
+"calls": 1
+}
+},
+{
+"suite": "bench",
+"id": "syn-spacer-white-on-light-s706141",
+"colour": "beige",
+"threshold": {
+"mask": true,
+"accepted": true,
+"errors": {
+"length": 0.0331,
+"width": 0.0708,
+"hole_1.diameter": 0.008
+},
+"failed_checks": []
+},
+"old": {
+"mask": false,
+"score": 0.0,
+"phrase": null,
+"seconds": 11.0,
+"calls": 2
+},
+"new": {
+"mask": true,
+"score": 0.9416,
+"phrase": "beige plastic part",
+"seconds": 7.0,
+"iou_threshold": 0.8456,
+"accepted": true,
+"errors": {
+"length": 0.1959,
+"width": 0.2528,
+"hole_1.diameter": 0.192
+},
+"failed_checks": [],
+"calls": 1
+}
+},
+{
+"suite": "bench",
+"id": "syn-spacer-white-part-s276343",
+"colour": "white",
+"threshold": {
+"mask": true,
+"accepted": true,
+"errors": {
+"length": 0.9358,
+"width": 0.258,
+"hole_1.diameter": 0.796
+},
+"failed_checks": []
+},
+"old": {
+"mask": false,
+"score": 0.0,
+"phrase": null,
+"seconds": 13.4,
+"calls": 2
+},
+"new": {
+"mask": true,
+"score": 0.7064,
+"phrase": "white plastic part",
+"seconds": 9.0,
+"iou_threshold": 0.9491,
+"accepted": true,
+"errors": {
+"length": 0.1838,
+"width": 0.088,
+"hole_1.diameter": 0.094
+},
+"failed_checks": [],
+"calls": 1
+}
+},
+{
+"suite": "bench",
+"id": "syn-spacer-white-part-s928626",
+"colour": "grey",
+"threshold": {
+"mask": true,
+"accepted": true,
+"errors": {
+"length": 0.8978,
+"width": 0.552,
+"hole_1.diameter": 0.802
+},
+"failed_checks": []
+},
+"old": {
+"mask": false,
+"score": 0.0,
+"phrase": null,
+"seconds": 11.4,
+"calls": 2
+},
+"new": {
+"mask": false,
+"score": 0.0,
+"phrase": null,
+"seconds": 5.7,
+"calls": 3
+}
+},
+{
+"suite": "fresh",
+"id": "syn-battery-cover-paper-s654881",
+"colour": "black",
+"threshold": {
+"mask": true,
+"accepted": true,
+"errors": {
+"length": 0.149,
+"width": 0.066
+},
+"failed_checks": [],
+"iou_exact": 0.9464
+},
+"old": {
+"mask": false,
+"score": 0.0,
+"phrase": null,
+"seconds": 12.4,
+"calls": 2
+},
+"new": {
+"mask": true,
+"score": 0.6049,
+"phrase": "black plastic part",
+"seconds": 8.2,
+"iou_threshold": 0.9325,
+"iou_exact": 0.9853,
+"accepted": true,
+"errors": {
+"length": 0.376,
+"width": 0.104
+},
+"failed_checks": [],
+"calls": 1
+}
+},
+{
+"suite": "fresh",
+"id": "syn-battery-cover-tilt-s767066",
+"colour": "black",
+"threshold": {
+"mask": true,
+"accepted": true,
+"errors": {
+"length": 0.017,
+"width": 0.033
+},
+"failed_checks": [],
+"iou_exact": 0.9715
+},
+"old": {
+"mask": false,
+"score": 0.0,
+"phrase": null,
+"seconds": 13.4,
+"calls": 2
+},
+"new": {
+"mask": false,
+"score": 0.0,
+"phrase": null,
+"seconds": 8.9,
+"calls": 3
+}
+},
+{
+"suite": "fresh",
+"id": "syn-cable-clip-clean-s77911",
+"colour": "green",
+"threshold": {
+"mask": true,
+"accepted": true,
+"errors": {
+"length": 0.05,
+"width": 0.604,
+"hole_1.diameter": 0.067,
+"hole_2.diameter": 0.071
+},
+"failed_checks": [],
+"iou_exact": 0.9192
+},
+"old": {
+"mask": false,
+"score": 0.0,
+"phrase": null,
+"seconds": 11.9,
+"calls": 2
+},
+"new": {
+"mask": true,
+"score": 0.9298,
+"phrase": "green plastic part",
+"seconds": 12.1,
+"iou_threshold": 0.9076,
+"iou_exact": 0.9868,
+"accepted": true,
+"errors": {
+"length": 0.077,
+"width": 0.477,
+"hole_1.diameter": 0.055,
+"hole_2.diameter": 0.065
+},
+"failed_checks": [],
+"calls": 1
+}
+},
+{
+"suite": "fresh",
+"id": "syn-cable-clip-white-part-s371290",
+"colour": "beige",
+"threshold": {
+"mask": true,
+"accepted": true,
+"errors": {
+"length": 0.095,
+"width": 0.288,
+"hole_1.diameter": 0.125
+},
+"failed_checks": [],
+"iou_exact": 0.9823
+},
+"old": {
+"mask": false,
+"score": 0.0,
+"phrase": null,
+"seconds": 11.6,
+"calls": 2
+},
+"new": {
+"mask": true,
+"score": 0.8129,
+"phrase": "beige plastic part",
+"seconds": 7.7,
+"iou_threshold": 0.966,
+"iou_exact": 0.9812,
+"accepted": true,
+"errors": {
+"length": 0.119,
+"width": 0.253,
+"hole_1.diameter": 0.1
+},
+"failed_checks": [],
+"calls": 1
+}
+},
+{
+"suite": "fresh",
+"id": "syn-caster-wheel-moire-s687005",
+"colour": "black",
+"threshold": {
+"mask": true,
+"accepted": true,
+"errors": {
+"length": 0.3325,
+"width": 0.596,
+"hole_1.diameter": 0.0232,
+"hole_2.diameter": 0.0212,
+"hole_3.diameter": 0.0232,
+"hole_4.diameter": 0.027,
+"hole_5.diameter": 0.0232,
+"hole_6.diameter": 0.0222,
+"hole_7.diameter": 0.0222
+},
+"failed_checks": [],
+"iou_exact": 0.9924
+},
+"old": {
+"mask": false,
+"score": 0.0,
+"phrase": null,
+"seconds": 13.1,
+"calls": 2
+},
+"new": {
+"mask": false,
+"score": 0.0,
+"phrase": null,
+"seconds": 10.9,
+"calls": 3
+}
+},
+{
+"suite": "fresh",
+"id": "syn-clip-paper-s786468",
+"colour": "black",
+"threshold": {
+"mask": true,
+"accepted": true,
+"errors": {
+"length": 0.06,
+"width": 1.169,
+"hole_1.diameter": 0.069
+},
+"failed_checks": [],
+"iou_exact": 0.9332
+},
+"old": {
+"mask": false,
+"score": 0.0,
+"phrase": null,
+"seconds": 16.4,
+"calls": 2
+},
+"new": {
+"mask": true,
+"score": 0.8519,
+"phrase": "black plastic part",
+"seconds": 9.0,
+"iou_threshold": 0.9148,
+"iou_exact": 0.9803,
+"accepted": true,
+"errors": {
+"length": 0.082,
+"width": 0.96,
+"hole_1.diameter": 0.234
+},
+"failed_checks": [],
+"calls": 1
+}
+},
+{
+"suite": "fresh",
+"id": "syn-cupboard-latch-blur-s35048",
+"colour": "orange",
+"threshold": {
+"mask": true,
+"accepted": true,
+"errors": {
+"length": 0.1864,
+"width": 0.022,
+"hole_1.diameter": 0.134
+},
+"failed_checks": [],
+"iou_exact": 0.9105
+},
+"old": {
+"mask": false,
+"score": 0.0,
+"phrase": null,
+"seconds": 11.5,
+"calls": 2
+},
+"new": {
+"mask": true,
+"score": 0.957,
+"phrase": "orange plastic part",
+"seconds": 9.8,
+"iou_threshold": 0.8748,
+"iou_exact": 0.9609,
+"accepted": true,
+"errors": {
+"length": 0.6064,
+"width": 0.42,
+"hole_1.diameter": 0.656
+},
+"failed_checks": [],
+"calls": 1
+}
+},
+{
+"suite": "fresh",
+"id": "syn-cupboard-latch-clean-s922792",
+"colour": "blue",
+"threshold": {
+"mask": true,
+"accepted": true,
+"errors": {
+"length": 0.0648,
+"width": 0.137,
+"hole_1.diameter": 0.131
+},
+"failed_checks": [],
+"iou_exact": 0.9246
+},
+"old": {
+"mask": false,
+"score": 0.0,
+"phrase": null,
+"seconds": 12.5,
+"calls": 2
+},
+"new": {
+"mask": true,
+"score": 0.9726,
+"phrase": "blue plastic part",
+"seconds": 10.2,
+"iou_threshold": 0.9067,
+"iou_exact": 0.9807,
+"accepted": true,
+"errors": {
+"length": 0.3242,
+"width": 0.154,
+"hole_1.diameter": 0.274
+},
+"failed_checks": [],
+"calls": 1
+}
+},
+{
+"suite": "fresh",
+"id": "syn-hinge-leaf-glare-s333803",
+"colour": "orange",
+"threshold": {
+"mask": true,
+"accepted": false,
+"errors": {
+"length": 0.651,
+"width": 0.0938,
+"hole_1.diameter": 0.001,
+"hole_2.diameter": 0.058,
+"hole_3.diameter": 0.112,
+"hole_4.diameter": 0.163
+},
+"failed_checks": [
+"contrast"
+],
+"iou_exact": 0.9438
+},
+"old": {
+"mask": false,
+"score": 0.0,
+"phrase": null,
+"seconds": 11.6,
+"calls": 2
+},
+"new": {
+"mask": true,
+"score": 0.9259,
+"phrase": "orange plastic part",
+"seconds": 12.1,
+"iou_threshold": 0.9287,
+"iou_exact": 0.9836,
+"accepted": true,
+"errors": {
+"length": 0.376,
+"width": 0.1422,
+"hole_1.diameter": 0.17,
+"hole_2.diameter": 0.233,
+"hole_3.diameter": 0.282,
+"hole_4.diameter": 0.288
+},
+"failed_checks": [],
+"calls": 1
+}
+},
+{
+"suite": "fresh",
+"id": "syn-hinge-leaf-tilt-s977667",
+"colour": "black",
+"threshold": {
+"mask": true,
+"accepted": true,
+"errors": {
+"length": 0.008,
+"width": 0.2643,
+"hole_1.diameter": 0.171,
+"hole_2.diameter": 0.259
+},
+"failed_checks": [],
+"iou_exact": 0.9646
+},
+"old": {
+"mask": false,
+"score": 0.0,
+"phrase": null,
+"seconds": 13.1,
+"calls": 2
+},
+"new": {
+"mask": true,
+"score": 0.8672,
+"phrase": "black plastic part",
+"seconds": 12.7,
+"iou_threshold": 0.9475,
+"iou_exact": 0.9822,
+"accepted": true,
+"errors": {
+"length": 0.143,
+"width": 0.4563,
+"hole_1.diameter": 0.345,
+"hole_2.diameter": 0.406
+},
+"failed_checks": [],
+"calls": 1
+}
+},
+{
+"suite": "fresh",
+"id": "syn-hook-white-part-s205909",
+"colour": "beige",
+"threshold": {
+"mask": true,
+"accepted": true,
+"errors": {
+"length": 0.143,
+"width": 1.364,
+"hole_1.diameter": 0.947,
+"hole_2.diameter": 0.988
+},
+"failed_checks": [],
+"iou_exact": 0.9853
+},
+"old": {
+"mask": false,
+"score": 0.0,
+"phrase": null,
+"seconds": 13.2,
+"calls": 2
+},
+"new": {
+"mask": true,
+"score": 0.9416,
+"phrase": "beige plastic part",
+"seconds": 9.1,
+"iou_threshold": 0.9706,
+"iou_exact": 0.985,
+"accepted": true,
+"errors": {
+"length": 0.1,
+"width": 1.259,
+"hole_1.diameter": 0.537,
+"hole_2.diameter": 0.546
+},
+"failed_checks": [],
+"calls": 1
+}
+},
+{
+"suite": "fresh",
+"id": "syn-knob-blur-s493826",
+"colour": "red",
+"threshold": {
+"mask": true,
+"accepted": true,
+"errors": {
+"length": 0.0132,
+"width": 0.0777
+},
+"failed_checks": [],
+"iou_exact": 0.9165
+},
+"old": {
+"mask": false,
+"score": 0.0,
+"phrase": null,
+"seconds": 12.3,
+"calls": 2
+},
+"new": {
+"mask": true,
+"score": 0.7143,
+"phrase": "red plastic part",
+"seconds": 7.5,
+"iou_threshold": 0.9076,
+"iou_exact": 0.9716,
+"accepted": true,
+"errors": {
+"length": 0.8078,
+"width": 0.8187
+},
+"failed_checks": [],
+"calls": 1
+}
+},
+{
+"suite": "fresh",
+"id": "syn-l-bracket-glare-s394385",
+"colour": "red",
+"threshold": {
+"mask": true,
+"accepted": false,
+"errors": {
+"length": 0.902,
+"width": 4.381,
+"hole_1.diameter": 0.087
+},
+"failed_checks": [
+"contrast",
+"scale"
+],
+"iou_exact": 0.9646
+},
+"old": {
+"mask": false,
+"score": 0.0,
+"phrase": null,
+"seconds": 11.4,
+"calls": 2
+},
+"new": {
+"mask": true,
+"score": 0.8476,
+"phrase": "red plastic part",
+"seconds": 6.8,
+"iou_threshold": 0.9491,
+"iou_exact": 0.9838,
+"accepted": false,
+"errors": {
+"length": 0.73,
+"width": 4.111,
+"hole_1.diameter": 0.271
+},
+"failed_checks": [
+"scale"
+],
+"calls": 1
+}
+},
+{
+"suite": "fresh",
+"id": "syn-spacer-low-light-s426202",
+"colour": "brown",
+"threshold": {
+"mask": true,
+"accepted": true,
+"errors": {
+"length": 0.1559,
+"width": 0.058,
+"hole_1.diameter": 0.139
+},
+"failed_checks": [],
+"iou_exact": 0.9746
+},
+"old": {
+"mask": false,
+"score": 0.0,
+"phrase": null,
+"seconds": 14.5,
+"calls": 2
+},
+"new": {
+"mask": true,
+"score": 0.6605,
+"phrase": "brown plastic part",
+"seconds": 7.6,
+"iou_threshold": 0.9007,
+"iou_exact": 0.9242,
+"accepted": true,
+"errors": {
+"length": 0.2529,
+"width": 0.171
+},
+"failed_checks": [],
+"calls": 1
+}
+},
+{
+"suite": "redteam",
+"id": "rt-flexible-object",
+"colour": "red",
+"threshold": {
+"mask": true,
+"accepted": true,
+"errors": {},
+"failed_checks": []
+},
+"old": {
+"mask": false,
+"score": 0.0,
+"phrase": null,
+"seconds": 12.9,
+"calls": 2
+},
+"new": {
+"mask": false,
+"score": 0.0,
+"phrase": null,
+"seconds": 9.4,
+"calls": 3
+}
+},
+{
+"suite": "redteam",
+"id": "rt-hand-in-frame",
+"colour": "beige",
+"threshold": {
+"mask": true,
+"accepted": false,
+"errors": {},
+"failed_checks": [
+"coverage",
+"contrast"
+]
+},
+"old": {
+"mask": false,
+"score": 0.0,
+"phrase": null,
+"seconds": 16.4,
+"calls": 2
+},
+"new": {
+"mask": false,
+"score": 0.0,
+"phrase": null,
+"seconds": 6.4,
+"calls": 3
+}
+},
+{
+"suite": "redteam",
+"id": "rt-organic-object",
+"colour": "orange",
+"threshold": {
+"mask": true,
+"accepted": true,
+"errors": {},
+"failed_checks": []
+},
+"old": {
+"mask": false,
+"score": 0.0,
+"phrase": null,
+"seconds": 12.1,
+"calls": 2
+},
+"new": {
+"mask": false,
+"score": 0.0,
+"phrase": null,
+"seconds": 6.1,
+"calls": 3
+}
+},
+{
+"suite": "redteam",
+"id": "rt-safety-part",
+"colour": "red",
+"threshold": {
+"mask": true,
+"accepted": true,
+"errors": {},
+"failed_checks": []
+},
+"old": {
+"mask": false,
+"score": 0.0,
+"phrase": null,
+"seconds": 9.8,
+"calls": 2
+},
+"new": {
+"mask": true,
+"score": 0.9024,
+"phrase": "red plastic part",
+"seconds": 10.6,
+"iou_threshold": 0.9455,
+"accepted": true,
+"errors": {},
+"failed_checks": [],
+"calls": 1
+}
+},
+{
+"suite": "redteam",
+"id": "rt-two-parts",
+"colour": "red",
+"threshold": {
+"mask": true,
+"accepted": false,
+"errors": {},
+"failed_checks": [
+"single_part"
+]
+},
+"old": {
+"mask": false,
+"score": 0.0,
+"phrase": null,
+"seconds": 9.7,
+"calls": 2
+},
+"new": {
+"mask": true,
+"score": 0.8672,
+"phrase": "red plastic part",
+"seconds": 9.7,
+"iou_threshold": 0.9363,
+"accepted": false,
+"errors": {},
+"failed_checks": [
+"single_part"
+],
+"calls": 1
+}
+},
+{
+"suite": "public",
+"id": "aa_cell-1",
+"colour": "blue",
+"threshold": {
+"mask": true,
+"accepted": true,
+"errors": {
+"width": 1.675
+},
+"failed_checks": []
+},
+"old": {
+"mask": false,
+"score": 0.0,
+"phrase": null,
+"seconds": 12.7,
+"calls": 2
+},
+"new": {
+"mask": false,
+"score": 0.0,
+"phrase": null,
+"seconds": 6.9,
+"calls": 3
+}
+},
+{
+"suite": "public",
+"id": "id1_card-1",
+"colour": "white",
+"threshold": {
+"mask": true,
+"accepted": true,
+"errors": {
+"width": 0.267
+},
+"failed_checks": []
+},
+"old": {
+"mask": false,
+"score": 0.0,
+"phrase": null,
+"seconds": 11.5,
+"calls": 2
+},
+"new": {
+"mask": true,
+"score": 0.6751,
+"phrase": "white plastic part",
+"seconds": 12.5,
+"iou_threshold": 0.9731,
+"accepted": true,
+"errors": {
+"width": 0.481
+},
+"failed_checks": [],
+"calls": 1
+}
+},
+{
+"suite": "public",
+"id": "microsd_card-1",
+"colour": "black",
+"threshold": {
+"mask": true,
+"accepted": true,
+"errors": {
+"length": 0.257,
+"width": 0.467
+},
+"failed_checks": []
+},
+"old": {
+"mask": false,
+"score": 0.0,
+"phrase": null,
+"seconds": 12.0,
+"calls": 2
+},
+"new": {
+"mask": false,
+"score": 0.0,
+"phrase": null,
+"seconds": 25.3,
+"calls": 3
+}
+},
+{
+"suite": "public",
+"id": "microsd_card-2",
+"colour": "green",
+"threshold": {
+"mask": true,
+"accepted": true,
+"errors": {
+"length": 0.022,
+"width": 0.491
+},
+"failed_checks": []
+},
+"old": {
+"mask": false,
+"score": 0.0,
+"phrase": null,
+"seconds": 10.6,
+"calls": 2
+},
+"new": {
+"mask": false,
+"score": 0.0,
+"phrase": null,
+"seconds": 9.6,
+"calls": 3
+}
+},
+{
+"suite": "public",
+"id": "sd_card-1",
+"colour": "green",
+"threshold": {
+"mask": true,
+"accepted": true,
+"errors": {
+"width": 0.034
+},
+"failed_checks": []
+},
+"old": {
+"mask": false,
+"score": 0.0,
+"phrase": null,
+"seconds": 12.9,
+"calls": 2
+},
+"new": {
+"mask": false,
+"score": 0.0,
+"phrase": null,
+"seconds": 7.1,
+"calls": 3
+}
+},
+{
+"suite": "public",
+"id": "sd_card-10",
+"colour": "blue",
+"threshold": {
+"mask": true,
+"accepted": true,
+"errors": {
+"width": 0.307
+},
+"failed_checks": []
+},
+"old": {
+"mask": false,
+"score": 0.0,
+"phrase": null,
+"seconds": 11.5,
+"calls": 2
+},
+"new": {
+"mask": false,
+"score": 0.0,
+"phrase": null,
+"seconds": 8.3,
+"calls": 3
+}
+},
+{
+"suite": "public",
+"id": "sd_card-2",
+"colour": "blue",
+"threshold": {
+"mask": true,
+"accepted": true,
+"errors": {
+"width": 0.166
+},
+"failed_checks": []
+},
+"old": {
+"mask": false,
+"score": 0.0,
+"phrase": null,
+"seconds": 13.9,
+"calls": 2
+},
+"new": {
+"mask": false,
+"score": 0.0,
+"phrase": null,
+"seconds": 6.8,
+"calls": 3
+}
+},
+{
+"suite": "public",
+"id": "sd_card-3",
+"colour": "blue",
+"threshold": {
+"mask": true,
+"accepted": true,
+"errors": {
+"width": 0.017
+},
+"failed_checks": []
+},
+"old": {
+"mask": false,
+"score": 0.0,
+"phrase": null,
+"seconds": 12.1,
+"calls": 2
+},
+"new": {
+"mask": false,
+"score": 0.0,
+"phrase": null,
+"seconds": 11.1,
+"calls": 3
+}
+},
+{
+"suite": "public",
+"id": "sd_card-4",
+"colour": "blue",
+"threshold": {
+"mask": true,
+"accepted": true,
+"errors": {
+"width": 0.473
+},
+"failed_checks": []
+},
+"old": {
+"mask": false,
+"score": 0.0,
+"phrase": null,
+"seconds": 12.1,
+"calls": 2
+},
+"new": {
+"mask": false,
+"score": 0.0,
+"phrase": null,
+"seconds": 6.3,
+"calls": 3
+}
+},
+{
+"suite": "public",
+"id": "sd_card-6",
+"colour": "blue",
+"threshold": {
+"mask": true,
+"accepted": true,
+"errors": {
+"width": 0.249
+},
+"failed_checks": []
+},
+"old": {
+"mask": false,
+"score": 0.0,
+"phrase": null,
+"seconds": 12.8,
+"calls": 2
+},
+"new": {
+"mask": false,
+"score": 0.0,
+"phrase": null,
+"seconds": 7.2,
+"calls": 3
+}
+},
+{
+"suite": "public",
+"id": "sd_card-8",
+"colour": "black",
+"threshold": {
+"mask": true,
+"accepted": true,
+"errors": {
+"width": 0.832
+},
+"failed_checks": []
+},
+"old": {
+"mask": false,
+"score": 0.0,
+"phrase": null,
+"seconds": 11.2,
+"calls": 2
+},
+"new": {
+"mask": false,
+"score": 0.0,
+"phrase": null,
+"seconds": 6.8,
+"calls": 3
+}
+},
+{
+"suite": "public",
+"id": "sd_card-9",
+"colour": "black",
+"threshold": {
+"mask": true,
+"accepted": true,
+"errors": {
+"width": 0.65
+},
+"failed_checks": []
+},
+"old": {
+"mask": false,
+"score": 0.0,
+"phrase": null,
+"seconds": 9.8,
+"calls": 2
+},
+"new": {
+"mask": false,
+"score": 0.0,
+"phrase": null,
+"seconds": 6.2,
+"calls": 3
+}
+},
+{
+"suite": "public",
+"id": "us_dime-1",
+"colour": "grey",
+"threshold": {
+"mask": true,
+"accepted": true,
+"errors": {
+"length": 0.221,
+"width": 0.962
+},
+"failed_checks": []
+},
+"old": {
+"mask": false,
+"score": 0.0,
+"phrase": null,
+"seconds": 10.2,
+"calls": 2
+},
+"new": {
+"mask": false,
+"score": 0.0,
+"phrase": null,
+"seconds": 5.6,
+"calls": 3
+}
+},
+{
+"suite": "public",
+"id": "yen_5-1",
+"colour": "orange",
+"threshold": {
+"mask": true,
+"accepted": true,
+"errors": {
+"width": 0.757,
+"hole_1.diameter": 0.458
+},
+"failed_checks": []
+},
+"old": {
+"mask": false,
+"score": 0.0,
+"phrase": null,
+"seconds": 152.4,
+"calls": 2
+},
+"new": {
+"mask": false,
+"score": 0.0,
+"phrase": null,
+"seconds": 6.9,
+"calls": 3
+}
+},
+{
+"suite": "public",
+"id": "yen_5-2",
+"colour": "yellow",
+"threshold": {
+"mask": true,
+"accepted": true,
+"errors": {
+"width": 0.242,
+"hole_1.diameter": 0.302
+},
+"failed_checks": []
+},
+"old": {
+"mask": false,
+"score": 0.0,
+"phrase": null,
+"seconds": 13.5,
+"calls": 2
+},
+"new": {
+"mask": false,
+"score": 0.0,
+"phrase": null,
+"seconds": 6.3,
+"calls": 3
+}
+},
+{
+"suite": "public",
+"id": "yen_5-3",
+"colour": "yellow",
+"threshold": {
+"mask": true,
+"accepted": true,
+"errors": {
+"width": 0.23
+},
+"failed_checks": []
+},
+"old": {
+"mask": false,
+"score": 0.0,
+"phrase": null,
+"seconds": 14.1,
+"calls": 2
+},
+"new": {
+"mask": false,
+"score": 0.0,
+"phrase": null,
+"seconds": 8.5,
+"calls": 3
+}
+}
+]
+}

@@ -32,6 +32,10 @@ CROP_ACCEPT_IOU = 0.8
 PROVIDER_MAX_SIDE_PX = 2016  # ≈ 2× SAM's 1008 px input; keeps request bodies small
 DEFAULT_LADDER = ("plastic part", "broken plastic piece")
 
+# SAM 3.1 often answers a bare "plastic part" with no mask at all and names the same object once its colour is in the
+# phrase (eval/sam_prompts.py). Code reads the colour off the deterministic threshold mask; no model is asked.
+COLOUR_EROSION_PX = 3
+
 THRESHOLD_SOURCE = "threshold"
 MIN_PART_AREA_MM2 = 4.0  # Measurements.mask_source literal for the deterministic segmenter
 
@@ -660,14 +664,48 @@ def merge_duplicates(
     return out
 
 
+def colour_word(img: U8, mask: BoolMask) -> str | None:
+    """A plain colour name for the masked pixels of a BGR image, from their median hue, saturation and value.
+
+    The mask is eroded first so edge blur and the stage's colour do not count. None for an empty mask or a grey image.
+    """
+    if img.ndim != 3 or not mask.any():
+        return None
+    inner = cv2.erode(mask.astype(np.uint8), np.ones((2 * COLOUR_EROSION_PX + 1,) * 2, np.uint8)) > 0
+    pixels = img[inner if inner.any() else mask]
+    hsv = cv2.cvtColor(pixels.reshape(-1, 1, 3).astype(np.uint8), cv2.COLOR_BGR2HSV).reshape(-1, 3)
+    hue_deg, sat, val = (
+        float(np.median(hsv[:, 0])) * 2.0,
+        float(np.median(hsv[:, 1])) / 255.0,
+        float(np.median(hsv[:, 2])) / 255.0,
+    )
+    if val < 0.22:
+        return "black"
+    if sat < 0.16:
+        return "white" if val > 0.72 else "grey"
+    if 15.0 <= hue_deg < 50.0:
+        if sat < 0.45 and val > 0.6:
+            return "beige"
+        if val < 0.55:
+            return "brown"
+    if hue_deg < 15.0 or hue_deg >= 345.0:
+        return "pink" if sat < 0.5 and val > 0.7 else "red"
+    for limit, name in ((40.0, "orange"), (70.0, "yellow"), (170.0, "green"), (255.0, "blue"), (290.0, "purple")):
+        if hue_deg < limit:
+            return name
+    return "pink"
+
+
 @dataclass
 class ProviderSegmenter:
     """Text-prompted segmentation through a provider call (SAM 3.1 via `services/agent/providers`).
 
-    `call(image_png, prompt)` returns `[(mask, score)]` with masks full-frame for the image it was given. The ladder
-    tries `prompt`, "broken plastic piece", then `family_word`; it stops at the first mask scoring ≥ 0.85 and ignores
-    masks below 0.4. Duplicate masks (IoU ≥ 0.72) are OR-merged. The chosen mask is then re-segmented on a crop
-    (+15 % margin) at full resolution for sharper edges. If nothing clears the floor, `fallback` (threshold) is used.
+    `call(image_png, prompt)` returns `[(mask, score)]` with masks full-frame for the image it was given. With a detected
+    mat the ladder starts with "<colour> `prompt`" (`colour_word` of the threshold mask); a plausible mask above the floor
+    from that phrase ends the ladder. Then it tries `prompt`, "broken plastic piece" and `family_word`, stops at the first
+    mask scoring ≥ 0.85 and ignores masks below 0.4. Duplicate masks (IoU ≥ 0.72) are OR-merged. The chosen mask is then
+    re-segmented on a crop (+15 % margin) at full resolution for sharper edges. If nothing clears the floor, `fallback`
+    (threshold) is used.
     """
 
     call: SegCall
@@ -676,6 +714,16 @@ class ProviderSegmenter:
     source: str = "sam-3.1"
     max_side_px: int = PROVIDER_MAX_SIDE_PX
     crop_refine: bool = True
+    colour_prompt: bool = True
+
+    def _threshold(self, img: U8, prompt: str, context: SegContext | None) -> SegResult | None:
+        """The deterministic mask, for the colour word and the fallback; None when there is no mat or it cannot run."""
+        if context is None:
+            return None
+        try:
+            return (self.fallback or ThresholdSegmenter()).segment(img, prompt, context=context)
+        except Exception:  # a colour hint is optional: without one the ladder starts at the plain phrase
+            return None
 
     def _run(self, img: U8, prompt: str) -> list[tuple[BoolMask, float]]:
         h, w = img.shape[:2]
@@ -705,8 +753,11 @@ class ProviderSegmenter:
         return inside >= 0.8 * area and area <= 0.85 * int(np.count_nonzero(stage_m))
 
     def segment(self, img: U8, prompt: str = "plastic part", *, context: SegContext | None = None) -> SegResult:
+        threshold = self._threshold(img, prompt, context) if self.colour_prompt else None
+        word = colour_word(img, threshold.mask) if threshold is not None else None
+        coloured = f"{word} {prompt}" if word else None
         ladder: list[str] = []
-        for p in (prompt, *DEFAULT_LADDER, self.family_word):
+        for p in (coloured, prompt, *DEFAULT_LADDER, self.family_word):
             if p and p not in ladder:
                 ladder.append(p)
         attempts: list[dict[str, Any]] = []
@@ -731,7 +782,7 @@ class ProviderSegmenter:
             )
             if top is not None and (best is None or top[1] > best[1]):
                 best = (top[0], top[1], p)
-            if best is not None and best[1] >= EARLY_EXIT_SCORE:
+            if best is not None and (best[1] >= EARLY_EXIT_SCORE or p == coloured):
                 break
         if best is None:
             if self.fallback is None:
@@ -742,7 +793,7 @@ class ProviderSegmenter:
                     attempts=attempts,
                     notes=["The segmenter found no part above the confidence floor."],
                 )
-            res = self.fallback.segment(img, prompt, context=context)
+            res = threshold if threshold is not None else self.fallback.segment(img, prompt, context=context)
             res.attempts = attempts + res.attempts
             res.notes.insert(0, f"{self.source} found no part with score ≥ {SCORE_FLOOR}; deterministic fallback used.")
             return res
