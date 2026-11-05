@@ -15,6 +15,11 @@ not reach that, so a small difference is reported as no measured difference. No 
 Limits fixed now: each sample runs once, $8 of model calls, no new run after the stop time. Unfinished samples are reported
 as not run. All photos are rendered, so this says nothing about real phone photos.
 
+What changed once it ran: the first attempt ran in an environment built without `meta-sam-parser`, so every SAM call failed,
+the threshold measured all 19 runs that reached measuring, and it tested nothing about the fix. It cost $5.03 and is not
+stored or counted. `run` now stops before any model call if the parser is missing, and the samples were run again in the same
+seeded order, with a new stop time.
+
     uv run python -m eval.after_fix render
     PROVIDER_MODE=live uv run python -m eval.after_fix run --stop-epoch <unix time> --out <dir>
     uv run python -m eval.after_fix report --out <dir>     # eval/reports/latest/after_fix.json from the stored runs
@@ -92,6 +97,10 @@ def run_one(task: bench.Task) -> dict[str, Any]:
 
 
 def run(stop_epoch: float, out: Path, workers: int) -> int:
+    import importlib.util
+
+    if importlib.util.find_spec("meta_sam_parser") is None:
+        raise SystemExit("meta-sam-parser is not installed, so SAM cannot answer: uv sync --all-extras")
     ok = json.loads((DATA.parent / "rendered.json").read_text())
     todo = []
     for row in ok:

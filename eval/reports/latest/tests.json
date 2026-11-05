@@ -1,16 +1,16 @@
 {
- "generated_at": "2026-11-04T23:08:07+00:00",
+ "generated_at": "2026-11-05T01:33:24+00:00",
  "git": {
-  "sha": "1f77aad30f748b303ab28a048e362a72929fe3d1",
-  "dirty": true
+  "sha": "3f6ad89897554fb48014f863cca6c04b880c3102",
+  "dirty": false
  },
  "gates": {
   "backend": {
    "title": "Backend unit tests (pytest)",
    "command": "make test",
-   "seconds": 275,
-   "tests": 1023,
-   "passed": 1023,
+   "seconds": 339,
+   "tests": 1120,
+   "passed": 1120,
    "failed": 0,
    "skipped": 0,
    "status": "passed"
@@ -18,9 +18,9 @@
   "web_unit": {
    "title": "Web unit tests (node --test)",
    "command": "pnpm -s test (in apps/web)",
-   "seconds": 1,
-   "tests": 153,
-   "passed": 153,
+   "seconds": 0,
+   "tests": 180,
+   "passed": 180,
    "failed": 0,
    "skipped": 0,
    "status": "passed"
@@ -28,11 +28,11 @@
   "browser": {
    "title": "Browser tests (Playwright)",
    "command": "pnpm -s exec playwright test --workers=2 (after next build)",
-   "seconds": 303,
-   "tests": 552,
-   "passed": 273,
+   "seconds": 360,
+   "tests": 656,
+   "passed": 337,
    "failed": 0,
-   "skipped": 279,
+   "skipped": 319,
    "status": "passed"
   },
   "deploy_check": {
@@ -50,8 +50,8 @@
   "python_types": {
    "title": "Python types (mypy --strict)",
    "command": "make typecheck",
-   "seconds": 5,
-   "status": "failed"
+   "seconds": 2,
+   "status": "passed"
   },
   "web_types": {
    "title": "Web types (tsc)",
